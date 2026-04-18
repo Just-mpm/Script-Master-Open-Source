@@ -46,13 +46,13 @@ export function Header() {
   return (
     <AppBar position="sticky" component="header" role="banner">
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
-        <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1.5, md: 2 } }}>
+        <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1, md: 1.5 } }}>
           <Stack direction="row" spacing={1.5} sx={{ minWidth: 0, flexShrink: 0, alignItems: 'center' }}>
             <Box
               aria-hidden="true"
               sx={{
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 borderRadius: '50%',
                 display: 'grid',
                 placeItems: 'center',
@@ -85,7 +85,7 @@ export function Header() {
               gap: GAP_COMPACT,
               px: GAP_COMPACT,
               py: GAP_COMPACT,
-              borderRadius: 999,
+              borderRadius: 8,
               overflowX: 'auto',
               flex: 1,
               minWidth: 0,
@@ -140,7 +140,7 @@ export function Header() {
                     ...glassSurfaceSx(theme),
                     px: { xs: 1, sm: 1.5 },
                     py: 0.75,
-                    borderRadius: 999,
+                    borderRadius: 8,
                   })}
                 >
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>

@@ -34,7 +34,7 @@ import { useImageGenerator } from '../hooks/useImageGenerator';
 import { saveImageGeneration } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Quadrado (1:1)' },
@@ -148,7 +148,7 @@ export function ImageStudio() {
             }}
             color="inherit"
             fullWidth
-            sx={{ justifyContent: 'space-between', px: 3, py: 2.5, borderRadius: 0 }}
+            sx={{ justifyContent: 'space-between', px: 3, py: 2, borderRadius: 0 }}
             endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: ICON_SIZE_LG }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_LG }} />) : undefined}
           >
             <Stack spacing={0.6} sx={{ textAlign: 'left' }}>
@@ -165,7 +165,7 @@ export function ImageStudio() {
           </Button>
 
           <Collapse in={isSidebarOpen} timeout="auto">
-            <Stack spacing={2.5} sx={{ px: 3, pb: 3 }}>
+            <Stack spacing={2} sx={{ px: 3, pb: 3 }}>
                 <Box sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
                 <Stack spacing={2}>
                   <FormControl fullWidth>
@@ -279,7 +279,7 @@ export function ImageStudio() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  p: { xs: 2, md: 3 },
+                  p: { xs: 1.5, md: 2 },
                   overflow: 'hidden',
                 })}
               >
@@ -330,8 +330,8 @@ export function ImageStudio() {
                     </Stack>
                   </Stack>
                 ) : (
-                  <Stack spacing={1.5} sx={{ maxWidth: 420, alignItems: 'center', textAlign: 'center' }}>
-                    <ImageIcon sx={{ fontSize: 52, color: theme.palette.text.disabled }} />
+                  <Stack spacing={1} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
+                    <ImageIcon sx={{ fontSize: EMPTY_ICON_SIZE, color: theme.palette.text.disabled }} />
                     <Typography variant="h6">Sua prévia aparece aqui</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Escreva um prompt claro e, se quiser, anexe uma referência para orientar estilo, composição e consistência visual.

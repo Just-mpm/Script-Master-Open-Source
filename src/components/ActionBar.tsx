@@ -18,7 +18,7 @@ import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
 import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
-import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
+import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface ActionBarProps {
@@ -140,7 +140,7 @@ export function ActionBar({
             maxWidth: 680,
             px: 2,
             py: 1.25,
-            borderRadius: 999,
+            borderRadius: 8,
             pointerEvents: 'auto',
           })}
         >
@@ -160,7 +160,7 @@ export function ActionBar({
                 sx={{
                   mt: 0.5,
                   height: 8,
-                  borderRadius: 999,
+                  borderRadius: RADIUS_CHIP,
                     bgcolor: 'action.hover',
                 }}
               />
@@ -181,7 +181,7 @@ export function ActionBar({
             ...glassSurfaceSx(theme),
             width: '100%',
             maxWidth: 1120,
-            borderRadius: { xs: 4, md: 999 },
+            borderRadius: { xs: 3, md: 8 },
             px: { xs: 1.5, sm: 2, md: 3 },
             py: { xs: 1.5, md: 1.75 },
             pointerEvents: 'auto',
@@ -209,8 +209,8 @@ export function ActionBar({
                     variant="determinate"
                     value={generationProgress}
                     sx={{
-                      height: 10,
-                      borderRadius: 999,
+                      height: 8,
+                      borderRadius: RADIUS_CHIP,
                       bgcolor: WHITE_08,
                     }}
                   />
@@ -255,7 +255,7 @@ export function ActionBar({
                           position: 'relative',
                           flex: 1,
                           height: 10,
-                          borderRadius: 999,
+                          borderRadius: RADIUS_CHIP,
                            bgcolor: WHITE_08,
                           cursor: 'pointer',
                           overflow: 'hidden',

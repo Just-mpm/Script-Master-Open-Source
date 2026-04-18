@@ -25,7 +25,7 @@ import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, RADIUS_CHIP } from '../theme/tokens';
 
 interface VideoLibraryScene {
   imageUrl: string;
@@ -59,7 +59,7 @@ function MetadataPill({
         gap: GAP_COMPACT,
         px: 1,
         py: 0.5,
-        borderRadius: 999,
+        borderRadius: RADIUS_CHIP,
         backgroundColor: alpha(theme.palette.common.white, 0.05),
         border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
       })}
@@ -188,8 +188,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     return (
       <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1.5 }}>
         {[1, 2, 3].map((index) => (
-          <Stack key={index} spacing={GAP_MEDIUM} sx={{ minWidth: 280 }}>
-            <Skeleton variant="rounded" animation="wave" width={280} height={158} />
+          <Stack key={index} spacing={GAP_MEDIUM} sx={{ minWidth: 260 }}>
+            <Skeleton variant="rounded" animation="wave" width={260} height={146} />
             <Skeleton variant="text" animation="wave" sx={{ fontSize: '1rem' }} />
             <Skeleton variant="text" animation="wave" width="75%" />
           </Stack>
@@ -200,22 +200,10 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
   if (projects.length === 0) {
     return (
-      <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 } })}>
-        <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
-          <Box
-            sx={(theme) => ({
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              display: 'grid',
-              placeItems: 'center',
-              backgroundColor: alpha(theme.palette.common.white, 0.05),
-              border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
-            })}
-          >
-            <FolderOpen sx={{ fontSize: 28, opacity: 0.35 }} />
-          </Box>
-          <Stack spacing={0.75}>
+      <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD } })}>
+        <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center', textAlign: 'center' }}>
+          <FolderOpen sx={{ fontSize: 24, opacity: 0.35 }} />
+          <Stack spacing={GAP_COMPACT}>
             <Typography variant="h6">Sua galeria ainda está vazia</Typography>
             <Typography variant="body2" color="text.secondary">
               Assim que você gerar projetos com áudio e cenas, eles aparecerão aqui para revisão e download.
@@ -227,7 +215,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   }
 
   return (
-    <Stack spacing={2.25}>
+    <Stack spacing={GAP_RELAXED}>
       <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
           <Movie sx={{ fontSize: ICON_SIZE_MD }} />
@@ -246,7 +234,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             const canSelect = Boolean(project.audioUrl && project.scenes);
 
             return (
-              <motion.div key={project.id} whileHover={{ y: -4 }} style={{ minWidth: 280, maxWidth: 280 }}>
+              <motion.div key={project.id} whileHover={{ y: -4 }} style={{ minWidth: 260, maxWidth: 260 }}>
                 <Card
                   sx={(theme): SystemStyleObject<Theme> => ({
                     position: 'relative',
@@ -300,8 +288,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                           position: 'absolute',
                           right: 12,
                           bottom: 12,
-                          width: 38,
-                          height: 38,
+                          width: 34,
+                          height: 34,
                           borderRadius: '50%',
                           display: 'grid',
                           placeItems: 'center',
@@ -314,7 +302,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                       </Box>
                     </Box>
 
-                    <CardContent sx={{ p: 2.25 }}>
+                    <CardContent sx={{ p: 2 }}>
                       <Stack spacing={GAP_MEDIUM}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: isActive ? 'primary.main' : 'text.primary' }} noWrap>
                           {project.name}
@@ -354,8 +342,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                         top: 10,
                         right: 10,
                           zIndex: 2,
-                          width: 38,
-                          height: 38,
+                          width: 34,
+                          height: 34,
                           backgroundColor: downloadingId === project.id
                             ? theme.palette.primary.main
                             : alpha(theme.palette.common.black, 0.42),

@@ -89,9 +89,9 @@ export function ScriptEditor({
           direction={{ xs: 'column', sm: 'row' }}
           spacing={GAP_MEDIUM}
           sx={{
-            px: { xs: 3, sm: 4 },
-            pt: { xs: 3, sm: 4 },
-            pb: 2,
+            px: { xs: 2.5, sm: 3 },
+            pt: { xs: 2.5, sm: 3 },
+            pb: 1.5,
             position: 'relative',
             zIndex: 2,
             alignItems: { xs: 'flex-start', sm: 'center' },
@@ -146,7 +146,7 @@ export function ScriptEditor({
           </Stack>
         </Stack>
 
-        <Box sx={{ px: { xs: 3, sm: 4 }, pb: { xs: 3, sm: 4 }, position: 'relative', zIndex: 2, flex: 1, display: 'flex' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: { xs: 2.5, sm: 3 }, position: 'relative', zIndex: 2, flex: 1, display: 'flex' }}>
           <TextField
             id="script-editor"
             fullWidth
@@ -206,9 +206,9 @@ export function ScriptEditor({
           size="large"
           startIcon={<Mic sx={{ fontSize: ICON_SIZE_LG }} />}
           sx={(theme) => ({
-            minHeight: { xs: 48, sm: 52 },
+            minHeight: { xs: 44, sm: 48 },
             px: { xs: 3, sm: 4 },
-            borderRadius: 3.5,
+            borderRadius: 2,
             fontSize: { xs: '1rem', sm: '1.05rem' },
             fontWeight: 700,
             backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,

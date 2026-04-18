@@ -223,5 +223,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.3.2`
-- **Last release:** 2026-04-18 — Design tokens centralization, component cleanup, unused imports removal
+- **Current:** `0.3.3`
+- **Last release:** 2026-04-18 — Border radius unification, Firestore collection group rules & indexes, empty state tokens

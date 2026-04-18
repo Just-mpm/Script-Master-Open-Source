@@ -216,7 +216,7 @@ export function Inspector({
           sx={{
             width: '100%',
             px: { xs: 2.5, md: 3 },
-            py: 2.25,
+            py: 2,
             textAlign: 'left',
           }}
         >
@@ -241,7 +241,7 @@ export function Inspector({
         </ButtonBase>
 
         <Collapse in={isVoiceOpen} timeout="auto" id={voiceSectionId}>
-          <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
+          <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
               <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Stack spacing={0.5}>
@@ -414,17 +414,17 @@ export function Inspector({
            }}
            aria-expanded={isDirectionOpen}
           aria-controls={directionSectionId}
-          sx={{
-            width: '100%',
-            px: { xs: 2.5, md: 3 },
-            py: 2.25,
-            textAlign: 'left',
-          }}
-        >
-          <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Stack spacing={GAP_COMPACT}>
-              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-                <Settings sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
+           sx={{
+             width: '100%',
+             px: { xs: 2.5, md: 3 },
+             py: 2,
+             textAlign: 'left',
+           }}
+         >
+           <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
+             <Stack spacing={GAP_COMPACT}>
+               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                 <Settings sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Direção de arte
                 </Typography>
@@ -439,7 +439,7 @@ export function Inspector({
         </ButtonBase>
 
         <Collapse in={isDirectionOpen} timeout="auto" id={directionSectionId}>
-          <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
+          <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <TextField
               fullWidth
               label="Personagem"

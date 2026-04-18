@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
-import { ICON_SIZE_SM, ICON_SIZE_MD } from '../../../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_XS } from '../../../theme/tokens';
 import AttachFile from '@mui/icons-material/AttachFile';
 import Close from '@mui/icons-material/Close';
 import Description from '@mui/icons-material/Description';
@@ -138,7 +138,7 @@ export function AssistantComposer({
           sx={{
             '& .MuiOutlinedInput-root': {
               alignItems: 'flex-end',
-              borderRadius: 3,
+              borderRadius: RADIUS_XS,
               px: 0.5,
               py: 0.5,
               backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.72),

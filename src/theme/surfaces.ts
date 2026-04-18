@@ -5,7 +5,7 @@ import { APP_SURFACE, APP_BORDER, SHADOW_DEEP, WHITE_05, WHITE_015 } from './tok
 export const glassPanelSx = (theme: Theme): SystemStyleObject<Theme> => ({
   position: 'relative',
   overflow: 'hidden',
-  borderRadius: { xs: 4, md: 5 },
+  borderRadius: { xs: 3, md: 4 },
   border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
   backgroundColor: alpha(theme.palette.background.paper, 0.78),
   backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
@@ -17,7 +17,7 @@ export const glassPanelSx = (theme: Theme): SystemStyleObject<Theme> => ({
 });
 
 export const insetPanelSx = (theme: Theme): SystemStyleObject<Theme> => ({
-  borderRadius: 3,
+  borderRadius: 2,
   border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
   backgroundColor: alpha(theme.palette.background.default, 0.28),
   backgroundImage: 'none',

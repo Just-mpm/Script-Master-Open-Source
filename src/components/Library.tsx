@@ -46,7 +46,7 @@ import { useGlobalAudioState } from '../contexts/AudioContext';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -135,7 +135,7 @@ export function Library() {
   };
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={GAP_RELAXED}>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={GAP_MEDIUM}
@@ -149,7 +149,7 @@ export function Library() {
             <Folder sx={{ fontSize: ICON_SIZE_LG, color: 'primary.main' }} />
             <Typography variant="h4">Projetos salvos</Typography>
           </Stack>
-          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 640 }}>
             Um painel mais claro para revisar ativos do projeto, renomear versões, retomar áudio e baixar cenas sem excesso de ruído visual.
           </Typography>
         </Stack>
@@ -164,10 +164,10 @@ export function Library() {
       ) : null}
 
       {loading ? (
-        <Grid container spacing={2.5}>
+        <Grid container spacing={2}>
           {Array.from({ length: 3 }).map((_, index) => (
             <Grid key={index} size={{ xs: 12 }}>
-              <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: 2.5 })}>
+              <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: 2 })}>
                 <Stack spacing={2}>
                   <Skeleton variant="text" animation="wave" width="36%" height={34} />
                   <Skeleton variant="text" animation="wave" width="22%" />
@@ -178,11 +178,11 @@ export function Library() {
           ))}
         </Grid>
       ) : projects.length === 0 ? (
-        <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, textAlign: 'center' })}>
-            <Stack spacing={1.5} sx={{ alignItems: 'center' }}>
-            <Album sx={{ fontSize: 48, color: 'text.secondary' }} />
+        <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
+            <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+            <Album sx={{ fontSize: EMPTY_ICON_SIZE, color: 'text.secondary' }} />
             <Typography variant="h6">Sua biblioteca ainda está vazia</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               Quando você salvar áudios e cenas do estúdio, os projetos aparecem aqui com acesso rápido a downloads e histórico visual.
             </Typography>
           </Stack>
@@ -194,8 +194,8 @@ export function Library() {
 
             return (
               <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), overflow: 'hidden' })}>
-                <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-                  <Stack spacing={2.5}>
+                <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                  <Stack spacing={GAP_RELAXED}>
                     <Stack
                       direction={{ xs: 'column', md: 'row' }}
                       spacing={2}
@@ -277,10 +277,10 @@ export function Library() {
                     </Stack>
 
                     {isExpanded ? (
-                      <Stack spacing={3}>
-                        <Grid container spacing={2.5}>
+                      <Stack spacing={GAP_RELAXED}>
+                        <Grid container spacing={2}>
                           <Grid size={{ xs: 12, lg: 5 }}>
-                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25, height: '100%' })}>
+                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
                               <Stack spacing={1.5}>
                                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
                                   Versões de áudio
@@ -345,7 +345,7 @@ export function Library() {
                           </Grid>
 
                           <Grid size={{ xs: 12, lg: 7 }}>
-                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25, height: '100%' })}>
+                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
                               <Stack spacing={1.5}>
                                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
                                   Cenas geradas
@@ -403,7 +403,7 @@ export function Library() {
                           </Grid>
                         </Grid>
 
-                        <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25 })}>
+                        <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2 })}>
                           <Stack spacing={1}>
                             <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.16em' }}>
                               Roteiro original
@@ -433,7 +433,7 @@ export function Library() {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 4,
+              borderRadius: RADIUS_SM,
             },
           },
         }}

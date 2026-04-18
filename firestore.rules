@@ -17,13 +17,6 @@ service cloud.firestore {
               (request.auth.token.email.lower() == "kurosaki.mpm@gmail.com" && request.auth.token.email_verified == true));
     }
 
-    function isValidScene(scene) {
-      return scene is map && 
-             scene.keys().hasAll(['imageUrl', 'timestamp']) &&
-             scene.imageUrl is string && (scene.imageUrl.matches("^https://.*") || scene.imageUrl.matches("^data:image/.*")) &&
-             scene.timestamp is number;
-    }
-
     function isValidMemory(data) {
       return data.keys().hasAll(['id', 'userId', 'content', 'createdAt']) &&
              data.id is string &&
@@ -156,6 +149,20 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidChat(request.resource.data);
       allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidChat(request.resource.data);
       allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Collection Group: audios (usado por getProjectsDetailsMap)
+    match /{path=**}/audios/{audioId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidAudio(request.resource.data);
+      allow delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Collection Group: images (usado por getProjectsDetailsMap)
+    match /{path=**}/images/{imageId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidProjectImage(request.resource.data);
+      allow delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Image Generations

@@ -19,7 +19,7 @@ import ReactMarkdown from 'react-markdown';
 import type { AssistantSettings, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
 import { assistantInsetSx, assistantMarkdownSx } from './assistantUi';
-import { BRAND_PRIMARY, WHITE_06, WHITE_82, WHITE_16, AVATAR_SIZE_SM, ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_SM, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED } from '../../../theme/tokens';
+import { BRAND_PRIMARY, WHITE_06, WHITE_82, WHITE_16, AVATAR_SIZE_SM, ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_XS, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED } from '../../../theme/tokens';
 
 interface AssistantMessagesProps {
   messages: ChatMessage[];
@@ -89,9 +89,9 @@ export function AssistantMessages({
                   elevation={0}
                   sx={(theme) => ({
                     width: '100%',
-                    px: { xs: 1.5, md: 2 },
-                    py: { xs: 1.25, md: 1.5 },
-                    borderRadius: 3,
+                    px: { xs: 1.25, md: 1.75 },
+                    py: { xs: 1, md: 1.25 },
+                    borderRadius: RADIUS_XS,
                     border: '1px solid',
                     borderColor: isModel ? 'divider' : 'transparent',
                     background: isModel
@@ -161,7 +161,7 @@ export function AssistantMessages({
                 <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
             </Avatar>
 
-            <Card elevation={0} sx={{ p: GAP_MEDIUM * 2, borderRadius: RADIUS_SM, width: '100%', maxWidth: 640 }}>
+            <Card elevation={0} sx={{ p: GAP_MEDIUM * 2, borderRadius: RADIUS_XS, width: '100%', maxWidth: 560 }}>
               <Stack spacing={GAP_DEFAULT}>
                 <Skeleton variant="text" animation="wave" width="28%" />
                 <Skeleton variant="rounded" animation="wave" height={16} width="92%" />

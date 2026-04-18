@@ -1,5 +1,5 @@
 export const APP_MAX_WIDTH = 1600;
-export const APP_HEADER_HEIGHT = 72;
+export const APP_HEADER_HEIGHT = 60;
 export const APP_ACTION_BAR_BOTTOM = 24;
 
 // ─── Sizing ───────────────────────────────────────────────
@@ -14,14 +14,14 @@ export const ICON_SIZE_LG = 18;
 
 export const RADIUS_XS = 2;
 export const RADIUS_SM = 3;
-export const RADIUS_CHIP = 10;
+export const RADIUS_CHIP = 6;
 
 // ─── Spacing (valores numéricos para Stack/Gap) ──────────
 
 export const GAP_COMPACT = 0.75;
 export const GAP_DEFAULT = 1;
-export const GAP_MEDIUM = 1.25;
-export const GAP_RELAXED = 1.75;
+export const GAP_MEDIUM = 1.5;
+export const GAP_RELAXED = 2;
 
 export const BRAND_PRIMARY = '#22d3ee';
 export const BRAND_PRIMARY_LIGHT = '#67e8f9';
@@ -106,6 +106,13 @@ export const WHITE_50 = 'rgba(255, 255, 255, 0.5)';
 export const WHITE_56 = 'rgba(255, 255, 255, 0.56)';
 export const WHITE_66 = 'rgba(255, 255, 255, 0.66)';
 export const TRANSPARENT = 'transparent';
+
+// ─── Empty States ───────────────────────────────────────
+
+export const EMPTY_ICON_SIZE = 36;
+export const EMPTY_WRAPPER_MAX_WIDTH = 340;
+export const EMPTY_WRAPPER_PADDING_XS = 3;
+export const EMPTY_WRAPPER_PADDING_MD = 4;
 
 export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 100%)`;
 export const BRAND_GRADIENT_HOVER = `linear-gradient(135deg, ${BRAND_PRIMARY_LIGHT} 0%, ${BRAND_SECONDARY} 100%)`;

@@ -30,10 +30,10 @@ export function AssistantHeader({
   return (
     <Stack
       direction={{ xs: 'column', md: 'row' }}
-      spacing={2}
+      spacing={GAP_MEDIUM}
       sx={{
-        px: { xs: 2.5, md: 3 },
-        py: { xs: 2, md: 2.5 },
+        px: { xs: 2, md: 2.5 },
+        py: { xs: 1.5, md: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.38),
@@ -62,7 +62,7 @@ export function AssistantHeader({
             <Chip label="Gemini" size="small" color="secondary" variant="outlined" />
           </Stack>
 
-          <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 680, display: { xs: 'block', md: 'none' } }}>
+          <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 560, display: { xs: 'block', md: 'none' } }}>
             Um painel de direção criativa para lapidar roteiro, voz, memória de projeto e ajustes de cena sem poluir o fluxo.
           </Typography>
         </Stack>

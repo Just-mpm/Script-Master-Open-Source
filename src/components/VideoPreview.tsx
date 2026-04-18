@@ -9,7 +9,7 @@ import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import { motion, AnimatePresence } from 'motion/react';
 import { glassPanelSx } from '../theme/surfaces';
-import { RADIUS_SM, GAP_COMPACT } from '../theme/tokens';
+import { RADIUS_SM, GAP_COMPACT, GAP_MEDIUM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
 interface VideoPreviewProps {
   scenes: { imageUrl: string; timestamp: number }[];
@@ -51,14 +51,14 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          p: { xs: 3, md: 4 },
+          p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD },
         })}
       >
-        <Stack spacing={2} sx={{ maxWidth: 420, alignItems: 'center', textAlign: 'center' }}>
+        <Stack spacing={GAP_MEDIUM} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
           <Box
             sx={(theme) => ({
-              width: 72,
-              height: 72,
+              width: 48,
+              height: 48,
               borderRadius: '50%',
               display: 'grid',
               placeItems: 'center',
@@ -66,7 +66,7 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
               border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
             })}
           >
-            <MovieCreation sx={{ fontSize: 32, opacity: 0.35 }} />
+            <MovieCreation sx={{ fontSize: 24, opacity: 0.35 }} />
           </Box>
           <Stack spacing={GAP_COMPACT}>
             <Typography variant="h6">Preview de vídeo aguardando cenas</Typography>
