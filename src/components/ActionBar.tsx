@@ -18,7 +18,7 @@ import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
 import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
-import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08 } from '../theme/tokens';
+import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface ActionBarProps {
@@ -130,7 +130,7 @@ export function ActionBar({
         pointerEvents: 'none',
       }}
     >
-      <Stack spacing={1.5} sx={{ alignItems: 'center' }}>
+      <Stack spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
       {isImagePhase && (
         <Paper
           variant="outlined"
@@ -144,9 +144,9 @@ export function ActionBar({
             pointerEvents: 'auto',
           })}
         >
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+            <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700 }}>
                   {statusText || 'Gerando cenas visuais...'}
                 </Typography>
@@ -168,7 +168,7 @@ export function ActionBar({
 
             <Tooltip title="Cancelar geração de imagens">
               <IconButton onClick={handleCancel} color="error" sx={{ pointerEvents: 'auto' }}>
-                <Stop sx={{ fontSize: 16 }} />
+                <Stop sx={{ fontSize: ICON_SIZE_MD }} />
               </IconButton>
             </Tooltip>
           </Stack>
@@ -189,13 +189,13 @@ export function ActionBar({
         >
           <Stack
             direction={{ xs: 'column', md: 'row' }}
-            spacing={{ xs: 1.5, md: 2 }}
+            spacing={{ xs: GAP_MEDIUM, md: GAP_DEFAULT }}
             sx={{ alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between' }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
               {showProgressBar ? (
-                <Stack spacing={1.25} role="status" aria-live="polite">
-                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
+                  <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
                     <CircularProgress size={18} thickness={5} />
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', flex: 1 }} noWrap>
                       {statusText || 'Sintetizando voz...'}
@@ -231,11 +231,11 @@ export function ActionBar({
                       },
                     }}
                   >
-                    {isPlaying ? <Stop sx={{ fontSize: 16 }} /> : <PlayArrow sx={{ fontSize: 16 }} />}
+                    {isPlaying ? <Stop sx={{ fontSize: ICON_SIZE_MD }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_MD }} />}
                   </IconButton>
 
-                  <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
+                  <Stack spacing={GAP_COMPACT} sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
                       <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                         {formatTime(currentTime)}
                       </Typography>
@@ -285,7 +285,7 @@ export function ActionBar({
             </Box>
 
             {!isImagePhase && (
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
                 {showPlayer && handleSaveToLibrary ? (
                   <>
                     <Tooltip title={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}>
@@ -299,7 +299,7 @@ export function ActionBar({
                             bgcolor: isSaved ? 'success.main' : 'action.hover',
                           }}
                         >
-                          {isSaved ? <Check sx={{ fontSize: 16 }} /> : <Bookmark sx={{ fontSize: 16 }} />}
+                          {isSaved ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <Bookmark sx={{ fontSize: ICON_SIZE_MD }} />}
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -310,14 +310,14 @@ export function ActionBar({
                         aria-label="Opções de download"
                         sx={{ bgcolor: 'action.hover' }}
                       >
-                        <Download sx={{ fontSize: 16 }} />
+                        <Download sx={{ fontSize: ICON_SIZE_MD }} />
                       </IconButton>
                     </Tooltip>
                   </>
                 ) : null}
 
                 {isGenerating ? (
-                  <Button onClick={handleCancel} variant="outlined" color="error" startIcon={<Stop sx={{ fontSize: 16 }} />}>
+                  <Button onClick={handleCancel} variant="outlined" color="error" startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />}>
                     Cancelar
                   </Button>
                 ) : null}
@@ -338,7 +338,7 @@ export function ActionBar({
             sx: (theme) => ({
               ...glassSurfaceSx(theme),
               minWidth: 220,
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               mt: -1,
             }),
           },

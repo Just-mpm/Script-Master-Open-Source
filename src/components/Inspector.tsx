@@ -20,7 +20,6 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import CheckCircle from '@mui/icons-material/CheckCircle';
@@ -39,6 +38,7 @@ import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS } from '../theme/tokens';
 
 interface InspectorProps {
   isMultiSpeaker: boolean;
@@ -160,7 +160,6 @@ export function Inspector({
   setReferenceImage
 }: InspectorProps) {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
   const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');
@@ -178,8 +177,8 @@ export function Inspector({
     playPreview,
   } = useVoicePreviews();
 
-  const isVoiceOpen = isDesktop || !isVoiceCollapsed;
-  const isDirectionOpen = isDesktop || !isDirectionCollapsed;
+  const isVoiceOpen = !isVoiceCollapsed;
+  const isDirectionOpen = !isDirectionCollapsed;
   const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
 
   const handleReferenceImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,13 +208,10 @@ export function Inspector({
         <ButtonBase
           component="button"
           type="button"
-          onClick={() => {
-            if (!isDesktop) {
-              setIsVoiceCollapsed((previous) => !previous);
-            }
-          }}
-          disableRipple={isDesktop}
-          aria-expanded={isVoiceOpen}
+           onClick={() => {
+             setIsVoiceCollapsed((previous) => !previous);
+           }}
+           aria-expanded={isVoiceOpen}
           aria-controls={voiceSectionId}
           sx={{
             width: '100%',
@@ -225,9 +221,9 @@ export function Inspector({
           }}
         >
           <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Stack spacing={0.75}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <GraphicEq sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
+            <Stack spacing={GAP_COMPACT}>
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                <GraphicEq sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Voz do locutor
                 </Typography>
@@ -237,9 +233,9 @@ export function Inspector({
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <Chip label={`${VOICES.length} opções`} size="small" variant="outlined" />
-              {!isDesktop && (isVoiceOpen ? <ExpandLess sx={{ fontSize: 16 }} /> : <ExpandMore sx={{ fontSize: 16 }} />)}
+              {!isVoiceOpen ? <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} />}
             </Stack>
           </Stack>
         </ButtonBase>
@@ -249,8 +245,8 @@ export function Inspector({
             <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
               <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Stack spacing={0.5}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <People sx={{ fontSize: 14, color: theme.palette.primary.main }} />
+                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                    <People sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} />
                     <Typography variant="subtitle2">Modo Podcast (2 vozes)</Typography>
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
@@ -326,7 +322,7 @@ export function Inspector({
                         position: 'relative',
                         height: '100%',
                         overflow: 'hidden',
-                        borderRadius: 3,
+                        borderRadius: RADIUS_SM,
                         transition: 'all 0.2s ease',
                         borderColor: isActiveVoice
                           ? alpha(currentTheme.palette.primary.main, 0.55)
@@ -355,12 +351,12 @@ export function Inspector({
                           pr: 6,
                         }}
                       >
-                        <Stack spacing={0.75} sx={{ width: '100%' }}>
-                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Stack spacing={GAP_COMPACT} sx={{ width: '100%' }}>
+                          <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="subtitle2" color={isActiveVoice ? 'primary.main' : 'text.primary'}>
                               {voice.name}
                             </Typography>
-                             {isActiveVoice && <CheckCircle sx={{ fontSize: 14, color: theme.palette.primary.main }} aria-hidden="true" />}
+                             {isActiveVoice && <CheckCircle sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} aria-hidden="true" />}
                           </Stack>
                           <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                             {voice.style}
@@ -382,7 +378,7 @@ export function Inspector({
                               position: 'absolute',
                               right: 8,
                               bottom: 8,
-                              borderRadius: 2,
+                              borderRadius: RADIUS_XS,
                               border: `1px solid ${alpha(currentTheme.palette.common.white, 0.08)}`,
                               backgroundColor: isPlaying
                                 ? currentTheme.palette.primary.main
@@ -395,7 +391,7 @@ export function Inspector({
                               },
                             })}
                           >
-                            {isPlaying ? <Pause sx={{ fontSize: 14 }} /> : <PlayArrow sx={{ fontSize: 14 }} />}
+                            {isPlaying ? <Pause sx={{ fontSize: ICON_SIZE_SM }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_SM }} />}
                           </IconButton>
                         </span>
                       </Tooltip>
@@ -413,13 +409,10 @@ export function Inspector({
         <ButtonBase
           component="button"
           type="button"
-          onClick={() => {
-            if (!isDesktop) {
-              setIsDirectionCollapsed((previous) => !previous);
-            }
-          }}
-          disableRipple={isDesktop}
-          aria-expanded={isDirectionOpen}
+           onClick={() => {
+             setIsDirectionCollapsed((previous) => !previous);
+           }}
+           aria-expanded={isDirectionOpen}
           aria-controls={directionSectionId}
           sx={{
             width: '100%',
@@ -429,9 +422,9 @@ export function Inspector({
           }}
         >
           <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Stack spacing={0.75}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Settings sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
+            <Stack spacing={GAP_COMPACT}>
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                <Settings sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Direção de arte
                 </Typography>
@@ -441,7 +434,7 @@ export function Inspector({
               </Typography>
             </Stack>
 
-            {!isDesktop && (isDirectionOpen ? <ExpandLess sx={{ fontSize: 16 }} /> : <ExpandMore sx={{ fontSize: 16 }} />)}
+            {isDirectionOpen ? <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} />}
           </Stack>
         </ButtonBase>
 
@@ -504,8 +497,8 @@ export function Inspector({
               <Stack spacing={2}>
                 <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                   <Stack spacing={0.5}>
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <Image sx={{ fontSize: 14, color: theme.palette.primary.main }} />
+                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                      <Image sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} />
                       <Typography variant="subtitle2">Gerar cenas visuais</Typography>
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
@@ -580,16 +573,16 @@ export function Inspector({
                       </Grid>
                     </Grid>
 
-                    <Stack spacing={1.25}>
-                      <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={1.25}
+                  <Stack spacing={GAP_MEDIUM}>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={GAP_MEDIUM}
                         sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
                       >
                         <Button
                           component="label"
                           variant={referenceImage ? 'contained' : 'outlined'}
-                          startIcon={<Image sx={{ fontSize: 14 }} />}
+                          startIcon={<Image sx={{ fontSize: ICON_SIZE_SM }} />}
                           disabled={isGenerating}
                           sx={{
                             flex: 1,
@@ -612,7 +605,7 @@ export function Inspector({
                                 aria-label="Remover imagem de referência"
                                 sx={{ border: `1px solid ${alpha(theme.palette.error.main, 0.3)}` }}
                               >
-                                 <Close sx={{ fontSize: 16 }} />
+                                 <Close sx={{ fontSize: ICON_SIZE_MD }} />
                               </IconButton>
                             </span>
                           </Tooltip>

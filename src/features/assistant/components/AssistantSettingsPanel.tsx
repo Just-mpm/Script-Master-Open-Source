@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
-import { BRAND_SECONDARY } from '../../../theme/tokens';
+import { BRAND_SECONDARY, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_COMPACT } from '../../../theme/tokens';
 import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantSettingsPanelProps {
@@ -49,9 +49,9 @@ export function AssistantSettingsPanel({
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-               <AutoAwesome sx={{ fontSize: 18, color: BRAND_SECONDARY }} />
+          <Stack spacing={GAP_COMPACT}>
+            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+               <AutoAwesome sx={{ fontSize: ICON_SIZE_LG, color: BRAND_SECONDARY }} />
               <Typography variant="h6">Persona da IA</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
@@ -60,7 +60,7 @@ export function AssistantSettingsPanel({
           </Stack>
 
           <IconButton onClick={onClose} aria-label="Fechar persona da IA">
-             <Close sx={{ fontSize: 16 }} />
+             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Stack>
 
@@ -95,7 +95,7 @@ export function AssistantSettingsPanel({
             variant="contained"
             size="large"
             loading={isSavingSettings}
-             startIcon={!isSavingSettings ? <Check sx={{ fontSize: 16 }} /> : undefined}
+             startIcon={!isSavingSettings ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
           >
             Aplicar diretrizes
           </Button>

@@ -25,6 +25,7 @@ import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { glassPanelSx } from '../theme/surfaces';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
 
 interface VideoLibraryScene {
   imageUrl: string;
@@ -55,7 +56,7 @@ function MetadataPill({
       sx={(theme) => ({
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 0.75,
+        gap: GAP_COMPACT,
         px: 1,
         py: 0.5,
         borderRadius: 999,
@@ -187,7 +188,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     return (
       <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1.5 }}>
         {[1, 2, 3].map((index) => (
-          <Stack key={index} spacing={1.25} sx={{ minWidth: 280 }}>
+          <Stack key={index} spacing={GAP_MEDIUM} sx={{ minWidth: 280 }}>
             <Skeleton variant="rounded" animation="wave" width={280} height={158} />
             <Skeleton variant="text" animation="wave" sx={{ fontSize: '1rem' }} />
             <Skeleton variant="text" animation="wave" width="75%" />
@@ -227,9 +228,9 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
   return (
     <Stack spacing={2.25}>
-      <Stack direction="row" spacing={1.25} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <Movie sx={{ fontSize: 16 }} />
+      <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+          <Movie sx={{ fontSize: ICON_SIZE_MD }} />
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
             Sua galeria
           </Typography>
@@ -251,7 +252,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                     position: 'relative',
                     height: '100%',
                     overflow: 'hidden',
-                    borderRadius: 4,
+                    borderRadius: RADIUS_SM,
                     border: `1px solid ${isActive ? alpha(theme.palette.primary.main, 0.6) : alpha(theme.palette.common.white, 0.08)}`,
                     backgroundColor: alpha(theme.palette.background.paper, 0.82),
                     backgroundImage: 'none',
@@ -309,12 +310,12 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                           border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
                         })}
                       >
-                        <PlayArrow sx={{ fontSize: 16 }} />
+                         <PlayArrow sx={{ fontSize: ICON_SIZE_MD }} />
                       </Box>
                     </Box>
 
                     <CardContent sx={{ p: 2.25 }}>
-                      <Stack spacing={1.25}>
+                      <Stack spacing={GAP_MEDIUM}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: isActive ? 'primary.main' : 'text.primary' }} noWrap>
                           {project.name}
                         </Typography>
@@ -335,8 +336,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                         </Typography>
 
                         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', pt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
-                          <MetadataPill icon={<CalendarMonth sx={{ fontSize: 12 }} />} label={new Date(project.createdAt).toLocaleDateString()} />
-                          <MetadataPill icon={<AccessTime sx={{ fontSize: 12 }} />} label={new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
+                          <MetadataPill icon={<CalendarMonth sx={{ fontSize: ICON_SIZE_SM }} />} label={new Date(project.createdAt).toLocaleDateString()} />
+                          <MetadataPill icon={<AccessTime sx={{ fontSize: ICON_SIZE_SM }} />} label={new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
                         </Stack>
                       </Stack>
                     </CardContent>
@@ -367,7 +368,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                           },
                       })}
                       >
-                        {downloadingId === project.id ? <CircularProgress size={18} color="inherit" /> : <Download sx={{ fontSize: 16 }} />}
+                        {downloadingId === project.id ? <CircularProgress size={18} color="inherit" /> : <Download sx={{ fontSize: ICON_SIZE_MD }} />}
                       </IconButton>
                     </span>
                   </Tooltip>

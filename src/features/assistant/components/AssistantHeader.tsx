@@ -12,7 +12,7 @@ import Forum from '@mui/icons-material/Forum';
 import History from '@mui/icons-material/History';
 import Psychology from '@mui/icons-material/Psychology';
 import Settings from '@mui/icons-material/Settings';
-import { BRAND_GRADIENT, BRAND_PRIMARY } from '../../../theme/tokens';
+import { BRAND_GRADIENT, BRAND_PRIMARY, GAP_MEDIUM, ICON_SIZE_MD, ICON_SIZE_LG, AVATAR_SIZE_MD, RADIUS_XS } from '../../../theme/tokens';
 
 interface AssistantHeaderProps {
   onStartNewChat: () => void;
@@ -42,18 +42,18 @@ export function AssistantHeader({
         justifyContent: 'space-between',
       }}
     >
-      <Stack direction="row" spacing={1.75} sx={{ minWidth: 0, alignItems: 'center' }}>
+      <Stack direction="row" spacing={GAP_MEDIUM} sx={{ minWidth: 0, alignItems: 'center' }}>
         <Avatar
           variant="rounded"
           sx={{
-            width: 48,
-            height: 48,
-            borderRadius: 2.5,
+            width: AVATAR_SIZE_MD,
+            height: AVATAR_SIZE_MD,
+            borderRadius: RADIUS_XS,
             background: BRAND_GRADIENT,
-            boxShadow: `0 18px 44px ${alpha(BRAND_PRIMARY, 0.22)}`,
+            boxShadow: `0 8px 24px ${alpha(BRAND_PRIMARY, 0.18)}`,
           }}
         >
-            <AutoAwesome sx={{ fontSize: 18 }} />
+            <AutoAwesome sx={{ fontSize: ICON_SIZE_LG }} />
         </Avatar>
 
         <Stack spacing={0.4} sx={{ minWidth: 0 }}>
@@ -62,7 +62,7 @@ export function AssistantHeader({
             <Chip label="Gemini" size="small" color="secondary" variant="outlined" />
           </Stack>
 
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 680 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 680, display: { xs: 'block', md: 'none' } }}>
             Um painel de direção criativa para lapidar roteiro, voz, memória de projeto e ajustes de cena sem poluir o fluxo.
           </Typography>
         </Stack>
@@ -72,7 +72,7 @@ export function AssistantHeader({
         <Button
           onClick={onStartNewChat}
           variant="contained"
-           startIcon={<Forum sx={{ fontSize: 16 }} />}
+           startIcon={<Forum sx={{ fontSize: ICON_SIZE_MD }} />}
           sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
         >
           Novo chat
@@ -80,19 +80,19 @@ export function AssistantHeader({
 
         <Tooltip title="Abrir histórico">
           <IconButton onClick={onOpenHistory} color="primary" aria-label="Abrir histórico do assistente">
-             <History sx={{ fontSize: 16 }} />
+             <History sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Memórias e documentos">
           <IconButton onClick={onOpenMemories} color="primary" aria-label="Abrir memórias e documentos">
-             <Psychology sx={{ fontSize: 16 }} />
+             <Psychology sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Persona e diretrizes">
           <IconButton onClick={onOpenSettings} color="primary" aria-label="Abrir persona e diretrizes">
-             <Settings sx={{ fontSize: 16 }} />
+             <Settings sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Tooltip>
 

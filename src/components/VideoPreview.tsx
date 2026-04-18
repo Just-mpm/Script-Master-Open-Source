@@ -9,6 +9,7 @@ import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import { motion, AnimatePresence } from 'motion/react';
 import { glassPanelSx } from '../theme/surfaces';
+import { RADIUS_SM, GAP_COMPACT } from '../theme/tokens';
 
 interface VideoPreviewProps {
   scenes: { imageUrl: string; timestamp: number }[];
@@ -67,7 +68,7 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
           >
             <MovieCreation sx={{ fontSize: 32, opacity: 0.35 }} />
           </Box>
-          <Stack spacing={0.75}>
+          <Stack spacing={GAP_COMPACT}>
             <Typography variant="h6">Preview de vídeo aguardando cenas</Typography>
             <Typography variant="body2" color="text.secondary">
               Gere um conteúdo com cenas visuais para acompanhar a narrativa aqui com transições e contexto.
@@ -135,14 +136,14 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
           elevation={0}
           sx={(theme): SystemStyleObject<Theme> => ({
             p: { xs: 2, md: 2.5 },
-            borderRadius: 3,
+            borderRadius: RADIUS_SM,
             backgroundColor: alpha(theme.palette.common.black, 0.34),
             border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
             backdropFilter: 'blur(14px)',
             backgroundImage: 'none',
           })}
         >
-          <Stack spacing={0.75}>
+          <Stack spacing={GAP_COMPACT}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Sequência visual em andamento
             </Typography>

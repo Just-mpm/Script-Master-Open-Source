@@ -12,6 +12,7 @@ import Mic from '@mui/icons-material/Mic';
 import { MAX_CHARS } from '../lib/constants';
 import type { StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
+import { ICON_SIZE_LG, GAP_MEDIUM, GAP_COMPACT } from '../theme/tokens';
 
 export interface ScriptEditorProps {
   script: string;
@@ -86,7 +87,7 @@ export function ScriptEditor({
 
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
+          spacing={GAP_MEDIUM}
           sx={{
             px: { xs: 3, sm: 4 },
             pt: { xs: 3, sm: 4 },
@@ -97,7 +98,7 @@ export function ScriptEditor({
             justifyContent: 'space-between',
           }}
         >
-          <Stack spacing={0.75}>
+          <Stack spacing={GAP_COMPACT}>
             <Typography variant="overline" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
               Script
             </Typography>
@@ -114,7 +115,7 @@ export function ScriptEditor({
 
           <Stack
             direction="row"
-            spacing={1.25}
+            spacing={GAP_MEDIUM}
             useFlexGap
             sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, alignItems: 'center' }}
           >
@@ -203,7 +204,7 @@ export function ScriptEditor({
           disabled={isGenerateDisabled}
           variant="contained"
           size="large"
-          startIcon={<Mic sx={{ fontSize: 18 }} />}
+          startIcon={<Mic sx={{ fontSize: ICON_SIZE_LG }} />}
           sx={(theme) => ({
             minHeight: { xs: 48, sm: 52 },
             px: { xs: 3, sm: 4 },
@@ -218,7 +219,7 @@ export function ScriptEditor({
             },
           })}
         >
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+          <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
             <span>Gerar áudio</span>
             <Box
               sx={{

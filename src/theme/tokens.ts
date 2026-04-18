@@ -2,6 +2,27 @@ export const APP_MAX_WIDTH = 1600;
 export const APP_HEADER_HEIGHT = 72;
 export const APP_ACTION_BAR_BOTTOM = 24;
 
+// ─── Sizing ───────────────────────────────────────────────
+
+export const AVATAR_SIZE_SM = 32;
+export const AVATAR_SIZE_MD = 36;
+export const ICON_SIZE_SM = 14;
+export const ICON_SIZE_MD = 16;
+export const ICON_SIZE_LG = 18;
+
+// ─── Border Radius ────────────────────────────────────────
+
+export const RADIUS_XS = 2;
+export const RADIUS_SM = 3;
+export const RADIUS_CHIP = 10;
+
+// ─── Spacing (valores numéricos para Stack/Gap) ──────────
+
+export const GAP_COMPACT = 0.75;
+export const GAP_DEFAULT = 1;
+export const GAP_MEDIUM = 1.25;
+export const GAP_RELAXED = 1.75;
+
 export const BRAND_PRIMARY = '#22d3ee';
 export const BRAND_PRIMARY_LIGHT = '#67e8f9';
 export const BRAND_PRIMARY_DARK = '#0891b2';

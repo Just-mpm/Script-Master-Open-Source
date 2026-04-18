@@ -46,6 +46,7 @@ import { useGlobalAudioState } from '../contexts/AudioContext';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
+import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -137,15 +138,15 @@ export function Library() {
     <Stack spacing={3}>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
-        spacing={1.5}
+        spacing={GAP_MEDIUM}
         sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
       >
-        <Stack spacing={0.75}>
+        <Stack spacing={GAP_COMPACT}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
             Biblioteca
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Folder sx={{ fontSize: 18, color: 'primary.main' }} />
+          <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+            <Folder sx={{ fontSize: ICON_SIZE_LG, color: 'primary.main' }} />
             <Typography variant="h4">Projetos salvos</Typography>
           </Stack>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
@@ -218,10 +219,10 @@ export function Library() {
                                   <InputAdornment position="end">
                                     <Stack direction="row" spacing={0.5}>
                                       <IconButton color="success" onClick={() => void saveEdit(project.id)} aria-label="Salvar nome do projeto">
-                                        <Check sx={{ fontSize: 16 }} />
+                                        <Check sx={{ fontSize: ICON_SIZE_MD }} />
                                       </IconButton>
                                       <IconButton onClick={() => setEditingId(null)} aria-label="Cancelar edição do nome">
-                                        <Close sx={{ fontSize: 16 }} />
+                                        <Close sx={{ fontSize: ICON_SIZE_MD }} />
                                       </IconButton>
                                     </Stack>
                                   </InputAdornment>
@@ -230,7 +231,7 @@ export function Library() {
                             }}
                           />
                         ) : (
-                          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                            <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
                             <Typography variant="h6" sx={{ minWidth: 0 }} noWrap>
                               {project.name}
                             </Typography>
@@ -242,24 +243,24 @@ export function Library() {
                                 }}
                                 aria-label="Renomear projeto"
                               >
-                                <Edit sx={{ fontSize: 16 }} />
+                                <Edit sx={{ fontSize: ICON_SIZE_MD }} />
                               </IconButton>
                             </Tooltip>
                           </Stack>
                         )}
 
-                        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                          <Chip icon={<GraphicEq sx={{ fontSize: 14 }} />} label="Áudio" size="small" variant="outlined" />
-                          <Chip icon={<ImageIcon sx={{ fontSize: 14 }} />} label="Cenas" size="small" variant="outlined" />
+                        <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                          <Chip icon={<GraphicEq sx={{ fontSize: ICON_SIZE_SM }} />} label="Áudio" size="small" variant="outlined" />
+                          <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_SM }} />} label="Cenas" size="small" variant="outlined" />
                           <Chip label={new Date(project.createdAt).toLocaleString()} size="small" />
                         </Stack>
                       </Stack>
 
-                      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                      <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
                         <Button
                           onClick={() => void handleExpandProject(project.id)}
                           variant={isExpanded ? 'contained' : 'outlined'}
-                            startIcon={isExpanded ? <ChevronUp sx={{ fontSize: 16 }} /> : <ChevronDown sx={{ fontSize: 16 }} />}
+                            startIcon={isExpanded ? <ChevronUp sx={{ fontSize: ICON_SIZE_MD }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_MD }} />}
                         >
                           {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
                         </Button>
@@ -268,7 +269,7 @@ export function Library() {
                           onClick={() => setItemToDelete(project.id)}
                           color="error"
                           variant="outlined"
-                            startIcon={<Delete sx={{ fontSize: 16 }} />}
+                            startIcon={<Delete sx={{ fontSize: ICON_SIZE_MD }} />}
                         >
                           Excluir
                         </Button>
@@ -290,7 +291,7 @@ export function Library() {
                                     Nenhum áudio encontrado neste projeto.
                                   </Typography>
                                 ) : (
-                                  <Stack spacing={1.25}>
+                                  <Stack spacing={GAP_MEDIUM}>
                                     {projectData.audios.map((audio: AudioSource) => {
                                       const isCurrent = activeId === audio.id;
 
@@ -300,11 +301,11 @@ export function Library() {
                                           elevation={0}
                                           sx={(theme): SystemStyleObject<Theme> => ({
                                             p: 1.5,
-                                            borderRadius: 3,
+                                              borderRadius: RADIUS_SM,
                                             bgcolor: alpha(theme.palette.common.white, 0.03),
                                           })}
                                         >
-                                            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Stack spacing={0.25} sx={{ minWidth: 0 }}>
                                               <Typography variant="subtitle2">Versão {new Date(audio.createdAt).toLocaleTimeString()}</Typography>
                                               <Typography variant="caption" color="text.secondary">
@@ -312,13 +313,13 @@ export function Library() {
                                               </Typography>
                                             </Stack>
 
-                                            <Stack direction="row" spacing={0.75}>
+                                            <Stack direction="row" spacing={GAP_COMPACT}>
                                               <IconButton
                                                 onClick={() => handlePlay(audio)}
                                                 color={isCurrent ? 'secondary' : 'primary'}
                                                 aria-label={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}
                                               >
-                                                {isPlaying && isCurrent ? <Pause sx={{ fontSize: 18 }} /> : <PlayArrow sx={{ fontSize: 18 }} />}
+                                                {isPlaying && isCurrent ? <Pause sx={{ fontSize: ICON_SIZE_LG }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_LG }} />}
                                               </IconButton>
 
                                               <IconButton
@@ -330,7 +331,7 @@ export function Library() {
                                                 }}
                                                 aria-label="Baixar áudio"
                                               >
-                                                <Download sx={{ fontSize: 16 }} />
+                                                <Download sx={{ fontSize: ICON_SIZE_MD }} />
                                               </IconButton>
                                             </Stack>
                                           </Stack>
@@ -364,7 +365,7 @@ export function Library() {
                                           <Card
                                             elevation={0}
                                             sx={(theme): SystemStyleObject<Theme> => ({
-                                              borderRadius: 3,
+                                            borderRadius: RADIUS_SM,
                                               overflow: 'hidden',
                                               bgcolor: alpha(theme.palette.common.white, 0.03),
                                             })}
@@ -376,7 +377,7 @@ export function Library() {
                                               loading="lazy"
                                               sx={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
                                             />
-                                            <Stack direction="row" spacing={1} sx={{ p: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ p: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
                                               <Typography variant="caption" color="text.secondary">
                                                 Cena {index + 1}
                                               </Typography>
@@ -388,7 +389,7 @@ export function Library() {
                                                 }}
                                                 aria-label={`Baixar cena ${index + 1}`}
                                               >
-                                                <Download sx={{ fontSize: 16 }} />
+                                                <Download sx={{ fontSize: ICON_SIZE_MD }} />
                                               </IconButton>
                                             </Stack>
                                           </Card>

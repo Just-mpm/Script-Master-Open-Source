@@ -16,7 +16,7 @@ import Delete from '@mui/icons-material/Delete';
 import History from '@mui/icons-material/History';
 import SmartToy from '@mui/icons-material/SmartToy';
 import type { ChatSession } from '../../../lib/db';
-import { BRAND_PRIMARY } from '../../../theme/tokens';
+import { BRAND_PRIMARY, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT } from '../../../theme/tokens';
 import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantHistoryPanelProps {
@@ -48,9 +48,9 @@ export function AssistantHistoryPanel({
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <History sx={{ fontSize: 18, color: BRAND_PRIMARY }} />
+          <Stack spacing={GAP_COMPACT}>
+            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+              <History sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
               <Typography variant="h6">Histórico de chats</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
@@ -59,7 +59,7 @@ export function AssistantHistoryPanel({
           </Stack>
 
           <IconButton onClick={onClose} aria-label="Fechar histórico">
-            <Close sx={{ fontSize: 16 }} />
+            <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Stack>
 
@@ -67,7 +67,7 @@ export function AssistantHistoryPanel({
           {history.length === 0 ? (
             <Stack spacing={2} sx={{ minHeight: 320, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
               <History sx={{ fontSize: 44, color: 'text.secondary' }} />
-              <Stack spacing={0.75}>
+              <Stack spacing={GAP_COMPACT}>
                 <Typography variant="subtitle1">Nenhum chat salvo ainda</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Quando você conversar com o assistente, as sessões aparecem aqui para reuso rápido.
@@ -79,7 +79,7 @@ export function AssistantHistoryPanel({
               </Stack>
             </Stack>
           ) : (
-            <List disablePadding sx={{ display: 'grid', gap: 1.25 }}>
+            <List disablePadding sx={{ display: 'grid', gap: GAP_MEDIUM }}>
               {history.map((session) => (
                 <Box key={session.id} sx={(theme) => ({ ...assistantInsetSx(theme), overflow: 'hidden' })}>
                   <ListItemButton
@@ -88,11 +88,11 @@ export function AssistantHistoryPanel({
                       alignItems: 'flex-start',
                       px: 2,
                       py: 1.75,
-                      gap: 1.25,
+                      gap: GAP_MEDIUM,
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 0, mt: 0.2 }}>
-                      <SmartToy sx={{ fontSize: 16, color: BRAND_PRIMARY }} />
+                      <SmartToy sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                     </ListItemIcon>
 
                     <ListItemText
@@ -114,7 +114,7 @@ export function AssistantHistoryPanel({
                         color="error"
                         aria-label="Excluir conversa"
                       >
-                        <Delete sx={{ fontSize: 16 }} />
+                        <Delete sx={{ fontSize: ICON_SIZE_MD }} />
                       </IconButton>
                     </Tooltip>
                   </ListItemButton>

@@ -34,7 +34,7 @@ import { useImageGenerator } from '../hooks/useImageGenerator';
 import { saveImageGeneration } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM } from '../theme/tokens';
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Quadrado (1:1)' },
@@ -149,11 +149,11 @@ export function ImageStudio() {
             color="inherit"
             fullWidth
             sx={{ justifyContent: 'space-between', px: 3, py: 2.5, borderRadius: 0 }}
-            endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: 18 }} /> : <ChevronDown sx={{ fontSize: 18 }} />) : undefined}
+            endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: ICON_SIZE_LG }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_LG }} />) : undefined}
           >
             <Stack spacing={0.6} sx={{ textAlign: 'left' }}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <ImageIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                <ImageIcon sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Estúdio de imagem
                 </Typography>
@@ -192,7 +192,7 @@ export function ImageStudio() {
                     </Typography>
 
                     {referencePreview ? (
-                      <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                      <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
                         <Box component="img" src={referencePreview} alt="Imagem de referência" sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
                         <Tooltip title="Remover referência">
                           <IconButton
@@ -200,7 +200,7 @@ export function ImageStudio() {
                             aria-label="Remover referência"
                           sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'background.default' }}
                           >
-                            <Close sx={{ fontSize: 16 }} />
+                            <Close sx={{ fontSize: ICON_SIZE_MD }} />
                           </IconButton>
                         </Tooltip>
                       </Card>
@@ -208,7 +208,7 @@ export function ImageStudio() {
                       <Button
                         onClick={() => fileInputRef.current?.click()}
                         variant="outlined"
-                        startIcon={<CloudUpload sx={{ fontSize: 16 }} />}
+                        startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
                         sx={{ borderStyle: 'dashed', minHeight: 56 }}
                       >
                         Enviar imagem de referência
@@ -244,7 +244,7 @@ export function ImageStudio() {
                   </Typography>
                 </Stack>
 
-                <Chip icon={<ImageIcon sx={{ fontSize: 16 }} />} label={aspectRatio} color="primary" variant="outlined" />
+                <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_MD }} />} label={aspectRatio} color="primary" variant="outlined" />
               </Stack>
 
               <TextField
@@ -265,7 +265,7 @@ export function ImageStudio() {
                   disabled={isGenerating || !prompt.trim()}
                   variant="contained"
                   size="large"
-                  startIcon={<Sparkles sx={{ fontSize: 16 }} />}
+                  startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
                 >
                   {isGenerating ? 'Gerando imagem...' : 'Gerar imagem'}
                 </Button>
@@ -298,7 +298,7 @@ export function ImageStudio() {
                         width: '100%',
                         maxHeight: { xs: 360, md: 520 },
                         objectFit: 'contain',
-                        borderRadius: 3,
+                        borderRadius: RADIUS_SM,
                         boxShadow: `0 30px 80px ${SHADOW_IMAGE}`,
                       }}
                     />
@@ -312,18 +312,18 @@ export function ImageStudio() {
                         Resultado pronto para download ou reaproveitamento na biblioteca.
                       </Typography>
 
-                      <Stack direction="row" spacing={1.25} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                      <Stack direction="row" spacing={GAP_MEDIUM} useFlexGap sx={{ flexWrap: 'wrap' }}>
                         <Button
                           onClick={() => void handleSaveToLibrary()}
                           disabled={isSaved}
                           variant={isSaved ? 'contained' : 'outlined'}
                           color={isSaved ? 'success' : 'primary'}
-                          startIcon={isSaved ? <Check sx={{ fontSize: 16 }} /> : <Save sx={{ fontSize: 16 }} />}
+                          startIcon={isSaved ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <Save sx={{ fontSize: ICON_SIZE_MD }} />}
                         >
                           {isSaved ? 'Salvo na biblioteca' : 'Salvar na biblioteca'}
                         </Button>
 
-                        <Button onClick={handleDownload} variant="contained" color="secondary" startIcon={<Download sx={{ fontSize: 16 }} />}>
+                        <Button onClick={handleDownload} variant="contained" color="secondary" startIcon={<Download sx={{ fontSize: ICON_SIZE_MD }} />}>
                           Baixar imagem
                         </Button>
                       </Stack>

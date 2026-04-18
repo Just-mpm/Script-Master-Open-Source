@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import {
   deleteChatSession,
   deleteMemory,
@@ -264,15 +262,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null}
 
-      <Stack spacing={0.25} sx={{ px: { xs: 2.5, md: 3 }, pt: 2.5 }}>
-        <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
-          Conversa ativa
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Peça respostas acionáveis. Quando houver sugestão estruturada, você poderá aplicar direto no estúdio.
-        </Typography>
-      </Stack>
-
       <AssistantMessages
         messages={messages}
         isLoading={isLoading}
@@ -280,9 +269,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         savedToMemoryId={savedToMemoryId}
         messagesEndRef={messagesEndRef}
         onApply={handleApply}
-        onQuickPrompt={(prompt) => {
-          void sendMessage(prompt);
-        }}
         onSaveToMemory={handleSaveMessageToMemory}
       />
 

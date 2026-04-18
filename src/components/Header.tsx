@@ -20,7 +20,7 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface NavItem {
@@ -61,7 +61,7 @@ export function Header() {
                 boxShadow: '0 18px 40px rgba(34, 211, 238, 0.28)',
               }}
             >
-              <Mic sx={{ fontSize: 18 }} />
+              <Mic sx={{ fontSize: ICON_SIZE_LG }} />
             </Box>
 
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
@@ -82,9 +82,9 @@ export function Header() {
               ...glassSurfaceSx(theme),
               display: 'flex',
               alignItems: 'center',
-              gap: 0.75,
-              px: 0.75,
-              py: 0.75,
+              gap: GAP_COMPACT,
+              px: GAP_COMPACT,
+              py: GAP_COMPACT,
               borderRadius: 999,
               overflowX: 'auto',
               flex: 1,
@@ -123,7 +123,7 @@ export function Header() {
                       mr: { sm: 1 },
                     },
                   }}
-                  startIcon={<Icon sx={{ fontSize: 16 }} aria-hidden="true" />}
+                  startIcon={<Icon sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />}
                 >
                   {item.label}
                 </Button>
@@ -131,7 +131,7 @@ export function Header() {
             })}
           </Paper>
 
-          <Stack direction="row" spacing={1.25} sx={{ flexShrink: 0, alignItems: 'center' }}>
+          <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
             {!loading && (user ? (
               <>
                 <Paper
@@ -149,7 +149,7 @@ export function Header() {
                       src={user.photoURL ?? undefined}
                       sx={{ width: 28, height: 28, bgcolor: 'action.hover' }}
                     >
-                      {!user.photoURL && <Person sx={{ fontSize: 14 }} />}
+                      {!user.photoURL && <Person sx={{ fontSize: ICON_SIZE_SM }} />}
                     </Avatar>
                     <Typography
                       variant="body2"
@@ -162,12 +162,12 @@ export function Header() {
 
                 <Tooltip title="Sair">
                   <IconButton onClick={logout} color="error" aria-label="Sair">
-                    <Logout sx={{ fontSize: 18 }} />
+                    <Logout sx={{ fontSize: ICON_SIZE_LG }} />
                   </IconButton>
                 </Tooltip>
               </>
             ) : (
-              <Button onClick={login} variant="contained" startIcon={<Login sx={{ fontSize: 16 }} />}>
+              <Button onClick={login} variant="contained" startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}>
                 Login
               </Button>
             ))}

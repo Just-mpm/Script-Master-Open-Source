@@ -1,6 +1,6 @@
 import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { APP_BORDER, APP_SURFACE, APP_SURFACE_ELEVATED, SHADOW_DEEP, WHITE_04, WHITE_08, BLACK_50 } from '../../../theme/tokens';
+import { APP_BORDER, APP_SURFACE, APP_SURFACE_ELEVATED, SHADOW_DEEP, WHITE_04, WHITE_08, BLACK_50, GAP_COMPACT, GAP_MEDIUM, RADIUS_XS } from '../../../theme/tokens';
 import { insetPanelSx } from '../../../theme/surfaces';
 
 export const assistantDrawerPaperSx = (theme: Theme) => ({
@@ -30,26 +30,26 @@ export const assistantMarkdownSx = {
     mb: 0,
   },
   '& p': {
-    my: 1,
+    my: GAP_COMPACT * 0.66,
   },
   '& ul, & ol': {
-    my: 1,
+    my: GAP_COMPACT * 0.66,
     pl: 3,
   },
   '& li': {
-    mb: 0.5,
+    mb: GAP_COMPACT * 0.33,
   },
   '& code': {
     px: 0.75,
     py: 0.25,
-    borderRadius: 1,
+    borderRadius: RADIUS_XS,
     fontSize: '0.85em',
     backgroundColor: WHITE_08,
   },
   '& pre': {
     overflowX: 'auto',
-    p: 1.5,
-    borderRadius: 2,
+    p: GAP_MEDIUM * 2,
+    borderRadius: RADIUS_XS,
     backgroundColor: BLACK_50,
   },
 };

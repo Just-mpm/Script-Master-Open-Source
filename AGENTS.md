@@ -223,5 +223,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.3.1`
-- **Last release:** 2026-04-18 — Pre-generated voice previews, theme border-radius unification, eslint-plugin-mui-v9
+- **Current:** `0.3.2`
+- **Last release:** 2026-04-18 — Design tokens centralization, component cleanup, unused imports removal

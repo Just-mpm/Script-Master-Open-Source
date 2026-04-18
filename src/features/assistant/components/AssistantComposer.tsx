@@ -1,5 +1,4 @@
 import type { ChangeEvent, FormEvent, KeyboardEvent, RefObject } from 'react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -8,8 +7,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { ICON_SIZE_SM, ICON_SIZE_MD } from '../../../theme/tokens';
 import AttachFile from '@mui/icons-material/AttachFile';
 import Close from '@mui/icons-material/Close';
 import Description from '@mui/icons-material/Description';
@@ -58,14 +57,14 @@ export function AssistantComposer({
         bottom: 0,
         zIndex: 2,
         px: { xs: 2, md: 3 },
-        py: { xs: 2, md: 2.5 },
+        py: { xs: 1.25, md: 1.5 },
         borderTop: '1px solid',
         borderColor: 'divider',
         background: (theme) => `linear-gradient(180deg, ${alpha(theme.palette.background.default, 0)} 0%, ${alpha(theme.palette.background.paper, 0.92)} 18%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`,
         backdropFilter: 'blur(18px)',
       }}
     >
-      <Stack spacing={1.5}>
+      <Stack spacing={1}>
         {pendingFiles.length > 0 ? (
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
             {pendingFiles.map((file, index) => {
@@ -74,10 +73,10 @@ export function AssistantComposer({
               return (
                 <Chip
                   key={`${file.name}-${index}`}
-                   icon={isImage ? <Image sx={{ fontSize: 14 }} /> : <Description sx={{ fontSize: 14 }} />}
+                   icon={isImage ? <Image sx={{ fontSize: ICON_SIZE_SM }} /> : <Description sx={{ fontSize: ICON_SIZE_SM }} />}
                    label={file.name}
                    onDelete={() => onRemoveFile(index)}
-                   deleteIcon={<Close sx={{ fontSize: 14 }} />}
+                   deleteIcon={<Close sx={{ fontSize: ICON_SIZE_SM }} />}
                   variant="outlined"
                   sx={{ maxWidth: '100%', '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
                 />
@@ -114,7 +113,7 @@ export function AssistantComposer({
                       edge="start"
                       aria-label="Anexar arquivo"
                     >
-                       <AttachFile sx={{ fontSize: 16 }} />
+                       <AttachFile sx={{ fontSize: ICON_SIZE_MD }} />
                     </IconButton>
                   </Tooltip>
                 </InputAdornment>
@@ -124,10 +123,11 @@ export function AssistantComposer({
                   <Button
                     type="submit"
                     variant="contained"
+                    size="small"
                     loading={isLoading}
                     disabled={(!input.trim() && pendingFiles.length === 0) || isLoading}
-                     endIcon={!isLoading ? <SendIcon sx={{ fontSize: 16 }} /> : undefined}
-                    sx={{ minWidth: 120 }}
+                      endIcon={!isLoading ? <SendIcon sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                    sx={{ minWidth: 96 }}
                   >
                     Enviar
                   </Button>
@@ -138,19 +138,13 @@ export function AssistantComposer({
           sx={{
             '& .MuiOutlinedInput-root': {
               alignItems: 'flex-end',
-              borderRadius: 4,
+              borderRadius: 3,
               px: 0.5,
-              py: 0.75,
+              py: 0.5,
               backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.72),
             },
           }}
         />
-
-        <Alert variant="outlined" severity="info" sx={{ py: 0.25 }}>
-          <Typography variant="caption" color="inherit">
-            Enter envia. Shift + Enter quebra linha. Você pode anexar imagens, PDF e texto para enriquecer o contexto.
-          </Typography>
-        </Alert>
       </Stack>
     </Box>
   );
