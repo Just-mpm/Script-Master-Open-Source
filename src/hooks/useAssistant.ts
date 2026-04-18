@@ -1,40 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
-import { getMemories, Memory, saveChatSession, ChatSession, getUserSettings } from '../lib/db';
+import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { AssistantStudioState } from '../components/Assistant';
+import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
+import { getGeminiApiKey } from '../lib/env';
 
-export interface Attachment {
-  mimeType: string;
-  data: string; // base64
-  name?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'model';
-  text: string;
-  attachments?: Attachment[];
-  isApplying?: boolean;
-}
-
-export interface AssistantSettings {
-  script?: string;
-  isMultiSpeaker?: boolean;
-  selectedVoice?: string;
-  speakerAName?: string;
-  speakerBVoice?: string;
-  speakerBName?: string;
-  audioProfile?: string;
-  scene?: string;
-  pace?: string;
-  styleNotes?: string;
-  generateScenes?: boolean;
-  sceneDensity?: number;
-  sceneRatio?: '16:9' | '9:16' | '1:1';
-  visualFramework?: string;
-}
+export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
@@ -50,7 +22,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,7 +43,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
         messages,
         updatedAt: Date.now()
       };
-      saveChatSession(session, user?.uid);
+
+      void Promise.resolve(saveChatSession(session, user?.uid)).catch((sessionError: unknown) => {
+        console.error('Erro ao salvar sessão do assistente:', sessionError);
+      });
     }
   }, [messages, currentSessionId, user]);
 
@@ -99,10 +74,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setError(null);
 
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('Chave da API do Gemini não configurada.');
-      }
-
       const memories = await getMemories(user?.uid);
       const memoriesText = memories.length > 0 
         ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map(m => `- ${m.content}`).join('\n')}`
@@ -217,9 +188,13 @@ ATENÇÃO: Você não precisa preencher todos os campos, apenas os que desejar s
         { id: (Date.now() + 1).toString(), role: 'model', text: responseText }
       ]);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error in assistant:', err);
-      setError(err.message || 'Ocorreu um erro ao comunicar com o assistente.');
+      const errorMessage = err instanceof Error
+        ? err.message
+        : 'Ocorreu um erro ao comunicar com o assistente.';
+
+      setError(errorMessage);
       setMessages(prev => [
         ...prev,
         { id: (Date.now() + 1).toString(), role: 'model', text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.' }

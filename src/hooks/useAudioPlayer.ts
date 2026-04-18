@@ -1,4 +1,4 @@
-import { useState, useEffect, RefObject } from 'react';
+import { useState, useEffect, type MouseEvent, type RefObject } from 'react';
 
 export function useAudioPlayer(audioRef: RefObject<HTMLAudioElement | null>, audioUrl: string | null) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -53,7 +53,7 @@ export function useAudioPlayer(audioRef: RefObject<HTMLAudioElement | null>, aud
     }
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleSeek = (e: MouseEvent<HTMLDivElement>) => {
     if (audioRef.current && audioRef.current.duration) {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;

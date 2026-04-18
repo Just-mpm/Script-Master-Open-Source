@@ -1,6 +1,14 @@
 import React, { useMemo } from 'react';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { alpha, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import MovieCreation from '@mui/icons-material/MovieCreation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Clapperboard } from 'lucide-react';
+import { glassPanelSx } from '../theme/surfaces';
 
 interface VideoPreviewProps {
   scenes: { imageUrl: string; timestamp: number }[];
@@ -22,20 +30,63 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
     return active;
   }, [scenes, currentTime]);
 
+  const scriptExcerpt = useMemo(() => {
+    const normalizedScript = script.replace(/\s+/g, ' ').trim();
+
+    if (normalizedScript.length <= 140) {
+      return normalizedScript;
+    }
+
+    return `${normalizedScript.slice(0, 140)}…`;
+  }, [script]);
+
   if (!scenes || scenes.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[var(--text-tertiary)] bg-[var(--bg-surface)] rounded-3xl">
-        <div className="w-16 h-16 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
-          <Clapperboard className="w-8 h-8 opacity-20" />
-        </div>
-        <p className="text-sm font-medium">Gere um conteúdo com cenas visuais para ver o vídeo aqui.</p>
-      </div>
+      <Paper
+        elevation={0}
+        sx={(theme): SystemStyleObject<Theme> => ({
+          ...glassPanelSx(theme),
+          aspectRatio: '16 / 9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 3, md: 4 },
+        })}
+      >
+        <Stack spacing={2} alignItems="center" textAlign="center" sx={{ maxWidth: 420 }}>
+          <Box
+            sx={(theme) => ({
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              backgroundColor: alpha(theme.palette.common.white, 0.06),
+              border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+            })}
+          >
+            <MovieCreation sx={{ fontSize: 32, opacity: 0.35 }} />
+          </Box>
+          <Stack spacing={0.75}>
+            <Typography variant="h6">Preview de vídeo aguardando cenas</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Gere um conteúdo com cenas visuais para acompanhar a narrativa aqui com transições e contexto.
+            </Typography>
+          </Stack>
+        </Stack>
+      </Paper>
     );
   }
 
   return (
-    <div className="relative flex-1 bg-black rounded-3xl overflow-hidden shadow-2xl">
-      {/* Dynamic Background */}
+    <Paper
+      elevation={0}
+      sx={(theme): SystemStyleObject<Theme> => ({
+        ...glassPanelSx(theme),
+        aspectRatio: '16 / 9',
+        backgroundColor: theme.palette.common.black,
+      })}
+    >
       <AnimatePresence mode="popLayout">
         <motion.div
           key={currentScene?.imageUrl}
@@ -43,18 +94,58 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${currentScene?.imageUrl})` }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${currentScene?.imageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
         >
-          {/* Subtle zoom effect overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.12) 30%, rgba(0, 0, 0, 0.74) 100%)',
+            }}
+          />
         </motion.div>
       </AnimatePresence>
 
-      {/* Label */}
-      <div className="absolute top-4 left-4 z-50">
-        <span className="px-3 py-1 bg-[var(--accent)] text-white text-[10px] font-bold rounded-xl border-none uppercase shadow-lg">Preview de Vídeo</span>
-      </div>
-    </div>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        sx={{ position: 'absolute', top: { xs: 16, md: 20 }, left: { xs: 16, md: 20 }, right: { xs: 16, md: 20 }, zIndex: 2 }}
+      >
+        <Chip label="Preview de vídeo" color="primary" />
+        <Chip label={`${scenes.length} ${scenes.length === 1 ? 'cena' : 'cenas'}`} variant="outlined" sx={{ backdropFilter: 'blur(8px)' }} />
+      </Stack>
+
+      <Box sx={{ position: 'absolute', left: { xs: 16, md: 20 }, right: { xs: 16, md: 20 }, bottom: { xs: 16, md: 20 }, zIndex: 2 }}>
+        <Paper
+          elevation={0}
+          sx={(theme): SystemStyleObject<Theme> => ({
+            p: { xs: 2, md: 2.5 },
+            borderRadius: 3,
+            backgroundColor: alpha(theme.palette.common.black, 0.34),
+            border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+            backdropFilter: 'blur(14px)',
+            backgroundImage: 'none',
+          })}
+        >
+          <Stack spacing={0.75}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              Sequência visual em andamento
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {scriptExcerpt || 'As cenas acompanham o tempo atual da reprodução para você revisar o ritmo do vídeo.'}
+            </Typography>
+          </Stack>
+        </Paper>
+      </Box>
+    </Paper>
   );
 }

@@ -1,7 +1,42 @@
 import React, { useState } from 'react';
-import { Volume2, Settings2, CheckCircle2, Image as ImageIcon, ChevronDown, ChevronUp, Users, Play, Pause, Loader2 } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import ButtonBase from '@mui/material/ButtonBase';
+import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import FormControl from '@mui/material/FormControl';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import LinearProgress from '@mui/material/LinearProgress';
+import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
+import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Close from '@mui/icons-material/Close';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import GraphicEq from '@mui/icons-material/GraphicEq';
+import Image from '@mui/icons-material/Image';
+import Autorenew from '@mui/icons-material/Autorenew';
+import Pause from '@mui/icons-material/Pause';
+import People from '@mui/icons-material/People';
+import PlayArrow from '@mui/icons-material/PlayArrow';
+import Settings from '@mui/icons-material/Settings';
 import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
+import type { SceneRatio } from '../features/studio/types';
+import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 
 interface InspectorProps {
   isMultiSpeaker: boolean;
@@ -27,12 +62,68 @@ interface InspectorProps {
   setGenerateScenes: (generate: boolean) => void;
   sceneDensity: number;
   setSceneDensity: (density: number) => void;
-  sceneRatio: '16:9' | '9:16' | '1:1';
-  setSceneRatio: (ratio: '16:9' | '9:16' | '1:1') => void;
+  sceneRatio: SceneRatio;
+  setSceneRatio: (ratio: SceneRatio) => void;
   visualFramework: string;
   setVisualFramework: (framework: string) => void;
   referenceImage: string | null;
   setReferenceImage: (img: string | null) => void;
+}
+
+type VoiceTabValue = 'A' | 'B';
+
+const PACE_OPTIONS = [
+  { value: 'very_slow', label: 'Muito Lento' },
+  { value: 'slow', label: 'Lento' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'fast', label: 'Rápido' },
+  { value: 'very_fast', label: 'Muito Rápido' },
+] as const;
+
+const VISUAL_FRAMEWORK_OPTIONS = [
+  { value: 'general', label: 'Cenário padrão (arte guiada pelo roteiro)' },
+  { value: 'whiteboard', label: 'Whiteboard Master (desenho com legendas)' },
+] as const;
+
+const SCENE_RATIO_OPTIONS: Array<{ value: SceneRatio; label: string }> = [
+  { value: '16:9', label: 'YouTube (16:9 horizontal)' },
+  { value: '9:16', label: 'Shorts/TikTok (9:16 vertical)' },
+  { value: '1:1', label: 'Instagram (1:1 quadrado)' },
+];
+
+const DENSITY_OPTIONS = [
+  { value: 15, label: 'Muito rápido (15s)' },
+  { value: 30, label: 'Dinâmico (30s)' },
+  { value: 60, label: 'Lento (1 min)' },
+  { value: 120, label: 'Muito lento (2 min)' },
+] as const;
+
+function voiceTabProps(tab: VoiceTabValue) {
+  return {
+    id: `voice-tab-${tab}`,
+    'aria-controls': `voice-panel-${tab}`,
+  };
+}
+
+function VoiceTabPanel({
+  value,
+  activeValue,
+  children,
+}: {
+  value: VoiceTabValue;
+  activeValue: VoiceTabValue;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box
+      role="tabpanel"
+      hidden={value !== activeValue}
+      id={`voice-panel-${value}`}
+      aria-labelledby={`voice-tab-${value}`}
+    >
+      {value === activeValue ? children : null}
+    </Box>
+  );
 }
 
 export function Inspector({
@@ -66,9 +157,17 @@ export function Inspector({
   referenceImage,
   setReferenceImage
 }: InspectorProps) {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
-  const [activeVoiceTab, setActiveVoiceTab] = useState<'A' | 'B'>('A');
+  const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');
+
+  const handleSceneRatioChange = (value: string) => {
+    if (value === '16:9' || value === '9:16' || value === '1:1') {
+      setSceneRatio(value);
+    }
+  };
 
   const { 
     playingId, 
@@ -79,327 +178,480 @@ export function Inspector({
     isAdmin 
   } = useVoicePreviews();
 
+  const isVoiceOpen = isDesktop || !isVoiceCollapsed;
+  const isDirectionOpen = isDesktop || !isDirectionCollapsed;
+  const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
+
+  const handleReferenceImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = typeof reader.result === 'string' ? reader.result : null;
+      setReferenceImage(result);
+      event.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <aside className="lg:col-span-4 xl:col-span-3 flex flex-col gap-4 lg:gap-6" role="complementary" aria-label="Configurações de voz e direção">
-      {/* Voice Selector Card */}
-      <div className="glass-panel rounded-2xl overflow-hidden">
-        <button 
-          onClick={() => setIsVoiceCollapsed(!isVoiceCollapsed)}
-          className="w-full flex items-center justify-between p-5 lg:cursor-default"
+    <Stack
+      component="aside"
+      spacing={{ xs: 2, lg: 3 }}
+      role="complementary"
+      aria-label="Configurações de voz e direção"
+    >
+      <Paper elevation={0} sx={glassPanelSx}>
+        <ButtonBase
+          onClick={() => {
+            if (!isDesktop) {
+              setIsVoiceCollapsed((previous) => !previous);
+            }
+          }}
+          disableRipple={isDesktop}
+          aria-expanded={isVoiceOpen}
+          sx={{
+            width: '100%',
+            px: { xs: 2.5, md: 3 },
+            py: 2.25,
+            textAlign: 'left',
+          }}
         >
-          <h2 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-2">
-            <Volume2 className="w-4 h-4 text-[var(--accent)]" aria-hidden="true" />
-            Voz do Locutor
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[var(--text-tertiary)] hidden sm:inline">{VOICES.length} opções</span>
-            <div className="lg:hidden">
-              {isVoiceCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-            </div>
-          </div>
-        </button>
-        
-        <div className={`p-5 pt-0 flex flex-col gap-4 ${isVoiceCollapsed ? 'hidden lg:flex' : 'flex'}`}>
-          <label className="flex items-center gap-3 cursor-pointer group mb-2 border border-[var(--border)] p-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors">
-            <div className="relative flex items-center justify-center shrink-0">
-              <input 
-                type="checkbox" 
-                checked={isMultiSpeaker}
-                onChange={(e) => setIsMultiSpeaker(e.target.checked)}
-                disabled={isGenerating}
-                className="peer sr-only"
-              />
-              <div className="w-9 h-5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-full peer-checked:bg-[var(--accent)] peer-checked:border-[var(--accent)] transition-colors duration-300"></div>
-              <div className="absolute left-1 top-1 w-3 h-3 bg-[var(--text-secondary)] rounded-full peer-checked:translate-x-4 peer-checked:bg-white transition-transform duration-300"></div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[var(--accent)]" />
-                Modo Podcast (2 Vozes)
-              </span>
-              <span className="text-[9px] text-[var(--text-tertiary)]">Permite que dois locutores interajam em um único roteiro</span>
-            </div>
-          </label>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+            <Stack spacing={0.75}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <GraphicEq sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
+                <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                  Voz do locutor
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                Escolha a assinatura vocal e organize vozes para narração ou podcast.
+              </Typography>
+            </Stack>
 
-          {isMultiSpeaker && (
-             <div className="flex bg-[var(--bg-elevated)] p-1 rounded-xl mb-2">
-               <button onClick={() => setActiveVoiceTab('A')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeVoiceTab === 'A' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-tertiary)]'}`}>Voz A</button>
-               <button onClick={() => setActiveVoiceTab('B')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeVoiceTab === 'B' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-tertiary)]'}`}>Voz B</button>
-             </div>
-          )}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label={`${VOICES.length} opções`} size="small" variant="outlined" />
+              {!isDesktop && (isVoiceOpen ? <ExpandLess sx={{ fontSize: 16 }} /> : <ExpandMore sx={{ fontSize: 16 }} />)}
+            </Stack>
+          </Stack>
+        </ButtonBase>
 
-          {isMultiSpeaker && (
-             <div className="mb-2">
-                <input type="text"
-                       value={activeVoiceTab === 'A' ? speakerAName : speakerBName}
-                       onChange={(e) => activeVoiceTab === 'A' ? setSpeakerAName(e.target.value) : setSpeakerBName(e.target.value)}
-                       disabled={isGenerating}
-                       placeholder={`Nome no Roteiro (ex: Voz ${activeVoiceTab})`}
-                       title="Digite o nome deste locutor exatamente como aparece no roteiro (Ex: 'Voz A:')"
-                       className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        <Collapse in={isVoiceOpen} timeout="auto">
+          <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
+            <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
+              <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                <Stack spacing={0.5}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <People sx={{ fontSize: 14, color: theme.palette.primary.main }} />
+                    <Typography variant="subtitle2">Modo Podcast (2 vozes)</Typography>
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Permite que dois locutores interajam em um único roteiro.
+                  </Typography>
+                </Stack>
+
+                <Switch
+                  checked={isMultiSpeaker}
+                  onChange={(event) => setIsMultiSpeaker(event.target.checked)}
+                  disabled={isGenerating}
+                  slotProps={{ input: { 'aria-label': 'Ativar modo podcast com duas vozes' } }}
                 />
-                <div className="text-[9px] text-[var(--text-tertiary)] mt-1 ml-1 cursor-help" title={`No editor, escreva '${activeVoiceTab === 'A' ? speakerAName : speakerBName}:' antes da fala desta pessoa.`}>Como interagir?</div>
-             </div>
-          )}
+              </Stack>
+            </Paper>
 
-          <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto custom-scrollbar pr-1" role="listbox" aria-label="Seleção de voz">
-            {VOICES.map((voice) => {
-              const isActiveVoice = activeVoiceTab === 'A' ? selectedVoice === voice.id : speakerBVoice === voice.id;
-              const isPlaying = playingId === voice.id;
-              
-              return (
-              <div key={voice.id} className="relative group/voice">
-                <button
-                  onClick={() => activeVoiceTab === 'A' ? setSelectedVoice(voice.id) : setSpeakerBVoice(voice.id)}
-                  disabled={isGenerating}
-                  role="option"
-                  aria-selected={isActiveVoice}
-                  className={`w-full flex flex-col items-start p-3 rounded-xl text-left transition-all duration-200 ${
-                    isActiveVoice
-                      ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/50 shadow-[0_0_15px_var(--accent-glow)]'
-                      : 'bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-hover)]'
-                  } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+            {isMultiSpeaker && (
+              <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 1.25 })}>
+                <Tabs
+                  value={activeVoiceTab}
+                  onChange={(_event, value: VoiceTabValue) => setActiveVoiceTab(value)}
+                  aria-label="Abas de seleção de voz por locutor"
+                  variant="fullWidth"
+                  sx={{ mb: 1.5 }}
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className={`text-sm font-medium ${isActiveVoice ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                      {voice.name}
-                    </span>
-                    {isActiveVoice && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden="true" />}
-                  </div>
-                  <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">{voice.style}</span>
-                </button>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playPreview(voice.id);
-                  }}
-                  title="Ouvir amostra"
-                  className={`absolute right-2 bottom-2 p-1.5 rounded-lg transition-all ${
-                    isPlaying 
-                      ? 'bg-[var(--accent)] text-white' 
-                      : 'bg-[var(--bg-base)] text-[var(--text-tertiary)] hover:bg-[var(--accent)] hover:text-white opacity-0 group-hover/voice:opacity-100'
-                  }`}
-                >
-                  {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                </button>
-              </div>
-            )})}
-          </div>
+                  <Tab label="Voz A" value="A" {...voiceTabProps('A')} />
+                  <Tab label="Voz B" value="B" {...voiceTabProps('B')} />
+                </Tabs>
 
-          {isAdmin && (
-             <div className="mt-2 pt-2 border-t border-[var(--border)]">
-               {isGeneratingBatch ? (
-                 <div className="flex flex-col gap-2">
-                   <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-secondary)]">
-                     <span>GERANDO PRÉVIAS...</span>
-                     <span>{Math.round(batchProgress)}%</span>
-                   </div>
-                   <div className="h-1 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
-                     <div className="h-full bg-[var(--accent)] transition-all duration-500" style={{ width: `${batchProgress}%` }}></div>
-                   </div>
-                 </div>
-               ) : (
-                 <button 
-                  onClick={generateAllPreviews}
-                  className="w-full py-2 px-3 bg-[var(--bg-elevated)] hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] text-[9px] font-bold uppercase tracking-widest rounded-lg border border-dashed border-[var(--border)] transition-all flex items-center justify-center gap-2"
-                 >
-                   <Loader2 className="w-3 h-3" />
-                   Gerar Todas as Prévias (Admin)
-                 </button>
-               )}
-             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Direction Context Card */}
-      <div className="glass-panel rounded-2xl overflow-hidden">
-        <button 
-          onClick={() => setIsDirectionCollapsed(!isDirectionCollapsed)}
-          className="w-full flex items-center justify-between p-5 lg:cursor-default"
-        >
-          <h2 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-[var(--accent)]" aria-hidden="true" />
-            Direção de Arte
-          </h2>
-          <div className="lg:hidden">
-            {isDirectionCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </div>
-        </button>
-        
-        <div className={`p-5 pt-0 flex flex-col gap-5 ${isDirectionCollapsed ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="character-input" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 block">Personagem</label>
-              <input 
-                id="character-input"
-                type="text" 
-                value={audioProfile}
-                onChange={(e) => setAudioProfile(e.target.value)}
-                disabled={isGenerating}
-                placeholder='Ex: "Jaz R., The Morning Hype"' 
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_var(--accent-glow)] transition-all placeholder:text-[var(--text-tertiary)] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="scene-input" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 block">Ambiente</label>
-              <textarea 
-                id="scene-input"
-                value={scene}
-                onChange={(e) => setScene(e.target.value)}
-                disabled={isGenerating}
-                placeholder='Ex: "Estúdio de rádio, 10 PM. Caótico."' 
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_var(--accent-glow)] transition-all resize-none h-20 placeholder:text-[var(--text-tertiary)] disabled:opacity-50 disabled:cursor-not-allowed custom-scrollbar"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="pace-select" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 block">Ritmo</label>
-                <select
-                  id="pace-select"
-                  value={pace}
-                  onChange={(e) => setPace(e.target.value)}
-                  disabled={isGenerating}
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-3 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_var(--accent-glow)] transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="very_slow">Muito Lento</option>
-                  <option value="slow">Lento</option>
-                  <option value="normal">Normal</option>
-                  <option value="fast">Rápido</option>
-                  <option value="very_fast">Muito Rápido</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="accent-input" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-2 block">Sotaque</label>
-                <input 
-                  id="accent-input"
-                  type="text"
-                  value={styleNotes}
-                  onChange={(e) => setStyleNotes(e.target.value)}
-                  disabled={isGenerating}
-                  placeholder='Ex: "Paulista"' 
-                  className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-3 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_var(--accent-glow)] transition-all placeholder:text-[var(--text-tertiary)] disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-            </div>
-            
-            <div className="pt-2 border-t border-[var(--border)]">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative flex items-center justify-center">
-                  <input 
-                    type="checkbox" 
-                    checked={generateScenes}
-                    onChange={(e) => setGenerateScenes(e.target.checked)}
+                <VoiceTabPanel value="A" activeValue={activeVoiceTab}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Nome no roteiro"
+                    value={speakerAName}
+                    onChange={(event) => setSpeakerAName(event.target.value)}
                     disabled={isGenerating}
-                    className="peer sr-only"
+                    placeholder="Ex: Voz A"
+                    helperText="Use exatamente o nome que aparece antes da fala no roteiro."
                   />
-                  <div className="w-10 h-5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-full peer-checked:bg-[var(--accent)] peer-checked:border-[var(--accent)] transition-colors duration-300"></div>
-                  <div className="absolute left-1 top-1 w-3 h-3 bg-[var(--text-secondary)] rounded-full peer-checked:translate-x-5 peer-checked:bg-white transition-transform duration-300"></div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-[var(--accent)]" />
-                    Gerar Cenas Visuais
-                  </span>
-                  <span className="text-[10px] text-[var(--text-tertiary)]">Transforma o áudio num vídeo narrado.</span>
-                </div>
-              </label>
+                </VoiceTabPanel>
 
-              {generateScenes && (
-                <div className="mt-4 grid grid-cols-2 gap-3 pl-1">
-                  <div className="col-span-2">
-                    <label htmlFor="framework-select" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-1.5 block">Identidade Visual do Canal</label>
-                    <select
-                      id="framework-select"
-                      value={visualFramework}
-                      onChange={(e) => setVisualFramework(e.target.value)}
-                      disabled={isGenerating}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                <VoiceTabPanel value="B" activeValue={activeVoiceTab}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Nome no roteiro"
+                    value={speakerBName}
+                    onChange={(event) => setSpeakerBName(event.target.value)}
+                    disabled={isGenerating}
+                    placeholder="Ex: Voz B"
+                    helperText="Use exatamente o nome que aparece antes da fala no roteiro."
+                  />
+                </VoiceTabPanel>
+
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25, px: 0.5 }}>
+                  No editor, escreva “{activeSpeakerName || `Voz ${activeVoiceTab}`}” antes da fala desta pessoa.
+                </Typography>
+              </Paper>
+            )}
+
+            <Grid container spacing={1.5} role="listbox" aria-label="Seleção de voz">
+              {VOICES.map((voice) => {
+                const isActiveVoice = activeVoiceTab === 'A' ? selectedVoice === voice.id : speakerBVoice === voice.id;
+                const isPlaying = playingId === voice.id;
+
+                return (
+                  <Grid key={voice.id} size={{ xs: 12, sm: 6 }}>
+                    <Paper
+                      elevation={0}
+                      variant="outlined"
+                      sx={(currentTheme): SystemStyleObject<Theme> => ({
+                        position: 'relative',
+                        height: '100%',
+                        overflow: 'hidden',
+                        borderRadius: 3,
+                        transition: 'all 0.2s ease',
+                        borderColor: isActiveVoice
+                          ? alpha(currentTheme.palette.primary.main, 0.55)
+                          : alpha(currentTheme.palette.common.white, 0.08),
+                        backgroundColor: isActiveVoice
+                          ? alpha(currentTheme.palette.primary.main, 0.12)
+                          : alpha(currentTheme.palette.background.default, 0.28),
+                        boxShadow: isActiveVoice
+                          ? `0 0 0 1px ${alpha(currentTheme.palette.primary.main, 0.35)}, 0 18px 45px ${alpha(currentTheme.palette.primary.main, 0.16)}`
+                          : 'none',
+                      })}
                     >
-                      <option value="general">Cenário Padrão (Arte Guiada pelo Roteiro)</option>
-                      <option value="whiteboard">Whiteboard Master (Desenho com Legendas)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="ratio-select" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-1.5 block">Formato</label>
-                    <select
-                      id="ratio-select"
-                      value={sceneRatio}
-                      onChange={(e) => setSceneRatio(e.target.value as any)}
-                      disabled={isGenerating}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                    >
-                      <option value="16:9">YouTube (16:9 Horizontal)</option>
-                      <option value="9:16">Shorts/TikTok (9:16 Vertical)</option>
-                      <option value="1:1">Instagram (1:1 Quadrado)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="density-select" className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-1.5 block">Frequência</label>
-                    <select
-                      id="density-select"
-                      value={sceneDensity}
-                      onChange={(e) => setSceneDensity(Number(e.target.value))}
-                      disabled={isGenerating}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                    >
-                      <option value="15">Muito Rápido (15s)</option>
-                      <option value="30">Dinâmico (30s)</option>
-                      <option value="60">Lento (1min)</option>
-                      <option value="120">Muito Lento (2min)</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest mb-1.5 block">Imagem de Referência (Opcional)</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="file" 
-                        accept="image/*"
+                      <ButtonBase
+                        onClick={() => (activeVoiceTab === 'A' ? setSelectedVoice(voice.id) : setSpeakerBVoice(voice.id))}
                         disabled={isGenerating}
-                        className="hidden"
-                        id="reference-image-upload"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              const result = reader.result as string;
-                              setReferenceImage(result.split(',')[1]);
-                            };
-                            reader.readAsDataURL(file);
-                          }
+                        role="option"
+                        aria-selected={isActiveVoice}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          alignItems: 'stretch',
+                          justifyContent: 'flex-start',
+                          textAlign: 'left',
+                          px: 1.75,
+                          py: 1.5,
+                          pr: 6,
                         }}
-                      />
-                      <label 
-                        htmlFor="reference-image-upload"
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-[var(--bg-elevated)] hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] text-[10px] font-bold tracking-wider rounded-lg border border-dashed ${referenceImage ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--border)]'} transition-all cursor-pointer ${isGenerating ? 'opacity-50 pointer-events-none' : ''}`}
                       >
-                        <ImageIcon className="w-3 h-3" />
-                        {referenceImage ? 'Imagem Selecionada (Trocar)' : 'Anexar Imagem de Personagem/Cenário'}
-                      </label>
-                      {referenceImage && (
-                        <button
-                          onClick={() => setReferenceImage(null)}
+                        <Stack spacing={0.75} sx={{ width: '100%' }}>
+                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                            <Typography variant="subtitle2" color={isActiveVoice ? 'primary.main' : 'text.primary'}>
+                              {voice.name}
+                            </Typography>
+                             {isActiveVoice && <CheckCircle sx={{ fontSize: 14, color: theme.palette.primary.main }} aria-hidden="true" />}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                            {voice.style}
+                          </Typography>
+                        </Stack>
+                      </ButtonBase>
+
+                      <Tooltip title={`Ouvir amostra da voz ${voice.name}`}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              playPreview(voice.id);
+                            }}
+                            disabled={isGenerating}
+                            aria-label={`Ouvir amostra da voz ${voice.name}`}
+                            sx={(currentTheme) => ({
+                              position: 'absolute',
+                              right: 8,
+                              bottom: 8,
+                              borderRadius: 2,
+                              border: `1px solid ${alpha(currentTheme.palette.common.white, 0.08)}`,
+                              backgroundColor: isPlaying
+                                ? currentTheme.palette.primary.main
+                                : alpha(currentTheme.palette.background.paper, 0.6),
+                              color: isPlaying ? currentTheme.palette.primary.contrastText : currentTheme.palette.text.secondary,
+                              '&:hover': {
+                                backgroundColor: isPlaying
+                                  ? currentTheme.palette.primary.dark
+                                  : alpha(currentTheme.palette.primary.main, 0.16),
+                              },
+                            })}
+                          >
+                            {isPlaying ? <Pause sx={{ fontSize: 14 }} /> : <PlayArrow sx={{ fontSize: 14 }} />}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Paper>
+                  </Grid>
+                );
+              })}
+            </Grid>
+
+            {isAdmin && (
+              <Paper elevation={0} sx={(currentTheme) => ({ ...insetPanelSx(currentTheme), p: 2 })}>
+                {isGeneratingBatch ? (
+                  <Stack spacing={1.25}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: '0.12em' }}>
+                        Gerando prévias
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {Math.round(batchProgress)}%
+                      </Typography>
+                    </Stack>
+                    <LinearProgress variant="determinate" value={batchProgress} sx={{ height: 6, borderRadius: 999 }} />
+                  </Stack>
+                ) : (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={generateAllPreviews}
+                    startIcon={<Autorenew sx={{ fontSize: 14 }} />}
+                    sx={{
+                      minHeight: 44,
+                      borderStyle: 'dashed',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Gerar todas as prévias (admin)
+                  </Button>
+                )}
+              </Paper>
+            )}
+          </Stack>
+        </Collapse>
+      </Paper>
+
+      <Paper elevation={0} sx={glassPanelSx}>
+        <ButtonBase
+          onClick={() => {
+            if (!isDesktop) {
+              setIsDirectionCollapsed((previous) => !previous);
+            }
+          }}
+          disableRipple={isDesktop}
+          aria-expanded={isDirectionOpen}
+          sx={{
+            width: '100%',
+            px: { xs: 2.5, md: 3 },
+            py: 2.25,
+            textAlign: 'left',
+          }}
+        >
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+            <Stack spacing={0.75}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Settings sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
+                <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                  Direção de arte
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                Defina personagem, atmosfera e regras visuais para guiar a geração.
+              </Typography>
+            </Stack>
+
+            {!isDesktop && (isDirectionOpen ? <ExpandLess sx={{ fontSize: 16 }} /> : <ExpandMore sx={{ fontSize: 16 }} />)}
+          </Stack>
+        </ButtonBase>
+
+        <Collapse in={isDirectionOpen} timeout="auto">
+          <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
+            <TextField
+              fullWidth
+              label="Personagem"
+              value={audioProfile}
+              onChange={(event) => setAudioProfile(event.target.value)}
+              disabled={isGenerating}
+              placeholder='Ex: "Jaz R., The Morning Hype"'
+            />
+
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              maxRows={6}
+              label="Ambiente"
+              value={scene}
+              onChange={(event) => setScene(event.target.value)}
+              disabled={isGenerating}
+              placeholder='Ex: "Estúdio de rádio, 10 PM. Caótico."'
+            />
+
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth disabled={isGenerating}>
+                  <InputLabel id="pace-select-label">Ritmo</InputLabel>
+                  <Select
+                    labelId="pace-select-label"
+                    id="pace-select"
+                    label="Ritmo"
+                    value={pace}
+                    onChange={(event) => setPace(event.target.value)}
+                  >
+                    {PACE_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Sotaque"
+                  value={styleNotes}
+                  onChange={(event) => setStyleNotes(event.target.value)}
+                  disabled={isGenerating}
+                  placeholder='Ex: "Paulista"'
+                />
+              </Grid>
+            </Grid>
+
+            <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                  <Stack spacing={0.5}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Image sx={{ fontSize: 14, color: theme.palette.primary.main }} />
+                      <Typography variant="subtitle2">Gerar cenas visuais</Typography>
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      Transforma o áudio em uma sequência visual coerente para vídeo.
+                    </Typography>
+                  </Stack>
+
+                  <Switch
+                    checked={generateScenes}
+                    onChange={(event) => setGenerateScenes(event.target.checked)}
+                    disabled={isGenerating}
+                    slotProps={{ input: { 'aria-label': 'Ativar geração de cenas visuais' } }}
+                  />
+                </Stack>
+
+                <Collapse in={generateScenes} timeout="auto" unmountOnExit>
+                  <Stack spacing={1.75}>
+                    <FormControl fullWidth disabled={isGenerating}>
+                      <InputLabel id="framework-select-label">Identidade visual do canal</InputLabel>
+                      <Select
+                        labelId="framework-select-label"
+                        id="framework-select"
+                        label="Identidade visual do canal"
+                        value={visualFramework}
+                        onChange={(event) => setVisualFramework(event.target.value)}
+                      >
+                        {VISUAL_FRAMEWORK_OPTIONS.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <Grid container spacing={1.5}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <FormControl fullWidth disabled={isGenerating}>
+                          <InputLabel id="ratio-select-label">Formato</InputLabel>
+                          <Select
+                            labelId="ratio-select-label"
+                            id="ratio-select"
+                            label="Formato"
+                            value={sceneRatio}
+                            onChange={(event) => handleSceneRatioChange(event.target.value)}
+                          >
+                            {SCENE_RATIO_OPTIONS.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <FormControl fullWidth disabled={isGenerating}>
+                          <InputLabel id="density-select-label">Frequência</InputLabel>
+                          <Select
+                            labelId="density-select-label"
+                            id="density-select"
+                            label="Frequência"
+                            value={String(sceneDensity)}
+                            onChange={(event) => setSceneDensity(Number(event.target.value))}
+                          >
+                            {DENSITY_OPTIONS.map((option) => (
+                              <MenuItem key={option.value} value={String(option.value)}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </Grid>
+
+                    <Stack spacing={1.25}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                        <Button
+                          component="label"
+                          variant={referenceImage ? 'contained' : 'outlined'}
+                          startIcon={<Image sx={{ fontSize: 14 }} />}
                           disabled={isGenerating}
-                          className="p-2 bg-[var(--bg-bg-elevated)] hover:bg-red-500/10 text-[var(--text-tertiary)] hover:text-red-500 rounded-lg transition-colors border border-[var(--border)] hover:border-red-500/30"
-                          title="Remover imagem"
+                          sx={{
+                            flex: 1,
+                            minHeight: 44,
+                            borderStyle: referenceImage ? 'solid' : 'dashed',
+                            justifyContent: 'center',
+                          }}
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[9px] text-[var(--text-tertiary)] block mt-1">Isso ajuda a IA a manter personagens ou arte consistentes.</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
+                          {referenceImage ? 'Imagem selecionada (trocar)' : 'Anexar imagem de personagem/cenário'}
+                          <input hidden type="file" accept="image/*" onChange={handleReferenceImageUpload} />
+                        </Button>
+
+                        {referenceImage && (
+                          <Tooltip title="Remover imagem de referência">
+                            <span>
+                              <IconButton
+                                onClick={() => setReferenceImage(null)}
+                                disabled={isGenerating}
+                                color="error"
+                                aria-label="Remover imagem de referência"
+                                sx={{ border: `1px solid ${alpha(theme.palette.error.main, 0.3)}` }}
+                              >
+                                 <Close sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        )}
+                      </Stack>
+
+                      <Typography variant="caption" color="text.secondary">
+                        Isso ajuda a IA a manter personagens ou arte consistentes entre as cenas.
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Collapse>
+              </Stack>
+            </Paper>
+          </Stack>
+        </Collapse>
+      </Paper>
+    </Stack>
   );
 }

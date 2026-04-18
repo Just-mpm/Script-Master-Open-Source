@@ -1,12 +1,17 @@
-import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 
-interface AudioContextType {
+interface AudioSnapshot {
   isPlaying: boolean;
   progress: number;
   currentTime: number;
   duration: number;
   activeId: string | null;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
+}
+
+interface AudioContextType {
+  audioRef: RefObject<HTMLAudioElement | null>;
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => AudioSnapshot;
   play: (url: string, id: string) => void;
   pause: () => void;
   toggle: (id?: string) => void;
@@ -17,38 +22,78 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export function AudioProvider({ children }: { children: ReactNode }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
-  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentUrlRef = useRef<string | null>(null);
+  const snapshotRef = useRef<AudioSnapshot>({
+    isPlaying: false,
+    progress: 0,
+    currentTime: 0,
+    duration: 0,
+    activeId: null,
+  });
+  const listenersRef = useRef(new Set<() => void>());
+
+  const notify = useCallback(() => {
+    for (const listener of listenersRef.current) {
+      listener();
+    }
+  }, []);
+
+  const setSnapshot = useCallback((patch: Partial<AudioSnapshot>) => {
+    snapshotRef.current = { ...snapshotRef.current, ...patch };
+    notify();
+  }, [notify]);
+
+  const syncFromAudio = useCallback(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    const currentTime = audio.currentTime;
+    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+    setSnapshot({
+      currentTime,
+      duration,
+      progress,
+    });
+  }, [audioRef, setSnapshot]);
+
+  const subscribe = useCallback((listener: () => void) => {
+    listenersRef.current.add(listener);
+
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
+
+  const getSnapshot = useCallback(() => snapshotRef.current, []);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const updateProgress = () => {
-      if (audio.duration) {
-        setProgress((audio.currentTime / audio.duration) * 100);
-        setCurrentTime(audio.currentTime);
-      }
+      syncFromAudio();
     };
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
+      syncFromAudio();
     };
 
     const handleEnded = () => {
-      setIsPlaying(false);
-      setProgress(0);
-      setCurrentTime(0);
+      setSnapshot({
+        isPlaying: false,
+        progress: 0,
+        currentTime: 0,
+      });
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => setSnapshot({ isPlaying: true });
+    const handlePause = () => setSnapshot({ isPlaying: false });
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -63,78 +108,109 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [audioRef, setSnapshot, syncFromAudio]);
 
-  const play = (url: string, id: string) => {
-    if (!audioRef.current) return;
+  const play = useCallback((url: string, id: string) => {
+    const audio = audioRef.current;
 
-    if (currentUrl !== url) {
-      audioRef.current.src = url;
-      setCurrentUrl(url);
+    if (!audio) return;
+
+    if (currentUrlRef.current !== url) {
+      audio.src = url;
+      currentUrlRef.current = url;
     }
-    
-    setActiveId(id);
-    audioRef.current.play().catch(err => console.error("Error playing audio:", err));
-  };
+    setSnapshot({ activeId: id });
+    audio.play().catch((err: unknown) => console.error('Error playing audio:', err));
+  }, [audioRef, setSnapshot]);
 
-  const pause = () => {
+  const pause = useCallback(() => {
     audioRef.current?.pause();
-  };
+  }, [audioRef]);
 
-  const toggle = (id?: string) => {
-    if (!audioRef.current) return;
-    
-    if (id && id !== activeId) {
-      // If a different ID is passed, we don't toggle, we just play the new one
-      // This logic depends on how it's called. 
-      // For simplicity, let's assume toggle is for the CURRENT activeId if none passed.
+  const toggle = useCallback((id?: string) => {
+    const audio = audioRef.current;
+
+    if (!audio) return;
+
+    if (id && id !== snapshotRef.current.activeId) {
       return;
     }
 
-    if (isPlaying) {
-      audioRef.current.pause();
+    if (snapshotRef.current.isPlaying) {
+      audio.pause();
     } else {
-      audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+      audio.play().catch((err: unknown) => console.error('Error playing audio:', err));
     }
-  };
+  }, [audioRef]);
 
-  const seek = (percentage: number) => {
-    if (audioRef.current && audioRef.current.duration) {
-      audioRef.current.currentTime = (percentage / 100) * audioRef.current.duration;
+  const seek = useCallback((percentage: number) => {
+    const audio = audioRef.current;
+
+    if (audio && audio.duration) {
+      audio.currentTime = (percentage / 100) * audio.duration;
+      syncFromAudio();
     }
-  };
+  }, [audioRef, syncFromAudio]);
 
-  const formatTime = (time: number) => {
-    if (isNaN(time)) return "00:00";
+  const formatTime = useCallback((time: number) => {
+    if (Number.isNaN(time)) return '00:00';
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
+
+  const contextValue = useMemo<AudioContextType>(() => ({
+    audioRef,
+    subscribe,
+    getSnapshot,
+    play,
+    pause,
+    toggle,
+    seek,
+    formatTime,
+  }), [audioRef, formatTime, getSnapshot, pause, play, seek, subscribe, toggle]);
 
   return (
-    <AudioContext.Provider value={{
-      isPlaying,
-      progress,
-      currentTime,
-      duration,
-      activeId,
-      audioRef,
-      play,
-      pause,
-      toggle,
-      seek,
-      formatTime
-    }}>
+    <AudioContext.Provider value={contextValue}>
       {children}
-      <audio ref={audioRef} className="hidden" />
+      <audio ref={audioRef} aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
     </AudioContext.Provider>
   );
 }
 
-export function useGlobalAudio() {
+export function useGlobalAudioState() {
   const context = useContext(AudioContext);
   if (context === undefined) {
-    throw new Error('useGlobalAudio must be used within an AudioProvider');
+    throw new Error('useGlobalAudioState must be used within an AudioProvider');
   }
-  return context;
+
+  const snapshot = useSyncExternalStore(context.subscribe, context.getSnapshot, context.getSnapshot);
+
+  return {
+    ...snapshot,
+    audioRef: context.audioRef,
+    play: context.play,
+    pause: context.pause,
+    toggle: context.toggle,
+    seek: context.seek,
+    formatTime: context.formatTime,
+  };
+}
+
+export function useGlobalAudioActions() {
+  const context = useContext(AudioContext);
+
+  if (context === undefined) {
+    throw new Error('useGlobalAudioActions must be used within an AudioProvider');
+  }
+
+  return {
+    audioRef: context.audioRef,
+    getSnapshot: context.getSnapshot,
+    play: context.play,
+    pause: context.pause,
+    toggle: context.toggle,
+    seek: context.seek,
+    formatTime: context.formatTime,
+  };
 }

@@ -1,26 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Pause, Download, Trash2, Edit2, Check, X, Library as LibraryIcon, Mic, Image as ImageIcon, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
-import { getProjects, deleteProject, updateProjectName, getProjectAudios, getProjectImages, Project, AudioSource, ProjectImage } from '../lib/db';
-import { useGlobalAudio } from '../contexts/AudioContext';
+import { useCallback, useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { alpha, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import Album from '@mui/icons-material/Album';
+import Check from '@mui/icons-material/Check';
+import ChevronDown from '@mui/icons-material/ExpandMore';
+import ChevronUp from '@mui/icons-material/ExpandLess';
+import Delete from '@mui/icons-material/Delete';
+import Download from '@mui/icons-material/Download';
+import Edit from '@mui/icons-material/Edit';
+import Folder from '@mui/icons-material/Folder';
+import GraphicEq from '@mui/icons-material/GraphicEq';
+import Close from '@mui/icons-material/Close';
+import ImageIcon from '@mui/icons-material/Image';
+import Pause from '@mui/icons-material/Pause';
+import PlayArrow from '@mui/icons-material/PlayArrow';
+import {
+  getProjects,
+  deleteProject,
+  updateProjectName,
+  getProjectAudios,
+  getProjectImages,
+  type Project,
+  type AudioSource,
+  type ProjectImage,
+} from '../lib/db';
+import { useGlobalAudioState } from '../contexts/AudioContext';
 import { useAuth } from '../contexts/AuthContext';
+import { downloadFile } from '../lib/download';
+import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
+
+interface ProjectDataState {
+  audios: AudioSource[];
+  images: ProjectImage[];
+}
+
+const EMPTY_PROJECT_DATA: ProjectDataState = { audios: [], images: [] };
 
 export function Library() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
-  const [projectData, setProjectData] = useState<{ audios: AudioSource[], images: ProjectImage[] }>({ audios: [], images: [] });
+  const [projectData, setProjectData] = useState<ProjectDataState>(EMPTY_PROJECT_DATA);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  
-  const { isPlaying, activeId, play, toggle, currentTime } = useGlobalAudio();
 
-  useEffect(() => {
-    loadProjects();
-  }, [user]);
+  const { isPlaying, activeId, play, toggle } = useGlobalAudioState();
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getProjects(user?.uid);
@@ -30,12 +76,16 @@ export function Library() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
 
   const handleExpandProject = async (projectId: string) => {
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null);
-      setProjectData({ audios: [], images: [] });
+      setProjectData(EMPTY_PROJECT_DATA);
       return;
     }
 
@@ -43,7 +93,7 @@ export function Library() {
     try {
       const [audios, images] = await Promise.all([
         getProjectAudios(projectId, user?.uid),
-        getProjectImages(projectId, user?.uid)
+        getProjectImages(projectId, user?.uid),
       ]);
       setProjectData({ audios, images });
     } catch (err) {
@@ -51,53 +101,24 @@ export function Library() {
     }
   };
 
-  const handleDownload = async (url: string, filename: string) => {
-    try {
-      if (url.startsWith('blob:') || url.startsWith('data:')) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        return;
-      }
-      const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) throw new Error('Proxy falhou');
-      
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error('Erro ao baixar arquivo:', error);
-      if (url.startsWith('blob:') || url.startsWith('data:')) return;
-      const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-      window.open(proxyUrl, '_blank');
-    }
-  };
-
-  const handlePlay = (audio: AudioSource, name: string) => {
+  const handlePlay = (audio: AudioSource) => {
     if (activeId === audio.id) {
       toggle(audio.id);
-    } else {
-      const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
-      if (url) {
-        play(url, audio.id);
-      }
+      return;
+    }
+
+    const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
+
+    if (url) {
+      play(url, audio.id);
     }
   };
 
   const confirmDelete = async () => {
-    if (!itemToDelete) return;
+    if (!itemToDelete) {
+      return;
+    }
+
     await deleteProject(itemToDelete, user?.uid);
     setItemToDelete(null);
     await loadProjects();
@@ -108,204 +129,321 @@ export function Library() {
       await updateProjectName(id, editName.trim(), user?.uid);
       await loadProjects();
     }
+
     setEditingId(null);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-        <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <Briefcase className="w-5 h-5 text-[var(--accent)]" />
-          Projetos Salvos
-        </h2>
-      </div>
+    <Stack spacing={3}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+        <Stack spacing={0.75}>
+          <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
+            Biblioteca
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Folder sx={{ fontSize: 18, color: 'primary.main' }} />
+            <Typography variant="h4">Projetos salvos</Typography>
+          </Stack>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
+            Um painel mais claro para revisar ativos do projeto, renomear versões, retomar áudio e baixar cenas sem excesso de ruído visual.
+          </Typography>
+        </Stack>
+
+        <Chip label={`${projects.length} projeto${projects.length === 1 ? '' : 's'}`} variant="outlined" />
+      </Stack>
+
+      {!user ? (
+        <Alert variant="outlined" severity="info">
+          Sem login, a biblioteca usa armazenamento local deste navegador. Entre com sua conta para sincronizar projetos na nuvem.
+        </Alert>
+      ) : null}
 
       {loading ? (
-        <div className="flex justify-center p-12" role="status">
-          <div className="animate-pulse text-[var(--text-secondary)]">Carregando projetos...</div>
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-[var(--text-secondary)] glass-panel rounded-2xl border border-[var(--border)]">
-          <LibraryIcon className="w-12 h-12 mb-4 opacity-50" aria-hidden="true" />
-          <p>Sua biblioteca está vazia.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {projects.map(project => (
-            <div 
-              key={project.id}
-              className="glass-panel rounded-2xl border border-[var(--border)] overflow-hidden transition-all hover:border-[var(--border-hover)]"
-            >
-              <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  {editingId === project.id ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 max-w-sm bg-[var(--bg-base)] border border-[var(--accent)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none"
-                        autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(project.id)}
-                      />
-                      <button onClick={() => saveEdit(project.id)} className="p-1.5 text-green-400 hover:bg-green-400/10 rounded-lg"><Check className="w-4 h-4" /></button>
-                      <button onClick={() => setEditingId(null)} className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg"><X className="w-4 h-4" /></button>
-                    </div>
-                  ) : (
-                    <div className="group flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-[var(--text-primary)]">{project.name}</h3>
-                      <button onClick={() => { setEditingId(project.id); setEditName(project.name); }} className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><Edit2 className="w-4 h-4" /></button>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-secondary)] font-medium">
-                    <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> Áudio</span>
-                    <span>•</span>
-                    <time>{new Date(project.createdAt).toLocaleString()}</time>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleExpandProject(project.id)}
-                    className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-sm font-medium flex items-center gap-2 hover:bg-[var(--border)] transition-colors"
-                  >
-                    {expandedProjectId === project.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    {expandedProjectId === project.id ? 'Ocultar' : 'Ver Detalhes'}
-                  </button>
-                  <button
-                    onClick={() => setItemToDelete(project.id)}
-                    className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {expandedProjectId === project.id && (
-                <div className="border-t border-[var(--border)] bg-[var(--bg-base)]/30 p-6 space-y-8 animate-in fade-in slide-in-from-top-2">
-                  {/* Audio Section */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-[var(--accent)] uppercase tracking-widest flex items-center gap-2">
-                      <Play className="w-4 h-4" />
-                      Versões de Áudio
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {projectData.audios.map(audio => (
-                        <div key={audio.id} className="glass-panel rounded-xl p-4 border border-[var(--border)] flex flex-col gap-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{new Date(audio.createdAt).toLocaleTimeString()}</span>
-                            <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => handlePlay(audio, project.name)}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                  activeId === audio.id 
-                                    ? 'bg-[var(--accent)] text-white shadow-lg' 
-                                    : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--border)]'
-                                }`}
-                              >
-                                {isPlaying && activeId === audio.id ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
-                                  if (url) {
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${project.name}-${audio.id}.wav`;
-                                    a.click();
-                                  }
-                                }}
-                                className="w-8 h-8 rounded-full bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] flex items-center justify-center hover:text-[var(--text-primary)]"
-                              >
-                                <Download className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {projectData.audios.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Nenhum áudio encontrado.</p>}
-                    </div>
-                  </div>
-
-                  {/* Images Section */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-[var(--accent)] uppercase tracking-widest flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4" />
-                      Cenas Geradas
-                    </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {projectData.images.map((img, idx) => (
-                        <div key={img.id} className="group relative aspect-video rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg-elevated)]">
-                          <img 
-                            src={img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '')} 
-                            alt={`Cena ${idx + 1}`}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <button 
-                              onClick={() => {
-                                const url = img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '');
-                                if (url) {
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = `${project.name}-cena-${idx + 1}.png`;
-                                  a.click();
-                                }
-                              }}
-                              className="p-2 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm"
-                            >
-                              <Download className="w-3 h-3" />
-                            </button>
-                          </div>
-                          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[8px] font-mono text-white">
-                            {idx + 1}
-                          </div>
-                        </div>
-                      ))}
-                      {projectData.images.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Nenhuma imagem encontrada.</p>}
-                    </div>
-                  </div>
-
-                  {/* Script Details */}
-                  <div className="space-y-2 pt-4 border-t border-[var(--border)]">
-                    <h4 className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em]">Roteiro Original</h4>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed italic line-clamp-4 hover:line-clamp-none transition-all cursor-pointer">
-                      "{project.script}"
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+        <Grid container spacing={2.5}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Grid key={index} size={{ xs: 12 }}>
+              <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: 2.5 })}>
+                <Stack spacing={2}>
+                  <Skeleton variant="text" animation="wave" width="36%" height={34} />
+                  <Skeleton variant="text" animation="wave" width="22%" />
+                  <Skeleton variant="rounded" animation="wave" height={48} />
+                </Stack>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
+      ) : projects.length === 0 ? (
+        <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, textAlign: 'center' })}>
+          <Stack spacing={1.5} alignItems="center">
+            <Album sx={{ fontSize: 48, color: 'text.secondary' }} />
+            <Typography variant="h6">Sua biblioteca ainda está vazia</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
+              Quando você salvar áudios e cenas do estúdio, os projetos aparecem aqui com acesso rápido a downloads e histórico visual.
+            </Typography>
+          </Stack>
+        </Card>
+      ) : (
+        <Stack spacing={2}>
+          {projects.map((project: Project) => {
+            const isExpanded = expandedProjectId === project.id;
+
+            return (
+              <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), overflow: 'hidden' })}>
+                <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                  <Stack spacing={2.5}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                      <Stack spacing={1.25} sx={{ flex: 1, minWidth: 0 }}>
+                        {editingId === project.id ? (
+                          <TextField
+                            value={editName}
+                            onChange={(event: ChangeEvent<HTMLInputElement>) => setEditName(event.target.value)}
+                            autoFocus
+                            size="small"
+                            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                              if (event.key === 'Enter') {
+                                void saveEdit(project.id);
+                              }
+                            }}
+                            slotProps={{
+                              input: {
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Stack direction="row" spacing={0.5}>
+                                      <IconButton color="success" onClick={() => void saveEdit(project.id)} aria-label="Salvar nome do projeto">
+                                        <Check sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                      <IconButton onClick={() => setEditingId(null)} aria-label="Cancelar edição do nome">
+                                        <Close sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Stack>
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                          />
+                        ) : (
+                          <Stack direction="row" spacing={1} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap' }}>
+                            <Typography variant="h6" sx={{ minWidth: 0 }} noWrap>
+                              {project.name}
+                            </Typography>
+                            <Tooltip title="Renomear projeto">
+                              <IconButton
+                                onClick={() => {
+                                  setEditingId(project.id);
+                                  setEditName(project.name);
+                                }}
+                                aria-label="Renomear projeto"
+                              >
+                                <Edit sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        )}
+
+                        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                          <Chip icon={<GraphicEq sx={{ fontSize: 14 }} />} label="Áudio" size="small" variant="outlined" />
+                          <Chip icon={<ImageIcon sx={{ fontSize: 14 }} />} label="Cenas" size="small" variant="outlined" />
+                          <Chip label={new Date(project.createdAt).toLocaleString()} size="small" />
+                        </Stack>
+                      </Stack>
+
+                      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                        <Button
+                          onClick={() => void handleExpandProject(project.id)}
+                          variant={isExpanded ? 'contained' : 'outlined'}
+                            startIcon={isExpanded ? <ChevronUp sx={{ fontSize: 16 }} /> : <ChevronDown sx={{ fontSize: 16 }} />}
+                        >
+                          {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+                        </Button>
+
+                        <Button
+                          onClick={() => setItemToDelete(project.id)}
+                          color="error"
+                          variant="outlined"
+                            startIcon={<Delete sx={{ fontSize: 16 }} />}
+                        >
+                          Excluir
+                        </Button>
+                      </Stack>
+                    </Stack>
+
+                    {isExpanded ? (
+                      <Stack spacing={3}>
+                        <Grid container spacing={2.5}>
+                          <Grid size={{ xs: 12, lg: 5 }}>
+                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25, height: '100%' })}>
+                              <Stack spacing={1.5}>
+                                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
+                                  Versões de áudio
+                                </Typography>
+
+                                {projectData.audios.length === 0 ? (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Nenhum áudio encontrado neste projeto.
+                                  </Typography>
+                                ) : (
+                                  <Stack spacing={1.25}>
+                                    {projectData.audios.map((audio: AudioSource) => {
+                                      const isCurrent = activeId === audio.id;
+
+                                      return (
+                                        <Card
+                                          key={audio.id}
+                                          elevation={0}
+                                          sx={(theme): SystemStyleObject<Theme> => ({
+                                            p: 1.5,
+                                            borderRadius: 3,
+                                            bgcolor: alpha(theme.palette.common.white, 0.03),
+                                          })}
+                                        >
+                                          <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+                                            <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                                              <Typography variant="subtitle2">Versão {new Date(audio.createdAt).toLocaleTimeString()}</Typography>
+                                              <Typography variant="caption" color="text.secondary">
+                                                {new Date(audio.createdAt).toLocaleDateString()}
+                                              </Typography>
+                                            </Stack>
+
+                                            <Stack direction="row" spacing={0.75}>
+                                              <IconButton
+                                                onClick={() => handlePlay(audio)}
+                                                color={isCurrent ? 'secondary' : 'primary'}
+                                                aria-label={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}
+                                              >
+                                                {isPlaying && isCurrent ? <Pause sx={{ fontSize: 18 }} /> : <PlayArrow sx={{ fontSize: 18 }} />}
+                                              </IconButton>
+
+                                              <IconButton
+                                                onClick={() => {
+                                                  const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
+                                                  if (url) {
+                                                    void downloadFile(url, `${project.name}-${audio.id}.wav`);
+                                                  }
+                                                }}
+                                                aria-label="Baixar áudio"
+                                              >
+                                                <Download sx={{ fontSize: 16 }} />
+                                              </IconButton>
+                                            </Stack>
+                                          </Stack>
+                                        </Card>
+                                      );
+                                    })}
+                                  </Stack>
+                                )}
+                              </Stack>
+                            </Box>
+                          </Grid>
+
+                          <Grid size={{ xs: 12, lg: 7 }}>
+                            <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25, height: '100%' })}>
+                              <Stack spacing={1.5}>
+                                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
+                                  Cenas geradas
+                                </Typography>
+
+                                {projectData.images.length === 0 ? (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Nenhuma imagem encontrada neste projeto.
+                                  </Typography>
+                                ) : (
+                                  <Grid container spacing={1.5}>
+                                    {projectData.images.map((img: ProjectImage, index: number) => {
+                                      const imageSrc = img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '');
+
+                                      return (
+                                        <Grid key={img.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                                          <Card
+                                            elevation={0}
+                                            sx={(theme): SystemStyleObject<Theme> => ({
+                                              borderRadius: 3,
+                                              overflow: 'hidden',
+                                              bgcolor: alpha(theme.palette.common.white, 0.03),
+                                            })}
+                                          >
+                                            <Box
+                                              component="img"
+                                              src={imageSrc}
+                                              alt={`Cena ${index + 1}`}
+                                              loading="lazy"
+                                              sx={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
+                                            />
+                                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ p: 1.25 }}>
+                                              <Typography variant="caption" color="text.secondary">
+                                                Cena {index + 1}
+                                              </Typography>
+                                              <IconButton
+                                                onClick={() => {
+                                                  if (imageSrc) {
+                                                    void downloadFile(imageSrc, `${project.name}-cena-${index + 1}.png`);
+                                                  }
+                                                }}
+                                                aria-label={`Baixar cena ${index + 1}`}
+                                              >
+                                                <Download sx={{ fontSize: 16 }} />
+                                              </IconButton>
+                                            </Stack>
+                                          </Card>
+                                        </Grid>
+                                      );
+                                    })}
+                                  </Grid>
+                                )}
+                              </Stack>
+                            </Box>
+                          </Grid>
+                        </Grid>
+
+                        <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2.25 })}>
+                          <Stack spacing={1}>
+                            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.16em' }}>
+                              Roteiro original
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {project.script}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    ) : null}
+                  </Stack>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Stack>
       )}
 
-      {/* Modal de Confirmação de Exclusão */}
-      {itemToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-[var(--bg-base)] border border-[var(--border)] rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Confirmar Exclusão</h3>
-            <p className="text-[var(--text-secondary)] mb-6">
-              Tem certeza que deseja excluir todo o projeto? Esta ação apagará permanentemente todos os áudios e imagens vinculados a ele.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setItemToDelete(null)}
-                className="px-4 py-2 rounded-xl font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded-xl font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                Excluir Projeto
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Dialog
+        open={Boolean(itemToDelete)}
+        onClose={() => setItemToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-project-title"
+        aria-describedby="delete-project-description"
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+            },
+          },
+        }}
+      >
+        <DialogTitle id="delete-project-title">Excluir projeto?</DialogTitle>
+        <DialogContent>
+          <Typography id="delete-project-description" variant="body2" color="text.secondary">
+            Esta ação remove permanentemente o projeto, seus áudios e suas imagens associadas.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setItemToDelete(null)} color="inherit">
+            Cancelar
+          </Button>
+          <Button onClick={() => void confirmDelete()} color="error" variant="contained">
+            Excluir projeto
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
   );
 }

@@ -1,0 +1,220 @@
+import type {
+  DocumentData,
+  FirestoreDataConverter,
+  QueryDocumentSnapshot,
+  SnapshotOptions,
+  WithFieldValue,
+} from 'firebase/firestore';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, storage } from '../firebase';
+
+export const DB_NAME = 'GeminiVoiceStudioDB';
+export const DB_VERSION = 6;
+
+export const STORE_NAME = 'generations';
+export const IMAGE_STORE = 'image_generations';
+export const PROJECTS_STORE = 'projects';
+export const AUDIOS_STORE = 'audios';
+export const IMAGES_STORE = 'project_images';
+export const MEMORY_STORE = 'memories';
+export const CHAT_STORE = 'chats';
+export const SETTING_STORE = 'user_settings';
+
+const STORE_DEFINITIONS = [
+  STORE_NAME,
+  IMAGE_STORE,
+  PROJECTS_STORE,
+  AUDIOS_STORE,
+  IMAGES_STORE,
+  MEMORY_STORE,
+  CHAT_STORE,
+  SETTING_STORE,
+] as const;
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  };
+}
+
+function runRequest<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const currentUser = auth.currentUser;
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: currentUser?.uid,
+      email: currentUser?.email,
+      emailVerified: currentUser?.emailVerified,
+      isAnonymous: currentUser?.isAnonymous,
+      tenantId: currentUser?.tenantId,
+      providerInfo: currentUser?.providerData.map((provider) => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL,
+      })) ?? [],
+    },
+    operationType,
+    path,
+  };
+
+  const errorString = JSON.stringify(errInfo);
+  console.error('Firestore Error: ', errorString);
+  throw new Error(errorString);
+}
+
+export function removeUndefinedFields<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeUndefinedFields(item)) as T;
+  }
+
+  if (
+    value !== null
+    && typeof value === 'object'
+    && !(value instanceof Blob)
+    && !(value instanceof Date)
+  ) {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, entryValue]) => entryValue !== undefined)
+      .map(([key, entryValue]) => [key, removeUndefinedFields(entryValue)]);
+
+    return Object.fromEntries(entries) as T;
+  }
+
+  return value;
+}
+
+export function createFirestoreConverter<T extends DocumentData>(): FirestoreDataConverter<T> {
+  return {
+    toFirestore(modelObject: WithFieldValue<T>): DocumentData {
+      return removeUndefinedFields(modelObject as T) as DocumentData;
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData>, options: SnapshotOptions): T {
+      return snapshot.data(options) as T;
+    },
+  };
+}
+
+export const initDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const database = (event.target as IDBOpenDBRequest).result;
+
+      for (const storeName of STORE_DEFINITIONS) {
+        if (!database.objectStoreNames.contains(storeName)) {
+          database.createObjectStore(storeName, { keyPath: 'id' });
+        }
+      }
+    };
+  });
+};
+
+export async function putIndexedDbItem<T>(storeName: string, value: T): Promise<void> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  await runRequest(store.put(value));
+}
+
+export async function getAllIndexedDbItems<T>(storeName: string): Promise<T[]> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+  return runRequest(store.getAll()) as Promise<T[]>;
+}
+
+export async function getIndexedDbItem<T>(storeName: string, key: IDBValidKey): Promise<T | null> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+  const result = await runRequest(store.get(key));
+  return (result as T | undefined) ?? null;
+}
+
+export async function deleteIndexedDbItem(storeName: string, key: IDBValidKey): Promise<void> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readwrite');
+  const store = transaction.objectStore(storeName);
+  await runRequest(store.delete(key));
+}
+
+export async function updateIndexedDbItem<T>(
+  storeName: string,
+  key: IDBValidKey,
+  updater: (item: T) => T,
+): Promise<void> {
+  const database = await initDB();
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const getRequest = store.get(key);
+
+    getRequest.onerror = () => reject(getRequest.error);
+    getRequest.onsuccess = () => {
+      const currentValue = getRequest.result as T | undefined;
+
+      if (!currentValue) {
+        reject(new Error('Item not found'));
+        return;
+      }
+
+      const putRequest = store.put(updater(currentValue));
+      putRequest.onerror = () => reject(putRequest.error);
+      putRequest.onsuccess = () => resolve();
+    };
+  });
+}
+
+export async function uploadBlobAndGetUrl(
+  storagePath: string,
+  blob: Blob,
+): Promise<string> {
+  const storageRef = ref(storage, storagePath);
+
+  await uploadBytes(storageRef, blob);
+  return getDownloadURL(storageRef);
+}
+
+export async function deleteStorageObjectSafely(storagePath: string, warningMessage: string): Promise<void> {
+  try {
+    await deleteObject(ref(storage, storagePath));
+  } catch (error: unknown) {
+    console.warn(warningMessage, error);
+  }
+}
+
+export { OperationType };

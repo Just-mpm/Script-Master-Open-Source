@@ -1,133 +1,156 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardActionArea from '@mui/material/CardActionArea';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { alpha, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import AccessTime from '@mui/icons-material/AccessTime';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import Download from '@mui/icons-material/Download';
+import FolderOpen from '@mui/icons-material/FolderOpen';
+import Movie from '@mui/icons-material/Movie';
+import PlayArrow from '@mui/icons-material/PlayArrow';
 import { motion } from 'motion/react';
-import { Play, Calendar, Clock, Film, Download } from 'lucide-react';
-import { getProjects, getProjectDetails, getGenerations, Project, SavedAudio } from '../lib/db';
+import { getProjects, getProjectsDetailsMap, getGenerations } from '../lib/db';
+import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
+import { downloadFile } from '../lib/download';
+import { glassPanelSx } from '../theme/surfaces';
+
+interface VideoLibraryScene {
+  imageUrl: string;
+  timestamp: number;
+}
+
+interface VideoLibraryItem extends Project {
+  thumbnail?: string;
+  isGeneration?: boolean;
+  audioUrl?: string;
+  scenes?: VideoLibraryScene[];
+}
 
 interface VideoLibraryProps {
   onSelect: (projectId: string, audioUrl: string, scenes: { imageUrl: string; timestamp: number }[], script: string) => void;
   activeProjectId?: string | null;
 }
 
+function MetadataPill({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Box
+      sx={(theme) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.75,
+        px: 1,
+        py: 0.5,
+        borderRadius: 999,
+        backgroundColor: alpha(theme.palette.common.white, 0.05),
+        border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+      })}
+    >
+      {icon}
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
 export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<VideoLibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadProjects();
+    const loadProjects = async () => {
+      setLoading(true);
+      try {
+        const [projectsData, generationsData] = await Promise.all([
+          getProjects(user?.uid),
+          getGenerations(user?.uid),
+        ]);
+        const projectDetailsMap = await getProjectsDetailsMap(user?.uid);
+
+        const unified: VideoLibraryItem[] = [
+          ...projectsData.map((p) => ({ ...p, isGeneration: false })),
+          ...generationsData.filter((g) => g.scenes && g.scenes.length > 0).map((g) => ({
+            id: g.id,
+            name: g.name,
+            script: g.script,
+            createdAt: g.createdAt,
+            userId: g.userId,
+            isGeneration: true,
+            audioUrl: g.audioUrl,
+            scenes: g.scenes,
+            settings: {
+              selectedVoice: g.voice,
+              pace: 'normal',
+              styleNotes: '',
+              isMultiSpeaker: false,
+              speakerAName: '',
+              speakerBName: '',
+              speakerBVoice: '',
+              audioProfile: '',
+              scene: '',
+              sceneDensity: 15,
+              sceneRatio: '16:9',
+            },
+          })),
+        ];
+
+        const sorted = unified.sort((a, b) => b.createdAt - a.createdAt);
+
+        const finalItems = await Promise.all(sorted.map(async (item) => {
+          if (item.isGeneration) {
+            return {
+              ...item,
+              thumbnail: item.scenes?.[0]?.imageUrl,
+            };
+          }
+          try {
+            const details = projectDetailsMap[item.id];
+            if (!details) {
+              return item;
+            }
+            return {
+              ...item,
+              thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? URL.createObjectURL(details.images[0].imageBlob) : undefined),
+              audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? URL.createObjectURL(details.audios[0].audioBlob) : ''),
+              scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : ''), timestamp: img.timestamp })),
+            };
+          } catch {
+            return item;
+          }
+        }));
+
+        setProjects(finalItems);
+      } catch (error) {
+        console.error('Failed to load video library:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadProjects();
   }, [user]);
 
-  const loadProjects = async () => {
-    setLoading(true);
-    try {
-      const [projectsData, generationsData] = await Promise.all([
-        getProjects(user?.uid),
-        getGenerations(user?.uid)
-      ]);
-
-      // Combine and unify data
-      const unified: (Project & { thumbnail?: string; isGeneration?: boolean; audioUrl?: string; scenes?: any[] })[] = [
-        ...projectsData.map(p => ({ ...p, isGeneration: false })),
-        ...generationsData.filter(g => g.scenes && g.scenes.length > 0).map(g => ({
-          id: g.id,
-          name: g.name,
-          script: g.script,
-          createdAt: g.createdAt,
-          userId: g.userId,
-          isGeneration: true,
-          audioUrl: g.audioUrl,
-          scenes: g.scenes,
-          settings: {
-            selectedVoice: g.voice,
-            pace: 'normal',
-            styleNotes: '',
-            isMultiSpeaker: false,
-            speakerAName: '',
-            speakerBName: '',
-            speakerBVoice: '',
-            audioProfile: '',
-            scene: '',
-            sceneDensity: 15,
-            sceneRatio: '16:9'
-          }
-        }))
-      ];
-
-      // Sort by date
-      const sorted = unified.sort((a, b) => b.createdAt - a.createdAt);
-      
-      // Fetch details/thumbnails
-      const finalItems = await Promise.all(sorted.map(async (item) => {
-        if (item.isGeneration) {
-           return {
-             ...item,
-             thumbnail: item.scenes?.[0]?.imageUrl
-           };
-        }
-        try {
-          const details = await getProjectDetails(item.id, user?.uid);
-          return {
-            ...item,
-            thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? URL.createObjectURL(details.images[0].imageBlob) : undefined),
-            audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? URL.createObjectURL(details.audios[0].audioBlob) : ''),
-            scenes: details.images.map(img => ({ imageUrl: img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : ''), timestamp: img.timestamp }))
-          };
-        } catch {
-          return item;
-        }
-      }));
-
-      setProjects(finalItems);
-    } catch (error) {
-      console.error('Failed to load video library:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadFile = async (url: string, filename: string) => {
-    try {
-      if (url.startsWith('blob:') || url.startsWith('data:')) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        return;
-      }
-
-      // Usando o nosso próprio proxy do backend para evitar os bloqueios de CORS do Storage
-      const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) throw new Error('Proxy falhou');
-      
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('Download failed:', err);
-      // Fallback
-      if (url.startsWith('blob:') || url.startsWith('data:')) return;
-      const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-      const a = document.createElement('a');
-      a.href = proxyUrl;
-      a.download = filename;
-      a.target = "_blank";
-      a.click();
-    }
-  };
-
-  const handleDownloadSequence = async (e: React.MouseEvent, item: any) => {
+  const handleDownloadSequence = async (e: React.MouseEvent, item: VideoLibraryItem) => {
     e.stopPropagation();
     if (downloadingId) return;
     
@@ -137,7 +160,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     try {
       // 1. Download Audio
       if (item.audioUrl) {
-        await downloadFile(item.audioUrl, `${safeName}-audio.wav`);
+          await downloadFile(item.audioUrl, `${safeName}-audio.wav`);
       }
 
       // 2. Download Images
@@ -154,7 +177,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     }
   };
 
-  const handleSelect = async (item: any) => {
+  const handleSelect = async (item: VideoLibraryItem) => {
     if (item.audioUrl && item.scenes) {
       onSelect(item.id, item.audioUrl, item.scenes, item.script);
     }
@@ -162,106 +185,198 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="min-w-[200px] h-28 bg-[var(--bg-elevated)] animate-pulse rounded-2xl" />
+      <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1.5 }}>
+        {[1, 2, 3].map((index) => (
+          <Stack key={index} spacing={1.25} sx={{ minWidth: 280 }}>
+            <Skeleton variant="rounded" animation="wave" width={280} height={158} />
+            <Skeleton variant="text" animation="wave" sx={{ fontSize: '1rem' }} />
+            <Skeleton variant="text" animation="wave" width="75%" />
+          </Stack>
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (projects.length === 0) {
-    return null;
+    return (
+      <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 } })}>
+        <Stack spacing={1.5} alignItems="center" textAlign="center">
+          <Box
+            sx={(theme) => ({
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              backgroundColor: alpha(theme.palette.common.white, 0.05),
+              border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+            })}
+          >
+            <FolderOpen sx={{ fontSize: 28, opacity: 0.35 }} />
+          </Box>
+          <Stack spacing={0.75}>
+            <Typography variant="h6">Sua galeria ainda está vazia</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Assim que você gerar projetos com áudio e cenas, eles aparecerão aqui para revisão e download.
+            </Typography>
+          </Stack>
+        </Stack>
+      </Paper>
+    );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between px-2">
-         <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em] flex items-center gap-2">
-           <Film className="w-3.5 h-3.5" />
-           Sua Galeria
-         </h3>
-      </div>
-      
-      <div className="flex items-center gap-4 overflow-x-auto pb-6 pt-1 px-1 no-scrollbar -mx-1">
-        {projects.map((project) => (
-          <motion.div
-            key={project.id}
-            whileHover={{ y: -4 }}
-            className={`flex-shrink-0 w-64 text-left glass-panel rounded-2xl border transition-all overflow-hidden group/card relative ${
-              activeProjectId === project.id 
-                ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]/50 shadow-[0_10px_25px_var(--accent-glow)]' 
-                : 'border-[var(--border)] hover:border-[var(--border-hover)] bg-[var(--bg-surface)]'
-            }`}
-          >
-            {/* Clickable Area for Selection */}
-            <div 
-              onClick={() => handleSelect(project)}
-              className="cursor-pointer"
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-video w-full bg-[var(--bg-elevated)] overflow-hidden">
-                 {project.thumbnail ? (
-                   <img 
-                     src={project.thumbnail} 
-                     alt={project.name}
-                     className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
-                     referrerPolicy="no-referrer"
-                   />
-                 ) : (
-                   <div className="w-full h-full flex items-center justify-center">
-                     <Film className="w-8 h-8 text-[var(--text-tertiary)] opacity-20" />
-                   </div>
-                 )}
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
-                 
-                 <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-[var(--accent)] text-white scale-0 group-hover/card:scale-100 transition-transform">
-                    <Play className="w-3 h-3 fill-current" />
-                 </div>
-              </div>
+    <Stack spacing={2.25}>
+      <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="space-between" useFlexGap sx={{ flexWrap: 'wrap' }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Movie sx={{ fontSize: 16 }} />
+          <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
+            Sua galeria
+          </Typography>
+        </Stack>
 
-              <div className="p-4 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className={`text-sm font-bold truncate ${activeProjectId === project.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                    {project.name}
-                  </h4>
-                </div>
-                
-                <p className="text-[10px] text-[var(--text-tertiary)] line-clamp-2 italic mb-3 opacity-60">
-                  "{project.script}"
-                </p>
-                
-                <div className="flex items-center gap-3 pt-2 border-t border-[var(--border)]/50">
-                  <div className="flex items-center gap-1 text-[9px] text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded-md">
-                     <Calendar className="w-2.5 h-2.5" />
-                     {new Date(project.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1 text-[9px] text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded-md">
-                     <Clock className="w-2.5 h-2.5" />
-                     {new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-              </div>
-            </div>
+        <Chip label={`${projects.length} itens`} size="small" variant="outlined" />
+      </Stack>
 
-            {/* Quick Actions Overlay (Not affected by main click) */}
-            <div className="absolute top-2 right-2 flex flex-col gap-2">
-              <button 
-                onClick={(e) => handleDownloadSequence(e, project)}
-                disabled={downloadingId === project.id}
-                className={`p-1.5 rounded-full backdrop-blur-md border border-white/10 transition-all ${
-                  downloadingId === project.id 
-                    ? 'bg-[var(--accent)] text-white animate-pulse' 
-                    : 'bg-black/40 hover:bg-[var(--accent)] text-white opacity-0 group-hover/card:opacity-100'
-                }`}
-                title="Sincronizar e baixar todos os arquivos"
-              >
-                <Download className={`w-3.5 h-3.5 ${downloadingId === project.id ? 'animate-bounce' : ''}`} />
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+      <Box sx={{ overflowX: 'auto', pb: 1.5, mx: -0.5, px: 0.5 }}>
+        <Stack direction="row" spacing={2} useFlexGap sx={{ minWidth: 'max-content', pr: 0.5 }}>
+          {projects.map((project) => {
+            const isActive = activeProjectId === project.id;
+            const canSelect = Boolean(project.audioUrl && project.scenes);
+
+            return (
+              <motion.div key={project.id} whileHover={{ y: -4 }} style={{ minWidth: 280, maxWidth: 280 }}>
+                <Card
+                  sx={(theme): SystemStyleObject<Theme> => ({
+                    position: 'relative',
+                    height: '100%',
+                    overflow: 'hidden',
+                    borderRadius: 4,
+                    border: `1px solid ${isActive ? alpha(theme.palette.primary.main, 0.6) : alpha(theme.palette.common.white, 0.08)}`,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.82),
+                    backgroundImage: 'none',
+                    boxShadow: isActive
+                      ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.32)}, 0 24px 60px ${alpha(theme.palette.primary.main, 0.18)}`
+                      : `0 20px 48px ${alpha(theme.palette.common.black, 0.22)}`,
+                    backdropFilter: 'blur(18px)',
+                  })}
+                >
+                  <CardActionArea onClick={() => handleSelect(project)} disabled={!canSelect} sx={{ height: '100%', alignItems: 'stretch' }}>
+                    <Box sx={{ position: 'relative', aspectRatio: '16 / 9', backgroundColor: 'action.hover', overflow: 'hidden' }}>
+                      {project.thumbnail ? (
+                        <Box
+                          component="img"
+                          src={project.thumbnail}
+                          alt={project.name}
+                          referrerPolicy="no-referrer"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.5s ease',
+                            '.MuiCardActionArea-root:hover &': {
+                              transform: 'scale(1.06)',
+                            },
+                          }}
+                        />
+                      ) : (
+                        <Stack sx={{ width: '100%', height: '100%' }} alignItems="center" justifyContent="center">
+                          <Movie sx={{ fontSize: 32, opacity: 0.25 }} />
+                        </Stack>
+                      )}
+
+                      <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.66) 100%)' }} />
+
+                      <Chip
+                        label={project.isGeneration ? 'Geração' : 'Projeto'}
+                        size="small"
+                        color={project.isGeneration ? 'primary' : 'default'}
+                        sx={{ position: 'absolute', top: 12, left: 12 }}
+                      />
+
+                      <Box
+                        sx={(theme) => ({
+                          position: 'absolute',
+                          right: 12,
+                          bottom: 12,
+                          width: 38,
+                          height: 38,
+                          borderRadius: '50%',
+                          display: 'grid',
+                          placeItems: 'center',
+                          backgroundColor: isActive ? theme.palette.primary.main : alpha(theme.palette.common.black, 0.44),
+                          color: isActive ? theme.palette.primary.contrastText : theme.palette.common.white,
+                          border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+                        })}
+                      >
+                        <PlayArrow sx={{ fontSize: 16 }} />
+                      </Box>
+                    </Box>
+
+                    <CardContent sx={{ p: 2.25 }}>
+                      <Stack spacing={1.25}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: isActive ? 'primary.main' : 'text.primary' }} noWrap>
+                          {project.name}
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            minHeight: 40,
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 2,
+                            overflow: 'hidden',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          “{project.script}”
+                        </Typography>
+
+                        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', pt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                          <MetadataPill icon={<CalendarMonth sx={{ fontSize: 12 }} />} label={new Date(project.createdAt).toLocaleDateString()} />
+                          <MetadataPill icon={<AccessTime sx={{ fontSize: 12 }} />} label={new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
+                        </Stack>
+                      </Stack>
+                    </CardContent>
+                  </CardActionArea>
+
+                  <Tooltip title="Sincronizar e baixar todos os arquivos">
+                    <span>
+                      <IconButton
+                        onClick={(event) => handleDownloadSequence(event, project)}
+                        disabled={downloadingId === project.id}
+                        aria-label={`Baixar arquivos do projeto ${project.name}`}
+                      sx={(theme): SystemStyleObject<Theme> => ({
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                          zIndex: 2,
+                          width: 38,
+                          height: 38,
+                          backgroundColor: downloadingId === project.id
+                            ? theme.palette.primary.main
+                            : alpha(theme.palette.common.black, 0.42),
+                          color: theme.palette.common.white,
+                          backdropFilter: 'blur(12px)',
+                          '&:hover': {
+                            backgroundColor: downloadingId === project.id
+                              ? theme.palette.primary.dark
+                              : alpha(theme.palette.primary.main, 0.72),
+                          },
+                      })}
+                      >
+                        {downloadingId === project.id ? <CircularProgress size={18} color="inherit" /> : <Download sx={{ fontSize: 16 }} />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </Stack>
+      </Box>
+    </Stack>
   );
 }

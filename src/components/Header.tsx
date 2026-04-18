@@ -1,116 +1,179 @@
-import React from 'react';
-import { Mic, Sparkles, Library, LogIn, LogOut, User, Image as ImageIcon, PlayCircle } from 'lucide-react';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import AppBar from '@mui/material/AppBar';
+import type { ElementType } from 'react';
+import ImageIcon from '@mui/icons-material/Image';
+import LocalLibrary from '@mui/icons-material/LocalLibrary';
+import Login from '@mui/icons-material/Login';
+import Logout from '@mui/icons-material/Logout';
+import Mic from '@mui/icons-material/Mic';
+import Person from '@mui/icons-material/Person';
+import PlayCircle from '@mui/icons-material/PlayCircle';
+import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { glassSurfaceSx } from '../theme/surfaces';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ElementType;
+  accent?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { to: '/', label: 'Estúdio', icon: Mic },
+  { to: '/image', label: 'Imagem', icon: ImageIcon },
+  { to: '/video', label: 'Vídeo', icon: PlayCircle },
+  { to: '/assistant', label: 'IA', icon: Sparkles, accent: true },
+  { to: '/library', label: 'Biblioteca', icon: LocalLibrary },
+];
 
 export function Header() {
-  const { user, login, logout } = useAuth();
+  const { user, loading, login, logout } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
 
   return (
-    <header className="h-16 border-b border-[var(--border)] flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40 glass-panel" role="banner">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full accent-gradient flex items-center justify-center shadow-[0_0_15px_var(--accent-glow)]" aria-hidden="true">
-          <Mic className="w-4 h-4 text-white" />
-        </div>
-        <h1 className="text-sm font-bold tracking-tight text-gradient hidden lg:block">Script Master</h1>
-      </div>
-      
-      <nav className="flex items-center gap-1 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] overflow-x-auto no-scrollbar max-w-[60%] sm:max-w-none" aria-label="Navegação principal">
-        <Link
-          to="/"
-          aria-current={currentPath === '/' ? 'page' : undefined}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-            currentPath === '/' 
-              ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]' 
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
-          }`}
-        >
-          <Mic className="w-3.5 h-3.5 hidden sm:block" aria-hidden="true" />
-          Estúdio
-        </Link>
-        <Link
-          to="/image"
-          aria-current={currentPath === '/image' ? 'page' : undefined}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-            currentPath === '/image' 
-              ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]' 
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
-          }`}
-        >
-          <ImageIcon className="w-3.5 h-3.5 hidden sm:block" aria-hidden="true" />
-          Imagem
-        </Link>
-        <Link
-          to="/video"
-          aria-current={currentPath === '/video' ? 'page' : undefined}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-            currentPath === '/video' 
-              ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]' 
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
-          }`}
-        >
-          <PlayCircle className="w-3.5 h-3.5 hidden sm:block" aria-hidden="true" />
-          Vídeo
-        </Link>
-        <Link
-          to="/assistant"
-          aria-current={currentPath === '/assistant' ? 'page' : undefined}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-            currentPath === '/assistant' 
-              ? 'bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]' 
-              : 'text-[var(--text-secondary)] hover:text-[var(--accent)] border border-transparent'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 hidden sm:block" aria-hidden="true" />
-          IA
-        </Link>
-        <Link
-          to="/library"
-          aria-current={currentPath === '/library' ? 'page' : undefined}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-            currentPath === '/library' 
-              ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]' 
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
-          }`}
-        >
-          <Library className="w-3.5 h-3.5 hidden sm:block" aria-hidden="true" />
-          Biblioteca
-        </Link>
-      </nav>
-
-      <div className="flex items-center gap-2 sm:gap-4">
-        {user ? (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)]">
-              {user.photoURL ? (
-                <img src={user.photoURL} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
-              ) : (
-                <User className="w-4 h-4 text-[var(--text-secondary)]" />
-              )}
-              <span className="text-xs font-medium text-[var(--text-secondary)] hidden lg:inline-block">
-                {user.displayName?.split(' ')[0]}
-              </span>
-            </div>
-            <button
-              onClick={logout}
-              className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors"
-              title="Sair"
+    <AppBar position="sticky" component="header" role="banner">
+      <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
+        <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1.5, md: 2 } }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flexShrink: 0 }}>
+            <Box
+              aria-hidden="true"
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                color: 'common.white',
+                background: BRAND_GRADIENT,
+                boxShadow: '0 18px 40px rgba(34, 211, 238, 0.28)',
+              }}
             >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={login}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors shadow-lg shadow-[var(--accent-glow)]"
+              <Mic sx={{ fontSize: 18 }} />
+            </Box>
+
+            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+              <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1 }}>
+                AI Studio
+              </Typography>
+              <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
+                Script Master
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Paper
+            component="nav"
+            variant="outlined"
+            aria-label="Navegação principal"
+            sx={(theme) => ({
+              ...glassSurfaceSx(theme),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 0.75,
+              py: 0.75,
+              borderRadius: 999,
+              overflowX: 'auto',
+              flex: 1,
+              minWidth: 0,
+              '&::-webkit-scrollbar': {
+                display: 'none',
+              },
+              scrollbarWidth: 'none',
+            })}
           >
-            <LogIn className="w-4 h-4" />
-            <span>Login</span>
-          </button>
-        )}
-      </div>
-    </header>
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPath === item.to;
+
+              return (
+                <Button
+                  key={item.to}
+                  href={item.to}
+                  aria-current={isActive ? 'page' : undefined}
+                  variant={isActive ? 'contained' : 'text'}
+                  color={item.accent && isActive ? 'secondary' : 'primary'}
+                  sx={{
+                    flexShrink: 0,
+                    px: { xs: 1.25, sm: 1.75 },
+                    color: isActive ? 'common.white' : item.accent ? 'secondary.light' : 'text.secondary',
+                    bgcolor: isActive && !item.accent ? 'action.hover' : undefined,
+                    '&:hover': {
+                      bgcolor: isActive
+                        ? item.accent
+                          ? 'secondary.dark'
+                          : 'action.hover'
+                        : 'action.hover',
+                    },
+                    '& .MuiButton-startIcon': {
+                      display: { xs: 'none', sm: 'inline-flex' },
+                      mr: { sm: 1 },
+                    },
+                  }}
+                  startIcon={<Icon sx={{ fontSize: 16 }} aria-hidden="true" />}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Paper>
+
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexShrink: 0 }}>
+            {!loading && (user ? (
+              <>
+                <Paper
+                  variant="outlined"
+                  sx={(theme) => ({
+                    ...glassSurfaceSx(theme),
+                    px: { xs: 1, sm: 1.5 },
+                    py: 0.75,
+                    borderRadius: 999,
+                  })}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Avatar
+                      alt={user.displayName ?? 'Usuário'}
+                      src={user.photoURL ?? undefined}
+                      sx={{ width: 28, height: 28, bgcolor: 'action.hover' }}
+                    >
+                      {!user.photoURL && <Person sx={{ fontSize: 14 }} />}
+                    </Avatar>
+                    <Typography
+                      variant="body2"
+                      sx={{ display: { xs: 'none', lg: 'block' }, color: 'text.secondary', fontWeight: 600 }}
+                    >
+                      {user.displayName?.split(' ')[0] ?? 'Conta'}
+                    </Typography>
+                  </Stack>
+                </Paper>
+
+                <Tooltip title="Sair">
+                  <IconButton onClick={logout} color="error" aria-label="Sair">
+                    <Logout sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Button onClick={login} variant="contained" startIcon={<Login sx={{ fontSize: 16 }} />}>
+                Login
+              </Button>
+            ))}
+          </Stack>
+        </Toolbar>
+      </Container>
+    </AppBar>
   );
 }

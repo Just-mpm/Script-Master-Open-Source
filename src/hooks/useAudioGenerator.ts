@@ -4,6 +4,7 @@ import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/au
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
 import { generateScenePrompts, generateImageFromPrompt } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
+import { getGeminiApiKey } from '../lib/env';
 
 interface GenerateOptions {
   userId?: string;
@@ -46,7 +47,16 @@ export function useAudioGenerator() {
   };
   
   const cancelRef = useRef(false);
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+  const lastSuccessfulStateRef = useRef<{
+    audioUrl: string | null;
+    audioBlob: Blob | null;
+    scenes: { imageUrl: string; timestamp: number }[];
+  }>({
+    audioUrl: null,
+    audioBlob: null,
+    scenes: [],
+  });
 
   // Cleanup object URL to prevent memory leaks when component unmounts or url changes
   useEffect(() => {
@@ -59,6 +69,12 @@ export function useAudioGenerator() {
 
   const handleCancel = () => {
     cancelRef.current = true;
+  };
+
+  const restoreLastSuccessfulState = () => {
+    setAudioUrl(lastSuccessfulStateRef.current.audioUrl);
+    setAudioBlob(lastSuccessfulStateRef.current.audioBlob);
+    setScenes(lastSuccessfulStateRef.current.scenes);
   };
 
   const generateAudio = async (options: GenerateOptions, onStart?: () => void) => {
@@ -111,19 +127,19 @@ export function useAudioGenerator() {
     
     if (onStart) onStart();
 
-    // Revoke previous URL to free memory before creating a new one
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-    }
+    const previousState = {
+      audioUrl,
+      audioBlob,
+      scenes,
+    };
+    lastSuccessfulStateRef.current = previousState;
     setAudioUrl(null);
     setAudioBlob(null);
     setScenes([]);
 
-    try {
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('Chave da API do Gemini não configurada. Verifique as configurações de ambiente.');
-      }
+    let generatedAudioUrl: string | null = null;
 
+    try {
       let chunks: string[] = [];
 
       const splitTextProgrammatically = (text: string, limit: number): string[] => {
@@ -236,14 +252,14 @@ export function useAudioGenerator() {
           `#### TRANSCRIÇÃO\n${chunk}`
         ].filter(Boolean).join('\n\n');
 
-        let base64Audio = null;
+        let base64Audio: string | null = null;
         let retries = 0;
         const MAX_RETRIES = 3;
 
         while (retries < MAX_RETRIES && !base64Audio) {
           if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
           try {
-            const speechConfig: any = isMultiSpeaker ? {
+            const speechConfig = isMultiSpeaker ? {
               multiSpeakerVoiceConfig: {
                  speakerVoiceConfigs: [
                     {
@@ -271,16 +287,20 @@ export function useAudioGenerator() {
               },
             });
 
-            base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ?? null;
             
             if (!base64Audio) {
               throw new Error('O modelo retornou texto em vez de áudio (comportamento intermitente conhecido).');
             }
-          } catch (chunkErr: any) {
+          } catch (chunkErr: unknown) {
             retries++;
             console.warn(`Tentativa ${retries} falhou para a parte ${i + 1}:`, chunkErr);
+            const chunkErrorMessage = chunkErr instanceof Error ? chunkErr.message : 'Erro desconhecido';
             if (retries >= MAX_RETRIES) {
-              throw new Error(`Falha ao gerar a parte ${i + 1} após ${MAX_RETRIES} tentativas. Erro: ${chunkErr.message}`);
+              throw new Error(
+                `Falha ao gerar a parte ${i + 1} após ${MAX_RETRIES} tentativas. Erro: ${chunkErrorMessage}`,
+                { cause: chunkErr },
+              );
             }
             setStatusText(`Falha na parte ${i + 1}, tentando novamente (${retries}/${MAX_RETRIES})...`);
             await new Promise(r => setTimeout(r, 1500)); // Wait before retry
@@ -309,6 +329,7 @@ export function useAudioGenerator() {
 
       const wavBlob = createWavBlob(combinedPcm, 24000);
       const url = URL.createObjectURL(wavBlob);
+      generatedAudioUrl = url;
       setAudioBlob(wavBlob);
       setAudioUrl(url);
 
@@ -376,13 +397,34 @@ export function useAudioGenerator() {
           }
           updateProgress(stepPerScene * 0.8);
         }
-        
+
         setScenes(generatedScenes);
+        lastSuccessfulStateRef.current = {
+          audioUrl: url,
+          audioBlob: wavBlob,
+          scenes: generatedScenes,
+        };
+      } else {
+        lastSuccessfulStateRef.current = {
+          audioUrl: url,
+          audioBlob: wavBlob,
+          scenes: [],
+        };
+      }
+
+      if (previousState.audioUrl && previousState.audioUrl.startsWith('blob:') && previousState.audioUrl !== url) {
+        URL.revokeObjectURL(previousState.audioUrl);
       }
       
       setGenerationProgress(100);
-    } catch (err: any) {
-      if (err.message === 'Geração cancelada pelo usuário.') {
+    } catch (err: unknown) {
+      const errorMessageText = err instanceof Error ? err.message : 'Ocorreu um erro inesperado ao gerar o áudio.';
+
+      if (errorMessageText === 'Geração cancelada pelo usuário.') {
+        if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(generatedAudioUrl);
+        }
+        restoreLastSuccessfulState();
         setIsGenerating(false);
         setStatusText('');
         return;
@@ -391,14 +433,18 @@ export function useAudioGenerator() {
       console.error('Error generating audio:', err);
       let errorMessage = 'Ocorreu um erro inesperado ao gerar o áudio.';
       
-      if (err.message?.includes('quota')) {
+      if (errorMessageText.includes('quota')) {
         errorMessage = 'Limite de cota excedido. Tente novamente mais tarde.';
-      } else if (err.message?.includes('API key') || err.message?.includes('key not valid')) {
+      } else if (errorMessageText.includes('API key') || errorMessageText.includes('key not valid')) {
         errorMessage = 'Erro de autenticação. Verifique sua chave de API.';
-      } else if (err.message) {
+      } else if (err instanceof Error && err.message) {
         errorMessage = err.message;
       }
       
+      if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(generatedAudioUrl);
+      }
+      restoreLastSuccessfulState();
       setError(errorMessage);
       setTimeout(() => setError(''), 8000); // Auto-dismiss after 8 seconds
     } finally {

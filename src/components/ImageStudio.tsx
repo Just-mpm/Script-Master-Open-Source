@@ -1,21 +1,55 @@
-import React, { useState, useRef } from 'react';
-import { Image as ImageIcon, Upload, X, Download, Sparkles, Loader2, Save, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import FormControl from '@mui/material/FormControl';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import Check from '@mui/icons-material/Check';
+import ChevronDown from '@mui/icons-material/ExpandMore';
+import ChevronUp from '@mui/icons-material/ExpandLess';
+import CloudUpload from '@mui/icons-material/CloudUpload';
+import Close from '@mui/icons-material/Close';
+import Download from '@mui/icons-material/Download';
+import ImageIcon from '@mui/icons-material/Image';
+import Save from '@mui/icons-material/Save';
+import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useImageGenerator } from '../hooks/useImageGenerator';
 import { saveImageGeneration } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
+import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
+import { SHADOW_IMAGE } from '../theme/tokens';
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Quadrado (1:1)' },
   { id: '16:9', label: 'Paisagem (16:9)' },
   { id: '9:16', label: 'Retrato (9:16)' },
   { id: '4:3', label: 'Clássico (4:3)' },
-  { id: '3:4', label: 'Retrato Clássico (3:4)' },
+  { id: '3:4', label: 'Retrato clássico (3:4)' },
   { id: '3:2', label: 'Foto (3:2)' },
-  { id: '2:3', label: 'Foto Retrato (2:3)' },
+  { id: '2:3', label: 'Foto retrato (2:3)' },
   { id: '21:9', label: 'Cinemático (21:9)' },
-];
+] as const;
 
 export function ImageStudio() {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const { user } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
@@ -24,256 +58,286 @@ export function ImageStudio() {
   const [isSaved, setIsSaved] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    isGenerating,
-    imageUrl,
-    imageBlob,
-    error,
-    setError,
-    generateImage,
-    clearImage
-  } = useImageGenerator();
+  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage } = useImageGenerator();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setReferenceImage(file);
-      setReferencePreview(URL.createObjectURL(file));
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
     }
+
+    setReferenceImage(file);
+    setReferencePreview(URL.createObjectURL(file));
   };
 
   const clearReference = () => {
     setReferenceImage(null);
     setReferencePreview(null);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const handleGenerate = () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      return;
+    }
+
     setIsSaved(false);
-    generateImage({
+    void generateImage({
       prompt,
       aspectRatio,
-      referenceImage: referenceImage || undefined
+      referenceImage: referenceImage || undefined,
     });
   };
 
   const handleDownload = () => {
-    if (imageUrl) {
-      const a = document.createElement('a');
-      a.href = imageUrl;
-      a.download = `imagem-gerada-${new Date().getTime()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+    if (!imageUrl) {
+      return;
     }
+
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `imagem-gerada-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSaveToLibrary = async () => {
-    if (!imageBlob || isSaved) return;
+    if (!imageBlob || isSaved) {
+      return;
+    }
+
     try {
       const newItem = {
         id: crypto.randomUUID(),
         name: `Imagem - ${new Date().toLocaleDateString()}`,
         createdAt: Date.now(),
-        imageBlob: imageBlob,
+        imageBlob,
         prompt,
-        aspectRatio
+        aspectRatio,
       };
-      
+
       await saveImageGeneration(newItem, user?.uid);
       setIsSaved(true);
-      setSuccessMsg(user ? 'Imagem salva na nuvem com sucesso!' : 'Imagem salva na biblioteca local!');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err) {
-      console.error(err);
+      setSuccessMsg(user ? 'Imagem salva na nuvem com sucesso.' : 'Imagem salva na biblioteca local.');
+      window.setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (saveError) {
+      console.error(saveError);
       setError('Erro ao salvar na biblioteca.');
     }
   };
 
+  const isSidebarOpen = isDesktop || !isSidebarCollapsed;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-      {/* Sidebar - Configurações */}
-      <div className="lg:col-span-4 xl:col-span-3">
-        <div className="glass-panel rounded-2xl overflow-hidden border border-[var(--border)]">
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="w-full flex items-center justify-between p-6 lg:cursor-default"
+    <Grid container spacing={{ xs: 3, lg: 4 }}>
+      <Grid size={{ xs: 12, lg: 4, xl: 3.5 }}>
+          <Paper elevation={0} sx={glassPanelSx}>
+          <Button
+            onClick={() => {
+              if (!isDesktop) {
+                setIsSidebarCollapsed((previous) => !previous);
+              }
+            }}
+            color="inherit"
+            fullWidth
+            sx={{ justifyContent: 'space-between', px: 3, py: 2.5, borderRadius: 0 }}
+            endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: 18 }} /> : <ChevronDown sx={{ fontSize: 18 }} />) : undefined}
           >
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-[var(--accent)]" />
-              Configurações
-            </h2>
-            <div className="lg:hidden">
-              {isSidebarCollapsed ? (
-                <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-                  <span>{aspectRatio}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              ) : <ChevronUp className="w-4 h-4" />}
-            </div>
-          </button>
+            <Stack spacing={0.6} sx={{ textAlign: 'left' }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <ImageIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
+                <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                  Estúdio de imagem
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                Ajuste formato, referência visual e contexto antes de gerar.
+              </Typography>
+            </Stack>
+          </Button>
 
-          <div className={`p-6 pt-0 space-y-6 ${isSidebarCollapsed ? 'hidden lg:block' : 'block'}`}>
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                Proporção (Aspect Ratio)
-              </label>
-              <select
-                value={aspectRatio}
-                onChange={(e) => setAspectRatio(e.target.value)}
+          <Collapse in={isSidebarOpen} timeout="auto">
+            <Stack spacing={2.5} sx={{ px: 3, pb: 3 }}>
+                <Box sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
+                <Stack spacing={2}>
+                  <FormControl fullWidth>
+                    <InputLabel id="image-studio-ratio">Proporção</InputLabel>
+                    <Select
+                      labelId="image-studio-ratio"
+                      value={aspectRatio}
+                      label="Proporção"
+                      onChange={(event) => setAspectRatio(event.target.value)}
+                      disabled={isGenerating}
+                    >
+                      {ASPECT_RATIOS.map((ratio) => (
+                        <MenuItem key={ratio.id} value={ratio.id}>
+                          {ratio.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle2">Imagem de referência</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Útil para manter personagens, composição ou estilo visual entre gerações.
+                    </Typography>
+
+                    {referencePreview ? (
+                      <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                        <Box component="img" src={referencePreview} alt="Imagem de referência" sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
+                        <Tooltip title="Remover referência">
+                          <IconButton
+                            onClick={clearReference}
+                            aria-label="Remover referência"
+                          sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'background.default' }}
+                          >
+                            <Close sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Card>
+                    ) : (
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        variant="outlined"
+                        startIcon={<CloudUpload sx={{ fontSize: 16 }} />}
+                        sx={{ borderStyle: 'dashed', minHeight: 56 }}
+                      >
+                        Enviar imagem de referência
+                      </Button>
+                    )}
+                  </Stack>
+
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden />
+
+                  <Alert variant="outlined" severity="info">
+                    Quanto mais específico o prompt, melhor a hierarquia visual, a iluminação e a fidelidade do resultado.
+                  </Alert>
+                </Stack>
+              </Box>
+            </Stack>
+          </Collapse>
+        </Paper>
+      </Grid>
+
+      <Grid size={{ xs: 12, lg: 8, xl: 8.5 }}>
+        <Stack spacing={2.5}>
+          <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...glassPanelSx(currentTheme), p: { xs: 2.5, md: 3 }, minHeight: { xs: 'auto', lg: 'calc(100vh - 12rem)' } })}>
+            <Stack spacing={2.5} sx={{ height: '100%' }}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                <Stack spacing={0.75}>
+                  <Typography variant="h4">Criação visual com mais clareza</Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
+                    Uma superfície mais limpa para escrever prompts, revisar resultados e salvar o que vale reaproveitar.
+                  </Typography>
+                </Stack>
+
+                <Chip icon={<ImageIcon sx={{ fontSize: 16 }} />} label={aspectRatio} color="primary" variant="outlined" />
+              </Stack>
+
+              <TextField
+                multiline
+                minRows={5}
+                maxRows={10}
+                fullWidth
+                label="Prompt da imagem"
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                placeholder="Descreva a composição, o clima, a iluminação, o enquadramento e o estilo visual desejado."
                 disabled={isGenerating}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
-              >
-                {ASPECT_RATIOS.map(ratio => (
-                  <option key={ratio.id} value={ratio.id}>{ratio.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                Imagem de Referência (Opcional)
-              </label>
-              <p className="text-xs text-[var(--text-tertiary)] mb-3">
-                Use para edição (Image-to-Image) ou transferência de estilo.
-              </p>
-              
-              {referencePreview ? (
-                <div className="relative rounded-xl overflow-hidden border border-[var(--border)] h-32 bg-[var(--bg-base)] flex items-center justify-center">
-                  <img src={referencePreview} alt="Referência" className="max-w-full max-h-full object-contain" />
-                  <button
-                    onClick={clearReference}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-red-500/80 transition-colors backdrop-blur-sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-[var(--border)] rounded-xl p-6 flex flex-col items-center justify-center gap-2 text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-colors cursor-pointer bg-[var(--bg-base)]"
-                >
-                  <Upload className="w-6 h-6" />
-                  <span className="text-sm text-center">Clique para enviar uma imagem</span>
-                </div>
-              )}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
               />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Area - Prompt e Preview */}
-      <div className="lg:col-span-8 xl:col-span-9 space-y-6">
-        <div className="glass-panel rounded-2xl p-6 border border-[var(--border)] flex flex-col h-full min-h-[600px]">
-          
-          {/* Prompt Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-              O que você quer gerar?
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Descreva a imagem em detalhes. Ex: Um gato fofo usando um chapéu de mago, estilo aquarela..."
-              className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-4 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none h-32"
-              disabled={isGenerating}
-            />
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:hover:bg-[var(--accent)] shadow-lg shadow-[var(--accent-glow)]"
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !prompt.trim()}
+                  variant="contained"
+                  size="large"
+                  startIcon={<Sparkles sx={{ fontSize: 16 }} />}
+                >
+                  {isGenerating ? 'Gerando imagem...' : 'Gerar imagem'}
+                </Button>
+              </Stack>
+
+              <Box
+                sx={(currentTheme) => ({
+                  ...insetPanelSx(currentTheme),
+                  flex: 1,
+                  minHeight: { xs: 320, md: 420 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: { xs: 2, md: 3 },
+                  overflow: 'hidden',
+                })}
               >
                 {isGenerating ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Gerando...
-                  </>
+                  <Stack spacing={2} alignItems="center" sx={{ width: '100%', maxWidth: 560 }}>
+                    <Skeleton variant="rounded" animation="wave" width="100%" height={320} />
+                    <Skeleton variant="text" animation="wave" width="34%" />
+                  </Stack>
+                ) : imageUrl ? (
+                  <Stack spacing={2} sx={{ width: '100%', height: '100%' }}>
+                    <Box
+                      component="img"
+                      src={imageUrl}
+                      alt="Imagem gerada"
+                      sx={{
+                        width: '100%',
+                        maxHeight: { xs: 360, md: 520 },
+                        objectFit: 'contain',
+                        borderRadius: 3,
+                        boxShadow: `0 30px 80px ${SHADOW_IMAGE}`,
+                      }}
+                    />
+
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Resultado pronto para download ou reaproveitamento na biblioteca.
+                      </Typography>
+
+                      <Stack direction="row" spacing={1.25} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                        <Button
+                          onClick={() => void handleSaveToLibrary()}
+                          disabled={isSaved}
+                          variant={isSaved ? 'contained' : 'outlined'}
+                          color={isSaved ? 'success' : 'primary'}
+                          startIcon={isSaved ? <Check sx={{ fontSize: 16 }} /> : <Save sx={{ fontSize: 16 }} />}
+                        >
+                          {isSaved ? 'Salvo na biblioteca' : 'Salvar na biblioteca'}
+                        </Button>
+
+                        <Button onClick={handleDownload} variant="contained" color="secondary" startIcon={<Download sx={{ fontSize: 16 }} />}>
+                          Baixar imagem
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Stack>
                 ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    Gerar Imagem
-                  </>
+                  <Stack spacing={1.5} alignItems="center" textAlign="center" sx={{ maxWidth: 420 }}>
+                    <ImageIcon sx={{ fontSize: 52, color: theme.palette.text.disabled }} />
+                    <Typography variant="h6">Sua prévia aparece aqui</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Escreva um prompt claro e, se quiser, anexe uma referência para orientar estilo, composição e consistência visual.
+                    </Typography>
+                  </Stack>
                 )}
-              </button>
-            </div>
-          </div>
+              </Box>
 
-          {/* Preview Area */}
-          <div className="flex-1 bg-[var(--bg-base)] rounded-xl border border-[var(--border)] flex flex-col items-center justify-center overflow-hidden relative min-h-[300px]">
-            {isGenerating ? (
-              <div className="flex flex-col items-center gap-4 text-[var(--text-secondary)]">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-                <p className="text-sm animate-pulse">Criando sua obra de arte...</p>
-              </div>
-            ) : imageUrl ? (
-              <div className="w-full h-full flex flex-col">
-                <div className="flex-1 p-4 flex items-center justify-center">
-                  <img src={imageUrl} alt="Imagem gerada" className="max-w-full max-h-[400px] object-contain rounded-lg shadow-2xl" />
-                </div>
-                
-                {/* Actions Bar */}
-                <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-elevated)]/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleSaveToLibrary}
-                      disabled={isSaved}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                        isSaved 
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                          : 'bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
-                      }`}
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaved ? 'Salvo' : 'Salvar na Biblioteca'}
-                    </button>
-                  </div>
-                  
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Baixar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4 text-[var(--text-tertiary)]">
-                <ImageIcon className="w-12 h-12 opacity-20" />
-                <p className="text-sm">Sua imagem gerada aparecerá aqui</p>
-              </div>
-            )}
-          </div>
-          
-          {error && (
-            <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3">
-              <X className="w-5 h-5 shrink-0 mt-0.5" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-center gap-3">
-              <Check className="w-5 h-5 shrink-0" />
-              <p>{successMsg}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+              {error ? <Alert variant="outlined" severity="error">{error}</Alert> : null}
+              {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null}
+            </Stack>
+          </Paper>
+        </Stack>
+      </Grid>
+    </Grid>
   );
 }

@@ -2,13 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { getFirebaseEnvConfig } from './env';
 
-const app = initializeApp(firebaseConfig);
+const appletConfig = getFirebaseEnvConfig();
+
+const app = initializeApp(appletConfig);
 
 export const auth = getAuth(app);
-export const db = (firebaseConfig as any).firestoreDatabaseId 
-  ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
+export const db = appletConfig.firestoreDatabaseId 
+  ? getFirestore(app, appletConfig.firestoreDatabaseId)
   : getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();

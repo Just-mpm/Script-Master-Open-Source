@@ -1,16 +1,26 @@
-import React, { useMemo, useState } from 'react';
-import { Mic } from 'lucide-react';
+import { useMemo, type ChangeEvent } from 'react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { alpha, type Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
+import Mic from '@mui/icons-material/Mic';
 import { MAX_CHARS } from '../lib/constants';
+import type { StudioScene } from '../features/studio/types';
+import { glassPanelSx } from '../theme/surfaces';
 
-interface ScriptEditorProps {
+export interface ScriptEditorProps {
   script: string;
   setScript: (script: string) => void;
   isGenerating: boolean;
   handleGenerate: () => void;
   isGenerateDisabled: boolean;
-  scenes?: { imageUrl: string; timestamp: number }[];
+  scenes?: StudioScene[];
   currentTime?: number;
-  notes?: string;
 }
 
 export function ScriptEditor({ 
@@ -36,85 +46,186 @@ export function ScriptEditor({
     return active;
   }, [scenes, currentTime]);
 
+  const isOverLimit = script.length > MAX_CHARS;
+
   return (
-    <section className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
-      <div className="glass-panel rounded-3xl flex flex-col h-[50vh] sm:h-[60vh] lg:h-[calc(100vh-12rem)] relative overflow-hidden group">
-        
-        {/* Scene Background */}
+    <Stack component="section" spacing={2}>
+      <Paper
+        elevation={0}
+        sx={(theme): SystemStyleObject<Theme> => ({
+          ...glassPanelSx(theme),
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: { xs: '52vh', sm: '60vh', lg: 'calc(100vh - 12rem)' },
+        })}
+      >
         {currentScene && (
-          <div 
-            className="absolute inset-0 z-0 transition-all duration-1000 ease-in-out bg-cover bg-center bg-no-repeat"
-            style={{ 
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
               backgroundImage: `url(${currentScene.imageUrl})`,
-              opacity: 0.4
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.36,
+              transition: 'opacity 0.6s ease',
             }}
           />
         )}
-        
-        {/* Subtle gradient overlay at top */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[var(--bg-surface)] to-transparent opacity-80 pointer-events-none z-10" />
-        
-        <div className="flex items-center justify-between px-6 sm:px-8 pt-6 sm:pt-8 pb-4 z-20">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xs sm:text-sm font-medium text-[var(--text-secondary)]" id="script-label">Script</h2>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4">
+
+        <Box
+          sx={(theme) => ({
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: 'none',
+            background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.92)} 0%, ${alpha(theme.palette.background.paper, 0.18)} 24%, ${alpha(theme.palette.background.paper, 0.58)} 100%)`,
+          })}
+        />
+
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+          sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3, sm: 4 }, pb: 2, position: 'relative', zIndex: 2 }}
+        >
+          <Stack spacing={0.75}>
+            <Typography variant="overline" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+              Script
+            </Typography>
+            {currentScene ? (
+              <Chip
+                label="Cena visual sincronizada com a escrita"
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            ) : null}
+          </Stack>
+
+          <Stack direction="row" spacing={1.25} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
             {script.length > 0 && !isGenerating && (
-              <button 
+              <Button
+                variant="text"
+                color="inherit"
                 onClick={() => setScript('')}
-                className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] hover:text-red-400 transition-colors"
                 aria-label="Limpar roteiro"
+                sx={{ minHeight: 40 }}
               >
                 Limpar
-              </button>
+              </Button>
             )}
-            <span 
-              className={`text-[10px] sm:text-xs font-mono ${script.length > MAX_CHARS ? 'text-red-400' : 'text-[var(--text-tertiary)]'}`}
+
+            <Typography
+              variant="caption"
+              component="div"
+              sx={{
+                fontFamily: 'monospace',
+                color: isOverLimit ? 'error.main' : 'text.secondary',
+                letterSpacing: '0.08em',
+              }}
               aria-label={`${script.length} de ${MAX_CHARS} caracteres utilizados`}
             >
               {script.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
-            </span>
-          </div>
-        </div>
+            </Typography>
+          </Stack>
+        </Stack>
 
-        <textarea
-          id="script-editor"
-          value={script}
-          onChange={(e) => setScript(e.target.value)}
-          disabled={isGenerating}
-          aria-labelledby="script-label"
-          placeholder="Comece a escrever sua história aqui..."
-          className="flex-1 w-full resize-none outline-none text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] bg-transparent px-6 sm:px-8 pb-24 font-serif z-20 custom-scrollbar focus:ring-0 disabled:opacity-50 drop-shadow-md"
-          spellCheck={false}
-          maxLength={MAX_CHARS + 500}
-        />
-      </div>
+        <Box sx={{ px: { xs: 3, sm: 4 }, pb: { xs: 3, sm: 4 }, position: 'relative', zIndex: 2, flex: 1, display: 'flex' }}>
+          <TextField
+            id="script-editor"
+            fullWidth
+            multiline
+            minRows={12}
+            maxRows={26}
+            value={script}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setScript(event.target.value)}
+            disabled={isGenerating}
+            placeholder="Comece a escrever sua história aqui..."
+            variant="outlined"
+            slotProps={{
+              htmlInput: {
+                spellCheck: false,
+                maxLength: MAX_CHARS + 500,
+                'aria-labelledby': 'script-label',
+              },
+            }}
+            sx={{
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                height: '100%',
+                alignItems: 'stretch',
+                borderRadius: 4,
+                backgroundColor: 'transparent',
+                backdropFilter: 'none',
+                px: { xs: 0.5, sm: 1 },
+                py: { xs: 0.5, sm: 1 },
+                '& fieldset': {
+                  borderColor: 'transparent',
+                },
+                '&:hover fieldset, &.Mui-focused fieldset': {
+                  borderColor: 'transparent',
+                },
+              },
+              '& .MuiInputBase-inputMultiline': {
+                height: '100% !important',
+                overflowY: 'auto !important',
+                px: { xs: 0.5, sm: 1 },
+                py: 1,
+                fontFamily: 'Georgia, Cambria, "Times New Roman", serif',
+                fontSize: { xs: '1rem', sm: '1.125rem', md: '1.35rem', lg: '1.6rem' },
+                lineHeight: 1.85,
+                color: 'text.primary',
+                textShadow: '0 1px 12px rgba(0, 0, 0, 0.24)',
+              },
+            }}
+          />
+        </Box>
+      </Paper>
 
-      {/* Generate Button below the editor */}
-      <div className="flex justify-center sm:justify-end mt-2">
-        <button
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent={{ xs: 'stretch', sm: 'flex-end' }}>
+        <Button
           onClick={handleGenerate}
           disabled={isGenerateDisabled}
-          className={`
-            relative group overflow-hidden
-            w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 rounded-2xl 
-            accent-gradient text-white font-bold text-base sm:text-lg
-            shadow-[0_10px_30px_var(--accent-glow)]
-            hover:shadow-[0_15px_40px_var(--accent-glow)]
-            hover:scale-[1.02] active:scale-[0.98]
-            transition-all duration-300
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none
-            flex items-center justify-center gap-3
-          `}
+          variant="contained"
+          size="large"
+          startIcon={<Mic sx={{ fontSize: 18 }} />}
+          sx={(theme) => ({
+            minHeight: { xs: 48, sm: 52 },
+            px: { xs: 3, sm: 4 },
+            borderRadius: 3.5,
+            fontSize: { xs: '1rem', sm: '1.05rem' },
+            fontWeight: 700,
+            backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
+            boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.32)}`,
+            '&:hover': {
+              backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+              boxShadow: `0 24px 56px ${alpha(theme.palette.primary.main, 0.38)}`,
+            },
+          })}
         >
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Mic className="w-4 sm:w-5 h-4 sm:h-5" />
-          <span>Gerar Áudio</span>
-          <div className="hidden sm:flex ml-2 px-2 py-0.5 rounded bg-black/20 text-[10px] font-mono border border-white/10">
-            ⌘ ↵
-          </div>
-        </button>
-      </div>
-    </section>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <span>Gerar áudio</span>
+            <Box
+              sx={{
+                display: { xs: 'none', sm: 'inline-flex' },
+                px: 1,
+                py: 0.25,
+                borderRadius: 1.5,
+                border: '1px solid rgba(255,255,255,0.16)',
+                backgroundColor: 'rgba(0,0,0,0.18)',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+              }}
+            >
+              ⌘ ↵
+            </Box>
+          </Stack>
+        </Button>
+      </Stack>
+    </Stack>
   );
 }

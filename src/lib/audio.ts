@@ -26,7 +26,7 @@ export function extractPcmFromData(data: Uint8Array): Uint8Array {
 export function createWavBlob(pcmData: Uint8Array, sampleRate: number = 24000): Blob {
   // Validate if the pcmData ALREADY has a WAV header to prevent double headers
   if (isWavFormat(pcmData)) {
-    return new Blob([pcmData], { type: 'audio/wav' });
+    return new Blob([pcmData as BlobPart], { type: 'audio/wav' });
   }
 
   const wavHeader = new ArrayBuffer(44);
@@ -52,7 +52,7 @@ export function createWavBlob(pcmData: Uint8Array, sampleRate: number = 24000): 
   writeString(view, 36, 'data');
   view.setUint32(40, pcmData.length, true); // Subchunk2Size
 
-  return new Blob([wavHeader, pcmData], { type: 'audio/wav' });
+  return new Blob([wavHeader, pcmData as BlobPart], { type: 'audio/wav' });
 }
 
 /**

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
+import { getGeminiApiKey } from '../lib/env';
 
 export interface ImageGenerationOptions {
   prompt: string;
@@ -20,13 +21,9 @@ export function useImageGenerator() {
     setImageBlob(null);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Chave da API do Gemini não configurada.');
-      }
-
+      const apiKey = getGeminiApiKey();
       const ai = new GoogleGenAI({ apiKey });
-      const contents: any[] = [];
+      const contents: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
 
       if (options.referenceImage) {
         const base64Data = await new Promise<string>((resolve, reject) => {
@@ -60,35 +57,34 @@ export function useImageGenerator() {
       });
 
       let foundImage = false;
-      if (response.candidates && response.candidates.length > 0) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            const imageData = part.inlineData.data;
-            const mimeType = part.inlineData.mimeType || 'image/png';
-            
-            // Converter base64 para Blob
-            const byteCharacters = atob(imageData);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: mimeType });
-            
-            setImageBlob(blob);
-            setImageUrl(URL.createObjectURL(blob));
-            foundImage = true;
-            break;
-          }
+      for (const part of response.candidates?.[0]?.content?.parts ?? []) {
+        if (!part.inlineData?.data) {
+          continue;
         }
+
+        const imageData = part.inlineData.data;
+        const mimeType = part.inlineData.mimeType || 'image/png';
+
+        const byteCharacters = atob(imageData);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+
+        setImageBlob(blob);
+        setImageUrl(URL.createObjectURL(blob));
+        foundImage = true;
+        break;
       }
 
       if (!foundImage) {
         throw new Error('Nenhuma imagem foi retornada pelo modelo.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating image:', err);
-      setError(err.message || 'Ocorreu um erro ao gerar a imagem.');
+      setError(err instanceof Error && err.message ? err.message : 'Ocorreu um erro ao gerar a imagem.');
     } finally {
       setIsGenerating(false);
     }

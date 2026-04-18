@@ -1,17 +1,27 @@
-import { useState, useRef } from 'react';
-import { storage, auth } from '../lib/firebase';
+import { useEffect, useState, useRef } from 'react';
+import { storage, auth, onAuthStateChanged } from '../lib/firebase';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { GoogleGenAI, Modality, HarmCategory, HarmBlockThreshold } from '@google/genai';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 import { VOICES } from '../lib/constants';
 import { base64ToUint8Array, createWavBlob, extractPcmFromData } from '../lib/audio';
+import { getGeminiApiKey } from '../lib/env';
 
 export function useVoicePreviews() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+
+    return unsubscribe;
+  }, []);
   
-  const isAdmin = auth.currentUser?.email?.toLowerCase() === 'kurosaki.mpm@gmail.com' && auth.currentUser?.emailVerified;
+  const isAdmin = currentUser?.email?.toLowerCase() === 'kurosaki.mpm@gmail.com' && currentUser?.emailVerified;
 
   const stop = () => {
     if (audioRef.current) {
@@ -30,25 +40,9 @@ export function useVoicePreviews() {
     try {
       stop();
       setPlayingId(voiceId);
-      
-      // Tentar carregar localmente primeiro
-      const localUrl = `/previews/${voiceId}.wav`;
-      
-      // Verificar se o arquivo existe via fetch
-      const check = await fetch(localUrl, { method: 'HEAD' });
-      
-      let url = localUrl;
-      
-      if (!check.ok) {
-        // Se não existir localmente, tenta do Firebase Storage como fallback
-        try {
-          const storageRef = ref(storage, `previews/${voiceId}.wav`);
-          url = await getDownloadURL(storageRef);
-        } catch (storageErr) {
-          console.warn(`Local preview not found and Storage fallback failed for ${voiceId}`);
-          throw new Error('Preview not found');
-        }
-      }
+
+      const storageRef = ref(storage, `previews/${voiceId}.wav`);
+      const url = await getDownloadURL(storageRef);
       
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -61,7 +55,7 @@ export function useVoicePreviews() {
   };
 
   const generatePreview = async (voiceId: string, voiceName: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
     // Usando um prompt mais neutro para evitar filtros de segurança automáticos
     const prompt = `Esta é uma demonstração da voz ${voiceName}.`;
     
@@ -105,39 +99,12 @@ export function useVoicePreviews() {
       const rawData = await base64ToUint8Array(base64Audio);
       const pcmData = extractPcmFromData(rawData);
       const wavBlob = createWavBlob(pcmData, 24000);
-      
-      // Converter blob para base64 para enviar ao servidor
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-      });
-      reader.readAsDataURL(wavBlob);
-      const audioBase64 = await base64Promise;
 
-      // Salvar localmente via API
-      const saveResponse = await fetch('/api/admin/save-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          voiceId,
-          audioBase64,
-          adminEmail: auth.currentUser?.email
-        })
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save preview locally');
-      }
-      
-      // Feedback opcional: também salvar no Firebase Storage se quiser redundância
-      // const storageRef = ref(storage, `previews/${voiceId}.wav`);
-      // await uploadBytes(storageRef, wavBlob, { contentType: 'audio/wav' });
-      
+      const storageRef = ref(storage, `previews/${voiceId}.wav`);
+      await uploadBytes(storageRef, wavBlob, { contentType: 'audio/wav' });
+       
       return true;
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(`Error generating preview for ${voiceId}:`, err);
       return false;
     }
@@ -153,7 +120,7 @@ export function useVoicePreviews() {
       const voice = VOICES[i];
       console.log(`Generating preview for ${voice.name} (${i + 1}/${VOICES.length})...`);
       
-      const success = await generatePreview(voice.id, voice.name);
+      await generatePreview(voice.id, voice.name);
       
       setBatchProgress(((i + 1) / VOICES.length) * 100);
       
