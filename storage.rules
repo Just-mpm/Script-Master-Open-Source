@@ -1,0 +1,63 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper: Verifica se o usuário está logado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Verifica se o usuário é o dono da pasta
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper: Admin
+    function isAdmin() {
+      return isAuthenticated() && (request.auth.token.email.lower() == "kurosaki.mpm@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    // Regras para a pasta de áudios
+    match /audios/{userId}/{audioId} {
+      // Apenas o dono pode ler, escrever ou deletar seus áudios
+      allow read, delete: if isOwner(userId) || isAdmin();
+      
+      // Validação: arquivos de áudio até 50MB
+      allow create, update: if isOwner(userId) 
+                    && request.resource.size < 50 * 1024 * 1024
+                    && request.resource.contentType.matches('audio/.*');
+    }
+
+    // Regras para a pasta de imagens
+    match /images/{userId}/{imageId} {
+      // Apenas o dono pode ler, escrever ou deletar suas imagens
+      allow read, write, delete: if isOwner(userId);
+      
+      // Validação básica: apenas arquivos de imagem menores que 10MB
+      allow create: if isOwner(userId) 
+                    && request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+    }
+
+    match /generations_images/{userId}/{imageId} {
+      allow read, write, delete: if isOwner(userId);
+      allow create: if isOwner(userId) 
+                    && request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+    }
+
+    // Regras para projetos (audios e imagens vinculados a um projeto específico)
+    match /projects/{userId}/{allPaths=**} {
+      allow read, delete: if isOwner(userId) || isAdmin();
+      
+      allow write: if isOwner(userId) 
+                    && request.resource.size < 50 * 1024 * 1024;
+    }
+
+    // Regras para prévias de vozes (amostras públicas)
+    match /previews/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

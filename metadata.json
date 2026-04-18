@@ -1,0 +1,6 @@
+{
+  "name": "Script Master",
+  "description": "Converta roteiros de vídeo em áudio usando o Gemini TTS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

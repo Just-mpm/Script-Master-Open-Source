@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Memory": {
+      "title": "Memory",
+      "description": "User preferences and facts for the assistant to remember",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "content", "createdAt"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A container for a generative session (script, audio, images)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "script": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "settings": { "type": "object" }
+      },
+      "required": ["id", "userId", "name", "script", "createdAt"]
+    },
+    "AudioSource": {
+      "title": "AudioSource",
+      "description": "Audio file associated with a project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "userId": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "projectId", "userId", "audioUrl", "createdAt"]
+    },
+    "ProjectImage": {
+      "title": "ProjectImage",
+      "description": "Individual images generated for a project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "userId": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "prompt": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "projectId", "userId", "imageUrl", "prompt", "timestamp", "createdAt"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Saved assistant chat sessions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "messages": { "type": "array" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "messages", "updatedAt"]
+    },
+    "UserSetting": {
+      "title": "UserSetting",
+      "description": "Global custom prompt and settings for the assistant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "customSystemPrompt": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "customSystemPrompt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "User memories collection"
+    },
+    "/user_settings/{settingId}": {
+      "schema": "UserSetting",
+      "description": "User settings overrides"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "User projects"
+    },
+    "/projects/{projectId}/audios/{audioId}": {
+      "schema": "AudioSource",
+      "description": "Project audio files"
+    },
+    "/projects/{projectId}/images/{imageId}": {
+      "schema": "ProjectImage",
+      "description": "Project image files"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatSession",
+      "description": "User chat sessions collection"
+    }
+  }
+}

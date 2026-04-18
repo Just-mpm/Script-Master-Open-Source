@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+              (request.auth.token.email.lower() == "kurosaki.mpm@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidScene(scene) {
+      return scene is map && 
+             scene.keys().hasAll(['imageUrl', 'timestamp']) &&
+             scene.imageUrl is string && (scene.imageUrl.matches("^https://.*") || scene.imageUrl.matches("^data:image/.*")) &&
+             scene.timestamp is number;
+    }
+
+    function isValidMemory(data) {
+      return data.keys().hasAll(['id', 'userId', 'content', 'createdAt']) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 500000 &&
+             data.createdAt is number;
+    }
+
+    function isValidUserSetting(data) {
+      return data.keys().hasAll(['id', 'userId', 'customSystemPrompt', 'updatedAt']) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.customSystemPrompt is string && data.customSystemPrompt.size() < 500000 &&
+             data.updatedAt is number;
+    }
+
+    function isValidChat(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'messages', 'updatedAt']) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             data.messages is list &&
+             data.updatedAt is number;
+    }
+
+    function isValidGeneration(data) {
+      // Basic required fields
+      let requiredFields = ['id', 'userId', 'name', 'script', 'voice', 'audioUrl', 'createdAt'];
+      
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.script is string && data.script.size() > 0 &&
+             data.audioUrl is string && (data.audioUrl.matches("^https://.*") || data.audioUrl.matches("^blob:.*")) &&
+             data.createdAt is number &&
+             (!('scenes' in data) || (data.scenes is list && data.scenes.size() <= 100));
+    }
+
+    function isValidImageGeneration(data) {
+      let requiredFields = ['id', 'userId', 'name', 'prompt', 'aspectRatio', 'imageUrl', 'createdAt'];
+      
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.prompt is string && data.prompt.size() > 0 &&
+             data.imageUrl is string && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*")) &&
+             data.createdAt is number;
+    }
+
+    function isValidProject(data) {
+      let requiredFields = ['id', 'userId', 'name', 'script', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.script is string &&
+             data.createdAt is number;
+    }
+
+    function isValidAudio(data) {
+      let requiredFields = ['id', 'projectId', 'userId', 'audioUrl', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.projectId is string &&
+             data.userId == request.auth.uid &&
+             data.audioUrl is string && (data.audioUrl.matches("^https://.*") || data.audioUrl.matches("^blob:.*")) &&
+             data.createdAt is number;
+    }
+
+    function isValidProjectImage(data) {
+      let requiredFields = ['id', 'projectId', 'userId', 'imageUrl', 'prompt', 'timestamp', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.projectId is string &&
+             data.userId == request.auth.uid &&
+             data.imageUrl is string && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*")) &&
+             data.timestamp is number &&
+             data.createdAt is number;
+    }
+
+    // Projects and Subcollections
+    match /projects/{projectId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidProject(request.resource.data);
+      allow update: if isAuthenticated() && (isAdmin() || (resource.data.userId == request.auth.uid)) && isValidProject(request.resource.data);
+      allow delete: if isAuthenticated() && (isAdmin() || (resource.data.userId == request.auth.uid));
+
+      match /audios/{audioId} {
+        allow read: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+        allow create: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidAudio(request.resource.data);
+        allow delete: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+      }
+
+      match /images/{imageId} {
+         allow read: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+         allow create: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidProjectImage(request.resource.data);
+         allow delete: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+      }
+    }
+
+    // Memories
+    match /memories/{memoryId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidMemory(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidMemory(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // User Settings
+    match /user_settings/{settingId} {
+      allow read: if isAuthenticated() && settingId == request.auth.uid;
+      allow create: if isAuthenticated() && settingId == request.auth.uid && isValidUserSetting(request.resource.data);
+      allow update: if isAuthenticated() && settingId == request.auth.uid && isValidUserSetting(request.resource.data);
+      allow delete: if isAuthenticated() && settingId == request.auth.uid;
+    }
+
+    // Generations
+    match /generations/{generationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidGeneration(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidGeneration(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidChat(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidChat(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // Image Generations
+    match /image_generations/{imageId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidImageGeneration(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidImageGeneration(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+  }
+}
