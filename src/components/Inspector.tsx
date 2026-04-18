@@ -8,7 +8,8 @@ import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
-import LinearProgress from '@mui/material/LinearProgress';
+
+
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
@@ -28,7 +29,8 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import GraphicEq from '@mui/icons-material/GraphicEq';
 import Image from '@mui/icons-material/Image';
-import Autorenew from '@mui/icons-material/Autorenew';
+
+
 import Pause from '@mui/icons-material/Pause';
 import People from '@mui/icons-material/People';
 import PlayArrow from '@mui/icons-material/PlayArrow';
@@ -171,13 +173,9 @@ export function Inspector({
     }
   };
 
-  const { 
-    playingId, 
-    isGeneratingBatch, 
-    batchProgress, 
-    playPreview, 
-    generateAllPreviews, 
-    isAdmin 
+  const {
+    playingId,
+    playPreview,
   } = useVoicePreviews();
 
   const isVoiceOpen = isDesktop || !isVoiceCollapsed;
@@ -407,38 +405,6 @@ export function Inspector({
               })}
             </Grid>
 
-            {isAdmin && (
-              <Paper elevation={0} sx={(currentTheme) => ({ ...insetPanelSx(currentTheme), p: 2 })}>
-                {isGeneratingBatch ? (
-                  <Stack spacing={1.25}>
-                    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: '0.12em' }}>
-                        Gerando prévias
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {Math.round(batchProgress)}%
-                      </Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={batchProgress} sx={{ height: 6, borderRadius: 999 }} />
-                  </Stack>
-                ) : (
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={generateAllPreviews}
-                    startIcon={<Autorenew sx={{ fontSize: 14 }} />}
-                    sx={{
-                      minHeight: 44,
-                      borderStyle: 'dashed',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Gerar todas as prévias (admin)
-                  </Button>
-                )}
-              </Paper>
-            )}
           </Stack>
         </Collapse>
       </Paper>

@@ -127,7 +127,7 @@ const components: Components = {
     },
     styleOverrides: {
       root: {
-        borderRadius: 999,
+        borderRadius: 24,
         minHeight: 44,
         textTransform: 'none',
         fontWeight: 600,
@@ -148,14 +148,14 @@ const components: Components = {
       root: {
         minHeight: 44,
         minWidth: 44,
-        borderRadius: 999,
+        borderRadius: 32,
       },
     },
   },
   MuiAlert: {
     styleOverrides: {
       root: {
-        borderRadius: 18,
+        borderRadius: 10,
         variants: [
           {
             props: { variant: 'filled', color: 'success' },
@@ -231,7 +231,7 @@ let appTheme = createTheme({
     },
   },
   shape: {
-    borderRadius: 20,
+    borderRadius: 8,
   },
   spacing: 8,
   typography: {

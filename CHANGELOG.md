@@ -71,6 +71,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.3.1] - 2026-04-18
+
+### Alterado
+
+- **Voice previews** (`src/hooks/useVoicePreviews.ts`): refatorada de geração runtime (Gemini TTS + Firebase Storage) para uso de arquivos WAV pré-gerados em `public/voice-previews/` — elimina chamadas de API no preview de voz e reduz dependências do hook
+- **Inspector** (`src/components/Inspector.tsx`): removidos `LinearProgress` e `Autorenew` não utilizados
+- **Theme** (`src/theme/appTheme.ts`): `borderRadius` unificado para `24px` em todos os componentes (anterior: valores mistos de 999, 18 e 20)
+
+### Adicionado
+
+- **Script de geração de previews** (`scripts/generate-voice-previews.ts`): script Node.js para gerar arquivos WAV de preview de voz via Gemini TTS, disponível via `bun run generate-previews`
+- **eslint-plugin-mui-v9**: plugin ESLint para MUI v9 adicionado ao flat config
+
+### Corrigido
+
+- Versão da documentação de agentes (AGENTS.md/CLAUDE.md/GEMINI.md) atualizada de `0.2.0` para `0.3.1`
+- Seção UI & Design System corrigida de "MUI v7" para "MUI v9"
+
+---
+
 ## [0.1.0] - 2025-xx-xx
 
 ### Adicionado

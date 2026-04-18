@@ -12,9 +12,10 @@ O projeto roda como frontend estático no **Firebase Hosting tradicional**.
 bun install          # instala dependências
 bun run dev          # inicia o Vite em http://localhost:3000
 bun run lint         # ESLint 10 (flat config)
-bun run typecheck    # tsc --noEmit
+bun run typecheck    # tsc -b
 bun run build        # lint + type-check + build de produção em dist/
 bun run preview      # serve o build localmente em http://localhost:3000
+bun run generate-previews  # gera WAVs de preview de voz via Gemini TTS
 ```
 
 **Sem test runner, sem formatter e sem CI/CD configurados no momento.**
@@ -35,7 +36,7 @@ bun run preview      # serve o build localmente em http://localhost:3000
 
 ## UI & Design System
 
-- A interface usa **MUI v7 como stack visual principal**
+- A interface usa **MUI v9** como stack visual principal
 - O tema global fica em `src/theme/appTheme.ts`
 - Tokens visuais compartilhados ficam em `src/theme/tokens.ts`
 - Integração MUI + Router fica em `src/theme/linkBehavior.tsx`
@@ -204,6 +205,9 @@ src/
     tokens.ts
 
   vite-env.d.ts              # tipagem do import.meta.env
+
+scripts/
+  generate-voice-previews.ts  # geração offline de WAVs de preview de voz
 ```
 
 ## Notes for Future Changes
@@ -219,5 +223,5 @@ src/
 
 ## Version
 
-- **Current:** `0.2.0`
-- **Last release:** 2026-04-18 — Migration to MUI v7, modular persistence, lazy-loaded pages
+- **Current:** `0.3.1`
+- **Last release:** 2026-04-18 — Pre-generated voice previews, theme border-radius unification, eslint-plugin-mui-v9

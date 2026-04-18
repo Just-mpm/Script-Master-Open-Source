@@ -8,3 +8,6 @@ coverage/
 .env*
 !.env.example
 .analyze/
+
+# Previews de voz (gerados pelo script, não versionar binários grandes)
+public/voice-previews/*.wav

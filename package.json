@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -10,7 +10,8 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "lint": "eslint src eslint.config.js vite.config.ts",
     "lint:fix": "eslint src eslint.config.js vite.config.ts --fix",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "generate-previews": "bun run scripts/generate-voice-previews.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -37,6 +38,7 @@
     "es-abstract": "^1.24.2",
     "eslint": "^10.2.1",
     "eslint-plugin-firebase-ai-logic": "^1.10.0",
+    "eslint-plugin-mui-v9": "^0.1.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-19-upgrade": "^1.7.1",
     "eslint-plugin-react-hooks": "^7.1.1",

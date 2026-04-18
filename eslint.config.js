@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
+import muiV9 from 'eslint-plugin-mui-v9';
 import react19UpgradePlugin from 'eslint-plugin-react-19-upgrade';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
@@ -31,6 +32,7 @@ export default defineConfig([
   js.configs.recommended,
   ...tseslint.configs.recommended,
   reactHooksConfig,
+  muiV9.configs.recommended,
   {
     name: 'script-master/source-rules',
     files: sourceFiles,
