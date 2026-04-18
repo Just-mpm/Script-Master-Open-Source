@@ -53,7 +53,7 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
           p: { xs: 3, md: 4 },
         })}
       >
-        <Stack spacing={2} alignItems="center" textAlign="center" sx={{ maxWidth: 420 }}>
+        <Stack spacing={2} sx={{ maxWidth: 420, alignItems: 'center', textAlign: 'center' }}>
           <Box
             sx={(theme) => ({
               width: 72,
@@ -116,9 +116,15 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ position: 'absolute', top: { xs: 16, md: 20 }, left: { xs: 16, md: 20 }, right: { xs: 16, md: 20 }, zIndex: 2 }}
+        sx={{
+          position: 'absolute',
+          top: { xs: 16, md: 20 },
+          left: { xs: 16, md: 20 },
+          right: { xs: 16, md: 20 },
+          zIndex: 2,
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+        }}
       >
         <Chip label="Preview de vídeo" color="primary" />
         <Chip label={`${scenes.length} ${scenes.length === 1 ? 'cena' : 'cenas'}`} variant="outlined" sx={{ backdropFilter: 'blur(8px)' }} />

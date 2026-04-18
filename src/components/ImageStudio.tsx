@@ -152,7 +152,7 @@ export function ImageStudio() {
             endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: 18 }} /> : <ChevronDown sx={{ fontSize: 18 }} />) : undefined}
           >
             <Stack spacing={0.6} sx={{ textAlign: 'left' }}>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <ImageIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Estúdio de imagem
@@ -232,7 +232,11 @@ export function ImageStudio() {
         <Stack spacing={2.5}>
           <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...glassPanelSx(currentTheme), p: { xs: 2.5, md: 3 }, minHeight: { xs: 'auto', lg: 'calc(100vh - 12rem)' } })}>
             <Stack spacing={2.5} sx={{ height: '100%' }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={2}
+                sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}
+              >
                 <Stack spacing={0.75}>
                   <Typography variant="h4">Criação visual com mais clareza</Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
@@ -255,7 +259,7 @@ export function ImageStudio() {
                 disabled={isGenerating}
               />
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating || !prompt.trim()}
@@ -280,7 +284,7 @@ export function ImageStudio() {
                 })}
               >
                 {isGenerating ? (
-                  <Stack spacing={2} alignItems="center" sx={{ width: '100%', maxWidth: 560 }}>
+                  <Stack spacing={2} sx={{ width: '100%', maxWidth: 560, alignItems: 'center' }}>
                     <Skeleton variant="rounded" animation="wave" width="100%" height={320} />
                     <Skeleton variant="text" animation="wave" width="34%" />
                   </Stack>
@@ -299,7 +303,11 @@ export function ImageStudio() {
                       }}
                     />
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1.5}
+                      sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         Resultado pronto para download ou reaproveitamento na biblioteca.
                       </Typography>
@@ -322,7 +330,7 @@ export function ImageStudio() {
                     </Stack>
                   </Stack>
                 ) : (
-                  <Stack spacing={1.5} alignItems="center" textAlign="center" sx={{ maxWidth: 420 }}>
+                  <Stack spacing={1.5} sx={{ maxWidth: 420, alignItems: 'center', textAlign: 'center' }}>
                     <ImageIcon sx={{ fontSize: 52, color: theme.palette.text.disabled }} />
                     <Typography variant="h6">Sua prévia aparece aqui</Typography>
                     <Typography variant="body2" color="text.secondary">

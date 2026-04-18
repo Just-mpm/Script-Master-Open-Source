@@ -17,10 +17,10 @@ import {
   APP_SURFACE,
   APP_SURFACE_ELEVATED,
   BRAND_PRIMARY,
-  BRAND_SECONDARY,
   BRAND_PRIMARY_CONTRAST_TEXT,
   BRAND_PRIMARY_DARK,
   BRAND_PRIMARY_LIGHT,
+  BRAND_SECONDARY,
   BRAND_SECONDARY_CONTRAST_TEXT,
   BRAND_SECONDARY_DARK,
   BRAND_SECONDARY_LIGHT,
@@ -47,20 +47,20 @@ const components: Components = {
     styleOverrides: {
       ':root': {
         colorScheme: 'dark',
-        '--bg-base': APP_BACKGROUND,
-        '--bg-surface': APP_SURFACE,
+        '--bg-base': 'var(--mui-palette-background-default)',
+        '--bg-surface': 'var(--mui-palette-background-paper)',
         '--bg-elevated': APP_SURFACE_ELEVATED,
-        '--border': APP_BORDER,
+        '--border': 'var(--mui-palette-divider)',
         '--border-hover': APP_BORDER_STRONG,
-        '--border-base': APP_BORDER,
-        '--text-primary': TEXT_PRIMARY,
-        '--text-secondary': TEXT_SECONDARY,
-        '--text-tertiary': TEXT_DISABLED,
-        '--accent': BRAND_PRIMARY,
-        '--accent-hover': BRAND_PRIMARY_DARK,
-        '--accent-glow': 'rgba(34, 211, 238, 0.28)',
-        '--glass-bg': 'rgba(16, 23, 42, 0.78)',
-        '--glass-border': 'rgba(255, 255, 255, 0.05)',
+        '--border-base': 'var(--mui-palette-divider)',
+        '--text-primary': 'var(--mui-palette-text-primary)',
+        '--text-secondary': 'var(--mui-palette-text-secondary)',
+        '--text-tertiary': 'var(--mui-palette-text-disabled)',
+        '--accent': 'var(--mui-palette-primary-main)',
+        '--accent-hover': 'var(--mui-palette-primary-dark)',
+        '--accent-glow': 'color-mix(in srgb, var(--mui-palette-primary-main), transparent 72%)',
+        '--glass-bg': 'color-mix(in srgb, var(--mui-palette-background-paper), transparent 22%)',
+        '--glass-border': 'color-mix(in srgb, var(--mui-palette-common-white), transparent 95%)',
       },
       html: {
         minHeight: '100%',
@@ -68,13 +68,14 @@ const components: Components = {
       body: {
         minHeight: '100vh',
         background: APP_BACKGROUND_GLOW,
+        color: TEXT_PRIMARY,
       },
       '#root': {
         minHeight: '100vh',
       },
       '::selection': {
         backgroundColor: alpha(BRAND_PRIMARY, 0.3),
-        color: TEXT_PRIMARY,
+        color: 'var(--mui-palette-text-primary)',
       },
     },
   },
@@ -131,9 +132,14 @@ const components: Components = {
         textTransform: 'none',
         fontWeight: 600,
         letterSpacing: '-0.01em',
-      },
-      containedPrimary: {
-        boxShadow: `0 18px 44px ${alpha(BRAND_PRIMARY, 0.28)}`,
+        variants: [
+          {
+            props: { variant: 'contained', color: 'primary' },
+            style: {
+              boxShadow: `0 18px 44px ${alpha(BRAND_PRIMARY, 0.28)}`,
+            },
+          },
+        ],
       },
     },
   },
@@ -150,14 +156,22 @@ const components: Components = {
     styleOverrides: {
       root: {
         borderRadius: 18,
-      },
-      filledSuccess: {
-        backgroundColor: alpha(SUCCESS_MAIN, 0.92),
-        color: TEXT_PRIMARY,
-      },
-      filledError: {
-        backgroundColor: alpha(ERROR_MAIN, 0.92),
-        color: TEXT_PRIMARY,
+        variants: [
+          {
+            props: { variant: 'filled', color: 'success' },
+            style: {
+              backgroundColor: alpha(SUCCESS_MAIN, 0.92),
+              color: TEXT_PRIMARY,
+            },
+          },
+          {
+            props: { variant: 'filled', color: 'error' },
+            style: {
+              backgroundColor: alpha(ERROR_MAIN, 0.92),
+              color: TEXT_PRIMARY,
+            },
+          },
+        ],
       },
     },
   },
@@ -170,45 +184,50 @@ const components: Components = {
   },
 };
 
+const sharedPalette = {
+  primary: {
+    main: BRAND_PRIMARY,
+    light: BRAND_PRIMARY_LIGHT,
+    dark: BRAND_PRIMARY_DARK,
+    contrastText: BRAND_PRIMARY_CONTRAST_TEXT,
+  },
+  secondary: {
+    main: BRAND_SECONDARY,
+    light: BRAND_SECONDARY_LIGHT,
+    dark: BRAND_SECONDARY_DARK,
+    contrastText: BRAND_SECONDARY_CONTRAST_TEXT,
+  },
+  success: { main: SUCCESS_MAIN },
+  error: { main: ERROR_MAIN },
+  warning: { main: WARNING_MAIN },
+  background: {
+    default: APP_BACKGROUND,
+    paper: APP_SURFACE,
+  },
+  divider: APP_BORDER,
+  text: {
+    primary: TEXT_PRIMARY,
+    secondary: TEXT_SECONDARY,
+    disabled: TEXT_DISABLED,
+  },
+  action: {
+    active: ACTION_ACTIVE,
+    hover: ACTION_HOVER,
+    selected: ACTION_SELECTED,
+    disabled: ACTION_DISABLED,
+    disabledBackground: ACTION_DISABLED_BACKGROUND,
+    focus: ACTION_FOCUS,
+  },
+} as const;
+
 let appTheme = createTheme({
   cssVariables: true,
   colorSchemes: {
+    light: {
+      palette: sharedPalette,
+    },
     dark: {
-      palette: {
-        primary: {
-          main: BRAND_PRIMARY,
-          light: BRAND_PRIMARY_LIGHT,
-          dark: BRAND_PRIMARY_DARK,
-          contrastText: BRAND_PRIMARY_CONTRAST_TEXT,
-        },
-        secondary: {
-          main: BRAND_SECONDARY,
-          light: BRAND_SECONDARY_LIGHT,
-          dark: BRAND_SECONDARY_DARK,
-          contrastText: BRAND_SECONDARY_CONTRAST_TEXT,
-        },
-        success: { main: SUCCESS_MAIN },
-        error: { main: ERROR_MAIN },
-        warning: { main: WARNING_MAIN },
-        background: {
-          default: APP_BACKGROUND,
-          paper: APP_SURFACE,
-        },
-        divider: APP_BORDER,
-        text: {
-          primary: TEXT_PRIMARY,
-          secondary: TEXT_SECONDARY,
-          disabled: TEXT_DISABLED,
-        },
-        action: {
-          active: ACTION_ACTIVE,
-          hover: ACTION_HOVER,
-          selected: ACTION_SELECTED,
-          disabled: ACTION_DISABLED,
-          disabledBackground: ACTION_DISABLED_BACKGROUND,
-          focus: ACTION_FOCUS,
-        },
-      },
+      palette: sharedPalette,
     },
   },
   shape: {
@@ -255,14 +274,6 @@ let appTheme = createTheme({
     },
   },
   components,
-  palette: {
-    mode: 'dark',
-    contrastThreshold: 4.5,
-    background: {
-      default: APP_BACKGROUND,
-      paper: APP_SURFACE,
-    },
-  },
 });
 
 appTheme = responsiveFontSizes(appTheme);

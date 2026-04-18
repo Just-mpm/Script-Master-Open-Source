@@ -48,9 +48,9 @@ export function AssistantSettingsPanel({
       }}
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
           <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                <AutoAwesome sx={{ fontSize: 18, color: BRAND_SECONDARY }} />
               <Typography variant="h6">Persona da IA</Typography>
             </Stack>

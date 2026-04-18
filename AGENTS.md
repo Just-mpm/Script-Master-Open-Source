@@ -24,7 +24,7 @@ bun run preview      # serve o build localmente em http://localhost:3000
 - **Runtime:** SPA estática com React 19 + react-router-dom v7
 - **Entry:** `index.html` + `src/main.tsx`
 - **App shell:** `src/App.tsx`
-- **UI:** **MUI v7** + tema customizado em `src/theme/*`
+- **UI:** **MUI v9** + tema customizado em `src/theme/*`
 - **AI:** `@google/genai` no cliente
   - TTS: `gemini-3.1-flash-tts-preview`
   - Imagens: `gemini-3.1-flash-image-preview`

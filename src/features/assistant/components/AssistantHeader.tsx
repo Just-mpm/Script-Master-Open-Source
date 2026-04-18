@@ -31,8 +31,6 @@ export function AssistantHeader({
     <Stack
       direction={{ xs: 'column', md: 'row' }}
       spacing={2}
-      alignItems={{ xs: 'flex-start', md: 'center' }}
-      justifyContent="space-between"
       sx={{
         px: { xs: 2.5, md: 3 },
         py: { xs: 2, md: 2.5 },
@@ -40,9 +38,11 @@ export function AssistantHeader({
         borderColor: 'divider',
         backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.38),
         backdropFilter: 'blur(16px)',
+        alignItems: { xs: 'flex-start', md: 'center' },
+        justifyContent: 'space-between',
       }}
     >
-      <Stack direction="row" spacing={1.75} alignItems="center" sx={{ minWidth: 0 }}>
+      <Stack direction="row" spacing={1.75} sx={{ minWidth: 0, alignItems: 'center' }}>
         <Avatar
           variant="rounded"
           sx={{
@@ -57,7 +57,7 @@ export function AssistantHeader({
         </Avatar>
 
         <Stack spacing={0.4} sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap' }}>
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
             <Typography variant="h6">Assistente criativo</Typography>
             <Chip label="Gemini" size="small" color="secondary" variant="outlined" />
           </Stack>
@@ -68,7 +68,7 @@ export function AssistantHeader({
         </Stack>
       </Stack>
 
-      <Stack direction="row" spacing={1} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, alignItems: 'center' }}>
         <Button
           onClick={onStartNewChat}
           variant="contained"

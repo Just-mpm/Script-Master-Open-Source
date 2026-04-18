@@ -200,7 +200,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   if (projects.length === 0) {
     return (
       <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 } })}>
-        <Stack spacing={1.5} alignItems="center" textAlign="center">
+        <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
           <Box
             sx={(theme) => ({
               width: 64,
@@ -227,8 +227,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
   return (
     <Stack spacing={2.25}>
-      <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="space-between" useFlexGap sx={{ flexWrap: 'wrap' }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1.25} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Movie sx={{ fontSize: 16 }} />
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
             Sua galeria
@@ -280,7 +280,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                           }}
                         />
                       ) : (
-                        <Stack sx={{ width: '100%', height: '100%' }} alignItems="center" justifyContent="center">
+                        <Stack sx={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
                           <Movie sx={{ fontSize: 32, opacity: 0.25 }} />
                         </Stack>
                       )}

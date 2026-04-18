@@ -41,10 +41,8 @@ const LibraryPage = lazy(async () => {
 function RouteFallback() {
   return (
     <Stack
-      alignItems="center"
-      justifyContent="center"
       spacing={2}
-      sx={{ minHeight: '55vh', textAlign: 'center' }}
+      sx={{ minHeight: '55vh', textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}
     >
       <CircularProgress size={28} />
       <Typography variant="body2" color="text.secondary">

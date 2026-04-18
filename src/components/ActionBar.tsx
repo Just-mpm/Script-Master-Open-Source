@@ -130,7 +130,7 @@ export function ActionBar({
         pointerEvents: 'none',
       }}
     >
-      <Stack spacing={1.5} alignItems="center">
+      <Stack spacing={1.5} sx={{ alignItems: 'center' }}>
       {isImagePhase && (
         <Paper
           variant="outlined"
@@ -144,9 +144,9 @@ export function ActionBar({
             pointerEvents: 'auto',
           })}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700 }}>
                   {statusText || 'Gerando cenas visuais...'}
                 </Typography>
@@ -190,13 +190,12 @@ export function ActionBar({
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={{ xs: 1.5, md: 2 }}
-            alignItems={{ xs: 'stretch', md: 'center' }}
-            justifyContent="space-between"
+            sx={{ alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between' }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
               {showProgressBar ? (
                 <Stack spacing={1.25} role="status" aria-live="polite">
-                  <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                     <CircularProgress size={18} thickness={5} />
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', flex: 1 }} noWrap>
                       {statusText || 'Sintetizando voz...'}
@@ -217,7 +216,7 @@ export function ActionBar({
                   />
                 </Stack>
               ) : showPlayer ? (
-                <Stack direction="row" spacing={{ xs: 1.25, sm: 2 }} alignItems="center">
+                <Stack direction="row" spacing={{ xs: 1.25, sm: 2 }} sx={{ alignItems: 'center' }}>
                     <IconButton
                       onClick={() => toggle()}
                     aria-label={isPlaying ? 'Pausar áudio' : 'Ouvir áudio'}
@@ -236,7 +235,7 @@ export function ActionBar({
                   </IconButton>
 
                   <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack direction="row" spacing={1.25} alignItems="center">
+                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
                       <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                         {formatTime(currentTime)}
                       </Typography>
@@ -286,7 +285,7 @@ export function ActionBar({
             </Box>
 
             {!isImagePhase && (
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
                 {showPlayer && handleSaveToLibrary ? (
                   <>
                     <Tooltip title={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}>

@@ -162,6 +162,8 @@ export function Inspector({
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
   const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');
+  const voiceSectionId = 'inspector-voice-section';
+  const directionSectionId = 'inspector-direction-section';
 
   const handleSceneRatioChange = (value: string) => {
     if (value === '16:9' || value === '9:16' || value === '1:1') {
@@ -207,6 +209,8 @@ export function Inspector({
     >
       <Paper elevation={0} sx={glassPanelSx}>
         <ButtonBase
+          component="button"
+          type="button"
           onClick={() => {
             if (!isDesktop) {
               setIsVoiceCollapsed((previous) => !previous);
@@ -214,6 +218,7 @@ export function Inspector({
           }}
           disableRipple={isDesktop}
           aria-expanded={isVoiceOpen}
+          aria-controls={voiceSectionId}
           sx={{
             width: '100%',
             px: { xs: 2.5, md: 3 },
@@ -221,9 +226,9 @@ export function Inspector({
             textAlign: 'left',
           }}
         >
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+          <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
             <Stack spacing={0.75}>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <GraphicEq sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Voz do locutor
@@ -234,19 +239,19 @@ export function Inspector({
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Chip label={`${VOICES.length} opções`} size="small" variant="outlined" />
               {!isDesktop && (isVoiceOpen ? <ExpandLess sx={{ fontSize: 16 }} /> : <ExpandMore sx={{ fontSize: 16 }} />)}
             </Stack>
           </Stack>
         </ButtonBase>
 
-        <Collapse in={isVoiceOpen} timeout="auto">
+        <Collapse in={isVoiceOpen} timeout="auto" id={voiceSectionId}>
           <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
-              <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Stack spacing={0.5}>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <People sx={{ fontSize: 14, color: theme.palette.primary.main }} />
                     <Typography variant="subtitle2">Modo Podcast (2 vozes)</Typography>
                   </Stack>
@@ -353,7 +358,7 @@ export function Inspector({
                         }}
                       >
                         <Stack spacing={0.75} sx={{ width: '100%' }}>
-                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="subtitle2" color={isActiveVoice ? 'primary.main' : 'text.primary'}>
                               {voice.name}
                             </Typography>
@@ -406,7 +411,7 @@ export function Inspector({
               <Paper elevation={0} sx={(currentTheme) => ({ ...insetPanelSx(currentTheme), p: 2 })}>
                 {isGeneratingBatch ? (
                   <Stack spacing={1.25}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: '0.12em' }}>
                         Gerando prévias
                       </Typography>
@@ -440,6 +445,8 @@ export function Inspector({
 
       <Paper elevation={0} sx={glassPanelSx}>
         <ButtonBase
+          component="button"
+          type="button"
           onClick={() => {
             if (!isDesktop) {
               setIsDirectionCollapsed((previous) => !previous);
@@ -447,6 +454,7 @@ export function Inspector({
           }}
           disableRipple={isDesktop}
           aria-expanded={isDirectionOpen}
+          aria-controls={directionSectionId}
           sx={{
             width: '100%',
             px: { xs: 2.5, md: 3 },
@@ -454,9 +462,9 @@ export function Inspector({
             textAlign: 'left',
           }}
         >
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+          <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
             <Stack spacing={0.75}>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Settings sx={{ fontSize: 16, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
                   Direção de arte
@@ -471,7 +479,7 @@ export function Inspector({
           </Stack>
         </ButtonBase>
 
-        <Collapse in={isDirectionOpen} timeout="auto">
+        <Collapse in={isDirectionOpen} timeout="auto" id={directionSectionId}>
           <Stack spacing={2.25} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <TextField
               fullWidth
@@ -528,9 +536,9 @@ export function Inspector({
 
             <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
               <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                   <Stack spacing={0.5}>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                       <Image sx={{ fontSize: 14, color: theme.palette.primary.main }} />
                       <Typography variant="subtitle2">Gerar cenas visuais</Typography>
                     </Stack>
@@ -607,7 +615,11 @@ export function Inspector({
                     </Grid>
 
                     <Stack spacing={1.25}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.25}
+                        sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
+                      >
                         <Button
                           component="label"
                           variant={referenceImage ? 'contained' : 'outlined'}

@@ -47,9 +47,9 @@ export function AssistantHistoryPanel({
       }}
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
           <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <History sx={{ fontSize: 18, color: BRAND_PRIMARY }} />
               <Typography variant="h6">Histórico de chats</Typography>
             </Stack>
@@ -65,7 +65,7 @@ export function AssistantHistoryPanel({
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
           {history.length === 0 ? (
-            <Stack spacing={2} alignItems="center" justifyContent="center" sx={{ minHeight: 320, textAlign: 'center' }}>
+            <Stack spacing={2} sx={{ minHeight: 320, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
               <History sx={{ fontSize: 44, color: 'text.secondary' }} />
               <Stack spacing={0.75}>
                 <Typography variant="subtitle1">Nenhum chat salvo ainda</Typography>

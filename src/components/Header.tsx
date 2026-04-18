@@ -47,7 +47,7 @@ export function Header() {
     <AppBar position="sticky" component="header" role="banner">
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1.5, md: 2 } }}>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flexShrink: 0 }}>
+          <Stack direction="row" spacing={1.5} sx={{ minWidth: 0, flexShrink: 0, alignItems: 'center' }}>
             <Box
               aria-hidden="true"
               sx={{
@@ -131,7 +131,7 @@ export function Header() {
             })}
           </Paper>
 
-          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexShrink: 0 }}>
+          <Stack direction="row" spacing={1.25} sx={{ flexShrink: 0, alignItems: 'center' }}>
             {!loading && (user ? (
               <>
                 <Paper
@@ -143,7 +143,7 @@ export function Header() {
                     borderRadius: 999,
                   })}
                 >
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Avatar
                       alt={user.displayName ?? 'Usuário'}
                       src={user.photoURL ?? undefined}

@@ -87,9 +87,15 @@ export function ScriptEditor({
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1.5}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          justifyContent="space-between"
-          sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3, sm: 4 }, pb: 2, position: 'relative', zIndex: 2 }}
+          sx={{
+            px: { xs: 3, sm: 4 },
+            pt: { xs: 3, sm: 4 },
+            pb: 2,
+            position: 'relative',
+            zIndex: 2,
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+          }}
         >
           <Stack spacing={0.75}>
             <Typography variant="overline" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
@@ -106,7 +112,12 @@ export function ScriptEditor({
             ) : null}
           </Stack>
 
-          <Stack direction="row" spacing={1.25} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+          <Stack
+            direction="row"
+            spacing={1.25}
+            useFlexGap
+            sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, alignItems: 'center' }}
+          >
             {script.length > 0 && !isGenerating && (
               <Button
                 variant="text"
@@ -186,7 +197,7 @@ export function ScriptEditor({
         </Box>
       </Paper>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent={{ xs: 'stretch', sm: 'flex-end' }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
         <Button
           onClick={handleGenerate}
           disabled={isGenerateDisabled}
@@ -207,7 +218,7 @@ export function ScriptEditor({
             },
           })}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <span>Gerar áudio</span>
             <Box
               sx={{

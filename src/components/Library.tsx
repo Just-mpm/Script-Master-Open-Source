@@ -135,12 +135,16 @@ export function Library() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={1.5}
+        sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
+      >
         <Stack spacing={0.75}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
             Biblioteca
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Folder sx={{ fontSize: 18, color: 'primary.main' }} />
             <Typography variant="h4">Projetos salvos</Typography>
           </Stack>
@@ -174,7 +178,7 @@ export function Library() {
         </Grid>
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, textAlign: 'center' })}>
-          <Stack spacing={1.5} alignItems="center">
+            <Stack spacing={1.5} sx={{ alignItems: 'center' }}>
             <Album sx={{ fontSize: 48, color: 'text.secondary' }} />
             <Typography variant="h6">Sua biblioteca ainda está vazia</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
@@ -191,7 +195,11 @@ export function Library() {
               <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), overflow: 'hidden' })}>
                 <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                   <Stack spacing={2.5}>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                    <Stack
+                      direction={{ xs: 'column', md: 'row' }}
+                      spacing={2}
+                      sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}
+                    >
                       <Stack spacing={1.25} sx={{ flex: 1, minWidth: 0 }}>
                         {editingId === project.id ? (
                           <TextField
@@ -222,7 +230,7 @@ export function Library() {
                             }}
                           />
                         ) : (
-                          <Stack direction="row" spacing={1} alignItems="center" useFlexGap sx={{ flexWrap: 'wrap' }}>
+                          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
                             <Typography variant="h6" sx={{ minWidth: 0 }} noWrap>
                               {project.name}
                             </Typography>
@@ -296,7 +304,7 @@ export function Library() {
                                             bgcolor: alpha(theme.palette.common.white, 0.03),
                                           })}
                                         >
-                                          <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+                                            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Stack spacing={0.25} sx={{ minWidth: 0 }}>
                                               <Typography variant="subtitle2">Versão {new Date(audio.createdAt).toLocaleTimeString()}</Typography>
                                               <Typography variant="caption" color="text.secondary">
@@ -368,7 +376,7 @@ export function Library() {
                                               loading="lazy"
                                               sx={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
                                             />
-                                            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ p: 1.25 }}>
+                                            <Stack direction="row" spacing={1} sx={{ p: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
                                               <Typography variant="caption" color="text.secondary">
                                                 Cena {index + 1}
                                               </Typography>

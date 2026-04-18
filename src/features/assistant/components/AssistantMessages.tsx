@@ -104,13 +104,7 @@ export function AssistantMessages({
           const cleanText = stripJsonSettingsBlock(message.text);
 
           return (
-            <Stack
-              key={message.id}
-              direction="row"
-              spacing={1.5}
-              justifyContent={isModel ? 'flex-start' : 'flex-end'}
-              sx={{ width: '100%' }}
-            >
+              <Stack key={message.id} direction="row" spacing={1.5} sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
                 {isModel ? (
                   <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider' }}>
                     <SmartToy sx={{ fontSize: 16, color: BRAND_PRIMARY }} />
@@ -125,7 +119,7 @@ export function AssistantMessages({
 
                       return (
                         <Box key={`${message.id}-${index}`} sx={(theme) => ({ ...assistantInsetSx(theme), px: 1.25, py: 1 })}>
-                          <Stack direction="row" spacing={1} alignItems="center">
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             {isImage ? (
                               <Box
                                 component="img"
@@ -162,8 +156,8 @@ export function AssistantMessages({
                   })}
                 >
                   <Stack spacing={1.25}>
-                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                      <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                           {isModel ? <AutoAwesome sx={{ fontSize: 18, color: BRAND_PRIMARY }} /> : <Person sx={{ fontSize: 18 }} />}
                         <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? 'text.secondary' : WHITE_82 }}>
                           {isModel ? 'Assistente' : 'Você'}
@@ -215,7 +209,7 @@ export function AssistantMessages({
         })}
 
         {isLoading ? (
-          <Stack direction="row" spacing={1.5} alignItems="flex-start">
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
             <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider' }}>
                 <SmartToy sx={{ fontSize: 16, color: BRAND_PRIMARY }} />
             </Avatar>
