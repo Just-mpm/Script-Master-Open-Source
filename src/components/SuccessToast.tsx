@@ -21,7 +21,7 @@ export function SuccessToast({ message, onDismiss }: SuccessToastProps) {
 
         onDismiss();
       }}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
       <Alert
         severity="success"

@@ -4,123 +4,51 @@ import { ScriptEditor } from '../components/ScriptEditor';
 import { useGlobalAudioState } from '../contexts/AudioContext';
 import type { StudioStateController } from '../features/studio/useStudioState';
 
-type StudioPageProps = Pick<
-  StudioStateController,
-  | 'audioProfile'
-  | 'generateScenes'
-  | 'handleGenerate'
-  | 'isGenerateDisabled'
+// Props da página via Pick — mantém compatibilidade com spread de useStudioState (bp #1)
+type StudioPageProps = Pick<StudioStateController,
+  | 'script' | 'setScript'
   | 'isGenerating'
-  | 'isMultiSpeaker'
-  | 'pace'
-  | 'referenceImage'
-  | 'scene'
-  | 'sceneDensity'
-  | 'sceneRatio'
-  | 'scenes'
-  | 'script'
-  | 'selectedVoice'
-  | 'setAudioProfile'
-  | 'setGenerateScenes'
-  | 'setIsMultiSpeaker'
-  | 'setPace'
-  | 'setReferenceImage'
-  | 'setScene'
-  | 'setSceneDensity'
-  | 'setSceneRatio'
-  | 'setScript'
-  | 'setSelectedVoice'
-  | 'setSpeakerAName'
-  | 'setSpeakerBName'
-  | 'setSpeakerBVoice'
-  | 'setStyleNotes'
-  | 'setVisualFramework'
-  | 'speakerAName'
-  | 'speakerBName'
-  | 'speakerBVoice'
-  | 'styleNotes'
-  | 'visualFramework'
+  | 'handleGenerate' | 'isGenerateDisabled' | 'scenes'
+  | 'isMultiSpeaker' | 'setIsMultiSpeaker'
+  | 'speakerAName' | 'setSpeakerAName'
+  | 'selectedVoice' | 'setSelectedVoice'
+  | 'speakerBName' | 'setSpeakerBName'
+  | 'speakerBVoice' | 'setSpeakerBVoice'
+  | 'audioProfile' | 'setAudioProfile'
+  | 'scene' | 'setScene'
+  | 'pace' | 'setPace'
+  | 'styleNotes' | 'setStyleNotes'
+  | 'generateScenes' | 'setGenerateScenes'
+  | 'sceneDensity' | 'setSceneDensity'
+  | 'sceneRatio' | 'setSceneRatio'
+  | 'visualFramework' | 'setVisualFramework'
+  | 'referenceImage' | 'setReferenceImage'
 >;
 
-export function StudioPage({
-  audioProfile,
-  generateScenes,
-  handleGenerate,
-  isGenerateDisabled,
-  isGenerating,
-  isMultiSpeaker,
-  pace,
-  referenceImage,
-  scene,
-  sceneDensity,
-  sceneRatio,
-  scenes,
-  script,
-  selectedVoice,
-  setAudioProfile,
-  setGenerateScenes,
-  setIsMultiSpeaker,
-  setPace,
-  setReferenceImage,
-  setScene,
-  setSceneDensity,
-  setSceneRatio,
-  setScript,
-  setSelectedVoice,
-  setSpeakerAName,
-  setSpeakerBName,
-  setSpeakerBVoice,
-  setStyleNotes,
-  setVisualFramework,
-  speakerAName,
-  speakerBName,
-  speakerBVoice,
-  styleNotes,
-  visualFramework,
-}: StudioPageProps) {
+export function StudioPage(props: StudioPageProps) {
   const { currentTime } = useGlobalAudioState();
+
+  const {
+    script,
+    setScript,
+    handleGenerate,
+    isGenerateDisabled,
+    scenes,
+    // Remaining (inclui isGenerating) vai para Inspector
+    ...inspectorProps
+  } = props;
 
   return (
     <Grid container spacing={{ xs: 3, lg: 4 }}>
       <Grid size={{ xs: 12, lg: 4 }}>
-        <Inspector
-          isMultiSpeaker={isMultiSpeaker}
-          setIsMultiSpeaker={setIsMultiSpeaker}
-          speakerAName={speakerAName}
-          setSpeakerAName={setSpeakerAName}
-          selectedVoice={selectedVoice}
-          setSelectedVoice={setSelectedVoice}
-          speakerBName={speakerBName}
-          setSpeakerBName={setSpeakerBName}
-          speakerBVoice={speakerBVoice}
-          setSpeakerBVoice={setSpeakerBVoice}
-          audioProfile={audioProfile}
-          setAudioProfile={setAudioProfile}
-          scene={scene}
-          setScene={setScene}
-          pace={pace}
-          setPace={setPace}
-          styleNotes={styleNotes}
-          setStyleNotes={setStyleNotes}
-          isGenerating={isGenerating}
-          generateScenes={generateScenes}
-          setGenerateScenes={setGenerateScenes}
-          sceneDensity={sceneDensity}
-          setSceneDensity={setSceneDensity}
-          sceneRatio={sceneRatio}
-          setSceneRatio={setSceneRatio}
-          visualFramework={visualFramework}
-          setVisualFramework={setVisualFramework}
-          referenceImage={referenceImage}
-          setReferenceImage={setReferenceImage}
-        />
+        <Inspector {...inspectorProps} />
       </Grid>
 
       <Grid size={{ xs: 12, lg: 8 }}>
         <ScriptEditor
           script={script}
           setScript={setScript}
-          isGenerating={isGenerating}
+          isGenerating={props.isGenerating}
           handleGenerate={handleGenerate}
           isGenerateDisabled={isGenerateDisabled}
           scenes={scenes}

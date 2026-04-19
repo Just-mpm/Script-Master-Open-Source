@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
@@ -76,80 +78,99 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const { user } = useAuth();
   const [projects, setProjects] = useState<VideoLibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      setLoading(true);
-      try {
-        const [projectsData, generationsData] = await Promise.all([
-          getProjects(user?.uid),
-          getGenerations(user?.uid),
-        ]);
-        const projectDetailsMap = await getProjectsDetailsMap(user?.uid);
+  const blobUrlsRef = useRef<Set<string>>(new Set());
 
-        const unified: VideoLibraryItem[] = [
-          ...projectsData.map((p) => ({ ...p, isGeneration: false })),
-          ...generationsData.filter((g) => g.scenes && g.scenes.length > 0).map((g) => ({
-            id: g.id,
-            name: g.name,
-            script: g.script,
-            createdAt: g.createdAt,
-            userId: g.userId,
-            isGeneration: true,
-            audioUrl: g.audioUrl,
-            scenes: g.scenes,
-            settings: {
-              selectedVoice: g.voice,
-              pace: 'normal',
-              styleNotes: '',
-              isMultiSpeaker: false,
-              speakerAName: '',
-              speakerBName: '',
-              speakerBVoice: '',
-              audioProfile: '',
-              scene: '',
-              sceneDensity: 15,
-              sceneRatio: '16:9',
-            },
-          })),
-        ];
+  const createTrackedBlobUrl = useCallback((blob: Blob): string => {
+    const url = URL.createObjectURL(blob);
+    blobUrlsRef.current.add(url);
+    return url;
+  }, []);
 
-        const sorted = unified.sort((a, b) => b.createdAt - a.createdAt);
+  const revokeAllBlobUrls = useCallback(() => {
+    blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    blobUrlsRef.current.clear();
+  }, []);
 
-        const finalItems = await Promise.all(sorted.map(async (item) => {
-          if (item.isGeneration) {
-            return {
-              ...item,
-              thumbnail: item.scenes?.[0]?.imageUrl,
-            };
-          }
-          try {
-            const details = projectDetailsMap[item.id];
-            if (!details) {
-              return item;
-            }
-            return {
-              ...item,
-              thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? URL.createObjectURL(details.images[0].imageBlob) : undefined),
-              audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? URL.createObjectURL(details.audios[0].audioBlob) : ''),
-              scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : ''), timestamp: img.timestamp })),
-            };
-          } catch {
+  useEffect(() => revokeAllBlobUrls, [revokeAllBlobUrls]);
+
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    revokeAllBlobUrls();
+    try {
+      const [projectsData, generationsData] = await Promise.all([
+        getProjects(user?.uid),
+        getGenerations(user?.uid),
+      ]);
+      const projectDetailsMap = await getProjectsDetailsMap(user?.uid);
+
+      const unified: VideoLibraryItem[] = [
+        ...projectsData.map((p) => ({ ...p, isGeneration: false })),
+        ...generationsData.filter((g) => g.scenes && g.scenes.length > 0).map((g) => ({
+          id: g.id,
+          name: g.name,
+          script: g.script,
+          createdAt: g.createdAt,
+          userId: g.userId,
+          isGeneration: true,
+          audioUrl: g.audioUrl,
+          scenes: g.scenes,
+          settings: {
+            selectedVoice: g.voice,
+            pace: 'normal',
+            styleNotes: '',
+            isMultiSpeaker: false,
+            speakerAName: '',
+            speakerBName: '',
+            speakerBVoice: '',
+            audioProfile: '',
+            scene: '',
+            sceneDensity: 15,
+            sceneRatio: '16:9',
+          },
+        })),
+      ];
+
+      const sorted = unified.sort((a, b) => b.createdAt - a.createdAt);
+
+      const finalItems = await Promise.all(sorted.map(async (item) => {
+        if (item.isGeneration) {
+          return {
+            ...item,
+            thumbnail: item.scenes?.[0]?.imageUrl,
+          };
+        }
+        try {
+          const details = projectDetailsMap[item.id];
+          if (!details) {
             return item;
           }
-        }));
+          return {
+            ...item,
+            thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? createTrackedBlobUrl(details.images[0].imageBlob) : undefined),
+            audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? createTrackedBlobUrl(details.audios[0].audioBlob) : ''),
+            scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? createTrackedBlobUrl(img.imageBlob) : ''), timestamp: img.timestamp })),
+          };
+        } catch {
+          return item;
+        }
+      }));
 
-        setProjects(finalItems);
-      } catch (error) {
-        console.error('Failed to load video library:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setProjects(finalItems);
+    } catch (error) {
+      console.error('Failed to load video library:', error);
+      setError('Não foi possível carregar a galeria. Verifique sua conexão e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user, revokeAllBlobUrls, createTrackedBlobUrl]);
 
+  useEffect(() => {
     void loadProjects();
-  }, [user]);
+  }, [loadProjects]);
 
   const handleDownloadSequence = async (e: React.MouseEvent, item: VideoLibraryItem) => {
     e.stopPropagation();
@@ -195,6 +216,22 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           </Stack>
         ))}
       </Stack>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert
+        variant="outlined"
+        severity="error"
+        action={
+          <Button color="inherit" size="small" onClick={() => { void loadProjects(); }}>
+            Tentar novamente
+          </Button>
+        }
+      >
+        {error}
+      </Alert>
     );
   }
 

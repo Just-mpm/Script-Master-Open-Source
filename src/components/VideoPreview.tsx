@@ -8,6 +8,7 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import { motion, AnimatePresence } from 'motion/react';
+import { resolveActiveScene } from '../lib/scene';
 import { glassPanelSx } from '../theme/surfaces';
 import { RADIUS_SM, GAP_COMPACT, GAP_MEDIUM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
@@ -18,18 +19,10 @@ interface VideoPreviewProps {
 }
 
 export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps) {
-  const currentScene = useMemo(() => {
-    if (!scenes || scenes.length === 0) return null;
-    let active = scenes[0];
-    for (const scene of scenes) {
-      if (scene.timestamp <= currentTime) {
-        active = scene;
-      } else {
-        break;
-      }
-    }
-    return active;
-  }, [scenes, currentTime]);
+  const currentScene = useMemo(
+    () => resolveActiveScene(scenes, currentTime),
+    [scenes, currentTime],
+  );
 
   const scriptExcerpt = useMemo(() => {
     const normalizedScript = script.replace(/\s+/g, ' ').trim();
@@ -103,7 +96,12 @@ export function VideoPreview({ scenes, currentTime, script }: VideoPreviewProps)
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
           }}
+          role="img"
+          aria-label={currentScene ? `Cena atual do vídeo` : undefined}
         >
+          {currentScene?.imageUrl && (
+            <img src={currentScene.imageUrl} alt="" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }} />
+          )}
           <Box
             sx={{
               position: 'absolute',

@@ -15,20 +15,18 @@ export const db = appletConfig.firestoreDatabaseId
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Validate Connection to Firestore
-async function testConnection() {
+// Validação de conexão com Firestore — executada de forma isolada, não no escopo do módulo
+export async function testFirebaseConnection(): Promise<void> {
   try {
-    // We use a dummy path to test if the client can reach the server
     await getDocFromServer(doc(db, '_connection_test_', 'ping'));
-    console.log("Firebase connection successful.");
+    console.log('Firebase connection successful.');
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline or the config is incorrect.");
+      console.error('Please check your Firebase configuration. The client is offline or the config is incorrect.');
     }
     // Skip logging for other errors (like permission denied), as this is simply a connection test.
   }
 }
-testConnection();
 
 export { signInWithPopup, signOut, onAuthStateChanged };
 export type { User };

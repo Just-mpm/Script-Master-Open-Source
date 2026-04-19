@@ -146,6 +146,7 @@ export function ActionBar({
         >
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700 }}>
                   {statusText || 'Gerando cenas visuais...'}
@@ -157,6 +158,7 @@ export function ActionBar({
                 <LinearProgress
                 variant="determinate"
                 value={generationProgress}
+                aria-label="Progresso da geração de cenas visuais"
                 sx={{
                   mt: 0.5,
                   height: 8,
@@ -164,6 +166,7 @@ export function ActionBar({
                     bgcolor: 'action.hover',
                 }}
               />
+              </Stack>
             </Box>
 
             <Tooltip title="Cancelar geração de imagens">
@@ -208,6 +211,7 @@ export function ActionBar({
                   <LinearProgress
                     variant="determinate"
                     value={generationProgress}
+                    aria-label="Progresso da geração de áudio"
                     sx={{
                       height: 8,
                       borderRadius: RADIUS_CHIP,

@@ -36,3 +36,47 @@ export interface StudioSettingsPatch {
   sceneRatio?: SceneRatio;
   visualFramework?: string;
 }
+
+// Props agrupadas para Inspector — reduz prop drilling (bp #1)
+export interface InspectorController {
+  isMultiSpeaker: boolean;
+  setIsMultiSpeaker: (value: boolean) => void;
+  speakerAName: string;
+  setSpeakerAName: (value: string) => void;
+  selectedVoice: string;
+  setSelectedVoice: (value: string) => void;
+  speakerBName: string;
+  setSpeakerBName: (value: string) => void;
+  speakerBVoice: string;
+  setSpeakerBVoice: (value: string) => void;
+  audioProfile: string;
+  setAudioProfile: (value: string) => void;
+  scene: string;
+  setScene: (value: string) => void;
+  pace: string;
+  setPace: (value: string) => void;
+  styleNotes: string;
+  setStyleNotes: (value: string) => void;
+  isGenerating: boolean;
+  generateScenes: boolean;
+  setGenerateScenes: (value: boolean) => void;
+  sceneDensity: number;
+  setSceneDensity: (value: number) => void;
+  sceneRatio: SceneRatio;
+  setSceneRatio: (value: SceneRatio) => void;
+  visualFramework: string;
+  setVisualFramework: (value: string) => void;
+  referenceImage: string | null;
+  setReferenceImage: (value: string | null) => void;
+}
+
+// Props agrupadas para ScriptEditor
+export interface ScriptEditorController {
+  script: string;
+  setScript: (value: string) => void;
+  isGenerating: boolean;
+  handleGenerate: () => void;
+  isGenerateDisabled: boolean;
+  scenes: StudioScene[];
+  currentTime: number;
+}

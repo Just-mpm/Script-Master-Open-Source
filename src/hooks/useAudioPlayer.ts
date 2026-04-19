@@ -8,39 +8,42 @@ export function useAudioPlayer(audioRef: RefObject<HTMLAudioElement | null>, aud
 
   useEffect(() => {
     const audio = audioRef.current;
-    
-    if (audio) {
-      const updateProgress = () => {
-        if (audio.duration) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-          setCurrentTime(audio.currentTime);
-        }
-      };
-      
-      const handleLoadedMetadata = () => {
-        setDuration(audio.duration);
-      };
-      
-      const handleEnded = () => {
-        setIsPlaying(false);
-        setProgress(0);
-        setCurrentTime(0);
-      };
+    if (!audio) return;
 
-      audio.addEventListener('timeupdate', updateProgress);
-      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('pause', () => setIsPlaying(false));
-      audio.addEventListener('play', () => setIsPlaying(true));
+    // Handlers nomeados para remoção correta (tech #1)
+    const handleTimeUpdate = () => {
+      if (audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+        setCurrentTime(audio.currentTime);
+      }
+    };
 
-      return () => {
-        audio.removeEventListener('timeupdate', updateProgress);
-        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('pause', () => setIsPlaying(false));
-        audio.removeEventListener('play', () => setIsPlaying(true));
-      };
-    }
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+      setCurrentTime(0);
+    };
+
+    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => setIsPlaying(true);
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('play', handlePlay);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('play', handlePlay);
+    };
   }, [audioUrl, audioRef]);
 
   const togglePlayPause = () => {
@@ -64,7 +67,7 @@ export function useAudioPlayer(audioRef: RefObject<HTMLAudioElement | null>, aud
   };
 
   const formatTime = (time: number) => {
-    if (isNaN(time)) return "00:00";
+    if (isNaN(time)) return '00:00';
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -79,6 +82,6 @@ export function useAudioPlayer(audioRef: RefObject<HTMLAudioElement | null>, aud
     handleSeek,
     formatTime,
     setIsPlaying,
-    setProgress
+    setProgress,
   };
 }

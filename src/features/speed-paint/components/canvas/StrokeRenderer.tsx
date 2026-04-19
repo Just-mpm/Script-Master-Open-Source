@@ -146,12 +146,16 @@ export function StrokeRenderer() {
       window.removeEventListener('resize', updateSize);
       clearTimeout(timeoutId);
     };
-  }, [animation]);
+  }, []);
 
   if (!animation) return null;
 
   const totalStrokes = animation.strokes.length;
   const visibleStrokesCount = Math.floor(progress * totalStrokes);
+
+  const strokeDescription = totalStrokes > 0
+    ? `Animação speed-paint com ${totalStrokes} traços. Progresso: ${Math.round(progress * 100)}%.`
+    : 'Animação speed-paint sem traços disponíveis.';
 
   // Calculate scaling to fit the container width AND height while maintaining aspect ratio
   const scaleX = animation.canvasWidth > 0 ? containerSize.width / animation.canvasWidth : 1;
@@ -165,6 +169,8 @@ export function StrokeRenderer() {
     <Box
       ref={containerRef}
       id="paint-canvas-container"
+      role="img"
+      aria-label={strokeDescription}
       sx={(theme) => ({
         width: '100%',
         maxWidth: 896,

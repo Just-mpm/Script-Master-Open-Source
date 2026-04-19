@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -61,19 +61,38 @@ export function Library() {
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<ProjectDataState>(EMPTY_PROJECT_DATA);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const { isPlaying, activeId, play, toggle } = useGlobalAudioState();
 
+  // Rastreia blob URLs criados para limpeza ao desmontar/trocar projeto
+  const blobUrlsRef = useRef<string[]>([]);
+
+  const cleanupBlobUrls = () => {
+    for (const url of blobUrlsRef.current) {
+      URL.revokeObjectURL(url);
+    }
+    blobUrlsRef.current = [];
+  };
+
+  // Cleanup ao desmontar
+  useEffect(() => cleanupBlobUrls, []);
+
   const loadProjects = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await getProjects(user?.uid);
       setProjects(data);
     } catch (error) {
       console.error('Failed to load library:', error);
+      setError('Não foi possível carregar sua biblioteca. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -87,10 +106,14 @@ export function Library() {
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null);
       setProjectData(EMPTY_PROJECT_DATA);
+      cleanupBlobUrls();
       return;
     }
 
+    // Revoga URLs do projeto anterior antes de carregar o novo
+    cleanupBlobUrls();
     setExpandedProjectId(projectId);
+    setDetailLoading(true);
     try {
       const [audios, images] = await Promise.all([
         getProjectAudios(projectId, user?.uid),
@@ -99,6 +122,8 @@ export function Library() {
       setProjectData({ audios, images });
     } catch (err) {
       console.error('Error loading project details:', err);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -115,14 +140,42 @@ export function Library() {
     }
   };
 
+  // Pré-processa URLs de imagem (blob ou remota) uma vez por mudança de projectData
+  const resolvedImageUrls = useMemo(() => {
+    return projectData.images.map((img) => ({
+      ...img,
+      resolvedUrl: img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : ''),
+    }));
+  }, [projectData.images]);
+
+  // Registra blob URLs criados pelo useMemo para cleanup
+  useEffect(() => {
+    const blobUrls = resolvedImageUrls
+      .map((img) => img.resolvedUrl)
+      .filter((url) => url.startsWith('blob:'));
+    for (const url of blobUrls) {
+      blobUrlsRef.current.push(url);
+    }
+  }, [resolvedImageUrls]);
+
   const confirmDelete = async () => {
     if (!itemToDelete) {
       return;
     }
 
-    await deleteProject(itemToDelete, user?.uid);
-    setItemToDelete(null);
-    await loadProjects();
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteProject(itemToDelete, user?.uid);
+      setItemToDelete(null);
+      cleanupBlobUrls();
+      await loadProjects();
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      setDeleteError('Não foi possível excluir o projeto. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const saveEdit = async (id: string) => {
@@ -177,6 +230,18 @@ export function Library() {
             </Grid>
           ))}
         </Grid>
+      ) : error ? (
+        <Alert
+          variant="outlined"
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => void loadProjects()}>
+              Tentar novamente
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
             <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
@@ -278,7 +343,30 @@ export function Library() {
 
                     {isExpanded ? (
                       <Stack spacing={GAP_RELAXED}>
-                        <Grid container spacing={2}>
+                        {detailLoading ? (
+                          <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, lg: 5 }}>
+                              <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
+                                <Stack spacing={1.5}>
+                                  <Skeleton variant="text" animation="wave" width="40%" height={20} />
+                                  {Array.from({ length: 3 }).map((_, i) => (
+                                    <Skeleton key={i} variant="rounded" animation="wave" height={48} />
+                                  ))}
+                                </Stack>
+                              </Box>
+                            </Grid>
+                            <Grid size={{ xs: 12, lg: 7 }}>
+                              <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
+                                <Stack spacing={1.5}>
+                                  <Skeleton variant="text" animation="wave" width="32%" height={20} />
+                                  <Skeleton variant="rounded" animation="wave" height={120} />
+                                </Stack>
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        ) : (
+                          <>
+                          <Grid container spacing={2}>
                           <Grid size={{ xs: 12, lg: 5 }}>
                             <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
                               <Stack spacing={1.5}>
@@ -324,7 +412,7 @@ export function Library() {
 
                                               <IconButton
                                                 onClick={() => {
-                                                  const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
+    const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
                                                   if (url) {
                                                     void downloadFile(url, `${project.name}-${audio.id}.wav`);
                                                   }
@@ -357,8 +445,7 @@ export function Library() {
                                   </Typography>
                                 ) : (
                                   <Grid container spacing={1.5}>
-                                    {projectData.images.map((img: ProjectImage, index: number) => {
-                                      const imageSrc = img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '');
+                                    {resolvedImageUrls.map((img, index: number) => {
 
                                       return (
                                         <Grid key={img.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -372,7 +459,7 @@ export function Library() {
                                           >
                                             <Box
                                               component="img"
-                                              src={imageSrc}
+                                              src={img.resolvedUrl}
                                               alt={`Cena ${index + 1}`}
                                               loading="lazy"
                                               sx={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
@@ -383,8 +470,8 @@ export function Library() {
                                               </Typography>
                                               <IconButton
                                                 onClick={() => {
-                                                  if (imageSrc) {
-                                                    void downloadFile(imageSrc, `${project.name}-cena-${index + 1}.png`);
+                                                  if (img.resolvedUrl) {
+                                                    void downloadFile(img.resolvedUrl, `${project.name}-cena-${index + 1}.png`);
                                                   }
                                                 }}
                                                 aria-label={`Baixar cena ${index + 1}`}
@@ -412,8 +499,10 @@ export function Library() {
                               {project.script}
                             </Typography>
                           </Stack>
-                        </Box>
-                      </Stack>
+                         </Box>
+                         </>
+                         )}
+                       </Stack>
                     ) : null}
                   </Stack>
                 </CardContent>
@@ -425,7 +514,7 @@ export function Library() {
 
       <Dialog
         open={Boolean(itemToDelete)}
-        onClose={() => setItemToDelete(null)}
+        onClose={deleting ? undefined : () => setItemToDelete(null)}
         fullWidth
         maxWidth="xs"
         aria-labelledby="delete-project-title"
@@ -438,18 +527,25 @@ export function Library() {
           },
         }}
       >
-        <DialogTitle id="delete-project-title">Excluir projeto?</DialogTitle>
+        <DialogTitle id="delete-project-title">
+          {deleting ? 'Excluindo projeto...' : 'Excluir projeto?'}
+        </DialogTitle>
         <DialogContent>
           <Typography id="delete-project-description" variant="body2" color="text.secondary">
             Esta ação remove permanentemente o projeto, seus áudios e suas imagens associadas.
           </Typography>
+          {deleteError && (
+            <Alert variant="outlined" severity="error" sx={{ mt: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setItemToDelete(null)} color="inherit">
+          <Button onClick={() => { setItemToDelete(null); setDeleteError(null); }} color="inherit" disabled={deleting}>
             Cancelar
           </Button>
-          <Button onClick={() => void confirmDelete()} color="error" variant="contained">
-            Excluir projeto
+          <Button onClick={() => void confirmDelete()} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir projeto'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -74,6 +74,10 @@ export async function base64ToUint8Array(base64: string): Promise<Uint8Array> {
 }
 
 // Mantendo a versão síncrona para compatibilidade se necessário, mas marcando como depreciada internamente
+/**
+ * Converte uma string Base64 para Uint8Array de forma síncrona (compatível com ambientes sem streaming).
+ * Preferir `base64ToUint8Array` (async) quando possível — é mais eficiente para strings grandes.
+ */
 export function base64ToUint8ArraySync(base64: string): Uint8Array {
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);
@@ -81,4 +85,17 @@ export function base64ToUint8ArraySync(base64: string): Uint8Array {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes;
+}
+
+/**
+ * Converte uma string Base64 para Blob diretamente, sem intermediário Uint8Array.
+ * Útil quando o destino final é um Blob (download, upload, exibição como src).
+ */
+export function base64ToBlobSync(base64: string, mimeType: string = 'image/png'): Blob {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
 }

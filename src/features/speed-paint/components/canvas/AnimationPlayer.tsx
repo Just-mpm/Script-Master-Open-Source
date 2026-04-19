@@ -106,7 +106,7 @@ export function AnimationPlayer() {
           sx={{ color: 'primary.main', mb: 2 }}
         />
         <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-          Gerando Animacao ({Math.round(job.progress * 100)}%)...
+          Gerando Animação ({Math.round(job.progress * 100)}%)...
         </Typography>
         <Box sx={{ width: '100%', maxWidth: 448 }}>
           <LinearProgress

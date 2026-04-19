@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
+import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Route, Routes, useLocation } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { ActionBar } from './components/ActionBar';
 import { ErrorToast } from './components/ErrorToast';
 import { Header } from './components/Header';
 import { SuccessToast } from './components/SuccessToast';
+import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
 import { useStudioState } from './features/studio/useStudioState';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
@@ -61,6 +63,7 @@ export default function App() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isAssistantRoute = currentPath === '/assistant';
+  const { authError, clearAuthError, loading: authLoading } = useAuth();
   const studio = useStudioState();
   const { toggle } = useGlobalAudioActions();
   const {
@@ -80,6 +83,10 @@ export default function App() {
     successMsg,
     audioUrl,
   } = studio;
+
+  // Prioriza authError (login/logout) sobre error do studio
+  const activeError = authError ?? error;
+  const dismissError = authError ? clearAuthError : () => setError('');
 
   const appRoutes = (
     <Suspense fallback={<RouteFallback />}>
@@ -140,9 +147,38 @@ export default function App() {
 
   return (
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
-      <Header />
+      <Typography
+        component="a"
+        href="#main-content"
+        tabIndex={0}
+        sx={(theme) => ({
+          position: 'fixed',
+          top: -100,
+          left: theme.spacing(1),
+          zIndex: theme.zIndex.tooltip + 1,
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
+          px: 2,
+          py: 1,
+          borderRadius: 1,
+          fontWeight: 600,
+          textDecoration: 'none',
+          '&:focus': {
+            top: theme.spacing(1),
+          },
+        })}
+      >
+        Pular para o conteúdo
+      </Typography>
 
-      <Box component="main" sx={{ minHeight: `calc(100dvh - ${APP_HEADER_HEIGHT}px)` }}>
+      <Header />
+      {authLoading && (
+        <Box sx={{ position: 'fixed', top: 'var(--mui-shape-borderRadius, 0px)', left: 0, right: 0, zIndex: 1300 }}>
+          <LinearProgress />
+        </Box>
+      )}
+
+      <Box component="main" id="main-content" tabIndex={-1} sx={{ minHeight: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, outline: 'none' }}>
         {isAssistantRoute ? (
           <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
             {appRoutes}
@@ -162,7 +198,7 @@ export default function App() {
         )}
       </Box>
 
-      <ErrorToast error={error} onDismiss={() => setError('')} />
+      <ErrorToast error={activeError} onDismiss={dismissError} />
       <SuccessToast message={successMsg} onDismiss={() => setSuccessMsg(null)} />
 
       {(currentPath === '/' || currentPath === '/video') && (

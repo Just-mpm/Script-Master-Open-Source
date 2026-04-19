@@ -19,79 +19,7 @@ import { useAnimationStore } from '../../store/animationStore';
 import { getStageRef } from '../../lib/stageRef';
 import { glassSurfaceSx } from '../../../../theme/surfaces';
 import { ERROR_MAIN } from '../../../../theme/tokens';
-
-function SpeedSelectorInline({
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-}) {
-  const speeds = [0.25, 0.5, 1, 2, 4, 8] as const;
-  return (
-    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'text.secondary',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          width: 32,
-          textAlign: 'right',
-          display: { xs: 'none', sm: 'block' },
-        }}
-      >
-        {label}
-      </Typography>
-      <Stack
-        direction="row"
-        role="group"
-        aria-label={`Velocidade de ${label.toLowerCase()}`}
-        sx={(theme) => ({
-          bgcolor: alpha(theme.palette.background.default, 0.5),
-          borderRadius: 1.5,
-          p: 0.5,
-          border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
-        })}
-      >
-        {speeds.map((s) => (
-          <Button
-            key={s}
-            onClick={() => onChange(s)}
-            disabled={disabled}
-            aria-pressed={value === s}
-            aria-label={`${s}x`}
-            sx={(theme) => ({
-              minWidth: 'auto',
-              px: 0.75,
-              py: 0.25,
-              fontSize: '0.625rem',
-              fontWeight: 500,
-              borderRadius: 1,
-              color: value === s ? 'text.primary' : 'text.secondary',
-              bgcolor: value === s
-                ? alpha(theme.palette.primary.main, 0.15)
-                : 'transparent',
-              '&:hover': {
-                bgcolor: value === s
-                  ? alpha(theme.palette.primary.main, 0.2)
-                  : alpha(theme.palette.common.white, 0.05),
-                color: 'text.primary',
-              },
-            })}
-          >
-            {s}x
-          </Button>
-        ))}
-      </Stack>
-    </Stack>
-  );
-}
+import { SpeedSelector } from '../SpeedSelector';
 
 export function AnimationControls() {
   const {
@@ -255,6 +183,14 @@ export function AnimationControls() {
     }
   };
 
+  // Ref estável para handleDownloadVideo, atualizado a cada render via useEffect
+  // (pattern recomendado para usar função de componente em useEffect sem re-trigger)
+  const handleDownloadVideoRef = useRef(handleDownloadVideo);
+
+  useEffect(() => {
+    handleDownloadVideoRef.current = handleDownloadVideo;
+  });
+
   // --- AUTOMATION TRIGGERS ---
 
   // 1. Auto-Start Recording when a new job is ready in 'record' mode
@@ -266,11 +202,10 @@ export function AnimationControls() {
 
       setTimeout(() => {
         if (useAnimationStore.getState().batchMode === 'record') {
-          handleDownloadVideo();
+          handleDownloadVideoRef.current();
         }
       }, 800);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batchMode, job.status, progress, isRecording, job.id]);
 
   // 2. Auto-Advance in 'watch' mode when animation finishes
@@ -303,13 +238,13 @@ export function AnimationControls() {
   // Determine current animation phase for the UI
   let currentPhase = 'Pronto';
   if (isRecording) {
-    currentPhase = 'Gravando Video...';
+    currentPhase = 'Gravando Vídeo...';
   } else if (job.animation && progress > 0 && progress < 1) {
     const currentStrokeIndex = Math.max(0, Math.floor(progress * job.animation.strokes.length) - 1);
     const currentStroke = job.animation.strokes[currentStrokeIndex];
     currentPhase = currentStroke?.type === 'reveal' ? 'Colorindo...' : 'Desenhando Objetos...';
   } else if (progress === 1) {
-    currentPhase = 'Concluido';
+    currentPhase = 'Concluído';
   }
 
   return (
@@ -349,7 +284,7 @@ export function AnimationControls() {
           min={0}
           max={1}
           step={0.001}
-          aria-label="Progresso da animacao"
+          aria-label="Progresso da animação"
           sx={{
             color: 'primary.main',
             '& .MuiSlider-thumb': {
@@ -367,7 +302,7 @@ export function AnimationControls() {
               <IconButton
                 onClick={handlePlayPause}
                 disabled={isRecording}
-                aria-label={isPlaying ? 'Pausar animacao' : 'Reproduzir animacao'}
+                aria-label={isPlaying ? 'Pausar animação' : 'Reproduzir animação'}
                 sx={(theme) => ({
                   bgcolor: alpha(theme.palette.primary.main, 0.15),
                   color: 'primary.main',
@@ -386,7 +321,7 @@ export function AnimationControls() {
               <IconButton
                 onClick={() => { setProgress(0); setIsPlaying(false); }}
                 disabled={isRecording}
-                aria-label="Reiniciar animacao"
+                aria-label="Reiniciar animação"
               >
                 <ReplayIcon />
               </IconButton>
@@ -396,8 +331,8 @@ export function AnimationControls() {
 
         <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 0.5, sm: 2 }, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Stack sx={{ gap: 0.5, display: { xs: 'none', sm: 'flex' } }}>
-            <SpeedSelectorInline label="Draw" value={speed} onChange={setSpeed} disabled={isRecording} />
-            <SpeedSelectorInline label="Paint" value={paintSpeed} onChange={setPaintSpeed} disabled={isRecording} />
+            <SpeedSelector label="Draw" value={speed} onChange={setSpeed} disabled={isRecording} />
+            <SpeedSelector label="Paint" value={paintSpeed} onChange={setPaintSpeed} disabled={isRecording} />
           </Stack>
 
           <Box
@@ -430,7 +365,7 @@ export function AnimationControls() {
                 <IconButton
                   onClick={handleDownloadVideo}
                   disabled={isRecording}
-                  aria-label="Baixar video"
+                  aria-label="Baixar vídeo"
                   sx={isRecording ? { color: ERROR_MAIN } : undefined}
                 >
                   {isRecording

@@ -13,77 +13,7 @@ import { alpha } from '@mui/material/styles';
 import { useAnimationStore } from '../../store/animationStore';
 import { ERROR_MAIN } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
-
-function SpeedSelector({
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-}) {
-  const speeds = [0.25, 0.5, 1, 2, 4, 8] as const;
-  return (
-    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'text.secondary',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          minWidth: 48,
-        }}
-      >
-        {label}
-      </Typography>
-      <Stack
-        direction="row"
-        role="group"
-        aria-label={`Velocidade de ${label.toLowerCase()}`}
-        sx={(theme) => ({
-          bgcolor: alpha(theme.palette.background.default, 0.5),
-          borderRadius: 1.5,
-          p: 0.5,
-          border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
-        })}
-      >
-        {speeds.map((s) => (
-          <Button
-            key={s}
-            onClick={() => onChange(s)}
-            disabled={disabled}
-            aria-pressed={value === s}
-            aria-label={`${s}x`}
-            sx={(theme) => ({
-              minWidth: 'auto',
-              px: 1,
-              py: 0.25,
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              borderRadius: 1,
-              color: value === s ? 'text.primary' : 'text.secondary',
-              bgcolor: value === s
-                ? alpha(theme.palette.primary.main, 0.15)
-                : 'transparent',
-              '&:hover': {
-                bgcolor: value === s
-                  ? alpha(theme.palette.primary.main, 0.2)
-                  : alpha(theme.palette.common.white, 0.05),
-                color: 'text.primary',
-              },
-            })}
-          >
-            {s}x
-          </Button>
-        ))}
-      </Stack>
-    </Stack>
-  );
-}
+import { SpeedSelector } from '../SpeedSelector';
 
 export function QueueStaging() {
   const {
@@ -129,10 +59,10 @@ export function QueueStaging() {
       >
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Fila de Producao
+            Fila de Produção
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {queue.length} imagem(ns) na fila. Configure a velocidade padrao abaixo.
+            {queue.length} imagem(ns) na fila. Configure a velocidade padrão abaixo.
           </Typography>
         </Box>
 
@@ -145,8 +75,8 @@ export function QueueStaging() {
             border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
           })}
         >
-          <SpeedSelector label="Draw" value={speed} onChange={setSpeed} />
-          <SpeedSelector label="Paint" value={paintSpeed} onChange={setPaintSpeed} />
+          <SpeedSelector label="Draw" value={speed} onChange={setSpeed} variant="panel" />
+          <SpeedSelector label="Paint" value={paintSpeed} onChange={setPaintSpeed} variant="panel" />
         </Box>
       </Stack>
 
@@ -290,7 +220,7 @@ export function QueueStaging() {
           color="secondary"
           startIcon={<VideocamIcon sx={{ fontSize: 18 }} />}
         >
-          Gravar Tudo Automatico
+          Gravar Tudo Automático
         </Button>
       </Stack>
     </Paper>

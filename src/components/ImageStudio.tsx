@@ -32,6 +32,7 @@ import Save from '@mui/icons-material/Save';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useImageGenerator } from '../hooks/useImageGenerator';
 import { saveImageGeneration } from '../lib/db';
+import { downloadFile } from '../lib/download';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
@@ -71,11 +72,21 @@ export function ImageStudio() {
     }
 
     setReferenceImage(file);
+
+    // Revoga blob URL anterior antes de criar um novo (tech #5)
+    if (referencePreview) {
+      URL.revokeObjectURL(referencePreview);
+    }
     setReferencePreview(URL.createObjectURL(file));
   };
 
   const clearReference = () => {
     setReferenceImage(null);
+
+    // Revoga blob URL de referência (tech #5)
+    if (referencePreview) {
+      URL.revokeObjectURL(referencePreview);
+    }
     setReferencePreview(null);
 
     if (fileInputRef.current) {
@@ -101,12 +112,8 @@ export function ImageStudio() {
       return;
     }
 
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `imagem-gerada-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Reutiliza utilitário centralizado de download (bp #3)
+    downloadFile(imageUrl, `imagem-gerada-${Date.now()}.png`);
   };
 
   const handleSaveToLibrary = async () => {

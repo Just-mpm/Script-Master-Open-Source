@@ -15,6 +15,7 @@ import {
 } from '../../lib/db';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAssistant } from '../../hooks/useAssistant';
+import { ErrorToast } from '../../components/ErrorToast';
 import { AssistantComposer } from './components/AssistantComposer';
 import { AssistantHeader } from './components/AssistantHeader';
 import { AssistantHistoryPanel } from './components/AssistantHistoryPanel';
@@ -49,6 +50,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [newMemory, setNewMemory] = useState('');
   const [customSystemPrompt, setCustomSystemPrompt] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [documentError, setDocumentError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +110,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     }
 
     if (file.size > MAX_DOCUMENT_SIZE) {
-      window.alert(`O arquivo ${file.name} é muito grande. O limite máximo é de 500KB para garantir a segurança da Base de Conhecimento.`);
+      setDocumentError(`O arquivo "${file.name}" excede o limite de 500 KB permitido para a Base de Conhecimento.`);
 
       if (documentInputRef.current) {
         documentInputRef.current.value = '';
@@ -284,6 +286,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           setPendingFiles((previousFiles) => previousFiles.filter((_, fileIndex) => fileIndex !== index));
         }}
       />
+
+      <ErrorToast error={documentError} onDismiss={() => setDocumentError(null)} />
     </Box>
   );
 }

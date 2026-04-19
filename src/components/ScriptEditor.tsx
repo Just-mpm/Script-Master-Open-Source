@@ -10,6 +10,7 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import Mic from '@mui/icons-material/Mic';
 import { MAX_CHARS } from '../lib/constants';
+import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_LG, GAP_MEDIUM, GAP_COMPACT } from '../theme/tokens';
@@ -33,19 +34,10 @@ export function ScriptEditor({
   scenes = [],
   currentTime = 0
 }: ScriptEditorProps) {
-  const currentScene = useMemo(() => {
-    if (!scenes || scenes.length === 0) return null;
-    // Find the last scene that has a timestamp <= currentTime
-    let active = scenes[0];
-    for (const scene of scenes) {
-      if (scene.timestamp <= currentTime) {
-        active = scene;
-      } else {
-        break;
-      }
-    }
-    return active;
-  }, [scenes, currentTime]);
+  const currentScene = useMemo(
+    () => resolveActiveScene(scenes, currentTime),
+    [scenes, currentTime],
+  );
 
   const isOverLimit = script.length > MAX_CHARS;
 
@@ -233,7 +225,7 @@ export function ScriptEditor({
                 fontFamily: 'monospace',
               }}
             >
-              ⌘ ↵
+              {navigator.platform?.includes('Mac') ? '⌘ ↵' : 'Ctrl ↵'}
             </Box>
           </Stack>
         </Button>

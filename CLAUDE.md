@@ -175,6 +175,7 @@ src/
       components/canvas/StrokeRenderer.tsx
       components/batch/BatchOrchestrator.tsx
       components/batch/QueueStaging.tsx
+      components/batch/SpeedSelector.tsx
       components/upload/ImageUpload.tsx
     studio/
       types.ts
@@ -210,6 +211,7 @@ src/
     gemini.ts                 # integração central com Gemini
     audio.ts                  # utilitários WAV/PCM
     download.ts               # downloads client-side
+    scene.ts                  # resolução de cena ativa por timestamp
     constants.ts              # vozes, limites e instruções
     types.ts                  # tipos compartilhados
     db.ts                     # fachada compatível
@@ -241,5 +243,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.4.1`
-- **Last release:** 2026-04-19 — Fix StrokeRenderer style units; Firestore indexes restructured to fieldOverrides format
+- **Current:** `0.5.0`
+- **Last release:** 2026-04-19 — SpeedSelector extraído como componente reutilizável; resolveActiveScene e base64ToBlobSync como novos utilitários; erros amigáveis pt-BR em AuthContext, useAudioGenerator e useImageGenerator; a11y melhorada com aria-labels dinâmicos; loader global de autenticação

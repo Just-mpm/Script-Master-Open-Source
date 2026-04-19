@@ -95,7 +95,6 @@ export interface ChatMessageRecord {
   role: 'user' | 'model';
   text: string;
   attachments?: AttachmentRecord[];
-  isApplying?: boolean;
 }
 
 export interface ChatSession {
