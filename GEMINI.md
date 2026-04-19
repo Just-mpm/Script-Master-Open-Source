@@ -241,5 +241,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.4.0`
-- **Last release:** 2026-04-19 — Speed Paint feature: canvas animation with Konva, batch processing, image upload via drag & drop
+- **Current:** `0.4.1`
+- **Last release:** 2026-04-19 — Fix StrokeRenderer style units; Firestore indexes restructured to fieldOverrides format

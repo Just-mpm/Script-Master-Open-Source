@@ -198,8 +198,8 @@ export function StrokeRenderer() {
             position: 'absolute',
             top: '50%',
             left: '50%',
-            mt: -animation.canvasHeight / 2,
-            ml: -animation.canvasWidth / 2,
+            mt: `${-animation.canvasHeight / 2}px`,
+            ml: `${-animation.canvasWidth / 2}px`,
           }}
         >
           <Stage
