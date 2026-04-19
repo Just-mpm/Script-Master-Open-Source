@@ -26,5 +26,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "Speed-Paint/**",
+    "dist/**",
+    "node_modules/**"
+  ]
 }

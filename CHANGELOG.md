@@ -124,6 +124,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.4.0] - 2026-04-19
+
+### Adicionado
+
+- **Speed Paint** (`src/features/speed-paint/`): nova feature de animação de pintura com canvas Konva, geração de strokes a partir de imagens, player de animação com controles de play/pause/replay, e captura de snapshots e gravação de vídeo
+  - **Page** (`src/pages/SpeedPaintPage.tsx`): rota lazy-loaded com upload de imagens, player de animação e painel de staging em batch
+  - **Canvas** (`components/canvas/`): `AnimationPlayer`, `AnimationControls` e `StrokeRenderer` com react-konva para renderização de strokes progressivos
+  - **Batch** (`components/batch/`): `BatchOrchestrator` e `QueueStaging` para processamento em lote de imagens com seletor de velocidade
+  - **Upload** (`components/upload/`): `ImageUpload` com react-dropzone para arrastar/soltar imagens
+  - **Store** (`store/animationStore.ts`): estado global via zustand com tipagem `AnimationState`
+  - **Tipos** (`types.ts`): `Stroke` e `StrokeAnimation` para o modelo de dados de animação
+  - **Image processing** (`lib/imageProcessing.ts`): `generateStrokesFromImage` para conversão de imagem em sequência de strokes
+  - **Stage ref** (`lib/stageRef.ts`): ref compartilhado do stage Konva para captura de snapshot/vídeo
+- **Novas dependências**: `konva` ^10.2.5, `react-konva` ^19.2.3, `react-dropzone` ^15.0.0, `zustand` ^5.0.12
+- **Navegação**: ícone Palette adicionado ao Header para acesso à Speed Paint
+
+### Alterado
+
+- **App shell** (`src/App.tsx`): nova rota lazy para `SpeedPaintPage`
+- **tsconfig.json**: diretório `Speed-Paint/` adicionado ao `exclude`
+
+---
+
 ## [0.1.0] - 2025-xx-xx
 
 ### Adicionado

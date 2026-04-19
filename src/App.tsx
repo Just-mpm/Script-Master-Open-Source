@@ -38,6 +38,11 @@ const LibraryPage = lazy(async () => {
   return { default: module.LibraryPage };
 });
 
+const SpeedPaintPage = lazy(async () => {
+  const module = await import('./pages/SpeedPaintPage');
+  return { default: module.SpeedPaintPage };
+});
+
 function RouteFallback() {
   return (
     <Stack
@@ -94,6 +99,8 @@ export default function App() {
         />
 
         <Route path="/library" element={<LibraryPage />} />
+
+        <Route path="/speed-paint" element={<SpeedPaintPage />} />
       </Routes>
     </Suspense>
   );

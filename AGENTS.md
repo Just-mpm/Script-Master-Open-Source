@@ -34,6 +34,12 @@ bun run generate-previews  # gera WAVs de preview de voz via Gemini TTS
 - **Hosting:** Firebase Hosting tradicional com rewrite SPA para `index.html`
 - **Persistência:** Firebase Auth + Firestore + Storage + IndexedDB local
 
+## Dependencies
+
+- **Canvas/Animação:** konva + react-konva para renderização de canvas
+- **Upload de arquivos:** react-dropzone para drag & drop
+- **Estado global:** zustand para stores de feature
+
 ## UI & Design System
 
 - A interface usa **MUI v9** como stack visual principal
@@ -149,6 +155,7 @@ src/
   pages/
     AssistantPage.tsx
     LibraryPage.tsx
+    SpeedPaintPage.tsx
     StudioPage.tsx
     VideoPage.tsx
 
@@ -158,6 +165,17 @@ src/
       types.ts
       utils.ts
       components/
+    speed-paint/
+      types.ts
+      store/animationStore.ts
+      lib/imageProcessing.ts
+      lib/stageRef.ts
+      components/canvas/AnimationPlayer.tsx
+      components/canvas/AnimationControls.tsx
+      components/canvas/StrokeRenderer.tsx
+      components/batch/BatchOrchestrator.tsx
+      components/batch/QueueStaging.tsx
+      components/upload/ImageUpload.tsx
     studio/
       types.ts
       useStudioState.ts
@@ -223,5 +241,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.3.3`
-- **Last release:** 2026-04-18 — Border radius unification, Firestore collection group rules & indexes, empty state tokens
+- **Current:** `0.4.0`
+- **Last release:** 2026-04-19 — Speed Paint feature: canvas animation with Konva, batch processing, image upload via drag & drop

@@ -15,6 +15,7 @@ import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
 import Mic from '@mui/icons-material/Mic';
+import Palette from '@mui/icons-material/Palette';
 import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import Sparkles from '@mui/icons-material/AutoAwesome';
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Estúdio', icon: Mic },
   { to: '/image', label: 'Imagem', icon: ImageIcon },
   { to: '/video', label: 'Vídeo', icon: PlayCircle },
+  { to: '/speed-paint', label: 'Speed Paint', icon: Palette },
   { to: '/assistant', label: 'IA', icon: Sparkles, accent: true },
   { to: '/library', label: 'Biblioteca', icon: LocalLibrary },
 ];

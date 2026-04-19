@@ -1,0 +1,68 @@
+import { useEffect, useRef } from 'react';
+import { useAnimationStore } from '../../store/animationStore';
+import { generateStrokesFromImage } from '../../lib/imageProcessing';
+
+/**
+ * Orquestrador invisível que processa imagens da fila automaticamente.
+ * Gerencia o pipeline: imagem pendente -> geração de strokes -> reprodução.
+ */
+export function BatchOrchestrator() {
+  const {
+    queue,
+    currentIndex,
+    batchMode,
+    setJob,
+    setCurrentIndex,
+    setBatchMode,
+    setIsPlaying,
+    setProgress,
+  } = useAnimationStore();
+
+  const currentImageIdRef = useRef<string | null>(null);
+
+  // Handle automatic generation of strokes for the current queued image
+  useEffect(() => {
+    if (batchMode === 'idle' || queue.length === 0) return;
+
+    const currentImg = queue[currentIndex];
+
+    // If we've reached the end
+    if (!currentImg) {
+      setBatchMode('idle');
+      return;
+    }
+
+    // Only process if it's a new image
+    if (currentImageIdRef.current !== currentImg.id) {
+      currentImageIdRef.current = currentImg.id;
+
+      // Update UI state
+      setJob({ inputImage: currentImg.dataUrl, status: 'processing', progress: 0 });
+
+      generateStrokesFromImage(currentImg.dataUrl, (p) => {
+        setJob({ progress: p });
+      }).then((animation) => {
+        setJob({ status: 'completed', animation, progress: 0 });
+        // Autoplay once ready (will be hijacked by recorder if in record mode)
+        setProgress(0);
+
+        // Give the UI a tiny moment to render the canvas before triggering play
+        if (batchMode !== 'record') {
+          setTimeout(() => {
+            setIsPlaying(true);
+          }, 100);
+        }
+      }).catch((err) => {
+        console.error('Batch processing failed for image:', err);
+        setJob({ status: 'failed' });
+
+        // Auto-skip failed image after 2 seconds
+        setTimeout(() => {
+          setCurrentIndex(currentIndex + 1);
+        }, 2000);
+      });
+    }
+  }, [batchMode, currentIndex, queue, setJob, setIsPlaying, setProgress, setCurrentIndex, setBatchMode]);
+
+  return null;
+}
