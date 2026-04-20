@@ -50,12 +50,17 @@ export function VideoPage({
   // (Remotion só é carregado quando a rota /video é acessada)
   const {
     editingPlan,
+    originalPlan,
     isGeneratingPlan,
     error: planError,
     generatePlan,
     clearPlan,
     updateScene,
-  } = useEditingPlan();
+    resetToOriginal,
+    undoLastEdit,
+    canUndo,
+    regenerateScene,
+  } = useEditingPlan(currentProjectId);
 
   const videoExporter = useVideoExporter();
 
@@ -71,9 +76,9 @@ export function VideoPage({
   // Wrapper para gerar plano de edição
   const handleGenerateEditingPlan = useCallback(() => {
     if (script.trim() && scenes.length > 0 && durationInSeconds > 0) {
-      void generatePlan(script, scenesForPlan, durationInSeconds);
+      void generatePlan(script, scenesForPlan, durationInSeconds, audioUrl);
     }
-  }, [script, scenes.length, scenesForPlan, durationInSeconds, generatePlan]);
+  }, [script, scenes.length, scenesForPlan, durationInSeconds, audioUrl, generatePlan]);
 
   // --- Sincronização com o bridge store (ações estáveis via getState) ---
 
@@ -143,6 +148,21 @@ export function VideoPage({
         scenes={scenes}
         onUpdateScene={updateScene}
         onClearPlan={clearPlan}
+        onRegenerateScene={regenerateScene ? (index) => {
+          if (script.trim() && scenes.length > 0 && durationInSeconds > 0) {
+            void regenerateScene(index, script, scenesForPlan, durationInSeconds);
+          }
+        } : undefined}
+        canUndo={canUndo}
+        onUndo={undoLastEdit}
+        originalPlan={originalPlan}
+        onResetToOriginal={resetToOriginal}
+        onSeekToScene={(index) => {
+          const timestamp = scenes[index]?.timestamp;
+          if (timestamp !== undefined && videoPlayerRef.current) {
+            videoPlayerRef.current.seekTo(Math.round(timestamp * videoFps));
+          }
+        }}
       />
 
       {/* Painel de exportação MP4 */}

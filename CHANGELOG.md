@@ -7,6 +7,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.7.0] - 2026-04-20
+
+### Adicionado
+
+- **TitleOverlay** (`src/features/video-render/components/TitleOverlay.tsx`): componente de overlay de título em vídeo com estilos `intro`, `credit` e `lower-third` — renderiza título e subtítulo com animação de fade via Remotion
+- **Análise de áudio** (`src/features/video-render/lib/audioAnalysis.ts`): módulo de análise de áudio para o plano de edição — extrai pontos de análise (`AudioAnalysisPoint`) e resultado completo (`AudioAnalysisResult`) usados pelo hook `useEditingPlan` para gerar planos baseados em ritmo do áudio
+- **Persistência de planos de edição** (`src/lib/db/editing-plans.ts`): CRUD de planos de edição no IndexedDB — `saveEditingPlan` e `loadEditingPlan` com tipo `StoredEditingPlan`; object store `editing_plans` adicionado ao IndexedDB (DB_VERSION bumped para 8)
+- **Listas de constantes para IA** (`src/features/video-render/lib/editingPlan.ts`): `TRANSITION_TYPE_LIST`, `CAMERA_MOVEMENT_LIST`, `VISUAL_EFFECT_LIST` para uso em prompts de structured output; `TITLE_OVERLAY_STYLES` e `TitleOverlayStyle` para estilos de overlay; `DEFAULT_EFFECT_INTENSITY` (0.5) e `effectBlurPx()` para cálculo de blur proporcional
+- **Parser de legendas com Markdown** (`src/features/video-render/components/SubtitleOverlay.tsx`): funções `wrapSubtitleText`, `parseBoldMarkdown` e componente `SubtitleLine` para renderizar legendas com quebra automática de linha e suporte a **negrito** em markdown
+- **Undo history no plano de edição** (`src/features/video-render/hooks/useEditingPlan.ts`): histórico de undo com `MAX_UNDO_HISTORY = 20`, debounce de persistência (`PERSIST_DEBOUNCE_MS = 500ms`), geração em estágios com análise de áudio integrada
+- **Overlap frames** (`src/features/video-render/components/VideoComposition.tsx`): função `getOverlapFrames` para calcular frames de sobreposição entre cenas no plano de edição
+
+### Alterado
+
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): reescrita completa — agora usa `wrapSubtitleText` e `parseBoldMarkdown` para renderização avançada de legendas com quebra de linha e formatação markdown
+- **EditingPlanInspector** (`src/features/video-render/components/EditingPlanInspector.tsx`): adicionados botões de Play, Restart e Undo com ícones MUI; suporte a undo/reset do plano de edição
+- **SceneSequence** (`src/features/video-render/components/SceneSequence.tsx`): importa `CAMERA_MOVEMENTS`, `DEFAULT_EFFECT_INTENSITY` e `effectBlurPx` de `editingPlan` — transições e efeitos agora usam intensidade configurável
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): importa `TitleOverlay` e usa `getOverlapFrames` para composição com sobreposição de cenas e overlay de título
+- **useEditingPlan** (`src/features/video-render/hooks/useEditingPlan.ts`): reescrito — adicionados undo history, debounce de persistência, análise de áudio via `analyzeAudioForEditing`, estágios de geração com progresso granular, e integração com `loadEditingPlan`/`saveEditingPlan`
+- **VideoPage** (`src/pages/VideoPage.tsx`): integrado `originalPlan` e `resetToOriginal` do hook de edição para suporte a reset do plano
+- **gemini.ts** (`src/lib/gemini.ts`): importa `AudioAnalysisResult` e reorganiza constantes de edição — `TRANSITION_TYPES`, `CAMERA_MOVEMENTS` e `VISUAL_EFFECTS` movidos para `editingPlan.ts`
+- **videoUtils** (`src/features/video-render/lib/videoUtils.ts`): `mapScenesToVideoScenes` agora recebe `editingPlan` como 4º parâmetro opcional
+- **Barrel export** (`src/features/video-render/index.ts`): adicionado `TitleOverlay`; removidos `TRANSITION_PRESETS`, `CAMERA_MOVEMENTS` (movidos para `editingPlan.ts`)
+
+### Corrigido
+
+- **VideoPreview** (`src/components/VideoPreview.tsx`): `mapScenesToVideoScenes` chamado com `editingPlan` como 4º argumento para consistência com a nova assinatura
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): `mapScenesToVideoScenes` chamado com `editingPlan` para respeitar o plano de edição durante exportação
+
+---
+
 ## [0.2.0] - 2026-04-18
 
 ### Adicionado

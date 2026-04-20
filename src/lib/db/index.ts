@@ -7,3 +7,4 @@ export * from './images';
 export * from './projects';
 export * from './chats';
 export * from './videos';
+export * from './editing-plans';

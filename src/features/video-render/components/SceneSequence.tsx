@@ -1,4 +1,5 @@
-import { AbsoluteFill, Img, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Img, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { CAMERA_MOVEMENTS, DEFAULT_EFFECT_INTENSITY, effectBlurPx } from '../lib/editingPlan';
 import type { TransitionType, CameraMovement, VisualEffect } from '../lib/editingPlan';
 
 interface SceneSequenceProps {
@@ -14,6 +15,8 @@ interface SceneSequenceProps {
   camera?: CameraMovement;
   /** Efeitos visuais aplicados à cena */
   effects?: VisualEffect[];
+  /** Se é a última cena — remove fade-out para permanecer visível até o final */
+  isLastScene?: boolean;
 }
 
 /** Frames de fade in/out padrão para transição fade */
@@ -31,8 +34,10 @@ export function SceneSequence({
   transitionDurationFrames,
   camera = 'static',
   effects = [],
+  isLastScene = false,
 }: SceneSequenceProps) {
   const frame = useCurrentFrame();
+  const { width } = useVideoConfig();
 
   // Usa a duração de transição informada ou fallback para FADE_FRAMES
   const tFrames = transitionDurationFrames ?? FADE_FRAMES;
@@ -48,6 +53,7 @@ export function SceneSequence({
     frame,
     safeTransitionFrames,
     durationInFrames,
+    isLastScene,
   );
 
   // ── 2. Cálculo do movimento de câmera ──
@@ -60,8 +66,8 @@ export function SceneSequence({
     `scale(${scale * cameraTransform.scale})`,
   ].join(' ');
 
-  // ── 4. Compõe filtros CSS para efeitos visuais ──
-  const filterString = buildEffectsFilter(effects);
+  // ── 4. Compõe filtros CSS para efeitos visuais (blur proporcional à resolução) ──
+  const filterString = buildEffectsFilter(effects, width);
 
   // ── 5. Box-shadow para efeito vignette ──
   const vignetteShadow = effects.includes('vignette')
@@ -93,10 +99,16 @@ export function SceneSequence({
 
 /**
  * Interpolação reutilizável de fade-out: opacidade 1 → 1 → 0 nos frames finais.
+ * Se isLastScene, retorna 1 (sem fade-out) pois não há cena seguinte.
  * Usada por slide-left, slide-right, slide-up e wipe para manter DRY.
  */
-function fadeOutOpacity(frame: number, tFrames: number, durationInFrames: number): number {
-  if (tFrames <= 0) return 1;
+function fadeOutOpacity(
+  frame: number,
+  tFrames: number,
+  durationInFrames: number,
+  isLastScene?: boolean,
+): number {
+  if (isLastScene || tFrames <= 0) return 1;
   return interpolate(
     frame,
     [0, tFrames, durationInFrames - tFrames, durationInFrames],
@@ -118,6 +130,7 @@ function buildTransition(
   frame: number,
   tFrames: number,
   durationInFrames: number,
+  isLastScene?: boolean,
 ): TransitionResult {
   // Cenas muito curtas (< 3 frames) não têm espaço para transição de 4 valores
   if (tFrames <= 0 || durationInFrames < 2) {
@@ -129,6 +142,16 @@ function buildTransition(
       return { opacity: 1, translateX: 0, translateY: 0, scale: 1 };
 
     case 'fade': {
+      if (isLastScene) {
+        // Última cena: só fade-in, permanece visível até o final
+        const opacity = interpolate(
+          frame,
+          [0, tFrames],
+          [0, 1],
+          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+        );
+        return { opacity, translateX: 0, translateY: 0, scale: 1 };
+      }
       const opacity = interpolate(
         frame,
         [0, tFrames, durationInFrames - tFrames, durationInFrames],
@@ -139,8 +162,16 @@ function buildTransition(
     }
 
     case 'dissolve': {
-      // Dissolve usa 2x a duração do fade para ser mais longo
       const dissolveFrames = Math.min(tFrames * 2, Math.floor(durationInFrames / 2));
+      if (isLastScene) {
+        const opacity = interpolate(
+          frame,
+          [0, dissolveFrames],
+          [0, 1],
+          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+        );
+        return { opacity, translateX: 0, translateY: 0, scale: 1 };
+      }
       const opacity = interpolate(
         frame,
         [0, dissolveFrames, durationInFrames - dissolveFrames, durationInFrames],
@@ -151,7 +182,7 @@ function buildTransition(
     }
 
     case 'slide-left': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames);
+      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
       const translateX = interpolate(
         frame,
         [0, tFrames],
@@ -162,7 +193,7 @@ function buildTransition(
     }
 
     case 'slide-right': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames);
+      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
       const translateX = interpolate(
         frame,
         [0, tFrames],
@@ -173,7 +204,7 @@ function buildTransition(
     }
 
     case 'slide-up': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames);
+      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
       const translateY = interpolate(
         frame,
         [0, tFrames],
@@ -184,6 +215,21 @@ function buildTransition(
     }
 
     case 'zoom': {
+      if (isLastScene) {
+        const opacity = interpolate(
+          frame,
+          [0, tFrames],
+          [0, 1],
+          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+        );
+        const scale = interpolate(
+          frame,
+          [0, tFrames],
+          [1.2, 1],
+          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+        );
+        return { opacity, translateX: 0, translateY: 0, scale };
+      }
       const opacity = interpolate(
         frame,
         [0, tFrames, durationInFrames - tFrames, durationInFrames],
@@ -200,7 +246,7 @@ function buildTransition(
     }
 
     case 'wipe': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames);
+      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
       // Cortina horizontal: inset(0 X% 0 0) revela da esquerda para direita
       const insetRight = interpolate(
         frame,
@@ -237,55 +283,70 @@ function buildCameraMovement(
   frame: number,
   durationInFrames: number,
 ): CameraTransform {
+  const preset = CAMERA_MOVEMENTS[type];
+  const intensity = preset?.intensity ?? 0;
+
+  // Sem intensidade ou câmera estática = sem movimento
+  if (intensity === 0 || type === 'static') {
+    return { scale: 1, translateX: 0, translateY: 0 };
+  }
+
   const progress = durationInFrames > 0 ? frame / durationInFrames : 0;
+
+  // Multiplicadores base: intensidade 0.5 = movimento máximo visível
+  const maxPan = intensity * 15;   // % de translate (0.5 → 7.5%)
+  const maxScale = 1 + intensity * 0.4; // scale final (0.5 → 1.2)
 
   switch (type) {
     case 'pan-left':
       return {
         scale: 1,
-        translateX: interpolate(progress, [0, 1], [5, -5]),
+        translateX: interpolate(progress, [0, 1], [maxPan, -maxPan]),
         translateY: 0,
       };
 
     case 'pan-right':
       return {
         scale: 1,
-        translateX: interpolate(progress, [0, 1], [-5, 5]),
+        translateX: interpolate(progress, [0, 1], [-maxPan, maxPan]),
         translateY: 0,
       };
 
-    case 'tilt-up': {
-      const translateY = interpolate(progress, [0, 1], [5, -5]);
-      return { scale: 1, translateX: 0, translateY };
-    }
+    case 'tilt-up':
+      return {
+        scale: 1,
+        translateX: 0,
+        translateY: interpolate(progress, [0, 1], [maxPan, -maxPan]),
+      };
 
-    case 'tilt-down': {
-      const translateY = interpolate(progress, [0, 1], [-5, 5]);
-      return { scale: 1, translateX: 0, translateY };
-    }
+    case 'tilt-down':
+      return {
+        scale: 1,
+        translateX: 0,
+        translateY: interpolate(progress, [0, 1], [-maxPan, maxPan]),
+      };
 
     case 'zoom-in':
       return {
-        scale: interpolate(progress, [0, 1], [1, 1.15]),
+        scale: interpolate(progress, [0, 1], [1, maxScale]),
         translateX: 0,
         translateY: 0,
       };
 
     case 'zoom-out':
       return {
-        scale: interpolate(progress, [0, 1], [1.15, 1]),
+        scale: interpolate(progress, [0, 1], [maxScale, 1]),
         translateX: 0,
         translateY: 0,
       };
 
     case 'ken-burns':
       return {
-        scale: interpolate(progress, [0, 1], [1, 1.1]),
-        translateX: interpolate(progress, [0, 1], [-2, 2]),
+        scale: interpolate(progress, [0, 1], [1, 1 + intensity * 0.25]),
+        translateX: interpolate(progress, [0, 1], [-maxPan * 0.4, maxPan * 0.4]),
         translateY: 0,
       };
 
-    case 'static':
     default:
       return { scale: 1, translateX: 0, translateY: 0 };
   }
@@ -295,8 +356,9 @@ function buildCameraMovement(
 // Helpers de efeitos visuais (CSS filter)
 // ---------------------------------------------------------------------------
 
-function buildEffectsFilter(effects: VisualEffect[]): string {
+function buildEffectsFilter(effects: VisualEffect[], resolutionWidth?: number): string {
   const filters: string[] = [];
+  const refWidth = resolutionWidth ?? 1920;
 
   for (const effect of effects) {
     switch (effect) {
@@ -307,7 +369,8 @@ function buildEffectsFilter(effects: VisualEffect[]): string {
         filters.push('sepia(80%)');
         break;
       case 'blur':
-        filters.push('blur(2px)');
+        // Blur proporcional à resolução via effectBlurPx()
+        filters.push(`blur(${effectBlurPx(DEFAULT_EFFECT_INTENSITY, refWidth)}px)`);
         break;
       case 'brightness-up':
         filters.push('brightness(1.2)');

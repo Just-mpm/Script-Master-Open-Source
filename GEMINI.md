@@ -89,7 +89,7 @@ Como este projeto usa Gemini diretamente no cliente, `VITE_GEMINI_API_KEY` vai p
 O projeto usa um padrão de **dual storage**:
 
 - **Authenticated:** Firestore + Firebase Storage
-- **Anonymous:** IndexedDB local (`GeminiVoiceStudioDB`, versão 7)
+- **Anonymous:** IndexedDB local (`GeminiVoiceStudioDB`, versão 8)
 
 Ao alterar persistência, atualize os dois caminhos.
 
@@ -259,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.6.3`
-- **Last release:** 2026-04-20 — Correção de transição em SceneSequence (inputRange crescente), nova dependência @remotion/media, favicon adicionado, limpeza de lógica em useVideoExporter e useAudioGenerator, CORS config para Storage
+- **Current:** `0.7.0`
+- **Last release:** 2026-04-20 — TitleOverlay para vídeo, análise de áudio integrada ao plano de edição, persistência de planos em IndexedDB, parser de legendas com Markdown bold, undo history no useEditingPlan, constantes de edição centralizadas em editingPlan.ts

@@ -1,11 +1,51 @@
+// ─── Arrays canônicos (fonte única de verdade) ────────────────
+
+export const TRANSITION_TYPE_LIST = [
+  'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'cut', 'dissolve', 'wipe',
+] as const;
+
+export const CAMERA_MOVEMENT_LIST = [
+  'static', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'zoom-in', 'zoom-out', 'ken-burns',
+] as const;
+
+export const VISUAL_EFFECT_LIST = [
+  'none', 'grayscale', 'sepia', 'blur', 'vignette', 'brightness-up', 'contrast-up', 'saturate',
+] as const;
+
+// ─── Tipos derivados dos arrays canônicos ─────────────────────
+
 /** Tipos de transição entre cenas */
-export type TransitionType = 'fade' | 'slide-left' | 'slide-right' | 'slide-up' | 'zoom' | 'cut' | 'dissolve' | 'wipe';
+export type TransitionType = (typeof TRANSITION_TYPE_LIST)[number];
 
 /** Movimentos de câmera virtuais */
-export type CameraMovement = 'static' | 'pan-left' | 'pan-right' | 'tilt-up' | 'tilt-down' | 'zoom-in' | 'zoom-out' | 'ken-burns';
+export type CameraMovement = (typeof CAMERA_MOVEMENT_LIST)[number];
 
 /** Efeitos visuais aplicáveis a uma cena */
-export type VisualEffect = 'none' | 'grayscale' | 'sepia' | 'blur' | 'vignette' | 'brightness-up' | 'contrast-up' | 'saturate';
+export type VisualEffect = (typeof VISUAL_EFFECT_LIST)[number];
+
+// ─── Estilos de overlay de título ─────────────────────────────
+
+export const TITLE_OVERLAY_STYLES = ['intro', 'credit', 'lower-third'] as const;
+export type TitleOverlayStyle = (typeof TITLE_OVERLAY_STYLES)[number];
+
+/** Labels para estilos de título */
+export const TITLE_OVERLAY_LABELS: Record<TitleOverlayStyle, string> = {
+  intro: 'Introdução',
+  credit: 'Créditos',
+  'lower-third': 'Lower Third',
+};
+
+// ─── Efeitos visuais — constantes de intensidade ──────────────
+
+/** Intensidade padrão dos efeitos visuais (0-1) */
+export const DEFAULT_EFFECT_INTENSITY = 0.5;
+
+/** Converte intensidade (0-1) em valor CSS de blur em pixels, proporcional à resolução */
+export function effectBlurPx(intensity: number, referenceWidth: number): number {
+  return Math.max(1, intensity * referenceWidth / 480);
+}
+
+// ─── Modelos de dados ─────────────────────────────────────────
 
 /** Descrição do plano de edição para uma cena */
 export interface EditingScene {
@@ -25,10 +65,19 @@ export interface EditingScene {
   camera?: CameraMovement;
   /** Override de duração (em segundos) se diferente do cálculo automático */
   durationOverride?: number;
+  /** Posição da legenda na tela */
+  subtitlePosition?: 'bottom' | 'center' | 'top';
+  /** Overlay de título (intro, créditos, lower-third) */
+  titleOverlay?: {
+    text: string;
+    style: TitleOverlayStyle;
+  };
 }
 
 /** Plano de edição completo */
 export type EditingPlan = EditingScene[];
+
+// ─── Presets (Records construídos para cobrir os arrays) ──────
 
 /** Presets de transição com configuração padrão */
 export const TRANSITION_PRESETS: Record<TransitionType, { defaultDuration: number; description: string }> = {

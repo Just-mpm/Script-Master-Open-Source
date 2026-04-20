@@ -1,4 +1,5 @@
 import type { SceneRatio, StudioScene } from '../../studio/types';
+import type { EditingScene } from './editingPlan';
 import type { VideoScene } from '../types';
 
 /** Converte milissegundos para frames */
@@ -40,22 +41,35 @@ export function calculateDurationFromWav(wavByteLength: number, sampleRate = 240
 /**
  * Mapeia StudioScene[] para VideoScene[] calculando a duração em frames
  * de cada cena. A última cena se estende até o fim do áudio.
+ * Se um editingPlan for fornecido, respeita durationOverride quando presente.
  */
 export function mapScenesToVideoScenes(
   scenes: StudioScene[],
   totalDurationInFrames: number,
   fps: number,
+  editingPlan?: EditingScene[],
 ): VideoScene[] {
   if (scenes.length === 0) return [];
 
   return scenes.map((scene, index) => {
-    const currentStartSec = scene.timestamp;
-    const nextStartSec = index < scenes.length - 1
-      ? scenes[index + 1].timestamp
-      : totalDurationInFrames / fps;
+    // Busca cena correspondente no plano de edição (por timestamp ou índice)
+    const planScene = editingPlan?.find(
+      (p) => Math.abs(p.timestamp - scene.timestamp) < 0.5,
+    ) ?? editingPlan?.[index];
 
-    const durationSec = Math.max(0, nextStartSec - currentStartSec);
-    const sceneDurationInFrames = Math.max(1, Math.round(durationSec * fps));
+    // Se há durationOverride válido, usa-o; senão calcula pelo timestamp da próxima
+    let sceneDurationInFrames: number;
+
+    if (planScene?.durationOverride && planScene.durationOverride > 0) {
+      sceneDurationInFrames = Math.max(1, Math.round(planScene.durationOverride * fps));
+    } else {
+      const currentStartSec = scene.timestamp;
+      const nextStartSec = index < scenes.length - 1
+        ? scenes[index + 1].timestamp
+        : totalDurationInFrames / fps;
+      const durationSec = Math.max(0, nextStartSec - currentStartSec);
+      sceneDurationInFrames = Math.max(1, Math.round(durationSec * fps));
+    }
 
     return { ...scene, durationInFrames: sceneDurationInFrames };
   });

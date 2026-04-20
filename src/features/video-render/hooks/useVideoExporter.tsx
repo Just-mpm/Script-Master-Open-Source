@@ -221,7 +221,7 @@ export function useVideoExporter() {
     if (!audioUrl || scenes.length === 0) return;
 
     const resolution = getResolutionFromRatio(ratio);
-    const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
+    const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps, editingPlan);
 
     // Monta inputProps com tipo compatível com Record<string, unknown>
     const exportableInputProps: ExportableProps = {

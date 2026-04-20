@@ -5,8 +5,13 @@ import type {
   EditingScene,
   TransitionType,
   CameraMovement,
-  VisualEffect,
 } from '../features/video-render/lib/editingPlan';
+import {
+  TRANSITION_TYPE_LIST,
+  CAMERA_MOVEMENT_LIST,
+  VISUAL_EFFECT_LIST,
+} from '../features/video-render/lib/editingPlan';
+import type { AudioAnalysisResult } from '../features/video-render/lib/audioAnalysis';
 
 const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
@@ -164,18 +169,6 @@ export async function generateImageFromPrompt(prompt: string, aspectRatio: '1:1'
 // Geração de plano de edição (transições, legendas, câmera, efeitos)
 // ---------------------------------------------------------------------------
 
-const TRANSITION_TYPES: TransitionType[] = [
-  'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'cut', 'dissolve', 'wipe',
-];
-
-const CAMERA_MOVEMENTS: CameraMovement[] = [
-  'static', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'zoom-in', 'zoom-out', 'ken-burns',
-];
-
-const VISUAL_EFFECTS: VisualEffect[] = [
-  'none', 'grayscale', 'sepia', 'blur', 'vignette', 'brightness-up', 'contrast-up', 'saturate',
-];
-
 /**
  * Gera um plano de edição automático para as cenas do vídeo.
  * Retorna um EditingScene por cena com transição, legenda, câmera e efeitos.
@@ -185,6 +178,7 @@ export async function generateEditingPlan(
   script: string,
   scenes: { timestamp: number; prompt: string }[],
   durationInSeconds: number,
+  audioAnalysis?: AudioAnalysisResult | null,
 ): Promise<EditingPlan> {
   // Plano padrão caso a IA falhe — fade em todas as cenas
   const fallbackPlan: EditingPlan = scenes.map(scene => ({
@@ -199,22 +193,38 @@ export async function generateEditingPlan(
 
   const scenesJson = scenes.map(s => JSON.stringify(s)).join('\n');
 
-  const systemPrompt = `Você é um editor de vídeo profissional especializado em vídeos do YouTube.
+  // Seção de análise de áudio — inserida antes do roteiro quando disponível
+  const audioSection = audioAnalysis?.toPromptText
+    ? `\n${audioAnalysis.toPromptText}\n\n`
+    : '';
+
+  const systemPrompt = `Você é um editor de vídeo profissional especializado em conteúdo para YouTube Shorts, Reels e TikTok.
 O vídeo tem ${durationInSeconds.toFixed(1)} segundos e ${scenes.length} cenas.
 
-Analise o roteiro e as cenas fornecidas e crie um plano de edição para cada cena.
+Analise o roteiro e crie um plano de edição dinâmico para cada cena.
 
-Regras:
-1. Mantenha os timestamps EXATAMENTE iguais aos das cenas fornecidas.
-2. Mantenha os prompts EXATAMENTE iguais aos das cenas fornecidas.
-3. A primeira cena DEVE usar transição "cut" (entrada direta sem efeito).
-4. Escolha transições variadas — evite usar a mesma em cenas consecutivas.
-5. Gere legendas curtas (até 8 palavras) que resumam o momento da cena. Se a cena não precisa de legenda, omita o campo.
-6. Escolha movimentos de câmera que combinem com o conteúdo narrativo.
+Regras obrigatórias:
+1. Mantenha os timestamps EXATAMENTE iguais aos fornecidos.
+2. Mantenha os prompts EXATAMENTE iguais aos fornecidos.
+3. A primeira cena DEVE usar transição "cut".
+4. Varie as transições — evite repetir a mesma em cenas consecutivas.
+5. Durações de transição: use os defaults (cut=0, fade=500, slide=400, zoom=600, dissolve=800, wipe=500).
+6. Gere legendas curtas (até 8 palavras) que resumam o momento da cena. Se a cena não precisa de legenda, omita o campo.
 7. Use efeitos visuais com moderação — a maioria das cenas deve usar ["none"] ou omitir o campo.
-8. Durações de transição: use os defaults (cut=0, fade=500, slide=400, zoom=600, dissolve=800, wipe=500).
 
-Roteiro:
+Diretrizes criativas:
+- Use movimentos de câmera para criar dinamismo (zoom-in em momentos de tensão, pan em cenas panorâmicas, ken-burns em revelações).
+- Legendas devem ser impactantes: use frases curtas que capturam a atenção (até 8 palavras).
+- Combine efeitos visuais com o tom narrativo: sépia/gradiente para nostalgia, contraste para momentos dramáticos.
+- Transições mais longas (dissolve) para cenas emocionais, rápidas (cut, wipe) para ação.
+- Cada cena deve ter personalidade própria — evite que todas pareçam iguais.
+
+Exemplos de boas combinações:
+- Cena panorâmica → pan-right + fade + legenda descritiva
+- Momento de impacto → zoom-in + cut + contraste
+- Transição emocional → ken-burns + dissolve + legenda reflexiva
+
+${audioSection}Roteiro:
 ${script}
 
 Cenas fornecidas (JSON):
@@ -241,7 +251,7 @@ ${scenesJson}`;
               transition: {
                 type: Type.STRING,
                 description: 'Tipo de transição para entrar nesta cena',
-                enum: TRANSITION_TYPES,
+                enum: TRANSITION_TYPE_LIST,
               },
               transitionDuration: {
                 type: Type.NUMBER,
@@ -256,13 +266,13 @@ ${scenesJson}`;
                 description: 'Efeitos visuais aplicados. Use ["none"] ou omita se não houver efeito.',
                 items: {
                   type: Type.STRING,
-                  enum: VISUAL_EFFECTS,
+                  enum: VISUAL_EFFECT_LIST,
                 },
               },
               camera: {
                 type: Type.STRING,
                 description: 'Movimento de câmera durante a cena',
-                enum: CAMERA_MOVEMENTS,
+                enum: CAMERA_MOVEMENT_LIST,
               },
             },
             required: ['timestamp', 'prompt', 'transition', 'camera'],
@@ -287,13 +297,13 @@ ${scenesJson}`;
     const normalized: EditingPlan = parsed.map((scene, index) => ({
       timestamp: scene.timestamp ?? scenes[index]?.timestamp ?? 0,
       prompt: scene.prompt ?? scenes[index]?.prompt ?? '',
-      transition: TRANSITION_TYPES.includes(scene.transition as TransitionType)
+      transition: TRANSITION_TYPE_LIST.includes(scene.transition as TransitionType)
         ? (scene.transition as TransitionType)
         : 'fade',
       transitionDuration: scene.transitionDuration ?? 500,
       subtitle: scene.subtitle?.trim() || undefined,
       effects: Array.isArray(scene.effects) ? scene.effects : undefined,
-      camera: CAMERA_MOVEMENTS.includes(scene.camera as CameraMovement)
+      camera: CAMERA_MOVEMENT_LIST.includes(scene.camera as CameraMovement)
         ? (scene.camera as CameraMovement)
         : 'static',
       durationOverride: scene.durationOverride,

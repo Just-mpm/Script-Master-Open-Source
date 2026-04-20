@@ -129,8 +129,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
     const mappedScenes = useMemo(
-      () => mapScenesToVideoScenes(scenes, durationInFrames, fps),
-      [scenes, durationInFrames, fps],
+      () => mapScenesToVideoScenes(scenes, durationInFrames, fps, editingPlan),
+      [scenes, durationInFrames, fps, editingPlan],
     );
 
     // Expose handle imperativo para o pai controlar play/pause/seek

@@ -1,10 +1,11 @@
 import { AbsoluteFill, Sequence } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { VideoCompositionProps } from '../types';
-import type { EditingScene } from '../lib/editingPlan';
+import { type EditingScene, TRANSITION_PRESETS } from '../lib/editingPlan';
 import { msToFrames } from '../lib/videoUtils';
 import { SceneSequence } from './SceneSequence';
 import { SubtitleOverlay } from './SubtitleOverlay';
+import { TitleOverlay } from './TitleOverlay';
 
 /**
  * Composition principal Remotion para o vídeo de roteiro.
@@ -12,22 +13,33 @@ import { SubtitleOverlay } from './SubtitleOverlay';
  * - Áudio master sincronizado
  * - Sequências de cena com imagens, transições e efeitos
  * - Legendas opcionais sobrepostas
+ * - Overlays de título (intro, créditos, lower-third)
+ * - Cross-scene via overlap de Sequences (crossfade real entre cenas)
  *
  * Backward compatible: sem editingPlan, usa fade padrão em todas as cenas.
  */
 export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCompositionProps) {
+  const totalScenes = scenes.length;
+
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
       {/* Áudio como master clock — Remotion sincroniza automaticamente */}
       {audioUrl && <Audio src={audioUrl} />}
 
-      {/* Renderiza cada cena como uma Sequence */}
+      {/* Renderiza cada cena como uma Sequence com overlap para crossfade */}
       {scenes.map((scene, index) => {
         // Timestamp em ms * 1000 -> converte para frames
         const startFrame = msToFrames(scene.timestamp * 1000, fps);
 
         // Busca dados do plano de edição para esta cena (se disponível)
         const planScene = findEditingSceneForIndex(editingPlan, scene.timestamp, index);
+
+        // Calcula frames de sobreposição para crossfade entre cenas
+        const overlapFrames = getOverlapFrames(planScene, fps);
+
+        // Compensa o from com overlap: cena começa mais cedo durante a anterior
+        const adjustedFrom = Math.max(0, startFrame - overlapFrames);
+        const adjustedDuration = scene.durationInFrames + overlapFrames;
 
         // Se há plano, converte transitionDuration de ms para frames
         const transitionDurationFrames = planScene?.transitionDuration
@@ -37,27 +49,40 @@ export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCo
         // Prioriza legenda do plano de edição sobre a legenda da cena
         const subtitleText = planScene?.subtitle ?? scene.subtitle;
 
+        const isLastScene = index === totalScenes - 1;
+
         return (
           <Sequence
             key={`${scene.imageUrl}-${scene.timestamp}`}
-            from={startFrame}
-            durationInFrames={scene.durationInFrames}
+            from={adjustedFrom}
+            durationInFrames={adjustedDuration}
           >
-            {/* Imagem da cena com transição, câmera e efeitos */}
+            {/* Imagem da cena com transição, câmera, efeitos e controle de última cena */}
             <SceneSequence
               imageUrl={scene.imageUrl}
-              durationInFrames={scene.durationInFrames}
+              durationInFrames={adjustedDuration}
               transition={planScene?.transition}
               transitionDurationFrames={transitionDurationFrames}
               camera={planScene?.camera}
               effects={planScene?.effects}
+              isLastScene={isLastScene}
             />
 
-            {/* Legenda opcional */}
+            {/* Legenda opcional com posição customizável */}
             {subtitleText && (
               <SubtitleOverlay
                 text={subtitleText}
-                durationInFrames={scene.durationInFrames}
+                durationInFrames={adjustedDuration}
+                position={planScene?.subtitlePosition}
+              />
+            )}
+
+            {/* Overlay de título (intro, créditos, lower-third) */}
+            {planScene?.titleOverlay && (
+              <TitleOverlay
+                text={planScene.titleOverlay.text}
+                style={planScene.titleOverlay.style}
+                durationInFrames={adjustedDuration}
               />
             )}
           </Sequence>
@@ -70,6 +95,21 @@ export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCo
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Calcula frames de sobreposição para crossfade entre cenas.
+ * Usa transitionDuration do plano ou o default do preset de transição.
+ * Transições 'cut' não geram overlap.
+ */
+function getOverlapFrames(planScene: EditingScene | undefined, fps: number): number {
+  if (!planScene?.transition || planScene.transition === 'cut') return 0;
+
+  const durationMs = planScene.transitionDuration
+    ?? TRANSITION_PRESETS[planScene.transition]?.defaultDuration
+    ?? 500;
+
+  return msToFrames(durationMs, fps);
+}
 
 /**
  * Encontra o EditingScene correspondente a uma cena pelo timestamp.

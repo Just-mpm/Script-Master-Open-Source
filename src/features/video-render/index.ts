@@ -12,8 +12,19 @@ export type {
   VisualEffect,
   EditingScene,
   EditingPlan,
+  TitleOverlayStyle,
 } from './lib/editingPlan';
-export { TRANSITION_PRESETS, CAMERA_MOVEMENTS } from './lib/editingPlan';
+export {
+  TRANSITION_PRESETS,
+  CAMERA_MOVEMENTS,
+  TRANSITION_TYPE_LIST,
+  CAMERA_MOVEMENT_LIST,
+  VISUAL_EFFECT_LIST,
+  TITLE_OVERLAY_STYLES,
+  TITLE_OVERLAY_LABELS,
+  DEFAULT_EFFECT_INTENSITY,
+  effectBlurPx,
+} from './lib/editingPlan';
 
 // ─── Utils ────────────────────────────────────────────────
 export {
@@ -29,6 +40,7 @@ export {
 export { VideoComposition } from './components/VideoComposition';
 export { SceneSequence } from './components/SceneSequence';
 export { SubtitleOverlay } from './components/SubtitleOverlay';
+export { TitleOverlay } from './components/TitleOverlay';
 export { EditingPlanInspector } from './components/EditingPlanInspector';
 export { VideoExportPanel } from './components/VideoExportPanel';
 

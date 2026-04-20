@@ -20,8 +20,24 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import AutoFixHigh from '@mui/icons-material/AutoFixHigh';
 import DeleteSweep from '@mui/icons-material/DeleteSweep';
 import Image from '@mui/icons-material/Image';
-import type { EditingPlan, EditingScene, TransitionType, CameraMovement, VisualEffect } from '../lib/editingPlan';
-import { TRANSITION_PRESETS, CAMERA_MOVEMENTS } from '../lib/editingPlan';
+import PlayArrow from '@mui/icons-material/PlayArrow';
+import RestartAlt from '@mui/icons-material/RestartAlt';
+import Undo from '@mui/icons-material/Undo';
+import WarningAmber from '@mui/icons-material/WarningAmber';
+import type {
+  EditingPlan,
+  EditingScene,
+  TransitionType,
+  CameraMovement,
+  VisualEffect,
+  TitleOverlayStyle,
+} from '../lib/editingPlan';
+import {
+  TRANSITION_PRESETS,
+  CAMERA_MOVEMENTS,
+  TITLE_OVERLAY_STYLES,
+  TITLE_OVERLAY_LABELS,
+} from '../lib/editingPlan';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
   GAP_COMPACT,
@@ -35,11 +51,13 @@ import {
   TEXT_SECONDARY,
   TEXT_DISABLED,
   APP_BORDER,
+  WARNING_MAIN,
   WHITE_06,
   WHITE_08,
   WHITE_10,
   WHITE_12,
   WHITE_14,
+  WHITE_16,
   BLACK_32,
 } from '../../../theme/tokens';
 
@@ -56,6 +74,18 @@ interface EditingPlanInspectorProps {
   onUpdateScene: (index: number, updates: Partial<EditingScene>) => void;
   /** Callback para limpar o plano de edição */
   onClearPlan: () => void;
+  /** Seek do player para o timestamp da cena (preview) */
+  onSeekToScene?: (index: number) => void;
+  /** Re-gerar cena individual com IA */
+  onRegenerateScene?: (index: number) => void;
+  /** Indica se há edições para desfazer */
+  canUndo?: boolean;
+  /** Desfazer última edição no plano */
+  onUndo?: () => void;
+  /** Plano original gerado pela IA (para reset) */
+  originalPlan?: EditingPlan | null;
+  /** Resetar plano para sugestão original da IA */
+  onResetToOriginal?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,9 +137,18 @@ export function EditingPlanInspector({
   scenes,
   onUpdateScene,
   onClearPlan,
+  onSeekToScene,
+  onRegenerateScene,
+  canUndo,
+  onUndo,
+  originalPlan,
+  onResetToOriginal,
 }: EditingPlanInspectorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  /** Quantidade de cenas do plano sem imagem correspondente */
+  const misalignedCount = editingPlan ? Math.max(0, editingPlan.length - scenes.length) : 0;
 
   // Estado vazio: plano ainda não gerado
   if (!editingPlan || editingPlan.length === 0) {
@@ -177,15 +216,60 @@ export function EditingPlanInspector({
             <AutoFixHigh sx={{ fontSize: 16, color: BRAND_PRIMARY }} />
           </Box>
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Plano de edição
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: GAP_COMPACT }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Plano de edição
+              </Typography>
+              {/* Aviso de desalinhamento: plano tem mais cenas que imagens */}
+              {misalignedCount > 0 && (
+                <Tooltip title={`${misalignedCount} cena(s) do plano sem imagem correspondente`}>
+                  <Chip
+                    icon={<WarningAmber sx={{ fontSize: 12 }} />}
+                    label={`${misalignedCount} sem imagem`}
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                    sx={{ fontSize: 10, height: 20, '& .MuiChip-icon': { color: WARNING_MAIN } }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
             <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
               {editingPlan.length} {editingPlan.length === 1 ? 'cena' : 'cenas'}
             </Typography>
           </Box>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: GAP_COMPACT }}>
+          {/* Botão desfazer — só aparece quando há edições para reverter */}
+          {canUndo && (
+            <Tooltip title="Desfazer última edição">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); onUndo?.(); }}
+                  aria-label="Desfazer última edição"
+                  sx={{ color: TEXT_SECONDARY }}
+                >
+                  <Undo sx={{ fontSize: 18 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+          {/* Botão resetar — só aparece quando há plano original da IA */}
+          {originalPlan && (
+            <Tooltip title="Resetar para sugestão original da IA">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={(e) => { e.stopPropagation(); onResetToOriginal?.(); }}
+                  aria-label="Resetar para sugestão original da IA"
+                  sx={{ color: TEXT_SECONDARY }}
+                >
+                  <RestartAlt sx={{ fontSize: 18 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
           <Tooltip title="Limpar plano de edição">
             <span>
               <IconButton
@@ -214,7 +298,10 @@ export function EditingPlanInspector({
               planScene={planScene}
               index={index}
               thumbnailUrl={scenes[index]?.imageUrl}
+              hasImage={index < scenes.length}
               onUpdate={(updates) => onUpdateScene(index, updates)}
+              onSeekToScene={onSeekToScene}
+              onRegenerateScene={onRegenerateScene}
             />
           ))}
         </Box>
@@ -263,10 +350,16 @@ interface PlanSceneCardProps {
   planScene: EditingScene;
   index: number;
   thumbnailUrl?: string;
+  /** Indica se esta cena tem imagem correspondente no array de scenes */
+  hasImage: boolean;
   onUpdate: (updates: Partial<EditingScene>) => void;
+  /** Seek do player para o frame desta cena */
+  onSeekToScene?: (index: number) => void;
+  /** Re-gerar esta cena com IA */
+  onRegenerateScene?: (index: number) => void;
 }
 
-function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCardProps) {
+function PlanSceneCard({ planScene, index, thumbnailUrl, hasImage, onUpdate, onSeekToScene, onRegenerateScene }: PlanSceneCardProps) {
   const timestampFormatted = formatTimestamp(planScene.timestamp);
 
   return (
@@ -280,7 +373,7 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
         '&:last-child': { borderBottom: 'none' },
       }}
     >
-      {/* Thumbnail ou ícone */}
+      {/* Thumbnail, placeholder ou placeholder com aviso de desalinhamento */}
       <Box sx={{
         flexShrink: 0,
         width: 64,
@@ -290,6 +383,9 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
         bgcolor: BLACK_32,
         display: 'grid',
         placeItems: 'center',
+        position: 'relative',
+        // Borda tracejada quando não há imagem correspondente
+        ...(!hasImage && { outline: `1px dashed ${WHITE_16}` }),
       }}>
         {thumbnailUrl
           ? (
@@ -305,7 +401,7 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
 
       {/* Conteúdo */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        {/* Header: número + timestamp */}
+        {/* Header: número + timestamp + ações rápidas */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: GAP_COMPACT, mb: GAP_COMPACT }}>
           <Typography variant="caption" sx={{ fontWeight: 700, color: BRAND_PRIMARY }}>
             Cena {index + 1}
@@ -313,6 +409,32 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, fontFamily: 'JetBrains Mono, monospace' }}>
             {timestampFormatted}
           </Typography>
+          {/* Botão seek — preview da cena no player */}
+          {onSeekToScene && (
+            <Tooltip title="Ir para esta cena">
+              <IconButton
+                size="small"
+                onClick={() => onSeekToScene(index)}
+                sx={{ color: TEXT_SECONDARY, opacity: 0.7, '&:hover': { opacity: 1 } }}
+                aria-label={`Ir para cena ${index + 1}`}
+              >
+                <PlayArrow sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+          {/* Botão regenerar cena com IA */}
+          {onRegenerateScene && (
+            <Tooltip title="Re-gerar esta cena com IA">
+              <IconButton
+                size="small"
+                onClick={() => onRegenerateScene(index)}
+                sx={{ color: BRAND_PRIMARY, opacity: 0.7, '&:hover': { opacity: 1 } }}
+                aria-label={`Re-gerar cena ${index + 1} com IA`}
+              >
+                <AutoFixHigh sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
         {/* Chips de transição, câmera e efeitos */}
@@ -349,7 +471,7 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
         )}
 
         {/* Campos editáveis */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: GAP_DEFAULT, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: GAP_DEFAULT, alignItems: 'flex-start' }}>
           {/* Dropdown de transição */}
           <Box sx={{ minWidth: 120 }}>
             <Typography variant="caption" sx={{ color: TEXT_DISABLED, display: 'block', mb: 0.25 }}>
@@ -403,6 +525,62 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, onUpdate }: PlanSceneCa
               sx={textFieldSx}
               slotProps={{ input: { 'aria-label': `Legenda da cena ${index + 1}` } }}
             />
+          </Box>
+
+          {/* Dropdown de posição da legenda */}
+          <Box sx={{ minWidth: 90 }}>
+            <Typography variant="caption" sx={{ color: TEXT_DISABLED, display: 'block', mb: 0.25 }}>
+              Posição
+            </Typography>
+            <Select
+              size="small"
+              value={planScene.subtitlePosition ?? 'bottom'}
+              onChange={(e) => onUpdate({ subtitlePosition: e.target.value as 'bottom' | 'center' | 'top' })}
+              sx={selectSx}
+              aria-label={`Posição da legenda da cena ${index + 1}`}
+            >
+              <MenuItem value="bottom" dense>Inferior</MenuItem>
+              <MenuItem value="center" dense>Centro</MenuItem>
+              <MenuItem value="top" dense>Superior</MenuItem>
+            </Select>
+          </Box>
+
+          {/* Controles de título overlay */}
+          <Box sx={{ minWidth: 200 }}>
+            <Typography variant="caption" sx={{ color: TEXT_DISABLED, display: 'block', mb: 0.25 }}>
+              Título overlay
+            </Typography>
+            <Box sx={{ display: 'flex', gap: GAP_COMPACT }}>
+              <TextField
+                size="small"
+                placeholder="Sem título"
+                value={planScene.titleOverlay?.text ?? ''}
+                onChange={(e) => onUpdate({
+                  titleOverlay: e.target.value
+                    ? { text: e.target.value, style: planScene.titleOverlay?.style ?? 'intro' }
+                    : undefined,
+                })}
+                sx={{ ...textFieldSx, flex: 1 }}
+                slotProps={{ input: { 'aria-label': `Título overlay da cena ${index + 1}` } }}
+              />
+              <Select
+                size="small"
+                value={planScene.titleOverlay?.style ?? 'intro'}
+                onChange={(e) => {
+                  const style = e.target.value as TitleOverlayStyle;
+                  const text = planScene.titleOverlay?.text ?? '';
+                  onUpdate({ titleOverlay: text ? { text, style } : undefined });
+                }}
+                sx={{ ...selectSx, minWidth: 100 }}
+                aria-label={`Estilo do título overlay da cena ${index + 1}`}
+              >
+                {TITLE_OVERLAY_STYLES.map(s => (
+                  <MenuItem key={s} value={s} dense>
+                    {TITLE_OVERLAY_LABELS[s]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
           </Box>
         </Box>
       </Box>
