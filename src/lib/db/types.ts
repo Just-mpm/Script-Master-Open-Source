@@ -104,3 +104,20 @@ export interface ChatSession {
   messages: ChatMessageRecord[];
   updatedAt: number;
 }
+
+/** Vídeo exportado associado a um projeto */
+export interface ProjectVideo {
+  id: string;
+  projectId: string;
+  userId: string;
+  videoUrl: string;
+  format: 'mp4' | 'webm';
+  width: number;
+  height: number;
+  fps: number;
+  durationInSeconds: number;
+  fileSizeBytes: number;
+  createdAt: number;
+  /** Blob local para IndexedDB (não persistido no Firestore) */
+  videoBlob?: Blob;
+}

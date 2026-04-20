@@ -89,7 +89,7 @@ Como este projeto usa Gemini diretamente no cliente, `VITE_GEMINI_API_KEY` vai p
 O projeto usa um padrão de **dual storage**:
 
 - **Authenticated:** Firestore + Firebase Storage
-- **Anonymous:** IndexedDB local (`GeminiVoiceStudioDB`, versão 6)
+- **Anonymous:** IndexedDB local (`GeminiVoiceStudioDB`, versão 7)
 
 Ao alterar persistência, atualize os dois caminhos.
 
@@ -106,11 +106,13 @@ Domínios atuais da persistência:
 - `image_generations`
 - `projects`
 - `chats`
+- `videos`
 
 Subcoleções de projeto:
 
 - `projects/{projectId}/audios`
 - `projects/{projectId}/images`
+- `projects/{projectId}/videos`
 
 Os contratos documentais espelham `firebase-blueprint.json`.
 
@@ -122,6 +124,7 @@ Os contratos documentais espelham `firebase-blueprint.json`.
 - Limites atuais:
   - áudio: 50 MB
   - imagem: 10 MB
+  - vídeo: 200 MB
 
 ## TTS Generation
 
@@ -180,6 +183,19 @@ src/
     studio/
       types.ts
       useStudioState.ts
+    video-render/
+      index.ts
+      types.ts
+      lib/editingPlan.ts
+      lib/videoUtils.ts
+      store/videoRenderBridge.ts
+      components/EditingPlanInspector.tsx
+      components/SceneSequence.tsx
+      components/SubtitleOverlay.tsx
+      components/VideoComposition.tsx
+      components/VideoExportPanel.tsx
+      hooks/useEditingPlan.ts
+      hooks/useVideoExporter.tsx
 
   components/
     Header.tsx
@@ -243,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.5.0`
-- **Last release:** 2026-04-19 — SpeedSelector extraído como componente reutilizável; resolveActiveScene e base64ToBlobSync como novos utilitários; erros amigáveis pt-BR em AuthContext, useAudioGenerator e useImageGenerator; a11y melhorada com aria-labels dinâmicos; loader global de autenticação
+- **Current:** `0.6.0`
+- **Last release:** 2026-04-20 — Video Render com Remotion (composição, plano de edição IA, exportação client-side); persistência de vídeos (Firestore + IndexedDB); VideoPreview refatorado com Remotion Player

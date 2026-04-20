@@ -9,7 +9,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 import { auth, storage } from '../firebase';
 
 export const DB_NAME = 'GeminiVoiceStudioDB';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 export const STORE_NAME = 'generations';
 export const IMAGE_STORE = 'image_generations';
@@ -19,6 +19,7 @@ export const IMAGES_STORE = 'project_images';
 export const MEMORY_STORE = 'memories';
 export const CHAT_STORE = 'chats';
 export const SETTING_STORE = 'user_settings';
+export const VIDEOS_STORE = 'videos';
 
 const STORE_DEFINITIONS = [
   STORE_NAME,
@@ -29,6 +30,7 @@ const STORE_DEFINITIONS = [
   MEMORY_STORE,
   CHAT_STORE,
   SETTING_STORE,
+  VIDEOS_STORE,
 ] as const;
 
 enum OperationType {
@@ -136,6 +138,20 @@ export const initDB = (): Promise<IDBDatabase> => {
       for (const storeName of STORE_DEFINITIONS) {
         if (!database.objectStoreNames.contains(storeName)) {
           database.createObjectStore(storeName, { keyPath: 'id' });
+        }
+      }
+
+      // Indexes para a store de vídeos
+      if (database.objectStoreNames.contains(VIDEOS_STORE)) {
+        const upgradeTransaction = (event.target as IDBOpenDBRequest).transaction;
+        if (upgradeTransaction) {
+          const videosStore = upgradeTransaction.objectStore(VIDEOS_STORE);
+          if (!videosStore.indexNames.contains('projectId')) {
+            videosStore.createIndex('projectId', 'projectId');
+          }
+          if (!videosStore.indexNames.contains('userId')) {
+            videosStore.createIndex('userId', 'userId');
+          }
         }
       }
     };

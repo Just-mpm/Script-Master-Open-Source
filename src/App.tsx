@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -10,9 +10,11 @@ import { ActionBar } from './components/ActionBar';
 import { ErrorToast } from './components/ErrorToast';
 import { Header } from './components/Header';
 import { SuccessToast } from './components/SuccessToast';
+import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
 import { useStudioState } from './features/studio/useStudioState';
+import { useVideoRenderBridge } from './features/video-render/store/videoRenderBridge';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
 
 const StudioPage = lazy(async () => {
@@ -66,6 +68,22 @@ export default function App() {
   const { authError, clearAuthError, loading: authLoading } = useAuth();
   const studio = useStudioState();
   const { toggle } = useGlobalAudioActions();
+
+  // Ref compartilhado entre VideoPage (dono) e ActionBar (consumidor)
+  // para controlar o Remotion Player na rota /video
+  const videoPlayerRef = useRef<VideoPreviewHandle>(null);
+
+  // Bridge store — lê estado dos hooks que vivem em VideoPage (code-splitting)
+  const {
+    isGeneratingPlan,
+    isPlanDisabled,
+    planError,
+    generatePlanAction,
+    isExportingVideo,
+    videoExportProgress,
+    dismissPlanError,
+  } = useVideoRenderBridge();
+
   const {
     error,
     generationProgress,
@@ -82,11 +100,25 @@ export default function App() {
     statusText,
     successMsg,
     audioUrl,
+    videoFps,
+    durationInFrames,
   } = studio;
 
-  // Prioriza authError (login/logout) sobre error do studio
-  const activeError = authError ?? error;
-  const dismissError = authError ? clearAuthError : () => setError('');
+  // Scroll para o painel de exportação de vídeo (rota /video)
+  const scrollToExport = useCallback(() => {
+    const element = document.getElementById('video-export-panel');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
+  // Prioriza erros: authError > studio error > planError
+  const activeError = authError ?? error ?? planError;
+  const dismissError = useCallback(() => {
+    if (authError) { clearAuthError(); return; }
+    if (error) { setError(''); return; }
+    if (planError) { dismissPlanError(); return; }
+  }, [authError, clearAuthError, error, setError, planError, dismissPlanError]);
 
   const appRoutes = (
     <Suspense fallback={<RouteFallback />}>
@@ -95,7 +127,12 @@ export default function App() {
 
         <Route
           path="/video"
-          element={<VideoPage {...studio} />}
+          element={
+            <VideoPage
+              {...studio}
+              videoPlayerRef={videoPlayerRef}
+            />
+          }
         />
 
         <Route path="/image" element={<ImageStudio />} />
@@ -136,14 +173,24 @@ export default function App() {
         e.preventDefault();
 
         if (!isGenerating) {
-          toggle('studio');
+          if (currentPath === '/video' && videoPlayerRef.current) {
+            // Na rota /video, controla o Remotion Player (evita dual-play)
+            const player = videoPlayerRef.current;
+            if (player.isPlaying()) {
+              player.pause();
+            } else {
+              player.play();
+            }
+          } else {
+            toggle('studio');
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPath, handleGenerate, isGenerateDisabled, isGenerating, toggle]);
+  }, [currentPath, handleGenerate, isGenerateDisabled, isGenerating, toggle, videoPlayerRef]);
 
   return (
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
@@ -212,6 +259,17 @@ export default function App() {
           handleSaveToLibrary={handleSaveToLibrary}
           isSaved={isSaved}
           scenes={scenes}
+          videoPlayerRef={videoPlayerRef}
+          videoFps={videoFps}
+          videoDurationInFrames={durationInFrames}
+          // Props do plano de edição (rota /video, via bridge store)
+          onGenerateEditingPlan={generatePlanAction ?? undefined}
+          isGeneratingPlan={isGeneratingPlan}
+          isPlanDisabled={isPlanDisabled}
+          // Props do exportador de vídeo (rota /video, via bridge store)
+          onScrollToExport={scrollToExport}
+          isExportingVideo={isExportingVideo}
+          videoExportProgress={videoExportProgress}
         />
       )}
     </Box>

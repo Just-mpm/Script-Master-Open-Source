@@ -5,6 +5,7 @@ import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
 import { generateScenePrompts, generateImageFromPrompt } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
 import { getGeminiApiKey } from '../lib/env';
+import { calculateDurationFromWav } from '../features/video-render/lib/videoUtils';
 
 // ---------------------------------------------------------------------------
 // Utilitários extraídos do handler (bp #13)
@@ -513,6 +514,12 @@ export function useAudioGenerator() {
     }
   };
 
+  // Duração do áudio em segundos, derivada do blob WAV (24 kHz, mono, 16-bit)
+  const durationInSeconds = useMemo(() => {
+    if (!audioBlob || audioBlob.size <= 44) return 0;
+    return calculateDurationFromWav(audioBlob.size, 24000);
+  }, [audioBlob]);
+
   return {
     isGenerating,
     statusText,
@@ -526,5 +533,6 @@ export function useAudioGenerator() {
     generateAudio,
     handleCancel,
     loadProjectData,
+    durationInSeconds,
   };
 }

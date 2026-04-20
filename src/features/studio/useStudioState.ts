@@ -26,6 +26,9 @@ const STORAGE_KEYS = {
 
 const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
 
+/** FPS padrão para composição de vídeo Remotion */
+const VIDEO_FPS = 30;
+
 function getStoredValue(key: string, fallbackValue: string): string {
   return localStorage.getItem(key) ?? fallbackValue;
 }
@@ -92,9 +95,16 @@ export function useStudioState() {
     handleCancel,
     loadProjectData,
     projectId,
+    durationInSeconds,
   } = useAudioGenerator();
 
   const isGenerateDisabled = isGenerating || !script.trim() || script.length > MAX_CHARS;
+
+  // Duração total do vídeo em frames (derivada do áudio e FPS)
+  const durationInFrames = useMemo(
+    () => Math.round(durationInSeconds * VIDEO_FPS),
+    [durationInSeconds],
+  );
 
   const currentState = useMemo<StudioDraftState>(
     () => ({
@@ -309,6 +319,10 @@ export function useStudioState() {
     loadProjectData,
     currentProjectId: projectId,
     play,
+    // Valores derivados para integração Remotion
+    videoFps: VIDEO_FPS,
+    durationInSeconds,
+    durationInFrames,
   };
 }
 

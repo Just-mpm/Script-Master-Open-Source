@@ -99,6 +99,22 @@ service cloud.firestore {
              data.createdAt is number;
     }
 
+    function isValidProjectVideo(data) {
+      let requiredFields = ['id', 'projectId', 'userId', 'videoUrl', 'format', 'width', 'height', 'fps', 'durationInSeconds', 'fileSizeBytes', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.id is string &&
+             data.projectId is string &&
+             data.userId == request.auth.uid &&
+             data.videoUrl is string && (data.videoUrl.matches("^https://.*") || data.videoUrl.matches("^blob:.*")) &&
+              (data.format == 'mp4' || data.format == 'webm') &&
+             data.width is number &&
+             data.height is number &&
+             data.fps is number &&
+             data.durationInSeconds is number &&
+             data.fileSizeBytes is number &&
+              data.createdAt is number;
+    }
+
     // Projects and Subcollections
     match /projects/{projectId} {
       allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
@@ -116,6 +132,12 @@ service cloud.firestore {
          allow read: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
          allow create: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidProjectImage(request.resource.data);
          allow delete: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+      }
+
+      match /videos/{videoId} {
+        allow read: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
+        allow create: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidProjectVideo(request.resource.data);
+        allow delete: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
       }
     }
 
@@ -162,6 +184,13 @@ service cloud.firestore {
     match /{path=**}/images/{imageId} {
       allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && isValidProjectImage(request.resource.data);
+      allow delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Collection Group: videos
+    match /{path=**}/videos/{videoId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidProjectVideo(request.resource.data);
       allow delete: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
     }
 

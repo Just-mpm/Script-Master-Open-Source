@@ -1,30 +1,120 @@
+import { useCallback, useEffect, useMemo } from 'react';
+import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useGlobalAudioState } from '../contexts/AudioContext';
+import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
-import { VideoPreview } from '../components/VideoPreview';
-import type { StudioScene } from '../features/studio/types';
+import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
+import { EditingPlanInspector } from '../features/video-render/components/EditingPlanInspector';
+import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
+import { useEditingPlan } from '../features/video-render/hooks/useEditingPlan';
+import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
+import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
+import type { SceneRatio, StudioScene } from '../features/studio/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
+import { useAuth } from '../contexts/AuthContext';
 
 interface VideoPageProps {
   currentProjectId: StudioStateController['currentProjectId'];
   loadProjectData: StudioStateController['loadProjectData'];
-  play: StudioStateController['play'];
   scenes: StudioScene[];
-  script: string;
   setScript: StudioStateController['setScript'];
+  script: string;
+  audioUrl: string | null;
+  videoFps: number;
+  durationInFrames: number;
+  durationInSeconds: number;
+  sceneRatio: SceneRatio;
+  videoPlayerRef: RefObject<VideoPreviewHandle | null>;
 }
 
 export function VideoPage({
   currentProjectId,
   loadProjectData,
-  play,
   scenes,
-  script,
   setScript,
+  script,
+  audioUrl,
+  videoFps,
+  durationInFrames,
+  durationInSeconds,
+  sceneRatio,
+  videoPlayerRef,
 }: VideoPageProps) {
-  const { currentTime } = useGlobalAudioState();
+  const { pause: pauseGlobalAudio } = useGlobalAudioActions();
+  const { user } = useAuth();
+  const userId = user?.uid;
+
+  // Hooks de edição e exportação — instanciados aqui para code-splitting
+  // (Remotion só é carregado quando a rota /video é acessada)
+  const {
+    editingPlan,
+    isGeneratingPlan,
+    error: planError,
+    generatePlan,
+    clearPlan,
+    updateScene,
+  } = useEditingPlan();
+
+  const videoExporter = useVideoExporter();
+
+  // Mapeia cenas para o formato esperado pelo hook de edição
+  const scenesForPlan = useMemo(
+    () => scenes.map(s => ({ timestamp: s.timestamp, prompt: s.prompt ?? '' })),
+    [scenes],
+  );
+
+  // Indica se o botão de gerar plano está desabilitado
+  const isPlanDisabled = isGeneratingPlan || !script.trim() || scenes.length === 0 || !audioUrl || durationInSeconds <= 0;
+
+  // Wrapper para gerar plano de edição
+  const handleGenerateEditingPlan = useCallback(() => {
+    if (script.trim() && scenes.length > 0 && durationInSeconds > 0) {
+      void generatePlan(script, scenesForPlan, durationInSeconds);
+    }
+  }, [script, scenes.length, scenesForPlan, durationInSeconds, generatePlan]);
+
+  // --- Sincronização com o bridge store (ações estáveis via getState) ---
+
+  useEffect(() => {
+    useVideoRenderBridge.getState().syncPlanState(isGeneratingPlan, isPlanDisabled, planError);
+  }, [isGeneratingPlan, isPlanDisabled, planError]);
+
+  useEffect(() => {
+    useVideoRenderBridge.getState().syncExportState(videoExporter.isRendering, videoExporter.renderProgress);
+  }, [videoExporter.isRendering, videoExporter.renderProgress]);
+
+  useEffect(() => {
+    useVideoRenderBridge.getState().setGeneratePlanAction(handleGenerateEditingPlan);
+  }, [handleGenerateEditingPlan]);
+
+  useEffect(() => {
+    const clearAction = () => clearPlan();
+    useVideoRenderBridge.getState().setClearPlanErrorAction(clearAction);
+    return () => { useVideoRenderBridge.getState().setClearPlanErrorAction(null); };
+  }, [clearPlan]);
+
+  // Reseta o bridge ao desmontar (navegação para fora de /video)
+  useEffect(() => {
+    return () => { useVideoRenderBridge.getState().resetBridge(); };
+  }, []);
+
+  // --- Efeitos locais ---
+
+  // Na rota /video, o áudio global (AudioContext) não deve tocar —
+  // pausa ao montar para evitar dual-play com o Remotion Player
+  useEffect(() => {
+    pauseGlobalAudio();
+  }, [pauseGlobalAudio]);
+
+  // Pausa o Remotion Player ao desmontar a página
+  useEffect(() => {
+    const playerHandle = videoPlayerRef.current;
+    return () => {
+      playerHandle?.pause();
+    };
+  }, [videoPlayerRef]);
 
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
@@ -38,9 +128,34 @@ export function VideoPage({
       </Box>
 
       <VideoPreview
+        ref={videoPlayerRef}
         scenes={scenes}
-        currentTime={currentTime}
-        script={script}
+        audioUrl={audioUrl}
+        fps={videoFps}
+        durationInFrames={durationInFrames}
+        ratio={sceneRatio}
+        editingPlan={editingPlan ?? undefined}
+      />
+
+      {/* Inspector do plano de edição */}
+      <EditingPlanInspector
+        editingPlan={editingPlan}
+        scenes={scenes}
+        onUpdateScene={updateScene}
+        onClearPlan={clearPlan}
+      />
+
+      {/* Painel de exportação MP4 */}
+      <VideoExportPanel
+        scenes={scenes}
+        audioUrl={audioUrl}
+        fps={videoFps}
+        durationInFrames={durationInFrames}
+        ratio={sceneRatio}
+        editingPlan={editingPlan ?? undefined}
+        projectId={currentProjectId ?? undefined}
+        userId={userId}
+        exporter={videoExporter}
       />
 
       <VideoLibrary
@@ -48,7 +163,8 @@ export function VideoPage({
         onSelect={(projectId, url, sceneList, projectScript) => {
           loadProjectData(url, sceneList, undefined, projectId);
           setScript(projectScript);
-          play(url, 'studio');
+          // Áudio gerenciado pelo Remotion Player nesta rota —
+          // não chamar play() do AudioContext para evitar dual-play
         }}
       />
     </Stack>

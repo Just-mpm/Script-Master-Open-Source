@@ -1,11 +1,12 @@
 import { collection, collectionGroup, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { AudioSource, Project, ProjectImage } from './types';
+import type { AudioSource, Project, ProjectImage, ProjectVideo } from './types';
 import {
   AUDIOS_STORE,
   IMAGES_STORE,
   OperationType,
   PROJECTS_STORE,
+  VIDEOS_STORE,
   createFirestoreConverter,
   deleteIndexedDbItem,
   deleteStorageObjectSafely,
@@ -15,6 +16,7 @@ import {
   updateIndexedDbItem,
   uploadBlobAndGetUrl,
 } from './shared';
+import { deleteVideoFromProject, getProjectVideos } from './videos';
 
 type FirestoreAudioSource = Omit<AudioSource, 'audioBlob'>;
 type FirestoreProjectImage = Omit<ProjectImage, 'imageBlob'>;
@@ -239,6 +241,7 @@ export async function deleteProject(projectId: string, userId?: string): Promise
   if (userId) {
     try {
       const details = await getProjectDetails(projectId, userId);
+      const videos = await getProjectVideos(projectId, userId);
 
       const operations: Promise<unknown>[] = [deleteDoc(projectDocument(projectId))];
 
@@ -258,6 +261,10 @@ export async function deleteProject(projectId: string, userId?: string): Promise
         ));
       }
 
+      for (const video of videos) {
+        operations.push(deleteVideoFromProject(video.id, projectId, userId));
+      }
+
       await Promise.all(operations);
       return;
     } catch (error: unknown) {
@@ -265,9 +272,10 @@ export async function deleteProject(projectId: string, userId?: string): Promise
     }
   }
 
-  const [allAudios, allImages] = await Promise.all([
+  const [allAudios, allImages, allVideos] = await Promise.all([
     getAllIndexedDbItems<AudioSource>(AUDIOS_STORE),
     getAllIndexedDbItems<ProjectImage>(IMAGES_STORE),
+    getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE),
   ]);
 
   await deleteIndexedDbItem(PROJECTS_STORE, projectId);
@@ -279,6 +287,9 @@ export async function deleteProject(projectId: string, userId?: string): Promise
     ...allImages
       .filter((image) => image.projectId === projectId)
       .map((image) => deleteIndexedDbItem(IMAGES_STORE, image.id)),
+    ...allVideos
+      .filter((video) => video.projectId === projectId)
+      .map((video) => deleteIndexedDbItem(VIDEOS_STORE, video.id)),
   ]);
 }
 

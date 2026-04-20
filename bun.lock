@@ -13,6 +13,8 @@
         "@mui/styled-engine": "^9.0.0",
         "@mui/system": "^9.0.0",
         "@mui/utils": "^9.0.0",
+        "@remotion/player": "4.0.448",
+        "@remotion/web-renderer": "4.0.448",
         "@vitejs/plugin-react": "^5.0.4",
         "firebase": "^12.12.0",
         "konva": "^10.2.5",
@@ -23,6 +25,7 @@
         "react-konva": "^19.2.3",
         "react-markdown": "^10.1.0",
         "react-router-dom": "^7.14.1",
+        "remotion": "4.0.448",
         "zustand": "^5.0.12",
       },
       "devDependencies": {
@@ -248,6 +251,12 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, ""],
 
+    "@mediabunny/aac-encoder": ["@mediabunny/aac-encoder@1.39.2", "", { "peerDependencies": { "mediabunny": "^1.0.0" } }, "sha512-KD6KADVzAnW7tqhRFGBOX4uaiHbd0Yxvg0lfthj3wJLAEEgEBAvi43w+ZXWeEn54X/jpabrLe4bW/eYFFvlbUA=="],
+
+    "@mediabunny/flac-encoder": ["@mediabunny/flac-encoder@1.39.2", "", { "peerDependencies": { "mediabunny": "^1.0.0" } }, "sha512-VwBr3AzZTPEEPvt4aladZiXwOf3W293eq213zDupGQi/taS8WWNqDd3eBdf8FfvlbXATfbRiycXDKyQ0HlOZaQ=="],
+
+    "@mediabunny/mp3-encoder": ["@mediabunny/mp3-encoder@1.39.2", "", { "peerDependencies": { "mediabunny": "^1.0.0" } }, "sha512-3rrodrGnUpUP8F2d1aRUl8IvjqK3jegkupbOzvOokooSAO5rXk2Lr5jZe7TnPeiVGiXfmnoJ7s9uyUOHlCd8qw=="],
+
     "@mui/core-downloads-tracker": ["@mui/core-downloads-tracker@9.0.0", "", {}, "sha512-uwQNGkhv0lf7ufxw6QXev77BW6pWbW+7uxYjU5+rfp4lBkFtMEgJCsarTM3Tn+i0lGx6+Ol2u88JdGXr0GDskA=="],
 
     "@mui/icons-material": ["@mui/icons-material@9.0.0", "", { "dependencies": { "@babel/runtime": "^7.29.2" }, "peerDependencies": { "@mui/material": "^9.0.0", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-oDwyvI6LgjWRC9MBcSGvLkPud9S9ELgSBQFYxa1rYcZn6Br55dn22SyvsPDMsn0G8OndFk53iMT45W5mNqrogw=="],
@@ -289,6 +298,12 @@
     "@protobufjs/pool": ["@protobufjs/pool@1.1.0", "", {}, ""],
 
     "@protobufjs/utf8": ["@protobufjs/utf8@1.1.0", "", {}, ""],
+
+    "@remotion/licensing": ["@remotion/licensing@4.0.448", "", {}, "sha512-weQ+yJLJN+NEeKKMlkHT9cydUSjxwGnteHqedAd3ffaBUOpRQthWJWQwLhCupqdFyDdkRt0Rtnh5ib7/dSByPA=="],
+
+    "@remotion/player": ["@remotion/player@4.0.448", "", { "dependencies": { "remotion": "4.0.448" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-lXwiJvAqlaUTwt5NGoGma9Md5IF9nf4Zetn6OAaNk0zTiXegUN42IFBSmzKZC8qUwNV10IpeLsTlQQEv4ntU1Q=="],
+
+    "@remotion/web-renderer": ["@remotion/web-renderer@4.0.448", "", { "dependencies": { "@mediabunny/aac-encoder": "1.39.2", "@mediabunny/flac-encoder": "1.39.2", "@mediabunny/mp3-encoder": "1.39.2", "@remotion/licensing": "4.0.448", "mediabunny": "1.39.2", "remotion": "4.0.448" }, "peerDependencies": { "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-iPsoLPxxiHKWZPbTZLKKxygcISZP5+rajODeWNlM+qrEN001Ardzf2MlqY+Zb/qHWsdAotw+cBPVVAv0JVZPQw=="],
 
     "@rolldown/binding-android-arm64": ["@rolldown/binding-android-arm64@1.0.0-rc.15", "", { "os": "android", "cpu": "arm64" }, "sha512-YYe6aWruPZDtHNpwu7+qAHEMbQ/yRl6atqb/AhznLTnD3UY99Q1jE7ihLSahNWkF4EqRPVC4SiR4O0UkLK02tA=="],
 
@@ -333,6 +348,10 @@
     "@types/babel__traverse": ["@types/babel__traverse@7.28.0", "", { "dependencies": { "@babel/types": "^7.28.2" } }, ""],
 
     "@types/debug": ["@types/debug@4.1.13", "", { "dependencies": { "@types/ms": "*" } }, ""],
+
+    "@types/dom-mediacapture-transform": ["@types/dom-mediacapture-transform@0.1.11", "", { "dependencies": { "@types/dom-webcodecs": "*" } }, "sha512-Y2p+nGf1bF2XMttBnsVPHUWzRRZzqUoJAKmiP10b5umnO6DDrWI0BrGDJy1pOHoOULVmGSfFNkQrAlC5dcj6nQ=="],
+
+    "@types/dom-webcodecs": ["@types/dom-webcodecs@0.1.13", "", {}, "sha512-O5hkiFIcjjszPIYyUSyvScyvrBoV3NOEEZx/pMlsu44TKzWNkLVBBxnxJz42in5n3QIolYOcBYFCPZZ0h8SkwQ=="],
 
     "@types/esrecurse": ["@types/esrecurse@4.3.1", "", {}, ""],
 
@@ -834,6 +853,8 @@
 
     "mdast-util-to-string": ["mdast-util-to-string@4.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0" } }, ""],
 
+    "mediabunny": ["mediabunny@1.39.2", "", { "dependencies": { "@types/dom-mediacapture-transform": "^0.1.11", "@types/dom-webcodecs": "0.1.13" } }, "sha512-VcrisGRt+OI7tTPrziucJoCIPYIS/DEWY37TqzQVLWSUUHiyvsiRizEypQ3FOlhfIZ4ytAG/Mw4zxfetCTyKUg=="],
+
     "micromark": ["micromark@4.0.2", "", { "dependencies": { "@types/debug": "^4.0.0", "debug": "^4.0.0", "decode-named-character-reference": "^1.0.0", "devlop": "^1.0.0", "micromark-core-commonmark": "^2.0.0", "micromark-factory-space": "^2.0.0", "micromark-util-character": "^2.0.0", "micromark-util-chunked": "^2.0.0", "micromark-util-combine-extensions": "^2.0.0", "micromark-util-decode-numeric-character-reference": "^2.0.0", "micromark-util-encode": "^2.0.0", "micromark-util-normalize-identifier": "^2.0.0", "micromark-util-resolve-all": "^2.0.0", "micromark-util-sanitize-uri": "^2.0.0", "micromark-util-subtokenize": "^2.0.0", "micromark-util-symbol": "^2.0.0", "micromark-util-types": "^2.0.0" } }, ""],
 
     "micromark-core-commonmark": ["micromark-core-commonmark@2.0.3", "", { "dependencies": { "decode-named-character-reference": "^1.0.0", "devlop": "^1.0.0", "micromark-factory-destination": "^2.0.0", "micromark-factory-label": "^2.0.0", "micromark-factory-space": "^2.0.0", "micromark-factory-title": "^2.0.0", "micromark-factory-whitespace": "^2.0.0", "micromark-util-character": "^2.0.0", "micromark-util-chunked": "^2.0.0", "micromark-util-classify-character": "^2.0.0", "micromark-util-html-tag-name": "^2.0.0", "micromark-util-normalize-identifier": "^2.0.0", "micromark-util-resolve-all": "^2.0.0", "micromark-util-subtokenize": "^2.0.0", "micromark-util-symbol": "^2.0.0", "micromark-util-types": "^2.0.0" } }, ""],
@@ -983,6 +1004,8 @@
     "remark-parse": ["remark-parse@11.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-from-markdown": "^2.0.0", "micromark-util-types": "^2.0.0", "unified": "^11.0.0" } }, ""],
 
     "remark-rehype": ["remark-rehype@11.1.2", "", { "dependencies": { "@types/hast": "^3.0.0", "@types/mdast": "^4.0.0", "mdast-util-to-hast": "^13.0.0", "unified": "^11.0.0", "vfile": "^6.0.0" } }, ""],
+
+    "remotion": ["remotion@4.0.448", "", { "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-4NBSmQRIzntZiLEtOU/bGMQXfnGgUsBoyrewdTRyYzPl+qnvlBjqwxcntsu6SDY/W7ucEwKZUTc7GDOcFhIuAA=="],
 
     "require-directory": ["require-directory@2.1.1", "", {}, ""],
 

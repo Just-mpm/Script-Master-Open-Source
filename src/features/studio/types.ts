@@ -3,6 +3,8 @@ export type SceneRatio = '16:9' | '9:16' | '1:1';
 export interface StudioScene {
   imageUrl: string;
   timestamp: number;
+  /** Prompt descritivo da cena (usado no plano de edição) */
+  prompt?: string;
 }
 
 export interface StudioDraftState {

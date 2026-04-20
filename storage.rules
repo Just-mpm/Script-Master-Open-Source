@@ -55,6 +55,16 @@ service firebase.storage {
     }
 
     // Regras para projetos (audios e imagens vinculados a um projeto específico)
+    // Regra específica para vídeos (200MB) — deve vir ANTES do wildcard
+    match /projects/{userId}/{projectId}/videos/{videoId} {
+      allow read, delete: if isOwner(userId) || isAdmin();
+      
+      // Validação: vídeos até 200MB, apenas formato de vídeo
+      allow write: if isOwner(userId) 
+                    && request.resource.size <= 200 * 1024 * 1024
+                    && request.resource.contentType.matches('^video/(mp4|webm)$');
+    }
+
     match /projects/{userId}/{allPaths=**} {
       allow read, delete: if isOwner(userId) || isAdmin();
       

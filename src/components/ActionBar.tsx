@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -11,14 +12,18 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { useLocation } from 'react-router-dom';
 import Bookmark from '@mui/icons-material/Bookmark';
 import Check from '@mui/icons-material/Check';
 import Download from '@mui/icons-material/Download';
+import AutoFixHigh from '@mui/icons-material/AutoFixHigh';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
+import VideoFile from '@mui/icons-material/VideoFile';
 import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
-import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP } from '../theme/tokens';
+import type { VideoPreviewHandle } from './VideoPreview';
+import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP, CYAN_GLOW_SOFT } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface ActionBarProps {
@@ -31,6 +36,24 @@ interface ActionBarProps {
   handleSaveToLibrary?: () => void;
   isSaved?: boolean;
   scenes?: { imageUrl: string; timestamp: number }[];
+  /** Ref para o Remotion Player (rota /video) */
+  videoPlayerRef?: RefObject<VideoPreviewHandle | null>;
+  /** FPS do vídeo Remotion */
+  videoFps?: number;
+  /** Duração total do vídeo em frames */
+  videoDurationInFrames?: number;
+  /** Callback para gerar plano de edição com IA (rota /video) */
+  onGenerateEditingPlan?: () => void;
+  /** Indica se está gerando o plano de edição */
+  isGeneratingPlan?: boolean;
+  /** Indica se o botão de gerar plano está desabilitado */
+  isPlanDisabled?: boolean;
+  /** Callback para rolar até o painel de exportação (rota /video) */
+  onScrollToExport?: () => void;
+  /** Indica se há exportação de vídeo em andamento */
+  isExportingVideo?: boolean;
+  /** Progresso da exportação de vídeo (0-100) */
+  videoExportProgress?: number;
 }
 
 export function ActionBar({
@@ -42,11 +65,48 @@ export function ActionBar({
   handleCancel,
   handleSaveToLibrary,
   isSaved,
-  scenes = []
+  scenes = [],
+  videoPlayerRef,
+  videoFps,
+  videoDurationInFrames,
+  onGenerateEditingPlan,
+  isGeneratingPlan = false,
+  isPlanDisabled = true,
+  onScrollToExport,
+  isExportingVideo = false,
+  videoExportProgress = 0,
 }: ActionBarProps) {
   const [downloadAnchorEl, setDownloadAnchorEl] = React.useState<HTMLElement | null>(null);
-  const { isPlaying, progress, currentTime, duration, formatTime } = useGlobalAudioState();
-  const { toggle, seek } = useGlobalAudioActions();
+  const location = useLocation();
+  const isVideoRoute = location.pathname === '/video';
+
+  // Estado do AudioContext (rota /)
+  const audioState = useGlobalAudioState();
+  const audioActions = useGlobalAudioActions();
+
+  // Estado do Remotion Player (rota /video) — polling a 10Hz
+  const [playerFrame, setPlayerFrame] = useState(0);
+  const [playerIsPlaying, setPlayerIsPlaying] = useState(false);
+  const [isRemotionActive, setIsRemotionActive] = useState(false);
+
+  // Polling do frame e estado do Remotion Player
+  useEffect(() => {
+    if (!isVideoRoute || !videoFps) return;
+
+    const intervalId = setInterval(() => {
+      const player = videoPlayerRef?.current;
+      const active = isVideoRoute && !!player;
+      setIsRemotionActive(active);
+
+      if (player) {
+        // Deriva frame a partir de getCurrentTime e fps
+        setPlayerFrame(Math.round(player.getCurrentTime() * videoFps));
+        setPlayerIsPlaying(player.isPlaying());
+      }
+    }, 100);
+
+    return () => clearInterval(intervalId);
+  }, [isVideoRoute, videoPlayerRef, videoFps]);
 
   if (!isGenerating && !audioUrl) return null;
 
@@ -54,13 +114,50 @@ export function ActionBar({
   const showProgressBar = isGenerating && !audioUrl;
   const isImagePhase = isGenerating && audioUrl;
   const isDownloadMenuOpen = Boolean(downloadAnchorEl);
-  const progressValue = Math.round(progress);
+
+  // ---- Estado unificado: Remotion na /video, AudioContext na / ----
+  const displayIsPlaying = isRemotionActive ? playerIsPlaying : audioState.isPlaying;
+
+  const displayCurrentTime = isRemotionActive && videoFps
+    ? playerFrame / videoFps
+    : audioState.currentTime;
+
+  const displayDuration = isRemotionActive && videoFps && videoDurationInFrames
+    ? videoDurationInFrames / videoFps
+    : audioState.duration;
+
+  const displayProgress = displayDuration > 0
+    ? (displayCurrentTime / displayDuration) * 100
+    : 0;
+
+  const progressValue = Math.round(displayProgress);
+  const { formatTime } = audioState;
 
   const closeDownloadMenu = () => setDownloadAnchorEl(null);
 
   const seekToPercentage = (nextProgress: number) => {
     const clampedProgress = Math.min(100, Math.max(0, nextProgress));
-    seek(clampedProgress);
+
+    if (isRemotionActive && videoDurationInFrames) {
+      // Converte porcentagem para frame no Remotion Player
+      const frame = Math.round((clampedProgress / 100) * videoDurationInFrames);
+      videoPlayerRef?.current?.seekTo(frame);
+    } else {
+      audioActions.seek(clampedProgress);
+    }
+  };
+
+  const handleToggle = () => {
+    if (isRemotionActive && videoPlayerRef?.current) {
+      const player = videoPlayerRef.current;
+      if (player.isPlaying()) {
+        player.pause();
+      } else {
+        player.play();
+      }
+    } else {
+      audioActions.toggle();
+    }
   };
 
   const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -222,9 +319,9 @@ export function ActionBar({
               ) : showPlayer ? (
                 <Stack direction="row" spacing={{ xs: 1.25, sm: 2 }} sx={{ alignItems: 'center' }}>
                     <IconButton
-                      onClick={() => toggle()}
-                    aria-label={isPlaying ? 'Pausar áudio' : 'Ouvir áudio'}
-                    aria-pressed={isPlaying}
+                      onClick={handleToggle}
+                    aria-label={displayIsPlaying ? 'Pausar reprodução' : 'Iniciar reprodução'}
+                    aria-pressed={displayIsPlaying}
                     color="primary"
                     sx={{
                       color: 'primary.contrastText',
@@ -235,24 +332,24 @@ export function ActionBar({
                       },
                     }}
                   >
-                    {isPlaying ? <Stop sx={{ fontSize: ICON_SIZE_MD }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_MD }} />}
+                    {displayIsPlaying ? <Stop sx={{ fontSize: ICON_SIZE_MD }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_MD }} />}
                   </IconButton>
 
                   <Stack spacing={GAP_COMPACT} sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
                       <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {formatTime(currentTime)}
+                        {formatTime(displayCurrentTime)}
                       </Typography>
 
                       <Box
                         onClick={handleProgressClick}
                         role="slider"
-                        aria-label="Progresso do áudio"
+                        aria-label={isRemotionActive ? 'Progresso do vídeo' : 'Progresso do áudio'}
                         aria-orientation="horizontal"
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={progressValue}
-                        aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
+                        aria-valuetext={`${formatTime(displayCurrentTime)} de ${formatTime(displayDuration)}`}
                         tabIndex={0}
                         onKeyDown={handleProgressKeyDown}
                         sx={{
@@ -273,14 +370,14 @@ export function ActionBar({
                           sx={{
                             position: 'absolute',
                             inset: 0,
-                            width: `${progress}%`,
+                            width: `${displayProgress}%`,
                             background: BRAND_GRADIENT,
                           }}
                         />
                       </Box>
 
                       <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {formatTime(duration)}
+                        {formatTime(displayDuration)}
                       </Typography>
                     </Stack>
                   </Stack>
@@ -290,6 +387,59 @@ export function ActionBar({
 
             {!isImagePhase && (
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                {/* Botão de gerar plano de edição (rota /video) */}
+                {isVideoRoute && showPlayer && onGenerateEditingPlan && (
+                  <Tooltip title={isGeneratingPlan ? 'Gerando plano de edição...' : 'Gerar plano de edição com IA'}>
+                    <span>
+                      <IconButton
+                        onClick={onGenerateEditingPlan}
+                        disabled={isPlanDisabled || isGeneratingPlan}
+                        aria-label="Gerar plano de edição com IA"
+                        sx={{
+                          bgcolor: isGeneratingPlan
+                            ? 'rgba(139, 92, 246, 0.12)'
+                            : 'action.hover',
+                          color: isGeneratingPlan ? 'secondary.main' : 'default',
+                          ...(isGeneratingPlan ? {
+                            animation: 'spin 1.4s linear infinite',
+                            '@keyframes spin': {
+                              from: { transform: 'rotate(0deg)' },
+                              to: { transform: 'rotate(360deg)' },
+                            },
+                          } : {}),
+                        }}
+                      >
+                        {isGeneratingPlan
+                          ? <CircularProgress size={ICON_SIZE_MD} thickness={2.5} sx={{ color: 'secondary.main' }} />
+                          : <AutoFixHigh sx={{ fontSize: ICON_SIZE_MD }} />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                )}
+
+                {/* Botão de exportar vídeo (rota /video) */}
+                {isVideoRoute && showPlayer && onScrollToExport && (
+                  <Tooltip title={isExportingVideo ? `Exportando vídeo... ${videoExportProgress}%` : 'Exportar vídeo MP4'}>
+                    <span>
+                      <IconButton
+                        onClick={onScrollToExport}
+                        disabled={isExportingVideo}
+                        aria-label={isExportingVideo ? 'Exportando vídeo' : 'Exportar vídeo MP4'}
+                        sx={{
+                          bgcolor: isExportingVideo
+                            ? CYAN_GLOW_SOFT
+                            : 'action.hover',
+                          color: isExportingVideo ? 'primary.main' : 'default',
+                        }}
+                      >
+                        {isExportingVideo
+                          ? <CircularProgress size={ICON_SIZE_MD} thickness={2.5} sx={{ color: 'primary.main' }} />
+                          : <VideoFile sx={{ fontSize: ICON_SIZE_MD }} />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                )}
+
                 {showPlayer && handleSaveToLibrary ? (
                   <>
                     <Tooltip title={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}>
