@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { alpha } from '@mui/material/styles';
@@ -79,7 +80,16 @@ export function ImageUpload() {
         },
       })}
     >
-      <input {...getInputProps()} />
+      {/* Input oculto conectado ao Button acessível abaixo */}
+      <Button
+        component="label"
+        variant="outlined"
+        startIcon={<CloudUploadIcon />}
+        sx={{ mt: 2 }}
+      >
+        Escolher arquivos
+        <input {...getInputProps()} style={{ display: 'none' }} />
+      </Button>
       <Box
         sx={{
           width: 56,
@@ -97,7 +107,7 @@ export function ImageUpload() {
         {isDragActive ? 'Solte as imagens aqui' : 'Envie uma ou mais imagens'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420 }}>
-        Arraste e solte suas imagens aqui, ou clique para procurar.
+        Arraste e solte suas imagens aqui, ou use o botão abaixo.
         Suporta JPG, PNG e WebP. Processamento em lote suportado!
       </Typography>
     </Box>

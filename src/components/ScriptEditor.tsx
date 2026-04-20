@@ -1,4 +1,4 @@
-import { useMemo, type ChangeEvent } from 'react';
+import { useCallback, useMemo, type ChangeEvent } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -40,6 +40,15 @@ export function ScriptEditor({
   );
 
   const isOverLimit = script.length > MAX_CHARS;
+
+  // Callbacks estáveis — evita nova referência a cada render,
+  // prevenindo dessincronia interna no TextareaAutosize do MUI v9
+  const handleScriptChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => setScript(event.target.value),
+    [setScript],
+  );
+
+  const handleClearScript = useCallback(() => setScript(''), [setScript]);
 
   return (
     <Stack component="section" spacing={2}>
@@ -115,7 +124,7 @@ export function ScriptEditor({
               <Button
                 variant="text"
                 color="inherit"
-                onClick={() => setScript('')}
+                onClick={handleClearScript}
                 aria-label="Limpar roteiro"
                 sx={{ minHeight: 40 }}
               >
@@ -146,7 +155,7 @@ export function ScriptEditor({
             minRows={12}
             maxRows={26}
             value={script}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => setScript(event.target.value)}
+            onChange={handleScriptChange}
             disabled={isGenerating}
             placeholder="Comece a escrever sua história aqui..."
             variant="outlined"
@@ -155,6 +164,7 @@ export function ScriptEditor({
                 spellCheck: false,
                 maxLength: MAX_CHARS + 500,
                 'aria-labelledby': 'script-label',
+                'aria-label': 'Editor de roteiro',
               },
             }}
             sx={{

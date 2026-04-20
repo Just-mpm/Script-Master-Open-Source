@@ -244,6 +244,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.6.1] - 2026-04-20
+
+### Corrigido
+
+- **Typography headings** (`ImageStudio`, `Library`, `AssistantHeader`): variant `h6` elevado para `h5` em títulos de seção e estados vazios para melhor hierarquia visual
+- **AudioContext** (`src/contexts/AudioContext.tsx`): adicionado `setDurationOverride` para override da duração calculada a partir do blob WAV, evitando dependência de `loadedmetadata` que pode falhar com áudios gerados client-side
+- **useStudioState** (`src/features/studio/useStudioState.ts`): sincronização da duração calculada do blob WAV com o AudioContext para exibir duração real no player
+- **AnimationPlayer** (`src/features/speed-paint/components/canvas/AnimationPlayer.tsx`): adicionado anúncio `aria-live="polite"` para screen readers acompanhar progresso da animação
+- **ImageUpload** (`src/features/speed-paint/components/upload/ImageUpload.tsx`): import de `Button` adicionado para uso correto no dropzone
+- **Header** (`src/components/Header.tsx`): ajustes menores de implementação em estilos
+- **ScriptEditor** (`src/components/ScriptEditor.tsx`): ajustes de implementação
+
+### Adicionado
+
+- **Backlog cosmético** (`docs/qa-loop/backlog-cosmetico.md`): lista de 15 itens cosméticos identificados no QA Loop para futura melhoria
+
+---
+
 ## [0.1.0] - 2025-xx-xx
 
 ### Adicionado

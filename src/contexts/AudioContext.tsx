@@ -17,6 +17,8 @@ interface AudioContextType {
   toggle: (id?: string) => void;
   seek: (percentage: number) => void;
   formatTime: (time: number) => string;
+  /** Override da duração calculada a partir do blob WAV (evita depender de loadedmetadata) */
+  setDurationOverride: (seconds: number | null) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentUrlRef = useRef<string | null>(null);
+  const durationOverrideRef = useRef<number | null>(null);
   const snapshotRef = useRef<AudioSnapshot>({
     isPlaying: false,
     progress: 0,
@@ -51,7 +54,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    // Usa o override calculado do blob WAV; fallback para o audio.duration nativo
+    const rawDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    const duration = durationOverrideRef.current ?? rawDuration;
     const currentTime = audio.currentTime;
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -118,6 +123,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (currentUrlRef.current !== url) {
       audio.src = url;
       currentUrlRef.current = url;
+      // Limpa override ao trocar de URL — o novo áudio terá sua própria duração
+      durationOverrideRef.current = null;
     }
     setSnapshot({ activeId: id });
     audio.play().catch((err: unknown) => console.error('Error playing audio:', err));
@@ -159,6 +166,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
+  /** Override da duração calculada a partir do blob WAV (evita depender de loadedmetadata) */
+  const setDurationOverride = useCallback((seconds: number | null) => {
+    durationOverrideRef.current = seconds;
+    // Se o override for aplicado, atualiza o snapshot imediatamente
+    if (seconds !== null) {
+      setSnapshot({ duration: seconds });
+      notify();
+    }
+  }, [setSnapshot, notify]);
+
   const contextValue = useMemo<AudioContextType>(() => ({
     audioRef,
     subscribe,
@@ -168,7 +185,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     toggle,
     seek,
     formatTime,
-  }), [audioRef, formatTime, getSnapshot, pause, play, seek, subscribe, toggle]);
+    setDurationOverride,
+  }), [audioRef, formatTime, getSnapshot, pause, play, seek, subscribe, toggle, setDurationOverride]);
 
   return (
     <AudioContext.Provider value={contextValue}>
@@ -212,5 +230,6 @@ export function useGlobalAudioActions() {
     toggle: context.toggle,
     seek: context.seek,
     formatTime: context.formatTime,
+    setDurationOverride: context.setDurationOverride,
   };
 }

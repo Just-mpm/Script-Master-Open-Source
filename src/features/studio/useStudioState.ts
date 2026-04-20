@@ -80,7 +80,7 @@ export function useStudioState() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
-  const { play } = useGlobalAudioActions();
+  const { play, setDurationOverride } = useGlobalAudioActions();
 
   const {
     isGenerating,
@@ -99,6 +99,12 @@ export function useStudioState() {
   } = useAudioGenerator();
 
   const isGenerateDisabled = isGenerating || !script.trim() || script.length > MAX_CHARS;
+
+  // Sincroniza a duração calculada do blob WAV com o AudioContext
+  // para que o player mostre a duração real mesmo sem loadedmetadata
+  useEffect(() => {
+    setDurationOverride(durationInSeconds > 0 ? durationInSeconds : null);
+  }, [durationInSeconds, setDurationOverride]);
 
   // Duração total do vídeo em frames (derivada do áudio e FPS)
   const durationInFrames = useMemo(

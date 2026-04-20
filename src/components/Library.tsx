@@ -297,7 +297,7 @@ export function Library() {
                           />
                         ) : (
                             <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-                            <Typography variant="h6" sx={{ minWidth: 0 }} noWrap>
+                            <Typography variant="h5" sx={{ minWidth: 0 }} noWrap>
                               {project.name}
                             </Typography>
                             <Tooltip title="Renomear projeto">

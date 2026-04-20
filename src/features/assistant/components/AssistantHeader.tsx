@@ -58,7 +58,7 @@ export function AssistantHeader({
 
         <Stack spacing={0.4} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-            <Typography variant="h6">Assistente criativo</Typography>
+            <Typography variant="h5">Assistente criativo</Typography>
             <Chip label="Gemini" size="small" color="secondary" variant="outlined" />
           </Stack>
 

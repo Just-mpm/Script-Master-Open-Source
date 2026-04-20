@@ -339,7 +339,7 @@ export function ImageStudio() {
                 ) : (
                   <Stack spacing={1} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
                     <ImageIcon sx={{ fontSize: EMPTY_ICON_SIZE, color: theme.palette.text.disabled }} />
-                    <Typography variant="h6">Sua prévia aparece aqui</Typography>
+                    <Typography variant="h5">Sua prévia aparece aqui</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Escreva um prompt claro e, se quiser, anexe uma referência para orientar estilo, composição e consistência visual.
                     </Typography>

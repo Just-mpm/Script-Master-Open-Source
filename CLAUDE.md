@@ -259,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.6.0`
-- **Last release:** 2026-04-20 — Video Render com Remotion (composição, plano de edição IA, exportação client-side); persistência de vídeos (Firestore + IndexedDB); VideoPreview refatorado com Remotion Player
+- **Current:** `0.6.1`
+- **Last release:** 2026-04-20 — Correções de UI (hierarquia de headings h5), duração do player de áudio via blob WAV, a11y no AnimationPlayer (aria-live); backlog cosmético do QA Loop

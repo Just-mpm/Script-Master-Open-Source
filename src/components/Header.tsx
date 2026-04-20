@@ -89,6 +89,7 @@ export function Header() {
               py: GAP_COMPACT,
               borderRadius: 8,
               overflowX: 'auto',
+              overscrollBehaviorX: 'contain',
               flex: 1,
               minWidth: 0,
               '&::-webkit-scrollbar': {
@@ -110,7 +111,8 @@ export function Header() {
                   color={item.accent && isActive ? 'secondary' : 'primary'}
                   sx={{
                     flexShrink: 0,
-                    px: { xs: 1.25, sm: 1.75 },
+                    minWidth: 'auto',
+                    px: { xs: 1, sm: 1.75 },
                     color: isActive ? 'common.white' : item.accent ? 'secondary.light' : 'text.secondary',
                     bgcolor: isActive && !item.accent ? 'action.hover' : undefined,
                     '&:hover': {
@@ -120,14 +122,12 @@ export function Header() {
                           : 'action.hover'
                         : 'action.hover',
                     },
-                    '& .MuiButton-startIcon': {
-                      display: { xs: 'none', sm: 'inline-flex' },
-                      mr: { sm: 1 },
-                    },
                   }}
                   startIcon={<Icon sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />}
                 >
-                  {item.label}
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                    {item.label}
+                  </Box>
                 </Button>
               );
             })}

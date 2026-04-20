@@ -99,6 +99,7 @@ export function AnimationPlayer() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: 300,
+          position: 'relative',
         })}
       >
         <CircularProgress
@@ -108,6 +109,21 @@ export function AnimationPlayer() {
         <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           Gerando Animação ({Math.round(job.progress * 100)}%)...
         </Typography>
+        {/* Anúncio para screen readers — visível apenas na árvore de acessibilidade */}
+        <Box
+          role="status"
+          aria-live="polite"
+          sx={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Gerando animação, {Math.round(job.progress * 100)}% concluído
+        </Box>
         <Box sx={{ width: '100%', maxWidth: 448 }}>
           <LinearProgress
             variant="determinate"
