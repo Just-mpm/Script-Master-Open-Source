@@ -37,8 +37,10 @@ export function SceneSequence({
   // Usa a duração de transição informada ou fallback para FADE_FRAMES
   const tFrames = transitionDurationFrames ?? FADE_FRAMES;
 
-  // Clampa para não exceder metade da duração da cena
-  const safeTransitionFrames = Math.min(tFrames, Math.floor(durationInFrames / 2));
+  // Garante que o inputRange [0, t, dur-t, dur] seja estritamente crescente:
+  // precisa t >= 1 e 2*t < durationInFrames, ou seja t <= floor((dur-1)/2)
+  const maxAllowed = durationInFrames >= 3 ? Math.floor((durationInFrames - 1) / 2) : 0;
+  const safeTransitionFrames = Math.min(Math.max(1, tFrames), maxAllowed);
 
   // ── 1. Cálculo da transição de entrada ──
   const { opacity, translateX, translateY, scale, clipPath } = buildTransition(
@@ -94,6 +96,7 @@ export function SceneSequence({
  * Usada por slide-left, slide-right, slide-up e wipe para manter DRY.
  */
 function fadeOutOpacity(frame: number, tFrames: number, durationInFrames: number): number {
+  if (tFrames <= 0) return 1;
   return interpolate(
     frame,
     [0, tFrames, durationInFrames - tFrames, durationInFrames],
@@ -116,6 +119,11 @@ function buildTransition(
   tFrames: number,
   durationInFrames: number,
 ): TransitionResult {
+  // Cenas muito curtas (< 3 frames) não têm espaço para transição de 4 valores
+  if (tFrames <= 0 || durationInFrames < 2) {
+    return { opacity: 1, translateX: 0, translateY: 0, scale: 1 };
+  }
+
   switch (type) {
     case 'cut':
       return { opacity: 1, translateX: 0, translateY: 0, scale: 1 };

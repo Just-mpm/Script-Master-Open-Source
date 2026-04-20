@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.6.2",
+  "version": "0.6.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -22,6 +22,7 @@
     "@mui/styled-engine": "^9.0.0",
     "@mui/system": "^9.0.0",
     "@mui/utils": "^9.0.0",
+    "@remotion/media": "^4.0.448",
     "@remotion/player": "4.0.448",
     "@remotion/web-renderer": "4.0.448",
     "@vitejs/plugin-react": "^5.0.4",

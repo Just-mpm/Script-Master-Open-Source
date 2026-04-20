@@ -259,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.6.2`
-- **Last release:** 2026-04-20 — Correções de a11y (id/name, aria-label), helperText no Inspector, meta description e lang pt-BR no index.html; itens cosméticos do QA Loop implementados
+- **Current:** `0.6.3`
+- **Last release:** 2026-04-20 — Correção de transição em SceneSequence (inputRange crescente), nova dependência @remotion/media, favicon adicionado, limpeza de lógica em useVideoExporter e useAudioGenerator, CORS config para Storage

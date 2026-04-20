@@ -222,6 +222,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             compositionWidth={resolution.width}
             compositionHeight={resolution.height}
             style={{ width: '100%', display: 'block' }}
+            acknowledgeRemotionLicense
           />
         </VideoPlayerErrorBoundary>
       </Paper>

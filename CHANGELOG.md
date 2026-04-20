@@ -244,6 +244,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.6.3] - 2026-04-20
+
+### Corrigido
+
+- **SceneSequence** (`src/features/video-render/components/SceneSequence.tsx`): fórmula de `safeTransitionFrames` corrigida — agora garante que o `inputRange` de interpolação `[0, t, dur-t, dur]` seja estritamente crescente (antes `Math.floor(duration/2)` podia gerar valores iguais causando falha no Remotion)
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): refatoração das mensagens de erro — strings inline de fallback removidas, lógica simplificada
+
+### Adicionado
+
+- **@remotion/media** (`@remotion/media ^4.0.448`): nova dependência Remotion para componente `<Audio>` — importado em `VideoComposition.tsx`
+- **Favicon** (`public/favicon.png` + `index.html`): ícone PNG adicionado ao projeto com `<link rel="icon">`
+
+### Alterado
+
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): `Audio` agora importado de `@remotion/media` em vez de `remotion`
+- **VideoPreview** (`src/components/VideoPreview.tsx`): adicionado `acknowledgeRemotionLicense` para conformidade com licença Remotion
+- **useAudioGenerator** (`src/hooks/useAudioGenerator.ts`): limpeza de lógica interna — remoção de `audioBlobData` e cálculo de duração via `calculateDurationFromWav` inline
+- **cors.json**: configuração CORS para Firebase Storage com origens do projeto (localhost + hosting)
+
+---
+
 ## [0.6.2] - 2026-04-20
 
 ### Corrigido

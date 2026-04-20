@@ -107,6 +107,7 @@ export function useAudioGenerator() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
   const [scenes, setScenes] = useState<{ imageUrl: string; timestamp: number }[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,14 +136,51 @@ export function useAudioGenerator() {
     };
   }, [audioUrl]);
 
-  const loadProjectData = (url: string, scenesData: { imageUrl: string; timestamp: number }[], audioBlobData?: Blob, id?: string) => {
+  const loadProjectData = async (url: string, scenesData: { imageUrl: string; timestamp: number }[], audioBlobData?: Blob, id?: string) => {
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
     }
     setAudioUrl(url);
-    if (audioBlobData) setAudioBlob(audioBlobData);
     setScenes(scenesData);
     if (id) setProjectId(id);
+
+    // Reseta duração via URL ao carregar novo projeto
+    setAudioDuration(0);
+
+    if (audioBlobData) {
+      setAudioBlob(audioBlobData);
+    } else if (url) {
+      if (url.startsWith('blob:')) {
+        // Blob URL: fetch para obter blob (sem problema de CORS)
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          setAudioBlob(blob);
+        } catch (err) {
+          console.warn('[loadProjectData] Falha ao buscar blob do áudio:', err);
+        }
+      } else {
+        // URL externa (ex: Firebase Storage): usa <audio> para obter
+        // a duração via loadedmetadata, sem baixar o arquivo inteiro
+        const audio = new Audio();
+        const handleLoaded = () => {
+          if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            setAudioDuration(audio.duration);
+          }
+          audio.removeEventListener('loadedmetadata', handleLoaded);
+          audio.removeEventListener('error', handleError);
+        };
+        const handleError = () => {
+          console.warn('[loadProjectData] Falha ao carregar metadados do áudio pela URL');
+          audio.removeEventListener('loadedmetadata', handleLoaded);
+          audio.removeEventListener('error', handleError);
+        };
+        audio.addEventListener('loadedmetadata', handleLoaded);
+        audio.addEventListener('error', handleError);
+        audio.preload = 'metadata';
+        audio.src = url;
+      }
+    }
   };
 
   const handleCancel = () => {
@@ -227,6 +265,7 @@ export function useAudioGenerator() {
     lastSuccessfulStateRef.current = previousState;
     setAudioUrl(null);
     setAudioBlob(null);
+    setAudioDuration(0);
     setScenes([]);
 
     let generatedAudioUrl: string | null = null;
@@ -514,11 +553,14 @@ export function useAudioGenerator() {
     }
   };
 
-  // Duração do áudio em segundos, derivada do blob WAV (24 kHz, mono, 16-bit)
+  // Duração do áudio em segundos: prioriza blob WAV (tamanho exato),
+  // fallback para duração via metadados de URL (carregamento da galeria)
   const durationInSeconds = useMemo(() => {
-    if (!audioBlob || audioBlob.size <= 44) return 0;
-    return calculateDurationFromWav(audioBlob.size, 24000);
-  }, [audioBlob]);
+    if (audioBlob && audioBlob.size > 44) {
+      return calculateDurationFromWav(audioBlob.size, 24000);
+    }
+    return audioDuration;
+  }, [audioBlob, audioDuration]);
 
   return {
     isGenerating,

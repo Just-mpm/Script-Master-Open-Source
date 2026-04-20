@@ -1,4 +1,5 @@
-import { AbsoluteFill, Audio, Sequence } from 'remotion';
+import { AbsoluteFill, Sequence } from 'remotion';
+import { Audio } from '@remotion/media';
 import type { VideoCompositionProps } from '../types';
 import type { EditingScene } from '../lib/editingPlan';
 import { msToFrames } from '../lib/videoUtils';

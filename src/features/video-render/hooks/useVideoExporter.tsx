@@ -94,8 +94,11 @@ function toUserFriendlyError(err: unknown): string {
 
   const msg = err.message.toLowerCase();
 
+  // Loga o erro real para diagnóstico no console
+  console.error('[useVideoExporter] Erro original:', err.message);
+
   if (msg.includes('webcodecs') || msg.includes('videoencoder') || msg.includes('not supported')) {
-    return 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.';
+    return `Navegador não suporta exportação de vídeo: ${err.message}`;
   }
 
   return 'Erro ao exportar vídeo. Tente novamente.';
@@ -109,6 +112,8 @@ export function useVideoExporter() {
   const [state, setState] = useState<VideoExporterState>(INITIAL_STATE);
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputUrlRef = useRef<string | null>(null);
+  /** Codec de áudio resolvido por checkSupport — 'aac' ou null (muted) */
+  const resolvedAudioCodecRef = useRef<string | null>('aac');
 
   // Mantém ref sincronizada para uso em callbacks sem depender do estado
   useEffect(() => {
@@ -132,7 +137,7 @@ export function useVideoExporter() {
   const checkSupport = useCallback(async (width: number, height: number) => {
     // Checagem rápida síncrona
     if (typeof VideoEncoder === 'undefined') {
-      setState(prev => ({ ...prev, canRender: false }));
+      setState(prev => ({ ...prev, canRender: false, error: 'WebCodecs não disponível neste navegador.' }));
       return;
     }
 
@@ -144,12 +149,56 @@ export function useVideoExporter() {
         audioCodec: 'aac',
         container: 'mp4',
       });
+
+      if (result.canRender) {
+        resolvedAudioCodecRef.current = result.resolvedAudioCodec;
+        setState(prev => ({ ...prev, canRender: true, error: null }));
+        return;
+      }
+
+      // Loga issues para diagnóstico
+      for (const issue of result.issues) {
+        console.warn(`[checkSupport] ${issue.type}: ${issue.message} (${issue.severity})`);
+      }
+
+      // Tenta fallback sem áudio se o problema for codec de áudio
+      const hasAudioIssue = result.issues.some(
+        (i) => i.type === 'audio-codec-unsupported' || i.type === 'container-codec-mismatch',
+      );
+
+      if (hasAudioIssue) {
+        const fallbackResult = await canRenderMediaOnWeb({
+          width,
+          height,
+          videoCodec: 'h264',
+          audioCodec: null,
+          container: 'mp4',
+        });
+
+        if (fallbackResult.canRender) {
+          resolvedAudioCodecRef.current = fallbackResult.resolvedAudioCodec;
+          setState(prev => ({
+            ...prev,
+            canRender: true,
+            error: null,
+          }));
+          return;
+        }
+
+        for (const issue of fallbackResult.issues) {
+          console.warn(`[checkSupport fallback] ${issue.type}: ${issue.message}`);
+        }
+      }
+
+      // Nenhum fallback funcionou — exibe mensagem com a primeira issue real
+      const mainIssue = result.issues.find((i) => i.severity === 'error');
       setState(prev => ({
         ...prev,
-        canRender: result.canRender,
-        error: result.canRender ? null : 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
+        canRender: false,
+        error: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
       }));
-    } catch {
+    } catch (err) {
+      console.warn('[checkSupport] Exceção inesperada:', err);
       setState(prev => ({ ...prev, canRender: false }));
     }
   }, []);
@@ -224,8 +273,9 @@ export function useVideoExporter() {
         composition,
         inputProps: exportableInputProps,
         videoCodec: 'h264',
-        audioCodec: 'aac',
+        audioCodec: resolvedAudioCodecRef.current as 'aac' | null,
         container: 'mp4',
+        licenseKey: 'free-license',
         signal: abortController.signal,
         onProgress: (progress: RenderMediaOnWebProgress) => {
           const percent = Math.round(progress.progress * 100);

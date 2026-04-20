@@ -13,6 +13,7 @@
         "@mui/styled-engine": "^9.0.0",
         "@mui/system": "^9.0.0",
         "@mui/utils": "^9.0.0",
+        "@remotion/media": "^4.0.448",
         "@remotion/player": "4.0.448",
         "@remotion/web-renderer": "4.0.448",
         "@vitejs/plugin-react": "^5.0.4",
@@ -300,6 +301,8 @@
     "@protobufjs/utf8": ["@protobufjs/utf8@1.1.0", "", {}, ""],
 
     "@remotion/licensing": ["@remotion/licensing@4.0.448", "", {}, "sha512-weQ+yJLJN+NEeKKMlkHT9cydUSjxwGnteHqedAd3ffaBUOpRQthWJWQwLhCupqdFyDdkRt0Rtnh5ib7/dSByPA=="],
+
+    "@remotion/media": ["@remotion/media@4.0.448", "", { "dependencies": { "mediabunny": "1.39.2", "remotion": "4.0.448", "zod": "4.3.6" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-Og/WQiW4MoyiEAIAmFVu6aoz6WnwPyrflYpvjMRr4c1bAw7CpI17xRie6WC7WAXU06Wadsd2cqeiv5tYEcc7NQ=="],
 
     "@remotion/player": ["@remotion/player@4.0.448", "", { "dependencies": { "remotion": "4.0.448" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-lXwiJvAqlaUTwt5NGoGma9Md5IF9nf4Zetn6OAaNk0zTiXegUN42IFBSmzKZC8qUwNV10IpeLsTlQQEv4ntU1Q=="],
 
