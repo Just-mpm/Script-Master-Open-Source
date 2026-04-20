@@ -54,7 +54,7 @@ export function SpeedSelector({
       <Stack
         direction="row"
         role="group"
-        aria-label={`Velocidade de ${label.toLowerCase()}`}
+        aria-label={`Velocidade de ${label.toLowerCase()}, ${value}x selecionado`}
         sx={(theme) => ({
           bgcolor: alpha(theme.palette.background.default, 0.5),
           borderRadius: 1.5,

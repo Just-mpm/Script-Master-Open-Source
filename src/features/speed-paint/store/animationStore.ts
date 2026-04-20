@@ -1,3 +1,14 @@
+/**
+ * Store central de animação do Speed Paint.
+ *
+ * TECH DEBT (hasAutoPlayed):
+ * O estado `hasAutoPlayed` é resetado indiretamente pela mudança de `job.id`.
+ * Isso funciona porque cada novo job gera um id único, mas é frágil — qualquer
+ * lógica que reutilize o mesmo id ou não atualize job.id corretamente pode burlar
+ * o reset. Futuramente, considerar um campo `hasAutoPlayed` explícito no store
+ * com reset controlado por uma ação dedicada (ex: `resetAutoPlay()`).
+ */
+
 import { create } from 'zustand';
 import type { PaintingJob, QueuedImage } from '../types';
 

@@ -259,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.6.1`
-- **Last release:** 2026-04-20 — Correções de UI (hierarquia de headings h5), duração do player de áudio via blob WAV, a11y no AnimationPlayer (aria-live); backlog cosmético do QA Loop
+- **Current:** `0.6.2`
+- **Last release:** 2026-04-20 — Correções de a11y (id/name, aria-label), helperText no Inspector, meta description e lang pt-BR no index.html; itens cosméticos do QA Loop implementados

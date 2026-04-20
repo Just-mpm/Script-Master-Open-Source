@@ -10,6 +10,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -17,11 +18,13 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import AccessTime from '@mui/icons-material/AccessTime';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import Close from '@mui/icons-material/Close';
 import Download from '@mui/icons-material/Download';
 import FolderOpen from '@mui/icons-material/FolderOpen';
 import Movie from '@mui/icons-material/Movie';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { getProjects, getProjectsDetailsMap, getGenerations } from '../lib/db';
 import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
@@ -76,10 +79,12 @@ function MetadataPill({
 
 export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<VideoLibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
@@ -194,6 +199,9 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           await downloadFile(item.scenes[i].imageUrl, sceneFilename);
         }
       }
+    } catch (err) {
+      console.error('Falha no download em sequência:', err);
+      setDownloadError('Ocorreu um erro durante o download. Tente novamente.');
     } finally {
       setDownloadingId(null);
     }
@@ -246,6 +254,14 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
               Assim que você gerar projetos com áudio e cenas, eles aparecerão aqui para revisão e download.
             </Typography>
           </Stack>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => navigate('/')}
+            sx={{ mt: 0.5 }}
+          >
+            Ir para o Estúdio
+          </Button>
         </Stack>
       </Paper>
     );
@@ -403,6 +419,30 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           })}
         </Stack>
       </Box>
+
+      <Snackbar
+        open={Boolean(downloadError)}
+        autoHideDuration={6000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          setDownloadError(null);
+        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          onClose={() => setDownloadError(null)}
+          action={
+            <IconButton color="inherit" size="small" aria-label="Fechar mensagem de erro" onClick={() => setDownloadError(null)}>
+              <Close sx={{ fontSize: ICON_SIZE_SM }} />
+            </IconButton>
+          }
+          sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
+        >
+          {downloadError}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 }

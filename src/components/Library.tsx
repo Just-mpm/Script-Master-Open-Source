@@ -36,8 +36,7 @@ import {
   getProjects,
   deleteProject,
   updateProjectName,
-  getProjectAudios,
-  getProjectImages,
+  getProjectDetails,
   type Project,
   type AudioSource,
   type ProjectImage,
@@ -115,10 +114,7 @@ export function Library() {
     setExpandedProjectId(projectId);
     setDetailLoading(true);
     try {
-      const [audios, images] = await Promise.all([
-        getProjectAudios(projectId, user?.uid),
-        getProjectImages(projectId, user?.uid),
-      ]);
+      const { audios, images } = await getProjectDetails(projectId, user?.uid);
       setProjectData({ audios, images });
     } catch (err) {
       console.error('Error loading project details:', err);
@@ -246,7 +242,7 @@ export function Library() {
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
             <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
             <Album sx={{ fontSize: EMPTY_ICON_SIZE, color: 'text.secondary' }} />
-            <Typography variant="h6">Sua biblioteca ainda está vazia</Typography>
+            <Typography variant="h5">Sua biblioteca ainda está vazia</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               Quando você salvar áudios e cenas do estúdio, os projetos aparecem aqui com acesso rápido a downloads e histórico visual.
             </Typography>
@@ -412,8 +408,12 @@ export function Library() {
 
                                               <IconButton
                                                 onClick={() => {
-    const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
+                                                  const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
                                                   if (url) {
+                                                    // Registra blob URL criado para cleanup ao desmontar
+                                                    if (!audio.audioUrl && url.startsWith('blob:')) {
+                                                      blobUrlsRef.current.push(url);
+                                                    }
                                                     void downloadFile(url, `${project.name}-${audio.id}.wav`);
                                                   }
                                                 }}

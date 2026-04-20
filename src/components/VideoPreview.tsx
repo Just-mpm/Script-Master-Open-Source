@@ -9,6 +9,7 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
+import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
 import type { EditingScene } from '../features/video-render';
@@ -123,6 +124,7 @@ class VideoPlayerErrorBoundary extends Component<
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
   function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, editingPlan }, ref) {
     const internalRef = useRef<PlayerRef>(null);
+    const navigate = useNavigate();
 
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
@@ -182,8 +184,16 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             <Stack spacing={GAP_COMPACT}>
               <Typography variant="h6">Preview de vídeo aguardando cenas</Typography>
               <Typography variant="body2" color="text.secondary">
-                Gere um conteúdo com cenas visuais para acompanhar a narrativa aqui com transições e contexto.
+                Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.
               </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate('/')}
+                sx={{ mt: 0.5, alignSelf: 'center' }}
+              >
+                Ir para o Estúdio
+              </Button>
             </Stack>
           </Stack>
         </Paper>

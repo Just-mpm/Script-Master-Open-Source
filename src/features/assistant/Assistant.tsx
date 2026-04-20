@@ -33,6 +33,9 @@ interface AssistantProps {
 
 const MAX_DOCUMENT_SIZE = 500 * 1024;
 const MAX_MEMORY_DOCUMENT_TEXT = 490000;
+const MAX_ATTACHMENTS = 5;
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
@@ -51,6 +54,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [customSystemPrompt, setCustomSystemPrompt] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -181,7 +185,39 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
-      setPendingFiles((previousFiles) => [...previousFiles, ...newFiles]);
+
+      setPendingFiles((previousFiles) => {
+        // Limite de quantidade total de anexos
+        const remainingSlots = MAX_ATTACHMENTS - previousFiles.length;
+
+        if (remainingSlots <= 0) {
+          setAttachmentError(`Você atingiu o limite de ${MAX_ATTACHMENTS} anexos por mensagem.`);
+
+          return previousFiles;
+        }
+
+        const candidates = newFiles.slice(0, remainingSlots);
+        const validFiles: File[] = [];
+
+        for (const file of candidates) {
+          const isImage = file.type.startsWith('image/');
+          const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_DOCUMENT_ATTACHMENT_SIZE;
+          const maxSizeLabel = isImage ? '10 MB' : '5 MB';
+
+          if (file.size > maxSize) {
+            setAttachmentError(`O arquivo "${file.name}" excede o limite de ${maxSizeLabel} para ${isImage ? 'imagens' : 'documentos'}.`);
+            break;
+          }
+
+          validFiles.push(file);
+        }
+
+        if (validFiles.length === 0) {
+          return previousFiles;
+        }
+
+        return [...previousFiles, ...validFiles];
+      });
     }
 
     if (fileInputRef.current) {
@@ -288,6 +324,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       />
 
       <ErrorToast error={documentError} onDismiss={() => setDocumentError(null)} />
+      <ErrorToast error={attachmentError} onDismiss={() => setAttachmentError(null)} />
     </Box>
   );
 }

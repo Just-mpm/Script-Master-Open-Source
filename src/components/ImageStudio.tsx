@@ -193,6 +193,7 @@ export function ImageStudio() {
                   </FormControl>
 
                   <Stack spacing={1}>
+                    {/* subtitle2 é adequado aqui: label dentro de subseção Collapse, abaixo do overline do painel. Promover para subtitle1 criaria inconsistência hierárquica. */}
                     <Typography variant="subtitle2">Imagem de referência</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Útil para manter personagens, composição ou estilo visual entre gerações.

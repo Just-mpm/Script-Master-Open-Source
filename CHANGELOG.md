@@ -244,6 +244,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.6.2] - 2026-04-20
+
+### Corrigido
+
+- **Inspector** (`src/components/Inspector.tsx`): adicionados `id` e `name` nos switches de podcast/geração de cenas para acessibilidade de formulários; helperText condicional exibido quando perfil de áudio não está definido
+- **SpeedSelector** (`src/features/speed-paint/components/SpeedSelector.tsx`): aria-label agora inclui o valor atual da velocidade (ex: "Velocidade de lenta, 0.5x selecionada")
+- **ImageUpload** (`src/features/speed-paint/components/upload/ImageUpload.tsx`): texto do dropzone corrigido de "botão abaixo" para "botão acima" (reflete ordem real dos elementos)
+- **AssistantComposer** (`src/features/assistant/components/AssistantComposer.tsx`): adicionados `id="assistant-chat-input"` e `name="chat-message"` no input para compatibilidade com autofill
+- **AssistantHeader** (`src/features/assistant/components/AssistantHeader.tsx`): adicionado `flexShrink: 0` no Chip "Gemini" para evitar compressão em telas estreitas
+- **Library** (`src/components/Library.tsx`): remoção de imports não utilizados (`getProjectAudios`, `getProjectImages`) e chamada `Promise.all` correspondente
+- **index.html**: atributo `lang` corrigido de `en` para `pt-BR`; título atualizado para "Script Master"; adicionada meta description
+
+### Alterado
+
+- **Backlog cosmético** (`docs/qa-loop/backlog-cosmetico.md`): reorganizado — itens implementados marcados com check e separados do backlog restante (features não cosmético)
+
+---
+
 ## [0.6.1] - 2026-04-20
 
 ### Corrigido

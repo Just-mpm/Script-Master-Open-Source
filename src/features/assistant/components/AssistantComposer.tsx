@@ -95,6 +95,8 @@ export function AssistantComposer({
         />
 
         <TextField
+          id="assistant-chat-input"
+          name="chat-message"
           multiline
           minRows={1}
           maxRows={6}

@@ -107,7 +107,7 @@ export function ImageUpload() {
         {isDragActive ? 'Solte as imagens aqui' : 'Envie uma ou mais imagens'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420 }}>
-        Arraste e solte suas imagens aqui, ou use o botão abaixo.
+        Arraste e solte suas imagens aqui, ou use o botão acima.
         Suporta JPG, PNG e WebP. Processamento em lote suportado!
       </Typography>
     </Box>

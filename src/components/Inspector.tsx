@@ -258,7 +258,7 @@ export function Inspector({
                   checked={isMultiSpeaker}
                   onChange={(event) => setIsMultiSpeaker(event.target.checked)}
                   disabled={isGenerating}
-                  slotProps={{ input: { 'aria-label': 'Ativar modo podcast com duas vozes' } }}
+                  slotProps={{ input: { id: 'podcast-mode-switch', name: 'podcast-mode', 'aria-label': 'Ativar modo podcast com duas vozes' } }}
                 />
               </Stack>
             </Paper>
@@ -438,6 +438,7 @@ export function Inspector({
           </Stack>
         </ButtonBase>
 
+        {/* Collapse verificado: id={directionSectionId} conectado ao aria-controls do botão, sem overflow cortando conteúdo */}
         <Collapse in={isDirectionOpen} timeout="auto" id={directionSectionId}>
           <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <TextField
@@ -447,6 +448,7 @@ export function Inspector({
               onChange={(event) => setAudioProfile(event.target.value)}
               disabled={isGenerating}
               placeholder='Ex: "Jaz R., The Morning Hype"'
+              helperText={!audioProfile ? 'Defina o personagem principal do roteiro' : undefined}
             />
 
             <TextField
@@ -459,6 +461,7 @@ export function Inspector({
               onChange={(event) => setScene(event.target.value)}
               disabled={isGenerating}
               placeholder='Ex: "Estúdio de rádio, 10 PM. Caótico."'
+              helperText={!scene ? 'Descreva o cenário ou ambiente da cena' : undefined}
             />
 
             <Grid container spacing={1.5}>
@@ -489,6 +492,7 @@ export function Inspector({
                   onChange={(event) => setStyleNotes(event.target.value)}
                   disabled={isGenerating}
                   placeholder='Ex: "Paulista"'
+                  helperText={!styleNotes ? 'Ex: Paulista, Mineiro, Carrioca' : undefined}
                 />
               </Grid>
             </Grid>
@@ -510,7 +514,7 @@ export function Inspector({
                     checked={generateScenes}
                     onChange={(event) => setGenerateScenes(event.target.checked)}
                     disabled={isGenerating}
-                    slotProps={{ input: { 'aria-label': 'Ativar geração de cenas visuais' } }}
+                    slotProps={{ input: { id: 'generate-scenes-switch', name: 'generate-scenes', 'aria-label': 'Ativar geração de cenas visuais' } }}
                   />
                 </Stack>
 
