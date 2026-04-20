@@ -20,9 +20,13 @@ const SUBTITLE_FADE = 8;
 export function SubtitleOverlay({ text, durationInFrames, style = 'bottom' }: SubtitleOverlayProps) {
   const frame = useCurrentFrame();
 
+  // Se a duração é muito curta para fade in+out, reduz o fade proporcionalmente
+  // para manter o inputRange monotonicamente crescente
+  const safeFade = Math.min(SUBTITLE_FADE, Math.floor(durationInFrames / 3));
+
   const opacity = interpolate(
     frame,
-    [0, SUBTITLE_FADE, durationInFrames - SUBTITLE_FADE, durationInFrames],
+    [0, safeFade, durationInFrames - safeFade, durationInFrames],
     [0, 1, 1, 0],
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
@@ -30,7 +34,7 @@ export function SubtitleOverlay({ text, durationInFrames, style = 'bottom' }: Su
   // Leve deslocamento vertical para animação de entrada
   const translateY = interpolate(
     frame,
-    [0, SUBTITLE_FADE],
+    [0, safeFade],
     [12, 0],
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
