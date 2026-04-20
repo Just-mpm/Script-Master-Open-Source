@@ -25,6 +25,19 @@ interface ReferenceImagePayload {
   data: string;
 }
 
+/** Imagem de cena carregada como base64 para envio ao Gemini */
+export interface SceneImagePayload {
+  /** Timestamp da cena a que esta imagem pertence */
+  timestamp: number;
+  /** MIME type da imagem (ex: image/png) */
+  mimeType: string;
+  /** Dados base64 da imagem (sem o prefixo data:) */
+  base64: string;
+}
+
+/** Número máximo de imagens enviadas ao Gemini para análise visual */
+const MAX_IMAGES_FOR_ANALYSIS = 8;
+
 function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   const dataUriMatch = referenceImage.match(/^data:([^;]+);base64,(.+)$/);
 
@@ -39,6 +52,130 @@ function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
     mimeType: 'image/jpeg',
     data: referenceImage,
   };
+}
+
+/**
+ * Extrai dados de imagem de um URL (data:, blob: ou HTTP) como base64.
+ * Falha silenciosamente retornando null — nunca quebra o fluxo principal.
+ */
+async function fetchImageAsBase64(imageUrl: string): Promise<SceneImagePayload | null> {
+  try {
+    // Data URL: extrai mime e base64 diretamente
+    if (imageUrl.startsWith('data:')) {
+      const match = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        return { timestamp: 0, mimeType: match[1], base64: match[2] };
+      }
+      return null;
+    }
+
+    const response = await fetch(imageUrl);
+    if (!response.ok) return null;
+
+    // Usa Content-Type do response ou infere a partir do URL
+    const contentType = response.headers.get('Content-Type') ?? '';
+    const mimeType = contentType.startsWith('image/')
+      ? contentType.split(';')[0].trim()
+      : inferMimeTypeFromUrl(imageUrl);
+
+    const buffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    // Converte ArrayBuffer para binary string e depois para base64 via btoa().
+    // O loop é necessário porque btoa() não aceita Uint8Array diretamente.
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+
+    return { timestamp: 0, mimeType, base64 };
+  } catch {
+    // Falha silenciosa — a imagem será ignorada
+    console.warn('[gemini] Falha ao carregar imagem para análise visual:', imageUrl.substring(0, 60));
+    return null;
+  }
+}
+
+/** Infere MIME type a partir da extensão do URL */
+function inferMimeTypeFromUrl(url: string): string {
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
+  const mimeMap: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    bmp: 'image/bmp',
+    avif: 'image/avif',
+  };
+  return mimeMap[ext ?? ''] ?? 'image/jpeg';
+}
+
+/**
+ * Carrega e seleciona as imagens das cenas para análise visual.
+ * Seleciona amostra representativa quando há mais cenas que o limite.
+ * Aceita imageUrl opcional — filtra automaticamente os que não têm imagem.
+ * Silenciosamente ignora imagens que falharem ao carregar.
+ */
+export async function loadSceneImagesForAnalysis(
+  scenes: ReadonlyArray<{ timestamp: number; imageUrl?: string }>,
+): Promise<SceneImagePayload[]> {
+  // Filtra cenas com URL de imagem válida (undefined → excluído)
+  const scenesWithImages = scenes.filter(
+    (s): s is { timestamp: number; imageUrl: string } => !!s.imageUrl?.trim(),
+  );
+
+  if (scenesWithImages.length === 0) return [];
+
+  // Seleciona amostra representativa: primeira, última e intermediárias espaçadas
+  const selectedScenes = selectRepresentativeScenes(scenesWithImages, MAX_IMAGES_FOR_ANALYSIS);
+
+  // Carrega todas em paralelo — falhas individuais são silenciosas
+  const results = await Promise.all(
+    selectedScenes.map(async (scene) => {
+      const payload = await fetchImageAsBase64(scene.imageUrl);
+      if (!payload) return null;
+      // Associa o timestamp correto da cena
+      return { ...payload, timestamp: scene.timestamp } satisfies SceneImagePayload;
+    }),
+  );
+
+  // Remove nulls (falhas)
+  return results.filter((img): img is SceneImagePayload => img !== null);
+}
+
+/**
+ * Seleciona até `maxCount` cenas de forma representativa:
+ * sempre inclui a primeira e a última, e distribui intermediárias uniformemente.
+ */
+function selectRepresentativeScenes<T>(
+  scenes: ReadonlyArray<T>,
+  maxCount: number,
+): ReadonlyArray<T> {
+  if (scenes.length <= maxCount) return scenes;
+
+  const result: T[] = [];
+
+  // Primeira cena sempre incluída
+  result.push(scenes[0]);
+
+  // Distribui cenas intermediárias uniformemente
+  const remaining = maxCount - 2; // reserva slots para primeira e última
+  if (remaining > 0 && scenes.length > 2) {
+    const step = (scenes.length - 2) / (remaining + 1);
+    for (let i = 1; i <= remaining; i++) {
+      const idx = Math.min(Math.round(i * step), scenes.length - 2);
+      result.push(scenes[idx]);
+    }
+  }
+
+  // Última cena sempre incluída
+  if (result[result.length - 1] !== scenes[scenes.length - 1]) {
+    result.push(scenes[scenes.length - 1]);
+  }
+
+  return result.slice(0, maxCount);
 }
 
 export async function generateScenePrompts(script: string, durationInSeconds: number, style: string, densitySeconds: number = 15, visualFramework: string = 'general'): Promise<ScenePrompt[]> {
@@ -171,7 +308,8 @@ export async function generateImageFromPrompt(prompt: string, aspectRatio: '1:1'
 
 /**
  * Gera um plano de edição automático para as cenas do vídeo.
- * Retorna um EditingScene por cena com transição, legenda, câmera e efeitos.
+ * Quando imagens reais estão disponíveis, o Gemini analisa a composição visual
+ * (framing, foco, elementos, mood) para sugerir transições, câmera e efeitos alinhados.
  * Faz fallback para plano padrão (fade em tudo) em caso de erro.
  */
 export async function generateEditingPlan(
@@ -179,6 +317,7 @@ export async function generateEditingPlan(
   scenes: { timestamp: number; prompt: string }[],
   durationInSeconds: number,
   audioAnalysis?: AudioAnalysisResult | null,
+  sceneImages?: SceneImagePayload[],
 ): Promise<EditingPlan> {
   // Plano padrão caso a IA falhe — fade em todas as cenas
   const fallbackPlan: EditingPlan = scenes.map(scene => ({
@@ -198,11 +337,16 @@ export async function generateEditingPlan(
     ? `\n${audioAnalysis.toPromptText}\n\n`
     : '';
 
+  // Seção de instrução visual — adicionada quando há imagens reais
+  const visualSection = sceneImages && sceneImages.length > 0
+    ? buildVisualInstructions(sceneImages)
+    : '';
+
   const systemPrompt = `Você é um editor de vídeo profissional especializado em conteúdo para YouTube Shorts, Reels e TikTok.
 O vídeo tem ${durationInSeconds.toFixed(1)} segundos e ${scenes.length} cenas.
 
 Analise o roteiro e crie um plano de edição dinâmico para cada cena.
-
+${visualSection}
 Regras obrigatórias:
 1. Mantenha os timestamps EXATAMENTE iguais aos fornecidos.
 2. Mantenha os prompts EXATAMENTE iguais aos fornecidos.
@@ -230,9 +374,26 @@ ${script}
 Cenas fornecidas (JSON):
 ${scenesJson}`;
 
+  // Monta as parts do conteúdo — inclui imagens como inlineData quando disponíveis
+  const contentParts: Array<
+    { inlineData: { mimeType: string; data: string } } | { text: string }
+  > = [];
+
+  // Imagens antes do texto (melhor prática do Gemini para multimodal)
+  if (sceneImages && sceneImages.length > 0) {
+    for (const img of sceneImages) {
+      contentParts.push({
+        inlineData: { mimeType: img.mimeType, data: img.base64 },
+      });
+    }
+  }
+
+  // Texto do prompt por último
+  contentParts.push({ text: systemPrompt });
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-lite-preview',
-      contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+      contents: [{ role: 'user', parts: contentParts }],
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -310,4 +471,27 @@ ${scenesJson}`;
     }));
 
     return normalized;
+}
+
+/**
+ * Monta instruções de análise visual para o prompt, referenciando os timestamps das imagens.
+ */
+function buildVisualInstructions(images: ReadonlyArray<SceneImagePayload>): string {
+  const timestamps = images.map(img => `${img.timestamp}s`).join(', ');
+  return `
+[ANÁLISE VISUAL DISPONÍVEL]
+As imagens reais das cenas nos timestamps [${timestamps}] foram fornecidas junto com este prompt.
+Analise a composição visual de cada imagem para refinar suas decisões de edição:
+
+Regras de análise visual:
+1. Composição e framing — se a imagem tem elemento central dominante, use ken-burns ou zoom-in; se tem elementos distribuídos horizontalmente, use pan-left/pan-right.
+2. Mood visual — se a imagem é monocromática/tons frios, considere grayscale ou contrast-up; se tem tom quente/vintage, considere sepia ou saturate.
+3. Distribuição espacial — se elementos principais estão à direita, use slide-left para a próxima cena; se à esquerda, use slide-right.
+4. Profundidade e foco — se há camadas de profundidade, use zoom-out para revelar; se há foco em detalhe, use zoom-in para imergir.
+5. Iluminação e contraste — cenas de alta luz/contraste combinam com cut; cenas suaves combinam com fade/dissolve.
+
+Importante: as imagens não estão em ordem — use o timestamp de cada cena para correlacionar.
+Cenas sem imagem devem seguir as diretrizes gerais do roteiro.
+
+`;
 }

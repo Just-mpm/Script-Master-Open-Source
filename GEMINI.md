@@ -259,5 +259,5 @@ scripts/
 
 ## Version
 
-- **Current:** `0.7.0`
-- **Last release:** 2026-04-20 — TitleOverlay para vídeo, análise de áudio integrada ao plano de edição, persistência de planos em IndexedDB, parser de legendas com Markdown bold, undo history no useEditingPlan, constantes de edição centralizadas em editingPlan.ts
+- **Current:** `0.8.0`
+- **Last release:** 2026-04-20 — WaveformOverlay para vídeo, animação karaoke palavra-a-palavra nas legendas, análise visual de cenas para planos de edição, transições com spring no SceneSequence, novas deps Remotion (media-utils, transitions)

@@ -41,6 +41,7 @@ export { VideoComposition } from './components/VideoComposition';
 export { SceneSequence } from './components/SceneSequence';
 export { SubtitleOverlay } from './components/SubtitleOverlay';
 export { TitleOverlay } from './components/TitleOverlay';
+export { WaveformOverlay } from './components/WaveformOverlay';
 export { EditingPlanInspector } from './components/EditingPlanInspector';
 export { VideoExportPanel } from './components/VideoExportPanel';
 

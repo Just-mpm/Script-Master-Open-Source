@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { generateEditingPlan } from '../../../lib/gemini';
+import { generateEditingPlan, loadSceneImagesForAnalysis } from '../../../lib/gemini';
+import type { SceneImagePayload } from '../../../lib/gemini';
 import { loadEditingPlan, saveEditingPlan } from '../../../lib/db/editing-plans';
 import type { EditingPlan, EditingScene } from '../lib/editingPlan';
 import { analyzeAudioForEditing } from '../lib/audioAnalysis';
@@ -9,6 +10,8 @@ import type { AudioAnalysisResult } from '../lib/audioAnalysis';
 export interface EditingPlanSceneInput {
   timestamp: number;
   prompt: string;
+  /** URL da imagem gerada para esta cena (usada na análise visual do Gemini) */
+  imageUrl?: string;
 }
 
 /** Estado e ações do hook de plano de edição */
@@ -61,10 +64,10 @@ const PERSIST_DEBOUNCE_MS = 500;
 
 /** Etapas de progresso da geração do plano (etapa 0 = análise de áudio) */
 const GENERATION_STAGES = [
-  { text: 'Enviando para IA...', progress: 20 },
-  { text: 'Analisando roteiro...', progress: 40 },
-  { text: 'Gerando plano de edição...', progress: 60 },
-  { text: 'Finalizando...', progress: 80 },
+  { text: 'Carregando imagens...', progress: 20 },
+  { text: 'Enviando para IA...', progress: 40 },
+  { text: 'Analisando roteiro e imagens...', progress: 60 },
+  { text: 'Gerando plano de edição...', progress: 80 },
 ] as const;
 
 /** Progresso reservado para a fase de análise de áudio */
@@ -193,7 +196,22 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
 
         if (cancelRef.current) throw new Error('Geração do plano cancelada pelo usuário.');
 
-        const plan = await generateEditingPlan(script, scenes, durationInSeconds, audioAnalysis);
+        // ─── Carregamento de imagens para análise visual ─────────
+        let sceneImages: SceneImagePayload[] = [];
+
+        const scenesWithImages = scenes.filter(s => s.imageUrl?.trim());
+        if (scenesWithImages.length > 0) {
+          try {
+            sceneImages = await loadSceneImagesForAnalysis(scenesWithImages);
+          } catch {
+            // Falha no carregamento de imagens — continua sem análise visual
+            console.warn('[useEditingPlan] Carregamento de imagens falhou, continuando sem análise visual.');
+          }
+        }
+
+        if (cancelRef.current) throw new Error('Geração do plano cancelada pelo usuário.');
+
+        const plan = await generateEditingPlan(script, scenes, durationInSeconds, audioAnalysis, sceneImages);
 
         if (cancelRef.current) throw new Error('Geração do plano cancelada pelo usuário.');
 
@@ -266,8 +284,19 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
 
   const regenerateScene = useCallback(
     async (index: number, script: string, scenes: EditingPlanSceneInput[], durationInSeconds: number) => {
+      // Carrega imagens para análise visual na re-geração (silencioso em caso de falha)
+      let sceneImages: SceneImagePayload[] = [];
+      const scenesWithImages = scenes.filter(s => s.imageUrl?.trim());
+      if (scenesWithImages.length > 0) {
+        try {
+          sceneImages = await loadSceneImagesForAnalysis(scenesWithImages);
+        } catch {
+          // Falha silenciosa — re-gera sem análise visual
+        }
+      }
+
       // Solicita plano completo para manter coerência entre cenas
-      const newPlan = await generateEditingPlan(script, scenes, durationInSeconds);
+      const newPlan = await generateEditingPlan(script, scenes, durationInSeconds, undefined, sceneImages);
 
       // Substitui só a cena no índice solicitado
       setEditingPlan(prev => {

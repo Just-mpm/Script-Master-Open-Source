@@ -1,6 +1,40 @@
-import { AbsoluteFill, Img, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import {
+  AbsoluteFill,
+  Img,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from 'remotion';
 import { CAMERA_MOVEMENTS, DEFAULT_EFFECT_INTENSITY, effectBlurPx } from '../lib/editingPlan';
 import type { TransitionType, CameraMovement, VisualEffect } from '../lib/editingPlan';
+
+// ─── Configurações spring por categoria de animação ───────────────
+
+/**
+ * Spring para transições de cena (fade, slide, wipe, zoom).
+ * damping > stiffness = superamortecido → sem oscilação, sem overshoot.
+ * A curva natural de spring dá aceleração suave na entrada e desaceleração na saída.
+ */
+const SPRING_TRANSICAO = {
+  damping: 26,
+  stiffness: 100,
+  mass: 1,
+} as const;
+
+/**
+ * Spring para movimentos de câmera (pan, tilt, zoom, ken-burns).
+ * damping muito alto = extremamente suave, sem qualquer oscilação visível.
+ * overshootClamping impede que a câmera passe do ponto final e "volte".
+ */
+const SPRING_CAMERA = {
+  damping: 200,
+  stiffness: 40,
+  mass: 1,
+  overshootClamping: true,
+} as const;
+
+// ─── Props (interface preservada — consumida por VideoComposition) ──
 
 interface SceneSequenceProps {
   /** URL da imagem da cena */
@@ -19,13 +53,19 @@ interface SceneSequenceProps {
   isLastScene?: boolean;
 }
 
-/** Frames de fade in/out padrão para transição fade */
+/** Frames de transição padrão quando não informado */
 const FADE_FRAMES = 12;
+
+// ─── Componente principal ─────────────────────────────────────────
 
 /**
  * Renderiza uma cena individual com imagem em tela cheia.
  * Suporta transições variadas, movimentos de câmera e efeitos visuais.
  * Usa `<Img>` do Remotion que aguarda o carregamento antes de renderizar.
+ *
+ * Todas as animações usam spring() do Remotion para timing physics-based:
+ * - Transições (fade, slide, wipe, zoom) → curva de entrada/saída natural
+ * - Câmeras (pan, tilt, zoom) → movimento suave com aceleração/desaceleração
  */
 export function SceneSequence({
   imageUrl,
@@ -37,32 +77,33 @@ export function SceneSequence({
   isLastScene = false,
 }: SceneSequenceProps) {
   const frame = useCurrentFrame();
-  const { width } = useVideoConfig();
+  const { width, fps } = useVideoConfig();
 
   // Usa a duração de transição informada ou fallback para FADE_FRAMES
   const tFrames = transitionDurationFrames ?? FADE_FRAMES;
 
-  // Garante que o inputRange [0, t, dur-t, dur] seja estritamente crescente:
+  // Garante que o inputRange seja estritamente crescente:
   // precisa t >= 1 e 2*t < durationInFrames, ou seja t <= floor((dur-1)/2)
   const maxAllowed = durationInFrames >= 3 ? Math.floor((durationInFrames - 1) / 2) : 0;
   const safeTransitionFrames = Math.min(Math.max(1, tFrames), maxAllowed);
 
-  // ── 1. Cálculo da transição de entrada ──
+  // ── 1. Cálculo da transição com spring ──
   const { opacity, translateX, translateY, scale, clipPath } = buildTransition(
     transition,
     frame,
+    fps,
     safeTransitionFrames,
     durationInFrames,
     isLastScene,
   );
 
-  // ── 2. Cálculo do movimento de câmera ──
-  const cameraTransform = buildCameraMovement(camera, frame, durationInFrames);
+  // ── 2. Cálculo do movimento de câmera com spring ──
+  const cameraTransform = buildCameraMovement(camera, frame, fps, durationInFrames);
 
   // ── 3. Compõe todos os transforms em uma única string ──
   const composedTransform = [
-    `translateX(${(translateX + cameraTransform.translateX)}%)`,
-    `translateY(${(translateY + cameraTransform.translateY)}%)`,
+    `translateX(${translateX + cameraTransform.translateX}%)`,
+    `translateY(${translateY + cameraTransform.translateY}%)`,
     `scale(${scale * cameraTransform.scale})`,
   ].join(' ');
 
@@ -94,27 +135,48 @@ export function SceneSequence({
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de transição
+// Helpers de transição com spring (physics-based timing)
 // ---------------------------------------------------------------------------
 
 /**
- * Interpolação reutilizável de fade-out: opacidade 1 → 1 → 0 nos frames finais.
- * Se isLastScene, retorna 1 (sem fade-out) pois não há cena seguinte.
- * Usada por slide-left, slide-right, slide-up e wipe para manter DRY.
+ * Gera progresso de fade-in com spring (0→1) ao longo de fadeFrames.
+ * Substitui interpolate linear por curva de spring com aceleração/desaceleração.
  */
-function fadeOutOpacity(
+function springFadeIn(
   frame: number,
-  tFrames: number,
-  durationInFrames: number,
+  fps: number,
+  fadeFrames: number,
+): number {
+  return spring({
+    frame,
+    fps,
+    config: SPRING_TRANSICAO,
+    durationInFrames: fadeFrames,
+  });
+}
+
+/**
+ * Gera opacidade de fade-out com spring (1→0) começando em fadeStartFrame.
+ * Se isLastScene, retorna 1 (sem fade-out) pois não há cena seguinte.
+ * Reusado por slide-left, slide-right, slide-up e wipe para manter DRY.
+ */
+function springFadeOut(
+  frame: number,
+  fps: number,
+  fadeStartFrame: number,
+  fadeFrames: number,
   isLastScene?: boolean,
 ): number {
-  if (isLastScene || tFrames <= 0) return 1;
-  return interpolate(
-    frame,
-    [0, tFrames, durationInFrames - tFrames, durationInFrames],
-    [1, 1, 1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
+  if (isLastScene || fadeFrames <= 0) return 1;
+  // Offset do frame para que o spring comece em fadeStartFrame
+  const localFrame = frame - fadeStartFrame;
+  // Inverte o spring (0→1 vira 1→0) e impede valores negativos
+  return Math.max(0, 1 - spring({
+    frame: localFrame,
+    fps,
+    config: SPRING_TRANSICAO,
+    durationInFrames: fadeFrames,
+  }));
 }
 
 interface TransitionResult {
@@ -125,14 +187,20 @@ interface TransitionResult {
   clipPath?: string;
 }
 
+/**
+ * Constrói a transformação de transição usando spring para todas as animações.
+ * Cada tipo de transição usa spring() para gerar curvas de entrada/saída naturais
+ * ao invés de interpolação linear.
+ */
 function buildTransition(
   type: TransitionType,
   frame: number,
+  fps: number,
   tFrames: number,
   durationInFrames: number,
   isLastScene?: boolean,
 ): TransitionResult {
-  // Cenas muito curtas (< 3 frames) não têm espaço para transição de 4 valores
+  // Cenas muito curtas (< 2 frames) não têm espaço para transição
   if (tFrames <= 0 || durationInFrames < 2) {
     return { opacity: 1, translateX: 0, translateY: 0, scale: 1 };
   }
@@ -143,117 +211,75 @@ function buildTransition(
 
     case 'fade': {
       if (isLastScene) {
-        // Última cena: só fade-in, permanece visível até o final
-        const opacity = interpolate(
-          frame,
-          [0, tFrames],
-          [0, 1],
-          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-        );
+        // Última cena: só fade-in com spring, permanece visível até o final
+        const opacity = springFadeIn(frame, fps, tFrames);
         return { opacity, translateX: 0, translateY: 0, scale: 1 };
       }
-      const opacity = interpolate(
-        frame,
-        [0, tFrames, durationInFrames - tFrames, durationInFrames],
-        [0, 1, 1, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
-      return { opacity, translateX: 0, translateY: 0, scale: 1 };
+      const fadeIn = springFadeIn(frame, fps, tFrames);
+      const fadeOut = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames);
+      // min(fadeIn, fadeOut) cria a curva de entrada platô saída
+      return { opacity: Math.min(fadeIn, fadeOut), translateX: 0, translateY: 0, scale: 1 };
     }
 
     case 'dissolve': {
+      // Dissolve = fade mais longo (2x os frames de transição)
       const dissolveFrames = Math.min(tFrames * 2, Math.floor(durationInFrames / 2));
       if (isLastScene) {
-        const opacity = interpolate(
-          frame,
-          [0, dissolveFrames],
-          [0, 1],
-          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-        );
+        const opacity = springFadeIn(frame, fps, dissolveFrames);
         return { opacity, translateX: 0, translateY: 0, scale: 1 };
       }
-      const opacity = interpolate(
-        frame,
-        [0, dissolveFrames, durationInFrames - dissolveFrames, durationInFrames],
-        [0, 1, 1, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
-      return { opacity, translateX: 0, translateY: 0, scale: 1 };
+      const fadeIn = springFadeIn(frame, fps, dissolveFrames);
+      const fadeOut = springFadeOut(frame, fps, durationInFrames - dissolveFrames, dissolveFrames);
+      return { opacity: Math.min(fadeIn, fadeOut), translateX: 0, translateY: 0, scale: 1 };
     }
 
     case 'slide-left': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
-      const translateX = interpolate(
-        frame,
-        [0, tFrames],
-        [100, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
+      const opacity = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames, isLastScene);
+      // Spring-driven slide: desliza de 100% para 0% com física natural
+      const slideSpring = springFadeIn(frame, fps, tFrames);
+      const translateX = interpolate(slideSpring, [0, 1], [100, 0]);
       return { opacity, translateX, translateY: 0, scale: 1 };
     }
 
     case 'slide-right': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
-      const translateX = interpolate(
-        frame,
-        [0, tFrames],
-        [-100, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
+      const opacity = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames, isLastScene);
+      const slideSpring = springFadeIn(frame, fps, tFrames);
+      const translateX = interpolate(slideSpring, [0, 1], [-100, 0]);
       return { opacity, translateX, translateY: 0, scale: 1 };
     }
 
     case 'slide-up': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
-      const translateY = interpolate(
-        frame,
-        [0, tFrames],
-        [100, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
+      const opacity = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames, isLastScene);
+      const slideSpring = springFadeIn(frame, fps, tFrames);
+      const translateY = interpolate(slideSpring, [0, 1], [100, 0]);
       return { opacity, translateX: 0, translateY, scale: 1 };
     }
 
     case 'zoom': {
+      // Zoom: opacidade + escala com spring sincronizado
+      const zoomSpring = springFadeIn(frame, fps, tFrames);
       if (isLastScene) {
-        const opacity = interpolate(
-          frame,
-          [0, tFrames],
-          [0, 1],
-          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-        );
-        const scale = interpolate(
-          frame,
-          [0, tFrames],
-          [1.2, 1],
-          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-        );
-        return { opacity, translateX: 0, translateY: 0, scale };
+        return {
+          opacity: zoomSpring,
+          translateX: 0,
+          translateY: 0,
+          scale: interpolate(zoomSpring, [0, 1], [1.2, 1]),
+        };
       }
-      const opacity = interpolate(
-        frame,
-        [0, tFrames, durationInFrames - tFrames, durationInFrames],
-        [0, 1, 1, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
-      const scale = interpolate(
-        frame,
-        [0, tFrames],
-        [1.2, 1],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
-      return { opacity, translateX: 0, translateY: 0, scale };
+      const fadeOut = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames);
+      return {
+        opacity: Math.min(zoomSpring, fadeOut),
+        translateX: 0,
+        translateY: 0,
+        scale: interpolate(zoomSpring, [0, 1], [1.2, 1]),
+      };
     }
 
     case 'wipe': {
-      const opacity = fadeOutOpacity(frame, tFrames, durationInFrames, isLastScene);
-      // Cortina horizontal: inset(0 X% 0 0) revela da esquerda para direita
-      const insetRight = interpolate(
-        frame,
-        [0, tFrames],
-        [100, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
+      const opacity = springFadeOut(frame, fps, durationInFrames - tFrames, tFrames, isLastScene);
+      // Cortina horizontal com spring: inset revela da esquerda para direita
+      const wipeSpring = springFadeIn(frame, fps, tFrames);
+      const insetRight = interpolate(wipeSpring, [0, 1], [100, 0]);
       return {
         opacity,
         translateX: 0,
@@ -269,7 +295,7 @@ function buildTransition(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de movimento de câmera
+// Helpers de movimento de câmera com spring
 // ---------------------------------------------------------------------------
 
 interface CameraTransform {
@@ -278,9 +304,19 @@ interface CameraTransform {
   translateY: number;
 }
 
+/**
+ * Constrói movimento de câmera usando spring() ao invés de progresso linear.
+ *
+ * Antes: progress = frame / durationInFrames (velocidade constante)
+ * Agora: spring() gera curva 0→1 com aceleração/desaceleração natural.
+ *
+ * O damping alto (200) garante movimento extremamente suave sem oscilação,
+ * e overshootClamping impede que a câmera passe do ponto final.
+ */
 function buildCameraMovement(
   type: CameraMovement,
   frame: number,
+  fps: number,
   durationInFrames: number,
 ): CameraTransform {
   const preset = CAMERA_MOVEMENTS[type];
@@ -291,10 +327,16 @@ function buildCameraMovement(
     return { scale: 1, translateX: 0, translateY: 0 };
   }
 
-  const progress = durationInFrames > 0 ? frame / durationInFrames : 0;
+  // Progresso baseado em spring: suave no início e fim, sem overshoot
+  const progress = spring({
+    frame,
+    fps,
+    config: SPRING_CAMERA,
+    durationInFrames,
+  });
 
   // Multiplicadores base: intensidade 0.5 = movimento máximo visível
-  const maxPan = intensity * 15;   // % de translate (0.5 → 7.5%)
+  const maxPan = intensity * 15;    // % de translate (0.5 → 7.5%)
   const maxScale = 1 + intensity * 0.4; // scale final (0.5 → 1.2)
 
   switch (type) {
@@ -353,7 +395,7 @@ function buildCameraMovement(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de efeitos visuais (CSS filter)
+// Helpers de efeitos visuais (CSS filter — inalterados)
 // ---------------------------------------------------------------------------
 
 function buildEffectsFilter(effects: VisualEffect[], resolutionWidth?: number): string {

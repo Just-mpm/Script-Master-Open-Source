@@ -7,6 +7,28 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.8.0] - 2026-04-20
+
+### Adicionado
+
+- **WaveformOverlay** (`src/features/video-render/components/WaveformOverlay.tsx`): overlay de forma de onda do áudio no vídeo — usa `@remotion/media-utils` para extrair amplitude por frame (`getAudioData`) e renderiza barras normalizadas com gradiente vertical sobre as cenas
+- **Animação palavra-a-palavra nas legendas** (`src/features/video-render/components/SubtitleOverlay.tsx`): sistema de karaoke com `AnimatedWord` — cada palavra recebe estado `active`/`past`/`future` com escala e opacidade distintas; `splitIntoWords` segmenta texto e `calculateWordTiming` distribui frames proporcionalmente ao tamanho de cada palavra
+- **Análise visual de cenas no plano de edição** (`src/lib/gemini.ts`): `loadSceneImagesForAnalysis` carrega até `MAX_IMAGES_FOR_ANALYSIS` (8) imagens das cenas como base64, `selectRepresentativeScenes` escolhe cenas distribuídas uniformemente, e `buildVisualInstructions` monta instruções visuais com referências inline para o prompt de edição; tipos `SceneImagePayload` e helpers `fetchImageAsBase64`/`inferMimeTypeFromUrl`
+- **Transições com spring** (`src/features/video-render/components/SceneSequence.tsx`): constantes `SPRING_TRANSICAO` e `SPRING_CAMERA` para animações naturais; funções `springFadeIn` e `springFadeOut` para transições de cena suaves
+- **Dependências Remotion**: `@remotion/media-utils` (4.0.448) para extração de dados de áudio e `@remotion/transitions` (4.0.448) para transições entre cenas
+
+### Alterado
+
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): reescrita completa — substituído sistema de quebra de linha estática por animação karaoke palavra-a-palavra com timing proporcional; removidos `wrapSubtitleText`, `SubtitleLine`, `MAX_CHARS_PER_LINE`
+- **SceneSequence** (`src/features/video-render/components/SceneSequence.tsx`): transições agora usam springs (`SPRING_TRANSICAO`) ao invés de easing linear; câmera usa `SPRING_CAMERA` para movimentos suaves; removida dependência de `remotion` e variável `fadeOutOpacity`
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): integração do `WaveformOverlay` na composição do vídeo
+- **useEditingPlan** (`src/features/video-render/hooks/useEditingPlan.ts`): plano de edição agora passa `imageUrl` das cenas para análise visual via Gemini
+- **VideoPage** (`src/pages/VideoPage.tsx`): `mapScenesToVideoScenes` agora inclui `imageUrl` no mapeamento de cenas
+- **Barrel export** (`src/features/video-render/index.ts`): adicionado export de `WaveformOverlay`
+- **gemini.ts** (`src/lib/gemini.ts`): adicionado módulo de análise visual de cenas com loading de imagens em base64 e seleção de cenas representativas
+
+---
+
 ## [0.7.0] - 2026-04-20
 
 ### Adicionado

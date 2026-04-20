@@ -66,7 +66,11 @@ export function VideoPage({
 
   // Mapeia cenas para o formato esperado pelo hook de edição
   const scenesForPlan = useMemo(
-    () => scenes.map(s => ({ timestamp: s.timestamp, prompt: s.prompt ?? '' })),
+    () => scenes.map(s => ({
+      timestamp: s.timestamp,
+      prompt: s.prompt ?? '',
+      imageUrl: s.imageUrl,
+    })),
     [scenes],
   );
 

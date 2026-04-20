@@ -1,4 +1,4 @@
-import { AbsoluteFill, Sequence } from 'remotion';
+import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { VideoCompositionProps } from '../types';
 import { type EditingScene, TRANSITION_PRESETS } from '../lib/editingPlan';
@@ -6,6 +6,7 @@ import { msToFrames } from '../lib/videoUtils';
 import { SceneSequence } from './SceneSequence';
 import { SubtitleOverlay } from './SubtitleOverlay';
 import { TitleOverlay } from './TitleOverlay';
+import { WaveformOverlay } from './WaveformOverlay';
 
 /**
  * Composition principal Remotion para o vídeo de roteiro.
@@ -20,6 +21,7 @@ import { TitleOverlay } from './TitleOverlay';
  */
 export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCompositionProps) {
   const totalScenes = scenes.length;
+  const frame = useCurrentFrame();
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -83,6 +85,18 @@ export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCo
                 text={planScene.titleOverlay.text}
                 style={planScene.titleOverlay.style}
                 durationInFrames={adjustedDuration}
+              />
+            )}
+
+            {/* Waveform de áudio sincronizado com a cena */}
+            {audioUrl && (
+              <WaveformOverlay
+                audioUrl={audioUrl}
+                sceneStartTime={scene.timestamp}
+                sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
+                frame={frame}
+                fps={fps}
+                opacity={0.3}
               />
             )}
           </Sequence>
