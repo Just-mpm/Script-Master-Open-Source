@@ -1,4 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore, useState, type ReactNode, type RefObject } from 'react';
+import Alert from '@mui/material/Alert';
+import IconButton from '@mui/material/IconButton';
+import Snackbar from '@mui/material/Snackbar';
+import Close from '@mui/icons-material/Close';
+import { ICON_SIZE_MD } from '../theme/tokens';
 
 interface AudioSnapshot {
   isPlaying: boolean;
@@ -35,6 +40,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     activeId: null,
   });
   const listenersRef = useRef(new Set<() => void>());
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+
+  /** Trata erros do audio.play() — exibe feedback visual para NotAllowedError */
+  const handlePlayError = useCallback((err: unknown) => {
+    if (err instanceof DOMException && err.name === 'NotAllowedError') {
+      setPlaybackError('O navegador bloqueou a reprodução. Clique no botão de play para iniciar.');
+    } else {
+      console.error('Error playing audio:', err);
+    }
+  }, []);
+
+  const dismissPlaybackError = useCallback(() => setPlaybackError(null), []);
 
   const notify = useCallback(() => {
     for (const listener of listenersRef.current) {
@@ -127,8 +144,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       durationOverrideRef.current = null;
     }
     setSnapshot({ activeId: id });
-    audio.play().catch((err: unknown) => console.error('Error playing audio:', err));
-  }, [audioRef, setSnapshot]);
+    audio.play().catch(handlePlayError);
+  }, [audioRef, setSnapshot, handlePlayError]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -146,9 +163,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     if (snapshotRef.current.isPlaying) {
       audio.pause();
     } else {
-      audio.play().catch((err: unknown) => console.error('Error playing audio:', err));
+      audio.play().catch(handlePlayError);
     }
-  }, [audioRef]);
+  }, [audioRef, handlePlayError]);
 
   const seek = useCallback((percentage: number) => {
     const audio = audioRef.current;
@@ -192,6 +209,29 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     <AudioContext.Provider value={contextValue}>
       {children}
       <audio ref={audioRef} aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
+      <Snackbar
+        open={Boolean(playbackError)}
+        autoHideDuration={6000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          dismissPlaybackError();
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="warning"
+          variant="filled"
+          onClose={dismissPlaybackError}
+          action={
+            <IconButton color="inherit" size="small" aria-label="Fechar aviso" onClick={dismissPlaybackError}>
+              <Close sx={{ fontSize: ICON_SIZE_MD }} />
+            </IconButton>
+          }
+          sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 400 } }}
+        >
+          {playbackError}
+        </Alert>
+      </Snackbar>
     </AudioContext.Provider>
   );
 }

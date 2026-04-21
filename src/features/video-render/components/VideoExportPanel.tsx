@@ -154,7 +154,7 @@ export function VideoExportPanel({
             sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
           >
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: H.264
+              Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}
             </Typography>
 
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>

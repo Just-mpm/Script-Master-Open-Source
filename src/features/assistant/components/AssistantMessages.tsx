@@ -24,6 +24,7 @@ import { BRAND_PRIMARY, WHITE_06, WHITE_82, WHITE_16, AVATAR_SIZE_SM, ICON_SIZE_
 interface AssistantMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  isStreaming: boolean;
   appliedMessageId: string | null;
   savedToMemoryId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
@@ -34,18 +35,27 @@ interface AssistantMessagesProps {
 export function AssistantMessages({
   messages,
   isLoading,
+  isStreaming,
   appliedMessageId,
   savedToMemoryId,
   messagesEndRef,
   onApply,
   onSaveToMemory,
 }: AssistantMessagesProps) {
+  // Última mensagem do modelo — pode estar em streaming (texto progressivo)
+  const lastModelMessage = [...messages].reverse().find(m => m.role === 'model');
+
+  // Oculta skeleton quando o primeiro token já chegou (texto parcial > '')
+  const showSkeleton = isLoading && !isStreaming;
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: { xs: 1, md: 1.5 } }}>
       <Stack spacing={GAP_RELAXED}>
         {messages.map((message) => {
           const isModel = message.role === 'model';
-          const settings = isModel ? extractJsonSettings(message.text) : null;
+          // Verifica se esta é a mensagem que está sendo gerada via streaming
+          const isCurrentlyStreaming = isStreaming
+            && lastModelMessage?.id === message.id;
+          const settings = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
           const cleanText = stripJsonSettingsBlock(message.text);
 
           return (
@@ -110,38 +120,56 @@ export function AssistantMessages({
                       </Stack>
                     </Stack>
 
-                    <Box sx={{ ...assistantMarkdownSx, typography: 'body2' }}>
-                      <ReactMarkdown>{cleanText}</ReactMarkdown>
+                    <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>
+                      {cleanText ? <ReactMarkdown>{cleanText}</ReactMarkdown> : null}
+                      {isCurrentlyStreaming ? (
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'inline-block',
+                            width: 2,
+                            height: '1.1em',
+                            bgcolor: 'text.primary',
+                            ml: 0.5,
+                            verticalAlign: 'text-bottom',
+                            animation: 'assistantCursorBlink 1s step-end infinite',
+                            '@keyframes assistantCursorBlink': {
+                              '0%, 100%': { opacity: 1 },
+                              '50%': { opacity: 0 },
+                            },
+                          }}
+                        />
+                      ) : null}
                     </Box>
 
-                     {settings || (isModel && message.id !== 'welcome') ? <Divider sx={{ borderColor: isModel ? 'divider' : WHITE_16 }} /> : null}
+                     {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming) ? <Divider sx={{ borderColor: isModel ? 'divider' : WHITE_16 }} /> : null}
 
                     <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                      {settings ? (
-                        <Button
-                          onClick={() => onApply(settings, message.id)}
-                          variant="contained"
-                          color="secondary"
-                          size="small"
-                            startIcon={appliedMessageId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
-                        >
-                          {appliedMessageId === message.id ? 'Aplicado' : 'Aplicar no estúdio'}
-                        </Button>
-                      ) : null}
+                       {!isCurrentlyStreaming && settings ? (
+                         <Button
+                           onClick={() => onApply(settings, message.id)}
+                           variant="contained"
+                           color="secondary"
+                           size="small"
+                             startIcon={appliedMessageId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
+                         >
+                           {appliedMessageId === message.id ? 'Aplicado' : 'Aplicar no estúdio'}
+                         </Button>
+                       ) : null}
 
-                      {isModel && message.id !== 'welcome' ? (
-                        <Button
-                          onClick={() => onSaveToMemory(cleanText, message.id)}
-                          variant="outlined"
-                          color="inherit"
-                          size="small"
-                           startIcon={savedToMemoryId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
-                           sx={{ borderColor: isModel ? 'divider' : 'action.hover' }}
-                        >
-                          {savedToMemoryId === message.id ? 'Salvo na memória' : 'Salvar insight'}
-                        </Button>
-                      ) : null}
-                    </Stack>
+                       {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
+                         <Button
+                           onClick={() => onSaveToMemory(cleanText, message.id)}
+                           variant="outlined"
+                           color="inherit"
+                           size="small"
+                            startIcon={savedToMemoryId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
+                            sx={{ borderColor: isModel ? 'divider' : 'action.hover' }}
+                         >
+                           {savedToMemoryId === message.id ? 'Salvo na memória' : 'Salvar insight'}
+                         </Button>
+                       ) : null}
+                     </Stack>
                   </Stack>
                 </Card>
               </Stack>
@@ -155,7 +183,7 @@ export function AssistantMessages({
           );
         })}
 
-        {isLoading ? (
+        {showSkeleton ? (
           <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>
             <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
                 <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />

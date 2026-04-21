@@ -39,7 +39,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
-  const { messages, isLoading, error, sendMessage, startNewChat, loadSession, messagesEndRef } = useAssistant(currentState);
+  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, messagesEndRef } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -303,6 +303,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       <AssistantMessages
         messages={messages}
         isLoading={isLoading}
+        isStreaming={isStreaming}
         appliedMessageId={appliedMessageId}
         savedToMemoryId={savedToMemoryId}
         messagesEndRef={messagesEndRef}

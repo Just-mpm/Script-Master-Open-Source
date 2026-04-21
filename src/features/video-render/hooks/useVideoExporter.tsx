@@ -37,6 +37,10 @@ export interface VideoExporterState {
   canRender: boolean | null;
   /** Aviso quando o salvamento no projeto falha após exportação bem-sucedida */
   saveWarning: string | null;
+  /** Codec de vídeo resolvido após checkSupport ('h264', 'vp8', etc.) */
+  resolvedVideoCodec: string;
+  /** Container resolvido após checkSupport ('mp4' ou 'webm') */
+  resolvedContainer: string;
 }
 
 const INITIAL_STATE: VideoExporterState = {
@@ -48,6 +52,8 @@ const INITIAL_STATE: VideoExporterState = {
   error: null,
   canRender: null,
   saveWarning: null,
+  resolvedVideoCodec: 'h264',
+  resolvedContainer: 'mp4',
 };
 
 // ---------------------------------------------------------------------------
@@ -114,6 +120,9 @@ export function useVideoExporter() {
   const outputUrlRef = useRef<string | null>(null);
   /** Codec de áudio resolvido por checkSupport — 'aac' ou null (muted) */
   const resolvedAudioCodecRef = useRef<string | null>('aac');
+  /** Codec de vídeo e container resolvidos por checkSupport */
+  const resolvedVideoCodecRef = useRef<string>('h264');
+  const resolvedContainerRef = useRef<string>('mp4');
 
   // Mantém ref sincronizada para uso em callbacks sem depender do estado
   useEffect(() => {
@@ -152,7 +161,7 @@ export function useVideoExporter() {
 
       if (result.canRender) {
         resolvedAudioCodecRef.current = result.resolvedAudioCodec;
-        setState(prev => ({ ...prev, canRender: true, error: null }));
+        setState(prev => ({ ...prev, canRender: true, error: null, resolvedVideoCodec: 'h264', resolvedContainer: 'mp4' }));
         return;
       }
 
@@ -177,10 +186,14 @@ export function useVideoExporter() {
 
         if (fallbackResult.canRender) {
           resolvedAudioCodecRef.current = fallbackResult.resolvedAudioCodec;
+          resolvedVideoCodecRef.current = fallbackResult.resolvedVideoCodec ?? 'h264';
+          resolvedContainerRef.current = 'mp4';
           setState(prev => ({
             ...prev,
             canRender: true,
             error: null,
+            resolvedVideoCodec: fallbackResult.resolvedVideoCodec ?? 'h264',
+            resolvedContainer: 'mp4',
           }));
           return;
         }
@@ -188,6 +201,34 @@ export function useVideoExporter() {
         for (const issue of fallbackResult.issues) {
           console.warn(`[checkSupport fallback] ${issue.type}: ${issue.message}`);
         }
+      }
+
+      // Terceiro fallback: VP8 + WebM (suportado pela maioria dos navegadores)
+      const vp8Result = await canRenderMediaOnWeb({
+        width,
+        height,
+        videoCodec: 'vp8',
+        audioCodec: 'opus',
+        container: 'webm',
+      });
+
+      if (vp8Result.canRender) {
+        resolvedAudioCodecRef.current = vp8Result.resolvedAudioCodec;
+        resolvedVideoCodecRef.current = vp8Result.resolvedVideoCodec ?? 'vp8';
+        resolvedContainerRef.current = 'webm';
+        setState(prev => ({
+          ...prev,
+          canRender: true,
+          error: null,
+          resolvedVideoCodec: vp8Result.resolvedVideoCodec ?? 'vp8',
+          resolvedContainer: 'webm',
+          saveWarning: prev.saveWarning || 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
+        }));
+        return;
+      }
+
+      for (const issue of vp8Result.issues) {
+        console.warn(`[checkSupport VP8 fallback] ${issue.type}: ${issue.message}`);
       }
 
       // Nenhum fallback funcionou — exibe mensagem com a primeira issue real
@@ -272,9 +313,9 @@ export function useVideoExporter() {
       const result = await renderMediaOnWeb({
         composition,
         inputProps: exportableInputProps,
-        videoCodec: 'h264',
-        audioCodec: resolvedAudioCodecRef.current as 'aac' | null,
-        container: 'mp4',
+        videoCodec: resolvedVideoCodecRef.current as 'h264' | 'vp8' | 'vp9' | 'h265' | 'av1',
+        audioCodec: resolvedAudioCodecRef.current as 'aac' | 'opus' | null,
+        container: resolvedContainerRef.current as 'mp4' | 'webm',
         licenseKey: 'free-license',
         signal: abortController.signal,
         onProgress: (progress: RenderMediaOnWebProgress) => {
@@ -305,12 +346,13 @@ export function useVideoExporter() {
       // Salva no projeto de forma não-bloqueante
       if (projectId) {
         const durationInSeconds = durationInFrames / fps;
+        const format = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
         saveVideoToProject(
           {
             projectId,
             userId: userId ?? '',
             videoUrl: url,
-            format: 'mp4',
+            format,
             width: resolution.width,
             height: resolution.height,
             fps,
@@ -356,7 +398,8 @@ export function useVideoExporter() {
   const handleDownload = useCallback(() => {
     const url = outputUrlRef.current;
     if (!url) return;
-    void downloadFile(url, `video-export-${Date.now()}.mp4`);
+    const ext = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
+    void downloadFile(url, `video-export-${Date.now()}.${ext}`);
   }, []);
 
   // -------------------------------------------------------------------------

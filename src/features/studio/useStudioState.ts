@@ -29,6 +29,16 @@ const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
 /** FPS padrão para composição de vídeo Remotion */
 const VIDEO_FPS = 30;
 
+/** Salva no localStorage silenciando erros de quota/segurança (preferências não-críticas) */
+function safeSetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Safari Private Browsing lança SecurityError; quota cheia lança QuotaExceededError
+    // Preferências não são críticas — falha silenciosa
+  }
+}
+
 function getStoredValue(key: string, fallbackValue: string): string {
   return localStorage.getItem(key) ?? fallbackValue;
 }
@@ -144,20 +154,20 @@ export function useStudioState() {
   );
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.script, script);
-    localStorage.setItem(STORAGE_KEYS.selectedVoice, selectedVoice);
-    localStorage.setItem(STORAGE_KEYS.isMultiSpeaker, String(isMultiSpeaker));
-    localStorage.setItem(STORAGE_KEYS.speakerAName, speakerAName);
-    localStorage.setItem(STORAGE_KEYS.speakerBVoice, speakerBVoice);
-    localStorage.setItem(STORAGE_KEYS.speakerBName, speakerBName);
-    localStorage.setItem(STORAGE_KEYS.audioProfile, audioProfile);
-    localStorage.setItem(STORAGE_KEYS.scene, scene);
-    localStorage.setItem(STORAGE_KEYS.styleNotes, styleNotes);
-    localStorage.setItem(STORAGE_KEYS.pace, pace);
-    localStorage.setItem(STORAGE_KEYS.generateScenes, String(generateScenes));
-    localStorage.setItem(STORAGE_KEYS.sceneDensity, String(sceneDensity));
-    localStorage.setItem(STORAGE_KEYS.sceneRatio, sceneRatio);
-    localStorage.setItem(STORAGE_KEYS.visualFramework, visualFramework);
+    safeSetItem(STORAGE_KEYS.script, script);
+    safeSetItem(STORAGE_KEYS.selectedVoice, selectedVoice);
+    safeSetItem(STORAGE_KEYS.isMultiSpeaker, String(isMultiSpeaker));
+    safeSetItem(STORAGE_KEYS.speakerAName, speakerAName);
+    safeSetItem(STORAGE_KEYS.speakerBVoice, speakerBVoice);
+    safeSetItem(STORAGE_KEYS.speakerBName, speakerBName);
+    safeSetItem(STORAGE_KEYS.audioProfile, audioProfile);
+    safeSetItem(STORAGE_KEYS.scene, scene);
+    safeSetItem(STORAGE_KEYS.styleNotes, styleNotes);
+    safeSetItem(STORAGE_KEYS.pace, pace);
+    safeSetItem(STORAGE_KEYS.generateScenes, String(generateScenes));
+    safeSetItem(STORAGE_KEYS.sceneDensity, String(sceneDensity));
+    safeSetItem(STORAGE_KEYS.sceneRatio, sceneRatio);
+    safeSetItem(STORAGE_KEYS.visualFramework, visualFramework);
   }, [
     audioProfile,
     generateScenes,

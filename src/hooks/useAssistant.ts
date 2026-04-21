@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, type GenerateContentResponse } from '@google/genai';
 import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
 import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,21 +8,70 @@ import { getGeminiApiKey } from '../lib/env';
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
+// ---------------------------------------------------------------------------
+// Mapeamento de erros amigáveis (padrão consistente com useAudioGenerator)
+// ---------------------------------------------------------------------------
+
+/** Mapeia erros técnicos do Gemini para mensagens amigáveis em pt-BR. */
+function toUserFriendlyAssistantError(err: unknown): string {
+  if (!(err instanceof Error)) {
+    return 'Ocorreu um erro inesperado. Tente novamente.';
+  }
+
+  const msg = err.message.toLowerCase();
+
+  if (msg.includes('quota') || msg.includes('resource_exhausted') || msg.includes('429')) {
+    return 'Limite de uso atingido. Aguarde alguns minutos e tente novamente.';
+  }
+  if (msg.includes('api key') || msg.includes('key not valid') || msg.includes('permission_denied')) {
+    return 'Erro de autenticação. Verifique sua chave de API nas configurações.';
+  }
+  if (msg.includes('deadline_exceeded') || msg.includes('504')) {
+    return 'O servidor demorou demais para responder. Tente novamente em instantes.';
+  }
+  if (msg.includes('unavailable') || msg.includes('503')) {
+    return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
+  }
+  if (msg.includes('safety') || msg.includes('blocked')) {
+    return 'Conteúdo bloqueado por filtros de segurança. Reformule a pergunta.';
+  }
+  if (msg.includes('abort') || msg.includes('cancelled')) {
+    return '';
+  }
+
+  return 'Não foi possível concluir. Tente novamente.';
+}
+
+// ---------------------------------------------------------------------------
+// Constantes
+// ---------------------------------------------------------------------------
+
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
   role: 'model',
   text: 'Olá! Sou seu Assistente Criativo. Posso te ajudar a escrever roteiros, escolher a voz ideal ou configurar a cena perfeita. Agora também posso analisar seus arquivos (PDFs, imagens) para te ajudar melhor! Como posso ajudar hoje?'
 };
 
+// ---------------------------------------------------------------------------
+// Hook principal
+// ---------------------------------------------------------------------------
+
 export function useAssistant(currentState?: AssistantStudioState) {
   const { user } = useAuth();
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const streamActiveRef = useRef(false);
 
   const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
+
+  // ---------------------------------------------------------------------------
+  // Scroll automático
+  // ---------------------------------------------------------------------------
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,6 +80,29 @@ export function useAssistant(currentState?: AssistantStudioState) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Rola suavemente durante streaming a cada novo token
+  useEffect(() => {
+    if (!isStreaming) return;
+
+    const interval = setInterval(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isStreaming]);
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle e persistência
+  // ---------------------------------------------------------------------------
+
+  // Aborta chamada em andamento ao desmontar
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+      streamActiveRef.current = false;
+    };
+  }, []);
 
   // Auto-save session
   useEffect(() => {
@@ -50,32 +122,84 @@ export function useAssistant(currentState?: AssistantStudioState) {
     }
   }, [messages, currentSessionId, user]);
 
+  // ---------------------------------------------------------------------------
+  // Controle de sessão
+  // ---------------------------------------------------------------------------
+
   const startNewChat = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    streamActiveRef.current = false;
+
     setCurrentSessionId(crypto.randomUUID());
     setMessages([WELCOME_MESSAGE]);
+    setIsLoading(false);
+    setIsStreaming(false);
+    setError(null);
   };
 
   const loadSession = (session: ChatSession) => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    streamActiveRef.current = false;
+
     setCurrentSessionId(session.id);
     setMessages(session.messages);
+    setIsLoading(false);
+    setIsStreaming(false);
+    setError(null);
   };
+
+  // ---------------------------------------------------------------------------
+  // Montagem de anexos
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Monta o array de parts de um anexo para envio ao Gemini.
+   * Usa `inlineData` quando os dados estão disponíveis (base64 ou resolvidos do Storage).
+   * Anexos sem dados (storagePath sem resolução) são ignorados no envio ao modelo.
+   */
+  const buildAttachmentParts = (attachments?: Attachment[]) => {
+    if (!attachments || attachments.length === 0) return [];
+
+    return attachments
+      .filter((att: Attachment) => !!att.data)
+      .map((att: Attachment) => ({
+        inlineData: {
+          mimeType: att.mimeType,
+          data: att.data,
+        },
+      }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Envio de mensagem com streaming
+  // ---------------------------------------------------------------------------
 
   const sendMessage = async (text: string, attachments?: Attachment[]) => {
     if (!text.trim() && (!attachments || attachments.length === 0)) return;
 
-    const newUserMsg: ChatMessage = { 
-      id: Date.now().toString(), 
-      role: 'user', 
+    const newUserMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
       text,
-      attachments 
+      attachments,
     };
     setMessages(prev => [...prev, newUserMsg]);
     setIsLoading(true);
     setError(null);
 
+    // Cria AbortController para esta chamada
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    streamActiveRef.current = true;
+
+    // ID da mensagem de resposta do assistente (para atualização progressiva)
+    const assistantMsgId = (Date.now() + 1).toString();
+
     try {
       const memories = await getMemories(user?.uid);
-      const memoriesText = memories.length > 0 
+      const memoriesText = memories.length > 0
         ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map(m => `- ${m.content}`).join('\n')}`
         : '';
 
@@ -87,7 +211,154 @@ export function useAssistant(currentState?: AssistantStudioState) {
         ? `\n\nDIRETRIZES CUSTOMIZADAS DO USUÁRIO:\n${userSettings.customSystemPrompt}`
         : '';
 
-      const systemInstruction = `Você é o Assistente Criativo do Gemini Voice Studio, um especialista avançado em criação de roteiros, direção de áudio (Gemini TTS) e produção de vídeos estilo Canal Dark/YouTube.
+      const systemInstruction = buildSystemInstruction(
+        memoriesText, voicesList, paceList, customPromptBlock, currentState,
+      );
+
+      // Converte histórico para formato Gemini
+      const contents = messages.slice(1).map(msg => ({
+        role: msg.role,
+        parts: [
+          { text: msg.text },
+          ...buildAttachmentParts(msg.attachments),
+        ],
+      }));
+
+      // Adiciona mensagem atual
+      contents.push({
+        role: 'user',
+        parts: [
+          { text },
+          ...buildAttachmentParts(attachments),
+        ],
+      });
+
+      // Adiciona mensagem vazia do assistente (texto progressivo)
+      setMessages(prev => [
+        ...prev,
+        { id: assistantMsgId, role: 'model', text: '' },
+      ]);
+      setIsStreaming(true);
+
+      const stream = await ai.models.generateContentStream({
+        model: 'gemini-3.1-flash-lite-preview',
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+          abortSignal: abortController.signal,
+        },
+      });
+
+      // Processa chunks progressivamente
+      for await (const chunk of stream) {
+        if (abortController.signal.aborted || !streamActiveRef.current) break;
+        appendChunkText(chunk, assistantMsgId);
+      }
+
+    } catch (err: unknown) {
+      // Ignora erros de aborto (intencional pelo usuário)
+      if (abortController.signal.aborted) return;
+
+      console.error('Error in assistant:', err);
+      const errorMessage = toUserFriendlyAssistantError(err);
+
+      if (errorMessage) {
+        setError(errorMessage);
+      }
+
+      // Remove mensagem vazia do streaming e adiciona fallback
+      setMessages(prev => {
+        const withoutEmpty = prev.filter(m => !(m.id === assistantMsgId && m.text === ''));
+        return [
+          ...withoutEmpty,
+          { id: assistantMsgId, role: 'model', text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.' },
+        ];
+      });
+
+    } finally {
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
+      streamActiveRef.current = false;
+      setIsLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /** Acumula texto de um chunk na mensagem do assistente. */
+  const appendChunkText = (chunk: GenerateContentResponse, targetId: string) => {
+    const chunkText = chunk.text;
+    if (!chunkText) return;
+
+    setMessages(prev => prev.map(msg => {
+      if (msg.id !== targetId) return msg;
+      return { ...msg, text: msg.text + chunkText };
+    }));
+  };
+
+  return {
+    messages,
+    isLoading,
+    isStreaming,
+    error,
+    sendMessage,
+    startNewChat,
+    loadSession,
+    messagesEndRef,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Construção do prompt do sistema (extraído do hook para legibilidade)
+// ---------------------------------------------------------------------------
+
+function buildSystemInstruction(
+  memoriesText: string,
+  voicesList: string,
+  paceList: string,
+  customPromptBlock: string,
+  currentState?: AssistantStudioState,
+): string {
+  const studioBlock = currentState
+    ? `
+ESTADO ATUAL DO ESTÚDIO DO USUÁRIO:
+O usuário está visualizando a tela do estúdio neste exato momento e você sabe o que está preenchido nela:
+- Roteiro atual: "${currentState.script || '(vazio)'}"
+- Voz Selecionada: ${currentState.selectedVoice || '(padrão)'} (MultiSpeaker: ${currentState.isMultiSpeaker ? 'Ligado' : 'Desligado'})
+- Personagem (Audio Profile): "${currentState.audioProfile || '(vazio)'}"
+- Cena Atual: "${currentState.scene || '(vazio)'}"
+- Ritmo: ${currentState.pace || '(padrão)'}
+- Notas de Sotaque/Direção: "${currentState.styleNotes || '(vazio)'}"
+- Cenas Visuais: ${currentState.generateScenes ? 'Ligado' : 'Desligado'} (Ratio: ${currentState.sceneRatio || '16:9'}, Framework: ${currentState.visualFramework || 'general'})
+${currentState.referenceImage ? '- O usuário conectou uma Imagem de Referência para manter os mesmos personagens.' : '- Nenhuma imagem de referência anexada.'}
+
+Você pode sugerir configurações para o usuário baseadas no estado atual. Se você quiser que o usuário aplique uma nova configuração diretamente no estúdio, DEVE incluir um bloco JSON na sua resposta (com a tag \`\`\`json). O aplicativo irá ler esse JSON e criar um botão "Aplicar".
+
+Exemplo Completo:
+\`\`\`json
+{
+  "script": "Inscreva-se no canal! [laughs]",
+  "isMultiSpeaker": false,
+  "selectedVoice": "Zephyr",
+  "audioProfile": "Narrador de mistério",
+  "scene": "Ambiente tenso",
+  "pace": "normal",
+  "styleNotes": "Mistério, tom grave",
+  "generateScenes": true,
+  "sceneRatio": "16:9",
+  "sceneDensity": 15,
+  "visualFramework": "general"
+}
+\`\`\`
+ATENÇÃO: Você não precisa preencher todos os campos, apenas os que desejar sugerir. Mantenha as respostas focadas no fluxo criativo!`
+    : '';
+
+  return `Você é o Assistente Criativo do Gemini Voice Studio, um especialista avançado em criação de roteiros, direção de áudio (Gemini TTS) e produção de vídeos estilo Canal Dark/YouTube.
 Seu objetivo é ajudar o usuário a escrever textos para conversão em áudio TTS guiado organicamente e sugerir as melhores configurações baseadas na documentação do TTS e produção visual.
 
 ESTRUTURA DE UM BOM PROMPT TTS (Voice Profile, Scene, Director Notes):
@@ -112,105 +383,5 @@ VOZES DISPONÍVEIS:
 ${voicesList}
 
 Ritmos disponíveis (pace): ${paceList}
-
-ESTADO ATUAL DO ESTÚDIO DO USUÁRIO:
-O usuário está visualizando a tela do estúdio neste exato momento e você sabe o que está preenchido nela:
-- Roteiro atual: "${currentState?.script || '(vazio)'}"
-- Voz Selecionada: ${currentState?.selectedVoice || '(padrão)'} (MultiSpeaker: ${currentState?.isMultiSpeaker ? 'Ligado' : 'Desligado'})
-- Personagem (Audio Profile): "${currentState?.audioProfile || '(vazio)'}"
-- Cena Atual: "${currentState?.scene || '(vazio)'}"
-- Ritmo: ${currentState?.pace || '(padrão)'}
-- Notas de Sotaque/Direção: "${currentState?.styleNotes || '(vazio)'}"
-- Cenas Visuais: ${currentState?.generateScenes ? 'Ligado' : 'Desligado'} (Ratio: ${currentState?.sceneRatio || '16:9'}, Framework: ${currentState?.visualFramework || 'general'})
-${currentState?.referenceImage ? '- O usuário conectou uma Imagem de Referência para manter os mesmos personagens.' : '- Nenhuma imagem de referência anexada.'}
-
-Você pode sugerir configurações para o usuário baseadas no estado atual. Se você quiser que o usuário aplique uma nova configuração diretamente no estúdio, DEVE incluir um bloco JSON na sua resposta (com a tag \`\`\`json). O aplicativo irá ler esse JSON e criar um botão "Aplicar".
-
-Exemplo Completo:
-\`\`\`json
-{
-  "script": "Inscreva-se no canal! [laughs]",
-  "isMultiSpeaker": false,
-  "selectedVoice": "Zephyr",
-  "audioProfile": "Narrador de mistério",
-  "scene": "Ambiente tenso",
-  "pace": "normal",
-  "styleNotes": "Mistério, tom grave",
-  "generateScenes": true,
-  "sceneRatio": "16:9",
-  "sceneDensity": 15,
-  "visualFramework": "general"
-}
-\`\`\`
-ATENÇÃO: Você não precisa preencher todos os campos, apenas os que desejar sugerir. Mantenha as respostas focadas no fluxo criativo!${customPromptBlock}`;
-
-      // Convert history to Gemini format
-      const contents = messages.slice(1).map(msg => ({
-        role: msg.role,
-        parts: [
-          { text: msg.text },
-          ...(msg.attachments?.map(att => ({
-            inlineData: {
-              mimeType: att.mimeType,
-              data: att.data
-            }
-          })) || [])
-        ]
-      }));
-
-      // Add current message
-      contents.push({
-        role: 'user',
-        parts: [
-          { text },
-          ...(attachments?.map(att => ({
-            inlineData: {
-              mimeType: att.mimeType,
-              data: att.data
-            }
-          })) || [])
-        ]
-      });
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: contents,
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-        }
-      });
-
-      const responseText = response.text || 'Desculpe, não consegui gerar uma resposta.';
-
-      setMessages(prev => [
-        ...prev,
-        { id: (Date.now() + 1).toString(), role: 'model', text: responseText }
-      ]);
-
-    } catch (err: unknown) {
-      console.error('Error in assistant:', err);
-      const errorMessage = err instanceof Error
-        ? err.message
-        : 'Ocorreu um erro ao comunicar com o assistente.';
-
-      setError(errorMessage);
-      setMessages(prev => [
-        ...prev,
-        { id: (Date.now() + 1).toString(), role: 'model', text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.' }
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    messages,
-    isLoading,
-    error,
-    sendMessage,
-    startNewChat,
-    loadSession,
-    messagesEndRef
-  };
+${studioBlock}${customPromptBlock}`;
 }

@@ -7,6 +7,39 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.8.2] - 2026-04-21
+
+### Adicionado
+
+- **NotFoundPage** (`src/pages/NotFoundPage.tsx`): página 404 com navegação para home
+- **ErrorBoundary** (`src/components/ErrorBoundary.tsx`): error boundary global com tela de erro amigável e botão de retry
+- **DataMigrationDialog** (`src/components/DataMigrationDialog.tsx`): diálogo de migração de dados entre armazenamentos (Firestore/IndexedDB) com progresso
+- **NetworkStatusIndicator** (`src/components/NetworkStatusIndicator.tsx`): indicador visual de status de rede offline
+- **useOnlineStatus** (`src/hooks/useOnlineStatus.ts`): hook reativo para detectar status online/offline do navegador
+- **Migration module** (`src/lib/db/migration.ts`): módulo de migração de dados para Firestore — transfere dados do IndexedDB ao autenticar
+- **Rate limiter** (`src/lib/rate-limiter.ts`): rate limiter para chamadas à API Gemini com controle de requisições por minuto
+- **6 guias de documentação** (`docs/guides/`): documentação detalhada por domínio extraída do código-fonte — audio, image-generation, persistence, ui-design-system, video-render, environment
+
+### Alterado
+
+- **useAssistant** (`src/hooks/useAssistant.ts`): tratamento de erros amigável com mensagens contextualizadas (quota, auth, safety, timeout); nova função `buildSystemInstruction` para instruções do sistema; adicionado estado `isStreaming` para controle de UI durante streaming
+- **AssistantMessages** (`src/features/assistant/components/AssistantMessages.tsx`): cursor de digitação animado (CSS blink) durante streaming; renderização melhorada de mensagens do modelo
+- **Assistant** (`src/features/assistant/Assistant.tsx`): propagação de `isStreaming` para componentes filhos
+- **AudioContext** (`src/contexts/AudioContext.tsx`): feedback de erros via Snackbar com MUI Alert e botão de fechar
+- **useStudioState** (`src/features/studio/useStudioState.ts`): `safeSetItem` como wrapper seguro para `localStorage.setItem` com tratamento de erros
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): suporte a VP8/WebM como fallback automático quando H.264/MP4 não está disponível no navegador; detecção de codecs suportados via `MediaSource.isTypeSupported()`
+- **VideoExportPanel** (`src/features/video-render/components/VideoExportPanel.tsx`): aviso informativo quando formato WebM é selecionado como fallback
+- **ActionBar** (`src/components/ActionBar.tsx`): melhorias de implementação
+
+### Removido
+
+- **Gemini-TTS.md**: documentação de referência externa não utilizada no projeto
+- **Gerador-imagem.md**: documentação de referência externa não utilizada no projeto
+- **scripts/generate-voice-previews.ts**: script de geração offline de previews de voz (substituído por arquivos estáticos em `public/voice-previews/`)
+- **Script `generate-previews`** (`package.json`): removido dos scripts npm
+
+---
+
 ## [0.8.0] - 2026-04-20
 
 ### Adicionado

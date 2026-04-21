@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -84,12 +84,16 @@ export function ActionBar({
   const audioState = useGlobalAudioState();
   const audioActions = useGlobalAudioActions();
 
-  // Estado do Remotion Player (rota /video) — polling a 10Hz
+  // Estado do Remotion Player (rota /video) — polling otimizado
   const [playerFrame, setPlayerFrame] = useState(0);
   const [playerIsPlaying, setPlayerIsPlaying] = useState(false);
   const [isRemotionActive, setIsRemotionActive] = useState(false);
 
-  // Polling do frame e estado do Remotion Player
+  // Refs para evitar state updates desnecessários durante polling
+  const prevFrameRef = useRef(0);
+  const prevPlayingRef = useRef(false);
+
+  // Polling do frame e estado do Remotion Player — pausado quando não está reproduzindo
   useEffect(() => {
     if (!isVideoRoute || !videoFps) return;
 
@@ -99,9 +103,19 @@ export function ActionBar({
       setIsRemotionActive(active);
 
       if (player) {
-        // Deriva frame a partir de getCurrentTime e fps
-        setPlayerFrame(Math.round(player.getCurrentTime() * videoFps));
-        setPlayerIsPlaying(player.isPlaying());
+        const currentFrame = Math.round(player.getCurrentTime() * videoFps);
+        const playing = player.isPlaying();
+
+        // Só atualiza state se os valores mudaram (evita re-renders desnecessários)
+        if (currentFrame !== prevFrameRef.current) {
+          prevFrameRef.current = currentFrame;
+          setPlayerFrame(currentFrame);
+        }
+
+        if (playing !== prevPlayingRef.current) {
+          prevPlayingRef.current = playing;
+          setPlayerIsPlaying(playing);
+        }
       }
     }, 100);
 
