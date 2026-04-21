@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.8.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -21,11 +21,11 @@
     "@mui/styled-engine": "^9.0.0",
     "@mui/system": "^9.0.0",
     "@mui/utils": "^9.0.0",
-    "@remotion/media": "^4.0.448",
-    "@remotion/media-utils": "4.0.448",
-    "@remotion/player": "4.0.448",
-    "@remotion/transitions": "4.0.448",
-    "@remotion/web-renderer": "4.0.448",
+    "@remotion/media": "4.0.450",
+    "@remotion/media-utils": "4.0.450",
+    "@remotion/player": "4.0.450",
+    "@remotion/transitions": "4.0.450",
+    "@remotion/web-renderer": "4.0.450",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase": "^12.12.0",
     "konva": "^10.2.5",
@@ -36,7 +36,7 @@
     "react-konva": "^19.2.3",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.1",
-    "remotion": "4.0.448",
+    "remotion": "4.0.450",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

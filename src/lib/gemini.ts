@@ -35,8 +35,10 @@ export interface SceneImagePayload {
   base64: string;
 }
 
-/** Número máximo de imagens enviadas ao Gemini para análise visual */
-const MAX_IMAGES_FOR_ANALYSIS = 8;
+/** Número máximo de imagens enviadas ao Gemini para análise visual.
+ *  Limite conservador para não estourar o contexto do flash-lite (~1M tokens).
+ *  Cada imagem base64 consome ~50-150K tokens, então 3 imagens = ~150-450K tokens. */
+const MAX_IMAGES_FOR_ANALYSIS = 3;
 
 function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   const dataUriMatch = referenceImage.match(/^data:([^;]+);base64,(.+)$/);
@@ -330,6 +332,12 @@ export async function generateEditingPlan(
 
   if (scenes.length === 0) return fallbackPlan;
 
+  // Trunca o script se for muito longo (evita estourar o limite de tokens do modelo)
+  const MAX_SCRIPT_CHARS = 15_000;
+  const truncatedScript = script.length > MAX_SCRIPT_CHARS
+    ? `${script.slice(0, MAX_SCRIPT_CHARS)}\n\n[ROTEIRO TRUNCADO — ${script.length} caracteres no total]`
+    : script;
+
   const scenesJson = scenes.map(s => JSON.stringify(s)).join('\n');
 
   // Seção de análise de áudio — inserida antes do roteiro quando disponível
@@ -369,7 +377,7 @@ Exemplos de boas combinações:
 - Transição emocional → ken-burns + dissolve + legenda reflexiva
 
 ${audioSection}Roteiro:
-${script}
+${truncatedScript}
 
 Cenas fornecidas (JSON):
 ${scenesJson}`;
@@ -380,8 +388,10 @@ ${scenesJson}`;
   > = [];
 
   // Imagens antes do texto (melhor prática do Gemini para multimodal)
-  if (sceneImages && sceneImages.length > 0) {
-    for (const img of sceneImages) {
+  // Limita a MAX_IMAGES_FOR_ANALYSIS por segurança — base64 consome muitos tokens
+  const imagesToSend = sceneImages?.slice(0, MAX_IMAGES_FOR_ANALYSIS) ?? [];
+  if (imagesToSend.length > 0) {
+    for (const img of imagesToSend) {
       contentParts.push({
         inlineData: { mimeType: img.mimeType, data: img.base64 },
       });

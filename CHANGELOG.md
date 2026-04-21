@@ -7,6 +7,39 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.8.3] - 2026-04-21
+
+### Corrigido
+
+- **useEditingPlan** (`src/features/video-render/hooks/useEditingPlan.ts`): `regenerateScene` agora reutiliza a análise de áudio (`audioAnalysisResult`) em vez de refazer a análise, evitando chamadas desnecessárias à API; novo tratamento de erro para `token count exceeds` com mensagem amigável em pt-BR
+- **AudioContext** (`src/contexts/AudioContext.tsx`): `AbortError` no `play()` agora é silenciado — ocorre naturalmente ao trocar de áudio ou pausar, não é um erro real
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): extraído `isCancellationError()` para detectar tanto `DOMException AbortError` quanto `Error "cancelled"` do Remotion, evitando exibir mensagem de erro falsa ao cancelar exportação
+- **generateEditingPlan** (`src/lib/gemini.ts`): roteiro truncado em 15.000 caracteres (`MAX_SCRIPT_CHARS`) quando excede o limite, evitando erro `invalid_argument` do Gemini por estouro de tokens; `MAX_IMAGES_FOR_ANALYSIS` reduzido de 8 para 3 — imagens base64 consomem ~50-150K tokens cada, 3 imagens mantêm uso total abaixo de ~450K tokens do flash-lite
+
+### Alterado
+
+- **AnimationControls** (`src/features/speed-paint/components/canvas/AnimationControls.tsx`): `alert()` substituído por `Snackbar`+`Alert` MUI para feedback de erros de gravação; SpeedSelectors em mobile agora acessíveis via `Menu` com ícone `SpeedIcon` (variante `panel`), melhorando usabilidade em telas estreitas
+- **ActionBar** (`src/components/ActionBar.tsx`): download em lote de imagens agora mostra progresso (`"Baixando cena N/M..."`) com `CircularProgress` e desabilita o botão durante o download
+- **AssistantMessages** (`src/features/assistant/components/AssistantMessages.tsx`): exibe mensagem de aviso quando o assistente sugere ajustes em JSON malformado (`"O assistente sugeriu ajustes, mas o formato não pôde ser interpretado."`)
+- **extractJsonSettings** (`src/features/assistant/utils.ts`): retorno agora discriminado via `ExtractedSettingsResult` — distingue "não encontrado" (`null`), "JSON válido" (`parseError: false`) e "JSON malformado" (`parseError: true`)
+- **AuthContext** (`src/contexts/AuthContext.tsx`): migração IndexedDB→Firestore agora usa ref `lastCheckedUserId` para evitar re-verificação quando `onAuthStateChanged` dispara múltiplas vezes com o mesmo usuário
+- **App** (`src/main.tsx`): `ErrorBoundary` envolve toda a árvore de providers para captura global de erros
+- **vite.config.ts`: adicionado `dedupe` para `mediabunny` e encoders, eliminando duplicatas no bundle
+
+### Removido (código morto)
+
+- **generations.ts**: `deleteGeneration`, `updateGenerationName` — funções sem referência no projeto
+- **images.ts**: `sortImages`, `getImageGenerations`, `deleteImageGeneration`, `updateImageGenerationName` — funções sem referência no projeto
+- **projects.ts**: `getProjectAudios`, `getProjectImages` — funções sem referência no projeto
+- **firebase.ts**: `testFirebaseConnection` — função sem referência no projeto
+- **audio.ts**: `base64ToUint8ArraySync` — função sem referência no projeto (versão async `base64ToUint8Array` é usada no lugar)
+
+### Dependências
+
+- **Remotion**: `4.0.448` → `4.0.450` (remotion, @remotion/media, @remotion/media-utils, @remotion/player, @remotion/transitions, @remotion/web-renderer)
+
+---
+
 ## [0.8.2] - 2026-04-21
 
 ### Adicionado

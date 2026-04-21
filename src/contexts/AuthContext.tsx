@@ -1,5 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from '../lib/firebase';
+import { DataMigrationDialog } from '../components/DataMigrationDialog';
+import { isMigrationAlreadyHandled } from '../lib/db/migration';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/popup-closed-by-user': 'Popup fechado. Tente novamente.',
@@ -32,11 +34,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
+
+  // Ref para o userId do último onAuthStateChanged — evita re-verificação
+  // se o callback disparar múltiplas vezes com o mesmo usuário
+  const lastCheckedUserId = useRef<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+      setUser(authUser);
       setLoading(false);
+
+      // Verifica migração quando o usuário faz login (null → não-null)
+      if (authUser && authUser.uid !== lastCheckedUserId.current) {
+        lastCheckedUserId.current = authUser.uid;
+
+        if (!isMigrationAlreadyHandled(authUser.uid)) {
+          setShowMigrationDialog(true);
+        }
+      }
     });
     return unsubscribe;
   }, []);
@@ -66,6 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, logout }}>
       {children}
+      {showMigrationDialog && user && (
+        <DataMigrationDialog
+          userId={user.uid}
+          onComplete={() => setShowMigrationDialog(false)}
+        />
+      )}
     </AuthContext.Provider>
   );
 }

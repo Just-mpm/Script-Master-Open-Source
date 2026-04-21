@@ -7,6 +7,7 @@ import type { VideoCompositionProps } from '../types';
 import type { EditingScene } from '../lib/editingPlan';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtils';
+import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
 
@@ -87,13 +88,20 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
 // ---------------------------------------------------------------------------
 
 /**
+ * Verifica se o erro representa um cancelamento intencional do usuário.
+ * O Remotion lança Error com "was cancelled" ao invés de DOMException AbortError.
+ */
+function isCancellationError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === 'AbortError') return true;
+  if (err instanceof Error && err.message.toLowerCase().includes('cancelled')) return true;
+  return false;
+}
+
+/**
  * Mapeia erros de renderização para mensagens amigáveis em pt-BR.
+ * Não deve ser chamada para erros de cancelamento (usar isCancellationError antes).
  */
 function toUserFriendlyError(err: unknown): string {
-  if (err instanceof DOMException && err.name === 'AbortError') {
-    return 'Exportação cancelada.';
-  }
-
   if (!(err instanceof Error)) {
     return 'Erro ao exportar vídeo. Tente novamente.';
   }
@@ -291,6 +299,10 @@ export function useVideoExporter() {
     });
 
     try {
+      // Aplica patch que traduz fontStretch percentual → keyword para a Canvas API
+      // Corrige bug do @remotion/web-renderer 4.0.450 que causa centenas de warnings
+      patchCanvasFontStretch();
+
       // Usa o wrapper ExportableComposition para satisfazer as constraints de tipo
       const composition: {
         component: ComponentType<ExportableProps>;
@@ -370,15 +382,13 @@ export function useVideoExporter() {
         });
       }
     } catch (err: unknown) {
-      const friendlyMessage = toUserFriendlyError(err);
+      const cancelled = isCancellationError(err);
 
-      // AbortError já é tratado como status, não como erro
-      const isCancelled = err instanceof DOMException && err.name === 'AbortError';
       setState(prev => ({
         ...prev,
         isRendering: false,
-        error: isCancelled ? null : friendlyMessage,
-        renderStatusText: isCancelled ? 'Exportação cancelada.' : prev.renderStatusText,
+        error: cancelled ? null : toUserFriendlyError(err),
+        renderStatusText: cancelled ? 'Exportação cancelada.' : prev.renderStatusText,
       }));
     } finally {
       abortControllerRef.current = null;

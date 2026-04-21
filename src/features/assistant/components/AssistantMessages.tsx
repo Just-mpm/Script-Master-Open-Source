@@ -55,7 +55,9 @@ export function AssistantMessages({
           // Verifica se esta é a mensagem que está sendo gerada via streaming
           const isCurrentlyStreaming = isStreaming
             && lastModelMessage?.id === message.id;
-          const settings = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
+          const extracted = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
+          const settings: AssistantSettings | null = extracted && !extracted.parseError ? extracted.settings : null;
+          const hasMalformedJson = extracted?.parseError === true;
           const cleanText = stripJsonSettingsBlock(message.text);
 
           return (
@@ -139,6 +141,12 @@ export function AssistantMessages({
                             },
                           }}
                         />
+                      ) : null}
+
+                      {hasMalformedJson ? (
+                        <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.5 }}>
+                          O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.
+                        </Typography>
                       ) : null}
                     </Box>
 

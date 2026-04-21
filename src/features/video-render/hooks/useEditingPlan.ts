@@ -82,6 +82,7 @@ const AUDIO_ANALYSIS_TEXT = 'Analisando áudio...';
 export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn {
   const [editingPlan, setEditingPlan] = useState<EditingPlan | null>(null);
   const [originalPlan, setOriginalPlan] = useState<EditingPlan | null>(null);
+  const [audioAnalysisResult, setAudioAnalysisResult] = useState<AudioAnalysisResult | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [planProgress, setPlanProgress] = useState(0);
   const [planStatusText, setPlanStatusText] = useState('');
@@ -215,6 +216,9 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
 
         if (cancelRef.current) throw new Error('Geração do plano cancelada pelo usuário.');
 
+        // Salva análise de áudio no estado para reutilizar em regenerateScene
+        setAudioAnalysisResult(audioAnalysis);
+
         setEditingPlan(plan);
         setOriginalPlan(plan); // Salva original para undo/reset
         setEditHistory([]); // Limpa histórico de edições anteriores
@@ -234,6 +238,8 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
           setError('Limite de uso atingido. Aguarde alguns minutos e tente novamente.');
         } else if (msg.includes('api key') || msg.includes('permission_denied')) {
           setError('Erro de autenticação. Verifique sua chave de API nas configurações.');
+        } else if (msg.includes('token count exceeds') || msg.includes('maximum number of tokens') || msg.includes('invalid_argument')) {
+          setError('O conteúdo é muito longo para o modelo processar. Tente com menos cenas ou um roteiro mais curto.');
         } else if (msg.includes('deadline') || msg.includes('504')) {
           setError('O servidor demorou demais para responder. Tente novamente.');
         } else if (msg.includes('unavailable') || msg.includes('503')) {
@@ -296,7 +302,7 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
       }
 
       // Solicita plano completo para manter coerência entre cenas
-      const newPlan = await generateEditingPlan(script, scenes, durationInSeconds, undefined, sceneImages);
+      const newPlan = await generateEditingPlan(script, scenes, durationInSeconds, audioAnalysisResult, sceneImages);
 
       // Substitui só a cena no índice solicitado
       setEditingPlan(prev => {
@@ -308,7 +314,7 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
         return updated;
       });
     },
-    [],
+    [audioAnalysisResult],
   );
 
   // ─── Utilitários ──────────────────────────────────────────────
@@ -316,6 +322,7 @@ export function useEditingPlan(projectId?: string | null): UseEditingPlanReturn 
   const clearPlan = useCallback(() => {
     setEditingPlan(null);
     setOriginalPlan(null);
+    setAudioAnalysisResult(null);
     setPlanProgress(0);
     setPlanStatusText('');
     setError(null);

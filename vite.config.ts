@@ -9,6 +9,12 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
+      dedupe: [
+        'mediabunny',
+        '@mediabunny/aac-encoder',
+        '@mediabunny/flac-encoder',
+        '@mediabunny/mp3-encoder',
+      ],
     },
     server: {
       host: '0.0.0.0',

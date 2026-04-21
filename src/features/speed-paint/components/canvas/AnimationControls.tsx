@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
 import Slider from '@mui/material/Slider';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
@@ -12,6 +15,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import SpeedIcon from '@mui/icons-material/Speed';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import ImageIcon from '@mui/icons-material/Image';
 import { alpha } from '@mui/material/styles';
@@ -31,6 +35,10 @@ export function AnimationControls() {
     batchMode, currentIndex, queue, setCurrentIndex, setBatchMode, clearQueue,
   } = useAnimationStore();
   const [isRecording, setIsRecording] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Menu mobile para SpeedSelector em telas pequenas
+  const [speedMenuAnchorEl, setSpeedMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const isSpeedMenuOpen = Boolean(speedMenuAnchorEl);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
@@ -126,7 +134,7 @@ export function AnimationControls() {
         if (chunksRef.current.length === 0) {
           console.error('No video data captured');
           setIsRecording(false);
-          alert('Failed to capture video data. Please try again.');
+          setErrorMessage('Falha ao capturar dados do vídeo. Tente novamente.');
           return;
         }
 
@@ -175,7 +183,7 @@ export function AnimationControls() {
     } catch (err) {
       console.error('Failed to start recording:', err);
       setIsRecording(false);
-      alert('Video recording failed to start. Your browser might not support this feature.');
+      setErrorMessage('Falha ao iniciar gravação. Seu navegador pode não suportar este recurso.');
 
       if (currentBatchMode === 'record') {
         setIsPlaying(true);
@@ -248,9 +256,10 @@ export function AnimationControls() {
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={(theme) => ({
+    <>
+      <Paper
+        elevation={0}
+        sx={(theme) => ({
         ...glassSurfaceSx(theme),
         width: '100%',
         maxWidth: 768,
@@ -329,11 +338,42 @@ export function AnimationControls() {
           </Tooltip>
         </Stack>
 
-        <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 0.5, sm: 2 }, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Stack direction="row" sx={{ alignItems: 'center', gap: { xs: 0.5, sm: 2 }, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {/* SpeedSelectors desktop (sm+) */}
           <Stack sx={{ gap: 0.5, display: { xs: 'none', sm: 'flex' } }}>
             <SpeedSelector label="Draw" value={speed} onChange={setSpeed} disabled={isRecording} />
             <SpeedSelector label="Paint" value={paintSpeed} onChange={setPaintSpeed} disabled={isRecording} />
           </Stack>
+
+          {/* SpeedSelectors mobile (xs) — ícone que abre Menu */}
+          <Tooltip title="Velocidade">
+            <IconButton
+              onClick={(e) => setSpeedMenuAnchorEl(e.currentTarget)}
+              disabled={isRecording}
+              aria-label="Ajustar velocidade"
+              sx={{ display: { xs: 'flex', sm: 'none' } }}
+            >
+              <SpeedIcon />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            open={isSpeedMenuOpen}
+            anchorEl={speedMenuAnchorEl}
+            onClose={() => setSpeedMenuAnchorEl(null)}
+            slotProps={{
+              paper: {
+                sx: (theme) => ({
+                  ...glassSurfaceSx(theme),
+                  minWidth: 200,
+                  p: 1.5,
+                  borderRadius: 2,
+                }),
+              },
+            }}
+          >
+            <SpeedSelector label="Draw" value={speed} onChange={setSpeed} disabled={isRecording} variant="panel" />
+            <SpeedSelector label="Paint" value={paintSpeed} onChange={setPaintSpeed} disabled={isRecording} variant="panel" />
+          </Menu>
 
           <Box
             aria-hidden="true"
@@ -395,7 +435,28 @@ export function AnimationControls() {
             </Tooltip>
           </Stack>
         </Stack>
-      </Stack>
-    </Paper>
+        </Stack>
+      </Paper>
+
+      {/* Feedback de erro via Snackbar (substitui alert nativo) */}
+      <Snackbar
+        open={Boolean(errorMessage)}
+        autoHideDuration={8000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          setErrorMessage(null);
+        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          onClose={() => setErrorMessage(null)}
+          sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
+        >
+          {errorMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

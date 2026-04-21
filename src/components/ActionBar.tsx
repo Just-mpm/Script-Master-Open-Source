@@ -77,6 +77,8 @@ export function ActionBar({
   videoExportProgress = 0,
 }: ActionBarProps) {
   const [downloadAnchorEl, setDownloadAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
   const location = useLocation();
   const isVideoRoute = location.pathname === '/video';
 
@@ -218,11 +220,17 @@ export function ActionBar({
   };
 
   const handleDownloadAllImages = async () => {
+    setIsDownloadingAll(true);
+    setDownloadProgress(`Baixando cena 1/${scenes.length}...`);
+
     for (const [index, sceneItem] of scenes.entries()) {
+      setDownloadProgress(`Baixando cena ${index + 1}/${scenes.length}...`);
       await new Promise((resolve) => window.setTimeout(resolve, 400));
       await downloadFile(sceneItem.imageUrl, `cena-${index}.png`);
     }
 
+    setDownloadProgress(null);
+    setIsDownloadingAll(false);
     closeDownloadMenu();
   };
 
@@ -522,8 +530,16 @@ export function ActionBar({
         </MenuItem>
 
         {scenes.length > 0 ? [
-          <MenuItem key="all-images" onClick={() => void handleDownloadAllImages()}>
-            Download todas as imagens
+          <MenuItem
+            key="all-images"
+            onClick={() => { if (!isDownloadingAll) void handleDownloadAllImages(); }}
+            disabled={isDownloadingAll}
+            sx={{ gap: 2 }}
+          >
+            <span style={{ flex: 1 }}>
+              {isDownloadingAll ? downloadProgress : 'Download todas as imagens'}
+            </span>
+            {isDownloadingAll ? <CircularProgress size={16} thickness={2.5} /> : null}
           </MenuItem>,
           <Divider key="divider" />,
           ...scenes.map((sceneItem, index) => (

@@ -20,6 +20,7 @@ import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
+import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { useLocation } from 'react-router-dom';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
@@ -132,6 +133,8 @@ export function Header() {
               );
             })}
           </Paper>
+
+          <NetworkStatusIndicator />
 
           <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
             {!loading && (user ? (

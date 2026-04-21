@@ -46,6 +46,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const handlePlayError = useCallback((err: unknown) => {
     if (err instanceof DOMException && err.name === 'NotAllowedError') {
       setPlaybackError('O navegador bloqueou a reprodução. Clique no botão de play para iniciar.');
+    } else if (err instanceof DOMException && err.name === 'AbortError') {
+      // play() cancelado por pause() ou troca de áudio — comportamento normal, ignorar
+      return;
     } else {
       console.error('Error playing audio:', err);
     }

@@ -1,16 +1,13 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SavedAudio, SavedAudioScene } from './types';
 import {
   OperationType,
   STORE_NAME,
   createFirestoreConverter,
-  deleteIndexedDbItem,
-  deleteStorageObjectSafely,
   getAllIndexedDbItems,
   handleFirestoreError,
   putIndexedDbItem,
-  updateIndexedDbItem,
   uploadBlobAndGetUrl,
 } from './shared';
 
@@ -90,47 +87,4 @@ export async function getGenerations(userId?: string): Promise<SavedAudio[]> {
   return sortGenerations(await getAllIndexedDbItems<SavedAudio>(STORE_NAME));
 }
 
-export async function deleteGeneration(id: string, userId?: string): Promise<void> {
-  if (userId) {
-    try {
-      const generationDocument = doc(generationsCollection, id);
-      const snapshot = await getDoc(generationDocument);
-      const generation = snapshot.exists() ? snapshot.data() : null;
 
-      await deleteDoc(generationDocument);
-      await deleteStorageObjectSafely(
-        `audios/${userId}/${id}.wav`,
-        'Erro ao deletar arquivo do storage (pode não existir):',
-      );
-
-      const scenes = generation?.scenes ?? [];
-      await Promise.all(
-        scenes.map((_, index) => deleteStorageObjectSafely(
-          `generations_images/${userId}/${id}_scene_${index}.png`,
-          `Erro ao deletar cena ${index} do storage:`,
-        )),
-      );
-      return;
-    } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.DELETE, `generations/${id}`);
-    }
-  }
-
-  await deleteIndexedDbItem(STORE_NAME, id);
-}
-
-export async function updateGenerationName(id: string, newName: string, userId?: string): Promise<void> {
-  if (userId) {
-    try {
-      await setDoc(doc(generationsCollection, id), { name: newName }, { merge: true });
-      return;
-    } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.WRITE, `generations/${id}`);
-    }
-  }
-
-  await updateIndexedDbItem<SavedAudio>(STORE_NAME, id, (item) => ({
-    ...item,
-    name: newName,
-  }));
-}

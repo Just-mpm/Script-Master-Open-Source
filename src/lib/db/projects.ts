@@ -51,16 +51,6 @@ function sortProjectImages(items: ProjectImage[]): ProjectImage[] {
   return [...items].sort((firstItem, secondItem) => firstItem.timestamp - secondItem.timestamp);
 }
 
-export async function getProjectAudios(projectId: string, userId?: string): Promise<AudioSource[]> {
-  const details = await getProjectDetails(projectId, userId);
-  return details.audios;
-}
-
-export async function getProjectImages(projectId: string, userId?: string): Promise<ProjectImage[]> {
-  const details = await getProjectDetails(projectId, userId);
-  return details.images;
-}
-
 export async function saveProject(project: Project, userId?: string): Promise<void> {
   if (userId) {
     try {
