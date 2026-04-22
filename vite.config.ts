@@ -16,16 +16,27 @@ export default defineConfig(() => {
         '@mediabunny/mp3-encoder',
       ],
     },
+    optimizeDeps: {
+      exclude: ['@remotion/whisper-web'],
+    },
     server: {
       host: '0.0.0.0',
       port: 3000,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+      },
     },
     preview: {
       host: '0.0.0.0',
       port: 3000,
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+      },
     },
     build: {
       chunkSizeWarningLimit: 1600,

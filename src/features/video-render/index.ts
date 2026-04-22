@@ -5,6 +5,13 @@ export type {
   VideoRenderConfig,
 } from './types';
 
+// ─── Tipos de legenda/transcrição ──────────────────────────
+export type {
+  CaptionWord,
+  TranscriptionResult,
+  SubtitleMode,
+} from './types';
+
 // ─── Tipos do plano de edição ─────────────────────────────
 export type {
   TransitionType,

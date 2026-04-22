@@ -305,7 +305,7 @@ export async function generateImageFromPrompt(prompt: string, aspectRatio: '1:1'
 }
 
 // ---------------------------------------------------------------------------
-// Geração de plano de edição (transições, legendas, câmera, efeitos)
+// Geração de plano de edição (transições, câmera, efeitos)
 // ---------------------------------------------------------------------------
 
 /**
@@ -361,20 +361,20 @@ Regras obrigatórias:
 3. A primeira cena DEVE usar transição "cut".
 4. Varie as transições — evite repetir a mesma em cenas consecutivas.
 5. Durações de transição: use os defaults (cut=0, fade=500, slide=400, zoom=600, dissolve=800, wipe=500).
-6. Gere legendas curtas (até 8 palavras) que resumam o momento da cena. Se a cena não precisa de legenda, omita o campo.
+6. Não gere legendas — o campo subtitle foi descontinuado.
 7. Use efeitos visuais com moderação — a maioria das cenas deve usar ["none"] ou omitir o campo.
 
 Diretrizes criativas:
 - Use movimentos de câmera para criar dinamismo (zoom-in em momentos de tensão, pan em cenas panorâmicas, ken-burns em revelações).
-- Legendas devem ser impactantes: use frases curtas que capturam a atenção (até 8 palavras).
+- Legendas não são mais necessárias — foram descontinuadas.
 - Combine efeitos visuais com o tom narrativo: sépia/gradiente para nostalgia, contraste para momentos dramáticos.
 - Transições mais longas (dissolve) para cenas emocionais, rápidas (cut, wipe) para ação.
 - Cada cena deve ter personalidade própria — evite que todas pareçam iguais.
 
 Exemplos de boas combinações:
-- Cena panorâmica → pan-right + fade + legenda descritiva
+- Cena panorâmica → pan-right + fade
 - Momento de impacto → zoom-in + cut + contraste
-- Transição emocional → ken-burns + dissolve + legenda reflexiva
+- Transição emocional → ken-burns + dissolve
 
 ${audioSection}Roteiro:
 ${truncatedScript}
@@ -428,10 +428,6 @@ ${scenesJson}`;
                 type: Type.NUMBER,
                 description: 'Duração da transição em milissegundos (default: 500)',
               },
-              subtitle: {
-                type: Type.STRING,
-                description: 'Legenda curta (até 8 palavras). Omita se não for necessário.',
-              },
               effects: {
                 type: Type.ARRAY,
                 description: 'Efeitos visuais aplicados. Use ["none"] ou omita se não houver efeito.',
@@ -472,7 +468,6 @@ ${scenesJson}`;
         ? (scene.transition as TransitionType)
         : 'fade',
       transitionDuration: scene.transitionDuration ?? 500,
-      subtitle: scene.subtitle?.trim() || undefined,
       effects: Array.isArray(scene.effects) ? scene.effects : undefined,
       camera: CAMERA_MOVEMENT_LIST.includes(scene.camera as CameraMovement)
         ? (scene.camera as CameraMovement)

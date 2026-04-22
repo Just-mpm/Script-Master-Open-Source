@@ -57,7 +57,7 @@ export interface EditingScene {
   transition: TransitionType;
   /** Duração da transição em milissegundos (default: 500) */
   transitionDuration?: number;
-  /** Legenda para esta cena (texto sobreposto) */
+  /** @deprecated Legenda gerada pelo Gemini. Sera removida na v0.9.0. Use CaptionWord[] via Whisper. */
   subtitle?: string;
   /** Efeito visual aplicado à cena */
   effects?: VisualEffect[];
@@ -65,7 +65,7 @@ export interface EditingScene {
   camera?: CameraMovement;
   /** Override de duração (em segundos) se diferente do cálculo automático */
   durationOverride?: number;
-  /** Posição da legenda na tela */
+  /** @deprecated Posicao da legenda gerada pelo Gemini. Sera removida na v0.9.0. */
   subtitlePosition?: 'bottom' | 'center' | 'top';
   /** Overlay de título (intro, créditos, lower-third) */
   titleOverlay?: {

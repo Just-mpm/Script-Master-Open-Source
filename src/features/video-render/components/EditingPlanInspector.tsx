@@ -167,7 +167,7 @@ export function EditingPlanInspector({
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ color: TEXT_SECONDARY, ml: '52px' }}>
-          Gere um plano de edição para personalizar transições e legendas.
+          Gere um plano de edição para personalizar transições e efeitos.
         </Typography>
       </Box>
     );
@@ -325,7 +325,7 @@ export function EditingPlanInspector({
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="clear-plan-dialog-description">
-          Esta ação é irreversível. Todas as transições, legendas e efeitos
+          Esta ação é irreversível. Todas as transições, câmeras e efeitos
           personalizados serão perdidos, incluindo as alterações feitas manualmente.
         </DialogContentText>
       </DialogContent>
@@ -509,39 +509,6 @@ function PlanSceneCard({ planScene, index, thumbnailUrl, hasImage, onUpdate, onS
                   {CAMERA_LABELS[type]}
                 </MenuItem>
               ))}
-            </Select>
-          </Box>
-
-          {/* Campo de legenda editável */}
-          <Box sx={{ flex: 1, minWidth: 160 }}>
-            <Typography variant="caption" sx={{ color: TEXT_DISABLED, display: 'block', mb: 0.25 }}>
-              Legenda
-            </Typography>
-            <TextField
-              size="small"
-              placeholder="Sem legenda"
-              value={planScene.subtitle ?? ''}
-              onChange={(e) => onUpdate({ subtitle: e.target.value || undefined })}
-              sx={textFieldSx}
-              slotProps={{ input: { 'aria-label': `Legenda da cena ${index + 1}` } }}
-            />
-          </Box>
-
-          {/* Dropdown de posição da legenda */}
-          <Box sx={{ minWidth: 90 }}>
-            <Typography variant="caption" sx={{ color: TEXT_DISABLED, display: 'block', mb: 0.25 }}>
-              Posição
-            </Typography>
-            <Select
-              size="small"
-              value={planScene.subtitlePosition ?? 'bottom'}
-              onChange={(e) => onUpdate({ subtitlePosition: e.target.value as 'bottom' | 'center' | 'top' })}
-              sx={selectSx}
-              aria-label={`Posição da legenda da cena ${index + 1}`}
-            >
-              <MenuItem value="bottom" dense>Inferior</MenuItem>
-              <MenuItem value="center" dense>Centro</MenuItem>
-              <MenuItem value="top" dense>Superior</MenuItem>
             </Select>
           </Box>
 

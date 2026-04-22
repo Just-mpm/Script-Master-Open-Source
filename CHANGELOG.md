@@ -7,6 +7,47 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.8.4] - 2026-04-21
+
+### Adicionado
+
+- **useTranscription** (`src/features/video-render/hooks/useTranscription.ts`): hook de transcrição automática de áudio via Whisper WASM (`@remotion/whisper-web`); suporta modelos `tiny` (multilingual) e `tiny.en` (inglês), resampling para 16kHz, fallback para estimativa proporcional quando Whisper falha, integração com IndexedDB para cache de transcrições; estados de progresso expostos via `videoRenderBridge` (`isTranscribing`, `transcriptionProgress`, `transcriptionStatusText`)
+- **ScrollingPhrase** (`src/features/video-render/components/ScrollingPhrase.tsx`): componente Remotion para exibição de legendas no modo scroll de frases — frase ativa com fade-in/out, karaoke palavra-a-palavra dentro da frase, suporte a negrito via markdown `**`
+- **subtitleUtils** (`src/features/video-render/lib/subtitleUtils.tsx`): utilitários para processamento de legendas — agrupamento de palavras em frases (`groupCaptionWordsIntoPhrases`), cálculo de timing e duração por frase, componentes internos `AnimatedPhrase` e `KaraokeWord`
+- **TranscriptionResult/CaptionWord/SubtitleMode** (`src/features/video-render/types.ts`): tipos para o sistema de legendas — `CaptionWord` (palavra com timestamp), `TranscriptionResult` (resultado completo da transcrição), `SubtitleMode` (`scroll-phrases` | `word-karaoke`)
+- **transcriptions DB** (`src/lib/db/transcriptions.ts`): persistência de transcrições no IndexedDB (store `transcriptions`) para evitar re-transcrição do mesmo áudio
+- **VideoPage**: integração com `useTranscription` — botão de transcrever na página de vídeo, com indicação de progresso
+- **Dependências**: `@remotion/captions@4.0.448`, `@remotion/whisper-web@4.0.448`
+
+### Alterado
+
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): reescrito com suporte a dois modos de exibição — `scroll-phrases` (frases com karaoke interno) e `word-karaoke` (karaoke contínuo como v0.8.0); lógica de timing e animação movida para `subtitleUtils`
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): adaptação para receber `CaptionWord[]` no lugar de legendas simples
+- **VideoExportPanel** (`src/features/video-render/components/VideoExportPanel.tsx`): integração com tipos de transcrição
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): integração com tipos de transcrição
+- **EditingPlanInspector** (`src/features/video-render/components/EditingPlanInspector.tsx`): simplificação — remoção de campos de legenda editáveis (agora gerados automaticamente via Whisper)
+- **videoRenderBridge** (`src/features/video-render/store/videoRenderBridge.ts`): novos estados para transcrição (`isTranscribing`, `transcriptionProgress`, `transcriptionStatusText`, `syncTranscriptionState`)
+- **video-render/index.ts**: exportação dos novos tipos (`CaptionWord`, `TranscriptionResult`, `SubtitleMode`)
+- **gemini.ts** (`src/lib/gemini.ts`): remoção do campo `subtitle` do tipo de cena (legendas agora são geradas por transcrição, não pelo Gemini)
+- **shared.ts** (`src/lib/db/shared.ts`): incremento de `DB_VERSION` para migração, novo store `TRANSCRIPTIONS_STORE`
+- **db/index.ts** (`src/lib/db/index.ts`): re-export do módulo de transcrições
+- **vite.config.ts**: headers COOP/COEP (`credentialless`) para suporte a `SharedArrayBuffer` (requerido pelo Whisper WASM); `@remotion/whisper-web` excluído de `optimizeDeps`
+
+### Deprecado
+
+- **editingPlan.ts**: campos `subtitle` e `subtitlePosition` no tipo de cena marcados como `@deprecated` para remoção na v0.9.0 — legendas agora vêm da transcrição Whisper
+
+### Dependências
+
+- **Remotion**: downgrade `4.0.450` → `4.0.448` (necessário para compatibilidade com `@remotion/whisper-web`)
+- **Novo**: `@remotion/captions@4.0.448`, `@remotion/whisper-web@4.0.448`
+
+### Documentação
+
+- **docs/plan/legendas-automaticas-whisper.md**: plano de implementação do sistema de legendas automáticas com Whisper Web + fallback proporcional
+
+---
+
 ## [0.8.3] - 2026-04-21
 
 ### Corrigido

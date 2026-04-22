@@ -17,6 +17,11 @@ interface VideoRenderBridgeState {
   isExportingVideo: boolean;
   videoExportProgress: number;
 
+  // Estado da transcrição
+  isTranscribing: boolean;
+  transcriptionProgress: number;
+  transcriptionStatusText: string;
+
   // Callbacks de ação (registrados por VideoPage)
   generatePlanAction: (() => void) | null;
   clearPlanErrorAction: (() => void) | null;
@@ -24,6 +29,7 @@ interface VideoRenderBridgeState {
   // Ações de sincronização
   syncPlanState: (generating: boolean, disabled: boolean, error: string | null) => void;
   syncExportState: (rendering: boolean, progress: number) => void;
+  syncTranscriptionState: (transcribing: boolean, progress: number, statusText: string) => void;
   setGeneratePlanAction: (action: (() => void) | null) => void;
   setClearPlanErrorAction: (action: (() => void) | null) => void;
   dismissPlanError: () => void;
@@ -36,6 +42,9 @@ const INITIAL_BRIDGE_STATE = {
   planError: null,
   isExportingVideo: false,
   videoExportProgress: 0,
+  isTranscribing: false,
+  transcriptionProgress: 0,
+  transcriptionStatusText: '',
   generatePlanAction: null,
   clearPlanErrorAction: null,
 };
@@ -48,6 +57,9 @@ export const useVideoRenderBridge = create<VideoRenderBridgeState>()((set) => ({
 
   syncExportState: (rendering, progress) =>
     set({ isExportingVideo: rendering, videoExportProgress: progress }),
+
+  syncTranscriptionState: (transcribing, progress, statusText) =>
+    set({ isTranscribing: transcribing, transcriptionProgress: progress, transcriptionStatusText: statusText }),
 
   setGeneratePlanAction: (action) => set({ generatePlanAction: action }),
 

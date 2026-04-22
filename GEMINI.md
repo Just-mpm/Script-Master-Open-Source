@@ -26,7 +26,7 @@ bun run clean            # remove dist/
 - **MUI v9** — tema em `src/theme/*`, sem Tailwind
 - **@google/genai** (cliente direto) — TTS, imagens, prompts de cena
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage)
-- **Remotion 4.0.450** — renderização de vídeo client-side (WebCodecs)
+- **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
 
 ## Modelos Gemini
@@ -71,13 +71,14 @@ Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
 
 ## Version
 
-- **Current:** `0.8.3`
+- **Current:** `0.8.4`
 - **Last release:** 2026-04-21
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.8.4 | Transcrição automática de legendas via Whisper WASM, dois modos de legenda (scroll-phrases, word-karaoke), ScrollingPhrase, subtitleUtils, persistência de transcrições, headers COOP/COEP, @remotion/captions + @remotion/whisper-web, Remotion 4.0.448 |
 | 0.8.3 | Limpeza de código morto (10 funções), patch font-stretch Canvas, truncamento de roteiro + limite de imagens para Gemini, reutilização de análise de áudio, menu mobile de velocidade, progresso no download em lote, detecção de JSON malformado no assistente, Snackbar no AnimationControls, Remotion 4.0.450, dedupe no Vite |
 | 0.8.2 | NotFoundPage, ErrorBoundary, DataMigrationDialog, rate limiter, migração IndexedDB→Firestore, cursor animado no assistente, `isStreaming`, fallback VP8/WebM no exportador, tratamento de erros contextualizado, 6 guias em `docs/guides/` |
 | 0.8.1 | Unificação do modelo de imagem para `gemini-3.1-flash-image-preview`; reestruturação da documentação em `docs/guides/` (6 guias); remoção de scripts de preview |

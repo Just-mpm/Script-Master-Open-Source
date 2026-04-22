@@ -32,6 +32,7 @@ import {
   SUCCESS_MAIN,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
+import type { CaptionWord } from '../types';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -52,6 +53,8 @@ interface VideoExportPanelProps {
   userId?: string;
   /** Hook do exportador de vídeo (elevado do App.tsx) */
   exporter: VideoExporter;
+  /** Legendas palavra-a-palavra para karaoke */
+  captions?: CaptionWord[];
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +71,7 @@ export function VideoExportPanel({
   projectId,
   userId,
   exporter,
+  captions,
 }: VideoExportPanelProps) {
   const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -96,6 +100,7 @@ export function VideoExportPanel({
       durationInFrames,
       ratio,
       editingPlan,
+      captions,
       projectId,
       userId,
     };

@@ -12,7 +12,7 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
-import type { EditingScene } from '../features/video-render';
+import type { CaptionWord, EditingScene } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
@@ -35,6 +35,8 @@ interface VideoPreviewProps {
   ratio: SceneRatio;
   /** Plano de edição com transições, legendas e efeitos (opcional) */
   editingPlan?: EditingScene[];
+  /** Legendas com timestamps (Whisper ou fallback proporcional) */
+  captions?: CaptionWord[];
 }
 
 /** Handle imperativo exposto ao pai para controlar o Remotion Player */
@@ -122,7 +124,7 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, editingPlan }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, editingPlan, captions }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
@@ -151,7 +153,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       audioUrl: audioUrl ?? '',
       fps,
       editingPlan: editingPlan ?? undefined,
-    }), [mappedScenes, audioUrl, fps, editingPlan]);
+      captions: captions ?? undefined,
+    }), [mappedScenes, audioUrl, fps, editingPlan, captions]);
 
     // Estado vazio: sem áudio e sem cenas
     if (!audioUrl && scenes.length === 0) {

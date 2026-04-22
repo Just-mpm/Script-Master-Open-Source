@@ -9,7 +9,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 import { auth, storage } from '../firebase';
 
 export const DB_NAME = 'GeminiVoiceStudioDB';
-export const DB_VERSION = 8;
+export const DB_VERSION = 9;
 
 export const STORE_NAME = 'generations';
 export const IMAGE_STORE = 'image_generations';
@@ -21,6 +21,7 @@ export const CHAT_STORE = 'chats';
 export const SETTING_STORE = 'user_settings';
 export const VIDEOS_STORE = 'videos';
 export const EDITING_PLAN_STORE = 'editing_plans';
+export const TRANSCRIPTIONS_STORE = 'transcriptions';
 
 const STORE_DEFINITIONS = [
   STORE_NAME,
@@ -33,6 +34,7 @@ const STORE_DEFINITIONS = [
   SETTING_STORE,
   VIDEOS_STORE,
   EDITING_PLAN_STORE,
+  TRANSCRIPTIONS_STORE,
 ] as const;
 
 enum OperationType {

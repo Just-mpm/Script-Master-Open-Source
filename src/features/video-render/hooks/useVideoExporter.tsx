@@ -4,6 +4,7 @@ import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
+import type { CaptionWord } from '../types';
 import type { EditingScene } from '../lib/editingPlan';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtils';
@@ -23,6 +24,7 @@ export interface VideoExportOptions {
   durationInFrames: number;
   ratio: SceneRatio;
   editingPlan?: EditingScene[];
+  captions?: CaptionWord[];
   projectId?: string;
   userId?: string;
 }
@@ -72,13 +74,14 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, editingPlan } = props;
+  const { scenes, audioUrl, fps, editingPlan, captions } = props;
   return (
     <VideoComposition
       scenes={scenes}
       audioUrl={audioUrl}
       fps={fps}
       editingPlan={editingPlan}
+      captions={captions}
     />
   );
 }
@@ -263,6 +266,7 @@ export function useVideoExporter() {
       durationInFrames,
       ratio,
       editingPlan,
+      captions,
       projectId,
       userId,
     } = options;
@@ -278,6 +282,7 @@ export function useVideoExporter() {
       audioUrl,
       fps,
       editingPlan,
+      captions,
     };
 
     // Cria AbortController para cancelamento

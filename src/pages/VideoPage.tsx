@@ -10,6 +10,7 @@ import { EditingPlanInspector } from '../features/video-render/components/Editin
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
 import { useEditingPlan } from '../features/video-render/hooks/useEditingPlan';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
+import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
@@ -64,6 +65,16 @@ export function VideoPage({
 
   const videoExporter = useVideoExporter();
 
+  // Hook de transcrição Whisper — instanciado aqui para code-splitting
+  // (@remotion/whisper-web só é carregado quando a rota /video é acessada)
+  const {
+    captions,
+    isTranscribing,
+    transcriptionProgress,
+    transcriptionStatusText,
+    transcribeAudio,
+  } = useTranscription(currentProjectId);
+
   // Mapeia cenas para o formato esperado pelo hook de edição
   const scenesForPlan = useMemo(
     () => scenes.map(s => ({
@@ -95,6 +106,10 @@ export function VideoPage({
   }, [videoExporter.isRendering, videoExporter.renderProgress]);
 
   useEffect(() => {
+    useVideoRenderBridge.getState().syncTranscriptionState(isTranscribing, transcriptionProgress, transcriptionStatusText);
+  }, [isTranscribing, transcriptionProgress, transcriptionStatusText]);
+
+  useEffect(() => {
     useVideoRenderBridge.getState().setGeneratePlanAction(handleGenerateEditingPlan);
   }, [handleGenerateEditingPlan]);
 
@@ -116,6 +131,23 @@ export function VideoPage({
   useEffect(() => {
     pauseGlobalAudio();
   }, [pauseGlobalAudio]);
+
+  // Dispara transcrição automática 3s após carregar, se não houver cache
+  useEffect(() => {
+    if (!audioUrl || !script.trim() || captions.length > 0 || isTranscribing) return;
+
+    const timer = setTimeout(() => {
+      void transcribeAudio({
+        audioUrl,
+        script,
+        scenes: scenesForPlan,
+        totalDurationFrames: durationInFrames,
+        fps: videoFps,
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [audioUrl, script, captions.length, isTranscribing, transcribeAudio, scenesForPlan, durationInFrames, videoFps]);
 
   // Pausa o Remotion Player ao desmontar a página
   useEffect(() => {
@@ -144,6 +176,7 @@ export function VideoPage({
         durationInFrames={durationInFrames}
         ratio={sceneRatio}
         editingPlan={editingPlan ?? undefined}
+        captions={captions.length > 0 ? captions : undefined}
       />
 
       {/* Inspector do plano de edição */}
@@ -180,6 +213,7 @@ export function VideoPage({
         projectId={currentProjectId ?? undefined}
         userId={userId}
         exporter={videoExporter}
+        captions={captions.length > 0 ? captions : undefined}
       />
 
       <VideoLibrary

@@ -19,7 +19,13 @@ import { WaveformOverlay } from './WaveformOverlay';
  *
  * Backward compatible: sem editingPlan, usa fade padrão em todas as cenas.
  */
-export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCompositionProps) {
+export function VideoComposition({
+  scenes,
+  audioUrl,
+  fps,
+  editingPlan,
+  captions,
+}: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
 
@@ -48,8 +54,20 @@ export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCo
           ? msToFrames(planScene.transitionDuration, fps)
           : undefined;
 
-        // Prioriza legenda do plano de edição sobre a legenda da cena
-        const subtitleText = planScene?.subtitle ?? scene.subtitle;
+        // Filtra captions que pertencem ao range de frames desta cena
+        // e ajusta timestamps para serem relativos ao início da cena
+        const sceneCaptions = captions?.filter(
+          (w) => w.startFrame < adjustedFrom + adjustedDuration && w.endFrame > adjustedFrom,
+        ).map((w) => ({
+          ...w,
+          startFrame: w.startFrame - adjustedFrom,
+          endFrame: w.endFrame - adjustedFrom,
+        })) ?? [];
+
+        // Fallback para planos antigos que ainda usam subtitle textual
+        const subtitleText = sceneCaptions.length === 0
+          ? (planScene?.subtitle ?? scene.subtitle)
+          : undefined;
 
         const isLastScene = index === totalScenes - 1;
 
@@ -70,10 +88,11 @@ export function VideoComposition({ scenes, audioUrl, fps, editingPlan }: VideoCo
               isLastScene={isLastScene}
             />
 
-            {/* Legenda opcional com posição customizável */}
-            {subtitleText && (
+            {/* Legenda: captions com timestamps ou texto fallback de planos antigos */}
+            {(sceneCaptions.length > 0 || subtitleText) && (
               <SubtitleOverlay
-                text={subtitleText}
+                captions={sceneCaptions.length > 0 ? sceneCaptions : undefined}
+                text={sceneCaptions.length === 0 ? subtitleText : undefined}
                 durationInFrames={adjustedDuration}
                 position={planScene?.subtitlePosition}
               />
