@@ -26,6 +26,8 @@ import {
   BRAND_GLOW,
   WHITE_08,
   SUCCESS_MAIN,
+  WARNING_BG_SUBTLE,
+  ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
 
 // ---------------------------------------------------------------------------
@@ -150,7 +152,7 @@ export function TranscriptionPanel({
               <Alert
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                sx={{ mb: 1, borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.08)' }}
+                sx={{ mb: 1, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
               >
                 O roteiro foi editado desde a última geração de legendas. As legendas podem estar desalinhadas.
               </Alert>
@@ -243,7 +245,7 @@ export function TranscriptionPanel({
           <Stack spacing={GAP_DEFAULT}>
             <Alert
               severity="error"
-              sx={{ mb: 0, borderRadius: 2, bgcolor: 'rgba(239, 68, 68, 0.08)' }}
+              sx={{ mb: 0, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
             >
               {transcriptionError}
             </Alert>
@@ -271,7 +273,7 @@ export function TranscriptionPanel({
               <Alert
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                sx={{ borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.08)' }}
+                sx={{ borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
               >
                 Seu navegador não suporta Whisper. As legendas serão geradas por distribuição proporcional (menos precisas).
               </Alert>

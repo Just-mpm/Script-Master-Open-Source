@@ -37,6 +37,9 @@ export const BLACK = '#000000';
 export const SUCCESS_MAIN = '#10b981';
 export const ERROR_MAIN = '#ef4444';
 export const WARNING_MAIN = '#f59e0b';
+export const ERROR_BG_SUBTLE = 'rgba(239, 68, 68, 0.08)';
+export const ERROR_BG_MEDIUM = 'rgba(239, 68, 68, 0.12)';
+export const WARNING_BG_SUBTLE = 'rgba(245, 158, 11, 0.08)';
 
 export const TEXT_PRIMARY = '#f8fafc';
 export const TEXT_SECONDARY = 'rgba(248, 250, 252, 0.68)';
@@ -61,6 +64,7 @@ export const WHITE_80 = 'rgba(255, 255, 255, 0.8)';
 export const WHITE_82 = 'rgba(255, 255, 255, 0.82)';
 export const WHITE_90 = 'rgba(255, 255, 255, 0.9)';
 export const WHITE_92 = 'rgba(255, 255, 255, 0.92)';
+export const WHITE_01 = 'rgba(255, 255, 255, 0.01)';
 export const WHITE_04 = 'rgba(255, 255, 255, 0.04)';
 export const WHITE_05 = 'rgba(255, 255, 255, 0.05)';
 export const WHITE_015 = 'rgba(255, 255, 255, 0.015)';
@@ -106,6 +110,7 @@ export const WHITE_50 = 'rgba(255, 255, 255, 0.5)';
 export const WHITE_56 = 'rgba(255, 255, 255, 0.56)';
 export const WHITE_66 = 'rgba(255, 255, 255, 0.66)';
 export const TRANSPARENT = 'transparent';
+export const GLASS_BG = 'rgba(16, 23, 42, 0.78)';
 
 // ─── Empty States ───────────────────────────────────────
 

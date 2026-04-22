@@ -13,7 +13,7 @@ import { MAX_CHARS } from '../lib/constants';
 import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_LG, GAP_MEDIUM, GAP_COMPACT } from '../theme/tokens';
+import { ICON_SIZE_LG, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16 } from '../theme/tokens';
 
 export interface ScriptEditorProps {
   script: string;
@@ -214,7 +214,7 @@ export function ScriptEditor({
                 fontSize: { xs: '1rem', sm: '1.125rem', md: '1.35rem', lg: '1.6rem' },
                 lineHeight: 1.85,
                 color: 'text.primary',
-                textShadow: '0 1px 12px rgba(0, 0, 0, 0.24)',
+                textShadow: `0 1px 12px ${BLACK_24}`,
               },
             }}
           />
@@ -250,8 +250,8 @@ export function ScriptEditor({
                 px: 1,
                 py: 0.25,
                 borderRadius: 1.5,
-                border: '1px solid rgba(255,255,255,0.16)',
-                backgroundColor: 'rgba(0,0,0,0.18)',
+                border: `1px solid ${WHITE_16}`,
+                backgroundColor: BLACK_18,
                 fontSize: '0.75rem',
                 fontFamily: 'monospace',
               }}

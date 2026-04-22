@@ -8,9 +8,9 @@ Documentacao completa do pipeline de audio do projeto, extraida diretamente do c
 
 | Funcao | Modelo | Arquivo |
 |--------|--------|---------|
-| TTS (fala) | `gemini-3.1-flash-tts-preview` | `src/hooks/useAudioGenerator.ts:391` |
-| Chunking via LLM | `gemini-3.1-flash-lite-preview` | `src/hooks/useAudioGenerator.ts:283` |
-| Prompts de cena | `gemini-3.1-flash-lite-preview` | `src/lib/gemini.ts:215` |
+| TTS (fala) | `gemini-3.1-flash-tts-preview` | `src/hooks/useAudioGenerator.ts:406` |
+| Chunking via LLM | `gemini-3.1-flash-lite-preview` | `src/hooks/useAudioGenerator.ts:296` |
+| Prompts de cena | `gemini-3.1-flash-lite-preview` | `src/lib/gemini.ts:43` |
 
 Todas as chamadas usam `@google/genai` (`GoogleGenAI`) diretamente no cliente.
 
@@ -236,6 +236,84 @@ const url = URL.createObjectURL(wavBlob);
 
 ---
 
+## Segmentos de Audio (AudioSegment)
+
+> `src/lib/db/types.ts` — `AudioSegment` | `src/lib/db/audio-segments.ts` — `saveAudioSegments`
+
+Apos a montagem do WAV, o hook persiste o mapeamento chunk→timestamp no IndexedDB:
+
+```typescript
+export interface AudioSegment {
+  /** Texto do roteiro enviado ao TTS para este chunk */
+  text: string;
+  /** Timestamp de inicio em segundos (relativo ao audio final) */
+  startSec: number;
+  /** Timestamp de fim em segundos */
+  endSec: number;
+  /** Indice do chunk na sequencia de geracao */
+  chunkIndex: number;
+}
+```
+
+O hook retorna `audioSegments: AudioSegment[]` no estado. A persistencia e feita via `saveAudioSegments(projectId, segments)` logo apos a montagem do WAV, de forma nao-bloqueante (fire-and-forget com `.catch` para warning).
+
+A duracao de cada chunk e calculada com base no PCM: `chunkDurationSec = pcmData.length / 48000` (24kHz 16-bit mono = 48.000 bytes/s).
+
+---
+
+## Logger Centralizado
+
+> `src/lib/logger.ts` — `createLogger`
+
+O hook usa `createLogger('useAudioGenerator')` extensivamente para logs estruturados:
+
+```typescript
+const log = createLogger('useAudioGenerator');
+```
+
+Metodos utilizados: `log.warn(...)`, `log.error(...)`. O logger tambem e usado em outros arquivos do pipeline (`gemini.ts`, `audio-segments.ts`, `audio-analysis.ts`, `useVoicePreviews.ts`).
+
+---
+
+## Deteccao de Silencio (detectSceneBoundaries)
+
+> `src/lib/audio-analysis.ts`
+
+Apos gerar as cenas visuais, o hook refina os timestamps usando deteccao de silencio via RMS no audio real:
+
+```typescript
+const detectedBoundaries = await detectSceneBoundaries(wavBlob, prompts.length);
+
+if (detectedBoundaries.length >= generatedScenes.length) {
+  for (let i = 0; i < generatedScenes.length; i++) {
+    generatedScenes[i].timestamp = detectedBoundaries[i];
+  }
+}
+```
+
+**Algoritmo:**
+
+1. Decodifica o blob WAV em `AudioBuffer` via `decodeAudioData()`
+2. Extrai channel data (`Float32Array`, valores -1.0 a 1.0)
+3. Divide em janelas de ~20ms
+4. Calcula RMS de cada janela
+5. Detecta regioes onde RMS < threshold por >= 400ms
+6. Retorna array de timestamps (inicio de cada regiao de fala apos silencio)
+
+**Calibracao automatica:** o threshold inicial (0.01) e ajustado em ate 3 iteracoes para se aproximar do numero desejado de cenas. Muitos silencios → sobe threshold; poucos → baixa. A primeira cena SEMPRE comeca em timestamp 0.
+
+| Parametro | Padrao | Descricao |
+|-----------|--------|-----------|
+| `windowSizeMs` | `20` | Tamanho da janela de analise |
+| `rmsThreshold` | `0.01` | Threshold RMS abaixo = silencio |
+| `minSilenceDurationMs` | `400` | Duracao minima de silencio para transicao |
+| `minSceneDurationMs` | `2000` | Distancia minima entre cenas |
+| `maxCalibrationIterations` | `3` | Maximo de iteracoes de calibracao |
+
+Se a deteccao falhar, os timestamps originais do Gemini sao mantidos (fallback silencioso via `log.warn`).
+
+---
+
 ## Formato de Saida
 
 > `src/lib/audio.ts` — `createWavBlob`
@@ -293,7 +371,7 @@ export function extractPcmFromData(data: Uint8Array): Uint8Array {
 
 ## Multi-Speaker
 
-> `src/hooks/useAudioGenerator.ts:371-388`
+> `src/hooks/useAudioGenerator.ts:384-401`
 
 Quando `isMultiSpeaker` e `true`, o `speechConfig` muda para `multiSpeakerVoiceConfig` com dois locutores:
 
@@ -377,7 +455,7 @@ const { value: response } = await withRetry(
 
 ### Mapeamento de Erros para o Usuario
 
-> `src/hooks/useAudioGenerator.ts:46-74` — `toUserFriendlyError`
+> `src/hooks/useAudioGenerator.ts:53-81` — `toUserFriendlyError`
 
 | Padrao detectado | Mensagem (pt-BR) |
 |------------------|-------------------|
@@ -425,9 +503,17 @@ export function useVoicePreviews() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const stop = (): void => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+    setPlayingId(null);
+  };
+
   const playPreview = (voiceId: string): void => {
     if (playingId === voiceId) {
-      stop(); // toggle: clicar na voz que esta tocando para ela
+      stop();
       return;
     }
     stop();
@@ -435,25 +521,33 @@ export function useVoicePreviews() {
     const audio = new Audio(`/voice-previews/${voiceId}.wav`);
     audioRef.current = audio;
     audio.onerror = () => {
-      console.error(`Preview para ${voiceId} nao encontrado.`);
+      log.error(`Preview para ${voiceId} nao encontrado. Execute "bun run generate-previews" para gerar.`);
       setPlayingId(null);
     };
     audio.onended = () => setPlayingId(null);
-    void audio.play();
+    audio.play().catch((playErr: unknown) => {
+      const isAbort = playErr instanceof DOMException && playErr.name === 'AbortError';
+      if (!isAbort) {
+        log.warn('Preview bloqueado pela politica de autoplay do navegador', { error: playErr });
+      }
+      setPlayingId(null);
+    });
   };
+
+  return { playingId, playPreview, stop };
 }
 ```
 
-- **Toggle:** clicar na mesma voz que esta tocando a para
-- **Erros:** se o arquivo nao existe, loga erro e reseta o estado
-
----
+- **Toggle:** clicar na mesma voz que esta tocando a para (via `stop()`)
+- **stop:** funcao exportada que pausa e limpa o audio
+- **Erros:** se o arquivo nao existe, `log.error` registra e reseta o estado
+- **Autoplay bloqueado:** `play().catch()` trata `AbortError` (desprezado) e outros erros de autoplay via `log.warn`
 
 ---
 
 ## Calculo de Duracao
 
-> `src/hooks/useAudioGenerator.ts:558-563`
+> `src/hooks/useAudioGenerator.ts:631-636`
 
 A duracao e calculada de duas formas com prioridade:
 
@@ -473,7 +567,7 @@ const durationInSeconds = useMemo(() => {
 
 ## Estrutura de Dados — GenerateOptions
 
-> `src/hooks/useAudioGenerator.ts:80-98`
+> `src/hooks/useAudioGenerator.ts:87-105`
 
 ```typescript
 interface GenerateOptions {
@@ -515,15 +609,73 @@ O flag e checado antes de cada chunk TTS e antes de cada geracao de cena. Se can
 
 ---
 
+## Restauracao de Estado (lastSuccessfulStateRef)
+
+O hook mantem uma referencia ao ultimo estado bem-sucedido para restauracao em caso de cancelamento ou erro:
+
+```typescript
+const lastSuccessfulStateRef = useRef<{
+  audioUrl: string | null;
+  audioBlob: Blob | null;
+  scenes: { imageUrl: string; timestamp: number }[];
+  audioSegments: AudioSegment[];
+}>({ audioUrl: null, audioBlob: null, scenes: [], audioSegments: [] });
+```
+
+A funcao `restoreLastSuccessfulState()` restaura `audioUrl`, `audioBlob`, `scenes` e `audioSegments` do ref. Ela e chamada automaticamente em duas situacoes:
+
+1. **Cancelamento** — quando o usuario cancela, o URL parcial e revogado e o estado anterior e restaurado
+2. **Erro** — quando a geracao falha, o estado anterior e restaurado para que o usuario nao perca o conteudo existente
+
+O ref e atualizado sempre que a geracao termina com sucesso (com ou sem cenas visuais).
+
+---
+
+## Carregamento de Projetos (loadProjectData)
+
+Funcao exposta pelo hook para carregar projetos da galeria:
+
+```typescript
+const loadProjectData = async (
+  url: string,
+  scenesData: { imageUrl: string; timestamp: number }[],
+  audioBlobData?: Blob,
+  id?: string,
+) => { /* ... */ };
+```
+
+- Revoga o blob URL anterior (memory leak prevention)
+- Se `audioBlobData` for fornecido, usa-o diretamente
+- Se a URL for blob, faz `fetch` para obter o blob (sem CORS)
+- Se a URL for externa (ex: Firebase Storage), usa `<audio>` com `loadedmetadata` para obter a duracao sem baixar o arquivo inteiro
+
+---
+
+## Aviso de Geracao de Cenas (sceneGenerationWarning)
+
+O hook retorna `sceneGenerationWarning: string | null` no estado. E preenchido em tres situacoes:
+
+1. **Fallback generico** — quando `generateScenePrompts` retorna `isFallback: true` (API do Gemini falhou completamente)
+2. **Falha parcial** — quando algumas cenas falharam apos retries (ex: "5 de 8 cenas geradas com sucesso")
+3. **Falha total** — quando nenhuma cena foi gerada
+
+O componente de UI deve exibir esse aviso ao usuario para sinalizar que a qualidade visual pode estar reduzida.
+
+---
+
 ## Mapa de Arquivos
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
 | `src/lib/constants.ts` | `CHUNK_LIMIT`, `MAX_CHARS`, `VOICES`, `PACE_INSTRUCTIONS` |
 | `src/lib/types.ts` | Interface `Voice` |
+| `src/lib/db/types.ts` | `AudioSegment`, `Project`, `AudioSource`, `ProjectImage` |
+| `src/lib/db/audio-segments.ts` | `saveAudioSegments`, `loadAudioSegments` — persistencia de segmentos IndexedDB |
 | `src/lib/audio.ts` | `isWavFormat`, `extractPcmFromData`, `createWavBlob`, `base64ToBlob`, `base64ToUint8Array`, `base64ToBlobSync` |
-| `src/lib/gemini.ts` | `generateScenePrompts`, `generateImageFromPrompt` |
+| `src/lib/audio-analysis.ts` | `detectSceneBoundaries` — deteccao de silencio via RMS para refinamento de timestamps |
+| `src/lib/gemini.ts` | `generateScenePrompts`, `generateImageFromPrompt`, `ScenePromptResult` |
 | `src/lib/env.ts` | `getGeminiApiKey()` |
 | `src/lib/rate-limiter.ts` | `withRetry` — retry com exponential backoff + jitter |
-| `src/hooks/useAudioGenerator.ts` | Hook principal: chunking, TTS, montagem WAV, progresso, retry, cancelamento |
-| `src/hooks/useVoicePreviews.ts` | Preview de vozes via arquivos WAV estaticos |
+| `src/lib/logger.ts` | `createLogger` — logger centralizado |
+| `src/hooks/useAudioGenerator.ts` | Hook principal: chunking, TTS, montagem WAV, progresso, retry, cancelamento, restauracao de estado, segmentos |
+| `src/hooks/useVoicePreviews.ts` | Preview de vozes via arquivos WAV estaticos (com tratamento de autoplay) |

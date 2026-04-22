@@ -1,13 +1,13 @@
 import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { APP_BORDER, APP_SURFACE, APP_SURFACE_ELEVATED, SHADOW_DEEP, WHITE_04, WHITE_08, BLACK_50, GAP_COMPACT, GAP_MEDIUM, RADIUS_XS } from '../../../theme/tokens';
+import { APP_BORDER, APP_SURFACE, APP_SURFACE_ELEVATED, SHADOW_DEEP, WHITE_04, WHITE_01, WHITE_08, BLACK_50, GAP_COMPACT, GAP_MEDIUM, RADIUS_XS } from '../../../theme/tokens';
 import { insetPanelSx } from '../../../theme/surfaces';
 
 export const assistantDrawerPaperSx = (theme: Theme) => ({
   width: { xs: '100%', sm: 400, lg: 440 },
   maxWidth: '100%',
   backgroundColor: alpha(APP_SURFACE, 0.96),
-  backgroundImage: `linear-gradient(180deg, ${WHITE_04} 0%, rgba(255,255,255,0.01) 100%)`,
+  backgroundImage: `linear-gradient(180deg, ${WHITE_04} 0%, ${WHITE_01} 100%)`,
   backdropFilter: 'blur(24px)',
   WebkitBackdropFilter: 'blur(24px)',
   borderLeft: `1px solid ${APP_BORDER}`,

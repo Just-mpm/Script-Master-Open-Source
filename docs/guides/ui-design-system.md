@@ -1,6 +1,6 @@
 # UI Design System — Script Master
 
-> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.9.0).
+> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.11.0).
 
 ---
 
@@ -357,6 +357,9 @@ styleOverrides.root: { zIndex: 1500 }
 | `SUCCESS_MAIN` | `#10b981` |
 | `ERROR_MAIN` | `#ef4444` |
 | `WARNING_MAIN` | `#f59e0b` |
+| `ERROR_BG_SUBTLE` | `rgba(239, 68, 68, 0.08)` |
+| `ERROR_BG_MEDIUM` | `rgba(239, 68, 68, 0.12)` |
+| `WARNING_BG_SUBTLE` | `rgba(245, 158, 11, 0.08)` |
 
 ### Texto
 
@@ -382,7 +385,7 @@ styleOverrides.root: { zIndex: 1500 }
 
 ### Branco (opacidades)
 
-`WHITE_04`, `WHITE_05`, `WHITE_06`, `WHITE_08`, `WHITE_10`, `WHITE_12`, `WHITE_14`, `WHITE_16`, `WHITE_18`, `WHITE_22`, `WHITE_24`, `WHITE_30`, `WHITE_38`, `WHITE_42`, `WHITE_44`, `WHITE_45`, `WHITE_46`, `WHITE_50`, `WHITE_56`, `WHITE_66`, `WHITE_80`, `WHITE_82`, `WHITE_90`, `WHITE_92`, `WHITE_015`
+`WHITE_01`, `WHITE_04`, `WHITE_05`, `WHITE_06`, `WHITE_08`, `WHITE_10`, `WHITE_12`, `WHITE_14`, `WHITE_16`, `WHITE_18`, `WHITE_22`, `WHITE_24`, `WHITE_30`, `WHITE_38`, `WHITE_42`, `WHITE_44`, `WHITE_45`, `WHITE_46`, `WHITE_50`, `WHITE_56`, `WHITE_66`, `WHITE_80`, `WHITE_82`, `WHITE_90`, `WHITE_92`, `WHITE_015`
 
 ### Preto (opacidades)
 
@@ -403,6 +406,7 @@ styleOverrides.root: { zIndex: 1500 }
 | `WHITE` | `#ffffff` |
 | `BLACK` | `#000000` |
 | `TRANSPARENT` | `transparent` |
+| `GLASS_BG` | `rgba(16, 23, 42, 0.78)` |
 
 ### Empty States
 

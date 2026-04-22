@@ -7,6 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.11.1] - 2026-04-22
+
+### Adicionado
+
+- **5 novos tokens** em `src/theme/tokens.ts`: `ERROR_BG_SUBTLE`, `ERROR_BG_MEDIUM`, `WARNING_BG_SUBTLE`, `WHITE_01`, `GLASS_BG` — substituem valores hardcoded de cor em 8 componentes
+
+### Alterado
+
+- **12 componentes** migrados de cores hardcoded para tokens de tema: `Header`, `NetworkStatusIndicator`, `ScriptEditor`, `VideoLibrary`, `assistantUi`, `StrokeRenderer`, `ScrollingPhrase`, `TranscriptionPanel`, `VideoExportPanel`, `subtitleUtils`
+- **`src/index.css`**: comentário de alinhamento entre variáveis CSS e tokens.ts
+
+### Documentação
+
+- **6 guias atualizados** (`docs/guides/`) para refletir o código-fonte real — 47 inconsistências corrigidas entre números de linha, tipos, funções, constantes e descrições de comportamento
+
+---
+
 ## [0.11.0] - 2026-04-22
 
 ### Adicionado

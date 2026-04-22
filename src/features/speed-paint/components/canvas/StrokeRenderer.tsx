@@ -5,7 +5,7 @@ import type Konva from 'konva';
 import { alpha } from '@mui/material/styles';
 import { useAnimationStore } from '../../store/animationStore';
 import { setStageRef } from '../../lib/stageRef';
-import { APP_BORDER } from '../../../../theme/tokens';
+import { APP_BORDER, SHADOW_DEEP } from '../../../../theme/tokens';
 
 function drawTool(ctx: Konva.Context, x: number, y: number, tool: 'pencil' | 'brush'): void {
   ctx.save();
@@ -181,7 +181,7 @@ export function StrokeRenderer() {
         borderRadius: 2,
         overflow: 'hidden',
         border: `1px solid ${APP_BORDER}`,
-        boxShadow: `0 24px 80px ${alpha('#020617', 0.55)}`,
+        boxShadow: `0 24px 80px ${alpha(SHADOW_DEEP, 0.55)}`,
         height: displayHeight,
       })}
     >

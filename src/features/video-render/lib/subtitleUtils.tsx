@@ -1,6 +1,6 @@
 import { interpolate, spring } from 'remotion';
 import { createLogger } from '../../../lib/logger';
-import { WHITE, WHITE_92 } from '../../../theme/tokens';
+import { WHITE, WHITE_92, BLACK_82, BLACK_64 } from '../../../theme/tokens';
 import type { CaptionWord } from '../types';
 
 const log = createLogger('subtitleUtils');
@@ -413,7 +413,7 @@ export function AnimatedWord({
           color: WHITE,
           transform: `scale(${scale})`,
           opacity,
-          textShadow: '0 0 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)',
+          textShadow: `0 0 12px ${BLACK_82}, 0 2px 4px ${BLACK_64}`,
         }}
       >
         {word.text}

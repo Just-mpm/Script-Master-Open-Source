@@ -24,16 +24,16 @@ Pacotes utilizados (`package.json`):
 ```
 src/features/video-render/
   index.ts                          # Barrel — re-exporta tudo
-  types.ts                          # VideoScene, VideoCompositionProps, VideoRenderConfig, CaptionWord, TranscriptionResult, SubtitleMode
+  types.ts                          # VideoScene, VideoCompositionProps, VideoRenderConfig, CaptionWord, CaptionSource, TranscriptionResult, SubtitleMode
   lib/
     videoUtils.ts                   # Conversão de tempo, resolução, mapeamento de cenas
-    subtitleUtils.tsx               # Tipos (TextSegment, WordEntry, WordState), constantes, AnimatedWord, helpers de parse, segmentScriptByCenes
+    subtitleUtils.tsx               # Tipos (TextSegment, WordEntry, WordState), constantes, AnimatedWord, helpers de parse, timing por sílabas, segmentScriptByCenes, alignScriptToSegments
     canvasFontStretchPatch.ts       # Patch para corrigir bug de fontStretch percentual na Canvas API
   store/
     videoRenderBridge.ts            # Zustand store — sincroniza exportação e transcrição entre VideoPage e App.tsx
   hooks/
     useVideoExporter.tsx            # Exportação de vídeo via renderMediaOnWeb (3 etapas de fallback de codec)
-    useTranscription.ts             # Transcrição automática via Whisper WASM com fallback proporcional
+    useTranscription.ts             # Transcrição com 3 fontes (segment-timing, whisper-aligned, proportional) + staleness detection
   components/
     VideoComposition.tsx            # Composition principal Remotion (fade padrão em todas as cenas)
     VideoExportPanel.tsx            # Painel de exportação (MUI)
@@ -41,7 +41,8 @@ src/features/video-render/
     SubtitleOverlay.tsx             # Orchestrator de legendas — agrupa em frases, delega para ScrollingPhrase
     ScrollingPhrase.tsx             # Frase individual com karaoke interno via AnimatedWord
     WaveformOverlay.tsx             # Waveform de áudio SVG sincronizado
-    TranscriptionPanel.tsx          # Painel MUI para transcrição de legendas (Whisper/fallback)
+    TranscriptionPanel.tsx          # Painel MUI para transcrição de legendas (3 fontes + staleness)
+    CaptionEditorPanel.tsx          # Editor de legendas com split/merge de frases (520 linhas)
 ```
 
 ## Tipos TypeScript
@@ -75,12 +76,22 @@ interface CaptionWord {
   bold: boolean;
 }
 
+/** Fonte dos dados de temporização das legendas */
+type CaptionSource =
+  | 'whisper'              // Legado: timing Whisper puro (antigo valor)
+  | 'whisper-aligned'      // Timing Whisper refinado + texto do roteiro
+  | 'segment-timing'       // Timing real do chunk TTS + texto do roteiro
+  | 'proportional'         // Timing proporcional (fallback quando não há segmentos)
+  | 'manual';              // Editado manualmente pelo usuário
+
 interface TranscriptionResult {
   words: CaptionWord[];
-  source: 'whisper' | 'proportional';
+  source: CaptionSource;
+  /** Hash SHA-256 do roteiro usado para gerar as legendas (staleness detection) */
+  scriptHash?: string;
 }
 
-type SubtitleMode = 'word-karaoke' | 'scroll-phrases';
+type SubtitleMode = 'scroll-phrases' | 'word-karaoke';
 ```
 
 ### Tipos do subtitleUtils (`lib/subtitleUtils.tsx`)
@@ -130,6 +141,9 @@ interface VideoExporterState {
   resolvedVideoCodec: string;
   resolvedContainer: string;
 }
+
+/** Tipo do retorno do hook useVideoExporter — útil para passar via props */
+type VideoExporter = ReturnType<typeof useVideoExporter>;
 ```
 
 ## Composição de Vídeo (VideoComposition)
@@ -263,7 +277,7 @@ Cada palavra é renderizada por `AnimatedWord` (em `subtitleUtils.tsx`).
 
 - Font-size: `clamp(18px, 3.5vw, 36px)`
 - Fundo: `BLACK_50` (rgba preto 50%)
-- Sombra: `0 0 40px 20px rgba(0,0,0,0.4)`
+- Sombra: `0 0 40px 20px ${BLACK_40}` (token `BLACK_40`)
 - borderRadius: `12px`, padding: `12px 24px`
 - Posição: controlada pelo `SubtitleOverlay` pai
 
@@ -281,11 +295,11 @@ Diferente do `SPRING_TRANSICAO` da cena (`{ damping: 26, stiffness: 100, mass: 1
 
 ### Estados visuais
 
-| Estado | Escala | Opacidade | fontWeight | Cor |
-|--------|--------|-----------|------------|-----|
-| `active` | spring 1.0→1.15 | 0.6→1.0 (acompanha spring) | bold? 800 : 700 | WHITE |
-| `past` | 1.0 | 1.0→0.5 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 700 : 600 | WHITE_92 |
-| `future` | 1.0 | 0→0.25 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 600 : 500 | WHITE_92 |
+| Estado | Escala | Opacidade | fontWeight | Cor | Extra |
+|--------|--------|-----------|------------|-----|-------|
+| `active` | spring 1.0→1.15 | 0.6→1.0 (acompanha spring) | bold? 800 : 700 | WHITE | `textShadow: 0 0 12px ${BLACK_82}, 0 2px 4px ${BLACK_64}` |
+| `past` | 1.0 | 1.0→0.5 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 700 : 600 | WHITE_92 | — |
+| `future` | 1.0 | 0→0.25 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 600 : 500 | WHITE_92 | — |
 
 ## Constantes de animação (subtitleUtils.tsx)
 
@@ -320,7 +334,7 @@ Visualização SVG de waveform sincronizada com o frame atual.
 | `PROGRESS_LINE_WIDTH` | 3 | Largura do indicador de progresso (px SVG) |
 | `PROGRESS_LINE_OPACITY` | 0.9 | Opacidade do indicador de progresso |
 | Opacidade padrão | 0.3 | Overlay semi-transparente |
-| Fade do overlay | 10 frames | Fade de entrada/saída do overlay (entrada/saída do waveform) |
+| Fade do overlay | `Math.min(10, Math.floor(sceneDurationFrames / 4))` frames | Fade de entrada/saída do overlay (dinâmico, máximo 10) |
 
 ### Elementos SVG
 
@@ -329,6 +343,74 @@ Visualização SVG de waveform sincronizada com o frame atual.
 - Barra de progresso de fundo — 8% de opacidade
 - Indicador de progresso — linha vertical com glow (`PROGRESS_LINE_WIDTH`, `PROGRESS_LINE_OPACITY`)
 - Ponto luminoso no topo do indicador
+
+## TranscriptionPanel
+
+Painel MUI para transcrição de legendas com suporte a 3 fontes e staleness detection.
+
+### Props
+
+```typescript
+interface TranscriptionPanelProps {
+  audioUrl: string | null;
+  script: string;
+  scenes: { timestamp: number; prompt?: string; imageUrl: string }[];
+  durationInFrames: number;
+  fps: number;
+  transcriptionSource: CaptionSource | null;
+  isTranscribing: boolean;
+  transcriptionProgress: number;
+  transcriptionStatusText: string;
+  transcriptionError: string | null;
+  whisperSupported: boolean | null;
+  captionCount: number;
+  isStale?: boolean;
+  onTranscribe: () => void;
+  onCancel: () => void;
+  onClear: () => void;
+}
+```
+
+### Estados visuais
+
+| Estado | Condição | Renderização |
+|--------|----------|-------------|
+| **Sucesso** | `captionCount > 0 && !isTranscribing` | Contagem de palavras + rótulo da fonte (`Timing TTS`, `Whisper Alinhado`, `Proporcional`, `Manual`) |
+| **Stale** | `isStale && hasCaptions` | Alerta `WARNING_BG_SUBTLE`: "O roteiro foi editado desde a última geração" |
+| **Transcrevendo** | `isTranscribing` | Barra de progresso com `%` + botão Cancelar |
+| **Erro** | `transcriptionError && !isTranscribing` | Alerta `ERROR_BG_SUBTLE` + botão Tentar novamente |
+| **Idle** | sem legendas, sem erro | Descrição contextual (Whisper vs proporcional) + botão Gerar |
+| **Whisper indisponível** | `whisperSupported === false && idle` | Alerta `WARNING_BG_SUBTLE` informando sobre fallback |
+
+## CaptionEditorPanel
+
+Editor de legendas com split/merge de frases. Exportado pelo barrel. Usa `glassSurfaceSx` para estilo glass.
+
+### Props
+
+```typescript
+interface CaptionEditorPanelProps {
+  captions: CaptionWord[];
+  onUpdateCaptions: (captions: CaptionWord[]) => void;
+  fps: number;
+  onSeekToFrame?: (frame: number) => void;
+  currentFrame?: number;
+}
+```
+
+### Funcionalidades
+
+| Ação | Descrição |
+|------|-----------|
+| **Editar frase** | TextField multiline com parse de `**bold**`. Timing redistribuído uniformemente. Enter confirma, Esc cancela. |
+| **Dividir frase** | Divide no ponto médio (pelo nº de palavras). Ajusta `startFrame`/`endFrame` para manter continuidade. |
+| **Mesclar frases** | Concatena duas frases consecutivas mantendo timing contínuo. |
+| **Pular no vídeo** | Clique em qualquer frase chama `onSeekToFrame(startFrame)`. |
+| **Highlight ativo** | Frase contendo `currentFrame` recebe borda `BRAND_PRIMARY` + fundo `CYAN_GLOW_SOFT`. |
+
+### Agrupamento
+
+Usa `groupCaptionWordsIntoPhrases()` local (mesma lógica do SubtitleOverlay): pontuação final `.!?` ou limite de 12 palavras.
 
 ## canvasFontStretchPatch
 
@@ -359,16 +441,25 @@ O patch intercepta `CanvasRenderingContext2D.prototype.fontStretch` e converte p
 
 ## Transcrição Automática (useTranscription)
 
-Hook que transcreve áudio para legendas palavra-a-palavra usando Whisper WASM, com fallback proporcional.
+Hook que transcreve áudio para legendas palavra-a-palavra usando 3 fontes com prioridade, com staleness detection (detecta quando o roteiro muda após a geração).
 
-### Pipeline Whisper (4 etapas)
+### Pipeline de 3 fontes (prioridade)
 
-| # | Etapa | Progresso | Descrição |
-|---|-------|-----------|-----------|
-| 1 | Resample | 0–5% | `resampleTo16Khz()` converte o áudio para 16kHz (requerido pelo Whisper) |
-| 2 | Download do modelo | 5–30% | `downloadWhisperModel({ model: 'base' })` baixa o modelo (~75MB) |
-| 3 | Transcrição | 30–90% | `transcribe({ channelWaveform, model, language: 'pt' })` |
-| 4 | Pós-processamento | 90–100% | `processWhisperCaptions()` — `toCaptions()` → filtro → merge fragmentos → `createTikTokStyleCaptions()` → `CaptionWord[]` |
+O hook tenta gerar legendas na seguinte ordem:
+
+| Prioridade | Fonte | `CaptionSource` | Descrição |
+|------------|-------|-----------------|-----------|
+| 1 | Segmentos TTS | `segment-timing` | Usa timing real dos chunks TTS (`alignScriptToSegments`). Não precisa de Whisper. |
+| 2 | Whisper alinhado | `whisper-aligned` | Whisper fornece timestamps, mas o texto vem do roteiro (`processWhisperAlignedCaptions`). |
+| 3 | Proporcional | `proportional` | Distribui o roteiro proporcionalmente ao tempo de cada cena (`segmentScriptByCenes`). |
+
+**Fluxo detalhado:**
+
+1. Se `audioSegments` foram fornecidos (ou carregados do IndexedDB via `loadAudioSegments`), usa `alignScriptToSegments()` — timing real, sem Whisper.
+2. Se Whisper está disponível (`whisperSupported === true`), executa o pipeline Whisper (resample → download modelo → transcrição → `processWhisperAlignedCaptions`). Se Whisper falhar, cai para proporcional.
+3. Se Whisper não está disponível, usa `segmentScriptByCenes()` diretamente.
+
+**`processWhisperCaptions()`** (legado, `@deprecated`) — pipeline Whisper de 4 etapas com texto do próprio Whisper (não do roteiro). Mantida para backward compat; o fluxo principal usa `processWhisperAlignedCaptions`.
 
 ### Imports principais
 
@@ -380,45 +471,69 @@ canUseWhisperWeb, downloadWhisperModel, resampleTo16Khz, transcribe, toCaptions
 createTikTokStyleCaptions
 
 // Internos
-segmentScriptByCenes, saveTranscription, loadTranscription
+segmentScriptByCenes, alignScriptToSegments, parseBoldMarkdown, splitIntoWordsWithTiming
+saveTranscription, loadTranscription, loadAudioSegments, hashScript
 ```
+
+### Constantes
+
+| Constante | Valor | Descrição |
+|-----------|-------|-----------|
+| `WHISPER_MODEL` | `'base'` | Modelo Whisper (~75MB, melhor precisão que tiny para legendas) |
+| `PERSIST_DEBOUNCE_MS` | `500` | Debounce para persistência no IndexedDB |
 
 ### Filtros de tokens
 
 | Filtro | Regex | Ação |
 |--------|-------|------|
-| `INVALID_TOKEN` | `/[\[\]<_\{\}\\]/` | Rejeita tokens com brackets, underscores, chaves, etc. |
+| `INVALID_TOKEN` | `/[[\]<_{}\]\\]/` | Rejeita tokens com brackets, underscores, chaves, etc. |
 | `VALID_WORD` | `/[a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/` | Aceita só tokens com pelo menos uma letra real |
 
-### Fallback proporcional
+### Staleness detection
 
-Se Whisper indisponível ou falhar, usa `segmentScriptByCenes()` que distribui o roteiro proporcionalmente ao tempo de cada cena, dividindo por pontuação e limitando frases a ~12 palavras.
+Após a geração, o hook calcula `hashScript(script)` (SHA-256) e armazena em `scriptHash`. Sempre que o `script` prop muda, um `useEffect` reavalia: se o hash atual diverge do salvo, `isStale = true`. O `TranscriptionPanel` exibe um alerta nesse caso.
 
 ### Persistência
 
-- `saveTranscription(projectId, { words, source })` — salva no IndexedDB
+- `saveTranscription(projectId, { words, source, scriptHash })` — salva no IndexedDB
 - `loadTranscription(projectId)` — carrega transcrição salva
 - **Debounce:** 500ms (`PERSIST_DEBOUNCE_MS`) para evitar writes excessivos
+
+### Parâmetros
+
+```typescript
+interface TranscribeAudioParams {
+  audioUrl: string;
+  script: string;
+  scenes: { timestamp: number }[];
+  totalDurationFrames: number;
+  fps: number;
+  audioSegments?: AudioSegment[];
+}
+```
 
 ### Estado
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `captions` | `CaptionWord[]` | Legendas extraídas |
-| `source` | `'whisper' \| 'proportional' \| null` | Fonte da transcrição |
+| `source` | `CaptionSource \| null` | Fonte da transcrição (5 valores possíveis) |
 | `isTranscribing` | `boolean` | Indica se está transcrevendo |
 | `transcriptionProgress` | `number` (0–100) | Progresso da transcrição |
 | `transcriptionStatusText` | `string` | Texto descritivo do status |
 | `error` | `string \| null` | Mensagem de erro |
 | `whisperSupported` | `boolean \| null` | null = verificação pendente |
+| `scriptHash` | `string \| null` | Hash do roteiro quando as legendas foram geradas |
+| `isStale` | `boolean` | `true` se o roteiro mudou desde a última geração |
 
 ### Ações
 
 | Ação | Descrição |
 |------|-----------|
-| `transcribeAudio(params)` | Inicia transcrição (Whisper ou fallback) |
+| `transcribeAudio(params)` | Inicia transcrição com `TranscribeAudioParams` |
 | `cancelTranscription()` | Cancela via flag `cancelRef` (não AbortController) |
-| `clearTranscription()` | Limpa todos os dados de transcrição |
+| `clearTranscription()` | Limpa todos os dados de transcrição (incluindo `scriptHash` e `isStale`) |
+| `updateCaptions(captions)` | Atualiza legendas manualmente — marca `source` como `'manual'` |
 
 ## Exportação de Vídeo
 
@@ -463,7 +578,7 @@ function isCancellationError(err: unknown): boolean {
 
 ```typescript
 function toUserFriendlyError(err: unknown): string {
-  if ('webcodecs'|'videoencoder'|'not supported') return 'Navegador não suporta exportação...';
+  if ('webcodecs'|'videoencoder'|'not supported') return `Navegador não suporta exportação de vídeo: ${err.message}`;
   return 'Erro ao exportar vídeo. Tente novamente.';
 }
 ```
@@ -505,6 +620,22 @@ interface VideoRenderBridgeState {
 
 ## Utilitários (`lib/subtitleUtils.tsx`)
 
+### Constantes de pausa por pontuação
+
+| Constante | Valor | Descrição |
+|-----------|-------|-----------|
+| `PUNCTUATION_PAUSES` | `{ ',': 5, ';': 5, '.': 10, '!': 10, '?': 10, '...': 14 }` | Pausas por tipo de pontuação em frames (base 24fps) |
+| `MAX_WORDS_PER_PHRASE` | `12` | Número máximo de palavras por frase antes de forçar divisão |
+
+### Helpers de contagem e timing
+
+| Função | Descrição |
+|--------|-----------|
+| `countSyllables(word)` | Conta sílabas de uma palavra em português (vogais - ditongos - tritongos, mínimo 1) |
+| `scalePause(baseFrames, fps)` | Converte pausa de frames-24fps para fps real: `round(base * fps / 24)` |
+| `extractTokensFromSegments(segments)` | Extrai tokens (palavras e pontuação) de segmentos bold, retorna array com `{ text, bold, isPunct }` |
+| `getPunctuationPauseKey(punct)` | Mapeia pontuação para chave de `PUNCTUATION_PAUSES` (normaliza reticências `…` → `...`) |
+
 ### Helpers de parse
 
 | Função | Descrição |
@@ -512,12 +643,14 @@ interface VideoRenderBridgeState {
 | `parseBoldMarkdown(text)` | Parseia `**texto**` em segmentos `{ text, bold }` (`TextSegment[]`) |
 | `splitIntoWords(text)` | Separa em palavras preservando flag de negrito (`WordEntry[]`) |
 | `calculateWordTiming(words, totalFrames)` | Distribui frames proporcionalmente ao comprimento; última palavra absorve residuais |
+| `splitIntoWordsWithTiming(text, startFrame, endFrame, fps)` | Divide texto em `CaptionWord[]` com timing por **sílabas** (não caracteres), respeitando pausas de pontuação. Retorna pronto para uso. |
 
 ### Segmentação de roteiro
 
 | Função | Descrição |
 |--------|-----------|
 | `segmentScriptByCenes(script, scenes, totalDurationFrames, fps)` | Divide roteiro por cena proporcionalmente ao timestamp; frases limitadas a ~12 palavras; distribui frames por caractere |
+| `alignScriptToSegments(script, segments, totalDurationFrames, fps)` | Alinha o roteiro aos segmentos de áudio TTS com timing real (método principal quando segmentos disponíveis). Cada segmento usa `splitIntoWordsWithTiming` para timing por sílabas. |
 
 ## Resoluções suportadas
 

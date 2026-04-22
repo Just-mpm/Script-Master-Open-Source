@@ -31,7 +31,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, RADIUS_CHIP } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, RADIUS_CHIP, BLACK_66 } from '../theme/tokens';
 
 const log = createLogger('VideoLibrary');
 
@@ -330,7 +330,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                         </Stack>
                       )}
 
-                      <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.66) 100%)' }} />
+                      <Box sx={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, transparent 20%, ${BLACK_66} 100%)` }} />
 
                       <Chip
                         label={project.isGeneration ? 'Geração' : 'Projeto'}

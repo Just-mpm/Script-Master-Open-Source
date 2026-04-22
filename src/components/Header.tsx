@@ -22,7 +22,7 @@ import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { useLocation } from 'react-router-dom';
-import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM } from '../theme/tokens';
+import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT, CYAN_GLOW, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface NavItem {
@@ -61,7 +61,7 @@ export function Header() {
                 placeItems: 'center',
                 color: 'common.white',
                 background: BRAND_GRADIENT,
-                boxShadow: '0 18px 40px rgba(34, 211, 238, 0.28)',
+                boxShadow: `0 18px 40px ${CYAN_GLOW}`,
               }}
             >
               <Mic sx={{ fontSize: ICON_SIZE_LG }} />

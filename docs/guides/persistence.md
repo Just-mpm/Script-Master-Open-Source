@@ -4,7 +4,8 @@
 > `src/lib/db.ts`, `src/lib/db/index.ts`, `src/lib/db/shared.ts`, `src/lib/db/types.ts`,
 > `src/lib/db/memories.ts`, `src/lib/db/user-settings.ts`, `src/lib/db/generations.ts`,
 > `src/lib/db/images.ts`, `src/lib/db/projects.ts`, `src/lib/db/chats.ts`,
-> `src/lib/db/videos.ts`, `firestore.rules`, `storage.rules`
+> `src/lib/db/videos.ts`, `src/lib/db/transcriptions.ts`, `src/lib/db/audio-segments.ts`,
+> `firestore.rules`, `storage.rules`
 
 ---
 
@@ -53,6 +54,7 @@ export * from './projects';
 export * from './chats';
 export * from './videos';
 export * from './transcriptions';
+export * from './audio-segments';
 ```
 
 ---
@@ -174,6 +176,25 @@ export interface AudioSource {
   audioUrl: string;
   createdAt: number;
   audioBlob?: Blob;
+  /** Mapeamento chunk→timestamp do áudio gerado */
+  audioSegments?: AudioSegment[];
+}
+```
+
+### `AudioSegment`
+
+```typescript
+/** Segmento de áudio gerado a partir de um chunk do roteiro.
+ *  Permite reconstruir o mapeamento texto→tempo sem depender de Whisper. */
+export interface AudioSegment {
+  /** Texto do roteiro enviado ao TTS para este chunk */
+  text: string;
+  /** Timestamp de início em segundos (relativo ao áudio final) */
+  startSec: number;
+  /** Timestamp de fim em segundos */
+  endSec: number;
+  /** Índice do chunk na sequência de geração */
+  chunkIndex: number;
 }
 ```
 
@@ -496,6 +517,28 @@ export interface StoredTranscription {
 
 ---
 
+### 5.9 Audio Segments
+
+**Fonte:** `src/lib/db/audio-segments.ts`
+
+> **Apenas IndexedDB.** Segmentos de áudio são metadados de mapeamento texto→tempo e não fazem sync com Firestore.
+
+| | Valor |
+|---|---|
+| Store IndexedDB | `'audios'` (reutiliza `AUDIOS_STORE`) |
+| Tipo | `AudioSegment` |
+
+> Segmentos são armazenados como campo `audioSegments` dentro de um documento `AudioSource` existente. Usa `updateIndexedDbItem` para preservar os demais campos (audioBlob, etc).
+
+**Operações:**
+
+| Função | Descrição |
+|---|---|
+| `saveAudioSegments(projectId, segments)` | Atualiza o campo `audioSegments` de um `AudioSource` existente via merge. Se o documento não existir, loga warning e ignora |
+| `loadAudioSegments(projectId)` | Retorna `AudioSegment[] \| null` (null se não houver documento ou campo) |
+
+---
+
 ## 6. Utilitários Compartilhados
 
 **Fonte:** `src/lib/db/shared.ts`
@@ -570,10 +613,12 @@ Remove campos `undefined` na serialização via `removeUndefinedFields()`, que f
 Existem regras de collection group para `audios`, `images` e `videos` (usadas por `getProjectsDetailsMap`):
 
 ```
-match /{path=**}/audios/{audioId}  → read/create/delete com isOwner ou isAdmin
-match /{path=**}/images/{imageId}  → read/create/delete com isOwner ou isAdmin
-match /{path=**}/videos/{videoId}  → read/create/delete com isOwner ou isAdmin
+match /{path=**}/audios/{audioId}  → read/delete com isOwner ou isAdmin; create com isValidAudio (sem isAdmin)
+match /{path=**}/images/{imageId}  → read/delete com isOwner ou isAdmin; create com isValidProjectImage (sem isAdmin)
+match /{path=**}/videos/{videoId}  → read/delete com isOwner ou isAdmin; create com isValidProjectVideo (sem isAdmin)
 ```
+
+> As funções `isValid*` verificam internamente se `data.userId == request.auth.uid`, garantindo ownership no create sem necessidade de checagem explícita.
 
 ---
 
@@ -583,11 +628,11 @@ match /{path=**}/videos/{videoId}  → read/create/delete com isOwner ou isAdmin
 
 ### Admin Override
 
-`kurosaki.mpm@gmail.com` (email verificado) tem permissão de admin para leitura, escrita e deleção em áudios e projetos.
+`kurosaki.mpm@gmail.com` (email verificado) tem permissão de **leitura e deleção** (sem escrita) em áudios e projetos. Escrita (create/update/write) requer `isOwner`.
 
 ### Limites por Path
 
-| Path | Tipos permitidos | Tamanho máximo | Leitura | Escrita |
+| Path | Tipos permitidos | Tamanho máximo | Leitura/Deleção | Escrita (create/update) |
 |---|---|---|---|---|
 | `audios/{userId}/{audioId}` | `audio/*` | **50 MB** | Owner ou Admin | Owner |
 | `images/{userId}/{imageId}` | `image/*` | **10 MB** | Owner | Owner |

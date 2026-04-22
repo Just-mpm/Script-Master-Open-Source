@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { BLACK_50 } from '../../../theme/tokens';
+import { BLACK_50, BLACK_40 } from '../../../theme/tokens';
 import {
   AnimatedWord,
   SUBTITLE_FADE,
@@ -101,7 +101,7 @@ export function ScrollingPhrase({
         borderRadius: 12,
         userSelect: 'none',
         backgroundColor: BLACK_50,
-        boxShadow: '0 0 40px 20px rgba(0, 0, 0, 0.4)',
+        boxShadow: `0 0 40px 20px ${BLACK_40}`,
       }}
     >
       {wordEntries.map((word, i) => {

@@ -1,7 +1,7 @@
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import WifiOff from '@mui/icons-material/WifiOff';
-import { ICON_SIZE_SM, GAP_COMPACT } from '../theme/tokens';
+import { ICON_SIZE_SM, GAP_COMPACT, ERROR_BG_MEDIUM } from '../theme/tokens';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 /**
@@ -26,7 +26,7 @@ export function NetworkStatusIndicator() {
           px: 1.5,
           py: 0.5,
           borderRadius: 6,
-          bgcolor: 'rgba(239, 68, 68, 0.12)',
+          bgcolor: ERROR_BG_MEDIUM,
           color: 'error.main',
           fontSize: '0.75rem',
           fontWeight: 600,

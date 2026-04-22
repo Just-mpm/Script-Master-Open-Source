@@ -257,7 +257,9 @@ Sempre use `.env.local` para desenvolvimento local. O `.env.example` serve como 
 Resumo de `firestore.rules`:
 
 - **Ownership:** todas as coleções usam `userId == request.auth.uid`
-- **Admin override:** email verificado `kurosaki.mpm@gmail.com`
+- **Admin override:** `isAdmin()` aceita duas condições (OR):
+  1. Documento `users/{uid}` com `role == 'admin'` no Firestore (role-based)
+  2. Email verificado `kurosaki.mpm@gmail.com` (hardcoded fallback)
 - **Coleções:** `projects`, `memories`, `user_settings`, `generations`, `chats`, `image_generations`
 - **Subcoleções:** `projects/{projectId}/audios`, `images`, `videos`
 - **Collection groups:** `audios`, `images`, `videos` (para queries cross-project)
@@ -267,7 +269,7 @@ Resumo de `firestore.rules`:
 Resumo de `storage.rules`:
 
 - **Ownership:** `request.auth.uid == userId` no path
-- **Admin override:** mesmo email admin do Firestore
+- **Admin override:** email verificado `kurosaki.mpm@gmail.com` (apenas email, sem role-based — diferente do Firestore)
 - **Limites:** áudio 50 MB, imagem 10 MB, vídeo 200 MB
 - **Paths:** `audios/{userId}/`, `images/{userId}/`, `generations_images/{userId}/`, `projects/{userId}/`
 - **Público:** `previews/{allPaths=**}` — leitura pública, escrita admin-only
@@ -299,4 +301,4 @@ Resumo de `storage.rules`:
       → src/lib/gemini.ts (Gemini init)
 ```
 
-Nenhum outro arquivo lê `import.meta.env` diretamente — toda leitura passa por `src/lib/env.ts`.
+> **Exceção:** `src/lib/logger.ts` (linha 40) lê `import.meta.env.PROD` diretamente para definir o nível mínimo de log (`warn` em produção, `debug` em desenvolvimento). Toda leitura de env vars **com valor de configuração** continua passando por `src/lib/env.ts`.

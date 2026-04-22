@@ -8,13 +8,13 @@ O projeto usa um único modelo para geração de imagens:
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:117` |
+| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:130` |
 
 Há também um modelo auxiliar para prompts de cena (não gera imagens, apenas texto):
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) | `src/lib/gemini.ts:66` |
+| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) | `src/lib/gemini.ts:77` |
 
 ---
 
@@ -32,11 +32,11 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
 
 #### Passo a passo
 
-1. **Montagem do conteúdo** (`useImageGenerator.ts:88-110`):
+1. **Montagem do conteúdo** (`useImageGenerator.ts:92-113`):
    - Se há `referenceImage`, o arquivo é lido como DataURL via `FileReader`, extraído o base64 puro (sem prefixo) e enviado como `inlineData` **antes** do prompt textual.
    - O prompt do usuário é enviado como `{ text: options.prompt }`.
 
-2. **Chamada ao Gemini** (`useImageGenerator.ts:112-123`):
+2. **Chamada ao Gemini** (`useImageGenerator.ts:115-126`):
    ```typescript
     const { value: response } = await withRetry(
       () => ai.models.generateContent({
@@ -52,7 +52,7 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
     );
     ```
 
-3. **Extração da imagem** (`useImageGenerator.ts:125-143`):
+3. **Extração da imagem** (`useImageGenerator.ts:128-146`):
    - Itera sobre `response.candidates?.[0]?.content?.parts`.
    - Filtra partes que possuem `part.inlineData?.data`.
    - Usa `part.inlineData.mimeType || 'image/png'` como fallback de mime.
@@ -60,7 +60,7 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
    - Cria blob URL com `URL.createObjectURL(blob)`.
    - Para na primeira imagem encontrada (`break`).
 
-4. **Tratamento de erros** (`useImageGenerator.ts:14-38`):
+4. **Tratamento de erros** (`useImageGenerator.ts:17-41`):
    - Mapeia erros técnicos para mensagens em pt-BR via `toUserFriendlyImageError`.
    - Erros de quota (429, RESOURCE_EXHAUSTED), autenticação, timeout (504), indisponibilidade (503) e segurança (blocked) têm mensagens dedicadas.
    - Auto-dismiss do erro após 8 segundos.
@@ -69,14 +69,14 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
 
 Usado pelo pipeline de vídeo para gerar imagens de cena automaticamente.
 
-**Arquivo:** `src/lib/gemini.ts:98-153`
+**Arquivo:** `src/lib/gemini.ts:110-157`
 
-#### Diferenças em relação ao Fluxo 1
+#### Características em relação ao Fluxo 1
 
 - **Mesmo modelo:** `gemini-3.1-flash-image-preview`.
+- **Mesmo retry:** ambos usam `withRetry` com `maxRetries: 3, baseDelayMs: 1000, jitterMs: 500`.
 - **Retorno:** retorna `data URL` (`data:${mimeType};base64,${imageData}`) em vez de Blob.
-- **Retry com backoff:** até `MAX_IMAGE_RETRIES = 2` tentativas, com delay crescente (`retries * 3000` ms).
-- **Condições de retry:** erros de quota, `Deadline`, `UNAVAILABLE` (503).
+- **Em caso de falha total:** retorna `null` em vez de lançar erro.
 - **Referência:** aceita `string` (data URL ou base64 puro) em vez de `File`.
 
 ```typescript
@@ -107,7 +107,7 @@ O objeto `imageConfig` contém apenas `aspectRatio`. Não há configuração de 
 
 ### Aspect Ratios Suportados
 
-Definidos no componente `ImageStudio.tsx:40-49`:
+Definidos no componente `ImageStudio.tsx:43-52`:
 
 ```typescript
 const ASPECT_RATIOS = [
@@ -143,7 +143,7 @@ O projeto suporta enviar uma imagem de referência junto com o prompt para edita
 - A referência é enviada como `inlineData` **antes** do texto do prompt.
 
 ```typescript
-// useImageGenerator.ts:88-110
+// useImageGenerator.ts:92-113
 const contents: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
 
 if (options.referenceImage) {
@@ -170,7 +170,7 @@ contents.push({ text: options.prompt });
 - Usa `parseReferenceImage` para extrair mimeType e dados.
 
 ```typescript
-// gemini.ts:16-30
+// gemini.ts:27-41
 function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   const dataUriMatch = referenceImage.match(/^data:([^;]+);base64,(.+)$/);
   if (dataUriMatch) {
@@ -186,7 +186,7 @@ function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
 
 ### `ImageGenerationOptions` — opções do hook
 
-**Arquivo:** `src/hooks/useImageGenerator.ts:44-48`
+**Arquivo:** `src/hooks/useImageGenerator.ts:47-51`
 
 ```typescript
 export interface ImageGenerationOptions {
@@ -198,7 +198,7 @@ export interface ImageGenerationOptions {
 
 ### `SavedImage` — documento persistido
 
-**Arquivo:** `src/lib/db/types.ts:69-78`
+**Arquivo:** `src/lib/db/types.ts:71-80`
 
 ```typescript
 export interface SavedImage {
@@ -215,7 +215,7 @@ export interface SavedImage {
 
 ### `ProjectImage` — imagem vinculada a um projeto
 
-**Arquivo:** `src/lib/db/types.ts:51-60`
+**Arquivo:** `src/lib/db/types.ts:53-62`
 
 ```typescript
 export interface ProjectImage {
@@ -232,7 +232,7 @@ export interface ProjectImage {
 
 ### `ScenePrompt` — prompt de cena gerado pela IA
 
-**Arquivo:** `src/lib/gemini.ts:6-9`
+**Arquivo:** `src/lib/gemini.ts:10-13`
 
 ```typescript
 export interface ScenePrompt {
@@ -241,9 +241,21 @@ export interface ScenePrompt {
 }
 ```
 
+### `ScenePromptResult` — resultado de `generateScenePrompts`
+
+**Arquivo:** `src/lib/gemini.ts:16-20`
+
+```typescript
+export interface ScenePromptResult {
+  readonly prompts: ScenePrompt[];
+  /** true quando a API falhou e o resultado é um fallback genérico */
+  readonly isFallback: boolean;
+}
+```
+
 ### `ReferenceImagePayload` — referência parseada
 
-**Arquivo:** `src/lib/gemini.ts:11-14`
+**Arquivo:** `src/lib/gemini.ts:22-25`
 
 ```typescript
 interface ReferenceImagePayload {
@@ -277,7 +289,7 @@ No Estúdio de Imagem, se nenhuma imagem for encontrada, lança erro: `"Nenhuma 
 
 ## Geração de Prompts de Cena
 
-A função `generateScenePrompts` (`src/lib/gemini.ts:32-96`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
+A função `generateScenePrompts` (`src/lib/gemini.ts:43-108`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
 
 ### Parâmetros
 
@@ -288,7 +300,7 @@ export async function generateScenePrompts(
   style: string,
   densitySeconds: number = 15,
   visualFramework: string = 'general',
-): Promise<ScenePrompt[]>
+): Promise<ScenePromptResult>
 ```
 
 ### Comportamento
@@ -299,7 +311,7 @@ export async function generateScenePrompts(
   - **`whiteboard`**: instruções para estilo whiteboard animation (fundo branco, ilustrações coloridas, texto integrado).
   - **`general`** (padrão): foco em fotografia e cinemática.
 - Usa `responseMimeType: "application/json"` com schema estruturado (`Type.ARRAY` de objetos com `timestamp` e `prompt`).
-- Em caso de erro, retorna fallback com prompt genérico a partir das primeiras 100 letras do roteiro.
+- Em caso de erro, retorna `ScenePromptResult` com `isFallback: true` e prompt genérico a partir das primeiras 100 letras do roteiro.
 
 ---
 
@@ -335,7 +347,7 @@ O projeto segue o padrão dual storage:
 
 ### Dados salvos no Estúdio de Imagem
 
-Construído em `ImageStudio.tsx:125-132`:
+Construído em `ImageStudio.tsx:128-135`:
 
 ```typescript
 const newItem = {
@@ -386,5 +398,6 @@ export function base64ToBlobSync(base64: string, mimeType: string = 'image/png')
 | `src/lib/db/types.ts` | Tipos: `SavedImage`, `ProjectImage` |
 | `src/lib/db/shared.ts` | Utilitários de persistência, `uploadBlobAndGetUrl`, IndexedDB helpers |
 | `src/lib/audio.ts` | `base64ToBlobSync` (reutilizado para imagens) |
-| `src/lib/rate-limiter.ts` | `withRetry` — wrapper de retry com backoff (usado pelo hook) |
+| `src/lib/rate-limiter.ts` | `withRetry` — wrapper de retry com backoff (usado pelo hook e por `generateImageFromPrompt`) |
+| `src/lib/logger.ts` | `createLogger` — logger centralizado (usado por `gemini.ts`, `useImageGenerator.ts`, `ImageStudio.tsx`) |
 | `src/lib/env.ts` | `getGeminiApiKey()` — leitura da chave de API |

@@ -14,6 +14,7 @@
   --text-tertiary: var(--mui-palette-text-disabled);
   --accent: var(--mui-palette-primary-main);
   --accent-hover: var(--mui-palette-primary-dark);
+  /* Alinhado com tokens.ts: CYAN_GLOW, GLASS_BG, WHITE_05 */
   --accent-glow: rgba(34, 211, 238, 0.28);
   --glass-bg: rgba(16, 23, 42, 0.78);
   --glass-border: rgba(255, 255, 255, 0.05);

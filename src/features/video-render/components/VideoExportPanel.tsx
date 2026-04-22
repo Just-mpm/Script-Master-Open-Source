@@ -29,6 +29,8 @@ import {
   BRAND_GLOW,
   WHITE_08,
   SUCCESS_MAIN,
+  WARNING_BG_SUBTLE,
+  ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
 import type { CaptionWord } from '../types';
@@ -125,7 +127,7 @@ export function VideoExportPanel({
           <Alert
             severity="warning"
             icon={<WarningAmber sx={{ fontSize: 20 }} />}
-            sx={{ mb: 2, borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.08)' }}
+            sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
           >
             {exporter.error || 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.'}
           </Alert>
@@ -140,7 +142,7 @@ export function VideoExportPanel({
                 <Close sx={{ fontSize: 18 }} />
               </IconButton>
             }
-            sx={{ mb: 2, borderRadius: 2, bgcolor: 'rgba(239, 68, 68, 0.08)' }}
+            sx={{ mb: 2, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
           >
             {exporter.error}
           </Alert>
@@ -272,7 +274,7 @@ export function VideoExportPanel({
                 <Close sx={{ fontSize: 18 }} />
               </IconButton>
             }
-            sx={{ mt: 1.5, borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.08)' }}
+            sx={{ mt: 1.5, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
           >
             {exporter.saveWarning}
           </Alert>
