@@ -8,13 +8,13 @@ O projeto usa um único modelo para geração de imagens:
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:266` |
+| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:117` |
 
 Há também um modelo auxiliar para prompts de cena (não gera imagens, apenas texto):
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) e plano de edição | `src/lib/gemini.ts:214`, `src/lib/gemini.ts:394` |
+| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) | `src/lib/gemini.ts:66` |
 
 ---
 
@@ -22,42 +22,45 @@ Há também um modelo auxiliar para prompts de cena (não gera imagens, apenas t
 
 ### Fluxo Único: Estúdio de Imagem e Cenas de Vídeo (`useImageGenerator` + `generateImageFromPrompt`)
 
-Pipeline usado tanto pelo componente `ImageStudio.tsx` quanto pelo pipeline de cenas de vídeo em `gemini.ts`. Ambos usam o mesmo modelo `gemini-3.1-flash-image-preview`.
+Pipeline usado tanto pelo componente `ImageStudio.tsx` quanto pelo pipeline de cenas de vídeo em `gemini.ts`. Ambos usam o mesmo modelo `gemini-3.1-flash-image-preview`. O hook `useImageGenerator` usa `withRetry` (de `src/lib/rate-limiter.ts`) como wrapper da chamada ao Gemini, com até 3 retries, delay base de 1s e jitter de 500ms.
 
 ```
-Usuário escreve prompt → [opcional] anexa imagem de referência → hook chama Gemini → extrai inlineData → converte base64 para Blob → exibe via blob URL
+Usuário escreve prompt → [opcional] anexa imagem de referência → hook chama Gemini (via withRetry) → extrai inlineData → converte base64 para Blob → exibe via blob URL
 ```
 
 **Arquivos:** `src/hooks/useImageGenerator.ts`, `src/components/ImageStudio.tsx`
 
 #### Passo a passo
 
-1. **Montagem do conteúdo** (`useImageGenerator.ts:87-109`):
+1. **Montagem do conteúdo** (`useImageGenerator.ts:88-110`):
    - Se há `referenceImage`, o arquivo é lido como DataURL via `FileReader`, extraído o base64 puro (sem prefixo) e enviado como `inlineData` **antes** do prompt textual.
    - O prompt do usuário é enviado como `{ text: options.prompt }`.
 
-2. **Chamada ao Gemini** (`useImageGenerator.ts:111-119`):
+2. **Chamada ao Gemini** (`useImageGenerator.ts:112-123`):
    ```typescript
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-image-preview',
-     contents,
-     config: {
-       imageConfig: {
-         aspectRatio: options.aspectRatio,
-       },
-     },
-   });
-   ```
+    const { value: response } = await withRetry(
+      () => ai.models.generateContent({
+        model: 'gemini-3.1-flash-image-preview',
+        contents,
+        config: {
+          imageConfig: {
+            aspectRatio: options.aspectRatio,
+          },
+        },
+      }),
+      { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
+    );
+    ```
 
-3. **Extração da imagem** (`useImageGenerator.ts:121-139`):
+3. **Extração da imagem** (`useImageGenerator.ts:125-143`):
    - Itera sobre `response.candidates?.[0]?.content?.parts`.
    - Filtra partes que possuem `part.inlineData?.data`.
    - Usa `part.inlineData.mimeType || 'image/png'` como fallback de mime.
-   - Converte base64 para `Blob` via `base64ToBlobSync` (de `src/lib/audio.ts:94`).
+   - Converte base64 para `Blob` via `base64ToBlobSync` (de `src/lib/audio.ts:80`).
    - Cria blob URL com `URL.createObjectURL(blob)`.
    - Para na primeira imagem encontrada (`break`).
 
-4. **Tratamento de erros** (`useImageGenerator.ts:13-37`):
+4. **Tratamento de erros** (`useImageGenerator.ts:14-38`):
    - Mapeia erros técnicos para mensagens em pt-BR via `toUserFriendlyImageError`.
    - Erros de quota (429, RESOURCE_EXHAUSTED), autenticação, timeout (504), indisponibilidade (503) e segurança (blocked) têm mensagens dedicadas.
    - Auto-dismiss do erro após 8 segundos.
@@ -66,7 +69,7 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
 
 Usado pelo pipeline de vídeo para gerar imagens de cena automaticamente.
 
-**Arquivo:** `src/lib/gemini.ts:247-303`
+**Arquivo:** `src/lib/gemini.ts:98-153`
 
 #### Diferenças em relação ao Fluxo 1
 
@@ -140,7 +143,7 @@ O projeto suporta enviar uma imagem de referência junto com o prompt para edita
 - A referência é enviada como `inlineData` **antes** do texto do prompt.
 
 ```typescript
-// useImageGenerator.ts:88-109
+// useImageGenerator.ts:88-110
 const contents: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
 
 if (options.referenceImage) {
@@ -167,7 +170,7 @@ contents.push({ text: options.prompt });
 - Usa `parseReferenceImage` para extrair mimeType e dados.
 
 ```typescript
-// gemini.ts:41-55
+// gemini.ts:16-30
 function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   const dataUriMatch = referenceImage.match(/^data:([^;]+);base64,(.+)$/);
   if (dataUriMatch) {
@@ -183,7 +186,7 @@ function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
 
 ### `ImageGenerationOptions` — opções do hook
 
-**Arquivo:** `src/hooks/useImageGenerator.ts:43-47`
+**Arquivo:** `src/hooks/useImageGenerator.ts:44-48`
 
 ```typescript
 export interface ImageGenerationOptions {
@@ -229,7 +232,7 @@ export interface ProjectImage {
 
 ### `ScenePrompt` — prompt de cena gerado pela IA
 
-**Arquivo:** `src/lib/gemini.ts:18-21`
+**Arquivo:** `src/lib/gemini.ts:6-9`
 
 ```typescript
 export interface ScenePrompt {
@@ -238,21 +241,9 @@ export interface ScenePrompt {
 }
 ```
 
-### `SceneImagePayload` — imagem de cena como base64
-
-**Arquivo:** `src/lib/gemini.ts:29-36`
-
-```typescript
-export interface SceneImagePayload {
-  timestamp: number;
-  mimeType: string;
-  base64: string;
-}
-```
-
 ### `ReferenceImagePayload` — referência parseada
 
-**Arquivo:** `src/lib/gemini.ts:23-26`
+**Arquivo:** `src/lib/gemini.ts:11-14`
 
 ```typescript
 interface ReferenceImagePayload {
@@ -286,7 +277,7 @@ No Estúdio de Imagem, se nenhuma imagem for encontrada, lança erro: `"Nenhuma 
 
 ## Geração de Prompts de Cena
 
-A função `generateScenePrompts` (`src/lib/gemini.ts:181-245`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
+A função `generateScenePrompts` (`src/lib/gemini.ts:32-96`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
 
 ### Parâmetros
 
@@ -325,7 +316,7 @@ O projeto segue o padrão dual storage:
 
 ### Salvando uma imagem gerada
 
-**Função:** `saveImageGeneration` (`src/lib/db/images.ts:28-48`)
+**Função:** `saveImageGeneration` (`src/lib/db/images.ts:25-45`)
 
 **Autenticado:**
 1. Faz upload do blob para Firebase Storage em `images/{userId}/{id}.png`.
@@ -339,10 +330,8 @@ O projeto segue o padrão dual storage:
 
 | Função | Arquivo | Descrição |
 |--------|---------|-----------|
-| `saveImageGeneration` | `src/lib/db/images.ts:28` | Cria nova geração |
-| `getImageGenerations` | `src/lib/db/images.ts:50` | Lista todas, ordenadas por `createdAt` decrescente |
-| `deleteImageGeneration` | `src/lib/db/images.ts:63` | Remove (Firestore + Storage ou IndexedDB) |
-| `updateImageGenerationName` | `src/lib/db/images.ts:80` | Atualiza apenas o nome |
+| `saveImageGeneration` | `src/lib/db/images.ts:25` | Cria nova geração |
+| `getImageGenerations` | `src/lib/db/images.ts:47` | Lista todas, ordenadas por `createdAt` decrescente |
 
 ### Dados salvos no Estúdio de Imagem
 
@@ -362,14 +351,14 @@ await saveImageGeneration(newItem, user?.uid);
 
 ### IndexedDB
 
-- **Database:** `GeminiVoiceStudioDB` (versão 8)
+- **Database:** `GeminiVoiceStudioDB` (versão 9)
 - **Store:** `image_generations` (keyPath: `id`)
 
 ---
 
 ## Utilitário `base64ToBlobSync`
 
-**Arquivo:** `src/lib/audio.ts:94-101`
+**Arquivo:** `src/lib/audio.ts:80-87`
 
 Reutilizado tanto pelo hook de áudio quanto pelo de imagem:
 
@@ -397,4 +386,5 @@ export function base64ToBlobSync(base64: string, mimeType: string = 'image/png')
 | `src/lib/db/types.ts` | Tipos: `SavedImage`, `ProjectImage` |
 | `src/lib/db/shared.ts` | Utilitários de persistência, `uploadBlobAndGetUrl`, IndexedDB helpers |
 | `src/lib/audio.ts` | `base64ToBlobSync` (reutilizado para imagens) |
+| `src/lib/rate-limiter.ts` | `withRetry` — wrapper de retry com backoff (usado pelo hook) |
 | `src/lib/env.ts` | `getGeminiApiKey()` — leitura da chave de API |

@@ -1,23 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { RefObject } from 'react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Close from '@mui/icons-material/Close';
 import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
+import { TranscriptionPanel } from '../features/video-render/components/TranscriptionPanel';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import { useAuth } from '../contexts/AuthContext';
-import { ICON_SIZE_MD } from '../theme/tokens';
 
 interface VideoPageProps {
   currentProjectId: StudioStateController['currentProjectId'];
@@ -60,19 +56,12 @@ export function VideoPage({
     transcriptionProgress,
     transcriptionStatusText,
     transcribeAudio,
+    cancelTranscription,
+    clearTranscription,
     error: transcriptionError,
     source: transcriptionSource,
+    whisperSupported,
   } = useTranscription(currentProjectId);
-
-  // Estado local para controlar visibilidade do Snackbar de erro de transcrição
-  const [showTranscriptionError, setShowTranscriptionError] = useState(false);
-
-  // Exibe erro de transcrição via Snackbar quando detectado
-  useEffect(() => {
-    if (transcriptionError) {
-      setShowTranscriptionError(true);
-    }
-  }, [transcriptionError]);
 
   // Mapeia cenas para o formato esperado pela transcrição
   const scenesForTranscription = useMemo(
@@ -107,22 +96,19 @@ export function VideoPage({
     pauseGlobalAudio();
   }, [pauseGlobalAudio]);
 
-  // Dispara transcrição automática 3s após carregar, se não houver cache
-  useEffect(() => {
-    if (!audioUrl || !script.trim() || captions.length > 0 || isTranscribing) return;
+  // --- Handlers ---
 
-    const timer = setTimeout(() => {
-      void transcribeAudio({
-        audioUrl,
-        script,
-        scenes: scenesForTranscription,
-        totalDurationFrames: durationInFrames,
-        fps: videoFps,
-      });
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [audioUrl, script, captions.length, isTranscribing, transcribeAudio, scenesForTranscription, durationInFrames, videoFps]);
+  // Inicia transcrição manual (disparado pelo TranscriptionPanel)
+  const handleTranscribe = () => {
+    if (!audioUrl || !script.trim()) return;
+    void transcribeAudio({
+      audioUrl,
+      script,
+      scenes: scenesForTranscription,
+      totalDurationFrames: durationInFrames,
+      fps: videoFps,
+    });
+  };
 
   // Pausa o Remotion Player ao desmontar a página
   useEffect(() => {
@@ -153,6 +139,25 @@ export function VideoPage({
         captions={captions.length > 0 ? captions : undefined}
       />
 
+      {/* Painel de legendas */}
+      <TranscriptionPanel
+        audioUrl={audioUrl}
+        script={script}
+        scenes={scenesForTranscription}
+        durationInFrames={durationInFrames}
+        fps={videoFps}
+        transcriptionSource={transcriptionSource}
+        isTranscribing={isTranscribing}
+        transcriptionProgress={transcriptionProgress}
+        transcriptionStatusText={transcriptionStatusText}
+        transcriptionError={transcriptionError}
+        whisperSupported={whisperSupported}
+        captionCount={captions.length}
+        onTranscribe={handleTranscribe}
+        onCancel={cancelTranscription}
+        onClear={clearTranscription}
+      />
+
       {/* Painel de exportação MP4 */}
       <VideoExportPanel
         scenes={scenes}
@@ -175,33 +180,6 @@ export function VideoPage({
           // não chamar play() do AudioContext para evitar dual-play
         }}
       />
-
-      {/* Feedback de erro de transcrição */}
-      <Snackbar
-        open={showTranscriptionError}
-        autoHideDuration={8000}
-        onClose={(_, reason) => {
-          if (reason === 'clickaway') return;
-          setShowTranscriptionError(false);
-        }}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          severity="error"
-          variant="filled"
-          onClose={() => setShowTranscriptionError(false)}
-          action={
-            <IconButton color="inherit" size="small" aria-label="Fechar mensagem de erro" onClick={() => setShowTranscriptionError(false)}>
-              <Close sx={{ fontSize: ICON_SIZE_MD }} />
-            </IconButton>
-          }
-          sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
-        >
-          {transcriptionSource === 'proportional'
-            ? 'Não foi possível gerar legendas automáticas. As legendas proporcionais ao roteiro foram usadas como alternativa.'
-            : `Falha na transcrição automática: ${transcriptionError}`}
-        </Alert>
-      </Snackbar>
     </Stack>
   );
 }

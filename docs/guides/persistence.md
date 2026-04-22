@@ -41,11 +41,10 @@ export async function saveMemory(content: string, userId?: string): Promise<Memo
 export * from './db/index';
 ```
 
-`src/lib/db/index.ts` reexporta tipos, `initDB` e todos os módulos de domínio:
+`src/lib/db/index.ts` reexporta tipos e todos os módulos de domínio. `initDB` **não** é exportado publicamente — é usado internamente pelos módulos de domínio, que importam diretamente de `./shared`:
 
 ```typescript
 export * from './types';
-export { initDB } from './shared';
 export * from './memories';
 export * from './user-settings';
 export * from './generations';
@@ -65,7 +64,7 @@ export * from './transcriptions';
 | Constante | Valor |
 |---|---|
 | `DB_NAME` | `'GeminiVoiceStudioDB'` |
-| `DB_VERSION` | `8` |
+| `DB_VERSION` | `9` |
 
 ### Stores (Object Stores)
 
@@ -82,6 +81,8 @@ Todas as stores usam `keyPath: 'id'`. Definidas em `STORE_DEFINITIONS`:
 | `CHAT_STORE` | `'chats'` | Sessões de chat |
 | `SETTING_STORE` | `'user_settings'` | Configurações do usuário |
 | `VIDEOS_STORE` | `'videos'` | Vídeos de projeto |
+| `EDITING_PLAN_STORE` | `'editing_plans'` | Planos de edição (legado) |
+| `TRANSCRIPTIONS_STORE` | `'transcriptions'` | Transcrições de áudio |
 
 ### Indexes
 
@@ -348,8 +349,6 @@ export interface ProjectVideo {
 |---|---|
 | `saveGeneration(item, userId?)` | Upload de blob + save Firestore/IndexedDB |
 | `getGenerations(userId?)` | Lista ordenada por `createdAt` descendente |
-| `deleteGeneration(id, userId?)` | Deleta documento + áudio do Storage + cenas do Storage |
-| `updateGenerationName(id, newName, userId?)` | Atualiza apenas o campo `name` |
 
 ---
 
@@ -373,8 +372,6 @@ export interface ProjectVideo {
 |---|---|
 | `saveImageGeneration(item, userId?)` | Upload de `imageBlob` para Storage + save |
 | `getImageGenerations(userId?)` | Lista ordenada por `createdAt` descendente |
-| `deleteImageGeneration(id, userId?)` | Deleta documento + imagem do Storage |
-| `updateImageGenerationName(id, newName, userId?)` | Atualiza apenas o campo `name` |
 
 ---
 
@@ -417,8 +414,6 @@ export interface ProjectVideo {
 | `getProjectsDetailsMap(userId?)` | Retorna `Record<projectId, { audios, images }>` para todos os projetos (usa `collectionGroup` no Firestore) |
 | `deleteProject(projectId, userId?)` | Remove projeto + todos os áudios, imagens e vídeos associados (inclusive Storage) |
 | `updateProjectName(projectId, newName, userId?)` | Atualiza apenas o campo `name` |
-| `getProjectAudios(projectId, userId?)` | Alias para `getProjectDetails().audios` |
-| `getProjectImages(projectId, userId?)` | Alias para `getProjectDetails().images` |
 
 **Detalhe do `deleteProject`:** No Firestore, deleta o documento do projeto + todas as subcoleções + arquivos do Storage em paralelo. No IndexedDB, busca todos os itens e filtra por `projectId`.
 
@@ -466,6 +461,39 @@ export interface ProjectVideo {
 | `saveVideoToProject(video, userId?)` | Cria vídeo com `crypto.randomUUID()`, upload do blob, retorna `ProjectVideo` |
 | `getProjectVideos(projectId, userId?)` | Lista por projeto, ordenada por `createdAt` descendente (Firestore usa `orderBy`) |
 | `deleteVideoFromProject(videoId, projectId, userId?)` | Lê formato do doc, deleta Firestore + Storage |
+
+---
+
+### 5.8 Transcriptions
+
+**Fonte:** `src/lib/db/transcriptions.ts`
+
+> **Apenas IndexedDB.** Transcrições são dados temporários por projeto e não fazem sync com Firestore.
+
+| | Valor |
+|---|---|
+| Store IndexedDB | `'transcriptions'` |
+| Tipo | `StoredTranscription` |
+
+**Tipo:**
+
+```typescript
+export interface StoredTranscription {
+  id: string;          // projectId
+  result: TranscriptionResult;
+  createdAt: number;
+}
+```
+
+> `TranscriptionResult` é importado de `src/features/video-render/types`.
+
+**Operações:**
+
+| Função | Descrição |
+|---|---|
+| `saveTranscription(projectId, result)` | Salva transcrição no IndexedDB (usa `projectId` como chave) |
+| `loadTranscription(projectId)` | Carrega transcrição de um projeto, retorna `StoredTranscription \| null` |
+| `deleteTranscription(projectId)` | Remove transcrição persistida de um projeto |
 
 ---
 
@@ -586,9 +614,7 @@ Na maioria dos tipos, `userId` é `string | undefined` (opcional). Exceção: `P
 ### Operações de update
 
 Apenas alguns domínios suportam update parcial:
-- **Generations:** `updateGenerationName` (atualiza `name` via `setDoc` com `merge: true` no Firestore)
-- **Images:** `updateImageGenerationName` (mesmo padrão)
-- **Projects:** `updateProjectName` (mesmo padrão)
+- **Projects:** `updateProjectName` (atualiza `name` via `setDoc` com `merge: true` no Firestore)
 - **User Settings:** `saveUserSettings` reescreve o documento inteiro
 - **Memories, Chats:** sem update — reescrevem o documento inteiro via `save*`
 

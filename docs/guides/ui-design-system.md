@@ -1,6 +1,6 @@
 # UI Design System — Script Master
 
-> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.8.0).
+> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.9.0).
 
 ---
 
@@ -61,15 +61,17 @@ StrictMode
     GlobalStyles ("@layer theme, base, mui, components, utilities;")
     AppThemeProvider
       BrowserRouter
-        AuthProvider
-          AudioProvider
-            App
+        RoutableErrorBoundary
+          AuthProvider
+            AudioProvider
+              App
 ```
 
 Notas:
 - `StyledEngineProvider` com `enableCssLayer` ativa CSS Layers no MUI v9.
 - `GlobalStyles` define a ordem das camadas CSS: `theme, base, mui, components, utilities`.
 - `index.css` e importado antes de tudo no `main.tsx`.
+- `RoutableErrorBoundary` combina `useLocation` + `ErrorBoundary` com `key={location.pathname}` para resetar automaticamente ao mudar de rota. O key dinamico forca o React a destruir e recriar o ErrorBoundary, limpando o estado de erro automaticamente.
 
 ---
 
@@ -186,8 +188,9 @@ Outros estilos do CssBaseline:
 - `colorScheme: 'dark'` no `:root`
 - `min-height: 100%` no `html`
 - `min-height: 100vh` no `body` e `#root`
+- `color: TEXT_PRIMARY` no `body`
 - `background: APP_BACKGROUND_GLOW` no `body`
-- `::selection` com `backgroundColor: alpha(BRAND_PRIMARY, 0.3)`
+- `::selection` com `backgroundColor: alpha(BRAND_PRIMARY, 0.3)` e `color: 'var(--mui-palette-text-primary)'`
 
 #### MuiLink
 
@@ -213,6 +216,7 @@ styleOverrides.root: {
   backgroundColor: alpha(APP_BACKGROUND, 0.68),
   backgroundImage: 'none',
   backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
   borderBottom: '1px solid APP_BORDER',
 }
 ```
@@ -222,7 +226,12 @@ Header com efeito glass/blur.
 #### MuiToolbar
 
 ```ts
-styleOverrides.root: { minHeight: APP_HEADER_HEIGHT } // 60px
+styleOverrides.root: {
+  minHeight: APP_HEADER_HEIGHT,
+  '@media (min-width: 0px)': {
+    minHeight: APP_HEADER_HEIGHT,
+  },
+} // 60px
 ```
 
 #### MuiPaper
@@ -373,7 +382,7 @@ styleOverrides.root: { zIndex: 1500 }
 
 ### Branco (opacidades)
 
-`WHITE_04`, `WHITE_05`, `WHITE_06`, `WHITE_08`, `WHITE_10`, `WHITE_12`, `WHITE_14`, `WHITE_16`, `WHITE_18`, `WHITE_22`, `WHITE_24`, `WHITE_30`, `WHITE_38`, `WHITE_42`, `WHITE_44`, `WHITE_45`, `WHITE_46`, `WHITE_50`, `WHITE_56`, `WHITE_66`, `WHITE_80`, `WHITE_82`, `WHITE_90`, `WHITE_92`
+`WHITE_04`, `WHITE_05`, `WHITE_06`, `WHITE_08`, `WHITE_10`, `WHITE_12`, `WHITE_14`, `WHITE_16`, `WHITE_18`, `WHITE_22`, `WHITE_24`, `WHITE_30`, `WHITE_38`, `WHITE_42`, `WHITE_44`, `WHITE_45`, `WHITE_46`, `WHITE_50`, `WHITE_56`, `WHITE_66`, `WHITE_80`, `WHITE_82`, `WHITE_90`, `WHITE_92`, `WHITE_015`
 
 ### Preto (opacidades)
 
@@ -412,7 +421,7 @@ styleOverrides.root: { zIndex: 1500 }
 | `BRAND_GRADIENT_HOVER` | `linear-gradient(135deg, #67e8f9 0%, #8b5cf6 100%)` |
 | `BRAND_GLOW` | `0 14px 36px rgba(34, 211, 238, 0.26)` |
 | `BRAND_GLOW_FOCUS` | `0 0 0 3px rgba(34, 211, 238, 0.45)` |
-| `APP_BACKGROUND_GLOW` | Composto de 2 radials (cyan 15%/15%, purple 85%/20%) + linear gradient |
+| `APP_BACKGROUND_GLOW` | 2 radials (`rgba(34, 211, 238, 0.12)` circle at 15%/15% stop 34%, `rgba(139, 92, 246, 0.12)` circle at 85%/20% stop 30%) + linear-gradient `#050816` → `#070b18` |
 
 ---
 

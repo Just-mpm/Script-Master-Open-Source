@@ -71,13 +71,14 @@ Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
 
 ## Version
 
-- **Current:** `0.9.0`
+- **Current:** `0.10.0`
 - **Last release:** 2026-04-22
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.10.0 | TranscriptionPanel dedicado, refatoração do pipeline Whisper (model tiny-en, idioma auto, @remotion/captions), WaveformOverlay com frame relativo, ScrollingPhrase centralizado, 3 logos WebP, 6 guias atualizados |
 | 0.9.0 | Remoção completa do plano de edição IA — fade in/out padrão em todas as cenas, sem análise de áudio/visual para edição, sem inspetor, sem TitleOverlay. Documentação atualizada em 4 guias. Rate limiter reutilizável, RoutableErrorBoundary, getImageGenerations |
 | 0.8.4 | Transcrição automática de legendas via Whisper WASM, dois modos de legenda (scroll-phrases, word-karaoke), ScrollingPhrase, subtitleUtils, persistência de transcrições, headers COOP/COEP, @remotion/captions + @remotion/whisper-web, Remotion 4.0.448 |
 | 0.8.3 | Limpeza de código morto (10 funções), patch font-stretch Canvas, truncamento de roteiro + limite de imagens para Gemini, reutilização de análise de áudio, menu mobile de velocidade, progresso no download em lote, detecção de JSON malformado no assistente, Snackbar no AnimationControls, Remotion 4.0.450, dedupe no Vite |

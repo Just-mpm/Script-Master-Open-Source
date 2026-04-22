@@ -176,6 +176,7 @@ export function WaveformOverlay({
       style={{
         pointerEvents: 'none',
         opacity: overlayOpacity,
+        zIndex: 5,
       }}
     >
       {/* Container SVG ancorado na parte inferior */}

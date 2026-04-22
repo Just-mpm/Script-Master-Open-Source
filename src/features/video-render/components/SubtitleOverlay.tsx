@@ -123,11 +123,12 @@ export function SubtitleOverlay({
 
   if (phrases.length === 0) return null;
 
-  // ── Posição vertical: alinhamento e padding ──
+  // ── Posição: usa flexDirection nativa (column) do AbsoluteFill ──
+  // justifyContent controla o eixo VERTICAL, alignItems o HORIZONTAL
   const alignmentMap = {
-    bottom: { alignItems: 'flex-end' as const, padding: '40px 24px' },
-    center: { alignItems: 'center' as const, padding: '24px' },
-    top: { alignItems: 'flex-start' as const, padding: '40px 24px' },
+    bottom: { justifyContent: 'flex-end' as const, alignItems: 'center' as const, padding: '40px 24px' },
+    center: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: '24px' },
+    top: { justifyContent: 'flex-start' as const, alignItems: 'center' as const, padding: '40px 24px' },
   };
 
   const alignment = alignmentMap[position];
@@ -135,11 +136,11 @@ export function SubtitleOverlay({
   return (
     <AbsoluteFill
       style={{
-        display: 'flex',
+        justifyContent: alignment.justifyContent,
         alignItems: alignment.alignItems,
-        justifyContent: 'center',
         padding: alignment.padding,
         pointerEvents: 'none',
+        zIndex: 10,
       }}
     >
       <div style={{ opacity: globalOpacity }}>

@@ -80,7 +80,7 @@ export interface FirebaseEnvConfig {
 
 ```typescript
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFirebaseEnvConfig } from './env';
@@ -94,11 +94,15 @@ export const db = appletConfig.firestoreDatabaseId
   : getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+
+export { signInWithPopup, signOut, onAuthStateChanged };
+export type { User };
 ```
 
 Pontos-chave:
 - `firestoreDatabaseId` condicional: se definido, `getFirestore` recebe o database ID como segundo argumento
 - `GoogleAuthProvider` exportado para autenticação via popup
+- Funções de auth re-exportadas: `signInWithPopup`, `signOut`, `onAuthStateChanged` e o tipo `User`
 - Função `testFirebaseConnection()` disponível para validação (não executada automaticamente no escopo do módulo)
 
 ## Gemini AI Init
@@ -150,15 +154,27 @@ export default defineConfig(() => ({
   plugins: [react()],
   resolve: {
     alias: { '@': path.resolve(__dirname, '.') },
+    dedupe: ['mediabunny', '@mediabunny/aac-encoder', '@mediabunny/flac-encoder', '@mediabunny/mp3-encoder'],
+  },
+  optimizeDeps: {
+    exclude: ['@remotion/whisper-web'],
   },
   server: {
     host: '0.0.0.0',
     port: 3000,
     hmr: process.env.DISABLE_HMR !== 'true',
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: 3000,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
   },
   build: {
     chunkSizeWarningLimit: 1600,
@@ -174,7 +190,22 @@ export default defineConfig(() => ({
 | `preview.host` | `0.0.0.0` | |
 | `preview.port` | `3000` | |
 | `resolve.alias['@']` | `path.resolve(__dirname, '.')` | Aponta para raiz do projeto |
+| `resolve.dedupe` | `['mediabunny', ...]` | Deduplica pacotes de mídia (evita instâncias duplicadas) |
+| `optimizeDeps.exclude` | `['@remotion/whisper-web']` | Exclui Whisper WASM da otimização (carregado sob demanda) |
 | `build.chunkSizeWarningLimit` | `1600` | KB |
+
+### Headers COOP/COEP
+
+Tanto `server` quanto `preview` definem headers de Cross-Origin:
+
+```typescript
+headers: {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
+},
+```
+
+Esses headers são obrigatórios para habilitar o `SharedArrayBuffer` no navegador, que é utilizado pelo Remotion (renderização de vídeo) e pelo Whisper WASM (transcrição de legendas). Sem eles, o `SharedArrayBuffer` fica indisponível e a funcionalidade de vídeo/legendas falha silenciosamente.
 
 > **Nota sobre DISABLE_HMR:** Usado apenas em ambientes de AI Studio. O file watching é desativado para evitar flickering durante edições de agentes. **Não altere sem motivo forte.**
 
@@ -186,6 +217,7 @@ Configuração em `tsconfig.json`:
 |---|---|---|
 | `target` | `ES2022` | |
 | `module` | `ESNext` | |
+| `lib` | `["ES2022", "DOM", "DOM.Iterable"]` | APIs disponíveis no build |
 | `moduleResolution` | `bundler` | |
 | `jsx` | `react-jsx` | JSX transform automático |
 | `types` | `["vite/client", "node"]` | Tipos do Vite + Node |
@@ -194,6 +226,10 @@ Configuração em `tsconfig.json`:
 | `skipLibCheck` | `true` | |
 | `isolatedModules` | `true` | Obrigatório para Vite |
 | `allowImportingTsExtensions` | `true` | Permite imports `.ts` diretos |
+| `experimentalDecorators` | `true` | Decorators legado (necessário para libs que usam `@decorator`) |
+| `useDefineForClassFields` | `false` | Comportamento de campos de classe via `Object.defineProperty` |
+| `moduleDetection` | `force` | Força detecção de módulo (evita inferência por extensão de arquivo) |
+| `allowJs` | `true` | Permite importar arquivos `.js` no projeto |
 
 **Excluídos:** `Speed-Paint/**`, `dist/**`, `node_modules/**`
 

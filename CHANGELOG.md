@@ -7,6 +7,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.10.0] - 2026-04-22
+
+### Adicionado
+
+- **TranscriptionPanel** (`src/features/video-render/components/TranscriptionPanel.tsx`): painel MUI dedicado para transcrição de legendas — controle de transcrição, progresso, status e ações (transcrever, cancelar, limpar) integrado ao VideoPage
+- **useTranscription v2** (`src/features/video-render/hooks/useTranscription.ts`): refatoração do pipeline Whisper com `mergeWordFragments` e `processWhisperCaptions` via `@remotion/captions`, filtros `INVALID_TOKEN`/`VALID_WORD`, troca para modelo Whisper `tiny-en` com idioma `auto` (detector automático)
+- **Logos do app** (`public/logo-sem-titulo-quadrado.webp`, `public/logo-sem-titulo-redondo.webp`, `public/logo-sem-titulo-transparente.webp`): três variantes do logo em formato WebP
+
+### Alterado
+
+- **ScrollingPhrase** (`src/features/video-render/components/ScrollingPhrase.tsx`): maxWidth `80%` → `90%`, adição de `width: fit-content` e `margin: 0 auto` para melhor centralização
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): ajustes na implementação das posições (bottom, center, top)
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): frame do WaveframeOverlay agora é relativo à cena (`frame - adjustedFrom`) em vez de absoluto, corrigindo sincronização visual
+- **WaveformOverlay** (`src/features/video-render/components/WaveformOverlay.tsx`): adição de `zIndex: 5` para controle de empilhamento
+- **VideoPage** (`src/pages/VideoPage.tsx`): substituição da UI de transcrição inline por `TranscriptionPanel` dedicado, remoção de imports MUI desnecessários
+
+### Documentação
+
+- **6 guias atualizados** em `docs/guides/` para refletir estado atual do código:
+  - `audio.md`: retry logic reescrita (withRetry), remoção de useAudioPlayer e script de previews, correção de contagem de vozes
+  - `environment.md`: headers COOP/COEP, dedupe, optimizeDeps, re-exports de auth, tsconfig completo
+  - `image-generation.md`: SceneImagePayload removido, funções CRUD atualizadas, withRetry, números de linha corrigidos
+  - `persistence.md`: DB_VERSION 8→9, 2 novas stores, domínio Transcriptions, funções CRUD atualizadas
+  - `ui-design-system.md`: RoutableErrorBoundary, WHITE_015, APP_BACKGROUND_GLOW, MuiAppBar WebkitBackdropFilter
+  - `video-render.md`: pacotes Whisper/captions, SubtitleOverlay refatorada, 3 fallbacks de codec, seções useTranscription e canvasFontStretchPatch
+
+---
+
 ## [0.9.0] - 2026-04-22
 
 ### Removido (breaking change)

@@ -14,8 +14,10 @@ Pacotes utilizados (`package.json`):
 | `@remotion/media-utils` | `4.0.448` | `useAudioData`, `visualizeAudioWaveform`, `createSmoothSvgPath` |
 | `@remotion/transitions` | `4.0.448` | Dependência instalada (não referenciada diretamente no código — crossfade é feito via overlap de `Sequence`) |
 | `@remotion/web-renderer` | `4.0.448` | `renderMediaOnWeb`, `canRenderMediaOnWeb` para exportação client-side |
+| `@remotion/whisper-web` | `4.0.448` | Transcrição automática via Whisper WASM |
+| `@remotion/captions` | `4.0.448` | Pós-processamento de captions Whisper (TikTok style) |
 
-**Renderização:** client-side via WebCodecs (H.264 + AAC em MP4). Não há backend de renderização.
+**Renderização:** client-side via WebCodecs (H.264 + AAC em MP4, ou VP8 + Opus em WebM como fallback). Não há backend de renderização.
 
 ## Arquitetura do Módulo
 
@@ -25,20 +27,21 @@ src/features/video-render/
   types.ts                          # VideoScene, VideoCompositionProps, VideoRenderConfig, CaptionWord, TranscriptionResult, SubtitleMode
   lib/
     videoUtils.ts                   # Conversão de tempo, resolução, mapeamento de cenas
-    subtitleUtils.tsx               # Utilitários de subtitle (parsing, formatação)
-    canvasFontStretchPatch.ts       # Patch de fonte para Canvas
+    subtitleUtils.tsx               # Tipos (TextSegment, WordEntry, WordState), constantes, AnimatedWord, helpers de parse, segmentScriptByCenes
+    canvasFontStretchPatch.ts       # Patch para corrigir bug de fontStretch percentual na Canvas API
   store/
     videoRenderBridge.ts            # Zustand store — sincroniza exportação e transcrição entre VideoPage e App.tsx
   hooks/
-    useVideoExporter.tsx            # Exportação de vídeo via renderMediaOnWeb
-    useTranscription.ts             # Transcrição automática via Whisper WASM
+    useVideoExporter.tsx            # Exportação de vídeo via renderMediaOnWeb (3 etapas de fallback de codec)
+    useTranscription.ts             # Transcrição automática via Whisper WASM com fallback proporcional
   components/
     VideoComposition.tsx            # Composition principal Remotion (fade padrão em todas as cenas)
     VideoExportPanel.tsx            # Painel de exportação (MUI)
     SceneSequence.tsx               # Cena individual com fade in/out padrão (spring-based)
-    SubtitleOverlay.tsx             # Legenda karaoke palavra-a-palavra
+    SubtitleOverlay.tsx             # Orchestrator de legendas — agrupa em frases, delega para ScrollingPhrase
+    ScrollingPhrase.tsx             # Frase individual com karaoke interno via AnimatedWord
     WaveformOverlay.tsx             # Waveform de áudio SVG sincronizado
-    ScrollingPhrase.tsx             # Componente de frase scrollável
+    TranscriptionPanel.tsx          # Painel MUI para transcrição de legendas (Whisper/fallback)
 ```
 
 ## Tipos TypeScript
@@ -78,6 +81,27 @@ interface TranscriptionResult {
 }
 
 type SubtitleMode = 'word-karaoke' | 'scroll-phrases';
+```
+
+### Tipos do subtitleUtils (`lib/subtitleUtils.tsx`)
+
+```typescript
+/** Segmento de texto com informação de formatação (negrito markdown) */
+interface TextSegment {
+  text: string;
+  bold: boolean;
+}
+
+/** Palavra individual com timing e formatação para animação */
+interface WordEntry {
+  text: string;
+  bold: boolean;
+  startFrame: number;
+  endFrame: number;
+}
+
+/** Estado visual de uma palavra na animação de legenda */
+type WordState = 'active' | 'past' | 'future';
 ```
 
 ### Tipos do Exportador (`hooks/useVideoExporter.tsx`)
@@ -120,7 +144,7 @@ AbsoluteFill (bg: #000)
   {scenes.map((scene, index) =>
     <Sequence from={adjustedFrom} durationInFrames={adjustedDuration}>
       <SceneSequence ... />          // Imagem com fade in/out padrão
-      <SubtitleOverlay ... />        // Legenda karaoke (se houver)
+      <SubtitleOverlay ... />        // Legenda com scroll de frases (se houver)
       <WaveformOverlay ... />        // Waveform SVG (se houver áudio)
     </Sequence>
   )}
@@ -169,31 +193,109 @@ Superamortecido (damping > stiffness) — sem oscilação, sem overshoot. A curv
 - **Última cena:** não aplica fade-out (permanece visível até o final).
 - **Cenas curtas (< 3 frames):** `safeFadeFrames = min(fadeFrames, floor((duration-1)/2))` previne range inválido no inputRange.
 
-## SubtitleOverlay (Karaoke palavra-a-palavra)
+## SubtitleOverlay (Orchestrator de legendas)
 
-Legenda estilo TikTok com timing por palavra.
+SubtitleOverlay é o componente principal de legendas. Não faz karaoke diretamente — age como **orchestrator** que agrupa palavras em frases e delega a renderização para `ScrollingPhrase`.
 
-### Parsing
+### Modos de entrada
 
-1. `parseBoldMarkdown(text)` — parseia `**texto**` em segmentos `{ text, bold }`
-2. `splitIntoWords(text)` — separa em palavras preservando flag de negrito
-3. `calculateWordTiming(words, totalFrames)` — distribui frames proporcionalmente ao comprimento de cada palavra; última palavra absorve frames residuais
+Recebe dados de duas formas (prioridade na ordem):
 
-### Estados de palavra
+1. **`captions?: CaptionWord[]`** — legendas com timestamps reais (Whisper ou fallback proporcional)
+2. **`text?: string`** — texto simples (backward compat, convertido internamente para `CaptionWord[]` via `splitIntoWords` + `calculateWordTiming`)
 
-| Estado | Escala | Opacidade | fontWeight |
-|--------|--------|-----------|------------|
-| `active` | spring 1.0→1.15 | 0.6→1.0 | bold? 800 : 700 |
-| `past` | 1.0 | 1.0→0.5 (fade em 6 frames) | bold? 700 : 600 |
-| `future` | 1.0 | 0→0.25 (fade em 6 frames) | bold? 600 : 500 |
+### Pipeline de processamento
+
+1. **Construção de palavras** — se `captions` está presente, usa diretamente; se `text`, faz parse markdown + split + timing proporcional
+2. **Agrupamento em frases** — `groupCaptionWordsIntoPhrases()` divide `CaptionWord[]` em frases (~12 palavras ou pontuação final `.!?`)
+3. **Busca de frase ativa** — identifica qual frase contém o frame atual via `startFrame`/`endFrame`
+4. **Renderização otimizada** — renderiza apenas frase ativa + próxima frase (evita DOM desnecessário)
+5. **Delegação** — cada frase é passada para `ScrollingPhrase` com `words`, `phraseIndex` e `totalPhrases`
+
+### Props
+
+```typescript
+interface SubtitleOverlayProps {
+  captions?: CaptionWord[];
+  text?: string;
+  durationInFrames: number;
+  position?: 'bottom' | 'center' | 'top';  // default: bottom
+}
+```
+
+### Fade global
+
+A legenda inteira aplica fade de entrada/saída (`SUBTITLE_FADE = 8` frames) usando `interpolate`, independente do karaoke interno das frases.
+
+## ScrollingPhrase (Frase com karaoke interno)
+
+Renderiza **UMA frase** de legenda com karaoke palavra-a-palavra. Cada frase é renderizada por uma instância separada de `ScrollingPhrase`, criada por `SubtitleOverlay`.
+
+### Props
+
+```typescript
+interface ScrollingPhraseProps {
+  words: CaptionWord[];
+  phraseIndex: number;
+  totalPhrases: number;
+}
+```
+
+### Animação de entrada/saída
+
+| Propriedade | Entrada | Saída (exceto última frase) |
+|-------------|---------|---------------------------|
+| **Fade** | 0→1 ao longo de `SUBTITLE_FADE` (8 frames) | 1→0 ao longo de `SUBTITLE_FADE` |
+| **translateY** | 8px→0px | — |
+| **Última frase** | — | Permanece visível (fade out desativado) |
+
+### Detecção de palavra ativa
+
+Por frame, `ScrollingPhrase` encontra o índice da palavra ativa (`frame >= startFrame && frame < endFrame`) e mapeia cada palavra para `WordState`:
+
+- `i === activeIndex` → `'active'`
+- `activeIndex !== -1 && i < activeIndex` → `'past'`
+- Caso contrário → `'future'`
+
+Cada palavra é renderizada por `AnimatedWord` (em `subtitleUtils.tsx`).
 
 ### Estilo
 
 - Font-size: `clamp(18px, 3.5vw, 36px)`
 - Fundo: `BLACK_50` (rgba preto 50%)
 - Sombra: `0 0 40px 20px rgba(0,0,0,0.4)`
-- Posição: configurável (`bottom`, `center`, `top`)
-- Fade global da legenda: 8 frames de entrada/saída com leve deslocamento vertical (+12px)
+- borderRadius: `12px`, padding: `12px 24px`
+- Posição: controlada pelo `SubtitleOverlay` pai
+
+## AnimatedWord (Palavra animada individual)
+
+Componente em `subtitleUtils.tsx` que renderiza uma única palavra com animação baseada no seu `WordState`.
+
+### Spring config
+
+```typescript
+{ damping: 12, stiffness: 200, mass: 0.8 }
+```
+
+Diferente do `SPRING_TRANSICAO` da cena (`{ damping: 26, stiffness: 100, mass: 1 }`) — aqui o spring é mais responsivo (maior stiffness), gerando o "pop" do karaoke.
+
+### Estados visuais
+
+| Estado | Escala | Opacidade | fontWeight | Cor |
+|--------|--------|-----------|------------|-----|
+| `active` | spring 1.0→1.15 | 0.6→1.0 (acompanha spring) | bold? 800 : 700 | WHITE |
+| `past` | 1.0 | 1.0→0.5 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 700 : 600 | WHITE_92 |
+| `future` | 1.0 | 0→0.25 (fade em `WORD_TRANSITION_FRAMES` = 6) | bold? 600 : 500 | WHITE_92 |
+
+## Constantes de animação (subtitleUtils.tsx)
+
+| Constante | Valor | Descrição |
+|-----------|-------|-----------|
+| `SUBTITLE_FADE` | `8` | Frames de fade in/out da legenda inteira |
+| `ACTIVE_WORD_SCALE` | `1.15` | Escala máxima da palavra ativa (pop-in) |
+| `PAST_WORD_OPACITY` | `0.5` | Opacidade das palavras já faladas |
+| `FUTURE_WORD_OPACITY` | `0.25` | Opacidade das palavras ainda não faladas |
+| `WORD_TRANSITION_FRAMES` | `6` | Frames para transição suave entre estados de palavra |
 
 ## WaveformOverlay
 
@@ -211,45 +313,156 @@ Visualização SVG de waveform sincronizada com o frame atual.
 |-----------|-------|-----------|
 | `SVG_WIDTH` | 2000 | Largura lógica do viewBox |
 | `SVG_HEIGHT` | 120 | Altura lógica do viewBox |
+| `SVG_PADDING_Y` | 10 | Margem vertical dentro do viewBox |
+| `WAVEFORM_HEIGHT` | 100 | Altura útil (`SVG_HEIGHT - SVG_PADDING_Y * 2`) |
 | `NUMBER_OF_SAMPLES` | 120 | Amostras por frame |
 | `WINDOW_IN_SECONDS` | 0.4 | Janela de tempo ao redor do frame |
+| `PROGRESS_LINE_WIDTH` | 3 | Largura do indicador de progresso (px SVG) |
+| `PROGRESS_LINE_OPACITY` | 0.9 | Opacidade do indicador de progresso |
 | Opacidade padrão | 0.3 | Overlay semi-transparente |
+| Fade do overlay | 10 frames | Fade de entrada/saída do overlay (entrada/saída do waveform) |
 
 ### Elementos SVG
 
 - Linha base (zero amplitude) — `WHITE_14`
 - Path do waveform — gradiente vertical (brilho na base) + mask de fade nas bordas
 - Barra de progresso de fundo — 8% de opacidade
-- Indicador de progresso — linha vertical com glow
+- Indicador de progresso — linha vertical com glow (`PROGRESS_LINE_WIDTH`, `PROGRESS_LINE_OPACITY`)
 - Ponto luminoso no topo do indicador
+
+## canvasFontStretchPatch
+
+Monkey patch que corrige bug do `@remotion/web-renderer 4.0.450` que passa `fontStretch: "100%"` para a Canvas API, que só aceita keywords.
+
+### Mapeamento
+
+O patch intercepta `CanvasRenderingContext2D.prototype.fontStretch` e converte percentuais para keywords válidas:
+
+| Percentual | Keyword |
+|------------|---------|
+| `50%` | `ultra-condensed` |
+| `62.5%` | `extra-condensed` |
+| `75%` | `condensed` |
+| `87.5%` | `semi-condensed` |
+| `100%` | `normal` |
+| `112.5%` | `semi-expanded` |
+| `125%` | `expanded` |
+| `150%` | `extra-expanded` |
+| `200%` | `ultra-expanded` |
+
+### Características
+
+- **Idempotente:** flag `patched` impede aplicação múltipla
+- **Seguro:** só afeta `fontStretch`, não altera outros comportamentos da Canvas API
+- **Chamado em:** `startRender` do `useVideoExporter`, antes de `renderMediaOnWeb()`
+- Valores não-percentuais (keywords, globals) são repassados sem alteração
+
+## Transcrição Automática (useTranscription)
+
+Hook que transcreve áudio para legendas palavra-a-palavra usando Whisper WASM, com fallback proporcional.
+
+### Pipeline Whisper (4 etapas)
+
+| # | Etapa | Progresso | Descrição |
+|---|-------|-----------|-----------|
+| 1 | Resample | 0–5% | `resampleTo16Khz()` converte o áudio para 16kHz (requerido pelo Whisper) |
+| 2 | Download do modelo | 5–30% | `downloadWhisperModel({ model: 'base' })` baixa o modelo (~75MB) |
+| 3 | Transcrição | 30–90% | `transcribe({ channelWaveform, model, language: 'pt' })` |
+| 4 | Pós-processamento | 90–100% | `processWhisperCaptions()` — `toCaptions()` → filtro → merge fragmentos → `createTikTokStyleCaptions()` → `CaptionWord[]` |
+
+### Imports principais
+
+```typescript
+// @remotion/whisper-web
+canUseWhisperWeb, downloadWhisperModel, resampleTo16Khz, transcribe, toCaptions
+
+// @remotion/captions
+createTikTokStyleCaptions
+
+// Internos
+segmentScriptByCenes, saveTranscription, loadTranscription
+```
+
+### Filtros de tokens
+
+| Filtro | Regex | Ação |
+|--------|-------|------|
+| `INVALID_TOKEN` | `/[\[\]<_\{\}\\]/` | Rejeita tokens com brackets, underscores, chaves, etc. |
+| `VALID_WORD` | `/[a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/` | Aceita só tokens com pelo menos uma letra real |
+
+### Fallback proporcional
+
+Se Whisper indisponível ou falhar, usa `segmentScriptByCenes()` que distribui o roteiro proporcionalmente ao tempo de cada cena, dividindo por pontuação e limitando frases a ~12 palavras.
+
+### Persistência
+
+- `saveTranscription(projectId, { words, source })` — salva no IndexedDB
+- `loadTranscription(projectId)` — carrega transcrição salva
+- **Debounce:** 500ms (`PERSIST_DEBOUNCE_MS`) para evitar writes excessivos
+
+### Estado
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `captions` | `CaptionWord[]` | Legendas extraídas |
+| `source` | `'whisper' \| 'proportional' \| null` | Fonte da transcrição |
+| `isTranscribing` | `boolean` | Indica se está transcrevendo |
+| `transcriptionProgress` | `number` (0–100) | Progresso da transcrição |
+| `transcriptionStatusText` | `string` | Texto descritivo do status |
+| `error` | `string \| null` | Mensagem de erro |
+| `whisperSupported` | `boolean \| null` | null = verificação pendente |
+
+### Ações
+
+| Ação | Descrição |
+|------|-----------|
+| `transcribeAudio(params)` | Inicia transcrição (Whisper ou fallback) |
+| `cancelTranscription()` | Cancela via flag `cancelRef` (não AbortController) |
+| `clearTranscription()` | Limpa todos os dados de transcrição |
 
 ## Exportação de Vídeo
 
 ### Verificação de suporte (`checkSupport`)
 
-1. Verifica `VideoEncoder` (WebCodecs) disponível
-2. Chama `canRenderMediaOnWeb()` com H.264 + AAC + MP4
-3. Se falha por codec de áudio, tenta fallback sem áudio (`audioCodec: null`)
-4. Exibe mensagem amigável se nenhum fallback funcionar
+3 etapas de fallback progressivas:
+
+1. **H.264 + AAC + MP4** — codec ideal, melhor compatibilidade
+2. **H.264 sem áudio** (`audioCodec: null`, MP4) — fallback se codec de áudio não for suportado
+3. **VP8 + Opus + WebM** — fallback final, suportado pela maioria dos navegadores; exibe `saveWarning` informativo ao usuário
+
+Cada etapa chama `canRenderMediaOnWeb()` e verifica `result.canRender`. Issues são logados para diagnóstico. Os resultados são armazenados em refs (`resolvedVideoCodecRef`, `resolvedAudioCodecRef`, `resolvedContainerRef`).
 
 ### Renderização (`startRender`)
 
-1. Mapeia cenas via `mapScenesToVideoScenes()`
-2. Cria `AbortController` para cancelamento
-3. Chama `renderMediaOnWeb()` com:
+1. Aplica `patchCanvasFontStretch()` para corrigir bug de fontStretch
+2. Mapeia cenas via `mapScenesToVideoScenes()`
+3. Cria `AbortController` para cancelamento
+4. Chama `renderMediaOnWeb()` com:
    - Composition: `ExportableComposition` (wrapper tipado sobre `VideoComposition`)
-   - Codec: `h264` + `aac` (ou null se fallback)
-   - Container: `mp4`
+   - **Codec dinâmico:** usa refs resolvidas por `checkSupport` (não fixo em H.264+AAC)
+     - `videoCodec`: `resolvedVideoCodecRef.current` (`'h264'` ou `'vp8'`)
+     - `audioCodec`: `resolvedAudioCodecRef.current` (`'aac'`, `'opus'` ou `null`)
+     - `container`: `resolvedContainerRef.current` (`'mp4'` ou `'webm'`)
    - License: `free-license`
-4. Recebe blob final via `result.getBlob()`
-5. Cria `URL.createObjectURL(blob)` para preview/download
-6. Salva no projeto via `saveVideoToProject()` (não-bloqueante, com `saveWarning` em caso de falha)
+5. Recebe blob final via `result.getBlob()`
+6. Cria `URL.createObjectURL(blob)` para preview/download
+7. Salva no projeto via `saveVideoToProject()` (não-bloqueante, com `saveWarning` em caso de falha)
+
+### Cancelamento
+
+```typescript
+function isCancellationError(err: unknown): boolean {
+  // Remotion lança Error com "was cancelled"
+  if (err instanceof DOMException && err.name === 'AbortError') return true;
+  if (err instanceof Error && err.message.toLowerCase().includes('cancelled')) return true;
+  return false;
+}
+```
 
 ### Fluxo de erros
 
 ```typescript
 function toUserFriendlyError(err: unknown): string {
-  if (DOMException 'AbortError') return 'Exportação cancelada.';
   if ('webcodecs'|'videoencoder'|'not supported') return 'Navegador não suporta exportação...';
   return 'Erro ao exportar vídeo. Tente novamente.';
 }
@@ -289,6 +502,22 @@ interface VideoRenderBridgeState {
 | `getResolutionFromRatio(ratio)` | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
 | `calculateDurationFromWav(byteLength, sampleRate=24000)` | Desconta header WAV de 44 bytes; mono 16-bit: 2 bytes/sample |
 | `mapScenesToVideoScenes(scenes, totalDurationInFrames, fps)` | Mapeia `StudioScene[]` para `VideoScene[]` calculando `durationInFrames`; última cena se estende até o fim do áudio |
+
+## Utilitários (`lib/subtitleUtils.tsx`)
+
+### Helpers de parse
+
+| Função | Descrição |
+|--------|-----------|
+| `parseBoldMarkdown(text)` | Parseia `**texto**` em segmentos `{ text, bold }` (`TextSegment[]`) |
+| `splitIntoWords(text)` | Separa em palavras preservando flag de negrito (`WordEntry[]`) |
+| `calculateWordTiming(words, totalFrames)` | Distribui frames proporcionalmente ao comprimento; última palavra absorve residuais |
+
+### Segmentação de roteiro
+
+| Função | Descrição |
+|--------|-----------|
+| `segmentScriptByCenes(script, scenes, totalDurationFrames, fps)` | Divide roteiro por cena proporcionalmente ao timestamp; frases limitadas a ~12 palavras; distribui frames por caractere |
 
 ## Resoluções suportadas
 

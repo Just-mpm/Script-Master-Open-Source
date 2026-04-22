@@ -44,7 +44,7 @@ export interface Voice {
 }
 ```
 
-Lista completa (31 vozes):
+Lista completa (30 vozes):
 
 | id | style |
 |----|-------|
@@ -79,7 +79,7 @@ Lista completa (31 vozes):
 | Sadaltager | Especialista |
 | Sulafat | Acolhedora |
 
-**Nota:** no script de preview (`scripts/generate-voice-previews.ts`), apenas 5 vozes sao reconhecidas como "oficiais" do TTS: `Puck`, `Charon`, `Kore`, `Fenrir`, `Zephyr`. Demais vozes no preview recebem fallback para uma dessas 5.
+**Nota:** o hook `useVoicePreviews` reproduz previews de voz estaticas via `/voice-previews/{voiceId}.wav`.
 
 ---
 
@@ -334,39 +334,46 @@ const multiCtx = isMultiSpeaker
 
 ## Retry Logic
 
-> `src/hooks/useAudioGenerator.ts:365-416`
+> `src/lib/rate-limiter.ts` — `withRetry`
 
-Cada chunk do TTS tem ate **3 tentativas** (`MAX_RETRIES = 3`):
+O retry de cada chunk TTS usa o wrapper `withRetry` do `rate-limiter.ts`, que implementa exponential backoff com jitter. O hook passa overrides especificos para o TTS:
 
 ```typescript
-let retries = 0;
-const MAX_RETRIES = 3;
-
-while (retries < MAX_RETRIES && !base64Audio) {
-  try {
-    // ... chamada ao TTS ...
-    base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ?? null;
-
-    if (!base64Audio) {
+const { value: response } = await withRetry(
+  async () => {
+    const ttsResponse = await ai.models.generateContent({ /* ... */ });
+    const data = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ?? null;
+    if (!data) {
       throw new Error('O modelo retornou texto em vez de audio (comportamento intermitente conhecido).');
     }
-  } catch (chunkErr: unknown) {
-    retries++;
-    if (retries >= MAX_RETRIES) {
-      throw new Error(
-        `Falha ao gerar a parte ${i + 1} após ${MAX_RETRIES} tentativas.`,
-        { cause: chunkErr },
-      );
-    }
-    setStatusText(`Falha na parte ${i + 1}, tentando novamente (${retries}/${MAX_RETRIES})...`);
-    await new Promise(r => setTimeout(r, 1500));
-  }
-}
+    return data;
+  },
+  { maxRetries: 3, baseDelayMs: 1500, jitterMs: 500 },
+);
 ```
 
-- Delay entre retries: **1.500 ms**
-- Cancelamento e respeitado dentro do loop de retry
-- Se o modelo retorna texto em vez de audio (comportamento intermitente do Gemini), isso e tratado como erro e dispara retry
+**Parametros passados ao TTS:**
+
+| Parametro | Valor | Descricao |
+|-----------|-------|-----------|
+| `maxRetries` | `3` | Numero maximo de tentativas (incluindo a primeira) |
+| `baseDelayMs` | `1500` | Delay base em ms — dobrado a cada retry |
+| `jitterMs` | `500` | Jitter maximo adicionado ao delay (0–500ms) |
+
+**Formula do delay:** `delay = baseDelayMs * 2^attempt + random(0, jitterMs)`
+
+- Tentativa 1 (falha): aguarda ~1500ms + 0-500ms
+- Tentativa 2 (falha): aguarda ~3000ms + 0-500ms
+- Tentativa 3 (falha): lanca o ultimo erro
+
+**Detecao automatica de erros retryaveis** — `isRetryableError`:
+
+- Códigos HTTP: **429** (quota), **503** (unavailable), **504** (gateway timeout)
+- Instancias de `ApiError` do `@google/genai` verificadas por `.status`
+- Keywords em mensagens de erro: `quota`, `resource_exhausted`, `deadline`, `unavailable`
+- Erros definitivos (400, 403, 404) falham imediatamente sem retry
+
+> O `withRetry` e reutilizavel — o hook de TTS passa overrides especificos, enquanto outros consumidores podem usar os defaults (`baseDelayMs: 1000`, `jitterMs: 1000`).
 
 ### Mapeamento de Erros para o Usuario
 
@@ -403,7 +410,7 @@ export async function base64ToUint8Array(base64: string): Promise<Uint8Array> {
 }
 ```
 
-Versoes sincronas estao disponiveis para compatibilidade (`base64ToUint8ArraySync`, `base64ToBlobSync`), mas sao consideradas deprecadas internamente.
+Versao sincrona disponivel para compatibilidade (`base64ToBlobSync`), que usa `atob` diretamente — utilizada internamente quando o destino final e um Blob.
 
 ---
 
@@ -411,7 +418,7 @@ Versoes sincronas estao disponiveis para compatibilidade (`base64ToUint8ArraySyn
 
 > `src/hooks/useVoicePreviews.ts`
 
-Previews de voz sao arquivos WAV estaticos servidos via `/voice-previews/{voiceId}.wav`, gerados pelo script `bun run generate-previews` (`scripts/generate-voice-previews.ts`).
+Previews de voz sao arquivos WAV estaticos servidos via `/voice-previews/{voiceId}.wav`:
 
 ```typescript
 export function useVoicePreviews() {
@@ -420,7 +427,7 @@ export function useVoicePreviews() {
 
   const playPreview = (voiceId: string): void => {
     if (playingId === voiceId) {
-      stop(); // toggle: cliquar na voz que esta tocando para ela
+      stop(); // toggle: clicar na voz que esta tocando para ela
       return;
     }
     stop();
@@ -428,7 +435,7 @@ export function useVoicePreviews() {
     const audio = new Audio(`/voice-previews/${voiceId}.wav`);
     audioRef.current = audio;
     audio.onerror = () => {
-      console.error(`Preview para ${voiceId} nao encontrado. Execute "bun run generate-previews" para gerar.`);
+      console.error(`Preview para ${voiceId} nao encontrado.`);
       setPlayingId(null);
     };
     audio.onended = () => setPlayingId(null);
@@ -438,43 +445,9 @@ export function useVoicePreviews() {
 ```
 
 - **Toggle:** clicar na mesma voz que esta tocando a para
-- **Erros:** se o arquivo nao existe, loga erro e instrui a rodar o script de geracao
-- **Rate limit no script:** 5.000ms entre cada chamada a API (`DELAY_BETWEEN_REQUESTS_MS`)
-- **Prompt do preview:** `Esta e uma demonstracao da voz ${voiceName}.` (~1s de audio)
+- **Erros:** se o arquivo nao existe, loga erro e reseta o estado
 
 ---
-
-## Audio Player
-
-> `src/hooks/useAudioPlayer.ts`
-
-Hook generico para reproducao de audio via elemento `<audio>` nativo:
-
-```typescript
-export function useAudioPlayer(
-  audioRef: RefObject<HTMLAudioElement | null>,
-  audioUrl: string | null
-)
-```
-
-**Estado exposto:**
-
-| Campo | Tipo | Descricao |
-|-------|------|-----------|
-| `isPlaying` | `boolean` | Se o audio esta tocando |
-| `progress` | `number` | Progresso em porcentagem (0-100) |
-| `currentTime` | `number` | Posicao atual em segundos |
-| `duration` | `number` | Duracao total em segundos |
-
-**Acoes:**
-
-| Metodo | Descricao |
-|--------|-----------|
-| `togglePlayPause()` | Play ou pause |
-| `handleSeek(e)` | Seek via clique na barra (calcula % pela posicao X do mouse) |
-| `formatTime(time)` | Formata `MM:SS` |
-
-Os listeners (`timeupdate`, `loadedmetadata`, `ended`, `pause`, `play`) sao adicionados/removidos corretamente no `useEffect`, dependendo de `audioUrl` e `audioRef`.
 
 ---
 
@@ -548,10 +521,9 @@ O flag e checado antes de cada chunk TTS e antes de cada geracao de cena. Se can
 |---------|-----------------|
 | `src/lib/constants.ts` | `CHUNK_LIMIT`, `MAX_CHARS`, `VOICES`, `PACE_INSTRUCTIONS` |
 | `src/lib/types.ts` | Interface `Voice` |
-| `src/lib/audio.ts` | `isWavFormat`, `extractPcmFromData`, `createWavBlob`, `base64ToBlob`, `base64ToUint8Array` |
+| `src/lib/audio.ts` | `isWavFormat`, `extractPcmFromData`, `createWavBlob`, `base64ToBlob`, `base64ToUint8Array`, `base64ToBlobSync` |
 | `src/lib/gemini.ts` | `generateScenePrompts`, `generateImageFromPrompt` |
 | `src/lib/env.ts` | `getGeminiApiKey()` |
+| `src/lib/rate-limiter.ts` | `withRetry` — retry com exponential backoff + jitter |
 | `src/hooks/useAudioGenerator.ts` | Hook principal: chunking, TTS, montagem WAV, progresso, retry, cancelamento |
 | `src/hooks/useVoicePreviews.ts` | Preview de vozes via arquivos WAV estaticos |
-| `src/hooks/useAudioPlayer.ts` | Reproducao de audio (play/pause/seek) |
-| `scripts/generate-voice-previews.ts` | Geracao offline de previews WAV para `public/voice-previews/` |

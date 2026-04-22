@@ -1,13 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { canUseWhisperWeb, downloadWhisperModel, resampleTo16Khz, transcribe } from '@remotion/whisper-web';
-import type { TranscriptionJson, TranscriptionItemWithTimestamp } from '@remotion/whisper-web';
+import { canUseWhisperWeb, downloadWhisperModel, resampleTo16Khz, transcribe, toCaptions } from '@remotion/whisper-web';
+import { createTikTokStyleCaptions } from '@remotion/captions';
+import type { Caption } from '@remotion/captions';
+import type { TranscriptionJson } from '@remotion/whisper-web';
 import { msToFrames } from '../lib/videoUtils';
 import { segmentScriptByCenes } from '../lib/subtitleUtils';
 import { saveTranscription, loadTranscription } from '../../../lib/db/transcriptions';
 import type { CaptionWord } from '../types';
-
-/** Tipo do token palavra-a-palavra extraído da transcrição Whisper */
-type WordLevelToken = TranscriptionItemWithTimestamp['tokens'][number];
 
 /** Parâmetros para iniciar a transcrição */
 export interface TranscribeAudioParams {
@@ -50,8 +49,8 @@ export interface UseTranscriptionReturn {
 /** Debounce em ms para persistência no IndexedDB */
 const PERSIST_DEBOUNCE_MS = 500;
 
-/** Modelo Whisper usado (tiny = ~40MB, bom o suficiente para legendas) */
-const WHISPER_MODEL = 'tiny' as const;
+/** Modelo Whisper usado (base = ~75MB, melhor precisão que tiny para legendas) */
+const WHISPER_MODEL = 'base' as const;
 
 /** Mapeia faixas de progresso do hook para os callbacks do whisper-web */
 const PROGRESS_RANGES = {
@@ -68,32 +67,108 @@ const PROGRESS_RANGES = {
 } as const;
 
 /**
- * Extrai WordLevelToken[] do resultado da transcrição Whisper.
- * Aplaina todos os tokens de todos os segmentos em uma única lista.
+ * Filtro defensivo para captions do Whisper.
+ * Rejeita tokens que contenham caracteres não-textuais: colchetes, underscores,
+ * parênteses, <>, etc. Só aceita tokens compostos por letras, espaços,
+ * pontuação comum e números (para casos como "2024" ou "R$").
  */
-function extractTokens(transcription: TranscriptionJson['transcription']): WordLevelToken[] {
-  const tokens: WordLevelToken[] = [];
-  for (const segment of transcription) {
-    for (const token of segment.tokens) {
-      if (token.text.trim() !== '') {
-        tokens.push(token);
-      }
+const INVALID_TOKEN = /[\[\]<_\{\}\\]/;
+
+/**
+ * Aceita só tokens válidos: têm pelo menos uma letra E não têm caracteres de formatação.
+ */
+const VALID_WORD = /[a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/;
+
+/**
+ * Mescla fragmentos de palavras consecutivos no Caption[].
+ * O Whisper frequentemente divide palavras em sílabas (ex: "tra" + "vi" + "seiro").
+ * Detecta isso quando um token NÃO começa com espaço — significa que é continuação
+ * do token anterior.
+ */
+function mergeWordFragments(captions: Caption[]): Caption[] {
+  if (captions.length === 0) return [];
+
+  const merged: Caption[] = [];
+  let i = 0;
+
+  while (i < captions.length) {
+    const current = captions[i];
+
+    // Verifica se os próximos tokens são fragmentos (não começam com espaço)
+    let j = i + 1;
+    while (j < captions.length && !captions[j].text.startsWith(' ')) {
+      j++;
     }
+
+    if (j > i + 1) {
+      // Mescla: junta textos e usa startMs do primeiro + endMs do último
+      const text = captions
+        .slice(i, j)
+        .map((c) => c.text)
+        .join('');
+      merged.push({
+        text,
+        startMs: current.startMs,
+        endMs: captions[j - 1].endMs,
+        timestampMs: null,
+        confidence: null,
+      });
+    } else {
+      merged.push(current);
+    }
+
+    i = j;
   }
-  return tokens;
+
+  return merged;
 }
 
 /**
- * Converte WordLevelToken[] do Whisper para CaptionWord[].
- * Offsets do Whisper estão em SEGUNDOS, convertidos para frames via msToFrames.
+ * Pós-processa captions do Whisper usando pipeline nativo do Remotion:
+ * 1. toCaptions() mapeia tokens para Caption[] (startMs/endMs)
+ * 2. Filtra tokens inválidos (só aceita palavras com letras reais)
+ * 3. Mescla fragmentos de palavras (sílabas do Whisper → palavras completas)
+ * 4. createTikTokStyleCaptions() agrupa palavras em frases para exibição
+ * 5. Converte para CaptionWord[] com frames
  */
-function tokensToCaptionWords(tokens: WordLevelToken[], fps: number): CaptionWord[] {
-  return tokens.map(token => ({
-    text: token.text.trim(),
-    startFrame: msToFrames(token.offsets.from * 1000, fps),
-    endFrame: msToFrames(token.offsets.to * 1000, fps),
-    bold: false,
-  }));
+function processWhisperCaptions(
+  transcription: TranscriptionJson['transcription'],
+  fps: number,
+): CaptionWord[] {
+  // Passo 1: toCaptions converte para Caption[] com startMs/endMs
+  const { captions: rawCaptions } = toCaptions({ whisperWebOutput: transcription });
+
+  // Passo 2: filtra tokens inválidos — aceita só palavras com letras reais
+  const cleaned = rawCaptions.filter(
+    (c) => VALID_WORD.test(c.text) && !INVALID_TOKEN.test(c.text),
+  );
+
+  if (cleaned.length === 0) return [];
+
+  // Passo 3: mescla fragmentos de palavras (sílabas → palavras completas)
+  const merged = mergeWordFragments(cleaned);
+
+  // Passo 4: agrupa em frases para exibição (estilo TikTok)
+  // combineTokensWithinMilliseconds controla quando separar frases
+  const { pages } = createTikTokStyleCaptions({
+    captions: merged,
+    combineTokensWithinMilliseconds: 200,
+  });
+
+  // Passo 5: converte páginas para CaptionWord[] com frames
+  const words: CaptionWord[] = [];
+  for (const page of pages) {
+    for (const token of page.tokens) {
+      words.push({
+        text: token.text.trim(),
+        startFrame: msToFrames(token.fromMs, fps),
+        endFrame: msToFrames(token.toMs, fps),
+        bold: false,
+      });
+    }
+  }
+
+  return words;
 }
 
 /**
@@ -256,8 +331,7 @@ export function useTranscription(projectId?: string | null): UseTranscriptionRet
 
             if (cancelRef.current) throw new Error('Transcrição cancelada pelo usuário.');
 
-            const tokens = extractTokens(result.transcription);
-            words = tokensToCaptionWords(tokens, params.fps);
+            words = processWhisperCaptions(result.transcription, params.fps);
             transcriptionSource = 'whisper';
           } catch (whisperErr) {
             // Falha no Whisper → fallback proporcional
