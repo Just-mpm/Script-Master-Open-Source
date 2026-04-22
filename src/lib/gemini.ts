@@ -1,11 +1,19 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getGeminiApiKey } from './env';
+import { withRetry } from './rate-limiter';
 
 const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
 export interface ScenePrompt {
   timestamp: number; // in seconds
   prompt: string;
+}
+
+/** Resultado da geração de prompts de cena, incluindo flag de fallback */
+export interface ScenePromptResult {
+  readonly prompts: ScenePrompt[];
+  /** true quando a API falhou e o resultado é um fallback genérico */
+  readonly isFallback: boolean;
 }
 
 interface ReferenceImagePayload {
@@ -29,7 +37,7 @@ function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   };
 }
 
-export async function generateScenePrompts(script: string, durationInSeconds: number, style: string, densitySeconds: number = 15, visualFramework: string = 'general'): Promise<ScenePrompt[]> {
+export async function generateScenePrompts(script: string, durationInSeconds: number, style: string, densitySeconds: number = 15, visualFramework: string = 'general'): Promise<ScenePromptResult> {
   const imageCount = Math.max(1, Math.ceil(durationInSeconds / densitySeconds));
   
   const frameworkInstructions = visualFramework === 'whiteboard'
@@ -87,68 +95,60 @@ ${script}`;
     text = text.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(text) as ScenePrompt[];
     
-    return parsed;
+    return { prompts: parsed, isFallback: false };
   } catch (error) {
     console.error("Erro ao gerar prompts de cena:", error);
-    // Fallback
-    return [{ timestamp: 0, prompt: `A captivating scene about: ${script.substring(0, 100)}... Style: ${style}` }];
+    // Fallback genérico quando a API falha
+    const fallbackPrompts: ScenePrompt[] = [{ timestamp: 0, prompt: `A captivating scene about: ${script.substring(0, 100)}... Style: ${style}` }];
+    return { prompts: fallbackPrompts, isFallback: true };
   }
 }
 
 export async function generateImageFromPrompt(prompt: string, aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' = '16:9', referenceImage?: string): Promise<string | null> {
-  let retries = 0;
-  const MAX_IMAGE_RETRIES = 2;
+  try {
+    // Extrai a lógica de chamada para dentro de withRetry — erros transitórios
+    // (429, 503, 504, quota, deadline, unavailable) são automaticamente
+    // retentados com exponential backoff + jitter pelo rate-limiter.
+    const { value: response } = await withRetry(
+      async () => {
+        const contentsParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
 
-  while (retries <= MAX_IMAGE_RETRIES) {
-    try {
-      const contentsParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
-      
-      if (referenceImage) {
-        const referenceImagePayload = parseReferenceImage(referenceImage);
-        contentsParts.push({
-          inlineData: {
-            mimeType: referenceImagePayload.mimeType,
-            data: referenceImagePayload.data
-          }
-        });
-      }
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: [{ role: 'user', parts: contentsParts }],
-        config: {
-          imageConfig: {
-            aspectRatio,
-          },
-        },
-      });
-
-      for (const part of response.candidates?.[0]?.content?.parts ?? []) {
-        if (!part.inlineData?.data) {
-          continue;
+        if (referenceImage) {
+          const referenceImagePayload = parseReferenceImage(referenceImage);
+          contentsParts.push({
+            inlineData: {
+              mimeType: referenceImagePayload.mimeType,
+              data: referenceImagePayload.data,
+            },
+          });
         }
 
-        const imageData = part.inlineData.data;
-        const mimeType = part.inlineData.mimeType || 'image/png';
-        return `data:${mimeType};base64,${imageData}`;
-      }
-      return null;
-    } catch (error: unknown) {
-      const errorObject = error as { message?: string; status?: string; code?: number };
-      const isQuotaError = errorObject.message?.includes('quota') || 
-                          errorObject.message?.includes('429') || 
-                          errorObject.status === 'RESOURCE_EXHAUSTED';
-      
-      if ((isQuotaError || errorObject.message?.includes('Deadline') || errorObject.status === 'UNAVAILABLE' || errorObject.code === 503) && retries < MAX_IMAGE_RETRIES) {
-        retries++;
-        console.warn(`Erro temporário (${errorObject.status || errorObject.code}) na imagem, tentando em ${retries * 3}s...`);
-        await new Promise(r => setTimeout(r, retries * 3000));
+        return ai.models.generateContent({
+          model: 'gemini-3.1-flash-image-preview',
+          contents: [{ role: 'user', parts: contentsParts }],
+          config: {
+            imageConfig: {
+              aspectRatio,
+            },
+          },
+        });
+      },
+      { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
+    );
+
+    // Procura a primeira parte que contenha imagem inline
+    for (const part of response.candidates?.[0]?.content?.parts ?? []) {
+      if (!part.inlineData?.data) {
         continue;
       }
-      
-      console.error("Erro ao gerar imagem:", error);
-      return null;
+
+      const imageData = part.inlineData.data;
+      const mimeType = part.inlineData.mimeType || 'image/png';
+      return `data:${mimeType};base64,${imageData}`;
     }
+    return null;
+  } catch (error) {
+    console.error('Erro ao gerar imagem após tentativas de retry:', error);
+    return null;
   }
-  return null;
 }

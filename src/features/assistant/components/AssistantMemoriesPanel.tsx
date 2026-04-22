@@ -8,6 +8,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -25,6 +26,7 @@ import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantMemoriesPanelProps {
   memories: Memory[];
+  isLoading?: boolean;
   newMemory: string;
   documentInputRef: RefObject<HTMLInputElement | null>;
   onClose: () => void;
@@ -36,6 +38,7 @@ interface AssistantMemoriesPanelProps {
 
 export function AssistantMemoriesPanel({
   memories,
+  isLoading = false,
   newMemory,
   documentInputRef,
   onClose,
@@ -128,7 +131,26 @@ export function AssistantMemoriesPanel({
         </Stack>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-          {memories.length === 0 ? (
+          {isLoading ? (
+            <List disablePadding sx={{ display: 'grid', gap: GAP_MEDIUM }}>
+              {[1, 2, 3].map((key) => (
+                <ListItem
+                  key={key}
+                  disablePadding
+                  sx={(theme) => ({ ...assistantInsetSx(theme), alignItems: 'flex-start', p: 2, pr: 7 })}
+                >
+                  <ListItemText
+                    primary={<Skeleton variant="text" animation="wave" />}
+                    secondary={<Skeleton variant="text" width="30%" height={14} animation="wave" />}
+                    slotProps={{
+                      primary: { variant: 'body2', sx: { pr: 1 } },
+                      secondary: { variant: 'caption' },
+                    }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : memories.length === 0 ? (
             <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 280, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
                 <Description sx={{ fontSize: 42, color: 'text.secondary' }} />
               <Typography variant="subtitle1">Ainda não há memórias salvas</Typography>

@@ -104,8 +104,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
     };
   }, []);
 
-  // Auto-save session
+  // Auto-save session (após streaming, evita centenas de saves por segundo)
   useEffect(() => {
+    if (isStreaming) return;
+
     if (messages.length > 1) {
       const title = messages.find(m => m.role === 'user')?.text.slice(0, 40) || 'Nova Conversa';
       const session: ChatSession = {
@@ -120,7 +122,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         console.error('Erro ao salvar sessão do assistente:', sessionError);
       });
     }
-  }, [messages, currentSessionId, user]);
+  }, [messages, currentSessionId, user, isStreaming]);
 
   // ---------------------------------------------------------------------------
   // Controle de sessão

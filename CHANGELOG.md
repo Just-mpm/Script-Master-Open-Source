@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.10.1] - 2026-04-22
+
+### Adicionado
+
+- **WarningToast** (`src/components/WarningToast.tsx`): snackbar de aviso para falhas parciais (ex: cenas que falharam na geração), integrado ao App shell
+- **Loading states** nos painéis do assistente: skeletons em `AssistantMemoriesPanel` e estado `isLoading` em `AssistantHistoryPanel` durante carregamento de dados
+
+### Alterado
+
+- **useAssistant** (`src/hooks/useAssistant.ts`): auto-save de sessão agora respeita `isStreaming`, evitando centenas de saves por segundo durante streaming
+- **useVoicePreviews** (`src/hooks/useVoicePreviews.ts`): tratamento de erro no `audio.play()` para navegadores que bloqueiam autoplay
+- **VideoExportPanel** (`src/features/video-render/components/VideoExportPanel.tsx`): labels dinâmicos exibem o container resolvido (MP4/VP8/VP9) em vez de texto fixo "MP4"
+- **AnimationPlayer** (`src/features/speed-paint/components/canvas/AnimationPlayer.tsx`): acesso ao `batchMode` via seletor Zustand em vez de getState direto
+- **gemini.ts** (`src/lib/gemini.ts`): `generateScenePrompts` refatorado com retry via `withRetry`, nova interface `ScenePromptResult` exportada, remoção de `MAX_IMAGE_RETRIES`
+
+### Removido
+
+- **EDITING_PLAN_STORE** (`src/lib/db/shared.ts`): constante legada do plano de edição (removido na 0.9.0)
+- **Plano de legendas Whisper** (`docs/plan/legendas-automaticas-whisper.md`): documento de planejamento arquivado — feature já implementada nas versões 0.8.4/0.10.0
+- **referenceImage do localStorage** (`src/features/studio/useStudioState.ts`): `referenceImage` agora é session-only (data URLs base64 são muito grandes para localStorage)
+
+### Documentação
+
+- **persistence.md**: remoção de `EDITING_PLAN_STORE` da tabela de stores, nota "apenas IndexedDB" em `TRANSCRIPTIONS_STORE`
+
+---
+
 ## [0.10.0] - 2026-04-22
 
 ### Adicionado

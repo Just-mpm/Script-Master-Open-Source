@@ -21,6 +21,7 @@ import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantHistoryPanelProps {
   history: ChatSession[];
+  isLoading?: boolean;
   onClose: () => void;
   onSelectSession: (session: ChatSession) => void;
   onDeleteHistory: (event: MouseEvent<HTMLButtonElement>, id: string) => void;
@@ -28,6 +29,7 @@ interface AssistantHistoryPanelProps {
 
 export function AssistantHistoryPanel({
   history,
+  isLoading = false,
   onClose,
   onSelectSession,
   onDeleteHistory,
@@ -64,7 +66,19 @@ export function AssistantHistoryPanel({
         </Stack>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-          {history.length === 0 ? (
+          {isLoading ? (
+            <List disablePadding sx={{ display: 'grid', gap: GAP_MEDIUM }}>
+              {[1, 2, 3].map((key) => (
+                <Box key={key} sx={(theme) => ({ ...assistantInsetSx(theme), p: 1.75, display: 'flex', alignItems: 'center', gap: GAP_MEDIUM })}>
+                  <Skeleton variant="circular" width={ICON_SIZE_MD} height={ICON_SIZE_MD} animation="wave" />
+                  <Stack spacing={0.5} sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width="60%" height={20} animation="wave" />
+                    <Skeleton variant="text" width="35%" height={14} animation="wave" />
+                  </Stack>
+                </Box>
+              ))}
+            </List>
+          ) : history.length === 0 ? (
             <Stack spacing={2} sx={{ minHeight: 320, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
               <History sx={{ fontSize: 44, color: 'text.secondary' }} />
               <Stack spacing={GAP_COMPACT}>

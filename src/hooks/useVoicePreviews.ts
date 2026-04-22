@@ -35,7 +35,17 @@ export function useVoicePreviews() {
       setPlayingId(null);
     };
     audio.onended = () => setPlayingId(null);
-    void audio.play();
+    audio.play().catch((playErr: unknown) => {
+      // play() é rejeitado quando o navegador bloqueia autoplay (sem interação prévia)
+      const isAbort = playErr instanceof DOMException && playErr.name === 'AbortError';
+      if (!isAbort) {
+        console.warn(
+          'Preview bloqueado pela política de autoplay do navegador.',
+          playErr,
+        );
+      }
+      setPlayingId(null);
+    });
   };
 
   return {

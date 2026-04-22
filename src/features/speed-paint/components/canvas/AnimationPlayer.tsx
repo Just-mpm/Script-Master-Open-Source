@@ -11,6 +11,7 @@ import { CYAN_GLOW_SOFT } from '../../../../theme/tokens';
 
 export function AnimationPlayer() {
   const { job, isPlaying, setIsPlaying, setProgress } = useAnimationStore();
+  const batchMode = useAnimationStore((s) => s.batchMode);
   const requestRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number | undefined>(undefined);
   const hasAutoPlayed = useRef(false);
@@ -70,9 +71,7 @@ export function AnimationPlayer() {
     }
   }, [job.id, job.status]);
 
-  // Handle manual playback mode where no batch is present and the user drops one image
-  const batchMode = useAnimationStore.getState().batchMode;
-
+  // Auto-play quando job completa no modo manual (sem batch ativo)
   useEffect(() => {
     if (job.status === 'completed' && !hasAutoPlayed.current && batchMode === 'idle') {
       hasAutoPlayed.current = true;

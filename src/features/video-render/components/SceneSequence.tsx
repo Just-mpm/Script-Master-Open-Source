@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import {
   AbsoluteFill,
   Img,
+  cancelRender,
+  continueRender,
+  delayRender,
   spring,
   useCurrentFrame,
   useVideoConfig,
@@ -48,6 +52,9 @@ export function SceneSequence({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
+  // Bloqueia a renderização até que a imagem carregue; cancela em caso de falha
+  const [handle] = useState(() => delayRender('Carregando imagem da cena'));
+
   // Garante que o inputRange seja estritamente crescente:
   // precisa t >= 1 e 2*t < durationInFrames, ou seja t <= floor((dur-1)/2)
   const maxAllowed = durationInFrames >= 3 ? Math.floor((durationInFrames - 1) / 2) : 0;
@@ -60,6 +67,8 @@ export function SceneSequence({
         <Img
           src={imageUrl}
           alt=""
+          onLoad={() => continueRender(handle)}
+          onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
           style={{
             width: '100%',
             height: '100%',
@@ -81,6 +90,8 @@ export function SceneSequence({
         <Img
           src={imageUrl}
           alt=""
+          onLoad={() => continueRender(handle)}
+          onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
           style={{
             width: '100%',
             height: '100%',
@@ -102,6 +113,8 @@ export function SceneSequence({
       <Img
         src={imageUrl}
         alt=""
+        onLoad={() => continueRender(handle)}
+        onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
         style={{
           width: '100%',
           height: '100%',

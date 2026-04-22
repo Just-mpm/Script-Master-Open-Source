@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/audio';
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
-import { generateScenePrompts, generateImageFromPrompt } from '../lib/gemini';
+import { generateScenePrompts, generateImageFromPrompt, type ScenePromptResult } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
 import { getGeminiApiKey } from '../lib/env';
 import { calculateDurationFromWav } from '../features/video-render/lib/videoUtils';
@@ -467,7 +467,14 @@ export function useAudioGenerator() {
         const durationInSeconds = totalLength / 48000;
         const style = `${scene} ${styleNotes}`.trim();
 
-        const prompts = await generateScenePrompts(script, durationInSeconds, style, sceneDensity, visualFramework);
+        const result: ScenePromptResult = await generateScenePrompts(script, durationInSeconds, style, sceneDensity, visualFramework);
+
+        // Avisa o usuário quando o Gemini falhou e usou fallback genérico
+        if (result.isFallback) {
+          setSceneGenerationWarning('Não foi possível gerar o roteiro visual automaticamente. As cenas usarão prompts genéricos — a qualidade visual será reduzida.');
+        }
+
+        const prompts = result.prompts;
         updateProgress(0.5);
 
         const generatedScenes: { imageUrl: string; timestamp: number }[] = [];

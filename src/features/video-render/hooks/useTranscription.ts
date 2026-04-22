@@ -72,7 +72,7 @@ const PROGRESS_RANGES = {
  * parênteses, <>, etc. Só aceita tokens compostos por letras, espaços,
  * pontuação comum e números (para casos como "2024" ou "R$").
  */
-const INVALID_TOKEN = /[\[\]<_\{\}\\]/;
+const INVALID_TOKEN = /[[\]<_{}\]\\]/;
 
 /**
  * Aceita só tokens válidos: têm pelo menos uma letra E não têm caracteres de formatação.

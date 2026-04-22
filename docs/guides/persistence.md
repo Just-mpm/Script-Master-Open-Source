@@ -81,8 +81,7 @@ Todas as stores usam `keyPath: 'id'`. Definidas em `STORE_DEFINITIONS`:
 | `CHAT_STORE` | `'chats'` | Sessões de chat |
 | `SETTING_STORE` | `'user_settings'` | Configurações do usuário |
 | `VIDEOS_STORE` | `'videos'` | Vídeos de projeto |
-| `EDITING_PLAN_STORE` | `'editing_plans'` | Planos de edição (legado) |
-| `TRANSCRIPTIONS_STORE` | `'transcriptions'` | Transcrições de áudio |
+| `TRANSCRIPTIONS_STORE` | `'transcriptions'` | Transcrições de áudio (apenas local) |
 
 ### Indexes
 

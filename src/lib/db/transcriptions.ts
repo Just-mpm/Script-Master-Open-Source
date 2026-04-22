@@ -1,6 +1,20 @@
 import type { TranscriptionResult } from '../../features/video-render/types';
 import { TRANSCRIPTIONS_STORE, getIndexedDbItem, putIndexedDbItem, deleteIndexedDbItem } from './shared';
 
+/**
+ * @module transcriptions
+ *
+ * ⚠️ APENAS IndexedDB — sem dual storage (Firestore).
+ *
+ * Transcrições são dados temporários por projeto e não fazem sync com a nuvem.
+ * Em mudanças de dispositivo ou limpeza de dados do navegador, elas são perdidas.
+ * Isso é intencional: transcrições são regeneráveis a partir do áudio (via Whisper WASM)
+ * e implementar dual storage completo seria overengineering para o benefício.
+ *
+ * Se o usuário precisar de persistência cruzada, o fluxo correto é re-renderizar
+ * o vídeo com legendas no mesmo dispositivo.
+ */
+
 /** Estrutura persistida no IndexedDB para a transcrição de um projeto */
 export interface StoredTranscription {
   id: string; // projectId
@@ -8,14 +22,27 @@ export interface StoredTranscription {
   createdAt: number;
 }
 
+/** Flag para emitir console.info apenas na primeira chamada */
+let hasLoggedNotice = false;
+
 /**
  * Salva a transcrição de um projeto no IndexedDB.
- * Dados temporários por projeto — não precisam de sync com Firestore.
+ *
+ * @note Dados locais apenas — não sincronizam com Firestore em nenhuma circunstância.
+ * Se userId for necessário futuramente, a arquitetura dual storage precisará ser expandida.
  */
 export async function saveTranscription(
   projectId: string,
   result: TranscriptionResult,
 ): Promise<void> {
+  if (!hasLoggedNotice) {
+    hasLoggedNotice = true;
+    console.info(
+      '[Script Master] Transcrições são salvas apenas no IndexedDB local. ' +
+      'Elas não sincronizam entre dispositivos e podem ser perdidas ao limpar dados do navegador.',
+    );
+  }
+
   const stored: StoredTranscription = {
     id: projectId,
     result,

@@ -172,7 +172,7 @@ export function VideoExportPanel({
                   } : {}),
                 }}
               >
-                Exportar MP4
+                Exportar {exporter.resolvedContainer.toUpperCase()}
               </Button>
             </Stack>
           </Stack>
@@ -243,7 +243,7 @@ export function VideoExportPanel({
               >
                 Limpar
               </Button>
-              <Tooltip title="Baixar MP4">
+              <Tooltip title={`Baixar ${exporter.resolvedContainer.toUpperCase()}`}>
                 <Button
                   variant="contained"
                   size="small"
@@ -255,7 +255,7 @@ export function VideoExportPanel({
                     '&:hover': { background: BRAND_GRADIENT_HOVER },
                   }}
                 >
-                  Baixar MP4
+                  Baixar {exporter.resolvedContainer.toUpperCase()}
                 </Button>
               </Tooltip>
             </Stack>

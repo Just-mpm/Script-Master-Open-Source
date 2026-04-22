@@ -20,8 +20,11 @@ export const MEMORY_STORE = 'memories';
 export const CHAT_STORE = 'chats';
 export const SETTING_STORE = 'user_settings';
 export const VIDEOS_STORE = 'videos';
-export const EDITING_PLAN_STORE = 'editing_plans';
 export const TRANSCRIPTIONS_STORE = 'transcriptions';
+
+// Removido no v0.9.0: EDITING_PLAN_STORE ('editing_plans')
+// Feature de planos de edição foi removida. A store pode existir em bancos antigos
+// ( IndexedDB não permite deletar stores via upgrade ), mas nenhum código a acessa.
 
 const STORE_DEFINITIONS = [
   STORE_NAME,
@@ -33,7 +36,6 @@ const STORE_DEFINITIONS = [
   CHAT_STORE,
   SETTING_STORE,
   VIDEOS_STORE,
-  EDITING_PLAN_STORE,
   TRANSCRIPTIONS_STORE,
 ] as const;
 

@@ -50,6 +50,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [history, setHistory] = useState<ChatSession[]>([]);
+  const [isLoadingMemories, setIsLoadingMemories] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [newMemory, setNewMemory] = useState('');
   const [customSystemPrompt, setCustomSystemPrompt] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -68,13 +70,23 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   }, [user?.uid]);
 
   const loadMemories = useCallback(async () => {
-    const data = await getMemories(user?.uid);
-    setMemories(data);
+    setIsLoadingMemories(true);
+    try {
+      const data = await getMemories(user?.uid);
+      setMemories(data);
+    } finally {
+      setIsLoadingMemories(false);
+    }
   }, [user?.uid]);
 
   const loadHistory = useCallback(async () => {
-    const data = await getChatSessions(user?.uid);
-    setHistory(data);
+    setIsLoadingHistory(true);
+    try {
+      const data = await getChatSessions(user?.uid);
+      setHistory(data);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   }, [user?.uid]);
 
   useEffect(() => {
@@ -248,6 +260,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       {showMemories && (
         <AssistantMemoriesPanel
           memories={memories}
+          isLoading={isLoadingMemories}
           newMemory={newMemory}
           documentInputRef={documentInputRef}
           onClose={() => setShowMemories(false)}
@@ -261,6 +274,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       {showHistory && (
         <AssistantHistoryPanel
           history={history}
+          isLoading={isLoadingHistory}
           onClose={() => setShowHistory(false)}
           onSelectSession={handleSelectSession}
           onDeleteHistory={handleDeleteHistory}

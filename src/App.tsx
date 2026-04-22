@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -10,6 +10,7 @@ import { ActionBar } from './components/ActionBar';
 import { ErrorToast } from './components/ErrorToast';
 import { Header } from './components/Header';
 import { SuccessToast } from './components/SuccessToast';
+import { WarningToast } from './components/WarningToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
@@ -99,6 +100,7 @@ export default function App() {
     setSuccessMsg,
     statusText,
     successMsg,
+    sceneGenerationWarning,
     audioUrl,
     videoFps,
     durationInFrames,
@@ -118,6 +120,17 @@ export default function App() {
     if (authError) { clearAuthError(); return; }
     if (error) { setError(''); return; }
   }, [authError, clearAuthError, error, setError]);
+
+  // Desativa warning de cena após auto-hide
+  const [localSceneWarning, setLocalSceneWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sceneGenerationWarning) {
+      setLocalSceneWarning(sceneGenerationWarning);
+    }
+  }, [sceneGenerationWarning]);
+
+  const dismissSceneWarning = useCallback(() => setLocalSceneWarning(null), []);
 
   const appRoutes = (
     <Suspense fallback={<RouteFallback />}>
@@ -247,6 +260,7 @@ export default function App() {
       </Box>
 
       <ErrorToast error={activeError} onDismiss={dismissError} />
+      <WarningToast warning={localSceneWarning} onDismiss={dismissSceneWarning} />
       <SuccessToast message={successMsg} onDismiss={() => setSuccessMsg(null)} />
 
       {(currentPath === '/' || currentPath === '/video') && (

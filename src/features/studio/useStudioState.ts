@@ -22,7 +22,6 @@ const STORAGE_KEYS = {
   sceneDensity: 's2a_scene_density',
   sceneRatio: 's2a_scene_ratio',
   visualFramework: 's2a_visual_framework',
-  hasReferenceImage: 's2a_has_ref_image',
 } as const;
 
 const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
@@ -87,11 +86,23 @@ export function useStudioState() {
   const [sceneDensity, setSceneDensity] = useState(() => getStoredNumber(STORAGE_KEYS.sceneDensity, 15));
   const [sceneRatio, setSceneRatio] = useState<SceneRatio>(() => getStoredSceneRatio());
   const [visualFramework, setVisualFramework] = useState(() => getStoredValue(STORAGE_KEYS.visualFramework, 'general'));
+  // referenceImage é intencionalmente session-only (useState sem persistência).
+  // Data URLs base64 são muito grandes para localStorage/IndexedDB, e a imagem
+  // é regenerável pelo usuário. Em reloads, a referência é perdida — comportamento esperado.
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
   const { play, setDurationOverride } = useGlobalAudioActions();
+
+  // Limpa flag obsoleto do localStorage (removido — referenceImage é session-only)
+  useEffect(() => {
+    try {
+      localStorage.removeItem('s2a_has_ref_image');
+    } catch {
+      // Safari Private Browsing — ignorar silenciosamente
+    }
+  }, []);
 
   const {
     isGenerating,
@@ -102,6 +113,7 @@ export function useStudioState() {
     scenes,
     error,
     setError,
+    sceneGenerationWarning,
     generateAudio,
     handleCancel,
     loadProjectData,
@@ -169,13 +181,11 @@ export function useStudioState() {
     safeSetItem(STORAGE_KEYS.sceneDensity, String(sceneDensity));
     safeSetItem(STORAGE_KEYS.sceneRatio, sceneRatio);
     safeSetItem(STORAGE_KEYS.visualFramework, visualFramework);
-    safeSetItem(STORAGE_KEYS.hasReferenceImage, String(referenceImage !== null));
   }, [
     audioProfile,
     generateScenes,
     isMultiSpeaker,
     pace,
-    referenceImage,
     scene,
     sceneDensity,
     sceneRatio,
@@ -330,6 +340,7 @@ export function useStudioState() {
     scenes,
     error,
     setError,
+    sceneGenerationWarning,
     handleGenerate,
     handleApplySettings,
     handleDownload,

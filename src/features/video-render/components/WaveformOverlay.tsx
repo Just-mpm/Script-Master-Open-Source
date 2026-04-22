@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useId } from 'react';
 import { AbsoluteFill, interpolate } from 'remotion';
 import {
   useAudioData,
@@ -119,6 +119,9 @@ export function WaveformOverlay({
   // ── Carrega dados de áudio via hook do Remotion ──
   const audioData = useAudioData(audioUrl ?? '');
 
+  // ── IDs únicos por instância para evitar colisão SVG ──
+  const id = useId();
+
   // ── Calcula tempo relativo dentro da cena ──
   const sceneTime = getSceneTime(frame, fps, sceneStartTime, sceneEndTime);
 
@@ -193,28 +196,28 @@ export function WaveformOverlay({
       >
         {/* Gradiente vertical para o waveform — brilho na base */}
         <defs>
-          <linearGradient id="waveformGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${id}-waveformGradient`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={BRAND_PRIMARY} stopOpacity="0.4" />
             <stop offset="100%" stopColor={BRAND_PRIMARY} stopOpacity="0.9" />
           </linearGradient>
 
           {/* Gradiente de fade lateral — esquerda */}
-          <linearGradient id="fadeLeft" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${id}-fadeLeft`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor={BRAND_PRIMARY} stopOpacity="0" />
             <stop offset="100%" stopColor={BRAND_PRIMARY} stopOpacity="1" />
           </linearGradient>
 
           {/* Gradiente de fade lateral — direita */}
-          <linearGradient id="fadeRight" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`${id}-fadeRight`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor={BRAND_PRIMARY} stopOpacity="1" />
             <stop offset="100%" stopColor={BRAND_PRIMARY} stopOpacity="0" />
           </linearGradient>
 
           {/* Mask para fade nas bordas do waveform */}
-          <mask id="waveformFadeMask">
-            <rect x="0" y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill="url(#fadeLeft)" />
+          <mask id={`${id}-waveformFadeMask`}>
+            <rect x="0" y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill={`url(#${id}-fadeLeft)`} />
             <rect x={SVG_WIDTH * 0.1} y="0" width={SVG_WIDTH * 0.8} height={SVG_HEIGHT} fill="white" />
-            <rect x={SVG_WIDTH * 0.9} y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill="url(#fadeRight)" />
+            <rect x={SVG_WIDTH * 0.9} y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill={`url(#${id}-fadeRight)`} />
           </mask>
         </defs>
 
@@ -233,11 +236,11 @@ export function WaveformOverlay({
           <path
             d={svgPath}
             fill="none"
-            stroke="url(#waveformGradient)"
+            stroke={`url(#${id}-waveformGradient)`}
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            mask="url(#waveformFadeMask)"
+            mask={`url(#${id}-waveformFadeMask)`}
           />
         )}
 
