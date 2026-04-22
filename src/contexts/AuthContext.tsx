@@ -7,10 +7,10 @@ import { isMigrationAlreadyHandled } from '../lib/db/migration';
 const log = createLogger('AuthContext');
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  'auth/popup-closed-by-user': 'Popup fechado. Tente novamente.',
+  'auth/popup-closed-by-user': 'Popup fechado pelo usuario. Tente novamente.',
   'auth/cancelled-popup-request': 'Login cancelado.',
   'auth/popup-blocked': 'Popup bloqueado pelo navegador. Permita popups para este site.',
-  'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
+  'auth/network-request-failed': 'Erro de conexao. Verifique sua internet.',
   'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento.',
 };
 

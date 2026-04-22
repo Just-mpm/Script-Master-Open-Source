@@ -71,13 +71,14 @@ Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
 
 ## Version
 
-- **Current:** `0.11.1`
+- **Current:** `0.11.2`
 - **Last release:** 2026-04-22
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.11.2 | Plugin condicional COEP (?coep=1) no dev server, resolve conflito Firebase Auth vs SharedArrayBuffer; referrerPolicy no Header Avatar; correção de encoding nas mensagens de auth |
 | 0.11.1 | 5 novos tokens de tema (ERROR_BG_SUBTLE, ERROR_BG_MEDIUM, WARNING_BG_SUBTLE, WHITE_01, GLASS_BG), 12 componentes migrados de cores hardcoded para tokens, 6 guias corrigidos (47 inconsistências) |
 | 0.11.0 | Logger centralizado (createLogger), CaptionEditorPanel com split/merge de legendas, persistência de segmentos de áudio (AudioSegment), detecção de silêncio via RMS, hash de roteiro (staleness), alinhamento script→legendas via segmentos TTS, CaptionSource type |
 | 0.10.1 | WarningToast, loading states no assistente, auto-save respeita isStreaming, tratamento de autoplay em previews, labels dinâmicos no exportador, withRetry em generateScenePrompts, ScenePromptResult, limpeza de código legado |

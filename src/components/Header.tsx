@@ -152,6 +152,7 @@ export function Header() {
                   <Avatar
                       alt={user.displayName ?? 'Usuário'}
                       src={user.photoURL ?? undefined}
+                      slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
                       sx={{ width: 28, height: 28, bgcolor: 'action.hover' }}
                     >
                       {!user.photoURL && <Person sx={{ fontSize: ICON_SIZE_SM }} />}

@@ -7,6 +7,16 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.11.2] - 2026-04-22
+
+### Alterado
+
+- **`vite.config.ts`**: headers COOP/COEP removidos da configuração estática de build e movidos para plugin condicional `conditionalCoepPlugin` — ativa via query param `?coep=1` no dev/preview server, eliminando o conflito entre Firebase Auth (iframes cross-origin) e `SharedArrayBuffer` (Whisper WASM, Remotion)
+- **`src/components/Header.tsx`**: adicionado `referrerPolicy: 'no-referrer'` no Avatar para evitar leaks de referência
+- **`src/contexts/AuthContext.tsx`**: mensagens de erro de auth corrigidas (encoding)
+
+---
+
 ## [0.11.1] - 2026-04-22
 
 ### Adicionado
