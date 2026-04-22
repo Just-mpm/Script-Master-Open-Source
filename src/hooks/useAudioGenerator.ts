@@ -4,9 +4,15 @@ import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/au
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
 import { generateScenePrompts, generateImageFromPrompt, type ScenePromptResult } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
+import type { AudioSegment } from '../lib/db/types';
+import { saveAudioSegments } from '../lib/db/audio-segments';
 import { getGeminiApiKey } from '../lib/env';
 import { calculateDurationFromWav } from '../features/video-render/lib/videoUtils';
 import { withRetry } from '../lib/rate-limiter';
+import { detectSceneBoundaries } from '../lib/audio-analysis';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('useAudioGenerator');
 
 // ---------------------------------------------------------------------------
 // Utilitários extraídos do handler (bp #13)
@@ -110,6 +116,7 @@ export function useAudioGenerator() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [scenes, setScenes] = useState<{ imageUrl: string; timestamp: number }[]>([]);
+  const [audioSegments, setAudioSegments] = useState<AudioSegment[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sceneGenerationWarning, setSceneGenerationWarning] = useState<string | null>(null);
@@ -123,10 +130,12 @@ export function useAudioGenerator() {
     audioUrl: string | null;
     audioBlob: Blob | null;
     scenes: { imageUrl: string; timestamp: number }[];
+    audioSegments: AudioSegment[];
   }>({
     audioUrl: null,
     audioBlob: null,
     scenes: [],
+    audioSegments: [],
   });
 
   // Cleanup object URL para evitar memory leaks (tech #6 parcial)
@@ -159,7 +168,7 @@ export function useAudioGenerator() {
           const blob = await response.blob();
           setAudioBlob(blob);
         } catch (err) {
-          console.warn('[loadProjectData] Falha ao buscar blob do áudio:', err);
+          log.warn('Falha ao buscar blob do áudio', { error: err });
         }
       } else {
         // URL externa (ex: Firebase Storage): usa <audio> para obter
@@ -173,7 +182,7 @@ export function useAudioGenerator() {
           audio.removeEventListener('error', handleError);
         };
         const handleError = () => {
-          console.warn('[loadProjectData] Falha ao carregar metadados do áudio pela URL');
+          log.warn('Falha ao carregar metadados do áudio pela URL');
           audio.removeEventListener('loadedmetadata', handleLoaded);
           audio.removeEventListener('error', handleError);
         };
@@ -193,6 +202,7 @@ export function useAudioGenerator() {
     setAudioUrl(lastSuccessfulStateRef.current.audioUrl);
     setAudioBlob(lastSuccessfulStateRef.current.audioBlob);
     setScenes(lastSuccessfulStateRef.current.scenes);
+    setAudioSegments(lastSuccessfulStateRef.current.audioSegments);
   };
 
   const generateAudio = async (options: GenerateOptions, onStart?: () => void) => {
@@ -264,12 +274,13 @@ export function useAudioGenerator() {
 
     if (onStart) onStart();
 
-    const previousState = { audioUrl, audioBlob, scenes };
+    const previousState = { audioUrl, audioBlob, scenes, audioSegments };
     lastSuccessfulStateRef.current = previousState;
     setAudioUrl(null);
     setAudioBlob(null);
     setAudioDuration(0);
     setScenes([]);
+    setAudioSegments([]);
 
     let generatedAudioUrl: string | null = null;
 
@@ -314,7 +325,7 @@ export function useAudioGenerator() {
             throw new Error('Resposta vazia do modelo de divisão.');
           }
         } catch (e) {
-          console.warn('Erro na divisão via LLM, usando fallback programático', e);
+          log.warn('Erro na divisão via LLM, usando fallback programático', { error: e });
           chunks = splitTextProgrammatically(script, CHUNK_LIMIT);
         }
       }
@@ -333,6 +344,7 @@ export function useAudioGenerator() {
       };
 
       const pcmChunks: Uint8Array[] = [];
+      const generatedSegments: AudioSegment[] = [];
       let totalLength = 0;
 
       const paceNote = PACE_INSTRUCTIONS[pace];
@@ -409,7 +421,7 @@ export function useAudioGenerator() {
 
           base64Audio = response;
         } catch (chunkErr: unknown) {
-          console.warn(`Falha ao gerar a parte ${i + 1} apos retries:`, chunkErr);
+          log.warn(`Falha ao gerar a parte ${i + 1} após retries`, { error: chunkErr });
           throw new Error(
             `Falha ao gerar a parte ${i + 1} após múltiplas tentativas.`,
             { cause: chunkErr },
@@ -421,6 +433,22 @@ export function useAudioGenerator() {
           const pcmData = extractPcmFromData(rawData);
           pcmChunks.push(pcmData);
           totalLength += pcmData.length;
+
+          // Mapeia o texto do chunk para o timing real no áudio final
+          // PCM 24kHz 16-bit mono = 48.000 bytes por segundo
+          const chunkDurationSec = pcmData.length / 48000;
+          const chunkStartSec = pcmChunks
+            .slice(0, i)
+            .reduce((sum, prevPcm) => sum + prevPcm.length / 48000, 0);
+          const chunkEndSec = chunkStartSec + chunkDurationSec;
+
+          generatedSegments.push({
+            text: chunk,
+            startSec: chunkStartSec,
+            endSec: chunkEndSec,
+            chunkIndex: i,
+          });
+
           updateProgress(0.8);
         }
       }
@@ -441,6 +469,12 @@ export function useAudioGenerator() {
       generatedAudioUrl = url;
       setAudioBlob(wavBlob);
       setAudioUrl(url);
+      setAudioSegments(generatedSegments);
+
+      // --- Persistir mapeamento chunk→timestamp no IndexedDB ---
+      void saveAudioSegments(currentProjectId, generatedSegments).catch((err: unknown) => {
+        log.warn('Erro ao salvar segmentos de áudio', { error: err });
+      });
 
       // --- Auto-save áudio (UX-5: feedback em caso de falha) ---
       try {
@@ -455,7 +489,7 @@ export function useAudioGenerator() {
         };
         await saveAudioToProject(audioSource, userId);
       } catch (saveError) {
-        console.warn('Erro no auto-save do áudio:', saveError);
+        log.warn('Erro no auto-save do áudio', { error: saveError });
         setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
         setTimeout(() => setError(''), 8000);
       }
@@ -509,7 +543,7 @@ export function useAudioGenerator() {
               };
               await saveImageToProject(projectImage, userId);
             } catch (imageSaveErr) {
-              console.warn('Erro no auto-save da imagem:', imageSaveErr);
+              log.warn('Erro no auto-save da imagem', { error: imageSaveErr });
             }
           } else {
             failedSceneCount++;
@@ -526,17 +560,36 @@ export function useAudioGenerator() {
           setSceneGenerationWarning(warning);
         }
 
+        // --- Refinamento de timestamps via detecção de silêncio ---
+        // Se o número de cenas geradas for próximo do detectado no áudio,
+        // substitui os timestamps estimados do Gemini por timestamps reais
+        if (generatedScenes.length > 0) {
+          try {
+            const detectedBoundaries = await detectSceneBoundaries(wavBlob, prompts.length);
+
+            if (detectedBoundaries.length >= generatedScenes.length) {
+              for (let i = 0; i < generatedScenes.length; i++) {
+                generatedScenes[i].timestamp = detectedBoundaries[i];
+              }
+            }
+          } catch (err) {
+            log.warn('Falha na detecção de silêncio, mantendo timestamps do Gemini', { error: err });
+          }
+        }
+
         setScenes(generatedScenes);
         lastSuccessfulStateRef.current = {
           audioUrl: url,
           audioBlob: wavBlob,
           scenes: generatedScenes,
+          audioSegments: generatedSegments,
         };
       } else {
         lastSuccessfulStateRef.current = {
           audioUrl: url,
           audioBlob: wavBlob,
           scenes: [],
+          audioSegments: generatedSegments,
         };
       }
 
@@ -558,7 +611,7 @@ export function useAudioGenerator() {
         return;
       }
 
-      console.error('Error generating audio:', err);
+      log.error('Erro ao gerar áudio', { error: err });
       const errorMessage = toUserFriendlyError(err);
 
       if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
@@ -589,6 +642,7 @@ export function useAudioGenerator() {
     audioUrl,
     audioBlob,
     scenes,
+    audioSegments,
     projectId,
     error,
     setError,

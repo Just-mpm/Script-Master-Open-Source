@@ -8,6 +8,7 @@ export type {
 // ─── Tipos de legenda/transcrição ──────────────────────────
 export type {
   CaptionWord,
+  CaptionSource,
   TranscriptionResult,
   SubtitleMode,
 } from './types';
@@ -28,6 +29,7 @@ export { SceneSequence } from './components/SceneSequence';
 export { SubtitleOverlay } from './components/SubtitleOverlay';
 export { WaveformOverlay } from './components/WaveformOverlay';
 export { VideoExportPanel } from './components/VideoExportPanel';
+export { CaptionEditorPanel } from './components/CaptionEditorPanel';
 
 // ─── Hooks ────────────────────────────────────────────────
 export { useVideoExporter } from './hooks/useVideoExporter';

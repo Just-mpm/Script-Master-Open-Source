@@ -7,6 +7,31 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.11.0] - 2026-04-22
+
+### Adicionado
+
+- **Logger centralizado** (`src/lib/logger.ts`): `logger` singleton e `createLogger(namespace)` factory com níveis (debug/info/warn/error), supressão automática em produção, integração em ~20 componentes, hooks e módulos da lib
+- **CaptionEditorPanel** (`src/features/video-render/components/CaptionEditorPanel.tsx`): painel MUI dedicado para edição manual de legendas — split de palavras em timers independentes, merge de timers, edição inline de timestamps, pré-visualização visual dos gaps, integração com CaptionSource
+- **Persistência de segmentos de áudio** (`src/lib/db/audio-segments.ts`): `saveAudioSegments`/`loadAudioSegments` persistem o mapeamento texto→tempo gerado pelo TTS em IndexedDB, tipo `AudioSegment` em `src/lib/db/types.ts`
+- **Detecção de silêncio** (`src/lib/audio-analysis.ts`): análise de amplitude RMS via Web Audio API para identificar transições de cena em áudio WAV, calibração automática de threshold, `detectSceneBoundaries` exportada
+- **Hash de roteiro** (`src/lib/crypto-utils.ts`): `hashScript` via SHA-256 (Web Crypto API) para staleness detection — detecta quando o roteiro mudou e as legendas salvas ficaram desatualizadas
+- **Alinhamento script→legendas** (`src/features/video-render/lib/subtitleUtils.ts`): `splitIntoWordsWithTiming` e `alignScriptToSegments` — alinham as palavras do roteiro aos segmentos de áudio TTS para timing preciso sem depender de Whisper, com suporte a sílabas e pausas por pontuação
+- **CaptionSource** (`src/features/video-render/types.ts`): tipo unificado para fonte de legendas (whisper-aligned, script-segments, manual)
+- **Exportação** de `CaptionEditorPanel` no barrel `src/features/video-render/index.ts`
+
+### Alterado
+
+- **useTranscription** (`src/features/video-render/hooks/useTranscription.ts`): pipeline v3 — integração com `loadAudioSegments` e `hashScript` para detecção de staleness, `processWhisperAlignedCaptions` refinado, `ScriptWord` type para marcação bold por palavra
+- **useAudioGenerator** (`src/hooks/useAudioGenerator.ts`): persiste `audioSegments` via `saveAudioSegments` após geração TTS, detecção de boundaries via `detectSceneBoundaries`
+- **VideoPreview** (`src/components/VideoPreview.tsx`): integração com `createLogger`, refatoração do render
+- **VideoPage** (`src/pages/VideoPage.tsx`): integração com `CaptionEditorPanel` e tipo `AudioSegment`
+- **TranscriptionPanel** (`src/features/video-render/components/TranscriptionPanel.tsx`): uso de `CaptionSource` type
+- **Módulos de persistência** (`migration.ts`, `shared.ts`, `transcriptions.ts`): integração com `createLogger`
+- **useStudioState** (`src/features/studio/useStudioState.ts`): integração com `createLogger`
+
+---
+
 ## [0.10.1] - 2026-04-22
 
 ### Adicionado

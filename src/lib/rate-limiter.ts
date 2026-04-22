@@ -9,6 +9,9 @@
  * logic using exponential backoff".
  */
 import { ApiError } from '@google/genai';
+import { createLogger } from './logger';
+
+const log = createLogger('rate-limiter');
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -121,8 +124,8 @@ export async function withRetry<T>(
       const errorInfo = error instanceof ApiError
         ? `status ${error.status}`
         : 'desconhecido';
-      console.warn(
-        `[rate-limiter] Erro transitório (${errorInfo}), tentativa ${attempt + 1}/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
+      log.warn(
+        `Erro transitório (${errorInfo}), tentativa ${attempt + 1}/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
       );
 
       await sleep(delay);

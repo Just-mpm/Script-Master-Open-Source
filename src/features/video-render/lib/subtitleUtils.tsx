@@ -1,6 +1,9 @@
 import { interpolate, spring } from 'remotion';
+import { createLogger } from '../../../lib/logger';
 import { WHITE, WHITE_92 } from '../../../theme/tokens';
 import type { CaptionWord } from '../types';
+
+const log = createLogger('subtitleUtils');
 
 // ─── Tipos exportados ──────────────────────────────────────
 
@@ -37,6 +40,81 @@ export const FUTURE_WORD_OPACITY = 0.25;
 
 /** Frames para transição suave entre estados de palavra */
 export const WORD_TRANSITION_FRAMES = 6;
+
+// ─── Tipos locais ──────────────────────────────────────────
+
+/** Tipo local (espelho de AudioSegment em src/lib/db/types.ts) */
+interface AudioSegmentData {
+  text: string;
+  startSec: number;
+  endSec: number;
+  chunkIndex: number;
+}
+
+// ─── Constantes de pausa por pontuação ─────────────────────
+
+/** Pausas por tipo de pontuação em frames (base 24fps) */
+const PUNCTUATION_PAUSES: Record<string, number> = {
+  ',': 5,
+  ';': 5,
+  '.': 10,
+  '!': 10,
+  '?': 10,
+  '...': 14,
+};
+
+/** Converte pausa de frames-24fps para fps real */
+function scalePause(baseFrames: number, fps: number): number {
+  return Math.round(baseFrames * (fps / 24));
+}
+
+// ─── Helpers de contagem de sílabas ────────────────────────
+
+/**
+ * Conta sílabas de uma palavra em português (regra simplificada).
+ * 
+ * Algoritmo:
+ * 1. Conta vogais (a, e, i, o, u, á, é, í, ó, ú, ã, õ, â, ê, ô)
+ * 2. Subtrai ditongos (ai, ei, oi, ui, au, eu, ou, ãe, õe) — cada um conta como 1 sílaba
+ * 3. Subtrai tritongos (uai, uei, uão) — cada um conta como 1 sílaba
+ * 4. Mínimo de 1 sílaba por palavra
+ */
+function countSyllables(word: string): number {
+  const normalized = word.toLowerCase().replace(/[^a-záéíóúãõâêô]/g, '');
+  if (normalized.length === 0) return 1;
+
+  let vowels = 0;
+  const vowelSet = new Set('aeiouáéíóúãõâêô');
+
+  for (const ch of normalized) {
+    if (vowelSet.has(ch)) vowels++;
+  }
+
+  // Ditongos: par de vogais adjacentes que forma uma sílaba
+  const diphthongs = ['ai', 'ei', 'oi', 'ui', 'au', 'eu', 'ou', 'ãe', 'õe'];
+  let diphthongCount = 0;
+  const lower = normalized;
+  for (const d of diphthongs) {
+    let pos = lower.indexOf(d);
+    while (pos !== -1) {
+      diphthongCount++;
+      pos = lower.indexOf(d, pos + d.length);
+    }
+  }
+
+  // Tritongos: três vogais adjacentes que formam uma sílaba
+  const triphthongs = ['uai', 'uei', 'uão'];
+  for (const t of triphthongs) {
+    let pos = lower.indexOf(t);
+    while (pos !== -1) {
+      // Tritongo já foi contado como ditongo + vogal, corrige subtraindo 1 extra
+      diphthongCount++;
+      pos = lower.indexOf(t, pos + t.length);
+    }
+  }
+
+  return Math.max(1, vowels - diphthongCount);
+}
 
 // ─── Helpers de parse ──────────────────────────────────────
 
@@ -112,6 +190,183 @@ export function calculateWordTiming(words: WordEntry[], totalFrames: number): vo
 
     frame = word.endFrame;
   }
+}
+
+// ─── Timing proporcional por sílabas com pausas ────────────
+
+/**
+ * Extrai tokens (palavras e pontuação) de um texto segmentado por bold.
+ * Retorna lista de tokens na ordem original com flag de bold.
+ */
+function extractTokensFromSegments(segments: TextSegment[]): Array<{ text: string; bold: boolean; isPunct: boolean }> {
+  const tokens: Array<{ text: string; bold: boolean; isPunct: boolean }> = [];
+
+  for (const seg of segments) {
+    // Separa pontuação e palavras mantendo ordem
+    const parts = seg.text.split(/(\s*[,.!?;…]+\s*|\.{3})/);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.length === 0) continue;
+
+      const isPunct = /^[,.!?;…]+$/.test(trimmed) || trimmed === '...';
+      tokens.push({ text: trimmed, bold: seg.bold, isPunct });
+    }
+  }
+
+  return tokens;
+}
+
+/** Pontuação mapeada para chave de PUNCTUATION_PAUSES */
+function getPunctuationPauseKey(punct: string): string | undefined {
+  if (punct === '...') return '...';
+  // Normaliza reticências soltas (…)
+  if (punct === '…') return '...';
+
+  // Pega o primeiro caractere se for pontuação simples
+  const first = punct[0];
+  if (first && first in PUNCTUATION_PAUSES) return first;
+  return undefined;
+}
+
+/**
+ * Divide o texto em palavras com timing proporcional por SÍLABAS (não caracteres).
+ * Parseia markdown **bold** e preserva a flag.
+ * Respeita pausas de pontuação dentro do intervalo.
+ *
+ * Diferente de splitIntoWords + calculateWordTiming, esta função:
+ * - Conta sílabas (não caracteres) para duração proporcional
+ * - Adiciona pausas em pontuação (vírgula, ponto, reticências)
+ * - Retorna CaptionWord[] pronto para uso (não precisa de calculateWordTiming depois)
+ *
+ * @param text - Texto com possível markdown **bold**
+ * @param startFrame - Frame inicial do intervalo
+ * @param endFrame - Frame final do intervalo
+ * @param fps - Frames por segundo (para escalar pausas)
+ */
+export function splitIntoWordsWithTiming(
+  text: string,
+  startFrame: number,
+  endFrame: number,
+  fps: number,
+): CaptionWord[] {
+  if (startFrame >= endFrame || text.trim().length === 0) return [];
+
+  const segments = parseBoldMarkdown(text);
+  const tokens = extractTokensFromSegments(segments);
+
+  // Separar palavras e pontuação
+  const words = tokens.filter((t) => !t.isPunct);
+  const punctuations = tokens.filter((t) => t.isPunct);
+
+  if (words.length === 0) return [];
+
+  // Calcular total de sílabas
+  const totalSyllables = words.reduce((sum, w) => sum + countSyllables(w.text), 0);
+
+  // Calcular total de frames reservados para pausas
+  const totalPauseFrames = punctuations.reduce((sum, p) => {
+    const key = getPunctuationPauseKey(p.text);
+    return key ? sum + scalePause(PUNCTUATION_PAUSES[key], fps) : sum;
+  }, 0);
+
+  // Frames disponíveis para palavras (clamped para não ficar negativo)
+  const totalInterval = endFrame - startFrame;
+  const availableForWords = Math.max(totalInterval - totalPauseFrames, totalInterval * 0.6);
+
+  // Distribuir frames proporcionalmente por sílabas
+  const result: CaptionWord[] = [];
+  let currentFrame = startFrame;
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const syllables = countSyllables(word.text);
+    const proportion = totalSyllables > 0 ? syllables / totalSyllables : 1 / words.length;
+    const wordFrames = Math.max(1, Math.round(proportion * availableForWords));
+
+    const wordStartFrame = currentFrame;
+
+    if (i === words.length - 1) {
+      // Última palavra absorve frames residuais
+      currentFrame = endFrame;
+    } else {
+      currentFrame = currentFrame + wordFrames;
+    }
+
+    result.push({
+      text: word.text,
+      startFrame: wordStartFrame,
+      endFrame: currentFrame,
+      bold: word.bold,
+    });
+
+    // Inserir pausas de pontuação entre palavras
+    if (i < words.length - 1) {
+      // Encontrar pontuação entre esta palavra e a próxima via índices no array de tokens
+      const currentWordIdx = tokens.indexOf(word);
+      const nextWordIdx = tokens.indexOf(words[i + 1]);
+      for (let j = currentWordIdx + 1; j < nextWordIdx; j++) {
+        const tok = tokens[j];
+        if (tok.isPunct) {
+          const key = getPunctuationPauseKey(tok.text);
+          if (key) {
+            currentFrame += scalePause(PUNCTUATION_PAUSES[key], fps);
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Alinha o roteiro aos segmentos de áudio (com timing real do TTS).
+ * Cada segmento tem startSec/endSec reais — não é estimativa.
+ *
+ * Este é o método principal de geração de legendas quando há mapeamento
+ * de segmentos disponível. Substitui segmentScriptByCenes com timing real.
+ *
+ * @param script - Roteiro completo (pode conter markdown **bold**)
+ * @param segments - Segmentos de áudio com timing real do TTS
+ * @param totalDurationFrames - Duração total em frames
+ * @param fps - Frames por segundo
+ */
+export function alignScriptToSegments(
+  script: string,
+  segments: AudioSegmentData[],
+  totalDurationFrames: number,
+  fps: number,
+): CaptionWord[] {
+  if (segments.length === 0) {
+    log.warn('alignScriptToSegments: segmentos vazios, usando fallback proporcional');
+    // Fallback: não temos cenas aqui, usar o script inteiro no intervalo total
+    return splitIntoWordsWithTiming(script, 0, totalDurationFrames, fps);
+  }
+
+  const allWords: CaptionWord[] = [];
+
+  for (const seg of segments) {
+    const segText = seg.text.trim();
+    if (segText.length === 0) continue;
+
+    const startFrame = Math.round(seg.startSec * fps);
+    const endFrame = Math.round(seg.endSec * fps);
+
+    if (startFrame >= endFrame) continue;
+
+    const segWords = splitIntoWordsWithTiming(segText, startFrame, endFrame, fps);
+    allWords.push(...segWords);
+  }
+
+  // Se houver frames residuais, a última palavra absorve
+  if (allWords.length > 0) {
+    const lastWord = allWords[allWords.length - 1];
+    if (lastWord.endFrame < totalDurationFrames) {
+      lastWord.endFrame = totalDurationFrames;
+    }
+  }
+
+  return allWords;
 }
 
 // ─── Componente de palavra animada ─────────────────────────
@@ -261,6 +516,18 @@ export function segmentScriptByCenes(
 
     if (snippet.length === 0) continue;
 
+    // Parseia bold markdown do snippet para preservar formatação nas legendas
+    const boldSegments = parseBoldMarkdown(snippet);
+    const boldWords = new Set<string>();
+    for (const seg of boldSegments) {
+      if (seg.bold) {
+        const segWords = seg.text.match(/\S+/g) ?? [];
+        for (const w of segWords) {
+          boldWords.add(w.toLowerCase());
+        }
+      }
+    }
+
     // Divide por pontuação forte (., !, ?) e quebra de linha
     const rawPhrases = snippet.split(/[.!?\n]+/).filter((p) => p.trim().length > 0);
 
@@ -342,7 +609,7 @@ export function segmentScriptByCenes(
           text: word,
           startFrame,
           endFrame: Math.min(endFrame, sceneEndFrame),
-          bold: false,
+          bold: boldWords.has(word.toLowerCase()),
         });
 
         wordFrame = endFrame;

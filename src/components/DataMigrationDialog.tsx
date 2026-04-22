@@ -10,8 +10,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CloudUpload from '@mui/icons-material/CloudUpload';
 import { useEffect, useState } from 'react';
+import { createLogger } from '../lib/logger';
 import type { MigrationCheckResult, MigrationResult } from '../lib/db/migration';
 import { checkForMigratableData, markMigrationCompleted, migrateAnonymousData } from '../lib/db/migration';
+
+const log = createLogger('DataMigrationDialog');
 
 interface DataMigrationDialogProps {
   userId: string;
@@ -43,7 +46,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
       setMigrationResult(result);
       markMigrationCompleted(userId);
     } catch (error: unknown) {
-      console.error('[DataMigrationDialog] Erro na migração:', error);
+      log.error('Erro na migração', { error });
       setMigrationResult({ migrated: 0, errors: 1, details: 'Erro inesperado durante a migração.' });
       markMigrationCompleted(userId);
     } finally {

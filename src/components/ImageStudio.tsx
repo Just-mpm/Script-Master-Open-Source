@@ -33,9 +33,12 @@ import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useImageGenerator } from '../hooks/useImageGenerator';
 import { saveImageGeneration } from '../lib/db';
 import { downloadFile } from '../lib/download';
+import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
+
+const log = createLogger('ImageStudio');
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Quadrado (1:1)' },
@@ -136,7 +139,7 @@ export function ImageStudio() {
       setSuccessMsg(user ? 'Imagem salva na nuvem com sucesso.' : 'Imagem salva na biblioteca local.');
       window.setTimeout(() => setSuccessMsg(null), 3000);
     } catch (saveError) {
-      console.error(saveError);
+      log.error('Erro ao salvar na biblioteca', { error: saveError });
       setError('Erro ao salvar na biblioteca.');
     }
   };

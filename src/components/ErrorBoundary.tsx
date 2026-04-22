@@ -5,8 +5,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import Refresh from '@mui/icons-material/Refresh';
+import { createLogger } from '../lib/logger';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
+
+const log = createLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -36,8 +39,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[ErrorBoundary] Erro de render capturado:', error);
-    console.error('[ErrorBoundary] Stack de componentes:', info.componentStack);
+    log.error('Erro de render capturado', { error });
+    log.error('Stack de componentes', { componentStack: info.componentStack });
   }
 
   handleRetry = (): void => {

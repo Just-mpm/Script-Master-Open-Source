@@ -1,7 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from '../lib/firebase';
+import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
+
+const log = createLogger('AuthContext');
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/popup-closed-by-user': 'Popup fechado. Tente novamente.',
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
-      console.error('Login error:', error);
+      log.error('Erro no login', { error });
       setAuthError(getAuthErrorMessage(error));
     }
   };
@@ -74,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       await signOut(auth);
     } catch (error) {
-      console.error('Logout error:', error);
+      log.error('Erro no logout', { error });
       setAuthError(getAuthErrorMessage(error));
     }
   };

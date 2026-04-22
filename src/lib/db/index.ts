@@ -7,3 +7,4 @@ export * from './projects';
 export * from './chats';
 export * from './videos';
 export * from './transcriptions';
+export * from './audio-segments';

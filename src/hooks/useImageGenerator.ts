@@ -3,6 +3,9 @@ import { GoogleGenAI } from '@google/genai';
 import { getGeminiApiKey } from '../lib/env';
 import { base64ToBlobSync } from '../lib/audio';
 import { withRetry } from '../lib/rate-limiter';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('useImageGenerator');
 
 // ---------------------------------------------------------------------------
 // Utilitários
@@ -146,7 +149,7 @@ export function useImageGenerator() {
         throw new Error('Nenhuma imagem foi retornada pelo modelo.');
       }
     } catch (err: unknown) {
-      console.error('Error generating image:', err);
+      log.error('Erro ao gerar imagem', { error: err });
       const friendlyMessage = toUserFriendlyImageError(err);
       setError(friendlyMessage);
       // Auto-dismiss após 8 segundos (UX-3)

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -9,6 +9,7 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
+import { createLogger } from '../lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
@@ -35,6 +36,8 @@ interface VideoPreviewProps {
   ratio: SceneRatio;
   /** Legendas com timestamps (Whisper ou fallback proporcional) */
   captions?: CaptionWord[];
+  /** Callback executado a cada frame renderizado (para sync com editor de legendas) */
+  onFrameUpdate?: (frame: number) => void;
 }
 
 /** Handle imperativo exposto ao pai para controlar o Remotion Player */
@@ -76,7 +79,8 @@ class VideoPlayerErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('[VideoPlayerErrorBoundary] Erro na composição do vídeo:', error, errorInfo);
+    const log = createLogger('VideoPlayerErrorBoundary');
+    log.error('Erro na composição do vídeo', { error, componentStack: errorInfo.componentStack });
   }
 
   private handleRetry = (): void => {
@@ -122,11 +126,41 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, onFrameUpdate }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
+
+    // Polling de frame: sincroniza o frame atual com componentes externos
+    // enquanto o player estiver tocando
+    const rafRef = useRef<number | null>(null);
+    useEffect(() => {
+      if (!onFrameUpdate) return;
+
+      const tick = () => {
+        const playerRef = internalRef.current;
+        if (playerRef && playerRef.isPlaying()) {
+          onFrameUpdate(playerRef.getCurrentFrame());
+          rafRef.current = requestAnimationFrame(tick);
+        } else {
+          // Pausado: emite frame atual uma vez e para
+          if (playerRef) {
+            onFrameUpdate(playerRef.getCurrentFrame());
+          }
+          rafRef.current = null;
+        }
+      };
+
+      rafRef.current = requestAnimationFrame(tick);
+
+      return () => {
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      };
+    }, [onFrameUpdate]);
 
     const mappedScenes = useMemo(
       () => mapScenesToVideoScenes(scenes, durationInFrames, fps),

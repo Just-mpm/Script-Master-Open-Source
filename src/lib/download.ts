@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 function triggerDownload(url: string, filename: string): void {
   const link = document.createElement('a');
   link.href = url;
@@ -35,7 +37,7 @@ export async function downloadFile(url: string, filename: string): Promise<void>
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    console.error('Falha ao baixar arquivo diretamente, usando fallback do navegador.', error);
+    logger.error('Falha ao baixar arquivo diretamente, usando fallback do navegador', { error });
     triggerDownload(url, filename);
   }
 }

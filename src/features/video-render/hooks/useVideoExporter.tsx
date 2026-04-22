@@ -10,6 +10,7 @@ import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtil
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
+import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -87,6 +88,8 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
 // Utilitários
 // ---------------------------------------------------------------------------
 
+const log = createLogger('useVideoExporter');
+
 /**
  * Verifica se o erro representa um cancelamento intencional do usuário.
  * O Remotion lança Error com "was cancelled" ao invés de DOMException AbortError.
@@ -108,8 +111,8 @@ function toUserFriendlyError(err: unknown): string {
 
   const msg = err.message.toLowerCase();
 
-  // Loga o erro real para diagnóstico no console
-  console.error('[useVideoExporter] Erro original:', err.message);
+  // Loga o erro real para diagnóstico
+  log.error('Erro original na exportação', { error: err.message });
 
   if (msg.includes('webcodecs') || msg.includes('videoencoder') || msg.includes('not supported')) {
     return `Navegador não suporta exportação de vídeo: ${err.message}`;
@@ -175,7 +178,7 @@ export function useVideoExporter() {
 
       // Loga issues para diagnóstico
       for (const issue of result.issues) {
-        console.warn(`[checkSupport] ${issue.type}: ${issue.message} (${issue.severity})`);
+        log.warn('Problema de suporte detectado', { type: issue.type, message: issue.message, severity: issue.severity });
       }
 
       // Tenta fallback sem áudio se o problema for codec de áudio
@@ -207,7 +210,7 @@ export function useVideoExporter() {
         }
 
         for (const issue of fallbackResult.issues) {
-          console.warn(`[checkSupport fallback] ${issue.type}: ${issue.message}`);
+          log.warn('Problema no fallback sem áudio', { type: issue.type, message: issue.message });
         }
       }
 
@@ -236,7 +239,7 @@ export function useVideoExporter() {
       }
 
       for (const issue of vp8Result.issues) {
-        console.warn(`[checkSupport VP8 fallback] ${issue.type}: ${issue.message}`);
+        log.warn('Problema no fallback VP8', { type: issue.type, message: issue.message });
       }
 
       // Nenhum fallback funcionou — exibe mensagem com a primeira issue real
@@ -247,7 +250,7 @@ export function useVideoExporter() {
         error: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
       }));
     } catch (err) {
-      console.warn('[checkSupport] Exceção inesperada:', err);
+      log.warn('Exceção inesperada no checkSupport', { error: err });
       setState(prev => ({ ...prev, canRender: false }));
     }
   }, []);

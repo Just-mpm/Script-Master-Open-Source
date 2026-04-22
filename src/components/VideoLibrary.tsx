@@ -29,8 +29,11 @@ import { getProjects, getProjectsDetailsMap, getGenerations } from '../lib/db';
 import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
+import { createLogger } from '../lib/logger';
 import { glassPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, RADIUS_CHIP } from '../theme/tokens';
+
+const log = createLogger('VideoLibrary');
 
 interface VideoLibraryScene {
   imageUrl: string;
@@ -166,7 +169,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
       setProjects(finalItems);
     } catch (error) {
-      console.error('Failed to load video library:', error);
+      log.error('Falha ao carregar galeria de vídeos', { error });
       setError('Não foi possível carregar a galeria. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
@@ -200,7 +203,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
         }
       }
     } catch (err) {
-      console.error('Falha no download em sequência:', err);
+      log.error('Falha no download em sequência', { error: err });
       setDownloadError('Ocorreu um erro durante o download. Tente novamente.');
     } finally {
       setDownloadingId(null);

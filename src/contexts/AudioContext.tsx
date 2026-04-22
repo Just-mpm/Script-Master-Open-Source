@@ -3,7 +3,10 @@ import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Close from '@mui/icons-material/Close';
+import { createLogger } from '../lib/logger';
 import { ICON_SIZE_MD } from '../theme/tokens';
+
+const log = createLogger('AudioContext');
 
 interface AudioSnapshot {
   isPlaying: boolean;
@@ -50,7 +53,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       // play() cancelado por pause() ou troca de áudio — comportamento normal, ignorar
       return;
     } else {
-      console.error('Error playing audio:', err);
+      log.error('Erro ao reproduzir áudio', { error: err });
     }
   }, []);
 

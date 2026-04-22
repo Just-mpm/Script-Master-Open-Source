@@ -1,4 +1,7 @@
 import { useState, useRef } from 'react';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('useVoicePreviews');
 
 /**
  * Hook para preview de vozes.
@@ -31,7 +34,7 @@ export function useVoicePreviews() {
     const audio = new Audio(`/voice-previews/${voiceId}.wav`);
     audioRef.current = audio;
     audio.onerror = () => {
-      console.error(`Preview para ${voiceId} não encontrado. Execute "bun run generate-previews" para gerar.`);
+      log.error(`Preview para ${voiceId} não encontrado. Execute "bun run generate-previews" para gerar.`);
       setPlayingId(null);
     };
     audio.onended = () => setPlayingId(null);
@@ -39,10 +42,7 @@ export function useVoicePreviews() {
       // play() é rejeitado quando o navegador bloqueia autoplay (sem interação prévia)
       const isAbort = playErr instanceof DOMException && playErr.name === 'AbortError';
       if (!isAbort) {
-        console.warn(
-          'Preview bloqueado pela política de autoplay do navegador.',
-          playErr,
-        );
+        log.warn('Preview bloqueado pela política de autoplay do navegador', { error: playErr });
       }
       setPlayingId(null);
     });

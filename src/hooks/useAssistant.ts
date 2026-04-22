@@ -5,6 +5,9 @@ import { getMemories, saveChatSession, getUserSettings, type ChatSession } from 
 import { useAuth } from '../contexts/AuthContext';
 import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
 import { getGeminiApiKey } from '../lib/env';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('useAssistant');
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
@@ -119,7 +122,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       };
 
       void Promise.resolve(saveChatSession(session, user?.uid)).catch((sessionError: unknown) => {
-        console.error('Erro ao salvar sessão do assistente:', sessionError);
+        log.error('Erro ao salvar sessão do assistente', { error: sessionError });
       });
     }
   }, [messages, currentSessionId, user, isStreaming]);
@@ -262,7 +265,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       // Ignora erros de aborto (intencional pelo usuário)
       if (abortController.signal.aborted) return;
 
-      console.error('Error in assistant:', err);
+      log.error('Erro no assistente', { error: err });
       const errorMessage = toUserFriendlyAssistantError(err);
 
       if (errorMessage) {

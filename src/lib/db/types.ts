@@ -46,6 +46,8 @@ export interface AudioSource {
   audioUrl: string;
   createdAt: number;
   audioBlob?: Blob;
+  /** Mapeamento chunk→timestamp do áudio gerado */
+  audioSegments?: AudioSegment[];
 }
 
 export interface ProjectImage {
@@ -105,7 +107,19 @@ export interface ChatSession {
   updatedAt: number;
 }
 
-/** Vídeo exportado associado a um projeto */
+/** Segmento de áudio gerado a partir de um chunk do roteiro.
+ *  Permite reconstruir o mapeamento texto→tempo sem depender de Whisper. */
+export interface AudioSegment {
+  /** Texto do roteiro enviado ao TTS para este chunk */
+  text: string;
+  /** Timestamp de início em segundos (relativo ao áudio final) */
+  startSec: number;
+  /** Timestamp de fim em segundos */
+  endSec: number;
+  /** Índice do chunk na sequência de geração */
+  chunkIndex: number;
+}
+
 export interface ProjectVideo {
   id: string;
   projectId: string;

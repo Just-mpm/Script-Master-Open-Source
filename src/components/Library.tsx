@@ -44,6 +44,7 @@ import {
 import { useGlobalAudioState } from '../contexts/AudioContext';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
+import { createLogger } from '../lib/logger';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
@@ -53,6 +54,8 @@ interface ProjectDataState {
 }
 
 const EMPTY_PROJECT_DATA: ProjectDataState = { audios: [], images: [] };
+
+const log = createLogger('Library');
 
 export function Library() {
   const { user } = useAuth();
@@ -90,7 +93,7 @@ export function Library() {
       const data = await getProjects(user?.uid);
       setProjects(data);
     } catch (error) {
-      console.error('Failed to load library:', error);
+      log.error('Falha ao carregar biblioteca', { error });
       setError('Não foi possível carregar sua biblioteca. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
@@ -117,7 +120,7 @@ export function Library() {
       const { audios, images } = await getProjectDetails(projectId, user?.uid);
       setProjectData({ audios, images });
     } catch (err) {
-      console.error('Error loading project details:', err);
+      log.error('Falha ao carregar detalhes do projeto', { error: err });
     } finally {
       setDetailLoading(false);
     }
@@ -167,7 +170,7 @@ export function Library() {
       cleanupBlobUrls();
       await loadProjects();
     } catch (err) {
-      console.error('Failed to delete project:', err);
+      log.error('Falha ao excluir projeto', { error: err });
       setDeleteError('Não foi possível excluir o projeto. Tente novamente.');
     } finally {
       setDeleting(false);

@@ -7,6 +7,9 @@ import type {
 } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { auth, storage } from '../firebase';
+import { createLogger } from '../logger';
+
+const log = createLogger('shared');
 
 export const DB_NAME = 'GeminiVoiceStudioDB';
 export const DB_VERSION = 9;
@@ -96,7 +99,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   };
 
   const errorString = JSON.stringify(errInfo);
-  console.error('Firestore Error: ', errorString);
+  log.error('Firestore Error', { error: errorString });
   throw new Error(errorString);
 }
 
@@ -245,7 +248,7 @@ export async function deleteStorageObjectSafely(storagePath: string, warningMess
   try {
     await deleteObject(ref(storage, storagePath));
   } catch (error: unknown) {
-    console.warn(warningMessage, error);
+    log.warn(warningMessage, { error });
   }
 }
 

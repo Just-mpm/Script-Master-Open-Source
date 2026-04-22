@@ -3,9 +3,12 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useGlobalAudioActions } from '../../contexts/AudioContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAudioGenerator } from '../../hooks/useAudioGenerator';
+import { createLogger } from '../../lib/logger';
 import { MAX_CHARS, VOICES } from '../../lib/constants';
 import { saveGeneration, type SavedAudio } from '../../lib/db';
 import type { SceneRatio, StudioDraftState, StudioSettingsPatch } from './types';
+
+const log = createLogger('useStudioState');
 
 const STORAGE_KEYS = {
   script: 's2a_script',
@@ -119,6 +122,7 @@ export function useStudioState() {
     loadProjectData,
     projectId,
     durationInSeconds,
+    audioSegments,
   } = useAudioGenerator();
 
   const isGenerateDisabled = isGenerating || !script.trim() || script.length > MAX_CHARS;
@@ -291,7 +295,7 @@ export function useStudioState() {
       setIsSaved(true);
       setSuccessMsg(user ? 'Áudio salvo na nuvem com sucesso!' : 'Áudio salvo na biblioteca local!');
     } catch (saveError: unknown) {
-      console.error(saveError);
+      log.error('Erro ao salvar na biblioteca', { error: saveError });
       setError('Erro ao salvar na biblioteca.');
     }
   }, [audioBlob, isMultiSpeaker, isSaved, scenes, script, selectedVoice, setError, speakerBVoice, user]);
@@ -338,6 +342,7 @@ export function useStudioState() {
     audioUrl,
     audioBlob,
     scenes,
+    audioSegments,
     error,
     setError,
     sceneGenerationWarning,

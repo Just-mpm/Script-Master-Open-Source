@@ -1,5 +1,8 @@
 import type { TranscriptionResult } from '../../features/video-render/types';
 import { TRANSCRIPTIONS_STORE, getIndexedDbItem, putIndexedDbItem, deleteIndexedDbItem } from './shared';
+import { createLogger } from '../logger';
+
+const log = createLogger('transcriptions');
 
 /**
  * @module transcriptions
@@ -22,7 +25,7 @@ export interface StoredTranscription {
   createdAt: number;
 }
 
-/** Flag para emitir console.info apenas na primeira chamada */
+/** Flag para emitir aviso apenas na primeira chamada */
 let hasLoggedNotice = false;
 
 /**
@@ -37,8 +40,8 @@ export async function saveTranscription(
 ): Promise<void> {
   if (!hasLoggedNotice) {
     hasLoggedNotice = true;
-    console.info(
-      '[Script Master] Transcrições são salvas apenas no IndexedDB local. ' +
+    log.info(
+      'Transcrições são salvas apenas no IndexedDB local. ' +
       'Elas não sincronizam entre dispositivos e podem ser perdidas ao limpar dados do navegador.',
     );
   }

@@ -21,9 +21,12 @@ import ImageIcon from '@mui/icons-material/Image';
 import { alpha } from '@mui/material/styles';
 import { useAnimationStore } from '../../store/animationStore';
 import { getStageRef } from '../../lib/stageRef';
+import { createLogger } from '../../../../lib/logger';
 import { glassSurfaceSx } from '../../../../theme/surfaces';
 import { ERROR_MAIN } from '../../../../theme/tokens';
 import { SpeedSelector } from '../SpeedSelector';
+
+const log = createLogger('AnimationControls');
 
 export function AnimationControls() {
   const {
@@ -89,7 +92,7 @@ export function AnimationControls() {
     const canvas = container?.querySelector('canvas') as HTMLCanvasElement | null;
 
     if (!canvas) {
-      console.error('Canvas not found for recording');
+      log.error('Canvas não encontrado para gravação');
       if (currentBatchMode === 'record') setIsPlaying(true);
       return;
     }
@@ -114,7 +117,7 @@ export function AnimationControls() {
         mimeType = 'video/webm';
       }
 
-      console.log(`Starting recording with mimeType: ${mimeType}`);
+      log.info('Iniciando gravação', { mimeType });
 
       // High quality video export (12 Mbps for 1080p)
       const recorder = new MediaRecorder(stream, {
@@ -132,17 +135,17 @@ export function AnimationControls() {
 
       recorder.onstop = () => {
         if (chunksRef.current.length === 0) {
-          console.error('No video data captured');
+          log.error('Nenhum dado de vídeo capturado');
           setIsRecording(false);
           setErrorMessage('Falha ao capturar dados do vídeo. Tente novamente.');
           return;
         }
 
         const blob = new Blob(chunksRef.current, { type: mimeType });
-        console.log(`Recording finished. Blob size: ${blob.size} bytes`);
+        log.info('Gravação finalizada', { blobSize: blob.size });
 
         if (blob.size < 1000) {
-          console.warn('Captured video is suspiciously small');
+          log.warn('Vídeo capturado é suspeitamente pequeno');
         }
 
         const url = URL.createObjectURL(blob);
@@ -181,7 +184,7 @@ export function AnimationControls() {
         setIsPlaying(true);
       }, 300);
     } catch (err) {
-      console.error('Failed to start recording:', err);
+      log.error('Falha ao iniciar gravação', { error: err });
       setIsRecording(false);
       setErrorMessage('Falha ao iniciar gravação. Seu navegador pode não suportar este recurso.');
 

@@ -1,6 +1,9 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getGeminiApiKey } from './env';
 import { withRetry } from './rate-limiter';
+import { createLogger } from './logger';
+
+const log = createLogger('gemini');
 
 const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
@@ -97,7 +100,7 @@ ${script}`;
     
     return { prompts: parsed, isFallback: false };
   } catch (error) {
-    console.error("Erro ao gerar prompts de cena:", error);
+    log.error('Erro ao gerar prompts de cena', { error });
     // Fallback genérico quando a API falha
     const fallbackPrompts: ScenePrompt[] = [{ timestamp: 0, prompt: `A captivating scene about: ${script.substring(0, 100)}... Style: ${style}` }];
     return { prompts: fallbackPrompts, isFallback: true };
@@ -148,7 +151,7 @@ export async function generateImageFromPrompt(prompt: string, aspectRatio: '1:1'
     }
     return null;
   } catch (error) {
-    console.error('Erro ao gerar imagem após tentativas de retry:', error);
+    log.error('Erro ao gerar imagem após tentativas de retry', { error });
     return null;
   }
 }

@@ -32,6 +32,8 @@ import {
 // Tipos
 // ---------------------------------------------------------------------------
 
+import type { CaptionSource } from '../types';
+
 interface TranscriptionPanelProps {
   /** URL do áudio — null desabilita o botão */
   audioUrl: string | null;
@@ -44,7 +46,7 @@ interface TranscriptionPanelProps {
   /** Frames por segundo */
   fps: number;
   /** Fonte da transcrição (null se ainda não transcreveu) */
-  transcriptionSource: 'whisper' | 'proportional' | null;
+  transcriptionSource: CaptionSource | null;
   /** Se está transcrevendo */
   isTranscribing: boolean;
   /** Progresso da transcrição (0-100) */
@@ -57,6 +59,8 @@ interface TranscriptionPanelProps {
   whisperSupported: boolean | null;
   /** Número de palavras capturadas */
   captionCount: number;
+  /** Se o roteiro mudou desde a última geração de legendas */
+  isStale?: boolean;
   /** Callback para iniciar transcrição */
   onTranscribe: () => void;
   /** Callback para cancelar transcrição */
@@ -79,6 +83,7 @@ export function TranscriptionPanel({
   transcriptionError,
   whisperSupported,
   captionCount,
+  isStale,
   onTranscribe,
   onCancel,
   onClear,
@@ -107,11 +112,17 @@ export function TranscriptionPanel({
 
   // Rótulo da fonte de transcrição para exibição
   const sourceLabel =
-    transcriptionSource === 'whisper'
-      ? 'Whisper'
-      : transcriptionSource === 'proportional'
-        ? 'Proporcional'
-        : null;
+    transcriptionSource === 'segment-timing'
+      ? 'Timing TTS'
+      : transcriptionSource === 'whisper-aligned'
+        ? 'Whisper Alinhado'
+        : transcriptionSource === 'whisper'
+          ? 'Whisper'
+          : transcriptionSource === 'proportional'
+            ? 'Proporcional'
+            : transcriptionSource === 'manual'
+              ? 'Manual'
+              : null;
 
   return (
     <Collapse in={hasContent} unmountOnExit>
@@ -133,7 +144,19 @@ export function TranscriptionPanel({
 
         {/* ── Estado: sucesso (legendas geradas) ── */}
         {hasCaptions && (
-          <Stack
+          <>
+            {/* Alerta de staleness: roteiro foi editado após geração */}
+            {isStale && (
+              <Alert
+                severity="warning"
+                icon={<WarningAmber sx={{ fontSize: 20 }} />}
+                sx={{ mb: 1, borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.08)' }}
+              >
+                O roteiro foi editado desde a última geração de legendas. As legendas podem estar desalinhadas.
+              </Alert>
+            )}
+
+            <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={{ xs: GAP_MEDIUM, sm: GAP_DEFAULT }}
             sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
@@ -174,6 +197,7 @@ export function TranscriptionPanel({
               </Button>
             </Stack>
           </Stack>
+          </>
         )}
 
         {/* ── Estado: transcrevendo ── */}

@@ -5,8 +5,11 @@ import { alpha } from '@mui/material/styles';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { useAnimationStore } from '../../store/animationStore';
 import { generateStrokesFromImage } from '../../lib/imageProcessing';
+import { createLogger } from '../../../../lib/logger';
 import { ERROR_MAIN } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
+
+const log = createLogger('BatchOrchestrator');
 
 /**
  * Orquestrador invisível que processa imagens da fila automaticamente.
@@ -60,7 +63,7 @@ export function BatchOrchestrator() {
           }, 100);
         }
       }).catch((err) => {
-        console.error('Batch processing failed for image:', err);
+        log.error('Falha ao processar imagem em lote', { error: err });
         setJob({ status: 'failed' });
 
         // Auto-skip failed image after 2 seconds

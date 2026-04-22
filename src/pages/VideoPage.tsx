@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -8,11 +8,13 @@ import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
 import { TranscriptionPanel } from '../features/video-render/components/TranscriptionPanel';
+import { CaptionEditorPanel } from '../features/video-render/components/CaptionEditorPanel';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
-import type { SceneRatio, StudioScene } from '../features/studio/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
+import type { AudioSegment } from '../lib/db/types';
+import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { useAuth } from '../contexts/AuthContext';
 
 interface VideoPageProps {
@@ -26,6 +28,7 @@ interface VideoPageProps {
   durationInFrames: number;
   sceneRatio: SceneRatio;
   videoPlayerRef: RefObject<VideoPreviewHandle | null>;
+  audioSegments: AudioSegment[];
 }
 
 export function VideoPage({
@@ -39,6 +42,7 @@ export function VideoPage({
   durationInFrames,
   sceneRatio,
   videoPlayerRef,
+  audioSegments,
 }: VideoPageProps) {
   const { pause: pauseGlobalAudio } = useGlobalAudioActions();
   const { user } = useAuth();
@@ -61,7 +65,12 @@ export function VideoPage({
     error: transcriptionError,
     source: transcriptionSource,
     whisperSupported,
-  } = useTranscription(currentProjectId);
+    isStale,
+    updateCaptions,
+  } = useTranscription(currentProjectId, script);
+
+  // Frame atual do player (para sync com CaptionEditorPanel)
+  const [currentPlayerFrame, setCurrentPlayerFrame] = useState(0);
 
   // Mapeia cenas para o formato esperado pela transcrição
   const scenesForTranscription = useMemo(
@@ -107,6 +116,7 @@ export function VideoPage({
       scenes: scenesForTranscription,
       totalDurationFrames: durationInFrames,
       fps: videoFps,
+      audioSegments: audioSegments.length > 0 ? audioSegments : undefined,
     });
   };
 
@@ -129,7 +139,7 @@ export function VideoPage({
         </Typography>
       </Box>
 
-      <VideoPreview
+       <VideoPreview
         ref={videoPlayerRef}
         scenes={scenes}
         audioUrl={audioUrl}
@@ -137,6 +147,7 @@ export function VideoPage({
         durationInFrames={durationInFrames}
         ratio={sceneRatio}
         captions={captions.length > 0 ? captions : undefined}
+        onFrameUpdate={setCurrentPlayerFrame}
       />
 
       {/* Painel de legendas */}
@@ -153,9 +164,19 @@ export function VideoPage({
         transcriptionError={transcriptionError}
         whisperSupported={whisperSupported}
         captionCount={captions.length}
+        isStale={isStale}
         onTranscribe={handleTranscribe}
         onCancel={cancelTranscription}
         onClear={clearTranscription}
+      />
+
+      {/* Editor de legendas — visível quando há captions */}
+      <CaptionEditorPanel
+        captions={captions}
+        onUpdateCaptions={updateCaptions}
+        fps={videoFps}
+        onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
+        currentFrame={currentPlayerFrame}
       />
 
       {/* Painel de exportação MP4 */}

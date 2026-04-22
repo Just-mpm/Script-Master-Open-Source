@@ -1,5 +1,8 @@
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { createLogger } from '../logger';
+
+const log = createLogger('migration');
 import {
   AUDIOS_STORE,
   CHAT_STORE,
@@ -112,7 +115,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     migrations.push(
       setDoc(doc(db, 'projects', project.id), { ...project, userId })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Projeto:', project.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar projeto', { id: project.id, error: err }); errors++; }),
     );
   }
 
@@ -122,7 +125,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     migrations.push(
       setDoc(doc(db, 'memories', memory.id), { ...memory, userId })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Memória:', memory.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar memória', { id: memory.id, error: err }); errors++; }),
     );
   }
 
@@ -132,7 +135,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     migrations.push(
       setDoc(doc(db, 'chats', chat.id), { ...chat, userId })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Chat:', chat.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar chat', { id: chat.id, error: err }); errors++; }),
     );
   }
 
@@ -142,7 +145,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     migrations.push(
       setDoc(doc(db, 'user_settings', userId), { ...setting, id: userId, userId })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Settings:', err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar settings', { error: err }); errors++; }),
     );
   }
 
@@ -161,7 +164,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         scenes: generation.scenes ?? [],
       })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Geração:', generation.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar geração', { id: generation.id, error: err }); errors++; }),
     );
   }
 
@@ -179,7 +182,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         imageUrl: imageGeneration.imageUrl ?? '',
       })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Imagem:', imageGeneration.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar imagem', { id: imageGeneration.id, error: err }); errors++; }),
     );
   }
 
@@ -195,7 +198,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         createdAt: audio.createdAt,
       })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Áudio:', audio.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar áudio de projeto', { id: audio.id, error: err }); errors++; }),
     );
   }
 
@@ -213,7 +216,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         createdAt: projectImage.createdAt,
       })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Imagem de projeto:', projectImage.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar imagem de projeto', { id: projectImage.id, error: err }); errors++; }),
     );
   }
 
@@ -235,7 +238,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         createdAt: video.createdAt,
       })
         .then(() => { migrated++; })
-        .catch((err: unknown) => { console.error('[Migração] Vídeo:', video.id, err); errors++; }),
+        .catch((err: unknown) => { log.error('Erro ao migrar vídeo', { id: video.id, error: err }); errors++; }),
     );
   }
 

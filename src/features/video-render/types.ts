@@ -36,10 +36,20 @@ export interface CaptionWord {
   bold: boolean;
 }
 
-/** Resultado de uma transcrição (Whisper ou fallback proporcional) */
+/** Fonte dos dados de temporização das legendas */
+export type CaptionSource =
+  | 'whisper'              // Legado: timing Whisper puro (antigo valor)
+  | 'whisper-aligned'      // Timing Whisper refinado + texto do roteiro
+  | 'segment-timing'       // Timing real do chunk TTS + texto do roteiro
+  | 'proportional'         // Timing proporcional (fallback quando não há segmentos)
+  | 'manual';              // Editado manualmente pelo usuário
+
+/** Resultado de uma transcrição (Whisper, segmentos TTS ou fallback proporcional) */
 export interface TranscriptionResult {
   words: CaptionWord[];
-  source: 'whisper' | 'proportional';
+  source: CaptionSource;
+  /** Hash SHA-256 do roteiro usado para gerar as legendas (staleness detection) */
+  scriptHash?: string;
 }
 
 /** Modo de exibição de legendas */
