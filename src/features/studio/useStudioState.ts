@@ -22,6 +22,7 @@ const STORAGE_KEYS = {
   sceneDensity: 's2a_scene_density',
   sceneRatio: 's2a_scene_ratio',
   visualFramework: 's2a_visual_framework',
+  hasReferenceImage: 's2a_has_ref_image',
 } as const;
 
 const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
@@ -168,11 +169,13 @@ export function useStudioState() {
     safeSetItem(STORAGE_KEYS.sceneDensity, String(sceneDensity));
     safeSetItem(STORAGE_KEYS.sceneRatio, sceneRatio);
     safeSetItem(STORAGE_KEYS.visualFramework, visualFramework);
+    safeSetItem(STORAGE_KEYS.hasReferenceImage, String(referenceImage !== null));
   }, [
     audioProfile,
     generateScenes,
     isMultiSpeaker,
     pace,
+    referenceImage,
     scene,
     sceneDensity,
     sceneRatio,

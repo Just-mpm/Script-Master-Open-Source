@@ -16,7 +16,6 @@ import WarningAmber from '@mui/icons-material/WarningAmber';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { VideoExportOptions, VideoExporter } from '../hooks/useVideoExporter';
-import type { EditingScene } from '../lib/editingPlan';
 import { getResolutionFromRatio } from '../lib/videoUtils';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
@@ -45,8 +44,6 @@ interface VideoExportPanelProps {
   fps: number;
   durationInFrames: number;
   ratio: SceneRatio;
-  /** Plano de edição com transições e legendas */
-  editingPlan?: EditingScene[];
   /** ID do projeto para salvar o vídeo */
   projectId?: string;
   /** ID do usuário autenticado */
@@ -67,7 +64,6 @@ export function VideoExportPanel({
   fps,
   durationInFrames,
   ratio,
-  editingPlan,
   projectId,
   userId,
   exporter,
@@ -99,7 +95,6 @@ export function VideoExportPanel({
       fps,
       durationInFrames,
       ratio,
-      editingPlan,
       captions,
       projectId,
       userId,

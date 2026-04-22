@@ -5,7 +5,6 @@ import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
 import type { CaptionWord } from '../types';
-import type { EditingScene } from '../lib/editingPlan';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtils';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
@@ -23,7 +22,6 @@ export interface VideoExportOptions {
   fps: number;
   durationInFrames: number;
   ratio: SceneRatio;
-  editingPlan?: EditingScene[];
   captions?: CaptionWord[];
   projectId?: string;
   userId?: string;
@@ -74,13 +72,12 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, editingPlan, captions } = props;
+  const { scenes, audioUrl, fps, captions } = props;
   return (
     <VideoComposition
       scenes={scenes}
       audioUrl={audioUrl}
       fps={fps}
-      editingPlan={editingPlan}
       captions={captions}
     />
   );
@@ -265,7 +262,6 @@ export function useVideoExporter() {
       fps,
       durationInFrames,
       ratio,
-      editingPlan,
       captions,
       projectId,
       userId,
@@ -274,14 +270,13 @@ export function useVideoExporter() {
     if (!audioUrl || scenes.length === 0) return;
 
     const resolution = getResolutionFromRatio(ratio);
-    const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps, editingPlan);
+    const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
 
     // Monta inputProps com tipo compatível com Record<string, unknown>
     const exportableInputProps: ExportableProps = {
       scenes: mappedScenes,
       audioUrl,
       fps,
-      editingPlan,
       captions,
     };
 

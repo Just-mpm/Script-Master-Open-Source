@@ -4,7 +4,7 @@
 > `src/lib/db.ts`, `src/lib/db/index.ts`, `src/lib/db/shared.ts`, `src/lib/db/types.ts`,
 > `src/lib/db/memories.ts`, `src/lib/db/user-settings.ts`, `src/lib/db/generations.ts`,
 > `src/lib/db/images.ts`, `src/lib/db/projects.ts`, `src/lib/db/chats.ts`,
-> `src/lib/db/videos.ts`, `src/lib/db/editing-plans.ts`, `firestore.rules`, `storage.rules`
+> `src/lib/db/videos.ts`, `firestore.rules`, `storage.rules`
 
 ---
 
@@ -53,7 +53,7 @@ export * from './images';
 export * from './projects';
 export * from './chats';
 export * from './videos';
-export * from './editing-plans';
+export * from './transcriptions';
 ```
 
 ---
@@ -82,7 +82,6 @@ Todas as stores usam `keyPath: 'id'`. Definidas em `STORE_DEFINITIONS`:
 | `CHAT_STORE` | `'chats'` | Sessões de chat |
 | `SETTING_STORE` | `'user_settings'` | Configurações do usuário |
 | `VIDEOS_STORE` | `'videos'` | Vídeos de projeto |
-| `EDITING_PLAN_STORE` | `'editing_plans'` | Planos de edição |
 
 ### Indexes
 
@@ -278,21 +277,6 @@ export interface ProjectVideo {
 }
 ```
 
-### `StoredEditingPlan`
-
-**Fonte:** `src/lib/db/editing-plans.ts`
-
-```typescript
-export interface StoredEditingPlan {
-  id: string; // projectId
-  plan: EditingPlan;
-  originalPlan: EditingPlan | null;
-  updatedAt: number;
-}
-```
-
-> `EditingPlan` é importado de `src/features/video-render/lib/editingPlan`.
-
 ---
 
 ## 5. Domínios de Persistência
@@ -482,27 +466,6 @@ export interface StoredEditingPlan {
 | `saveVideoToProject(video, userId?)` | Cria vídeo com `crypto.randomUUID()`, upload do blob, retorna `ProjectVideo` |
 | `getProjectVideos(projectId, userId?)` | Lista por projeto, ordenada por `createdAt` descendente (Firestore usa `orderBy`) |
 | `deleteVideoFromProject(videoId, projectId, userId?)` | Lê formato do doc, deleta Firestore + Storage |
-
----
-
-### 5.8 Editing Plans (IndexedDB Only)
-
-**Fonte:** `src/lib/db/editing-plans.ts`
-
-| | Valor |
-|---|---|
-| Store IndexedDB | `'editing_plans'` |
-| Tipo | `StoredEditingPlan` |
-
-> **Não usa Firestore.** Dados temporários por projeto, sem sync.
-
-**Operações:**
-
-| Função | Descrição |
-|---|---|
-| `saveEditingPlan(projectId, plan, originalPlan)` | Salva/atualiza plano de edição |
-| `loadEditingPlan(projectId)` | Retorna `StoredEditingPlan | null` |
-| `deleteEditingPlan(projectId)` | Remove plano de edição |
 
 ---
 

@@ -35,7 +35,7 @@ bun run clean            # remove dist/
 |--------|-----|
 | `gemini-3.1-flash-tts-preview` | Text-to-speech |
 | `gemini-3.1-flash-image-preview` | Geração de imagens |
-| `gemini-3.1-flash-lite-preview` | Chunking de roteiros, prompts de cena, plano de edição |
+| `gemini-3.1-flash-lite-preview` | Chunking de roteiros, prompts de cena |
 
 ## Convenções
 
@@ -65,19 +65,20 @@ Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
 | Audio & TTS | `docs/guides/audio.md` | Pipeline TTS, chunks, WAV, vozes, multi-speaker |
 | Geração de imagens | `docs/guides/image-generation.md` | Modelos, prompts, referências, aspect ratios |
 | Persistência | `docs/guides/persistence.md` | Dual storage, domínios, Firebase rules, tipos |
-| Renderização de vídeo | `docs/guides/video-render.md` | Remotion, editing plan, overlays, exportação |
+| Renderização de vídeo | `docs/guides/video-render.md` | Remotion, fade padrão, legendas, exportação |
 | UI & Design System | `docs/guides/ui-design-system.md` | MUI v9, tema, tokens, surfaces, CSS |
 | Environment & Config | `docs/guides/environment.md` | Env vars, Firebase, Vite, TypeScript |
 
 ## Version
 
-- **Current:** `0.8.4`
-- **Last release:** 2026-04-21
+- **Current:** `0.9.0`
+- **Last release:** 2026-04-22
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.9.0 | Remoção completa do plano de edição IA — fade in/out padrão em todas as cenas, sem análise de áudio/visual para edição, sem inspetor, sem TitleOverlay. Documentação atualizada em 4 guias. Rate limiter reutilizável, RoutableErrorBoundary, getImageGenerations |
 | 0.8.4 | Transcrição automática de legendas via Whisper WASM, dois modos de legenda (scroll-phrases, word-karaoke), ScrollingPhrase, subtitleUtils, persistência de transcrições, headers COOP/COEP, @remotion/captions + @remotion/whisper-web, Remotion 4.0.448 |
 | 0.8.3 | Limpeza de código morto (10 funções), patch font-stretch Canvas, truncamento de roteiro + limite de imagens para Gemini, reutilização de análise de áudio, menu mobile de velocidade, progresso no download em lote, detecção de JSON malformado no assistente, Snackbar no AnimationControls, Remotion 4.0.450, dedupe no Vite |
 | 0.8.2 | NotFoundPage, ErrorBoundary, DataMigrationDialog, rate limiter, migração IndexedDB→Firestore, cursor animado no assistente, `isStreaming`, fallback VP8/WebM no exportador, tratamento de erros contextualizado, 6 guias em `docs/guides/` |

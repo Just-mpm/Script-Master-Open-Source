@@ -1,20 +1,23 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Close from '@mui/icons-material/Close';
 import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
-import { EditingPlanInspector } from '../features/video-render/components/EditingPlanInspector';
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
-import { useEditingPlan } from '../features/video-render/hooks/useEditingPlan';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import { useAuth } from '../contexts/AuthContext';
+import { ICON_SIZE_MD } from '../theme/tokens';
 
 interface VideoPageProps {
   currentProjectId: StudioStateController['currentProjectId'];
@@ -25,7 +28,6 @@ interface VideoPageProps {
   audioUrl: string | null;
   videoFps: number;
   durationInFrames: number;
-  durationInSeconds: number;
   sceneRatio: SceneRatio;
   videoPlayerRef: RefObject<VideoPreviewHandle | null>;
 }
@@ -39,7 +41,6 @@ export function VideoPage({
   audioUrl,
   videoFps,
   durationInFrames,
-  durationInSeconds,
   sceneRatio,
   videoPlayerRef,
 }: VideoPageProps) {
@@ -47,22 +48,8 @@ export function VideoPage({
   const { user } = useAuth();
   const userId = user?.uid;
 
-  // Hooks de edição e exportação — instanciados aqui para code-splitting
+  // Hook de exportação — instanciado aqui para code-splitting
   // (Remotion só é carregado quando a rota /video é acessada)
-  const {
-    editingPlan,
-    originalPlan,
-    isGeneratingPlan,
-    error: planError,
-    generatePlan,
-    clearPlan,
-    updateScene,
-    resetToOriginal,
-    undoLastEdit,
-    canUndo,
-    regenerateScene,
-  } = useEditingPlan(currentProjectId);
-
   const videoExporter = useVideoExporter();
 
   // Hook de transcrição Whisper — instanciado aqui para code-splitting
@@ -73,10 +60,22 @@ export function VideoPage({
     transcriptionProgress,
     transcriptionStatusText,
     transcribeAudio,
+    error: transcriptionError,
+    source: transcriptionSource,
   } = useTranscription(currentProjectId);
 
-  // Mapeia cenas para o formato esperado pelo hook de edição
-  const scenesForPlan = useMemo(
+  // Estado local para controlar visibilidade do Snackbar de erro de transcrição
+  const [showTranscriptionError, setShowTranscriptionError] = useState(false);
+
+  // Exibe erro de transcrição via Snackbar quando detectado
+  useEffect(() => {
+    if (transcriptionError) {
+      setShowTranscriptionError(true);
+    }
+  }, [transcriptionError]);
+
+  // Mapeia cenas para o formato esperado pela transcrição
+  const scenesForTranscription = useMemo(
     () => scenes.map(s => ({
       timestamp: s.timestamp,
       prompt: s.prompt ?? '',
@@ -85,21 +84,7 @@ export function VideoPage({
     [scenes],
   );
 
-  // Indica se o botão de gerar plano está desabilitado
-  const isPlanDisabled = isGeneratingPlan || !script.trim() || scenes.length === 0 || !audioUrl || durationInSeconds <= 0;
-
-  // Wrapper para gerar plano de edição
-  const handleGenerateEditingPlan = useCallback(() => {
-    if (script.trim() && scenes.length > 0 && durationInSeconds > 0) {
-      void generatePlan(script, scenesForPlan, durationInSeconds, audioUrl);
-    }
-  }, [script, scenes.length, scenesForPlan, durationInSeconds, audioUrl, generatePlan]);
-
-  // --- Sincronização com o bridge store (ações estáveis via getState) ---
-
-  useEffect(() => {
-    useVideoRenderBridge.getState().syncPlanState(isGeneratingPlan, isPlanDisabled, planError);
-  }, [isGeneratingPlan, isPlanDisabled, planError]);
+  // --- Sincronização com o bridge store ---
 
   useEffect(() => {
     useVideoRenderBridge.getState().syncExportState(videoExporter.isRendering, videoExporter.renderProgress);
@@ -108,16 +93,6 @@ export function VideoPage({
   useEffect(() => {
     useVideoRenderBridge.getState().syncTranscriptionState(isTranscribing, transcriptionProgress, transcriptionStatusText);
   }, [isTranscribing, transcriptionProgress, transcriptionStatusText]);
-
-  useEffect(() => {
-    useVideoRenderBridge.getState().setGeneratePlanAction(handleGenerateEditingPlan);
-  }, [handleGenerateEditingPlan]);
-
-  useEffect(() => {
-    const clearAction = () => clearPlan();
-    useVideoRenderBridge.getState().setClearPlanErrorAction(clearAction);
-    return () => { useVideoRenderBridge.getState().setClearPlanErrorAction(null); };
-  }, [clearPlan]);
 
   // Reseta o bridge ao desmontar (navegação para fora de /video)
   useEffect(() => {
@@ -140,14 +115,14 @@ export function VideoPage({
       void transcribeAudio({
         audioUrl,
         script,
-        scenes: scenesForPlan,
+        scenes: scenesForTranscription,
         totalDurationFrames: durationInFrames,
         fps: videoFps,
       });
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [audioUrl, script, captions.length, isTranscribing, transcribeAudio, scenesForPlan, durationInFrames, videoFps]);
+  }, [audioUrl, script, captions.length, isTranscribing, transcribeAudio, scenesForTranscription, durationInFrames, videoFps]);
 
   // Pausa o Remotion Player ao desmontar a página
   useEffect(() => {
@@ -175,31 +150,7 @@ export function VideoPage({
         fps={videoFps}
         durationInFrames={durationInFrames}
         ratio={sceneRatio}
-        editingPlan={editingPlan ?? undefined}
         captions={captions.length > 0 ? captions : undefined}
-      />
-
-      {/* Inspector do plano de edição */}
-      <EditingPlanInspector
-        editingPlan={editingPlan}
-        scenes={scenes}
-        onUpdateScene={updateScene}
-        onClearPlan={clearPlan}
-        onRegenerateScene={regenerateScene ? (index) => {
-          if (script.trim() && scenes.length > 0 && durationInSeconds > 0) {
-            void regenerateScene(index, script, scenesForPlan, durationInSeconds);
-          }
-        } : undefined}
-        canUndo={canUndo}
-        onUndo={undoLastEdit}
-        originalPlan={originalPlan}
-        onResetToOriginal={resetToOriginal}
-        onSeekToScene={(index) => {
-          const timestamp = scenes[index]?.timestamp;
-          if (timestamp !== undefined && videoPlayerRef.current) {
-            videoPlayerRef.current.seekTo(Math.round(timestamp * videoFps));
-          }
-        }}
       />
 
       {/* Painel de exportação MP4 */}
@@ -209,7 +160,6 @@ export function VideoPage({
         fps={videoFps}
         durationInFrames={durationInFrames}
         ratio={sceneRatio}
-        editingPlan={editingPlan ?? undefined}
         projectId={currentProjectId ?? undefined}
         userId={userId}
         exporter={videoExporter}
@@ -225,6 +175,33 @@ export function VideoPage({
           // não chamar play() do AudioContext para evitar dual-play
         }}
       />
+
+      {/* Feedback de erro de transcrição */}
+      <Snackbar
+        open={showTranscriptionError}
+        autoHideDuration={8000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          setShowTranscriptionError(false);
+        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          onClose={() => setShowTranscriptionError(false)}
+          action={
+            <IconButton color="inherit" size="small" aria-label="Fechar mensagem de erro" onClick={() => setShowTranscriptionError(false)}>
+              <Close sx={{ fontSize: ICON_SIZE_MD }} />
+            </IconButton>
+          }
+          sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
+        >
+          {transcriptionSource === 'proportional'
+            ? 'Não foi possível gerar legendas automáticas. As legendas proporcionais ao roteiro foram usadas como alternativa.'
+            : `Falha na transcrição automática: ${transcriptionError}`}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 }

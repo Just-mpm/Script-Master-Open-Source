@@ -1,5 +1,4 @@
 import type { StudioScene } from '../studio/types';
-import type { EditingScene } from './lib/editingPlan';
 
 /** Cena estendida para vídeo Remotion */
 export interface VideoScene extends StudioScene {
@@ -17,8 +16,6 @@ export interface VideoCompositionProps {
   audioUrl: string;
   /** Frames por segundo (default: 30) */
   fps: number;
-  /** Plano de edição com transições, legendas e efeitos por cena */
-  editingPlan?: EditingScene[];
   /** Legendas com timestamps (Whisper ou fallback proporcional) */
   captions?: CaptionWord[];
 }

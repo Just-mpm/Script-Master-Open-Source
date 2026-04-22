@@ -312,19 +312,6 @@ export async function generateScenePrompts(
 
 ---
 
-## Análise Visual de Cenas (Plano de Edição)
-
-A função `generateEditingPlan` (`src/lib/gemini.ts:315-474`) pode receber imagens reais das cenas para análise visual multimodal.
-
-### Fluxo
-
-1. `loadSceneImagesForAnalysis` (`gemini.ts:121-146`) carrega até `MAX_IMAGES_FOR_ANALYSIS = 8` imagens como base64.
-2. Seleção representativa: sempre inclui primeira e última cena, distribui intermediárias uniformemente.
-3. Imagens são enviadas como `inlineData` **antes** do texto do prompt.
-4. O modelo analisa composição visual (framing, mood, profundidade, iluminação) para refinar transições, câmera e efeitos.
-
----
-
 ## Persistência
 
 ### Dual Storage
@@ -405,7 +392,7 @@ export function base64ToBlobSync(base64: string, mimeType: string = 'image/png')
 |---------|-----------------|
 | `src/hooks/useImageGenerator.ts` | Hook React para geração interativa de imagens |
 | `src/components/ImageStudio.tsx` | UI do Estúdio de Imagem (prompt, ratio, referência, preview) |
-| `src/lib/gemini.ts` | Integração Gemini: `generateImageFromPrompt`, `generateScenePrompts`, `generateEditingPlan`, análise visual |
+| `src/lib/gemini.ts` | Integração Gemini: `generateImageFromPrompt`, `generateScenePrompts` |
 | `src/lib/db/images.ts` | CRUD de `image_generations` (Firestore + IndexedDB) |
 | `src/lib/db/types.ts` | Tipos: `SavedImage`, `ProjectImage` |
 | `src/lib/db/shared.ts` | Utilitários de persistência, `uploadBlobAndGetUrl`, IndexedDB helpers |

@@ -20,6 +20,10 @@ interface ErrorBoundaryState {
 /**
  * ErrorBoundary global para capturar erros de render e impedir
  * que um crash de componente derrube a SPA inteira.
+ *
+ * Reset automático por rota: ao trocar de página, o componente pai
+ * deve passar um `key` diferente (ex: `key={location.pathname}`)
+ * para forçar o React a recriar esta instância com estado limpo.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {

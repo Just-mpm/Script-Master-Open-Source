@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { getGeminiApiKey } from '../lib/env';
 import { base64ToBlobSync } from '../lib/audio';
+import { withRetry } from '../lib/rate-limiter';
 
 // ---------------------------------------------------------------------------
 // Utilitários
@@ -108,15 +109,18 @@ export function useImageGenerator() {
 
       contents.push({ text: options.prompt });
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents,
-        config: {
-          imageConfig: {
-            aspectRatio: options.aspectRatio,
+      const { value: response } = await withRetry(
+        () => ai.models.generateContent({
+          model: 'gemini-3.1-flash-image-preview',
+          contents,
+          config: {
+            imageConfig: {
+              aspectRatio: options.aspectRatio,
+            },
           },
-        },
-      });
+        }),
+        { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
+      );
 
       let foundImage = false;
       for (const part of response.candidates?.[0]?.content?.parts ?? []) {

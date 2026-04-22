@@ -130,11 +130,19 @@ export function createFirestoreConverter<T extends DocumentData>(): FirestoreDat
   };
 }
 
-export const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
+// Lazy singleton: cacheia a Promise da conexão para reutilizar entre chamadas
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+const initDB = (): Promise<IDBDatabase> => {
+  if (dbPromise) return dbPromise;
+
+  dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      dbPromise = null; // permite retry em caso de falha
+      reject(request.error);
+    };
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
@@ -160,6 +168,8 @@ export const initDB = (): Promise<IDBDatabase> => {
       }
     };
   });
+
+  return dbPromise;
 };
 
 export async function putIndexedDbItem<T>(storeName: string, value: T): Promise<void> {

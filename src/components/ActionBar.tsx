@@ -16,7 +16,6 @@ import { useLocation } from 'react-router-dom';
 import Bookmark from '@mui/icons-material/Bookmark';
 import Check from '@mui/icons-material/Check';
 import Download from '@mui/icons-material/Download';
-import AutoFixHigh from '@mui/icons-material/AutoFixHigh';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
 import VideoFile from '@mui/icons-material/VideoFile';
@@ -42,12 +41,6 @@ interface ActionBarProps {
   videoFps?: number;
   /** Duração total do vídeo em frames */
   videoDurationInFrames?: number;
-  /** Callback para gerar plano de edição com IA (rota /video) */
-  onGenerateEditingPlan?: () => void;
-  /** Indica se está gerando o plano de edição */
-  isGeneratingPlan?: boolean;
-  /** Indica se o botão de gerar plano está desabilitado */
-  isPlanDisabled?: boolean;
   /** Callback para rolar até o painel de exportação (rota /video) */
   onScrollToExport?: () => void;
   /** Indica se há exportação de vídeo em andamento */
@@ -69,9 +62,6 @@ export function ActionBar({
   videoPlayerRef,
   videoFps,
   videoDurationInFrames,
-  onGenerateEditingPlan,
-  isGeneratingPlan = false,
-  isPlanDisabled = true,
   onScrollToExport,
   isExportingVideo = false,
   videoExportProgress = 0,
@@ -409,36 +399,6 @@ export function ActionBar({
 
             {!isImagePhase && (
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
-                {/* Botão de gerar plano de edição (rota /video) */}
-                {isVideoRoute && showPlayer && onGenerateEditingPlan && (
-                  <Tooltip title={isGeneratingPlan ? 'Gerando plano de edição...' : 'Gerar plano de edição com IA'}>
-                    <span>
-                      <IconButton
-                        onClick={onGenerateEditingPlan}
-                        disabled={isPlanDisabled || isGeneratingPlan}
-                        aria-label="Gerar plano de edição com IA"
-                        sx={{
-                          bgcolor: isGeneratingPlan
-                            ? 'rgba(139, 92, 246, 0.12)'
-                            : 'action.hover',
-                          color: isGeneratingPlan ? 'secondary.main' : 'default',
-                          ...(isGeneratingPlan ? {
-                            animation: 'spin 1.4s linear infinite',
-                            '@keyframes spin': {
-                              from: { transform: 'rotate(0deg)' },
-                              to: { transform: 'rotate(360deg)' },
-                            },
-                          } : {}),
-                        }}
-                      >
-                        {isGeneratingPlan
-                          ? <CircularProgress size={ICON_SIZE_MD} thickness={2.5} sx={{ color: 'secondary.main' }} />
-                          : <AutoFixHigh sx={{ fontSize: ICON_SIZE_MD }} />}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                )}
-
                 {/* Botão de exportar vídeo (rota /video) */}
                 {isVideoRoute && showPlayer && onScrollToExport && (
                   <Tooltip title={isExportingVideo ? `Exportando vídeo... ${videoExportProgress}%` : 'Exportar vídeo MP4'}>

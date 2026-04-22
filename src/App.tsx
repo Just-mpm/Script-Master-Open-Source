@@ -80,13 +80,8 @@ export default function App() {
 
   // Bridge store — lê estado dos hooks que vivem em VideoPage (code-splitting)
   const {
-    isGeneratingPlan,
-    isPlanDisabled,
-    planError,
-    generatePlanAction,
     isExportingVideo,
     videoExportProgress,
-    dismissPlanError,
   } = useVideoRenderBridge();
 
   const {
@@ -117,13 +112,12 @@ export default function App() {
     }
   }, []);
 
-  // Prioriza erros: authError > studio error > planError
-  const activeError = authError ?? error ?? planError;
+  // Prioriza erros: authError > studio error
+  const activeError = authError ?? error;
   const dismissError = useCallback(() => {
     if (authError) { clearAuthError(); return; }
     if (error) { setError(''); return; }
-    if (planError) { dismissPlanError(); return; }
-  }, [authError, clearAuthError, error, setError, planError, dismissPlanError]);
+  }, [authError, clearAuthError, error, setError]);
 
   const appRoutes = (
     <Suspense fallback={<RouteFallback />}>
@@ -269,10 +263,6 @@ export default function App() {
           videoPlayerRef={videoPlayerRef}
           videoFps={videoFps}
           videoDurationInFrames={durationInFrames}
-          // Props do plano de edição (rota /video, via bridge store)
-          onGenerateEditingPlan={generatePlanAction ?? undefined}
-          isGeneratingPlan={isGeneratingPlan}
-          isPlanDisabled={isPlanDisabled}
           // Props do exportador de vídeo (rota /video, via bridge store)
           onScrollToExport={scrollToExport}
           isExportingVideo={isExportingVideo}

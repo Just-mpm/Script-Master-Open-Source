@@ -549,7 +549,7 @@ O flag e checado antes de cada chunk TTS e antes de cada geracao de cena. Se can
 | `src/lib/constants.ts` | `CHUNK_LIMIT`, `MAX_CHARS`, `VOICES`, `PACE_INSTRUCTIONS` |
 | `src/lib/types.ts` | Interface `Voice` |
 | `src/lib/audio.ts` | `isWavFormat`, `extractPcmFromData`, `createWavBlob`, `base64ToBlob`, `base64ToUint8Array` |
-| `src/lib/gemini.ts` | `generateScenePrompts`, `generateImageFromPrompt`, `generateEditingPlan` |
+| `src/lib/gemini.ts` | `generateScenePrompts`, `generateImageFromPrompt` |
 | `src/lib/env.ts` | `getGeminiApiKey()` |
 | `src/hooks/useAudioGenerator.ts` | Hook principal: chunking, TTS, montagem WAV, progresso, retry, cancelamento |
 | `src/hooks/useVoicePreviews.ts` | Preview de vozes via arquivos WAV estaticos |

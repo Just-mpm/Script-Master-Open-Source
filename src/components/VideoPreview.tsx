@@ -12,7 +12,7 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
-import type { CaptionWord, EditingScene } from '../features/video-render';
+import type { CaptionWord } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
@@ -33,8 +33,6 @@ interface VideoPreviewProps {
   durationInFrames: number;
   /** Proporção de tela do vídeo */
   ratio: SceneRatio;
-  /** Plano de edição com transições, legendas e efeitos (opcional) */
-  editingPlan?: EditingScene[];
   /** Legendas com timestamps (Whisper ou fallback proporcional) */
   captions?: CaptionWord[];
 }
@@ -124,15 +122,15 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, editingPlan, captions }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
     const mappedScenes = useMemo(
-      () => mapScenesToVideoScenes(scenes, durationInFrames, fps, editingPlan),
-      [scenes, durationInFrames, fps, editingPlan],
+      () => mapScenesToVideoScenes(scenes, durationInFrames, fps),
+      [scenes, durationInFrames, fps],
     );
 
     // Expose handle imperativo para o pai controlar play/pause/seek
@@ -152,9 +150,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       scenes: mappedScenes,
       audioUrl: audioUrl ?? '',
       fps,
-      editingPlan: editingPlan ?? undefined,
       captions: captions ?? undefined,
-    }), [mappedScenes, audioUrl, fps, editingPlan, captions]);
+    }), [mappedScenes, audioUrl, fps, captions]);
 
     // Estado vazio: sem áudio e sem cenas
     if (!audioUrl && scenes.length === 0) {

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ChangeEvent } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -40,6 +40,7 @@ export function ScriptEditor({
   );
 
   const isOverLimit = script.length > MAX_CHARS;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Callbacks estáveis — evita nova referência a cada render,
   // prevenindo dessincronia interna no TextareaAutosize do MUI v9
@@ -50,8 +51,28 @@ export function ScriptEditor({
 
   const handleClearScript = useCallback(() => setScript(''), [setScript]);
 
+  // Atalho Ctrl+Enter (ou Cmd+Enter no Mac) para gerar áudio.
+  // Não dispara quando o foco está no textarea de edição — lá Enter
+  // serve para nova linha, Ctrl+Enter é o atalho esperado.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Enter') return;
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (isGenerateDisabled || isGenerating) return;
+
+      event.preventDefault();
+      handleGenerate();
+    };
+
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [isGenerateDisabled, isGenerating, handleGenerate]);
+
   return (
-    <Stack component="section" spacing={2}>
+    <Stack component="section" spacing={2} ref={containerRef}>
       <Paper
         elevation={0}
         sx={(theme): SystemStyleObject<Theme> => ({

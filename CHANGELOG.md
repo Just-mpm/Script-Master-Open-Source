@@ -7,6 +7,45 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.9.0] - 2026-04-22
+
+### Removido (breaking change)
+
+- **Plano de edição IA** (`src/features/video-render/hooks/useEditingPlan.ts`, `src/features/video-render/lib/editingPlan.ts`, `src/features/video-render/lib/audioAnalysis.ts`, `src/features/video-render/components/EditingPlanInspector.tsx`, `src/features/video-render/components/TitleOverlay.tsx`, `src/lib/db/editing-plans.ts`): remoção completa da feature de edição de vídeo gerada por IA — análise de áudio, análise visual de cenas, sugestão de transições/câmera/efeitos, inspetor de edição, persistência de planos e overlays de título. Todas as cenas agora usam fade in/out padrão via spring.
+- **gemini.ts** (`src/lib/gemini.ts`): remoção de `generateEditingPlan`, `loadSceneImagesForAnalysis` e funções auxiliares de análise visual (-348 linhas)
+- **ActionBar** (`src/components/ActionBar.tsx`): remoção do botão de gerar edição (AutoFixHigh)
+- **videoRenderBridge** (`src/features/video-render/store/videoRenderBridge.ts`): remoção do estado do plano de edição (`isGeneratingPlan`, `isPlanDisabled`, `planError`, `generatePlanAction`, `clearPlanErrorAction`)
+
+### Alterado
+
+- **SceneSequence** (`src/features/video-render/components/SceneSequence.tsx`): simplificado para fade in/out padrão com spring — remoção de transições variadas (slide, wipe, zoom, dissolve), movimentos de câmera (pan, tilt, ken-burns) e efeitos visuais (grayscale, blur, sepia, vignette, etc.)
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): fade fixo (`FADE_FRAMES = 12`, `FADE_DURATION_MS = 400`), remoção de `editingPlan`, `TitleOverlay`, `getOverlapFrames` e `findEditingSceneForIndex`
+- **VideoPage** (`src/pages/VideoPage.tsx`): remoção do hook `useEditingPlan`, do inspetor `EditingPlanInspector` e de toda a lógica de sincronização do plano de edição com o bridge
+- **App.tsx** (`src/App.tsx`): remoção da leitura do estado do plano de edição do bridge
+- **VideoPreview** (`src/components/VideoPreview.tsx`): remoção da prop `editingPlan`
+- **VideoExportPanel** (`src/features/video-render/components/VideoExportPanel.tsx`): remoção da prop `editingPlan`
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): remoção de `editingPlan` das opções de exportação
+- **videoUtils** (`src/features/video-render/lib/videoUtils.ts`): remoção de `editingPlan` de `mapScenesToVideoScenes`
+- **types** (`src/features/video-render/types.ts`): remoção de `EditingScene` de `VideoCompositionProps`
+- **video-render/index.ts**: remoção de re-exports relacionados ao plano de edição
+- **Gemini modelos**: `gemini-3.1-flash-lite-preview` não é mais usado para edição (ainda usado para chunking e prompts de cena)
+
+### Documentação
+
+- **video-render.md**: reescrita completa — remoção de 7 seções (Editing Plan, Tipos do Plano, Análise de Áudio, TitleOverlay, SPRING_CAMERA, transições variadas, efeitos visuais)
+- **image-generation.md**: remoção da seção "Análise Visual de Cenas (Plano de Edição)"
+- **persistence.md**: remoção das seções `StoredEditingPlan` e `5.8 Editing Plans`
+- **audio.md**: remoção de `generateEditingPlan` da tabela de referência
+
+### Outras mudanças
+
+- **Rate limiter** (`src/lib/rate-limiter.ts`, `useAudioGenerator.ts`, `useImageGenerator.ts`): extração do `withRetry` como utilitário reutilizável
+- **getImageGenerations** (`src/lib/db/images.ts`): nova função para listar gerações de imagens com ordenação
+- **ErrorBoundary** (`src/main.tsx`): wrapper `RoutableErrorBoundary` com reset automático por rota
+- **useStudioState** (`src/features/studio/useStudioState.ts`): persistência de `referenceImage` no localStorage
+
+---
+
 ## [0.8.4] - 2026-04-21
 
 ### Adicionado

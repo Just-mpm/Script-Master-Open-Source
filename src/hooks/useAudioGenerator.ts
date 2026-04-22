@@ -6,6 +6,7 @@ import { generateScenePrompts, generateImageFromPrompt } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
 import { getGeminiApiKey } from '../lib/env';
 import { calculateDurationFromWav } from '../features/video-render/lib/videoUtils';
+import { withRetry } from '../lib/rate-limiter';
 
 // ---------------------------------------------------------------------------
 // Utilitários extraídos do handler (bp #13)
@@ -111,6 +112,7 @@ export function useAudioGenerator() {
   const [scenes, setScenes] = useState<{ imageUrl: string; timestamp: number }[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sceneGenerationWarning, setSceneGenerationWarning] = useState<string | null>(null);
 
   const cancelRef = useRef(false);
 
@@ -228,6 +230,7 @@ export function useAudioGenerator() {
     setIsGenerating(true);
     setGenerationProgress(0);
     setError(null);
+    setSceneGenerationWarning(null);
     setStatusText('Iniciando...');
 
     // Cria Project ID antecipadamente
@@ -362,57 +365,55 @@ export function useAudioGenerator() {
         ].filter(Boolean).join('\n\n');
 
         let base64Audio: string | null = null;
-        let retries = 0;
-        const MAX_RETRIES = 3;
 
-        while (retries < MAX_RETRIES && !base64Audio) {
+        try {
           if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
-          try {
-            const speechConfig = isMultiSpeaker ? {
-              multiSpeakerVoiceConfig: {
-                speakerVoiceConfigs: [
-                  {
-                    speaker: speakerAName || 'Speaker1',
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
-                  },
-                  {
-                    speaker: speakerBName || 'Speaker2',
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: speakerBVoice || 'Puck' } },
-                  },
-                ],
-              },
-            } : {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: selectedVoice },
-              },
-            };
 
-            const response = await ai.models.generateContent({
-              model: 'gemini-3.1-flash-tts-preview',
-              contents: [{ parts: [{ text: finalPrompt }] }],
-              config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig,
-              },
-            });
+          const speechConfig = isMultiSpeaker ? {
+            multiSpeakerVoiceConfig: {
+              speakerVoiceConfigs: [
+                {
+                  speaker: speakerAName || 'Speaker1',
+                  voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } },
+                },
+                {
+                  speaker: speakerBName || 'Speaker2',
+                  voiceConfig: { prebuiltVoiceConfig: { voiceName: speakerBVoice || 'Puck' } },
+                },
+              ],
+            },
+          } : {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: selectedVoice },
+            },
+          };
 
-            base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ?? null;
+          const { value: response } = await withRetry(
+            async () => {
+              const ttsResponse = await ai.models.generateContent({
+                model: 'gemini-3.1-flash-tts-preview',
+                contents: [{ parts: [{ text: finalPrompt }] }],
+                config: {
+                  responseModalities: [Modality.AUDIO],
+                  speechConfig,
+                },
+              });
+              const data = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ?? null;
+              if (!data) {
+                throw new Error('O modelo retornou texto em vez de áudio (comportamento intermitente conhecido).');
+              }
+              return data;
+            },
+            { maxRetries: 3, baseDelayMs: 1500, jitterMs: 500 },
+          );
 
-            if (!base64Audio) {
-              throw new Error('O modelo retornou texto em vez de áudio (comportamento intermitente conhecido).');
-            }
-          } catch (chunkErr: unknown) {
-            retries++;
-            console.warn(`Tentativa ${retries} falhou para a parte ${i + 1}:`, chunkErr);
-            if (retries >= MAX_RETRIES) {
-              throw new Error(
-                `Falha ao gerar a parte ${i + 1} após ${MAX_RETRIES} tentativas.`,
-                { cause: chunkErr },
-              );
-            }
-            setStatusText(`Falha na parte ${i + 1}, tentando novamente (${retries}/${MAX_RETRIES})...`);
-            await new Promise(r => setTimeout(r, 1500));
-          }
+          base64Audio = response;
+        } catch (chunkErr: unknown) {
+          console.warn(`Falha ao gerar a parte ${i + 1} apos retries:`, chunkErr);
+          throw new Error(
+            `Falha ao gerar a parte ${i + 1} após múltiplas tentativas.`,
+            { cause: chunkErr },
+          );
         }
 
         if (base64Audio) {
@@ -472,6 +473,7 @@ export function useAudioGenerator() {
         const generatedScenes: { imageUrl: string; timestamp: number }[] = [];
         const scenesToGenerate = prompts.length;
         const stepPerScene = 4 / scenesToGenerate;
+        let failedSceneCount = 0;
 
         for (let i = 0; i < prompts.length; i++) {
           if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
@@ -502,8 +504,19 @@ export function useAudioGenerator() {
             } catch (imageSaveErr) {
               console.warn('Erro no auto-save da imagem:', imageSaveErr);
             }
+          } else {
+            failedSceneCount++;
           }
           updateProgress(stepPerScene * 0.8);
+        }
+
+        // Notifica o usuário se houve falhas na geracao de cenas
+        if (failedSceneCount > 0 && failedSceneCount < scenesToGenerate) {
+          const warning = `${generatedScenes.length} de ${scenesToGenerate} cenas geradas com sucesso. ${failedSceneCount} cena(s) falharam apos tentativas de retry.`;
+          setSceneGenerationWarning(warning);
+        } else if (failedSceneCount === scenesToGenerate) {
+          const warning = 'Nenhuma cena foi gerada. Todas falharam apos tentativas de retry. Verifique sua conexao ou tente novamente.';
+          setSceneGenerationWarning(warning);
         }
 
         setScenes(generatedScenes);
@@ -572,6 +585,7 @@ export function useAudioGenerator() {
     projectId,
     error,
     setError,
+    sceneGenerationWarning,
     generateAudio,
     handleCancel,
     loadProjectData,
