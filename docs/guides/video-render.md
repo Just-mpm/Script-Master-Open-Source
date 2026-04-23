@@ -205,7 +205,7 @@ Superamortecido (damping > stiffness) — sem oscilação, sem overshoot. A curv
 - **Fade out:** `springFadeOut(frame, fps, fadeStartFrame, fadeFrames)` — inverte o spring (1→0) começando em `fadeStartFrame`.
 - **Opacidade final:** `Math.min(fadeIn, fadeOut)` — cria curva de entrada-platô-saída.
 - **Última cena:** não aplica fade-out (permanece visível até o final).
-- **Cenas curtas (< 3 frames):** `safeFadeFrames = min(fadeFrames, floor((duration-1)/2))` previne range inválido no inputRange.
+- **Cenas curtas (< 3 frames):** `safeFadeFrames = min(max(1, fadeFrames), maxAllowed)` previne range inválido no inputRange. O `maxAllowed` é `floor((duration-1)/2)` quando `durationInFrames >= 3`, senão `0`.
 
 ## SubtitleOverlay (Orchestrator de legendas)
 
@@ -239,7 +239,7 @@ interface SubtitleOverlayProps {
 
 ### Fade global
 
-A legenda inteira aplica fade de entrada/saída (`SUBTITLE_FADE = 8` frames) usando `interpolate`, independente do karaoke interno das frases.
+A legenda inteira aplica fade de entrada/saída usando `interpolate`. O fade usa `safeFade = min(SUBTITLE_FADE, floor(durationInFrames / 3))` para evitar que o fade ultrapasse a duração da cena.
 
 ## ScrollingPhrase (Frase com karaoke interno)
 
@@ -414,7 +414,7 @@ Usa `groupCaptionWordsIntoPhrases()` local (mesma lógica do SubtitleOverlay): p
 
 ## canvasFontStretchPatch
 
-Monkey patch que corrige bug do `@remotion/web-renderer 4.0.450` que passa `fontStretch: "100%"` para a Canvas API, que só aceita keywords.
+Monkey patch que corrige bug do `@remotion/web-renderer` que passa `fontStretch: "100%"` para a Canvas API, que só aceita keywords.
 
 ### Mapeamento
 
@@ -459,7 +459,7 @@ O hook tenta gerar legendas na seguinte ordem:
 2. Se Whisper está disponível (`whisperSupported === true`), executa o pipeline Whisper (resample → download modelo → transcrição → `processWhisperAlignedCaptions`). Se Whisper falhar, cai para proporcional.
 3. Se Whisper não está disponível, usa `segmentScriptByCenes()` diretamente.
 
-**`processWhisperCaptions()`** (legado, `@deprecated`) — pipeline Whisper de 4 etapas com texto do próprio Whisper (não do roteiro). Mantida para backward compat; o fluxo principal usa `processWhisperAlignedCaptions`.
+**`processWhisperCaptions()`** (legado, `@deprecated`) — pipeline Whisper de 5 etapas com texto do próprio Whisper (não do roteiro): (1) `toCaptions`, (2) filtra tokens inválidos, (3) mescla fragmentos via `mergeWordFragments`, (4) `createTikTokStyleCaptions`, (5) converte para `CaptionWord[]`. Mantida para backward compat; o fluxo principal usa `processWhisperAlignedCaptions`.
 
 ### Imports principais
 
@@ -578,7 +578,13 @@ function isCancellationError(err: unknown): boolean {
 
 ```typescript
 function toUserFriendlyError(err: unknown): string {
-  if ('webcodecs'|'videoencoder'|'not supported') return `Navegador não suporta exportação de vídeo: ${err.message}`;
+  if (!(err instanceof Error)) {
+    return 'Erro ao exportar vídeo. Tente novamente.';
+  }
+  const msg = err.message.toLowerCase();
+  if (msg.includes('webcodecs') || msg.includes('videoencoder') || msg.includes('not supported')) {
+    return `Navegador não suporta exportação de vídeo: ${err.message}`;
+  }
   return 'Erro ao exportar vídeo. Tente novamente.';
 }
 ```
@@ -620,14 +626,18 @@ interface VideoRenderBridgeState {
 
 ## Utilitários (`lib/subtitleUtils.tsx`)
 
-### Constantes de pausa por pontuação
+### Constantes de pausa por pontuação (locais)
+
+> **Nota:** `PUNCTUATION_PAUSES` e `MAX_WORDS_PER_PHRASE` são constantes locais (não-exportadas) de `subtitleUtils.tsx`, usadas internamente por `splitIntoWordsWithTiming` e `segmentScriptByCenes`.
 
 | Constante | Valor | Descrição |
 |-----------|-------|-----------|
 | `PUNCTUATION_PAUSES` | `{ ',': 5, ';': 5, '.': 10, '!': 10, '?': 10, '...': 14 }` | Pausas por tipo de pontuação em frames (base 24fps) |
 | `MAX_WORDS_PER_PHRASE` | `12` | Número máximo de palavras por frase antes de forçar divisão |
 
-### Helpers de contagem e timing
+### Helpers de contagem e timing (locais)
+
+> **Nota:** `countSyllables`, `scalePause`, `extractTokensFromSegments` e `getPunctuationPauseKey` são funções locais (não-exportadas), usadas internamente por `splitIntoWordsWithTiming`.
 
 | Função | Descrição |
 |--------|-----------|

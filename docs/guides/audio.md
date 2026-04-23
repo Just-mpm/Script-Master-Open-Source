@@ -459,6 +459,7 @@ const { value: response } = await withRetry(
 
 | Padrao detectado | Mensagem (pt-BR) |
 |------------------|-------------------|
+| `!(err instanceof Error)` | "Ocorreu um erro inesperado. Tente novamente." |
 | `quota`, `resource_exhausted`, `429` | "Limite de uso atingido. Aguarde alguns minutos e tente novamente." |
 | `api key`, `key not valid`, `permission_denied` | "Erro de autenticacao. Verifique sua chave de API nas configuracoes." |
 | `deadline_exceeded`, `504` | "O servidor demorou demais para responder. Tente um roteiro menor ou aguarde." |
@@ -679,3 +680,5 @@ O componente de UI deve exibir esse aviso ao usuario para sinalizar que a qualid
 | `src/lib/logger.ts` | `createLogger` — logger centralizado |
 | `src/hooks/useAudioGenerator.ts` | Hook principal: chunking, TTS, montagem WAV, progresso, retry, cancelamento, restauracao de estado, segmentos |
 | `src/hooks/useVoicePreviews.ts` | Preview de vozes via arquivos WAV estaticos (com tratamento de autoplay) |
+| `src/contexts/AudioContext.tsx` | Estado global de reproducao (play, pause, seek, toggle, progress, currentTime, duration, formatTime, setDurationOverride) via `useSyncExternalStore` |
+| `src/features/video-render/lib/videoUtils.ts` | `calculateDurationFromWav` — duracao em segundos a partir do tamanho do blob WAV (usado por `useAudioGenerator`) |

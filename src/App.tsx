@@ -2,13 +2,13 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ActionBar } from './components/ActionBar';
 import { ErrorToast } from './components/ErrorToast';
 import { Header } from './components/Header';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { SuccessToast } from './components/SuccessToast';
 import { WarningToast } from './components/WarningToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
@@ -53,6 +53,11 @@ const NotFoundPage = lazy(async () => {
   return { default: module.NotFoundPage };
 });
 
+const LoginPage = lazy(async () => {
+  const module = await import('./pages/LoginPage');
+  return { default: module.LoginPage };
+});
+
 function RouteFallback() {
   return (
     <Stack
@@ -71,7 +76,8 @@ export default function App() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isAssistantRoute = currentPath === '/assistant';
-  const { authError, clearAuthError, loading: authLoading } = useAuth();
+  const isLoginRoute = currentPath === '/login';
+  const { authError, clearAuthError } = useAuth();
   const studio = useStudioState();
   const { toggle } = useGlobalAudioActions();
 
@@ -135,29 +141,38 @@ export default function App() {
   const appRoutes = (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        <Route path="/" element={<StudioPage {...studio} />} />
+        {/* Rota pública */}
+        <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/video"
-          element={
-            <VideoPage
-              {...studio}
-              videoPlayerRef={videoPlayerRef}
-            />
-          }
-        />
+        {/* Rotas protegidas */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/estudio" element={<StudioPage {...studio} />} />
 
-        <Route path="/image" element={<ImageStudio />} />
+          <Route
+            path="/video"
+            element={
+              <VideoPage
+                {...studio}
+                videoPlayerRef={videoPlayerRef}
+              />
+            }
+          />
 
-        <Route
-          path="/assistant"
-          element={<AssistantPage currentState={studio.currentState} onApplySettings={studio.handleApplySettings} />}
-        />
+          <Route path="/image" element={<ImageStudio />} />
 
-        <Route path="/library" element={<LibraryPage />} />
+          <Route
+            path="/assistant"
+            element={<AssistantPage currentState={studio.currentState} onApplySettings={studio.handleApplySettings} />}
+          />
 
-        <Route path="/speed-paint" element={<SpeedPaintPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/speed-paint" element={<SpeedPaintPage />} />
+        </Route>
 
+        {/* Redirect raiz */}
+        <Route path="/" element={<Navigate to="/estudio" replace />} />
+
+        {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
@@ -170,7 +185,7 @@ export default function App() {
       const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        if (!isGenerateDisabled && currentPath === '/') {
+        if (!isGenerateDisabled && currentPath === '/estudio') {
           e.preventDefault();
           handleGenerate();
         }
@@ -232,15 +247,12 @@ export default function App() {
         Pular para o conteúdo
       </Typography>
 
-      <Header />
-      {authLoading && (
-        <Box sx={{ position: 'fixed', top: 'var(--mui-shape-borderRadius, 0px)', left: 0, right: 0, zIndex: 1300 }}>
-          <LinearProgress />
-        </Box>
-      )}
+      {!isLoginRoute && <Header />}
 
-      <Box component="main" id="main-content" tabIndex={-1} sx={{ minHeight: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, outline: 'none' }}>
-        {isAssistantRoute ? (
+      <Box component="main" id="main-content" tabIndex={-1} sx={{ minHeight: isLoginRoute ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, outline: 'none' }}>
+        {isLoginRoute ? (
+          appRoutes
+        ) : isAssistantRoute ? (
           <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
             {appRoutes}
           </Box>
@@ -263,7 +275,7 @@ export default function App() {
       <WarningToast warning={localSceneWarning} onDismiss={dismissSceneWarning} />
       <SuccessToast message={successMsg} onDismiss={() => setSuccessMsg(null)} />
 
-      {(currentPath === '/' || currentPath === '/video') && (
+      {(currentPath === '/estudio' || currentPath === '/video') && (
         <ActionBar
           isGenerating={isGenerating}
           audioUrl={audioUrl}

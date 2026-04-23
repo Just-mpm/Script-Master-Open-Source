@@ -43,9 +43,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // se o callback disparar múltiplas vezes com o mesmo usuário
   const lastCheckedUserId = useRef<string | null>(null);
 
+  // Flag que indica se o login foi disparado ativamente (via popup).
+  // Usada para diferenciar login ativo de restauração de sessão.
+  const wasLoginRequested = useRef(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (authUser) => {
       setUser(authUser);
+
+      // Login ativo recém-concluído: full reload para ativar COEP
+      // (Firebase Auth precisa de cross-origin iframes, que COEP bloqueia)
+      if (authUser && wasLoginRequested.current) {
+        wasLoginRequested.current = false;
+        window.location.href = '/estudio';
+        return;
+      }
+
       setLoading(false);
 
       // Verifica migração quando o usuário faz login (null → não-null)
@@ -62,25 +75,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
-  const login = async () => {
+  const login = useCallback(async () => {
     try {
       setAuthError(null);
+      wasLoginRequested.current = true;
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
+      wasLoginRequested.current = false;
       log.error('Erro no login', { error });
       setAuthError(getAuthErrorMessage(error));
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       setAuthError(null);
       await signOut(auth);
+      // Full reload para limpar COEP e permitir próximo login via Firebase Auth
+      window.location.href = '/login';
     } catch (error) {
       log.error('Erro no logout', { error });
       setAuthError(getAuthErrorMessage(error));
     }
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, logout }}>

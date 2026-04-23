@@ -44,7 +44,7 @@ export function NotFoundPage() {
           <Button
             variant="contained"
             startIcon={<Home />}
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/estudio')}
             sx={{ mt: 1 }}
           >
             Voltar ao início

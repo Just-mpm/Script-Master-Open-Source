@@ -1,6 +1,6 @@
 # UI Design System — Script Master
 
-> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.11.0).
+> Documentacao baseada exclusivamente no codigo-fonte do projeto (v0.12.0).
 
 ---
 
@@ -477,6 +477,7 @@ Superficie glass sem gradient, com blur fixo.
   backgroundColor: 'alpha(APP_SURFACE, 0.78)',
   backgroundImage: 'linear-gradient(180deg, WHITE_05, WHITE_015)',
   backdropFilter: 'blur(22px)',
+  WebkitBackdropFilter: 'blur(22px)',
   border: '1px solid APP_BORDER',
   boxShadow: '0 24px 80px alpha(SHADOW_DEEP, 0.55)',
 }
@@ -534,7 +535,7 @@ Variavel com diferenca notavel:
 
 ```css
 html, body { min-height: 100%; }
-body { color: var(--text-primary); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+body { color: var(--text-primary); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 #root { min-height: 100vh; }
 ```
 
@@ -614,10 +615,14 @@ Previne zoom no iOS em inputs (font-size >= 16px) e garante area de toque minima
 
 7. **Links navegaveis** devem usar `LinkBehavior` automaticamente (ja configurado via `defaultProps` em `MuiLink` e `MuiButtonBase`).
 
-8. **Layout do App** (`src/App.tsx`):
-   - Container central com `maxWidth: APP_MAX_WIDTH` (1600px)
-   - Padding responsivo: `px: { xs: 2, sm: 3, lg: 4 }`
-   - Padding vertical: `py: { xs: 3, md: 4 }`, `pb: { xs: 16, md: 18 }` (espaco para ActionBar)
-   - Rota `/assistant` tem layout full-height (sem Container)
+ 8. **Layout do App** (`src/App.tsx`):
+    - Container central com `maxWidth: APP_MAX_WIDTH` (1600px)
+    - Padding responsivo: `px: { xs: 2, sm: 3, lg: 4 }`
+    - Padding vertical: `py: { xs: 3, md: 4 }`, `pb: { xs: 16, md: 18 }` (espaco para ActionBar)
+    - Rota `/assistant` tem layout full-height (sem Container)
+    - Rota `/login` e publica: renderiza SEM Header e SEM Container (layout full-screen). O Header usa `{!isLoginRoute && <Header />}`.
+    - Rotas autenticadas sao envolvidas por `<ProtectedRoute />` (`src/components/ProtectedRoute.tsx`), que redireciona nao-autenticados para `/login`.
+    - Rota `/` faz redirect para `/estudio` via `<Navigate to="/estudio" replace />`.
+    - O Header destruturou `useAuth()` como `{ user, loading, logout }` (sem `login`). O botao "Login" navega para `/login` via `href="/login"` (nao chama `login()` diretamente).
 
 9. **Idioma:** UI em pt-BR, prompts de imagem em ingles, comentarios em portugues.

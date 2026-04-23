@@ -223,7 +223,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/estudio')}
                 sx={{ mt: 0.5, alignSelf: 'center' }}
               >
                 Ir para o Estúdio

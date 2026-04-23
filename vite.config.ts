@@ -3,30 +3,34 @@ import path from 'path';
 import { defineConfig, type PluginOption } from 'vite';
 
 /**
- * Plugin que adiciona headers COOP/COEP condicionalmente via query param `?coep=1`.
+ * Plugin que adiciona headers COOP/COEP para todas as rotas exceto /login.
  *
- * Esses headers habilitam `SharedArrayBuffer`, necessario para Whisper WASM e Remotion.
- * Porem eles quebram Firebase Auth (iframes cross-origin sem credenciais).
+ * Esses headers habilitam SharedArrayBuffer (Whisper WASM, Remotion).
+ * A rota /login fica sem COEP para permitir Firebase Auth popup/iframe.
  *
- * Uso: acesse http://localhost:3000?coep=1 para ativar.
- * Padrao (sem o param): headers nao sao enviados, Firebase Auth funciona normalmente.
+ * Em produção, configurar headers equivalentes no firebase.json.
  */
-function conditionalCoepPlugin(): PluginOption {
+function coepPlugin(): PluginOption {
   const coepHeaders = {
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Embedder-Policy': 'credentialless',
   };
 
   function middleware(req: { url?: string }, res: { setHeader: (k: string, v: string) => void }, next: () => void) {
-    if (req.url?.includes('coep=1')) {
+    // Parseia o path ignorando query strings (?v=123, ?import, etc)
+    const path = req.url?.split('?')[0] ?? '/';
+
+    // Não aplica COEP na rota de login (Firebase Auth precisa de iframes cross-origin)
+    if (path !== '/login') {
       res.setHeader('Cross-Origin-Opener-Policy', coepHeaders['Cross-Origin-Opener-Policy']);
       res.setHeader('Cross-Origin-Embedder-Policy', coepHeaders['Cross-Origin-Embedder-Policy']);
     }
+
     next();
   }
 
   return {
-    name: 'conditional-coep',
+    name: 'coep-headers',
     configureServer(server) {
       server.middlewares.use(middleware);
     },
@@ -38,7 +42,7 @@ function conditionalCoepPlugin(): PluginOption {
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), conditionalCoepPlugin()],
+    plugins: [react(), coepPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

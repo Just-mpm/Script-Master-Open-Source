@@ -260,7 +260,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           <Button
             variant="outlined"
             size="small"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/estudio')}
             sx={{ mt: 0.5 }}
           >
             Ir para o Estúdio

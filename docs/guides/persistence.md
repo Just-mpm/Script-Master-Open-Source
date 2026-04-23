@@ -5,7 +5,7 @@
 > `src/lib/db/memories.ts`, `src/lib/db/user-settings.ts`, `src/lib/db/generations.ts`,
 > `src/lib/db/images.ts`, `src/lib/db/projects.ts`, `src/lib/db/chats.ts`,
 > `src/lib/db/videos.ts`, `src/lib/db/transcriptions.ts`, `src/lib/db/audio-segments.ts`,
-> `firestore.rules`, `storage.rules`
+> `src/lib/db/migration.ts`, `firestore.rules`, `storage.rules`
 
 ---
 
@@ -587,9 +587,9 @@ Remove campos `undefined` na serialização via `removeUndefinedFields()`, que f
 | `memories` | `isValidMemory` | `id`, `userId`, `content`, `createdAt` | `content`: string, 1-500000 chars |
 | `user_settings` | `isValidUserSetting` | `id`, `userId`, `customSystemPrompt`, `updatedAt` | `customSystemPrompt`: string, < 500000 chars |
 | `chats` | `isValidChat` | `id`, `userId`, `title`, `messages`, `updatedAt` | `title`: string, 1-500 chars; `messages`: list |
-| `generations` | `isValidGeneration` | `id`, `userId`, `name`, `script`, `voice`, `audioUrl`, `createdAt` | `audioUrl`: regex `^https://.*` ou `^blob:.*`; `scenes`: list, max 100 |
-| `image_generations` | `isValidImageGeneration` | `id`, `userId`, `name`, `prompt`, `aspectRatio`, `imageUrl`, `createdAt` | `imageUrl`: regex `^https://.*` ou `^data:image/.*` |
-| `projects` | `isValidProject` | `id`, `userId`, `name`, `script`, `createdAt` | — |
+| `generations` | `isValidGeneration` | `id`, `userId`, `name`, `script`, `voice`, `audioUrl`, `createdAt` | `name`: string, `size() > 0`; `script`: string, `size() > 0`; `audioUrl`: regex `^https://.*` ou `^blob:.*`; `scenes`: list, max 100 |
+| `image_generations` | `isValidImageGeneration` | `id`, `userId`, `name`, `prompt`, `aspectRatio`, `imageUrl`, `createdAt` | `name`: string, `size() > 0`; `prompt`: string, `size() > 0`; `imageUrl`: regex `^https://.*` ou `^data:image/.*` |
+| `projects` | `isValidProject` | `id`, `userId`, `name`, `script`, `createdAt` | `name`: string, `size() > 0` |
 | Subcoleção `audios` | `isValidAudio` | `id`, `projectId`, `userId`, `audioUrl`, `createdAt` | `audioUrl`: regex `^https://.*` ou `^blob:.*` |
 | Subcoleção `images` | `isValidProjectImage` | `id`, `projectId`, `userId`, `imageUrl`, `prompt`, `timestamp`, `createdAt` | `imageUrl`: regex `^https://.*` ou `^data:image/.*` |
 | Subcoleção `videos` | `isValidProjectVideo` | `id`, `projectId`, `userId`, `videoUrl`, `format`, `width`, `height`, `fps`, `durationInSeconds`, `fileSizeBytes`, `createdAt` | `format`: `'mp4'` ou `'webm'`; `videoUrl`: regex `^https://.*` ou `^blob:.*` |
@@ -604,13 +604,13 @@ Remove campos `undefined` na serialização via `removeUndefinedFields()`, que f
 | `chats` | `userId == auth.uid` | `isValidChat` | `isOwner` + `isValidChat` | `isOwner` |
 | `image_generations` | `userId == auth.uid` | `isValidImageGeneration` | `isOwner` + `isValidImageGeneration` | `isOwner` |
 | `projects` | `isOwner` ou `isAdmin` | `isValidProject` | `isOwner` ou `isAdmin` + valid | `isOwner` ou `isAdmin` |
-| `projects/*/audios` | Verifica owner do projeto | Owner do projeto + valid | — | Owner do projeto |
-| `projects/*/images` | Verifica owner do projeto | Owner do projeto + valid | — | Owner do projeto |
-| `projects/*/videos` | Verifica owner do projeto | Owner do projeto + valid | — | Owner do projeto |
+| `projects/*/audios` | Owner do projeto ou `isAdmin` | Owner do projeto ou `isAdmin` + valid | — | Owner do projeto ou `isAdmin` |
+| `projects/*/images` | Owner do projeto ou `isAdmin` | Owner do projeto ou `isAdmin` + valid | — | Owner do projeto ou `isAdmin` |
+| `projects/*/videos` | Owner do projeto ou `isAdmin` | Owner do projeto ou `isAdmin` + valid | — | Owner do projeto ou `isAdmin` |
 
 ### Collection Groups
 
-Existem regras de collection group para `audios`, `images` e `videos` (usadas por `getProjectsDetailsMap`):
+Existem regras de collection group para `audios`, `images` e `videos` (`audios` e `images` usadas por `getProjectsDetailsMap`; `videos` é mantida para consistência):
 
 ```
 match /{path=**}/audios/{audioId}  → read/delete com isOwner ou isAdmin; create com isValidAudio (sem isAdmin)

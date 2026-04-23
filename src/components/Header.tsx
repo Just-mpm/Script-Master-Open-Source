@@ -33,7 +33,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Estúdio', icon: Mic },
+  { to: '/estudio', label: 'Estúdio', icon: Mic },
   { to: '/image', label: 'Imagem', icon: ImageIcon },
   { to: '/video', label: 'Vídeo', icon: PlayCircle },
   { to: '/speed-paint', label: 'Speed Paint', icon: Palette },
@@ -42,7 +42,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function Header() {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -173,7 +173,7 @@ export function Header() {
                 </Tooltip>
               </>
             ) : (
-              <Button onClick={login} variant="contained" startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}>
+              <Button href="/login" variant="contained" startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}>
                 Login
               </Button>
             ))}

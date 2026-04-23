@@ -1,6 +1,8 @@
 # Variáveis de Ambiente e Configuração
 
 > Baseado nos arquivos: `src/lib/env.ts`, `src/lib/firebase.ts`, `.env.example`, `firebase.json`, `vite.config.ts`, `tsconfig.json`, `.gitignore`, `src/vite-env.d.ts`
+>
+> **Nota:** `.firebaserc` não existe — o `firebase.json` define toda a configuração de hosting diretamente.
 
 ## Variáveis de Ambiente
 
@@ -103,7 +105,6 @@ Pontos-chave:
 - `firestoreDatabaseId` condicional: se definido, `getFirestore` recebe o database ID como segundo argumento
 - `GoogleAuthProvider` exportado para autenticação via popup
 - Funções de auth re-exportadas: `signInWithPopup`, `signOut`, `onAuthStateChanged` e o tipo `User`
-- Função `testFirebaseConnection()` disponível para validação (não executada automaticamente no escopo do módulo)
 
 ## Gemini AI Init
 
@@ -125,15 +126,8 @@ Configuração em `firebase.json`:
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "headers": [
-      {
-        "source": "/index.html",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      }
-    ],
-    "rewrites": [
-      { "source": "**", "destination": "/index.html" }
-    ]
+    "headers": [ ... ],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
   },
   "storage": { "rules": "storage.rules" },
   "firestore": { "rules": "firestore.rules" }
@@ -142,8 +136,34 @@ Configuração em `firebase.json`:
 
 - **Public dir:** `dist` (output do `vite build`)
 - **SPA rewrite:** todas as rotas (`**`) reescritas para `/index.html`
-- **Cache:** `index.html` com `no-cache` (garante que o cliente sempre busca a versão mais recente)
 - **Ignored:** `firebase.json`, arquivos ocultos e `node_modules`
+
+### Headers de Cache
+
+| Rota | Header | Valor |
+|---|---|---|
+| `/index.html` | `Cache-Control` | `no-cache` |
+| `/login` | `Cache-Control` | `no-cache` |
+
+Garante que o cliente sempre busca a versão mais recente do HTML nessas rotas.
+
+### Headers COOP/COEP (produção)
+
+Habilita `SharedArrayBuffer` (Whisper WASM, Remotion) nas rotas que precisam:
+
+| Rota | COOP | COEP |
+|---|---|---|
+| `/estudio**` | `same-origin` | `credentialless` |
+| `/video**` | `same-origin` | `credentialless` |
+| `/image**` | `same-origin` | `credentialless` |
+| `/assistant**` | `same-origin` | `credentialless` |
+| `/library**` | `same-origin` | `credentialless` |
+| `/speed-paint**` | `same-origin` | `credentialless` |
+| `/404.html` | `same-origin` | `credentialless` |
+
+> **Nota:** A rota `/login` **não** recebe COOP/COEP — Firebase Auth precisa de iframes cross-origin para popups de autenticação.
+
+> **Relação com dev:** Em desenvolvimento, o plugin `coepPlugin()` em `vite.config.ts` aplica os mesmos headers dinamicamente via middleware. O comportamento é equivalente: COOP/COEP em todas as rotas exceto `/login`.
 
 ## Vite Config
 
@@ -151,7 +171,7 @@ Configuração em `vite.config.ts`:
 
 ```typescript
 export default defineConfig(() => ({
-  plugins: [react()],
+  plugins: [react(), coepPlugin()],
   resolve: {
     alias: { '@': path.resolve(__dirname, '.') },
     dedupe: ['mediabunny', '@mediabunny/aac-encoder', '@mediabunny/flac-encoder', '@mediabunny/mp3-encoder'],
@@ -163,18 +183,10 @@ export default defineConfig(() => ({
     host: '0.0.0.0',
     port: 3000,
     hmr: process.env.DISABLE_HMR !== 'true',
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'credentialless',
-    },
   },
   preview: {
     host: '0.0.0.0',
     port: 3000,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'credentialless',
-    },
   },
   build: {
     chunkSizeWarningLimit: 1600,
@@ -184,6 +196,7 @@ export default defineConfig(() => ({
 
 | Config | Valor | Observação |
 |---|---|---|
+| `plugins` | `[react(), coepPlugin()]` | `coepPlugin()` adiciona COOP/COEP via middleware |
 | `server.host` | `0.0.0.0` | Acessível na rede local |
 | `server.port` | `3000` | |
 | `server.hmr` | `process.env.DISABLE_HMR !== 'true'` | Desativado em AI Studio |
@@ -194,18 +207,34 @@ export default defineConfig(() => ({
 | `optimizeDeps.exclude` | `['@remotion/whisper-web']` | Exclui Whisper WASM da otimização (carregado sob demanda) |
 | `build.chunkSizeWarningLimit` | `1600` | KB |
 
-### Headers COOP/COEP
+### Plugin coepPlugin()
 
-Tanto `server` quanto `preview` definem headers de Cross-Origin:
+Definido no próprio `vite.config.ts`, aplica headers COOP/COEP via middleware do Connect:
 
 ```typescript
-headers: {
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'credentialless',
-},
+function coepPlugin(): PluginOption {
+  function middleware(req, res, next) {
+    const path = req.url?.split('?')[0] ?? '/';
+    if (path !== '/login') {
+      res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+      res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+    }
+    next();
+  }
+  return {
+    name: 'coep-headers',
+    configureServer(server) { server.middlewares.use(middleware); },
+    configurePreviewServer(server) { server.middlewares.use(middleware); },
+  };
+}
 ```
 
-Esses headers são obrigatórios para habilitar o `SharedArrayBuffer` no navegador, que é utilizado pelo Remotion (renderização de vídeo) e pelo Whisper WASM (transcrição de legendas). Sem eles, o `SharedArrayBuffer` fica indisponível e a funcionalidade de vídeo/legendas falha silenciosamente.
+Pontos-chave:
+- Aplica `Cross-Origin-Opener-Policy: same-origin` e `Cross-Origin-Embedder-Policy: credentialless` em todas as rotas
+- **Exceção:** a rota `/login` não recebe COEP — Firebase Auth precisa de iframes cross-origin para popups de autenticação
+- Os headers são definidos dinamicamente via middleware (não como propriedades estáticas de `server`/`preview`)
+- Esses headers habilitam `SharedArrayBuffer`, necessário para Remotion (renderização de vídeo) e Whisper WASM (transcrição de legendas)
+- Em produção, os mesmos headers são configurados via `firebase.json` (ver seção [Firebase Hosting](#firebase-hosting))
 
 > **Nota sobre DISABLE_HMR:** Usado apenas em ambientes de AI Studio. O file watching é desativado para evitar flickering durante edições de agentes. **Não altere sem motivo forte.**
 

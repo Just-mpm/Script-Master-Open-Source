@@ -7,6 +7,28 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.12.0] - 2026-04-22
+
+### Adicionado
+
+- **LoginPage** (`src/pages/LoginPage.tsx`): página de login dedicada com autenticação Google, layout visual com branding e redirecionamento pós-login para `/estudio`
+- **ProtectedRoute** (`src/components/ProtectedRoute.tsx`): wrapper de rota que redireciona usuários não-autenticados para `/login`, aplicado em todas as rotas autenticadas
+- **Headers COOP/COEP em produção** (`firebase.json`): 7 rotas com Cross-Origin headers (`/estudio**`, `/video**`, `/image**`, `/assistant**`, `/library**`, `/speed-paint**`, `/404.html`) + cache `no-cache` para `/login`
+
+### Alterado
+
+- **`src/App.tsx`**: rota `/` do Estúdio movida para `/estudio`; `/` agora faz redirect para `/estudio`; LoginPage carregada via lazy loading; ProtectedRoute envolve rotas autenticadas; Header oculto na rota `/login`
+- **`src/components/Header.tsx`**: botão "Login" agora navega para `/login` via href em vez de chamar `login()` diretamente; `useAuth()` destruturado sem `login`; rota do Estúdio atualizada de `/` para `/estudio`
+- **`src/contexts/AuthContext.tsx`**: `login()` refatorado — `isLoginActive` flag para rastrear popup ativo; `login()` exportado para uso pela LoginPage
+- **`vite.config.ts`**: plugin COEP simplificado — `coepPlugin()` middleware ativo por padrão (sem query param), exceção para `/login` (Firebase Auth precisa de iframes cross-origin); remoção de `conditionalCoepPlugin`
+- **`src/components/VideoLibrary.tsx`**, **`src/components/VideoPreview.tsx`**, **`src/pages/NotFoundPage.tsx`**: navegação atualizada de `/` para `/estudio`
+
+### Documentação
+
+- **5 guias atualizados** (`docs/guides/`) — 26 inconsistências corrigidas entre números de linha, fórmulas, funções, constantes, tabela de ownership e descrições de comportamento
+
+---
+
 ## [0.11.2] - 2026-04-22
 
 ### Alterado
