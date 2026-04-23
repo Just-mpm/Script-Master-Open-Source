@@ -295,10 +295,12 @@ function processWhisperAlignedCaptions(
  *
  * @param projectId - ID do projeto para persistência (null desativa)
  * @param script - Roteiro atual para detecção de staleness (opcional)
+ * @param userId - ID do usuário autenticado para dual storage (opcional)
  */
 export function useTranscription(
   projectId?: string | null,
   script?: string,
+  userId?: string,
 ): UseTranscriptionReturn {
   const [captions, setCaptions] = useState<CaptionWord[]>([]);
   const [source, setSource] = useState<CaptionSource | null>(null);
@@ -414,7 +416,7 @@ export function useTranscription(
         let resolvedSegments = segments;
         if (!resolvedSegments && projectId) {
           try {
-            resolvedSegments = await loadAudioSegments(projectId) ?? null;
+            resolvedSegments = await loadAudioSegments(projectId, userId) ?? null;
           } catch {
             // Falha ao carregar segmentos — segue para Whisper/fallback
           }
@@ -565,7 +567,7 @@ export function useTranscription(
         setIsTranscribing(false);
       }
     },
-    [whisperSupported, projectId],
+    [whisperSupported, projectId, userId],
   );
 
   // ─── Utilitários ──────────────────────────────────────────────

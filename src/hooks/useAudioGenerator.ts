@@ -471,12 +471,8 @@ export function useAudioGenerator() {
       setAudioUrl(url);
       setAudioSegments(generatedSegments);
 
-      // --- Persistir mapeamento chunk→timestamp no IndexedDB ---
-      void saveAudioSegments(currentProjectId, generatedSegments).catch((err: unknown) => {
-        log.warn('Erro ao salvar segmentos de áudio', { error: err });
-      });
-
       // --- Auto-save áudio (UX-5: feedback em caso de falha) ---
+      let savedAudioId: string | null = null;
       try {
         setStatusText('Salvando áudio na nuvem...');
         const audioSource: AudioSource = {
@@ -487,7 +483,13 @@ export function useAudioGenerator() {
           audioBlob: wavBlob,
           createdAt: Date.now(),
         };
+        savedAudioId = audioSource.id;
         await saveAudioToProject(audioSource, userId);
+
+        // Persiste segmentos APÓS salvar a AudioSource (GAP-001: key mismatch corrigido)
+        void saveAudioSegments(currentProjectId, savedAudioId, generatedSegments, userId).catch((err: unknown) => {
+          log.warn('Erro ao salvar segmentos de áudio', { error: err });
+        });
       } catch (saveError) {
         log.warn('Erro no auto-save do áudio', { error: saveError });
         setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');

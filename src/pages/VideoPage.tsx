@@ -67,7 +67,7 @@ export function VideoPage({
     whisperSupported,
     isStale,
     updateCaptions,
-  } = useTranscription(currentProjectId, script);
+  } = useTranscription(currentProjectId, script, userId);
 
   // Frame atual do player (para sync com CaptionEditorPanel)
   const [currentPlayerFrame, setCurrentPlayerFrame] = useState(0);

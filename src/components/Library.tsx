@@ -32,6 +32,7 @@ import Close from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
 import Pause from '@mui/icons-material/Pause';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import Search from '@mui/icons-material/Search';
 import {
   getProjects,
   deleteProject,
@@ -70,6 +71,7 @@ export function Library() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { isPlaying, activeId, play, toggle } = useGlobalAudioState();
 
@@ -162,6 +164,15 @@ export function Library() {
     }
   }, [resolvedImageUrls]);
 
+  // Filtra projetos por nome com base na busca
+  const filteredProjects = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return projects;
+    }
+    return projects.filter((project) => project.name.toLowerCase().includes(query));
+  }, [projects, searchQuery]);
+
   const confirmDelete = async () => {
     if (!itemToDelete) {
       return;
@@ -211,7 +222,42 @@ export function Library() {
           </Typography>
         </Stack>
 
-        <Chip label={`${projects.length} projeto${projects.length === 1 ? '' : 's'}`} variant="outlined" />
+        <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'flex-end' }}>
+          <Chip label={`${filteredProjects.length} projeto${filteredProjects.length === 1 ? '' : 's'}`} variant="outlined" />
+          {projects.length > 0 && (
+            <TextField
+              type="search"
+              size="small"
+              placeholder="Buscar projeto..."
+              value={searchQuery}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchQuery(event.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ fontSize: ICON_SIZE_SM, color: 'text.secondary' }} />
+                    </InputAdornment>
+                  ),
+                  ...(searchQuery ? {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setSearchQuery('')}
+                          aria-label="Limpar busca"
+                          sx={{ mr: -0.5 }}
+                        >
+                          <Close sx={{ fontSize: ICON_SIZE_SM }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  } : {}),
+                },
+              }}
+              sx={{ minWidth: 220 }}
+            />
+          )}
+        </Stack>
       </Stack>
 
       {!user ? (
@@ -256,9 +302,19 @@ export function Library() {
             </Typography>
           </Stack>
         </Card>
+      ) : filteredProjects.length === 0 ? (
+        <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
+            <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+            <Search sx={{ fontSize: EMPTY_ICON_SIZE, color: 'text.secondary' }} />
+            <Typography variant="h5">Nenhum projeto encontrado</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
+              Nenhum projeto corresponde a &ldquo;{searchQuery}&rdquo;. Tente outro termo de busca.
+            </Typography>
+          </Stack>
+        </Card>
       ) : (
         <Stack spacing={2}>
-          {projects.map((project: Project) => {
+          {filteredProjects.map((project: Project) => {
             const isExpanded = expandedProjectId === project.id;
 
             return (

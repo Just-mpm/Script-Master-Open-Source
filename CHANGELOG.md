@@ -7,6 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.13.2] - 2026-04-23
+
+### Adicionado
+
+- **Galeria de imagens no ImageStudio** (`src/components/ImageStudio.tsx`): exibe imagens salvas com loading skeleton, dialog de confirmação de exclusão e atualização automática após salvar/deletar
+- **Busca na Biblioteca** (`src/components/Library.tsx`): campo de busca por nome de projeto com ícone, botão de limpar e estado vazio contextual
+- **Busca no histórico do assistente** (`src/features/assistant/components/AssistantHistoryPanel.tsx`): campo de busca por título de sessão com estado vazio e filtragem client-side
+- **`deleteGeneration(id, userId?)`** (`src/lib/db/generations.ts`): exclusão de geração de áudio do Firestore, Storage (áudio + imagens de cena) e/ou IndexedDB conforme o modo do usuário
+
+### Alterado
+
+- **Audio segments — dual storage** (`src/lib/db/audio-segments.ts`): `saveAudioSegments` e `loadAudioSegments` agora suportam Firestore (via `userId`) + IndexedDB (fallback). `saveAudioSegments` recebe `audioId` em vez de `projectId` para keypath correto
+- **Bug fix: ordem de persistência de segmentos** (`src/hooks/useAudioGenerator.ts`): `saveAudioSegments` agora é chamado APÓS `saveAudioToProject` para garantir que o documento exista (corrigia key mismatch GAP-001)
+- **`useTranscription` recebe `userId`** (`src/features/video-render/hooks/useTranscription.ts`, `src/pages/VideoPage.tsx`): propaga `userId` para `loadAudioSegments` no dual storage
+
+---
+
 ## [0.13.1] - 2026-04-23
 
 ### Alterado

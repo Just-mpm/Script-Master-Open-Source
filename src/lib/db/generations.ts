@@ -1,10 +1,12 @@
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SavedAudio, SavedAudioScene } from './types';
 import {
   OperationType,
   STORE_NAME,
   createFirestoreConverter,
+  deleteIndexedDbItem,
+  deleteStorageObjectSafely,
   getAllIndexedDbItems,
   handleFirestoreError,
   putIndexedDbItem,
@@ -87,4 +89,40 @@ export async function getGenerations(userId?: string): Promise<SavedAudio[]> {
   return sortGenerations(await getAllIndexedDbItems<SavedAudio>(STORE_NAME));
 }
 
+/** Exclui uma geração de áudio. Remove do Firestore, Storage (áudio + cenas) e/ou IndexedDB conforme o modo do usuário. */
+export async function deleteGeneration(id: string, userId?: string): Promise<void> {
+  if (userId) {
+    try {
+      // Busca o doc para obter as cenas e seus paths de Storage
+      const documentSnapshot = await getDoc(doc(generationsCollection, id));
+      const generationData = documentSnapshot.data();
+
+      // Remove imagens de cena do Storage (se existirem no doc)
+      if (generationData?.scenes) {
+        const sceneDeletions = generationData.scenes.map(
+          (scene: SavedAudioScene, index: number) =>
+            deleteStorageObjectSafely(
+              `generations_images/${userId}/${id}_scene_${index}.png`,
+              `Imagem de cena Storage não encontrada (esperado na exclusão): ${id}_scene_${index}`,
+            ),
+        );
+        await Promise.all(sceneDeletions);
+      }
+
+      // Remove o documento do Firestore
+      await deleteDoc(doc(generationsCollection, id));
+
+      // Remove o áudio do Storage (fire-and-forget com segurança)
+      await deleteStorageObjectSafely(
+        `audios/${userId}/${id}.wav`,
+        `Áudio Storage não encontrado (esperado na exclusão): ${id}`,
+      );
+      return;
+    } catch (error: unknown) {
+      handleFirestoreError(error, OperationType.DELETE, `generations/${id}`);
+    }
+  }
+
+  await deleteIndexedDbItem(STORE_NAME, id);
+}
 

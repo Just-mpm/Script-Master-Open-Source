@@ -230,13 +230,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.13.1`
+- **Current:** `0.13.2`
 - **Last release:** 2026-04-23
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.13.2 | Galeria de imagens no ImageStudio com exclusão; busca na Biblioteca e histórico do assistente; deleteGeneration (Firestore+Storage+IndexedDB); audio segments dual storage (Firestore+IndexedDB); bug fix ordem de persistência de segmentos (GAP-001) |
 | 0.13.1 | AGENTS.md reestruturado com documentação por domínio inline (12 seções), adições de anti-patterns e rotas; 12 guias externos removidos (docs/guides/) |
 | 0.13.0 | 6 novos guias (assistant, speed-paint, studio, library, auth, gemini-integration), 4 guias corrigidos (22 inconsistências), deleteImageGeneration, saveChatSession com fallback IndexedDB, countIndexedDbItems, errorId em useVoicePreviews, blob URL cleanup |
 | 0.12.0 | LoginPage dedicada, ProtectedRoute, rota /estudio (era /), COEP em produção via firebase.json, coepPlugin simplificado no Vite, 5 guias corrigidos (26 inconsistências) |

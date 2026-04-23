@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -6,6 +6,10 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -26,17 +30,18 @@ import ChevronDown from '@mui/icons-material/ExpandMore';
 import ChevronUp from '@mui/icons-material/ExpandLess';
 import CloudUpload from '@mui/icons-material/CloudUpload';
 import Close from '@mui/icons-material/Close';
+import Delete from '@mui/icons-material/Delete';
 import Download from '@mui/icons-material/Download';
 import ImageIcon from '@mui/icons-material/Image';
 import Save from '@mui/icons-material/Save';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useImageGenerator } from '../hooks/useImageGenerator';
-import { saveImageGeneration } from '../lib/db';
+import { deleteImageGeneration, getImageGenerations, saveImageGeneration, type SavedImage } from '../lib/db';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
 
 const log = createLogger('ImageStudio');
 
@@ -62,10 +67,31 @@ export function ImageStudio() {
   const [isSaved, setIsSaved] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(true);
+  const [imageToDelete, setImageToDelete] = useState<SavedImage | null>(null);
+  const [deletingImage, setDeletingImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { isGenerating, imageUrl, imageBlob, error, setError, generateImage } = useImageGenerator();
+
+  // Carrega imagens salvas na biblioteca
+  const loadSavedImages = useCallback(async () => {
+    setImagesLoading(true);
+    try {
+      const images = await getImageGenerations(user?.uid);
+      setSavedImages(images);
+    } catch (loadError) {
+      log.error('Falha ao carregar imagens salvas', { error: loadError });
+    } finally {
+      setImagesLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void loadSavedImages();
+  }, [loadSavedImages]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -138,15 +164,36 @@ export function ImageStudio() {
       setIsSaved(true);
       setSuccessMsg(user ? 'Imagem salva na nuvem com sucesso.' : 'Imagem salva na biblioteca local.');
       window.setTimeout(() => setSuccessMsg(null), 3000);
+      // Atualiza a galeria após salvar
+      void loadSavedImages();
     } catch (saveError) {
       log.error('Erro ao salvar na biblioteca', { error: saveError });
       setError('Erro ao salvar na biblioteca.');
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!imageToDelete) {
+      return;
+    }
+
+    setDeletingImage(true);
+    try {
+      await deleteImageGeneration(imageToDelete.id, user?.uid);
+      setImageToDelete(null);
+      void loadSavedImages();
+    } catch (deleteError) {
+      log.error('Erro ao excluir imagem', { error: deleteError });
+      setError('Erro ao excluir a imagem.');
+    } finally {
+      setDeletingImage(false);
+    }
+  };
+
   const isSidebarOpen = isDesktop || !isSidebarCollapsed;
 
   return (
+    <>
     <Grid container spacing={{ xs: 3, lg: 4 }}>
       <Grid size={{ xs: 12, lg: 4, xl: 3.5 }}>
           <Paper elevation={0} sx={glassPanelSx}>
@@ -355,8 +402,125 @@ export function ImageStudio() {
               {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null}
             </Stack>
           </Paper>
+
+          {/* Galeria de imagens salvas */}
+          <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...glassPanelSx(currentTheme), p: { xs: 2.5, md: 3 } })}>
+            <Stack spacing={GAP_MEDIUM}>
+              <Stack spacing={GAP_COMPACT}>
+                <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                  <ImageIcon sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
+                  <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                    Imagens salvas
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Suas imagens geradas anteriormente. Baixe ou exclua conforme necessário.
+                </Typography>
+              </Stack>
+
+              {imagesLoading ? (
+                <Grid container spacing={1.5}>
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Grid key={index} size={{ xs: 6, sm: 4, md: 3 }}>
+                      <Skeleton variant="rounded" animation="wave" sx={{ aspectRatio: '1 / 1', borderRadius: RADIUS_SM }} />
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : savedImages.length === 0 ? (
+                <Box sx={{ py: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Nenhuma imagem salva ainda. Gere e salve sua primeira imagem acima.
+                  </Typography>
+                </Box>
+              ) : (
+                <Grid container spacing={1.5}>
+                  {savedImages.map((img) => (
+                    <Grid key={img.id} size={{ xs: 6, sm: 4, md: 3 }}>
+                      <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
+                        <Box
+                          component="img"
+                          src={img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '')}
+                          alt={img.name}
+                          loading="lazy"
+                          sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }}
+                        />
+                        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ p: 1, alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Tooltip title={img.prompt || img.name}>
+                            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {img.name}
+                            </Typography>
+                          </Tooltip>
+                          <Stack direction="row" spacing={GAP_COMPACT}>
+                            {img.imageUrl && (
+                              <IconButton
+                                size="small"
+                                onClick={() => downloadFile(img.imageUrl!, `${img.name}.png`)}
+                                aria-label={`Baixar ${img.name}`}
+                              >
+                                <Download sx={{ fontSize: ICON_SIZE_SM }} />
+                              </IconButton>
+                            )}
+                            <Tooltip title="Excluir imagem">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => setImageToDelete(img)}
+                                aria-label={`Excluir ${img.name}`}
+                              >
+                                <Delete sx={{ fontSize: ICON_SIZE_SM }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </Stack>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Stack>
+          </Paper>
         </Stack>
       </Grid>
     </Grid>
+
+    {/* Dialog de confirmação de exclusão */}
+    <Dialog
+      open={Boolean(imageToDelete)}
+      onClose={deletingImage ? undefined : () => setImageToDelete(null)}
+      fullWidth
+      maxWidth="xs"
+      aria-labelledby="delete-image-title"
+      aria-describedby="delete-image-description"
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: RADIUS_SM,
+          },
+        },
+      }}
+    >
+      <DialogTitle id="delete-image-title">
+        {deletingImage ? 'Excluindo imagem...' : 'Excluir imagem?'}
+      </DialogTitle>
+      <DialogContent>
+        <Typography id="delete-image-description" variant="body2" color="text.secondary">
+          Esta ação remove permanentemente a imagem da biblioteca. A operação não pode ser desfeita.
+        </Typography>
+        {error && (
+          <Alert variant="outlined" severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={() => setImageToDelete(null)} color="inherit" disabled={deletingImage}>
+          Cancelar
+        </Button>
+        <Button onClick={() => void handleDeleteImage()} color="error" variant="contained" disabled={deletingImage}>
+          {deletingImage ? 'Excluindo...' : 'Excluir imagem'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }
