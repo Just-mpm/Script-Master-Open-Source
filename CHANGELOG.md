@@ -7,6 +7,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.13.1] - 2026-04-23
+
+### Alterado
+
+- **AGENTS.md reestruturado**: documentação por domínio consolidada inline (12 seções) em vez de referenciar guias externos; adições: seções "Anti-patterns" e "Rotas" com tabela de rotas/proteção
+
+### Removido
+
+- **12 guias externos** (`docs/guides/`): `assistant.md`, `audio.md`, `auth.md`, `environment.md`, `gemini-integration.md`, `image-generation.md`, `library.md`, `persistence.md`, `speed-paint.md`, `studio.md`, `ui-design-system.md`, `video-render.md` — conteúdo migrado para AGENTS.md
+
+---
+
 ## [0.13.0] - 2026-04-23
 
 ### Adicionado

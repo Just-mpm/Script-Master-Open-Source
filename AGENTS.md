@@ -35,7 +35,7 @@ bun run clean            # remove dist/
 |--------|-----|
 | `gemini-3.1-flash-tts-preview` | Text-to-speech |
 | `gemini-3.1-flash-image-preview` | Geração de imagens |
-| `gemini-3.1-flash-lite-preview` | Chunking de roteiros, prompts de cena |
+| `gemini-3.1-flash-lite-preview` | Chunking de roteiros, prompts de cena, chat do assistente |
 
 ## Convenções
 
@@ -45,45 +45,199 @@ bun run clean            # remove dist/
 - **Rotas:** lazy loading por rota, páginas em `src/pages/`
 - **HMR:** não altere a checagem `DISABLE_HMR` em `vite.config.ts`
 
-## Guia Rápido de Features
+## Anti-patterns
 
-| Feature | Arquivos principais |
-|---------|---------------------|
-| Áudio/TTS | `src/hooks/useAudioGenerator.ts`, `src/lib/audio.ts` |
-| Imagens | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts` |
-| Vídeo | `src/features/video-render/` |
-| Assistente | `src/features/assistant/` |
-| Canvas/Speed Paint | `src/features/speed-paint/` |
-| Studio | `src/features/studio/` |
+- Não crie rotas `/api/*` — tudo é client-side
+- Não use Tailwind ou CSS modules — MUI v9 é a stack única de UI
+- Não altere `DISABLE_HMR` em `vite.config.ts` — usado por AI Studio
+- Não remova COEP sem motivo — necessário para SharedArrayBuffer (Whisper + Remotion)
+- Não use `process.env` — leia env vars via `import.meta.env` ou `src/lib/env.ts`
 
-## Documentação por Domínio
+## Rotas
 
-Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
+| Rota | Componente | Protegida |
+|------|-----------|-----------|
+| `/` | Redirect → `/estudio` | — |
+| `/estudio` | StudioPage | Sim |
+| `/video` | VideoPage | Sim |
+| `/assistant` | AssistantPage | Sim |
+| `/library` | LibraryPage | Sim |
+| `/speed-paint` | SpeedPaintPage | Sim |
+| `/image` | ImageStudio | Sim |
+| `/login` | LoginPage | Não |
 
-| Área | Arquivo | O que cobre |
-|------|---------|-------------|
-| Audio & TTS | `docs/guides/audio.md` | Pipeline TTS, chunks, WAV, vozes, multi-speaker |
-| Geração de imagens | `docs/guides/image-generation.md` | Modelos, prompts, referências, aspect ratios |
-| Persistência | `docs/guides/persistence.md` | Dual storage, domínios, Firebase rules, tipos |
-| Renderização de vídeo | `docs/guides/video-render.md` | Remotion, fade padrão, legendas, exportação |
-| UI & Design System | `docs/guides/ui-design-system.md` | MUI v9, tema, tokens, surfaces, CSS |
-| Environment & Config | `docs/guides/environment.md` | Env vars, Firebase, Vite, TypeScript |
-| Integração IA (Gemini) | `docs/guides/gemini-integration.md` | SDK GenAI, modelos, geração de imagem, prompts de cena, rate limiter, logger |
-| Assistente IA | `docs/guides/assistant.md` | Chat conversacional, memórias, persona, streaming, extração JSON |
-| Speed Paint & Animação | `docs/guides/speed-paint.md` | Canvas Konva, strokes, batch processing, reprodução, store |
-| Estúdio de Produção | `docs/guides/studio.md` | Roteiro, vozes, ação, estado centralizado, integração TTS/imagens |
-| Biblioteca & Projetos | `docs/guides/library.md` | Histórico, galeria, navegação, downloads, dual storage |
-| Autenticação | `docs/guides/auth.md` | Login Google, sessão, ProtectedRoute, COEP |
+---
+
+## Domínios
+
+### Audio & TTS
+
+| | |
+|---|---|
+| **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/lib/audio.ts`, `src/lib/constants.ts` |
+| **Pipeline** | valida roteiro → cria projeto → chunka (LLM+fallback) → TTS chunk-a-chunk → montagem WAV → auto-save |
+| **Chunking** | Se >500 chars, `gemini-lite` divide via JSON output. Fallback: `splitTextProgrammatically` por sentenças |
+| **Continuidade** | A partir do chunk 2, injeta "TAKES CONTÍNUOS" no prompt para manter tom/energia consistentes |
+| **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
+| **Retry** | `withRetry`: 3 tentativas, 1500ms base, 500ms jitter. 429/503/504 retryam; 400/403/404 falham imediato |
+| **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
+| **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS) |
+| **Segmentos** | `AudioSegment` persiste chunk→timestamp no IndexedDB (fire-and-forget). Duração: `pcm.length / 48000` |
+| **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef` |
+| **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
+| **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
+
+### Geração de Imagens
+
+| | |
+|---|---|
+| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx` |
+| **Pipeline** | prompt (opcional + referência) → Gemini via `withRetry` → extrai `inlineData` → base64ToBlob → blob URL |
+| **Retry** | `withRetry`: 3 tentativas, 1000ms base, 500ms jitter (mesmo do TTS) |
+| **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
+| **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
+| **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
+| **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
+
+### Vídeo (Remotion)
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/video-render/` |
+| **Renderização** | Client-side via WebCodecs. Sem backend |
+| **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
+| **Crossfade** | Overlap de 400ms entre cenas. Fade = 12 frames, spring `{damping:26, stiffness:100, mass:1}` |
+| **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
+| **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
+| **Karaoke** | `ScrollingPhrase` renderiza frase com `AnimatedWord` (spring `{damping:12, stiffness:200}` para "pop") |
+| **Whisper** | Modelo `base` (~75MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
+| **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição entre VideoPage e App |
+| **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Idempotente |
+| **Resoluções** | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
+
+### Persistência (Dual Storage)
+
+| | |
+|---|---|
+| **Arquivos** | `src/lib/db/` (barrel: `src/lib/db.ts` → `src/lib/db/index.ts`) |
+| **Padrão** | `userId` presente → Firestore + Storage. `userId` ausente → IndexedDB local |
+| **Domínios** | memories, user_settings, generations, image_generations, projects (+subcoleções audios/images/videos), chats, transcriptions, audio_segments |
+| **IndexedDB** | `GeminiVoiceStudioDB` v9. Stores: generations, image_generations, projects, audios, project_images, memories, chats, user_settings, videos, transcriptions |
+| **Chat fallback** | Se doc >900KB, salva apenas no IndexedDB (limite seguro Firestore ~1MB) |
+| **Transcriptions** | Apenas IndexedDB (dados temporários por projeto) |
+| **Audio segments** | Apenas IndexedDB, campo `audioSegments` dentro de `AudioSource` existente |
+| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded |
+| **Admin (Storage)** | Apenas email hardcoded (leitura + deleção, sem escrita) |
+| **Limites Storage** | Áudio 50MB, imagem 10MB, vídeo 200MB. Previews: público (leitura), admin (escrita) |
+| **Converter** | `createFirestoreConverter<T>()` genérico remove `undefined` na serialização |
+
+### Assistente IA
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/assistant/`, `src/hooks/useAssistant.ts` |
+| **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via `generateContentStream`) |
+| **System prompt** | Montado dinamicamente: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
+| **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
+| **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
+| **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
+| **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini |
+| **Auto-save** | Salva sessão ao final de cada resposta (quando `isStreaming` → `false`). Título: primeiros 40 chars da primeira msg |
+| **Abort** | Novo envio aborta chamada anterior. Desmontagem aborta em andamento |
+
+### Estúdio de Produção
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/studio/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx` |
+| **Estado** | `useStudioState()` centralizado em App.tsx, propagado via Pick para componentes |
+| **Persistência** | 14 preferências no localStorage (prefixo `s2a_`). `referenceImage` é session-only |
+| **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
+| **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo |
+| **Geração** | `handleGenerate` coleta `currentState` e delega para `useAudioGenerator.generateAudio()` |
+| **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
+
+### Biblioteca & Projetos
+
+| | |
+|---|---|
+| **Arquivos** | `src/components/Library.tsx`, `src/components/VideoLibrary.tsx`, `src/lib/db/projects.ts`, `src/lib/db/generations.ts` |
+| **Library** | `/biblioteca` — lista projetos expansível com áudios, cenas e roteiro |
+| **VideoLibrary** | `/video` (abaixo do player) — galeria horizontal com seleção rápida + batch download |
+| **Projetos** | Firestore usa subcoleções: `projects/{id}/audios`, `projects/{id}/images`, `projects/{id}/videos` |
+| **Gerações** | Coleção flat `generations`. Storage: `audios/{userId}/{id}.wav`, cenas em `generations_images/` |
+| **Download** | `downloadFile()`: blob/data URLs direto, remotas via fetch→blob, fallback abre no browser |
+| **Blob cleanup** | Library usa `useRef<string[]>`. VideoLibrary usa `Set<string>` com revogação automática |
+
+### Speed Paint & Animação
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/speed-paint/` |
+| **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva no canvas Konva |
+| **Fases** | Sketch (bordas, `layer:0`) → Reveal (coloração com destination-out, `layer:1`) |
+| **Canvas** | Offscreen buffer simula "lousa branca". Reveal apaga lousa revelando imagem original |
+| **Controles** | Play/pause, seek, velocidade dupla (draw + paint), export PNG (2x) e WebM (H.264 > VP9 > padrão, 12Mbps) |
+| **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança 2s) e `record` (grava + avança) |
+| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed |
+
+### Autenticação
+
+| | |
+|---|---|
+| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/lib/firebase.ts` |
+| **Provider** | Google popup only. Sem email/senha. `AuthContext` + `useAuth()` — 9 componentes consumidores |
+| **COEP conflict** | Login/logout fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
+| **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
+| **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, etc.) |
+
+### Environment & COEP
+
+| | |
+|---|---|
+| **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
+| **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 2 opcionais |
+| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()` |
+| **COEP** | Rotas autenticadas: COOP/COEP habilitados. `/login`: SEM COEP (popup Firebase) |
+| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` |
+| **Prod** | Headers em `firebase.json`. SPA rewrite: `**` → `/index.html` |
+| **Razão** | `SharedArrayBuffer` necessário para Whisper WASM e Remotion |
+| **Segurança** | `VITE_GEMINI_API_KEY` exposta no bundle (aceito por contexto privado). Segurança dos dados via Firestore/Storage Rules |
+
+### UI & Theme
+
+| | |
+|---|---|
+| **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
+| **Stack** | MUI v9 + Emotion. `StyledEngineProvider` com `enableCssLayer`. CSS layers: `theme, base, mui, components, utilities` |
+| **Modo** | Dark only na prática (light existe com palette idêntica). Font: Inter (sans), JetBrains Mono (mono), Playfair Display (serif) |
+| **Tokens** | `tokens.ts`: brand (cyan/purple), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow, gradients |
+| **Surfaces** | `glassPanelSx` (blur+gradiente+shadow), `insetPanelSx` (recessado), `glassSurfaceSx` (blur fixo) — todas em `surfaces.ts` |
+| **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
+| **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
+| **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient` |
+| **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant` e `/login` sem Container |
+
+### Logger & Rate Limiter
+
+| | |
+|---|---|
+| **Arquivos** | `src/lib/logger.ts`, `src/lib/rate-limiter.ts` |
+| **Logger** | `createLogger('context')` com níveis debug/info/warn/error. `debug` e `info` suprimidos em produção (`import.meta.env.PROD`) |
+| **Rate limiter** | `withRetry<T>(fn, config?)` — genérico, reutilizável. Detecta `ApiError.status` + keywords em mensagens |
+
+---
 
 ## Version
 
-- **Current:** `0.13.0`
+- **Current:** `0.13.1`
 - **Last release:** 2026-04-23
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.13.1 | AGENTS.md reestruturado com documentação por domínio inline (12 seções), adições de anti-patterns e rotas; 12 guias externos removidos (docs/guides/) |
 | 0.13.0 | 6 novos guias (assistant, speed-paint, studio, library, auth, gemini-integration), 4 guias corrigidos (22 inconsistências), deleteImageGeneration, saveChatSession com fallback IndexedDB, countIndexedDbItems, errorId em useVoicePreviews, blob URL cleanup |
 | 0.12.0 | LoginPage dedicada, ProtectedRoute, rota /estudio (era /), COEP em produção via firebase.json, coepPlugin simplificado no Vite, 5 guias corrigidos (26 inconsistências) |
 | 0.11.2 | Plugin condicional COEP (?coep=1) no dev server, resolve conflito Firebase Auth vs SharedArrayBuffer; referrerPolicy no Header Avatar; correção de encoding nas mensagens de auth |
