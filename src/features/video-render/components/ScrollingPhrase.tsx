@@ -1,11 +1,8 @@
 import { useMemo } from 'react';
-import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { BLACK_50, BLACK_40 } from '../../../theme/tokens';
-import {
-  AnimatedWord,
-  SUBTITLE_FADE,
-} from '../lib/subtitleUtils';
-import type { WordEntry, WordState } from '../lib/subtitleUtils';
+import { interpolate, useCurrentFrame } from 'remotion';
+import { BLACK_50, BLACK_40, WHITE } from '../../../theme/tokens';
+import { parseBoldMarkdown, SUBTITLE_FADE } from '../lib/subtitleUtils';
+import type { TextSegment } from '../lib/subtitleUtils';
 import type { CaptionWord } from '../types';
 
 // ─── Tipos ──────────────────────────────────────────────────
@@ -17,105 +14,119 @@ interface ScrollingPhraseProps {
   phraseIndex: number;
   /** Total de frases no grupo */
   totalPhrases: number;
+  /** Variante visual: ativa (destaque) ou anterior (opacidade reduzida) */
+  variant: 'active' | 'previous';
+  /** Frame em que esta frase deve começar a sair (apenas para previous) */
+  fadeOutStartFrame?: number;
 }
 
 // ─── Componente ─────────────────────────────────────────────
 
 /**
- * Renderiza UMA frase de legenda com karaoke palavra-a-palavra.
+ * Renderiza UMA frase de legenda como texto contínuo (sem karaoke).
  *
- * - Fade in + translateY na entrada (spring via interpolate)
- * - Karaoke interno reusando AnimatedWord de subtitleUtils
- * - Fade out quando a próxima frase entra (exceto na última)
+ * - active: fade in + translateY de entrada, opacidade 1.0
+ * - previous: transição suave para opacidade 0.5, fade out ao sair
  *
- * Usa useCurrentFrame/useVideoConfig diretamente pois é
- * renderizado dentro de um contexto Remotion.
+ * Preserva markdown **bold** via parseBoldMarkdown para segmentos
+ * com fontWeight diferenciado.
  */
 export function ScrollingPhrase({
   words,
-  phraseIndex,
-  totalPhrases,
+  variant,
+  fadeOutStartFrame,
 }: ScrollingPhraseProps) {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  const wordEntries: WordEntry[] = useMemo(
-    () => words.map((w) => w as WordEntry),
-    [words],
-  );
+  // ── Monta texto completo e parseia bold ──
+  const segments: TextSegment[] = useMemo(() => {
+    const fullText = words.map((w) => w.text).join(' ');
+    return parseBoldMarkdown(fullText);
+  }, [words]);
 
-  if (wordEntries.length === 0) {
+  if (words.length === 0) {
     return <></>;
   }
 
-  const firstWord = wordEntries[0];
-  const lastWord = wordEntries[wordEntries.length - 1];
-  const isLastPhrase = phraseIndex === totalPhrases - 1;
+  const firstWord = words[0];
+  const lastWord = words[words.length - 1];
 
-  // ── Fade in + translateY na entrada ──
-  const fadeIn = interpolate(
+  // ── Estilos base compartilhados entre variantes ──
+  const baseStyle: React.CSSProperties = {
+    fontSize: 'clamp(18px, 3.5vw, 36px)',
+    fontWeight: 600,
+    lineHeight: 1.6,
+    textAlign: 'center',
+    maxWidth: '90%',
+    width: 'fit-content',
+    margin: '0 auto',
+    padding: '12px 24px',
+    borderRadius: 12,
+    userSelect: 'none',
+    backgroundColor: BLACK_50,
+    boxShadow: `0 0 40px 20px ${BLACK_40}`,
+    color: WHITE,
+  };
+
+  // ── Variante ativa: fade in + translateY de entrada ──
+  if (variant === 'active') {
+    const fadeIn = interpolate(
+      frame,
+      [firstWord.startFrame, firstWord.startFrame + SUBTITLE_FADE],
+      [0, 1],
+      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+    );
+
+    const translateY = interpolate(
+      frame,
+      [firstWord.startFrame, firstWord.startFrame + SUBTITLE_FADE],
+      [8, 0],
+      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+    );
+
+    return (
+      <div style={{ ...baseStyle, opacity: fadeIn, transform: `translateY(${translateY}px)` }}>
+        {segments.map((seg, i) => (
+          <span key={i} style={{ fontWeight: seg.bold ? 800 : 'inherit' }}>
+            {seg.text}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  // ── Variante anterior: transição suave + fade out na saída ──
+
+  // Transição de opacidade 1.0 (estado ativo anterior) para 0.5
+  // Inicia quando a última palavra desta frase termina (momento em que
+  // a próxima frase se torna ativa e esta se torna "anterior")
+  const transitionToPrevious = interpolate(
     frame,
-    [firstWord.startFrame, firstWord.startFrame + SUBTITLE_FADE],
-    [0, 1],
+    [lastWord.endFrame, lastWord.endFrame + SUBTITLE_FADE],
+    [1.0, 0.5],
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
 
-  const translateY = interpolate(
-    frame,
-    [firstWord.startFrame, firstWord.startFrame + SUBTITLE_FADE],
-    [8, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
-
-  // ── Fade out na saída (somente se houver próxima frase) ──
-  const fadeOut = isLastPhrase
-    ? 1
-    : interpolate(
+  // Fade out quando uma nova frase ativa entra (esta frase deixa de ser anterior)
+  const fadeOut = fadeOutStartFrame !== undefined
+    ? interpolate(
         frame,
-        [lastWord.endFrame - SUBTITLE_FADE, lastWord.endFrame],
-        [1, 0],
+        [fadeOutStartFrame - SUBTITLE_FADE, fadeOutStartFrame],
+        [0.5, 0],
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
+      )
+    : 1.0;
 
-  // Opacidade combinada: garante que fadeOut não sobrepõe fadeIn
-  const opacity = Math.min(fadeIn, fadeOut);
-
-  // ── Índice da palavra ativa (-1 se nenhuma) ──
-  const activeIndex = wordEntries.findIndex(
-    (w) => frame >= w.startFrame && frame < w.endFrame,
-  );
+  // Combinar: transição para 0.5 e fade out para 0 (prevalece o menor)
+  const opacity = Math.min(transitionToPrevious, fadeOut);
 
   return (
-    <div
-      style={{
-        opacity,
-        transform: `translateY(${translateY}px)`,
-        fontSize: 'clamp(18px, 3.5vw, 36px)',
-        fontWeight: 600,
-        lineHeight: 1.6,
-        textAlign: 'center',
-        maxWidth: '90%',
-        width: 'fit-content',
-        margin: '0 auto',
-        padding: '12px 24px',
-        borderRadius: 12,
-        userSelect: 'none',
-        backgroundColor: BLACK_50,
-        boxShadow: `0 0 40px 20px ${BLACK_40}`,
-      }}
-    >
-      {wordEntries.map((word, i) => {
-        const isActive = i === activeIndex;
-        const isPast = activeIndex !== -1 && i < activeIndex;
-        const state: WordState = isActive ? 'active' : isPast ? 'past' : 'future';
-
-        return (
-          <span key={i}>
-            <AnimatedWord word={word} state={state} frame={frame} fps={fps} />
-            {' '}
-          </span>
-        );
-      })}
+    <div style={{ ...baseStyle, opacity }}>
+      {segments.map((seg, i) => (
+        <span key={i} style={{ fontWeight: seg.bold ? 800 : 'inherit' }}>
+          {seg.text}
+        </span>
+      ))}
     </div>
   );
 }

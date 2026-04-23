@@ -7,6 +7,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.13.3] - 2026-04-23
+
+### Alterado
+
+- **ScrollingPhrase** (`src/features/video-render/components/ScrollingPhrase.tsx`): reescrita — modo karaoke palavra-a-palavra (`AnimatedWord`, `WordState`, `useVideoConfig`) substituído por texto contínuo com 2 variantes visuais (`active` com fade in + translateY, `previous` com transição de opacidade 1.0→0.5 + fade out); estilos inline extraídos para `baseStyle`; suporte a **bold** via `parseBoldMarkdown`
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): scroll de legendas agora exibe frase ATIVA (opacidade 1.0) + frase ANTERIOR (opacidade 0.5) em vez de ativa + próxima; novo tipo `VisiblePhrase`; container com `flexDirection: column` e gap para empilhamento vertical correto
+
+---
+
 ## [0.13.2] - 2026-04-23
 
 ### Adicionado
