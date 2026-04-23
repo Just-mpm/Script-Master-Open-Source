@@ -81,19 +81,6 @@ const PROGRESS_RANGES = {
 } as const;
 
 /**
- * Filtro defensivo para captions do Whisper.
- * Rejeita tokens que contenham caracteres não-textuais: colchetes, underscores,
- * parênteses, <>, etc. Só aceita tokens compostos por letras, espaços,
- * pontuação comum e números (para casos como "2024" ou "R$").
- */
-const INVALID_TOKEN = /[[\]<_{}\]\\]/;
-
-/**
- * Aceita só tokens válidos: têm pelo menos uma letra E não têm caracteres de formatação.
- */
-const VALID_WORD = /[a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/;
-
-/**
  * Mescla fragmentos de palavras consecutivos no Caption[].
  * O Whisper frequentemente divide palavras em sílabas (ex: "tra" + "vi" + "seiro").
  * Detecta isso quando um token NÃO começa com espaço — significa que é continuação
@@ -138,54 +125,17 @@ function mergeWordFragments(captions: Caption[]): Caption[] {
 }
 
 /**
- * Pós-processa captions do Whisper usando pipeline nativo do Remotion:
- * 1. toCaptions() mapeia tokens para Caption[] (startMs/endMs)
- * 2. Filtra tokens inválidos (só aceita palavras com letras reais)
- * 3. Mescla fragmentos de palavras (sílabas do Whisper → palavras completas)
- * 4. createTikTokStyleCaptions() agrupa palavras em frases para exibição
- * 5. Converte para CaptionWord[] com frames
- *
- * @deprecated Mantida para backward compat. Use processWhisperAlignedCaptions no fluxo principal.
+ * Filtro defensivo para captions do Whisper.
+ * Rejeita tokens que contenham caracteres não-textuais: colchetes, underscores,
+ * parênteses, <>, etc. Só aceita tokens compostos por letras, espaços,
+ * pontuação comum e números (para casos como "2024" ou "R$").
  */
-export function processWhisperCaptions(
-  transcription: TranscriptionJson['transcription'],
-  fps: number,
-): CaptionWord[] {
-  // Passo 1: toCaptions converte para Caption[] com startMs/endMs
-  const { captions: rawCaptions } = toCaptions({ whisperWebOutput: transcription });
+const INVALID_TOKEN = /[[\]<_{}\]\\]/;
 
-  // Passo 2: filtra tokens inválidos — aceita só palavras com letras reais
-  const cleaned = rawCaptions.filter(
-    (c) => VALID_WORD.test(c.text) && !INVALID_TOKEN.test(c.text),
-  );
-
-  if (cleaned.length === 0) return [];
-
-  // Passo 3: mescla fragmentos de palavras (sílabas → palavras completas)
-  const merged = mergeWordFragments(cleaned);
-
-  // Passo 4: agrupa em frases para exibição (estilo TikTok)
-  // combineTokensWithinMilliseconds controla quando separar frases
-  const { pages } = createTikTokStyleCaptions({
-    captions: merged,
-    combineTokensWithinMilliseconds: 200,
-  });
-
-  // Passo 5: converte páginas para CaptionWord[] com frames
-  const words: CaptionWord[] = [];
-  for (const page of pages) {
-    for (const token of page.tokens) {
-      words.push({
-        text: token.text.trim(),
-        startFrame: msToFrames(token.fromMs, fps),
-        endFrame: msToFrames(token.toMs, fps),
-        bold: false,
-      });
-    }
-  }
-
-  return words;
-}
+/**
+ * Aceita só tokens válidos: têm pelo menos uma letra E não têm caracteres de formatação.
+ */
+const VALID_WORD = /[a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/;
 
 /**
  * Pós-processa captions do Whisper usando TIMING como referência,

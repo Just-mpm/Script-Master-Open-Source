@@ -18,6 +18,8 @@ export interface VideoCompositionProps {
   fps: number;
   /** Legendas com timestamps (Whisper ou fallback proporcional) */
   captions?: CaptionWord[];
+  /** Estilo personalizável das legendas */
+  subtitleStyle?: SubtitleStyle;
 }
 
 /** Configuração de renderização (Fase 3) */
@@ -38,7 +40,6 @@ export interface CaptionWord {
 
 /** Fonte dos dados de temporização das legendas */
 export type CaptionSource =
-  | 'whisper'              // Legado: timing Whisper puro (antigo valor)
   | 'whisper-aligned'      // Timing Whisper refinado + texto do roteiro
   | 'segment-timing'       // Timing real do chunk TTS + texto do roteiro
   | 'proportional'         // Timing proporcional (fallback quando não há segmentos)
@@ -52,5 +53,31 @@ export interface TranscriptionResult {
   scriptHash?: string;
 }
 
-/** Modo de exibição de legendas */
-export type SubtitleMode = 'scroll-phrases' | 'word-karaoke';
+/** Estilo personalizável das legendas no vídeo */
+export interface SubtitleStyle {
+  /** Tamanho da fonte em px (default: 28) */
+  fontSize: number;
+  /** Padding horizontal da caixa da legenda em px (default: 24) */
+  paddingX: number;
+  /** Padding vertical da caixa da legenda em px (default: 12) */
+  paddingY: number;
+  /** Border radius da caixa em px (default: 12) */
+  borderRadius: number;
+  /** Opacidade do fundo da caixa 0-1 (default: 0.5) */
+  backgroundOpacity: number;
+  /** Gap entre frases visíveis em px (default: 8) */
+  gap: number;
+  /** Offset vertical do container de legendas em px — positivo desce, negativo sobe (default: 0) */
+  verticalOffset: number;
+}
+
+/** Estilo padrão das legendas */
+export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
+  fontSize: 28,
+  paddingX: 24,
+  paddingY: 12,
+  borderRadius: 12,
+  backgroundOpacity: 0.5,
+  gap: 8,
+  verticalOffset: 0,
+};

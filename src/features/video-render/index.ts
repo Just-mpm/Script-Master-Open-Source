@@ -3,14 +3,16 @@ export type {
   VideoScene,
   VideoCompositionProps,
   VideoRenderConfig,
+  SubtitleStyle,
 } from './types';
+
+export { DEFAULT_SUBTITLE_STYLE } from './types';
 
 // ─── Tipos de legenda/transcrição ──────────────────────────
 export type {
   CaptionWord,
   CaptionSource,
   TranscriptionResult,
-  SubtitleMode,
 } from './types';
 
 // ─── Utils ────────────────────────────────────────────────

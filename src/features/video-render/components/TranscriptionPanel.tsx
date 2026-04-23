@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
@@ -94,18 +93,6 @@ export function TranscriptionPanel({
   const hasContent = Boolean(audioUrl && scenes.length > 0);
   const canTranscribe = hasContent && !isTranscribing;
 
-  const handleTranscribe = useCallback(() => {
-    onTranscribe();
-  }, [onTranscribe]);
-
-  const handleCancel = useCallback(() => {
-    onCancel();
-  }, [onCancel]);
-
-  const handleClear = useCallback(() => {
-    onClear();
-  }, [onClear]);
-
   // Indica se já temos uma transcrição concluída
   const hasCaptions = captionCount > 0 && !isTranscribing;
 
@@ -118,13 +105,11 @@ export function TranscriptionPanel({
       ? 'Timing TTS'
       : transcriptionSource === 'whisper-aligned'
         ? 'Whisper Alinhado'
-        : transcriptionSource === 'whisper'
-          ? 'Whisper'
-          : transcriptionSource === 'proportional'
-            ? 'Proporcional'
-            : transcriptionSource === 'manual'
-              ? 'Manual'
-              : null;
+        : transcriptionSource === 'proportional'
+          ? 'Proporcional'
+          : transcriptionSource === 'manual'
+            ? 'Manual'
+            : null;
 
   return (
     <Collapse in={hasContent} unmountOnExit>
@@ -179,7 +164,7 @@ export function TranscriptionPanel({
               <Button
                 variant="text"
                 size="small"
-                onClick={handleClear}
+                onClick={onClear}
                 startIcon={<DeleteOutline sx={{ fontSize: ICON_SIZE_MD }} />}
               >
                 Limpar
@@ -187,7 +172,7 @@ export function TranscriptionPanel({
               <Button
                 variant="contained"
                 size="small"
-                onClick={handleTranscribe}
+                onClick={onTranscribe}
                 startIcon={<Refresh sx={{ fontSize: ICON_SIZE_MD }} />}
                 sx={{
                   background: BRAND_GRADIENT,
@@ -231,7 +216,7 @@ export function TranscriptionPanel({
               variant="outlined"
               color="error"
               size="small"
-              onClick={handleCancel}
+              onClick={onCancel}
               startIcon={<StopCircleOutlined sx={{ fontSize: ICON_SIZE_MD }} />}
               sx={{ alignSelf: 'flex-end', mt: 0.5 }}
             >
@@ -252,7 +237,7 @@ export function TranscriptionPanel({
             <Button
               variant="contained"
               size="small"
-              onClick={handleTranscribe}
+              onClick={onTranscribe}
               startIcon={<Refresh sx={{ fontSize: ICON_SIZE_MD }} />}
               sx={{
                 background: BRAND_GRADIENT,
@@ -294,7 +279,7 @@ export function TranscriptionPanel({
                 variant="contained"
                 size="small"
                 disabled={!canTranscribe}
-                onClick={handleTranscribe}
+                onClick={onTranscribe}
                 startIcon={<ClosedCaption sx={{ fontSize: ICON_SIZE_MD }} />}
                 sx={{
                   ...(canTranscribe ? {

@@ -4,7 +4,7 @@ import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
-import type { CaptionWord } from '../types';
+import type { CaptionWord, SubtitleStyle } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtils';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
@@ -24,6 +24,7 @@ export interface VideoExportOptions {
   durationInFrames: number;
   ratio: SceneRatio;
   captions?: CaptionWord[];
+  subtitleStyle?: SubtitleStyle;
   projectId?: string;
   userId?: string;
 }
@@ -73,13 +74,14 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, captions } = props;
+  const { scenes, audioUrl, fps, captions, subtitleStyle } = props;
   return (
     <VideoComposition
       scenes={scenes}
       audioUrl={audioUrl}
       fps={fps}
       captions={captions}
+      subtitleStyle={subtitleStyle}
     />
   );
 }
@@ -266,6 +268,7 @@ export function useVideoExporter() {
       durationInFrames,
       ratio,
       captions,
+      subtitleStyle,
       projectId,
       userId,
     } = options;
@@ -281,6 +284,7 @@ export function useVideoExporter() {
       audioUrl,
       fps,
       captions,
+      subtitleStyle,
     };
 
     // Cria AbortController para cancelamento

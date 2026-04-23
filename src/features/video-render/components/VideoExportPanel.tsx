@@ -33,7 +33,7 @@ import {
   ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord } from '../types';
+import type { CaptionWord, SubtitleStyle } from '../types';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -54,6 +54,8 @@ interface VideoExportPanelProps {
   exporter: VideoExporter;
   /** Legendas palavra-a-palavra para karaoke */
   captions?: CaptionWord[];
+  /** Estilo personalizável das legendas */
+  subtitleStyle?: SubtitleStyle;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +72,7 @@ export function VideoExportPanel({
   userId,
   exporter,
   captions,
+  subtitleStyle,
 }: VideoExportPanelProps) {
   const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -98,6 +101,7 @@ export function VideoExportPanel({
       durationInFrames,
       ratio,
       captions,
+      subtitleStyle,
       projectId,
       userId,
     };

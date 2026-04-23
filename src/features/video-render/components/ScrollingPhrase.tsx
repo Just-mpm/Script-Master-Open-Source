@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { interpolate, useCurrentFrame } from 'remotion';
-import { BLACK_50, BLACK_40, WHITE } from '../../../theme/tokens';
+import { WHITE } from '../../../theme/tokens';
 import { parseBoldMarkdown, SUBTITLE_FADE } from '../lib/subtitleUtils';
 import type { TextSegment } from '../lib/subtitleUtils';
 import type { CaptionWord } from '../types';
@@ -10,23 +10,32 @@ import type { CaptionWord } from '../types';
 interface ScrollingPhraseProps {
   /** Palavras que compõem esta frase */
   words: CaptionWord[];
-  /** Índice desta frase no grupo (usado para decidir animação de saída) */
-  phraseIndex: number;
-  /** Total de frases no grupo */
-  totalPhrases: number;
   /** Variante visual: ativa (destaque) ou anterior (opacidade reduzida) */
   variant: 'active' | 'previous';
-  /** Frame em que esta frase deve começar a sair (apenas para previous) */
-  fadeOutStartFrame?: number;
+  /** Frame em que esta frase deve começar a fade out (apenas para previous) */
+  fadeOutFrame?: number;
+  /** Tamanho da fonte em px */
+  fontSize?: number;
+  /** Padding horizontal da caixa em px */
+  paddingX?: number;
+  /** Padding vertical da caixa em px */
+  paddingY?: number;
+  /** Border radius da caixa em px */
+  borderRadius?: number;
+  /** Opacidade do fundo da caixa 0-1 */
+  backgroundOpacity?: number;
 }
 
 // ─── Componente ─────────────────────────────────────────────
 
 /**
- * Renderiza UMA frase de legenda como texto contínuo (sem karaoke).
+ * Renderiza UMA frase de legenda como texto contínuo.
  *
- * - active: fade in + translateY de entrada, opacidade 1.0
- * - previous: transição suave para opacidade 0.5, fade out ao sair
+ * O scroll vertical é feito pelo container pai (SubtitleOverlay) via translateY.
+ * Este componente controla apenas opacidade:
+ *
+ * - active: fade in suave ao entrar, opacidade 1.0
+ * - previous: transição para 0.5, fade out suave ao sair
  *
  * Preserva markdown **bold** via parseBoldMarkdown para segmentos
  * com fontWeight diferenciado.
@@ -34,7 +43,12 @@ interface ScrollingPhraseProps {
 export function ScrollingPhrase({
   words,
   variant,
-  fadeOutStartFrame,
+  fadeOutFrame,
+  fontSize = 28,
+  paddingX = 24,
+  paddingY = 12,
+  borderRadius = 12,
+  backgroundOpacity = 0.5,
 }: ScrollingPhraseProps) {
   const frame = useCurrentFrame();
 
@@ -44,6 +58,23 @@ export function ScrollingPhrase({
     return parseBoldMarkdown(fullText);
   }, [words]);
 
+  // ── Estilos base construídos a partir das props (memoizado: evita recriação a cada frame) ──
+  const baseStyle = useMemo((): React.CSSProperties => ({
+    fontSize: `${fontSize}px`,
+    fontWeight: 600,
+    lineHeight: 1.6,
+    textAlign: 'center' as const,
+    maxWidth: '90%',
+    width: 'fit-content',
+    margin: '0 auto',
+    padding: `${paddingY}px ${paddingX}px`,
+    borderRadius,
+    userSelect: 'none' as const,
+    backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity})`,
+    boxShadow: `0 0 40px 20px rgba(0, 0, 0, ${backgroundOpacity * 0.8})`,
+    color: WHITE,
+  }), [fontSize, paddingX, paddingY, borderRadius, backgroundOpacity]);
+
   if (words.length === 0) {
     return <></>;
   }
@@ -51,24 +82,7 @@ export function ScrollingPhrase({
   const firstWord = words[0];
   const lastWord = words[words.length - 1];
 
-  // ── Estilos base compartilhados entre variantes ──
-  const baseStyle: React.CSSProperties = {
-    fontSize: 'clamp(18px, 3.5vw, 36px)',
-    fontWeight: 600,
-    lineHeight: 1.6,
-    textAlign: 'center',
-    maxWidth: '90%',
-    width: 'fit-content',
-    margin: '0 auto',
-    padding: '12px 24px',
-    borderRadius: 12,
-    userSelect: 'none',
-    backgroundColor: BLACK_50,
-    boxShadow: `0 0 40px 20px ${BLACK_40}`,
-    color: WHITE,
-  };
-
-  // ── Variante ativa: fade in + translateY de entrada ──
+  // ── Variante ativa: fade in suave, opacidade 1.0 ──
   if (variant === 'active') {
     const fadeIn = interpolate(
       frame,
@@ -77,15 +91,8 @@ export function ScrollingPhrase({
       { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
     );
 
-    const translateY = interpolate(
-      frame,
-      [firstWord.startFrame, firstWord.startFrame + SUBTITLE_FADE],
-      [8, 0],
-      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-    );
-
     return (
-      <div style={{ ...baseStyle, opacity: fadeIn, transform: `translateY(${translateY}px)` }}>
+      <div style={{ ...baseStyle, opacity: fadeIn }}>
         {segments.map((seg, i) => (
           <span key={i} style={{ fontWeight: seg.bold ? 800 : 'inherit' }}>
             {seg.text}
@@ -95,11 +102,9 @@ export function ScrollingPhrase({
     );
   }
 
-  // ── Variante anterior: transição suave + fade out na saída ──
+  // ── Variante anterior: acima da ativa, opacidade 0.5, fade out suave ──
 
-  // Transição de opacidade 1.0 (estado ativo anterior) para 0.5
-  // Inicia quando a última palavra desta frase termina (momento em que
-  // a próxima frase se torna ativa e esta se torna "anterior")
+  // Transição de opacidade 1.0 → 0.5 quando deixa de ser a frase ativa
   const transitionToPrevious = interpolate(
     frame,
     [lastWord.endFrame, lastWord.endFrame + SUBTITLE_FADE],
@@ -107,11 +112,11 @@ export function ScrollingPhrase({
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
 
-  // Fade out quando uma nova frase ativa entra (esta frase deixa de ser anterior)
-  const fadeOut = fadeOutStartFrame !== undefined
+  // Fade out para 0 quando uma nova frase entra e esta deixa de ser anterior
+  const fadeOut = fadeOutFrame !== undefined
     ? interpolate(
         frame,
-        [fadeOutStartFrame - SUBTITLE_FADE, fadeOutStartFrame],
+        [fadeOutFrame - SUBTITLE_FADE, fadeOutFrame],
         [0.5, 0],
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
       )

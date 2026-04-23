@@ -108,8 +108,9 @@ bun run clean            # remove dist/
 | **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
 | **Crossfade** | Overlap de 400ms entre cenas. Fade = 12 frames, spring `{damping:26, stiffness:100, mass:1}` |
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
+| **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE` configuram fontSize, padding, borderRadius, opacity, gap, verticalOffset. `SubtitleInlineEditor` editor inline via portal |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
-| **Karaoke** | `ScrollingPhrase` renderiza frase com `AnimatedWord` (spring `{damping:12, stiffness:200}` para "pop") |
+| **ScrollingPhrase** | Texto contínuo com variantes `active` (fade in + translateY) e `previous` (opacidade 1.0→0.5). Suporte a **bold** via markdown |
 | **Whisper** | Modelo `base` (~75MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
 | **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição entre VideoPage e App |
 | **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Idempotente |
@@ -230,13 +231,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.13.3`
+- **Current:** `0.14.0`
 - **Last release:** 2026-04-23
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.14.0 | SubtitleInlineEditor — editor inline de estilo de legendas (fontSize, padding, borderRadius, opacity, gap, verticalOffset); SubtitleStyle + DEFAULT_SUBTITLE_STYLE; getAlignment no SubtitleOverlay; limpeza de código morto (SubtitleMode, AnimatedWord, VisiblePhrase) |
 | 0.13.3 | ScrollingPhrase reescrito — karaoke substituído por texto contínuo com variantes active/previous; SubtitleOverlay mostra frase ativa + anterior em vez de ativa + próxima |
 | 0.13.2 | Galeria de imagens no ImageStudio com exclusão; busca na Biblioteca e histórico do assistente; deleteGeneration (Firestore+Storage+IndexedDB); audio segments dual storage (Firestore+IndexedDB); bug fix ordem de persistência de segmentos (GAP-001) |
 | 0.13.1 | AGENTS.md reestruturado com documentação por domínio inline (12 seções), adições de anti-patterns e rotas; 12 guias externos removidos (docs/guides/) |

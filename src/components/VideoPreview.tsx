@@ -13,7 +13,7 @@ import { createLogger } from '../lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
-import type { CaptionWord } from '../features/video-render';
+import type { CaptionWord, SubtitleStyle } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
@@ -36,6 +36,8 @@ interface VideoPreviewProps {
   ratio: SceneRatio;
   /** Legendas com timestamps (Whisper ou fallback proporcional) */
   captions?: CaptionWord[];
+  /** Estilo personalizável das legendas */
+  subtitleStyle?: SubtitleStyle;
   /** Callback executado a cada frame renderizado (para sync com editor de legendas) */
   onFrameUpdate?: (frame: number) => void;
 }
@@ -126,7 +128,7 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, onFrameUpdate }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle, onFrameUpdate }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
@@ -171,13 +173,16 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     useImperativeHandle(ref, () => ({
       play: () => internalRef.current?.play(),
       pause: () => internalRef.current?.pause(),
-      seekTo: (frame: number) => internalRef.current?.seekTo(frame),
+      seekTo: (frame: number) => {
+        internalRef.current?.seekTo(frame);
+        onFrameUpdate?.(frame);
+      },
       getCurrentTime: () => {
         if (!internalRef.current) return 0;
         return internalRef.current.getCurrentFrame() / fps;
       },
       isPlaying: () => internalRef.current?.isPlaying() ?? false,
-    }), [fps]);
+    }), [fps, onFrameUpdate]);
 
     // Memoiza inputProps — o Player usa igualdade referencial para detectar mudanças
     const inputProps = useMemo(() => ({
@@ -185,7 +190,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       audioUrl: audioUrl ?? '',
       fps,
       captions: captions ?? undefined,
-    }), [mappedScenes, audioUrl, fps, captions]);
+      subtitleStyle,
+    }), [mappedScenes, audioUrl, fps, captions, subtitleStyle]);
 
     // Estado vazio: sem áudio e sem cenas
     if (!audioUrl && scenes.length === 0) {

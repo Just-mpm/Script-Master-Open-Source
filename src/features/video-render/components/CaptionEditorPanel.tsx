@@ -233,6 +233,7 @@ function PhraseRow({
             multiline
             maxRows={3}
             autoFocus
+            aria-label="Editar texto da frase"
             sx={{
               '& .MuiInputBase-root': {
                 fontSize: '0.8125rem',

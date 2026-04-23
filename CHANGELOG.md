@@ -7,6 +7,36 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.14.0] - 2026-04-23
+
+### Adicionado
+
+- **SubtitleInlineEditor** (`src/features/video-render/components/SubtitleInlineEditor.tsx`): editor inline de estilo de legendas integrado ao VideoPage via portal React — controles para fontSize, paddingX/Y, borderRadius, backgroundOpacity, gap e verticalOffset com sliders, chips de preset e preview em tempo real; toggles de posição (bottom/center/top) e visibilidade
+- **`SubtitleStyle`** (`src/features/video-render/types.ts`): interface tipada para personalização visual de legendas no vídeo (fontSize, paddingX, paddingY, borderRadius, backgroundOpacity, gap, verticalOffset)
+- **`DEFAULT_SUBTITLE_STYLE`** (`src/features/video-render/types.ts`): constantes padrão para estilo de legendas, exportada no barrel `src/features/video-render/index.ts`
+- **`getAlignment()`** (`src/features/video-render/components/SubtitleOverlay.tsx`): função utilitária para posicionar legendas (bottom/center/top) com offset padding e gap entre frases visíveis
+- **`shouldAppendToPreviousWord()`** (`src/features/video-render/lib/subtitleUtils.tsx`): função auxiliar para tratamento de pontuação na concatenação de palavras
+
+### Alterado
+
+- **SubtitleOverlay** (`src/features/video-render/components/SubtitleOverlay.tsx`): suporte a `subtitleStyle` prop para personalização visual; novo sistema de alinhamento com `getAlignment`; remoção do tipo legado `VisiblePhrase`; posições bottom/center/top refatoradas
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): propaga `subtitleStyle` para `SubtitleOverlay` via `useMemo`
+- **VideoPage** (`src/pages/VideoPage.tsx`): integração do `SubtitleInlineEditor` e `DEFAULT_SUBTITLE_STYLE`; estado local para `subtitleStyle` passado ao player e exportador
+- **VideoExportPanel** (`src/features/video-render/components/VideoExportPanel.tsx`): suporte a `subtitleStyle` nas opções de exportação
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): propaga `subtitleStyle` para o render
+- **ScrollingPhrase** (`src/features/video-render/components/ScrollingPhrase.tsx`): ajuste de imports de tokens de tema
+- **CaptionEditorPanel** (`src/features/video-render/components/CaptionEditorPanel.tsx`): `aria-label` adicionado ao campo de edição de frase
+- **useTranscription** (`src/features/video-render/hooks/useTranscription.ts`): simplificação — remoção de `processWhisperCaptions` inline, ajustes em `INVALID_TOKEN`/`VALID_WORD`
+- **TranscriptionPanel** (`src/features/video-render/components/TranscriptionPanel.tsx`): remoção de import não utilizado (`react`)
+
+### Removido
+
+- **`SubtitleMode`** (`src/features/video-render/types.ts`): tipo legado não mais utilizado — legendas agora usam `SubtitleStyle` para configuração visual
+- **`AnimatedWord` / `WordState` / constantes de karaoke** (`src/features/video-render/lib/subtitleUtils.tsx`): código morto removido — karaoke palavra-a-palavra substituído por texto contínuo na v0.13.3
+- **`VisiblePhrase`** (`src/features/video-render/components/SubtitleOverlay.tsx`): tipo legado — substituído por sistema de alinhamento com `getAlignment`
+
+---
+
 ## [0.13.3] - 2026-04-23
 
 ### Alterado

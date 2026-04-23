@@ -6,8 +6,21 @@ import {
   SUBTITLE_FADE,
 } from '../lib/subtitleUtils';
 import type { WordEntry } from '../lib/subtitleUtils';
-import type { CaptionWord } from '../types';
+import type { CaptionWord, SubtitleStyle } from '../types';
+import { DEFAULT_SUBTITLE_STYLE } from '../types';
 import { ScrollingPhrase } from './ScrollingPhrase';
+
+// ─── Helpers ────────────────────────────────────────────────
+
+/** Retorna estilos de alinhamento baseado na posição vertical (função pura, sem alocação extra) */
+function getAlignment(position: 'bottom' | 'center' | 'top', offsetPadding: number) {
+  const configs = {
+    bottom: { justifyContent: 'flex-end' as const, alignItems: 'center' as const, padding: `${Math.max(0, offsetPadding)}px 24px` },
+    center: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: `${Math.max(0, offsetPadding)}px` },
+    top: { justifyContent: 'flex-start' as const, alignItems: 'center' as const, padding: `${Math.max(0, offsetPadding)}px 24px` },
+  };
+  return configs[position];
+}
 
 // ─── Tipos ──────────────────────────────────────────────────
 
@@ -20,17 +33,9 @@ interface SubtitleOverlayProps {
   durationInFrames: number;
   /** Posição vertical da legenda (default: bottom) */
   position?: 'bottom' | 'center' | 'top';
+  /** Estilo personalizável das legendas */
+  subtitleStyle?: SubtitleStyle;
 }
-
-interface VisiblePhrase {
-  phrase: CaptionWord[];
-  index: number;
-  variant: 'active' | 'previous';
-  /** Frame em que a frase anterior deve começar a fade out */
-  fadeOutStartFrame?: number;
-}
-
-// ─── Helpers ────────────────────────────────────────────────
 
 /**
  * Agrupa CaptionWord[] em frases usando pontuação final ou limite de ~12 palavras.
@@ -42,7 +47,7 @@ function groupCaptionWordsIntoPhrases(words: CaptionWord[]): CaptionWord[][] {
 
   for (const word of words) {
     current.push(word);
-    const isEndOfSentence = /[.!?]$/.test(word.text);
+    const isEndOfSentence = /[.!?;:]$/.test(word.text);
     if (isEndOfSentence || current.length >= 12) {
       phrases.push(current);
       current = [];
@@ -62,17 +67,30 @@ function groupCaptionWordsIntoPhrases(words: CaptionWord[]): CaptionWord[][] {
  * - `captions`: CaptionWord[] com timestamps reais (prioridade)
  * - `text`: string simples (backward compat, convertido para CaptionWord[])
  *
- * Agrupa palavras em frases (~12 palavras ou pontuação final) e renderiza
- * a frase ATIVA (opacidade 1.0) + a frase ANTERIOR (opacidade 0.5),
- * criando um efeito de scroll com 2 linhas visíveis.
+ * Layout vertical estilo karaoke com scroll suave:
+ * - O container inteiro desliza para cima via translateY acumulado
+ * - Frase ANTERIOR em cima (opacidade 0.5, fade out suave)
+ * - Frase ATIVA embaixo (opacidade 1.0, fade in suave)
+ * Máximo de 2 frases visíveis por vez.
+ *
+ * A animação de scroll é feita no container (não em cada frase individual),
+ * garantindo transição contínua sem "pulos" entre trocas de frase.
  */
 export function SubtitleOverlay({
   captions,
   text,
   durationInFrames,
   position = 'bottom',
+  subtitleStyle,
 }: SubtitleOverlayProps) {
   const frame = useCurrentFrame();
+
+  // Estilo com defaults — garante valores válidos mesmo sem prop
+  const style = subtitleStyle ?? DEFAULT_SUBTITLE_STYLE;
+
+  // Altura dinâmica de cada frase: texto (fontSize * lineHeight) + padding vertical + gap
+  // Isso substitui o LINE_HEIGHT estático que causava descompasso com o scroll
+  const phraseHeight = style.fontSize * 1.6 + style.paddingY * 2 + style.gap;
 
   // ── Constroi CaptionWord[] a partir de captions ou text (memoizado) ──
   const allWords: CaptionWord[] = useMemo(() => {
@@ -95,17 +113,9 @@ export function SubtitleOverlay({
     [allWords],
   );
 
-  // ── Fade global da cena (entrada e saída suaves) ──
-  const safeFade = Math.min(SUBTITLE_FADE, Math.floor(durationInFrames / 3));
+  if (phrases.length === 0) return null;
 
-  const globalOpacity = interpolate(
-    frame,
-    [0, safeFade, durationInFrames - safeFade, durationInFrames],
-    [0, 1, 1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
-
-  // ── Encontra frase ativa (depende de frame, recalculado a cada render) ──
+  // ── Encontra frase ativa (depende de frame) ──
   let activePhraseIndex = -1;
   for (let i = 0; i < phrases.length; i++) {
     const phrase = phrases[i];
@@ -117,42 +127,49 @@ export function SubtitleOverlay({
     }
   }
 
-  // ── Renderiza frase ativa + frase anterior (2 linhas visíveis) ──
-  const visiblePhrases: VisiblePhrase[] = [];
-  if (activePhraseIndex !== -1) {
-    // Frase ativa em cima (opacidade 1.0, fade in + translateY)
-    visiblePhrases.push({
-      phrase: phrases[activePhraseIndex],
-      index: activePhraseIndex,
-      variant: 'active',
-    });
-
-    // Frase anterior embaixo (opacidade 0.5, fade out na saída)
-    if (activePhraseIndex - 1 >= 0) {
-      // A frase anterior deve fade out quando a frase APÓS a ativa entrar
-      const fadeOutStartFrame = (activePhraseIndex + 1 < phrases.length)
-        ? phrases[activePhraseIndex + 1][0].startFrame
-        : undefined;
-
-      visiblePhrases.push({
-        phrase: phrases[activePhraseIndex - 1],
-        index: activePhraseIndex - 1,
-        variant: 'previous',
-        fadeOutStartFrame,
-      });
+  // ── Calcula translateY acumulado do container ──
+  // Cada vez que uma nova frase se torna ativa, o container sobe phraseHeight.
+  // Usa phraseHeight dinâmico para corresponder à altura real das frases.
+  // O interpolate garante transição suave ao invés de pulo instantâneo.
+  let scrollY = 0;
+  if (activePhraseIndex > 0) {
+    for (let i = 1; i <= activePhraseIndex; i++) {
+      const entryFrame = phrases[i][0].startFrame;
+      const shift = interpolate(
+        frame,
+        [entryFrame, entryFrame + SUBTITLE_FADE],
+        [0, phraseHeight],
+        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+      );
+      scrollY -= shift;
     }
   }
 
-  if (phrases.length === 0) return null;
+  // ── Determina range de frases visíveis (máx 2) ──
+  // Sempre renderiza: activePhraseIndex e activePhraseIndex - 1 (se existir)
+  const startIdx = Math.max(0, activePhraseIndex - 1);
+  const endIdx = activePhraseIndex + 1; // exclusivo
+
+  // ── Fade global da cena (entrada e saída suaves) ──
+  const safeFade = Math.min(SUBTITLE_FADE, Math.floor(durationInFrames / 3));
+
+  const globalOpacity = interpolate(
+    frame,
+    [0, safeFade, durationInFrames - safeFade, durationInFrames],
+    [0, 1, 1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+  );
 
   // ── Posição: usa flexDirection nativa (column) do AbsoluteFill ──
-  const alignmentMap = {
-    bottom: { justifyContent: 'flex-end' as const, alignItems: 'center' as const, padding: '40px 24px' },
-    center: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: '24px' },
-    top: { justifyContent: 'flex-start' as const, alignItems: 'center' as const, padding: '40px 24px' },
-  };
+  // verticalOffset é aplicado como padding extra na direção correspondente
+  const basePadding = position === 'center' ? 24 : 40;
+  const offsetPadding = basePadding + style.verticalOffset;
 
-  const alignment = alignmentMap[position];
+  const alignment = getAlignment(position, offsetPadding);
+
+  // ── Se nenhuma frase está ativa mas já há frases, mostra a primeira com fade in ──
+  const hasVisiblePhrases = activePhraseIndex !== -1 || frame < phrases[0][0].startFrame + SUBTITLE_FADE * 3;
+  if (!hasVisiblePhrases) return null;
 
   return (
     <AbsoluteFill
@@ -169,20 +186,49 @@ export function SubtitleOverlay({
           opacity: globalOpacity,
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
+          gap: style.gap,
           alignItems: 'center',
+          transform: `translateY(${scrollY}px)`,
         }}
       >
-        {visiblePhrases.map(({ phrase, index, variant, fadeOutStartFrame }) => (
-          <ScrollingPhrase
-            key={index}
-            words={phrase}
-            phraseIndex={index}
-            totalPhrases={phrases.length}
-            variant={variant}
-            fadeOutStartFrame={fadeOutStartFrame}
-          />
-        ))}
+        {/* Renderiza frases visíveis — container scrolla, frases só controlam opacidade */}
+        {activePhraseIndex !== -1
+          ? Array.from({ length: endIdx - startIdx }, (_, offset) => {
+              const idx = startIdx + offset;
+              const isActive = idx === activePhraseIndex;
+              const isPrevious = idx === activePhraseIndex - 1;
+
+              return (
+                <ScrollingPhrase
+                  key={idx}
+                  words={phrases[idx]}
+                  variant={isActive ? 'active' : 'previous'}
+                  fadeOutFrame={isPrevious && activePhraseIndex + 1 < phrases.length
+                    ? phrases[activePhraseIndex + 1][0].startFrame
+                    : undefined}
+                  fontSize={style.fontSize}
+                  paddingX={style.paddingX}
+                  paddingY={style.paddingY}
+                  borderRadius={style.borderRadius}
+                  backgroundOpacity={style.backgroundOpacity}
+                />
+              );
+            })
+          : (
+            // Antes da primeira frase ativa: prévia com fade in
+            <ScrollingPhrase
+              key={0}
+              words={phrases[0]}
+              variant="active"
+              fadeOutFrame={undefined}
+              fontSize={style.fontSize}
+              paddingX={style.paddingX}
+              paddingY={style.paddingY}
+              borderRadius={style.borderRadius}
+              backgroundOpacity={style.backgroundOpacity}
+            />
+          )
+        }
       </div>
     </AbsoluteFill>
   );

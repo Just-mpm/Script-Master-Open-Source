@@ -1,6 +1,4 @@
-import { interpolate, spring } from 'remotion';
 import { createLogger } from '../../../lib/logger';
-import { WHITE, WHITE_92, BLACK_82, BLACK_64 } from '../../../theme/tokens';
 import type { CaptionWord } from '../types';
 
 const log = createLogger('subtitleUtils');
@@ -21,25 +19,10 @@ export interface WordEntry {
   endFrame: number;
 }
 
-/** Estado visual de uma palavra na animação de legenda */
-export type WordState = 'active' | 'past' | 'future';
-
 // ─── Constantes de animação ────────────────────────────────
 
 /** Frames de fade in/out da legenda inteira */
 export const SUBTITLE_FADE = 8;
-
-/** Escala máxima da palavra ativa (pop-in) */
-export const ACTIVE_WORD_SCALE = 1.15;
-
-/** Opacidade das palavras já faladas */
-export const PAST_WORD_OPACITY = 0.5;
-
-/** Opacidade das palavras ainda não faladas */
-export const FUTURE_WORD_OPACITY = 0.25;
-
-/** Frames para transição suave entre estados de palavra */
-export const WORD_TRANSITION_FRAMES = 6;
 
 // ─── Tipos locais ──────────────────────────────────────────
 
@@ -229,13 +212,24 @@ function getPunctuationPauseKey(punct: string): string | undefined {
 }
 
 /**
+ * Verifica se uma pontuação deve ser anexada ao final da palavra anterior
+ * (pontuação leve: vírgula, ponto e vírgula, dois pontos, reticências).
+ * Pontuação forte (., !, ?) também é anexada para preservar no texto.
+ */
+function shouldAppendToPreviousWord(punct: string): boolean {
+  return /^[,.!?;:…]+$/.test(punct) || punct === '...';
+}
+
+/**
  * Divide o texto em palavras com timing proporcional por SÍLABAS (não caracteres).
  * Parseia markdown **bold** e preserva a flag.
  * Respeita pausas de pontuação dentro do intervalo.
+ * Preserva toda pontuação anexada ao texto da palavra (não descarta).
  *
  * Diferente de splitIntoWords + calculateWordTiming, esta função:
  * - Conta sílabas (não caracteres) para duração proporcional
  * - Adiciona pausas em pontuação (vírgula, ponto, reticências)
+ * - Preserva pontuação no texto da legenda (anexa à palavra anterior)
  * - Retorna CaptionWord[] pronto para uso (não precisa de calculateWordTiming depois)
  *
  * @param text - Texto com possível markdown **bold**
@@ -292,16 +286,9 @@ export function splitIntoWordsWithTiming(
       currentFrame = currentFrame + wordFrames;
     }
 
-    result.push({
-      text: word.text,
-      startFrame: wordStartFrame,
-      endFrame: currentFrame,
-      bold: word.bold,
-    });
-
-    // Inserir pausas de pontuação entre palavras
+    // Coleta pontuação entre esta palavra e a próxima para anexar ao texto
+    let appendedPunct = '';
     if (i < words.length - 1) {
-      // Encontrar pontuação entre esta palavra e a próxima via índices no array de tokens
       const currentWordIdx = tokens.indexOf(word);
       const nextWordIdx = tokens.indexOf(words[i + 1]);
       for (let j = currentWordIdx + 1; j < nextWordIdx; j++) {
@@ -311,9 +298,28 @@ export function splitIntoWordsWithTiming(
           if (key) {
             currentFrame += scalePause(PUNCTUATION_PAUSES[key], fps);
           }
+          if (shouldAppendToPreviousWord(tok.text)) {
+            appendedPunct += tok.text;
+          }
+        }
+      }
+    } else {
+      // Última palavra: anexar pontuação trailing (ex: "fim." ou "fim...")
+      const lastWordIdx = tokens.indexOf(word);
+      for (let j = lastWordIdx + 1; j < tokens.length; j++) {
+        const tok = tokens[j];
+        if (tok.isPunct && shouldAppendToPreviousWord(tok.text)) {
+          appendedPunct += tok.text;
         }
       }
     }
+
+    result.push({
+      text: word.text + appendedPunct,
+      startFrame: wordStartFrame,
+      endFrame: currentFrame,
+      bold: word.bold,
+    });
   }
 
   return result;
@@ -367,107 +373,6 @@ export function alignScriptToSegments(
   }
 
   return allWords;
-}
-
-// ─── Componente de palavra animada ─────────────────────────
-
-/**
- * Renderiza uma única palavra com animação determinada pelo seu estado:
- * - **active**: spring pop-in com escala 1.15, branca, bold
- * - **past**: opacidade reduzida suavemente, escala normal
- * - **future**: opacidade discreta, aparece gradualmente antes de ativar
- */
-export function AnimatedWord({
-  word,
-  state,
-  frame,
-  fps,
-}: {
-  word: WordEntry;
-  state: WordState;
-  frame: number;
-  fps: number;
-}) {
-  // ── Palavra ativa: spring pop-in + destaque visual ──
-  if (state === 'active') {
-    const scaleSpring = spring({
-      fps,
-      frame: frame - word.startFrame,
-      config: { damping: 12, stiffness: 200, mass: 0.8 },
-    });
-
-    // Mapeia spring 0→1 para escala 1.0→1.15
-    const scale = interpolate(scaleSpring, [0, 1], [1.0, ACTIVE_WORD_SCALE]);
-
-    // Opacidade de entrada rápida acompanhando o spring
-    const opacity = interpolate(scaleSpring, [0, 0.4], [0.6, 1], {
-      extrapolateRight: 'clamp',
-    });
-
-    return (
-      <span
-        style={{
-          display: 'inline-block',
-          fontSize: 'inherit',
-          fontWeight: word.bold ? 800 : 700,
-          color: WHITE,
-          transform: `scale(${scale})`,
-          opacity,
-          textShadow: `0 0 12px ${BLACK_82}, 0 2px 4px ${BLACK_64}`,
-        }}
-      >
-        {word.text}
-      </span>
-    );
-  }
-
-  // ── Palavra passada: transição suave de opacidade ──
-  if (state === 'past') {
-    const fadeOut = interpolate(
-      frame,
-      [word.endFrame, word.endFrame + WORD_TRANSITION_FRAMES],
-      [1, PAST_WORD_OPACITY],
-      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-    );
-
-    return (
-      <span
-        style={{
-          display: 'inline-block',
-          fontSize: 'inherit',
-          fontWeight: word.bold ? 700 : 600,
-          color: WHITE_92,
-          opacity: fadeOut,
-          transform: 'scale(1)',
-        }}
-      >
-        {word.text}
-      </span>
-    );
-  }
-
-  // ── Palavra futura: aparece gradualmente antes de ativar ──
-  const fadeIn = interpolate(
-    frame,
-    [word.startFrame - WORD_TRANSITION_FRAMES, word.startFrame],
-    [0, FUTURE_WORD_OPACITY],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
-
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        fontSize: 'inherit',
-        fontWeight: word.bold ? 600 : 500,
-        color: WHITE_92,
-        opacity: fadeIn,
-        transform: 'scale(1)',
-      }}
-    >
-      {word.text}
-    </span>
-  );
 }
 
 // ─── Segmentação de roteiro por cenas ──────────────────────
@@ -528,8 +433,8 @@ export function segmentScriptByCenes(
       }
     }
 
-    // Divide por pontuação forte (., !, ?) e quebra de linha
-    const rawPhrases = snippet.split(/[.!?\n]+/).filter((p) => p.trim().length > 0);
+    // Divide por pontuação forte (., !, ?, ;, :) e quebra de linha
+    const rawPhrases = snippet.split(/[.!?;:\n]+/).filter((p) => p.trim().length > 0);
 
     // Divide frases longas por vírgula ou limite duro
     const phrases: string[] = [];

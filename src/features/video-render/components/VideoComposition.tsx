@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
-import type { VideoCompositionProps } from '../types';
+import type { CaptionWord, VideoCompositionProps } from '../types';
 import { msToFrames } from '../lib/videoUtils';
 import { SceneSequence } from './SceneSequence';
 import { SubtitleOverlay } from './SubtitleOverlay';
@@ -24,12 +25,39 @@ export function VideoComposition({
   audioUrl,
   fps,
   captions,
+  subtitleStyle,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
 
   // Calcula overlap em frames baseado no fade padrão
   const overlapFrames = msToFrames(FADE_DURATION_MS, fps);
+
+  // Pré-computa captions por cena — evita filter+map a cada frame (P1: hotspot em ~300K iterações/s)
+  const sceneCaptionsMap = useMemo(() => {
+    if (!captions || captions.length === 0) return new Map<number, CaptionWord[]>();
+
+    const map = new Map<number, CaptionWord[]>();
+    for (let index = 0; index < scenes.length; index++) {
+      const scene = scenes[index];
+      const startFrame = msToFrames(scene.timestamp * 1000, fps);
+      const adjustedFrom = Math.max(0, startFrame - overlapFrames);
+      const adjustedDuration = scene.durationInFrames + overlapFrames;
+
+      const filtered = captions
+        .filter((w) => w.startFrame < adjustedFrom + adjustedDuration && w.endFrame > adjustedFrom)
+        .map((w) => ({
+          ...w,
+          startFrame: w.startFrame - adjustedFrom,
+          endFrame: w.endFrame - adjustedFrom,
+        }));
+
+      if (filtered.length > 0) {
+        map.set(index, filtered);
+      }
+    }
+    return map;
+  }, [captions, scenes, fps, overlapFrames]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -44,15 +72,8 @@ export function VideoComposition({
         const adjustedFrom = Math.max(0, startFrame - overlapFrames);
         const adjustedDuration = scene.durationInFrames + overlapFrames;
 
-        // Filtra captions que pertencem ao range de frames desta cena
-        // e ajusta timestamps para serem relativos ao início da cena
-        const sceneCaptions = captions?.filter(
-          (w) => w.startFrame < adjustedFrom + adjustedDuration && w.endFrame > adjustedFrom,
-        ).map((w) => ({
-          ...w,
-          startFrame: w.startFrame - adjustedFrom,
-          endFrame: w.endFrame - adjustedFrom,
-        })) ?? [];
+        // Busca captions pré-computados para esta cena (P1: lookup O(1) no lugar de filter+map)
+        const sceneCaptions = sceneCaptionsMap.get(index) ?? [];
 
         const isLastScene = index === totalScenes - 1;
 
@@ -76,6 +97,7 @@ export function VideoComposition({
                 captions={sceneCaptions.length > 0 ? sceneCaptions : undefined}
                 text={sceneCaptions.length === 0 ? scene.subtitle : undefined}
                 durationInFrames={adjustedDuration}
+                subtitleStyle={subtitleStyle}
               />
             )}
 

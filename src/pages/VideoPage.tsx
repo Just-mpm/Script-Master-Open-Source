@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -9,9 +9,12 @@ import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPrevie
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
 import { TranscriptionPanel } from '../features/video-render/components/TranscriptionPanel';
 import { CaptionEditorPanel } from '../features/video-render/components/CaptionEditorPanel';
+import { SubtitleInlineEditor } from '../features/video-render/components/SubtitleInlineEditor';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
+import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
+import type { SubtitleStyle } from '../features/video-render/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import type { AudioSegment } from '../lib/db/types';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
@@ -71,6 +74,32 @@ export function VideoPage({
 
   // Frame atual do player (para sync com CaptionEditorPanel)
   const [currentPlayerFrame, setCurrentPlayerFrame] = useState(0);
+
+  // Estilo personalizável das legendas — controlado pelo SubtitleInlineEditor
+  // Persistido no localStorage com prefixo s2a_ (padrão das 14 preferências do estúdio)
+  const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>(() => {
+    try {
+      const stored = localStorage.getItem('s2a_subtitleStyle');
+      if (stored) {
+        return JSON.parse(stored) as SubtitleStyle;
+      }
+    } catch {
+      // JSON malformado ou SecurityError (Safari Private Browsing)
+    }
+    return { ...DEFAULT_SUBTITLE_STYLE };
+  });
+
+  // Persiste subtitleStyle no localStorage quando muda
+  useEffect(() => {
+    try {
+      localStorage.setItem('s2a_subtitleStyle', JSON.stringify(subtitleStyle));
+    } catch {
+      // Quota cheia ou SecurityError — falha silenciosa
+    }
+  }, [subtitleStyle]);
+
+  // Ref para portal da toolbar de legenda — renderizada fora do preview
+  const toolbarPortalRef = useRef<HTMLDivElement>(null);
 
   // Mapeia cenas para o formato esperado pela transcrição
   const scenesForTranscription = useMemo(
@@ -139,18 +168,31 @@ export function VideoPage({
         </Typography>
       </Box>
 
-       <VideoPreview
-        ref={videoPlayerRef}
-        scenes={scenes}
-        audioUrl={audioUrl}
-        fps={videoFps}
-        durationInFrames={durationInFrames}
-        ratio={sceneRatio}
-        captions={captions.length > 0 ? captions : undefined}
-        onFrameUpdate={setCurrentPlayerFrame}
-      />
+      {/* Portal target para toolbar de legenda — DEVE vir antes do SubtitleInlineEditor
+          para que toolbarPortalRef.current esteja preenchido na primeira render */}
+      <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
 
-      {/* Painel de legendas */}
+       <SubtitleInlineEditor
+         hasCaptions={captions.length > 0}
+         subtitleStyle={subtitleStyle}
+         onSubtitleStyleChange={setSubtitleStyle}
+         ratio={sceneRatio}
+         toolbarPortal={toolbarPortalRef}
+       >
+        <VideoPreview
+          ref={videoPlayerRef}
+          scenes={scenes}
+          audioUrl={audioUrl}
+          fps={videoFps}
+          durationInFrames={durationInFrames}
+          ratio={sceneRatio}
+          captions={captions.length > 0 ? captions : undefined}
+          subtitleStyle={subtitleStyle}
+          onFrameUpdate={setCurrentPlayerFrame}
+        />
+       </SubtitleInlineEditor>
+
+       {/* Painel de legendas */}
       <TranscriptionPanel
         audioUrl={audioUrl}
         script={script}
@@ -190,6 +232,7 @@ export function VideoPage({
         userId={userId}
         exporter={videoExporter}
         captions={captions.length > 0 ? captions : undefined}
+        subtitleStyle={subtitleStyle}
       />
 
       <VideoLibrary
