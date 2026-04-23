@@ -168,18 +168,14 @@ export function VideoPage({
         </Typography>
       </Box>
 
-      {/* Portal target para toolbar de legenda — DEVE vir antes do SubtitleInlineEditor
-          para que toolbarPortalRef.current esteja preenchido na primeira render */}
-      <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
-
        <SubtitleInlineEditor
-         hasCaptions={captions.length > 0}
-         subtitleStyle={subtitleStyle}
-         onSubtitleStyleChange={setSubtitleStyle}
-         ratio={sceneRatio}
-         toolbarPortal={toolbarPortalRef}
-       >
-        <VideoPreview
+          hasCaptions={captions.length > 0}
+          subtitleStyle={subtitleStyle}
+          onSubtitleStyleChange={setSubtitleStyle}
+          ratio={sceneRatio}
+          toolbarPortal={toolbarPortalRef}
+        >
+         <VideoPreview
           ref={videoPlayerRef}
           scenes={scenes}
           audioUrl={audioUrl}
@@ -191,6 +187,9 @@ export function VideoPage({
           onFrameUpdate={setCurrentPlayerFrame}
         />
        </SubtitleInlineEditor>
+
+       {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
+       <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
 
        {/* Painel de legendas */}
       <TranscriptionPanel

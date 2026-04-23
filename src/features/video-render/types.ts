@@ -67,7 +67,7 @@ export interface SubtitleStyle {
   backgroundOpacity: number;
   /** Gap entre frases visíveis em px (default: 8) */
   gap: number;
-  /** Offset vertical do container de legendas em px — positivo desce, negativo sobe (default: 0) */
+  /** Offset vertical do container de legendas em px — positivo sobe, negativo desce (default: 0) */
   verticalOffset: number;
 }
 

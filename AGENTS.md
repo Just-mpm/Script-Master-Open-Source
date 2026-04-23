@@ -231,13 +231,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.14.0`
+- **Current:** `0.14.1`
 - **Last release:** 2026-04-23
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.14.1 | Limites dinâmicos de verticalOffset no SubtitleInlineEditor (resolução-aware); docstring corrigida (positivo=sobe); downgrade Whisper base→tiny (~39MB) |
 | 0.14.0 | SubtitleInlineEditor — editor inline de estilo de legendas (fontSize, padding, borderRadius, opacity, gap, verticalOffset); SubtitleStyle + DEFAULT_SUBTITLE_STYLE; getAlignment no SubtitleOverlay; limpeza de código morto (SubtitleMode, AnimatedWord, VisiblePhrase) |
 | 0.13.3 | ScrollingPhrase reescrito — karaoke substituído por texto contínuo com variantes active/previous; SubtitleOverlay mostra frase ativa + anterior em vez de ativa + próxima |
 | 0.13.2 | Galeria de imagens no ImageStudio com exclusão; busca na Biblioteca e histórico do assistente; deleteGeneration (Firestore+Storage+IndexedDB); audio segments dual storage (Firestore+IndexedDB); bug fix ordem de persistência de segmentos (GAP-001) |

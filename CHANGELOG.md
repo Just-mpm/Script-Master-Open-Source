@@ -7,6 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.14.1] - 2026-04-23
+
+### Corrigido
+
+- **SubtitleInlineEditor** (`src/features/video-render/components/SubtitleInlineEditor.tsx`): limites de `verticalOffset` agora são dinâmicos com base na resolução da composição (margem de 10% em relação ao topo e fundo) em vez de constantes estáticas `MIN_VERTICAL_OFFSET`/`MAX_VERTICAL_OFFSET` (-300 a 300), evitando offsets inválidos em resoluções menores como 1080x1920 (9:16); `enterEditMode` agora aplica `clamp` ao valor inicial
+- **Docstring de `verticalOffset`** (`src/features/video-render/types.ts`): correção na documentação — positivo sobe, negativo desce (antes dizia o oposto)
+
+### Alterado
+
+- **Modelo Whisper** (`src/features/video-render/hooks/useTranscription.ts`): downgrade de `base` (~75MB) para `tiny` (~39MB) — menor tamanho de download, sincronização de timing adequada para fala; mensagem de progresso atualizada
+
+### Removido
+
+- **`MIN_VERTICAL_OFFSET` / `MAX_VERTICAL_OFFSET`** (`src/features/video-render/components/SubtitleInlineEditor.tsx`): constantes estáticas removidas em favor de limites dinâmicos calculados pela resolução
+
+---
+
 ## [0.14.0] - 2026-04-23
 
 ### Adicionado

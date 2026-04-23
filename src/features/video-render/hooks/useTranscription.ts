@@ -63,8 +63,8 @@ export interface UseTranscriptionReturn {
 /** Debounce em ms para persistência no IndexedDB */
 const PERSIST_DEBOUNCE_MS = 500;
 
-/** Modelo Whisper usado (base = ~75MB, melhor precisão que tiny para legendas) */
-const WHISPER_MODEL = 'base' as const;
+/** Modelo Whisper usado (tiny = ~39MB, leve o suficiente para sincronizar timing de fala) */
+const WHISPER_MODEL = 'tiny' as const;
 
 /** Mapeia faixas de progresso do hook para os callbacks do whisper-web */
 const PROGRESS_RANGES = {
@@ -413,7 +413,7 @@ export function useTranscription(
             });
 
             // Etapa 2: Download do modelo (5-30%)
-            setTranscriptionStatusText('Baixando modelo Whisper (~75 MB)...');
+            setTranscriptionStatusText('Baixando modelo Whisper (~39 MB)...');
             setTranscriptionProgress(PROGRESS_RANGES.downloadStart);
 
             if (cancelRef.current) throw new Error('Transcrição cancelada pelo usuário.');

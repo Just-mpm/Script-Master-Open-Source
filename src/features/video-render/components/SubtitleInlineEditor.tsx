@@ -136,8 +136,6 @@ const FONT_SIZE_STEP = 2;
 const MIN_OPACITY = 0;
 const MAX_OPACITY = 1;
 const OPACITY_STEP = 0.05;
-const MIN_VERTICAL_OFFSET = -300;
-const MAX_VERTICAL_OFFSET = 300;
 const DRAG_SNAP = 5; // Arredonda para múltiplos de 5
 
 // ---------------------------------------------------------------------------
@@ -208,6 +206,15 @@ export function SubtitleInlineEditor({
   const compositionHeight = getResolutionFromRatio(ratio).height;
   const compositionWidth = getResolutionFromRatio(ratio).width;
 
+  // Limites dinâmicos com margem de 10% em relação ao fundo e ao topo
+  // minOffset = legenda a 10% da altura (ponto 0 do slider)
+  // maxOffset = legenda a 10% do topo (ponto 100 do slider)
+  const margin = Math.round(compositionHeight * 0.1);
+  const minOffset = margin - BASE_PADDING_BOTTOM;
+  const maxOffset = compositionHeight - margin - BASE_PADDING_BOTTOM;
+  const limitsRef = useRef({ min: minOffset, max: maxOffset });
+  limitsRef.current = { min: minOffset, max: maxOffset };
+
   // Sincroniza editingStyle se subtitleStyle mudar externamente (edge case)
   useEffect(() => {
     if (!isEditing) {
@@ -218,7 +225,10 @@ export function SubtitleInlineEditor({
   // --- Modo edição ---
 
   const enterEditMode = useCallback(() => {
-    setEditingStyle({ ...subtitleStyle });
+    setEditingStyle({
+      ...subtitleStyle,
+      verticalOffset: clamp(subtitleStyle.verticalOffset, limitsRef.current.min, limitsRef.current.max),
+    });
     setIsEditing(true);
   }, [subtitleStyle]);
 
@@ -270,7 +280,7 @@ export function SubtitleInlineEditor({
     (_: Event, value: number | number[]) => {
       setEditingStyle((prev) => ({
         ...prev,
-        verticalOffset: value as number,
+        verticalOffset: clamp(value as number, limitsRef.current.min, limitsRef.current.max),
       }));
     },
     [],
@@ -299,7 +309,7 @@ export function SubtitleInlineEditor({
         const raw = dragStartOffset.current + deltaOffset;
         // Arredonda para múltiplos de 5 para precisão e suavidade
         const snapped = Math.round(raw / DRAG_SNAP) * DRAG_SNAP;
-        const clamped = clamp(snapped, MIN_VERTICAL_OFFSET, MAX_VERTICAL_OFFSET);
+        const clamped = clamp(snapped, limitsRef.current.min, limitsRef.current.max);
 
         setEditingStyle((prev) => ({ ...prev, verticalOffset: clamped }));
       };
@@ -323,7 +333,7 @@ export function SubtitleInlineEditor({
       window.addEventListener('mousemove', handleDragMove);
       window.addEventListener('mouseup', handleDragEnd);
     },
-    [compositionHeight, editingStyle.verticalOffset],
+    [compositionHeight, limitsRef],
   );
 
   // --- Atalho Escape ---
@@ -559,8 +569,8 @@ export function SubtitleInlineEditor({
         <Slider
           value={editingStyle.verticalOffset}
           onChange={handleVerticalOffsetChange}
-          min={MIN_VERTICAL_OFFSET}
-          max={MAX_VERTICAL_OFFSET}
+          min={minOffset}
+          max={maxOffset}
           step={DRAG_SNAP}
           size="small"
           aria-label="Posição vertical da legenda"
