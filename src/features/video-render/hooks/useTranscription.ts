@@ -461,7 +461,7 @@ export function useTranscription(
             });
 
             // Etapa 2: Download do modelo (5-30%)
-            setTranscriptionStatusText('Baixando modelo Whisper...');
+            setTranscriptionStatusText('Baixando modelo Whisper (~75 MB)...');
             setTranscriptionProgress(PROGRESS_RANGES.downloadStart);
 
             if (cancelRef.current) throw new Error('Transcrição cancelada pelo usuário.');

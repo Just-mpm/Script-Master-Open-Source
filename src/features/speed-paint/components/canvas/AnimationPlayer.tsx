@@ -10,11 +10,10 @@ import { AnimationControls } from './AnimationControls';
 import { CYAN_GLOW_SOFT } from '../../../../theme/tokens';
 
 export function AnimationPlayer() {
-  const { job, isPlaying, setIsPlaying, setProgress } = useAnimationStore();
+  const { job, isPlaying, setIsPlaying, setProgress, hasAutoPlayed, setHasAutoPlayed, resetAutoPlay } = useAnimationStore();
   const batchMode = useAnimationStore((s) => s.batchMode);
   const requestRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number | undefined>(undefined);
-  const hasAutoPlayed = useRef(false);
 
   useEffect(() => {
     if (isPlaying) {
@@ -64,21 +63,21 @@ export function AnimationPlayer() {
     // Only re-bind when play state changes, not on every progress update
   }, [isPlaying]);
 
-  // Reset auto-play flag when new job starts
+  // Reseta auto-play quando novo job inicia
   useEffect(() => {
     if (job.status === 'processing') {
-      hasAutoPlayed.current = false;
+      resetAutoPlay();
     }
-  }, [job.id, job.status]);
+  }, [job.id, job.status, resetAutoPlay]);
 
   // Auto-play quando job completa no modo manual (sem batch ativo)
   useEffect(() => {
-    if (job.status === 'completed' && !hasAutoPlayed.current && batchMode === 'idle') {
-      hasAutoPlayed.current = true;
+    if (job.status === 'completed' && !hasAutoPlayed && batchMode === 'idle') {
+      setHasAutoPlayed(true);
       setProgress(0);
       setIsPlaying(true);
     }
-  }, [job.status, setProgress, setIsPlaying, batchMode]);
+  }, [job.status, setProgress, setIsPlaying, setHasAutoPlayed, batchMode, hasAutoPlayed]);
 
   if (job.status === 'processing') {
     return (

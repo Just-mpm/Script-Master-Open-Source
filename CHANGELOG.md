@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.13.0] - 2026-04-23
+
+### Adicionado
+
+- **6 novos guias** em `docs/guides/` — `assistant.md`, `speed-paint.md`, `studio.md`, `library.md`, `auth.md`, `gemini-integration.md`; todas as áreas do projeto agora possuem documentação
+- **`deleteImageGeneration(id, userId?)`** (`src/lib/db/images.ts`): exclusão de geração de imagem do Firestore + Storage e/ou IndexedDB
+- **`countIndexedDbItems(storeName)`** (`src/lib/db/shared.ts`): conta itens de uma store sem carregar dados
+- **`estimateDocumentSize()` / `sumAttachmentSize()`** (`src/lib/db/chats.ts`): estimativa de tamanho de documento para proteção contra limite do Firestore
+- **`errorId` no retorno de `useVoicePreviews`** (`src/hooks/useVoicePreviews.ts`): identificador da voz com erro de preview WAV
+- **Blob URL cleanup** (`src/components/Library.tsx`): registro e limpeza de blob URLs criados durante navegação na Biblioteca
+
+### Alterado
+
+- **`saveChatSession`** (`src/lib/db/chats.ts`): adicionado fallback para IndexedDB quando documento excede `FIRESTORE_MAX_DOC_SIZE_BYTES` (900 KB)
+- **`migration.ts`** (`src/lib/db/migration.ts`): novas funções `trackMigration` e `cleanupMigratedItems` para rastreamento de migrações
+- **`AnimationPlayer.tsx`**: remoção de `hasAutoPlayed` ref (tech debt eliminado do store)
+- **`animationStore.ts`**: remoção de comentário TECH DEBT sobre `hasAutoPlayed`
+- **`useTranscription.ts`**: mensagem de download do modelo Whisper agora inclui tamanho (~75 MB)
+- **`gemini.ts`**: ajustes de implementação em contents, responseSchema, timestamp e prompt
+
+### Documentação
+
+- **4 guias corrigidos** (`docs/guides/`) — 22 inconsistências corrigidas entre números de linha, funções omitidas, tipos incorretos e descrições de comportamento
+- **Tabela "Documentação por Domínio"** no AGENTS.md expandida de 7 para 12 entradas (100% das áreas cobertas)
+
+---
+
 ## [0.12.0] - 2026-04-22
 
 ### Adicionado

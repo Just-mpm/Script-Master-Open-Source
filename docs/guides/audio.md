@@ -120,6 +120,18 @@ const combinedNotes = [styleNotes, paceNote].filter(Boolean).join('\n* ');
 6. **Auto-save** do audio no Firebase/IndexedDB
 7. **Geracao de cenas visuais** (opcional, apos o audio)
 
+**Assinatura:**
+
+```typescript
+const generateAudio = async (options: GenerateOptions, onStart?: () => void) => {
+  // ...
+  if (onStart) onStart();
+  // ...
+};
+```
+
+O callback `onStart` e invocado apos a validacao inicial e salvamento do projeto no DB, antes de iniciar a geracao TTS.
+
 ### 3. Divisao em Chunks
 
 Se `script.length <= CHUNK_LIMIT`, o roteiro inteiro vai em um unico chunk.
@@ -271,7 +283,7 @@ O hook usa `createLogger('useAudioGenerator')` extensivamente para logs estrutur
 const log = createLogger('useAudioGenerator');
 ```
 
-Metodos utilizados: `log.warn(...)`, `log.error(...)`. O logger tambem e usado em outros arquivos do pipeline (`gemini.ts`, `audio-segments.ts`, `audio-analysis.ts`, `useVoicePreviews.ts`).
+Metodos utilizados: `log.warn(...)`, `log.error(...)`. O logger tambem e usado em outros arquivos do pipeline (`gemini.ts`, `audio-segments.ts`, `useVoicePreviews.ts`).
 
 ---
 
@@ -489,7 +501,7 @@ export async function base64ToUint8Array(base64: string): Promise<Uint8Array> {
 }
 ```
 
-Versao sincrona disponivel para compatibilidade (`base64ToBlobSync`), que usa `atob` diretamente — utilizada internamente quando o destino final e um Blob.
+Versao sincrona disponivel para compatibilidade (`base64ToBlobSync`), que usa `atob` diretamente — utilizada internamente quando o destino final e um Blob. **Atencao:** o default de `mimeType` e `'image/png'` (diferente da versao async que usa `'audio/pcm'`).
 
 ---
 
@@ -535,12 +547,18 @@ export function useVoicePreviews() {
     });
   };
 
-  return { playingId, playPreview, stop };
+  return {
+    playingId,
+    errorId,
+    playPreview,
+    stop,
+  };
 }
 ```
 
 - **Toggle:** clicar na mesma voz que esta tocando a para (via `stop()`)
 - **stop:** funcao exportada que pausa e limpa o audio
+- **errorId:** `string | null` — setado com o `voiceId` quando o arquivo WAV nao existe (onerror), resetado a `null` ao iniciar nova preview
 - **Erros:** se o arquivo nao existe, `log.error` registra e reseta o estado
 - **Autoplay bloqueado:** `play().catch()` trata `AbortError` (desprezado) e outros erros de autoplay via `log.warn`
 

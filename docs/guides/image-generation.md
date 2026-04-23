@@ -8,13 +8,13 @@ O projeto usa um único modelo para geração de imagens:
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:130` |
+| `gemini-3.1-flash-image-preview` | Geração de imagens (Estúdio de Imagem e pipeline de cenas de vídeo) | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts:135` |
 
 Há também um modelo auxiliar para prompts de cena (não gera imagens, apenas texto):
 
 | Modelo | Uso | Arquivo |
 |--------|-----|---------|
-| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) | `src/lib/gemini.ts:77` |
+| `gemini-3.1-flash-lite-preview` | Geração de descrições de cena (prompts) | `src/lib/gemini.ts:80` |
 
 ---
 
@@ -69,7 +69,7 @@ Usuário escreve prompt → [opcional] anexa imagem de referência → hook cham
 
 Usado pelo pipeline de vídeo para gerar imagens de cena automaticamente.
 
-**Arquivo:** `src/lib/gemini.ts:110-157`
+**Arquivo:** `src/lib/gemini.ts:115-162`
 
 #### Características em relação ao Fluxo 1
 
@@ -129,6 +129,8 @@ aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9'
 ```
 
 Ou seja, o pipeline de cenas suporta 5 ratios, enquanto o Estúdio de Imagem (que usa `string`) aceita todos os 8.
+
+**Nota:** No Estúdio de Vídeo, o tipo `SceneRatio` (`src/features/studio/types.ts:1`) restringe a apenas 3 ratios: `'16:9' | '9:16' | '1:1'`. Esse tipo é usado em `StudioDraftState.sceneRatio` e `StudioSettingsPatch.sceneRatio`.
 
 ---
 
@@ -289,7 +291,7 @@ No Estúdio de Imagem, se nenhuma imagem for encontrada, lança erro: `"Nenhuma 
 
 ## Geração de Prompts de Cena
 
-A função `generateScenePrompts` (`src/lib/gemini.ts:43-108`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
+A função `generateScenePrompts` (`src/lib/gemini.ts:43-113`) não gera imagens — gera **descrições textuais** que depois alimentam `generateImageFromPrompt`.
 
 ### Parâmetros
 
@@ -328,7 +330,7 @@ O projeto segue o padrão dual storage:
 
 ### Salvando uma imagem gerada
 
-**Função:** `saveImageGeneration` (`src/lib/db/images.ts:25-45`)
+**Função:** `saveImageGeneration` (`src/lib/db/images.ts:27-47`)
 
 **Autenticado:**
 1. Faz upload do blob para Firebase Storage em `images/{userId}/{id}.png`.
@@ -342,8 +344,9 @@ O projeto segue o padrão dual storage:
 
 | Função | Arquivo | Descrição |
 |--------|---------|-----------|
-| `saveImageGeneration` | `src/lib/db/images.ts:25` | Cria nova geração |
-| `getImageGenerations` | `src/lib/db/images.ts:47` | Lista todas, ordenadas por `createdAt` decrescente |
+| `saveImageGeneration` | `src/lib/db/images.ts:27` | Cria nova geração |
+| `getImageGenerations` | `src/lib/db/images.ts:49` | Lista todas, ordenadas por `createdAt` decrescente |
+| `deleteImageGeneration` | `src/lib/db/images.ts:63` | Exclui do Firestore + Storage e/ou IndexedDB |
 
 ### Dados salvos no Estúdio de Imagem
 

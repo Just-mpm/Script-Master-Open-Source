@@ -23,7 +23,7 @@ Pacotes utilizados (`package.json`):
 
 ```
 src/features/video-render/
-  index.ts                          # Barrel — re-exporta tudo
+  index.ts                          # Barrel — re-exporta API pública (tipos, utils, componentes de composição, hooks de exportação)
   types.ts                          # VideoScene, VideoCompositionProps, VideoRenderConfig, CaptionWord, CaptionSource, TranscriptionResult, SubtitleMode
   lib/
     videoUtils.ts                   # Conversão de tempo, resolução, mapeamento de cenas
@@ -375,7 +375,7 @@ interface TranscriptionPanelProps {
 
 | Estado | Condição | Renderização |
 |--------|----------|-------------|
-| **Sucesso** | `captionCount > 0 && !isTranscribing` | Contagem de palavras + rótulo da fonte (`Timing TTS`, `Whisper Alinhado`, `Proporcional`, `Manual`) |
+| **Sucesso** | `captionCount > 0 && !isTranscribing` | Contagem de palavras + rótulo da fonte (`Timing TTS`, `Whisper Alinhado`, `Whisper` (legado), `Proporcional`, `Manual`) |
 | **Stale** | `isStale && hasCaptions` | Alerta `WARNING_BG_SUBTLE`: "O roteiro foi editado desde a última geração" |
 | **Transcrevendo** | `isTranscribing` | Barra de progresso com `%` + botão Cancelar |
 | **Erro** | `transcriptionError && !isTranscribing` | Alerta `ERROR_BG_SUBTLE` + botão Tentar novamente |

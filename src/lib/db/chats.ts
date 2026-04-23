@@ -1,6 +1,7 @@
 import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { ChatSession } from './types';
+import { createLogger } from '../logger';
+import type { AttachmentRecord, ChatSession } from './types';
 import {
   CHAT_STORE,
   OperationType,
@@ -11,23 +12,58 @@ import {
   putIndexedDbItem,
 } from './shared';
 
+const log = createLogger('chats');
+
 const chatSessionConverter = createFirestoreConverter<ChatSession>();
 const chatsCollection = collection(db, 'chats').withConverter(chatSessionConverter);
+
+/** Limite seguro do Firestore (~1MB) com margem para metadados do documento */
+const FIRESTORE_MAX_DOC_SIZE_BYTES = 900_000;
 
 function sortChatSessions(items: ChatSession[]): ChatSession[] {
   return [...items].sort((firstItem, secondItem) => secondItem.updatedAt - firstItem.updatedAt);
 }
 
+/** Estima o tamanho em bytes que o documento ocupará no Firestore (JSON serializado). */
+function estimateDocumentSize(session: ChatSession, userId: string): number {
+  const docData = { ...session, userId };
+  return JSON.stringify(docData).length;
+}
+
+/** Soma o tamanho dos anexos base64 de todas as mensagens. */
+function sumAttachmentSize(messages: ChatSession['messages']): number {
+  return messages.reduce((total: number, message) => {
+    const attachments: AttachmentRecord[] = message.attachments ?? [];
+    for (const attachment of attachments) {
+      total += attachment.data.length;
+    }
+    return total;
+  }, 0);
+}
+
 export async function saveChatSession(session: ChatSession, userId?: string): Promise<void> {
   if (userId) {
-    try {
-      await setDoc(doc(chatsCollection, session.id), {
-        ...session,
-        userId,
+    // Valida tamanho do documento antes de tentar salvar no Firestore
+    const estimatedSize = estimateDocumentSize(session, userId);
+    if (estimatedSize > FIRESTORE_MAX_DOC_SIZE_BYTES) {
+      const totalAttachmentSize = sumAttachmentSize(session.messages);
+      log.warn('Sessão excede limite do Firestore — salvamento no Firestore omitido', {
+        sessionId: session.id,
+        estimatedSizeBytes: estimatedSize,
+        attachmentSizeBytes: totalAttachmentSize,
+        maxAllowedBytes: FIRESTORE_MAX_DOC_SIZE_BYTES,
       });
-      return;
-    } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.WRITE, `chats/${session.id}`);
+      // Recai para IndexedDB local que não tem limite de documento
+    } else {
+      try {
+        await setDoc(doc(chatsCollection, session.id), {
+          ...session,
+          userId,
+        });
+        return;
+      } catch (error: unknown) {
+        handleFirestoreError(error, OperationType.WRITE, `chats/${session.id}`);
+      }
     }
   }
 

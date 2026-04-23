@@ -32,6 +32,8 @@ export async function saveMemory(content: string, userId?: string): Promise<Memo
 }
 ```
 
+> **Nota:** O exemplo acima mostra `saveMemory` que retorna `Memory`, mas a maioria das funções `save*` retorna `void` (ex: `saveGeneration`, `saveImageGeneration`, `saveChatSession`).
+
 ---
 
 ## 2. Fachada `db.ts`
@@ -42,7 +44,7 @@ export async function saveMemory(content: string, userId?: string): Promise<Memo
 export * from './db/index';
 ```
 
-`src/lib/db/index.ts` reexporta tipos e todos os módulos de domínio. `initDB` **não** é exportado publicamente — é usado internamente pelos módulos de domínio, que importam diretamente de `./shared`:
+`src/lib/db/index.ts` reexporta tipos e todos os módulos de domínio. `initDB` **não** é exportado publicamente — é usado internamente pelos módulos de domínio, que importam diretamente de `./shared`. O arquivo `migration.ts` existe em `src/lib/db/` mas **não** é reexportado pelo barrel — é usado apenas internamente:
 
 ```typescript
 export * from './types';
@@ -102,6 +104,7 @@ A store `videos` possui dois indexes adicionais criados no upgrade:
 | `getIndexedDbItem<T>(storeName, key)` | Busca item por chave, retorna `null` se não encontrado |
 | `deleteIndexedDbItem(storeName, key)` | Remove item por chave |
 | `updateIndexedDbItem<T>(storeName, key, updater)` | Lê, aplica `updater`, e salva de volta |
+| `countIndexedDbItems(storeName)` | Conta itens de uma store sem carregar dados (ideal para checagens leves) |
 
 ---
 
@@ -392,6 +395,7 @@ export interface ProjectVideo {
 |---|---|
 | `saveImageGeneration(item, userId?)` | Upload de `imageBlob` para Storage + save |
 | `getImageGenerations(userId?)` | Lista ordenada por `createdAt` descendente |
+| `deleteImageGeneration(id, userId?)` | Remove do Firestore + Storage e/ou IndexedDB |
 
 ---
 
@@ -454,7 +458,7 @@ export interface ProjectVideo {
 
 | Função | Descrição |
 |---|---|
-| `saveChatSession(session, userId?)` | Cria/atualiza sessão (setDoc com userId) |
+| `saveChatSession(session, userId?)` | Cria/atualiza sessão (setDoc com userId). Se o documento estimado exceder `FIRESTORE_MAX_DOC_SIZE_BYTES` (900 000 bytes), faz fallback para IndexedDB sem salvar no Firestore |
 | `getChatSessions(userId?)` | Lista ordenada por `updatedAt` descendente |
 | `deleteChatSession(id, userId?)` | Remove por ID |
 
@@ -493,7 +497,7 @@ export interface ProjectVideo {
 | | Valor |
 |---|---|
 | Store IndexedDB | `'transcriptions'` |
-| Tipo | `StoredTranscription` |
+| Tipo | `StoredTranscription` (definido em `src/lib/db/transcriptions.ts`) |
 
 **Tipo:**
 
@@ -564,7 +568,7 @@ Remove campos `undefined` na serialização via `removeUndefinedFields()`, que f
 |---|---|
 | `handleFirestoreError(error, operationType, path)` | Loga erro detalhado (incluindo auth info) e lança `Error` com JSON |
 
-`OperationType`: `'create' | 'update' | 'delete' | 'list' | 'get' | 'write'`
+`OperationType`: enum com membros `CREATE`, `UPDATE`, `DELETE`, `LIST`, `GET`, `WRITE` (valores string: `'create'`, `'update'`, `'delete'`, `'list'`, `'get'`, `'write'`)
 
 ---
 

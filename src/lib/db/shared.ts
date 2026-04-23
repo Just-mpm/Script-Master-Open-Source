@@ -206,6 +206,14 @@ export async function deleteIndexedDbItem(storeName: string, key: IDBValidKey): 
   await runRequest(store.delete(key));
 }
 
+/** Conta itens de uma store sem carregar dados — ideal para checagens leves */
+export async function countIndexedDbItems(storeName: string): Promise<number> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+  return runRequest(store.count());
+}
+
 export async function updateIndexedDbItem<T>(
   storeName: string,
   key: IDBValidKey,
@@ -240,15 +248,26 @@ export async function uploadBlobAndGetUrl(
 ): Promise<string> {
   const storageRef = ref(storage, storagePath);
 
-  await uploadBytes(storageRef, blob);
+  await uploadBytes(storageRef, blob, {
+    contentType: blob.type || 'application/octet-stream',
+  });
   return getDownloadURL(storageRef);
 }
+
+/** Códigos de erro do Firebase Storage que indicam que o objeto não existe */
+const STORAGE_OBJECT_NOT_FOUND = 'storage/object-not-found';
 
 export async function deleteStorageObjectSafely(storagePath: string, warningMessage: string): Promise<void> {
   try {
     await deleteObject(ref(storage, storagePath));
   } catch (error: unknown) {
-    log.warn(warningMessage, { error });
+    // object-not-found é esperado em exclusões idempotentes — sucesso silencioso
+    const errorCode = (error as { code?: string })?.code ?? '';
+    if (errorCode === STORAGE_OBJECT_NOT_FOUND) {
+      log.warn(warningMessage, { reason: 'object-not-found' });
+    } else {
+      log.error(warningMessage, { error });
+    }
   }
 }
 

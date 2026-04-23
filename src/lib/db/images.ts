@@ -1,10 +1,12 @@
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SavedImage } from './types';
 import {
   IMAGE_STORE,
   OperationType,
   createFirestoreConverter,
+  deleteIndexedDbItem,
+  deleteStorageObjectSafely,
   getAllIndexedDbItems,
   handleFirestoreError,
   putIndexedDbItem,
@@ -55,4 +57,22 @@ export async function getImageGenerations(userId?: string): Promise<SavedImage[]
   }
 
   return sortImageGenerations(await getAllIndexedDbItems<SavedImage>(IMAGE_STORE));
+}
+
+/** Exclui uma imagem gerada. Remove do Firestore, Storage e/ou IndexedDB conforme o modo do usuário. */
+export async function deleteImageGeneration(id: string, userId?: string): Promise<void> {
+  if (userId) {
+    try {
+      await deleteDoc(doc(imageGenerationsCollection, id));
+      await deleteStorageObjectSafely(
+        `images/${userId}/${id}.png`,
+        `Imagem Storage não encontrada (esperado na exclusão): ${id}`,
+      );
+      return;
+    } catch (error: unknown) {
+      handleFirestoreError(error, OperationType.DELETE, `image_generations/${id}`);
+    }
+  }
+
+  await deleteIndexedDbItem(IMAGE_STORE, id);
 }

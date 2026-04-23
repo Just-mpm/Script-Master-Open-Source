@@ -68,16 +68,23 @@ Ao trabalhar nestas áreas, leia o guia correspondente **antes** de implementar:
 | Renderização de vídeo | `docs/guides/video-render.md` | Remotion, fade padrão, legendas, exportação |
 | UI & Design System | `docs/guides/ui-design-system.md` | MUI v9, tema, tokens, surfaces, CSS |
 | Environment & Config | `docs/guides/environment.md` | Env vars, Firebase, Vite, TypeScript |
+| Integração IA (Gemini) | `docs/guides/gemini-integration.md` | SDK GenAI, modelos, geração de imagem, prompts de cena, rate limiter, logger |
+| Assistente IA | `docs/guides/assistant.md` | Chat conversacional, memórias, persona, streaming, extração JSON |
+| Speed Paint & Animação | `docs/guides/speed-paint.md` | Canvas Konva, strokes, batch processing, reprodução, store |
+| Estúdio de Produção | `docs/guides/studio.md` | Roteiro, vozes, ação, estado centralizado, integração TTS/imagens |
+| Biblioteca & Projetos | `docs/guides/library.md` | Histórico, galeria, navegação, downloads, dual storage |
+| Autenticação | `docs/guides/auth.md` | Login Google, sessão, ProtectedRoute, COEP |
 
 ## Version
 
-- **Current:** `0.12.0`
-- **Last release:** 2026-04-22
+- **Current:** `0.13.0`
+- **Last release:** 2026-04-23
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.13.0 | 6 novos guias (assistant, speed-paint, studio, library, auth, gemini-integration), 4 guias corrigidos (22 inconsistências), deleteImageGeneration, saveChatSession com fallback IndexedDB, countIndexedDbItems, errorId em useVoicePreviews, blob URL cleanup |
 | 0.12.0 | LoginPage dedicada, ProtectedRoute, rota /estudio (era /), COEP em produção via firebase.json, coepPlugin simplificado no Vite, 5 guias corrigidos (26 inconsistências) |
 | 0.11.2 | Plugin condicional COEP (?coep=1) no dev server, resolve conflito Firebase Auth vs SharedArrayBuffer; referrerPolicy no Header Avatar; correção de encoding nas mensagens de auth |
 | 0.11.1 | 5 novos tokens de tema (ERROR_BG_SUBTLE, ERROR_BG_MEDIUM, WARNING_BG_SUBTLE, WHITE_01, GLASS_BG), 12 componentes migrados de cores hardcoded para tokens, 6 guias corrigidos (47 inconsistências) |

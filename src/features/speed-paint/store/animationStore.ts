@@ -1,12 +1,5 @@
 /**
  * Store central de animação do Speed Paint.
- *
- * TECH DEBT (hasAutoPlayed):
- * O estado `hasAutoPlayed` é resetado indiretamente pela mudança de `job.id`.
- * Isso funciona porque cada novo job gera um id único, mas é frágil — qualquer
- * lógica que reutilize o mesmo id ou não atualize job.id corretamente pode burlar
- * o reset. Futuramente, considerar um campo `hasAutoPlayed` explícito no store
- * com reset controlado por uma ação dedicada (ex: `resetAutoPlay()`).
  */
 
 import { create } from 'zustand';
@@ -35,6 +28,11 @@ interface AnimationState {
   setProgress: (progress: number) => void;
   setSpeed: (speed: number) => void;
   setPaintSpeed: (speed: number) => void;
+
+  // Auto-play control
+  hasAutoPlayed: boolean;
+  setHasAutoPlayed: (value: boolean) => void;
+  resetAutoPlay: () => void;
 }
 
 const initialJob: PaintingJob = {
@@ -47,7 +45,7 @@ const initialJob: PaintingJob = {
 export const useAnimationStore = create<AnimationState>()((set) => ({
   job: initialJob,
   setJob: (jobUpdate) => set((state) => ({ job: { ...state.job, ...jobUpdate } })),
-  resetJob: () => set({ job: initialJob, isPlaying: false, progress: 0 }),
+  resetJob: () => set({ job: initialJob, isPlaying: false, progress: 0, hasAutoPlayed: false }),
 
   queue: [],
   currentIndex: 0,
@@ -57,7 +55,7 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
   })),
   setCurrentIndex: (index) => set({ currentIndex: index }),
   setBatchMode: (mode) => set({ batchMode: mode }),
-  clearQueue: () => set({ queue: [], currentIndex: 0, batchMode: 'idle', job: initialJob, isPlaying: false, progress: 0 }),
+  clearQueue: () => set({ queue: [], currentIndex: 0, batchMode: 'idle', job: initialJob, isPlaying: false, progress: 0, hasAutoPlayed: false }),
 
   isPlaying: false,
   progress: 0,
@@ -67,4 +65,9 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
   setProgress: (progress) => set({ progress }),
   setSpeed: (speed) => set({ speed }),
   setPaintSpeed: (paintSpeed) => set({ paintSpeed }),
+
+  // Auto-play: controla se a reprodução automática já foi disparada para o job atual
+  hasAutoPlayed: false,
+  setHasAutoPlayed: (value) => set({ hasAutoPlayed: value }),
+  resetAutoPlay: () => set({ hasAutoPlayed: false }),
 }));

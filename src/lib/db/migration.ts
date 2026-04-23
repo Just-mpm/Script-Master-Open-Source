@@ -13,6 +13,8 @@ import {
   SETTING_STORE,
   STORE_NAME,
   VIDEOS_STORE,
+  countIndexedDbItems,
+  deleteIndexedDbItem,
   getAllIndexedDbItems,
 } from './shared';
 import type {
@@ -54,30 +56,30 @@ const MIGRATION_FLAG_PREFIX = 'sm_migration_completed_';
 
 /**
  * Verifica se o IndexedDB contém dados que podem ser migrados.
- * Não lê dados pesados (blobs) — apenas contabiliza itens.
+ * Usa count() para evitar carregar blobs pesados na memória.
  */
 export async function checkForMigratableData(): Promise<MigrationCheckResult> {
   const [projects, generations, imageGenerations, memories, chats, settings] = await Promise.all([
-    getAllIndexedDbItems<Project>(PROJECTS_STORE),
-    getAllIndexedDbItems<SavedAudio>(STORE_NAME),
-    getAllIndexedDbItems<SavedImage>(IMAGE_STORE),
-    getAllIndexedDbItems<Memory>(MEMORY_STORE),
-    getAllIndexedDbItems<ChatSession>(CHAT_STORE),
-    getAllIndexedDbItems<UserSetting>(SETTING_STORE),
+    countIndexedDbItems(PROJECTS_STORE),
+    countIndexedDbItems(STORE_NAME),
+    countIndexedDbItems(IMAGE_STORE),
+    countIndexedDbItems(MEMORY_STORE),
+    countIndexedDbItems(CHAT_STORE),
+    countIndexedDbItems(SETTING_STORE),
   ]);
 
-  const totalCount = projects.length + generations.length + imageGenerations.length
-    + memories.length + chats.length + (settings.length > 0 ? 1 : 0);
+  const totalCount = projects + generations + imageGenerations
+    + memories + chats + (settings > 0 ? 1 : 0);
 
   return {
     hasData: totalCount > 0,
     summary: {
-      projects: projects.length,
-      generations: generations.length,
-      imageGenerations: imageGenerations.length,
-      memories: memories.length,
-      chats: chats.length,
-      settings: settings.length > 0,
+      projects,
+      generations,
+      imageGenerations,
+      memories,
+      chats,
+      settings: settings > 0,
     },
   };
 }
@@ -102,57 +104,91 @@ export function markMigrationCompleted(userId: string): void {
  * Itens com blobs (gerações, imagens) são salvos sem upload de blob —
  * apenas os metadados são migrados. Blobs locais não podem ser transferidos
  * via Firestore ( Storage requer re-upload, que não é viável em migração).
+ *
+ * Após migração bem-sucedida, remove itens do IndexedDB para evitar dados fantasmas.
  */
 export async function migrateAnonymousData(userId: string): Promise<MigrationResult> {
   let migrated = 0;
   let errors = 0;
+
+  // Rastreia IDs migrados com sucesso para cleanup do IndexedDB
+  const migratedIds: Map<string, string[]> = new Map();
+
+  /**
+   * Cria promise de migração que rastreia o ID em caso de sucesso.
+   * Cada entrada usa (storeName, id) para permitir cleanup seletivo.
+   */
+  function trackMigration(
+    storeName: string,
+    itemId: string,
+    migrationPromise: Promise<void>,
+  ): void {
+    migrations.push(
+      migrationPromise
+        .then(() => {
+          migrated++;
+          const ids = migratedIds.get(storeName);
+          if (ids) {
+            ids.push(itemId);
+          } else {
+            migratedIds.set(storeName, [itemId]);
+          }
+        })
+        .catch((err: unknown) => {
+          log.error('Erro ao migrar item', { store: storeName, id: itemId, error: err });
+          errors++;
+        }),
+    );
+  }
 
   const migrations: Promise<void>[] = [];
 
   // --- Projects ---
   const projects = await getAllIndexedDbItems<Project>(PROJECTS_STORE);
   for (const project of projects) {
-    migrations.push(
-      setDoc(doc(db, 'projects', project.id), { ...project, userId })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar projeto', { id: project.id, error: err }); errors++; }),
+    trackMigration(
+      PROJECTS_STORE,
+      project.id,
+      setDoc(doc(db, 'projects', project.id), { ...project, userId }),
     );
   }
 
   // --- Memories ---
   const memories = await getAllIndexedDbItems<Memory>(MEMORY_STORE);
   for (const memory of memories) {
-    migrations.push(
-      setDoc(doc(db, 'memories', memory.id), { ...memory, userId })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar memória', { id: memory.id, error: err }); errors++; }),
+    trackMigration(
+      MEMORY_STORE,
+      memory.id,
+      setDoc(doc(db, 'memories', memory.id), { ...memory, userId }),
     );
   }
 
   // --- Chats ---
   const chats = await getAllIndexedDbItems<ChatSession>(CHAT_STORE);
   for (const chat of chats) {
-    migrations.push(
-      setDoc(doc(db, 'chats', chat.id), { ...chat, userId })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar chat', { id: chat.id, error: err }); errors++; }),
+    trackMigration(
+      CHAT_STORE,
+      chat.id,
+      setDoc(doc(db, 'chats', chat.id), { ...chat, userId }),
     );
   }
 
   // --- User Settings (ID local → ID do userId) ---
   const settings = await getAllIndexedDbItems<UserSetting>(SETTING_STORE);
   for (const setting of settings) {
-    migrations.push(
-      setDoc(doc(db, 'user_settings', userId), { ...setting, id: userId, userId })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar settings', { error: err }); errors++; }),
+    trackMigration(
+      SETTING_STORE,
+      setting.id,
+      setDoc(doc(db, 'user_settings', userId), { ...setting, id: userId, userId }),
     );
   }
 
   // --- Generations (metadados apenas — blobs locais não são migrados) ---
   const generations = await getAllIndexedDbItems<SavedAudio>(STORE_NAME);
   for (const generation of generations) {
-    migrations.push(
+    trackMigration(
+      STORE_NAME,
+      generation.id,
       setDoc(doc(db, 'generations', generation.id), {
         id: generation.id,
         userId: generation.userId,
@@ -162,16 +198,16 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         voice: generation.voice,
         audioUrl: generation.audioUrl ?? '',
         scenes: generation.scenes ?? [],
-      })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar geração', { id: generation.id, error: err }); errors++; }),
+      }),
     );
   }
 
   // --- Image Generations (metadados apenas) ---
   const imageGenerations = await getAllIndexedDbItems<SavedImage>(IMAGE_STORE);
   for (const imageGeneration of imageGenerations) {
-    migrations.push(
+    trackMigration(
+      IMAGE_STORE,
+      imageGeneration.id,
       setDoc(doc(db, 'image_generations', imageGeneration.id), {
         id: imageGeneration.id,
         userId: imageGeneration.userId,
@@ -180,32 +216,32 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         prompt: imageGeneration.prompt,
         aspectRatio: imageGeneration.aspectRatio,
         imageUrl: imageGeneration.imageUrl ?? '',
-      })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar imagem', { id: imageGeneration.id, error: err }); errors++; }),
+      }),
     );
   }
 
   // --- Project Audios (metadados apenas) ---
   const projectAudios = await getAllIndexedDbItems<AudioSource>(AUDIOS_STORE);
   for (const audio of projectAudios) {
-    migrations.push(
+    trackMigration(
+      AUDIOS_STORE,
+      audio.id,
       setDoc(doc(db, 'projects', audio.projectId, 'audios', audio.id), {
         id: audio.id,
         projectId: audio.projectId,
         userId,
         audioUrl: audio.audioUrl ?? '',
         createdAt: audio.createdAt,
-      })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar áudio de projeto', { id: audio.id, error: err }); errors++; }),
+      }),
     );
   }
 
   // --- Project Images (metadados apenas) ---
   const projectImages = await getAllIndexedDbItems<ProjectImage>(IMAGES_STORE);
   for (const projectImage of projectImages) {
-    migrations.push(
+    trackMigration(
+      IMAGES_STORE,
+      projectImage.id,
       setDoc(doc(db, 'projects', projectImage.projectId, 'images', projectImage.id), {
         id: projectImage.id,
         projectId: projectImage.projectId,
@@ -214,16 +250,16 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         prompt: projectImage.prompt,
         timestamp: projectImage.timestamp,
         createdAt: projectImage.createdAt,
-      })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar imagem de projeto', { id: projectImage.id, error: err }); errors++; }),
+      }),
     );
   }
 
   // --- Videos (metadados apenas) ---
   const videos = await getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE);
   for (const video of videos) {
-    migrations.push(
+    trackMigration(
+      VIDEOS_STORE,
+      video.id,
       setDoc(doc(db, 'projects', video.projectId, 'videos', video.id), {
         id: video.id,
         projectId: video.projectId,
@@ -236,13 +272,14 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         durationInSeconds: video.durationInSeconds,
         fileSizeBytes: video.fileSizeBytes,
         createdAt: video.createdAt,
-      })
-        .then(() => { migrated++; })
-        .catch((err: unknown) => { log.error('Erro ao migrar vídeo', { id: video.id, error: err }); errors++; }),
+      }),
     );
   }
 
   await Promise.allSettled(migrations);
+
+  // Limpa itens migrados com sucesso do IndexedDB para evitar dados fantasmas
+  await cleanupMigratedItems(migratedIds);
 
   const details = [
     `${projects.length} projetos`,
@@ -254,4 +291,28 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
   ].join(', ');
 
   return { migrated, errors, details };
+}
+
+/**
+ * Remove do IndexedDB os itens que foram migrados com sucesso para o Firestore.
+ * Usa Promise.allSettled para que falhas no cleanup não revertam o status da migração.
+ */
+async function cleanupMigratedItems(migratedIds: Map<string, string[]>): Promise<void> {
+  const cleanups: Promise<void>[] = [];
+
+  for (const [storeName, ids] of migratedIds) {
+    if (ids.length === 0) continue;
+
+    for (const id of ids) {
+      cleanups.push(
+        deleteIndexedDbItem(storeName, id).catch((err: unknown) => {
+          log.warn('Falha ao remover item migrado do IndexedDB', { store: storeName, id, error: err });
+        }),
+      );
+    }
+  }
+
+  if (cleanups.length > 0) {
+    await Promise.allSettled(cleanups);
+  }
 }

@@ -12,6 +12,7 @@ const log = createLogger('useVoicePreviews');
  */
 export function useVoicePreviews() {
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const stop = (): void => {
@@ -23,6 +24,9 @@ export function useVoicePreviews() {
   };
 
   const playPreview = (voiceId: string): void => {
+    // Limpa erro anterior ao tentar nova voz
+    setErrorId(null);
+
     if (playingId === voiceId) {
       stop();
       return;
@@ -36,6 +40,7 @@ export function useVoicePreviews() {
     audio.onerror = () => {
       log.error(`Preview para ${voiceId} não encontrado. Execute "bun run generate-previews" para gerar.`);
       setPlayingId(null);
+      setErrorId(voiceId);
     };
     audio.onended = () => setPlayingId(null);
     audio.play().catch((playErr: unknown) => {
@@ -50,6 +55,7 @@ export function useVoicePreviews() {
 
   return {
     playingId,
+    errorId,
     playPreview,
     stop,
   };

@@ -73,24 +73,29 @@ Roteiro Narrado:
 ${script}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
-      contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              timestamp: { type: Type.NUMBER },
-              prompt: { type: Type.STRING }
-            },
-            required: ["timestamp", "prompt"]
+    // Envelopa a chamada em withRetry — erros transitórios (429, 503, 504)
+    // são automaticamente retentados com exponential backoff + jitter.
+    const { value: response } = await withRetry(
+      async () => ai.models.generateContent({
+        model: "gemini-3.1-flash-lite-preview",
+        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                timestamp: { type: Type.NUMBER },
+                prompt: { type: Type.STRING }
+              },
+              required: ["timestamp", "prompt"]
+            }
           }
         }
-      }
-    });
+      }),
+      { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
+    );
 
     let text = response.text;
     if (!text) throw new Error("Resposta vazia ao gerar prompts de cena.");
@@ -100,8 +105,8 @@ ${script}`;
     
     return { prompts: parsed, isFallback: false };
   } catch (error) {
-    log.error('Erro ao gerar prompts de cena', { error });
-    // Fallback genérico quando a API falha
+    log.error('Erro ao gerar prompts de cena após tentativas de retry', { error });
+    // Fallback genérico como último recurso após falha de todos os retries
     const fallbackPrompts: ScenePrompt[] = [{ timestamp: 0, prompt: `A captivating scene about: ${script.substring(0, 100)}... Style: ${style}` }];
     return { prompts: fallbackPrompts, isFallback: true };
   }

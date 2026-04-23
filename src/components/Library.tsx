@@ -134,6 +134,11 @@ export function Library() {
 
     const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
 
+    // Registra blob URL criado para cleanup ao desmontar
+    if (!audio.audioUrl && url.startsWith('blob:')) {
+      blobUrlsRef.current.push(url);
+    }
+
     if (url) {
       play(url, audio.id);
     }
