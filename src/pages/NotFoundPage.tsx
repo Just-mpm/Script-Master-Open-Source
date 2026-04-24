@@ -6,9 +6,14 @@ import Typography from '@mui/material/Typography';
 import Home from '@mui/icons-material/Home';
 import SearchOff from '@mui/icons-material/SearchOff';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export function NotFoundPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Usuário autenticado → redireciona para o app; visitante → landing
+  const homePath = user ? '/app/estudio' : '/';
 
   return (
     <Box
@@ -44,7 +49,7 @@ export function NotFoundPage() {
           <Button
             variant="contained"
             startIcon={<Home />}
-            onClick={() => navigate('/estudio')}
+            onClick={() => navigate(homePath)}
             sx={{ mt: 1 }}
           >
             Voltar ao início

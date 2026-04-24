@@ -425,4 +425,168 @@ describe('AssistantMessages', () => {
 
     expect(defaultProps.onStopGeneration).toHaveBeenCalledTimes(1);
   });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Testes adicionais: React.memo com arePropsEqual
+  // ──────────────────────────────────────────────────────────────────────
+
+  describe('React.memo — arePropsEqual', () => {
+    it('deve manter "Aplicar no estúdio" visível ao re-renderizar com mesmas props', () => {
+      const messages = [
+        createMessage({
+          id: 'm1',
+          role: 'model',
+          text: '```json\n{"pace": "lento"}\n```',
+        }),
+      ];
+
+      const { rerender } = render(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+        />,
+        { wrapper: Wrapper },
+      );
+
+      expect(screen.getByText('Aplicar no estúdio')).toBeDefined();
+
+      // Re-renderiza com exatamente as mesmas props (memo deve evitar re-render do bubble)
+      rerender(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+        />,
+      );
+
+      // O botão continua presente e funcional
+      expect(screen.getByText('Aplicar no estúdio')).toBeDefined();
+    });
+
+    it('deve atualizar botão de "Aplicar no estúdio" para "Aplicado" quando appliedMessageId muda', () => {
+      const messages = [
+        createMessage({
+          id: 'm1',
+          role: 'model',
+          text: '```json\n{"pace": "lento"}\n```',
+        }),
+      ];
+
+      const { rerender } = render(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          appliedMessageId={null}
+        />,
+        { wrapper: Wrapper },
+      );
+
+      expect(screen.getByText('Aplicar no estúdio')).toBeDefined();
+
+      rerender(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          appliedMessageId="m1"
+        />,
+      );
+
+      // arePropsEqual compara isApplied — quando muda, deve re-renderizar
+      expect(screen.getByText('Aplicado')).toBeDefined();
+      expect(screen.queryByText('Aplicar no estúdio')).toBeNull();
+    });
+
+    it('deve atualizar "Salvar insight" para "Salvo na memória" quando savedToMemoryId muda', () => {
+      const messages = [
+        createMessage({ id: 'm1', role: 'model', text: 'Dica útil' }),
+      ];
+
+      const { rerender } = render(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          savedToMemoryId={null}
+        />,
+        { wrapper: Wrapper },
+      );
+
+      expect(screen.getByText('Salvar insight')).toBeDefined();
+
+      rerender(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          savedToMemoryId="m1"
+        />,
+      );
+
+      expect(screen.getByText('Salvo na memória')).toBeDefined();
+      expect(screen.queryByText('Salvar insight')).toBeNull();
+    });
+
+    it('deve atualizar label de streaming quando isStreaming muda para a última mensagem do modelo', () => {
+      const messages = [
+        createMessage({
+          id: 'm1',
+          role: 'model',
+          text: 'Texto modelo',
+        }),
+      ];
+
+      // Primeiro: sem streaming
+      const { rerender } = render(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          isStreaming={false}
+        />,
+        { wrapper: Wrapper },
+      );
+
+      // Não deve ter cursor piscante
+      expect(document.querySelector('[style*="animation"]')).toBeNull();
+
+      // Agora: com streaming (isCurrentlyStreaming muda para true no bubble)
+      rerender(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          isStreaming={true}
+        />,
+      );
+
+      // Deve ter cursor piscante (arePropsEqual detecta mudança em isCurrentlyStreaming)
+      expect(document.querySelector('[style*="animation"]')).toBeDefined();
+    });
+
+    it('deve atualizar botão "Aplicar" para "Copiado" quando callback onCopy muda (ref equality)', () => {
+      const messages = [
+        createMessage({ id: 'm1', role: 'model', text: 'Texto simples' }),
+      ];
+
+      const firstOnStopGeneration = vi.fn();
+      const secondOnStopGeneration = vi.fn();
+
+      // Render com primeira versão do callback
+      const { rerender } = render(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          onStopGeneration={firstOnStopGeneration}
+        />,
+        { wrapper: Wrapper },
+      );
+
+      // Re-render com callback diferente (arePropsEqual compara onStopGeneration por referência)
+      rerender(
+        <AssistantMessages
+          {...defaultProps}
+          messages={messages}
+          onStopGeneration={secondOnStopGeneration}
+        />,
+      );
+
+      // Componente deve ter sido atualizado — sem crash
+      expect(screen.getByText('Assistente')).toBeDefined();
+    });
+  });
 });

@@ -9,13 +9,14 @@ import { ImageUpload } from '../features/speed-paint/components/upload/ImageUplo
 import { APP_MAX_WIDTH, BRAND_GRADIENT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
 export function SpeedPaintPage() {
-  const { queue, batchMode } = useAnimationStore();
+  const queueLength = useAnimationStore((s) => s.queue.length);
+  const batchMode = useAnimationStore((s) => s.batchMode);
 
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: APP_MAX_WIDTH, mx: 'auto', px: { xs: 2, sm: 3 } }}>
       <BatchOrchestrator />
 
-      {queue.length === 0 ? (
+      {queueLength === 0 ? (
         <Box sx={{ textAlign: 'center', py: EMPTY_WRAPPER_PADDING_MD }}>
           <Box sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, mx: 'auto' }}>
             <Typography

@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, type PluginOption } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 /**
  * Plugin que adiciona headers COOP/COEP para todas as rotas exceto /login.
@@ -20,8 +21,12 @@ function coepPlugin(): PluginOption {
     // Parseia o path ignorando query strings (?v=123, ?import, etc)
     const path = req.url?.split('?')[0] ?? '/';
 
-    // Não aplica COEP na rota de login (Firebase Auth precisa de iframes cross-origin)
-    if (path !== '/login') {
+    // Rotas públicas (sem COEP) — Firebase Auth precisa de iframes cross-origin
+    const publicRoutes = ['/', '/login', '/features', '/pricing', '/faq', '/about', '/contact',
+      '/terms', '/privacy', '/cookies', '/changelog', '/status', '/blog'];
+    const isPublic = publicRoutes.some(route => path === route || path.startsWith(route + '/'));
+
+    if (!isPublic) {
       res.setHeader('Cross-Origin-Opener-Policy', coepHeaders['Cross-Origin-Opener-Policy']);
       res.setHeader('Cross-Origin-Embedder-Policy', coepHeaders['Cross-Origin-Embedder-Policy']);
     }
@@ -42,7 +47,69 @@ function coepPlugin(): PluginOption {
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), coepPlugin()],
+    plugins: [
+      react(),
+      coepPlugin(),
+      VitePWA({
+        registerType: 'prompt',
+        includeAssets: ['favicon.webp', 'logo-transparente.webp'],
+        manifest: {
+          name: 'Script Master',
+          short_name: 'ScriptMaster',
+          description: 'Transforme roteiros em áudio profissional com inteligência artificial.',
+          theme_color: '#0a0a0f',
+          background_color: '#0a0a0f',
+          display: 'standalone',
+          orientation: 'any',
+          start_url: '/',
+          scope: '/',
+          icons: [
+            {
+              src: 'pwa-192x192.webp',
+              sizes: '192x192',
+              type: 'image/webp',
+            },
+            {
+              src: 'pwa-512x512.webp',
+              sizes: '512x512',
+              type: 'image/webp',
+            },
+            {
+              src: 'pwa-512x512.webp',
+              sizes: '512x512',
+              type: 'image/webp',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          // Cache-first para assets estáticos (JS, CSS, fontes, imagens)
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-stylesheets',
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-webfonts',
+                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+          // SPA: navegação sempre volta ao index.html
+          navigateFallback: '/index.html',
+          // Não interceptar rotas de login (Firebase Auth precisa de rede)
+          navigateFallbackDenylist: [/^\/login/],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

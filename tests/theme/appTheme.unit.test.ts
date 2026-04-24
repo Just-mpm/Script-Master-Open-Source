@@ -11,12 +11,12 @@ describe('appTheme', () => {
     expect(appTheme.palette).toBeDefined();
   });
 
-  it('deve ter cor primária (brand cyan)', () => {
-    expect(appTheme.palette.primary.main).toBe('#22d3ee');
+  it('deve ter cor primária (brand blue)', () => {
+    expect(appTheme.palette.primary.main).toBe('#2E75B6');
   });
 
-  it('deve ter cor secundária (brand purple)', () => {
-    expect(appTheme.palette.secondary.main).toBe('#8b5cf6');
+  it('deve ter cor secundária (brand orange)', () => {
+    expect(appTheme.palette.secondary.main).toBe('#F7941E');
   });
 
   it('deve ter cores de status semântico', () => {

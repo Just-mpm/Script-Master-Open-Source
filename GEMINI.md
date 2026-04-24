@@ -31,6 +31,7 @@ bun run clean            # remove dist/
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
+- **vite-plugin-pwa** — service worker + manifest para instalação como app
 
 ## Modelos Gemini
 
@@ -61,14 +62,16 @@ bun run clean            # remove dist/
 
 | Rota | Componente | Protegida |
 |------|-----------|-----------|
-| `/` | Redirect → `/estudio` | — |
-| `/estudio` | StudioPage | Sim |
-| `/video` | VideoPage | Sim |
-| `/assistant` | AssistantPage | Sim |
-| `/library` | LibraryPage | Sim |
-| `/speed-paint` | SpeedPaintPage | Sim |
-| `/image` | ImageStudio | Sim |
+| `/` | LandingPage | Não |
+| `/features` | FeaturesPage | Não |
 | `/login` | LoginPage | Não |
+| `/app/estudio` | StudioPage | Sim |
+| `/app/video` | VideoPage | Sim |
+| `/app/assistant` | AssistantPage | Sim |
+| `/app/library` | LibraryPage | Sim |
+| `/app/speed-paint` | SpeedPaintPage | Sim |
+| `/app/image` | ImageStudio | Sim |
+| `/app` | Redirect → `/app/estudio` | — |
 
 ---
 
@@ -78,8 +81,15 @@ bun run clean            # remove dist/
 
 | | |
 |---|---|
-| **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/lib/audio.ts`, `src/lib/constants.ts` |
-| **Pipeline** | valida roteiro → cria projeto → chunka (LLM+fallback) → TTS chunk-a-chunk → montagem WAV → auto-save |
+| **Arquivos** | `src/pages/public/`, `src/components/public/` |
+| **LandingPage** | `/` — hero com CTA, social proof bar, 6 feature cards, 3 feature showcases, seção "como funciona" (3 steps), CTA final |
+| **FeaturesPage** | `/features` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
+| **Componentes** | 10 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter, PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, barrel `index.ts` |
+| **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
+| **SEO** | Open Graph, Twitter Cards, Schema.org Organization, canonical URL, theme-color |
+| **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
+
+### Áudio & TTS
 | **Chunking** | Se >500 chars, `gemini-lite` divide via JSON output. Fallback: `splitTextProgrammatically` por sentenças |
 | **Continuidade** | A partir do chunk 2, injeta "TAKES CONTÍNUOS" no prompt para manter tom/energia consistentes |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
@@ -90,6 +100,7 @@ bun run clean            # remove dist/
 | **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef` |
 | **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
 | **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
+| **AudioContext selectors** | `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — hooks seletivos para re-render otimizado |
 
 ### Geração de Imagens
 
@@ -162,6 +173,7 @@ bun run clean            # remove dist/
 | **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo |
 | **Geração** | `handleGenerate` coleta `currentState` e delega para `useAudioGenerator.generateAudio()` |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
+| **Keyboard shortcuts** | `useKeyboardShortcuts`: Ctrl+Enter (gerar), Space (play/pause vídeo e toggle áudio), proteção contra inputs/blocos editáveis focados |
 
 ### Biblioteca & Projetos
 
@@ -204,9 +216,9 @@ bun run clean            # remove dist/
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
 | **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 2 opcionais |
 | **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()` |
-| **COEP** | Rotas autenticadas: COOP/COEP habilitados. `/login`: SEM COEP (popup Firebase) |
+| **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`: SEM COEP (popup Firebase) |
 | **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` |
-| **Prod** | Headers em `firebase.json`. SPA rewrite: `**` → `/index.html` |
+| **Prod** | Headers em `firebase.json` (COEP em `/app/**` + `/404.html`). SPA rewrite: `**` → `/index.html` |
 | **Razão** | `SharedArrayBuffer` necessário para Whisper WASM e Remotion |
 | **Segurança** | `VITE_GEMINI_API_KEY` exposta no bundle (aceito por contexto privado). Segurança dos dados via Firestore/Storage Rules |
 
@@ -217,12 +229,22 @@ bun run clean            # remove dist/
 | **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
 | **Stack** | MUI v9 + Emotion. `StyledEngineProvider` com `enableCssLayer`. CSS layers: `theme, base, mui, components, utilities` |
 | **Modo** | Dark only na prática (light existe com palette idêntica). Font: Inter (sans), JetBrains Mono (mono), Playfair Display (serif) |
-| **Tokens** | `tokens.ts`: brand (cyan/purple), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow, gradients |
+| **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients |
 | **Surfaces** | `glassPanelSx` (blur+gradiente+shadow), `insetPanelSx` (recessado), `glassSurfaceSx` (blur fixo) — todas em `surfaces.ts` |
 | **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
 | **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
 | **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient` |
 | **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant` e `/login` sem Container |
+
+### PWA
+
+| | |
+|---|---|
+| **Arquivos** | `vite.config.ts` (plugin VitePWA), `src/main.tsx` (registro SW) |
+| **Manifest** | Ícones 192/512, `theme_color` #0a0a0f, `display: standalone` |
+| **Workbox** | Runtime caching para assets estáticos (1 ano) e Google Fonts (30 dias) |
+| **Registro** | Apenas em produção (`import.meta.env.PROD`), `immediate: true` |
+| **Exceções** | `/login` em `navigateFallbackDenylist` (sem COEP, não interceptado pelo SW) |
 
 ### Logger & Rate Limiter
 
@@ -236,13 +258,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.16.1`
+- **Current:** `0.17.0`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.17.0 | LandingPage + FeaturesPage + 10 componentes públicos; paleta blue/orange; PWA base (vite-plugin-pwa); SEO (OG, Twitter, Schema.org); keyboard shortcuts hook; AudioContext selectors; 77 testes novos (total: 857); COEP simplificado em /app/**; prefixo /app/ em rotas autenticadas |
 | 0.16.1 | Estado do player centralizado no videoRenderBridge (currentFrame/isPlaying); ActionBar/VideoPreview/CaptionEditorPanel consomem bridge; VideoPage remove estado local; frameToSeconds/secondsToFrame; testes de bridge, sticky fallback e conversão de frames |
 | 0.16.0 | Suite de testes Vitest completa (62 testes cobrindo todas as áreas); scripts test/test:watch; vitest.config com jsdom + fake-indexeddb; correção da lógica do logger em produção; normalização de bold markdown no subtitleUtils |
 | 0.15.0 | Navigation drawer mobile no Header; CaptionEditorPanel redesign com PhraseCard; botão copiar no ScriptEditor e AssistantMessages; stopGeneration no useAssistant; CaptionPhrase type; dialogs de exclusão em VideoLibrary e Assistant; MAX_STYLE_NOTES no Inspector |

@@ -36,6 +36,7 @@ vi.mock('../../src/theme/tokens', () => ({
   APP_HEADER_HEIGHT: 64,
   APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+  BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
   CYAN_GLOW: 'rgba(6, 182, 212, 0.3)',
   ICON_SIZE_SM: 16,
   ICON_SIZE_MD: 20,

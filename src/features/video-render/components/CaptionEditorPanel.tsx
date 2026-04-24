@@ -30,7 +30,7 @@ import {
   WHITE_10,
   WHITE_14,
   BRAND_PRIMARY,
-  CYAN_GLOW_SOFT,
+  BRAND_PRIMARY_GLOW_SOFT,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   TEXT_DISABLED,
@@ -203,9 +203,9 @@ const PhraseCard = React.memo(function PhraseCard({
         cursor: 'pointer',
         transition: `all ${HOVER_TRANSITION_DURATION} cubic-bezier(0.4, 0, 0.2, 1)`,
         borderLeft: `3px solid ${isActive ? BRAND_PRIMARY : 'transparent'}`,
-        backgroundColor: isActive ? CYAN_GLOW_SOFT : 'transparent',
+        backgroundColor: isActive ? BRAND_PRIMARY_GLOW_SOFT : 'transparent',
         '&:hover': {
-          backgroundColor: isActive ? CYAN_GLOW_SOFT : WHITE_08,
+          backgroundColor: isActive ? BRAND_PRIMARY_GLOW_SOFT : WHITE_08,
           borderColor: isActive ? BRAND_PRIMARY : WHITE_14,
           borderLeftColor: isActive ? BRAND_PRIMARY : WHITE_14,
         },
@@ -214,7 +214,7 @@ const PhraseCard = React.memo(function PhraseCard({
           outlineOffset: -2,
         },
         ...(isEditing && {
-          boxShadow: `inset 0 0 0 1px ${CYAN_GLOW_SOFT}, 0 2px 16px rgba(34, 211, 238, 0.08)`,
+          boxShadow: `inset 0 0 0 1px ${BRAND_PRIMARY_GLOW_SOFT}, 0 2px 16px rgba(46, 117, 182, 0.08)`,
           backgroundColor: WHITE_04,
         }),
       }}
@@ -479,7 +479,7 @@ interface AddPhraseButtonProps {
   onClick: () => void;
 }
 
-function AddPhraseButton({ onClick }: AddPhraseButtonProps) {
+const AddPhraseButton = React.memo(function AddPhraseButton({ onClick }: AddPhraseButtonProps) {
   // Handler de teclado para acessibilidade (F2)
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -519,7 +519,7 @@ function AddPhraseButton({ onClick }: AddPhraseButtonProps) {
       <Add sx={{ fontSize: ADD_ICON_SIZE, color: 'inherit', transition: 'color 0.15s ease' }} />
     </Box>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Componente principal
@@ -531,9 +531,6 @@ export function CaptionEditorPanel({
   fps,
   onSeekToFrame,
 }: CaptionEditorPanelProps) {
-  // Frame atual do player via bridge store (evita prop drilling)
-  const currentFrame = useVideoRenderBridge((state) => state.currentFrame);
-
   // ─── Estado local ────────────────────────────────────────
 
   const [phrases, setPhrases] = useState<CaptionPhrase[]>(() => wordsToPhrases(captions));
@@ -554,13 +551,38 @@ export function CaptionEditorPanel({
     setDeletedPhrase(null);
   }, [captions]);
 
+  // Tracking via subscription — só re-renderiza quando a frase ativa muda
+  // (evita re-renders 30x/s causados pelo requestAnimationFrame do player)
+  const phrasesRef = useRef(phrases);
+
+  // Mantém ref atualizada sem causar re-render (padrão React recomendado)
+  useEffect(() => {
+    phrasesRef.current = phrases;
+  }, [phrases]);
+
+  const [activePhraseId, setActivePhraseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = useVideoRenderBridge.subscribe((state) => {
+      const frame = state.currentFrame;
+      const newActive = phrasesRef.current.find(
+        (p) => frame >= p.startFrame && frame < p.endFrame,
+      )?.id ?? null;
+      setActivePhraseId((prev) => (prev !== newActive ? newActive : prev));
+    });
+    return unsub;
+  }, []);
+
   // Ref para auto-scroll da frase ativa
   const activePhraseRef = useRef<HTMLDivElement>(null);
 
   const hasCaptions = captions.length > 0;
 
-  // Contagem total de palavras
-  const totalWords = phrases.reduce((sum, p) => sum + p.words.length, 0);
+  // Contagem total de palavras (memoizado — phrases muda raramente)
+  const totalWords = useMemo(
+    () => phrases.reduce((sum, p) => sum + p.words.length, 0),
+    [phrases],
+  );
 
   // ─── Helpers ─────────────────────────────────────────────
 
@@ -708,26 +730,11 @@ export function CaptionEditorPanel({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deletedPhrase, handleUndoDelete]);
 
-  // ─── Auto-scroll para frase ativa (throttle 500ms) ──────
-
-  const lastScrollTimeRef = useRef(0);
-
+  // ─── Auto-scroll para frase ativa ────────────────────────
   useEffect(() => {
-    if (!activePhraseRef.current) return;
-
-    const now = Date.now();
-    if (now - lastScrollTimeRef.current < 500) return;
-    lastScrollTimeRef.current = now;
-
+    if (!activePhraseRef.current || !activePhraseId) return;
     activePhraseRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [currentFrame]);
-
-  // ─── Determina frase ativa ───────────────────────────────
-
-  const activePhraseId = useMemo(
-    () => phrases.find((p) => currentFrame >= p.startFrame && currentFrame < p.endFrame)?.id ?? null,
-    [phrases, currentFrame],
-  );
+  }, [activePhraseId]);
 
   // ─── Render ──────────────────────────────────────────────
 

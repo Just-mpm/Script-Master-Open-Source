@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -154,6 +154,19 @@ export function VideoPage({
     };
   }, [videoPlayerRef]);
 
+  // Callback memoizado para seleção no VideoLibrary (evita nova referência a cada render)
+  const handleLibrarySelect = useCallback((
+    projectId: string,
+    url: string,
+    sceneList: { imageUrl: string; timestamp: number }[],
+    projectScript: string,
+  ) => {
+    loadProjectData(url, sceneList, undefined, projectId);
+    setScript(projectScript);
+    // Áudio gerenciado pelo Remotion Player nesta rota —
+    // não chamar play() do AudioContext para evitar dual-play
+  }, [loadProjectData, setScript]);
+
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
       <Box>
@@ -231,12 +244,7 @@ export function VideoPage({
 
       <VideoLibrary
         activeProjectId={currentProjectId}
-        onSelect={(projectId, url, sceneList, projectScript) => {
-          loadProjectData(url, sceneList, undefined, projectId);
-          setScript(projectScript);
-          // Áudio gerenciado pelo Remotion Player nesta rota —
-          // não chamar play() do AudioContext para evitar dual-play
-        }}
+        onSelect={handleLibrarySelect}
       />
     </Stack>
   );

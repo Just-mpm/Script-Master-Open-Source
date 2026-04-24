@@ -31,7 +31,7 @@ import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { useLocation } from 'react-router-dom';
-import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT, CYAN_GLOW, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM, APP_SURFACE, APP_BORDER, WHITE_05, WHITE_015 } from '../theme/tokens';
+import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT,   BRAND_PRIMARY_GLOW, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM, APP_SURFACE, APP_BORDER, WHITE_05, WHITE_015 } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface NavItem {
@@ -42,12 +42,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/estudio', label: 'Estúdio', icon: Mic },
-  { to: '/image', label: 'Imagem', icon: ImageIcon },
-  { to: '/video', label: 'Vídeo', icon: PlayCircle },
-  { to: '/speed-paint', label: 'Speed Paint', icon: Palette },
-  { to: '/assistant', label: 'IA', icon: Sparkles, accent: true },
-  { to: '/library', label: 'Biblioteca', icon: LocalLibrary },
+  { to: '/app/estudio', label: 'Estúdio', icon: Mic },
+  { to: '/app/image', label: 'Imagem', icon: ImageIcon },
+  { to: '/app/video', label: 'Vídeo', icon: PlayCircle },
+  { to: '/app/speed-paint', label: 'Speed Paint', icon: Palette },
+  { to: '/app/assistant', label: 'IA', icon: Sparkles, accent: true },
+  { to: '/app/library', label: 'Biblioteca', icon: LocalLibrary },
 ];
 
 export function Header() {
@@ -83,7 +83,7 @@ export function Header() {
                 placeItems: 'center',
                 color: 'common.white',
                 background: BRAND_GRADIENT,
-                boxShadow: `0 18px 40px ${CYAN_GLOW}`,
+                boxShadow: `0 18px 40px ${BRAND_PRIMARY_GLOW}`,
               }}
             >
               <Mic sx={{ fontSize: ICON_SIZE_LG }} />
@@ -247,7 +247,7 @@ export function Header() {
                 placeItems: 'center',
                 color: 'common.white',
                 background: BRAND_GRADIENT,
-                boxShadow: `0 12px 28px ${CYAN_GLOW}`,
+                boxShadow: `0 12px 28px ${BRAND_PRIMARY_GLOW}`,
               }}
             >
               <Mic sx={{ fontSize: ICON_SIZE_MD }} />

@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.17.0] - 2026-04-24
+
+### Adicionado
+
+- **Páginas públicas** (`src/pages/public/`, `src/components/public/`): LandingPage (`/`) com hero, social proof, feature cards, showcases e CTA; FeaturesPage (`/features`) com 6 seções categorizadas; 10 componentes públicos reutilizáveis (PublicHeader, PublicFooter, PageLayout, HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, barrel index)
+- **Paleta de marca** (`src/theme/tokens.ts`): nova identidade visual — azul `#2E75B6` (primary) + laranja `#F7941E` (secondary) substituem cyan/purple; novos tokens: `BRAND_PRIMARY_GLOW`, `BRAND_PRIMARY_GLOW_SOFT`, `BRAND_SECONDARY_GLOW_SOFT`; 15 tokens de marca atualizados
+- **PWA base** (`vite-plugin-pwa`): service worker com Workbox, manifest com ícones 192/512, runtime caching para assets estáticos e Google Fonts, `navigateFallbackDenylist` para `/login` (sem COEP), registro apenas em produção
+- **SEO** (`index.html`): meta tags Open Graph, Twitter Cards, Schema.org Organization, canonical URL, theme-color e color-scheme; título atualizado para "Script Master — Roteiros em Áudio com IA"
+- **Keyboard shortcuts** (`src/hooks/useKeyboardShortcuts.ts`): hook global para Ctrl+Enter (gerar áudio), Space (play/pause vídeo e toggle áudio), com proteção contra inputs focados e blocos editáveis
+- **AudioContext selectors** (`src/contexts/AudioContext.tsx`): 5 hooks seletivos otimizados — `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — evitam re-renders desnecessários
+- **LoginPage redesign** (`src/pages/LoginPage.tsx`): layout de conversão com benefícios em grid, ícones de features, PublicHeader/Footer e padding vertical generoso
+- **Assets visuais**: 8 imagens geradas em `public/images/public/` para landing, features e CTA
+- **Testes**: 77 testes novos (total: 857 passando) — hooks (useKeyboardShortcuts 22, AudioContext +10), componentes públicos (PublicHeader, PublicFooter, PageLayout, HeroSection, marketingCards, LandingPage, FeaturesPage), páginas (pages.component.test atualizado), AssistantMessages (React.memo arePropsEqual), Library (useGlobalAudioActions mock)
+
+### Alterado
+
+- **Prefixo `/app/`**: todas as rotas autenticadas migradas de `/estudio` para `/app/estudio`, `/video` para `/app/video`, etc. — rotas públicas (`/`, `/features`, `/login`) desocupam o namespace raiz
+- **COEP simplificado** (`firebase.json`): headers COOP/COEP consolidados em `/app/**` (uma regra) e `/404.html`, substituindo 7 regras individuais por rota
+- **AuthContext**: redirect pós-login atualizado de `/estudio` para `/app/estudio`
+- **Tokens de tema**: 15 tokens de marca atualizados (primary, secondary, contrast, glow, gradients); testes de tema ajustados para nova paleta blue/orange
+- **AssistantMessages**: `React.memo` com `arePropsEqual` customizado evita re-render de mensagens quando props irrelevantes mudam
+- **VideoPage**: `sceneList` tipada (imageUrl + timestamp) passada ao VideoPreview
+- **Speed Paint**: seletores Zustand otimizados em StrokeRenderer e SpeedPaintPage (selector individual em vez de destruturação)
+- **ActionBar**: adaptação aos novos tokens de glow (brand blue)
+
+---
+
 ## [0.16.1] - 2026-04-24
 
 ### Adicionado

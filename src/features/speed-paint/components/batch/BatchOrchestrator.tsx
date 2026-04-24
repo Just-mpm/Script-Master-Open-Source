@@ -16,17 +16,15 @@ const log = createLogger('BatchOrchestrator');
  * Gerencia o pipeline: imagem pendente -> geração de strokes -> reprodução.
  */
 export function BatchOrchestrator() {
-  const {
-    job,
-    queue,
-    currentIndex,
-    batchMode,
-    setJob,
-    setCurrentIndex,
-    setBatchMode,
-    setIsPlaying,
-    setProgress,
-  } = useAnimationStore();
+  const job = useAnimationStore((s) => s.job);
+  const queue = useAnimationStore((s) => s.queue);
+  const currentIndex = useAnimationStore((s) => s.currentIndex);
+  const batchMode = useAnimationStore((s) => s.batchMode);
+  const setJob = useAnimationStore((s) => s.setJob);
+  const setCurrentIndex = useAnimationStore((s) => s.setCurrentIndex);
+  const setBatchMode = useAnimationStore((s) => s.setBatchMode);
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying);
+  const setProgress = useAnimationStore((s) => s.setProgress);
 
   const currentImageIdRef = useRef<string | null>(null);
 
@@ -67,8 +65,9 @@ export function BatchOrchestrator() {
         setJob({ status: 'failed' });
 
         // Auto-skip failed image after 2 seconds
+        // Usa getState() para evitar closure stale do currentIndex
         setTimeout(() => {
-          setCurrentIndex(currentIndex + 1);
+          setCurrentIndex(useAnimationStore.getState().currentIndex + 1);
         }, 2000);
       });
     }

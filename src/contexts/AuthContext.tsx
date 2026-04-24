@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // (Firebase Auth precisa de cross-origin iframes, que COEP bloqueia)
       if (authUser && wasLoginRequested.current) {
         wasLoginRequested.current = false;
-        window.location.href = '/estudio';
+        window.location.href = '/app/estudio';
         return;
       }
 

@@ -29,6 +29,17 @@ vi.mock('../../src/contexts/AudioContext', () => ({
     progress: 0,
     formatTime: (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`,
   }),
+  useGlobalAudioActions: () => ({
+    play: vi.fn(),
+    pause: vi.fn(),
+    toggle: vi.fn(),
+    seek: vi.fn(),
+  }),
+  useAudioIsPlaying: vi.fn(() => false),
+  useAudioCurrentTime: vi.fn(() => 0),
+  useAudioActiveId: vi.fn(() => null),
+  useAudioDuration: vi.fn(() => 0),
+  useAudioProgress: vi.fn(() => 0),
 }));
 
 vi.mock('../../src/lib/db', () => ({

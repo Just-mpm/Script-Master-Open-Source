@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -29,14 +29,22 @@ import { SpeedSelector } from '../SpeedSelector';
 const log = createLogger('AnimationControls');
 
 export function AnimationControls() {
-  const {
-    isPlaying, setIsPlaying,
-    progress, setProgress,
-    speed, setSpeed,
-    paintSpeed, setPaintSpeed,
-    resetJob, job,
-    batchMode, currentIndex, queue, setCurrentIndex, setBatchMode, clearQueue,
-  } = useAnimationStore();
+  const isPlaying = useAnimationStore((s) => s.isPlaying);
+  const progress = useAnimationStore((s) => s.progress);
+  const speed = useAnimationStore((s) => s.speed);
+  const paintSpeed = useAnimationStore((s) => s.paintSpeed);
+  const job = useAnimationStore((s) => s.job);
+  const batchMode = useAnimationStore((s) => s.batchMode);
+  const currentIndex = useAnimationStore((s) => s.currentIndex);
+  const queueLength = useAnimationStore((s) => s.queue.length);
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying);
+  const setProgress = useAnimationStore((s) => s.setProgress);
+  const setSpeed = useAnimationStore((s) => s.setSpeed);
+  const setPaintSpeed = useAnimationStore((s) => s.setPaintSpeed);
+  const resetJob = useAnimationStore((s) => s.resetJob);
+  const setCurrentIndex = useAnimationStore((s) => s.setCurrentIndex);
+  const setBatchMode = useAnimationStore((s) => s.setBatchMode);
+  const clearQueue = useAnimationStore((s) => s.clearQueue);
   const [isRecording, setIsRecording] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Menu mobile para SpeedSelector em telas pequenas
@@ -81,7 +89,7 @@ export function AnimationControls() {
     }
   };
 
-  const handleDownloadVideo = () => {
+  const handleDownloadVideo = useCallback(() => {
     // Force a fresh state check for batch advances
     const currentState = useAnimationStore.getState();
     const currentBatchMode = currentState.batchMode;
@@ -192,7 +200,7 @@ export function AnimationControls() {
         setIsPlaying(true);
       }
     }
-  };
+  }, [setIsPlaying, setProgress]);
 
   // Ref estável para handleDownloadVideo, atualizado a cada render via useEffect
   // (pattern recomendado para usar função de componente em useEffect sem re-trigger)
@@ -200,7 +208,7 @@ export function AnimationControls() {
 
   useEffect(() => {
     handleDownloadVideoRef.current = handleDownloadVideo;
-  });
+  }, [handleDownloadVideo]);
 
   // --- AUTOMATION TRIGGERS ---
 
@@ -223,7 +231,7 @@ export function AnimationControls() {
   useEffect(() => {
     if (batchMode === 'watch' && progress >= 1 && !isPlaying) {
       const timer = setTimeout(() => {
-        if (currentIndex + 1 < queue.length) {
+        if (currentIndex + 1 < queueLength) {
           setCurrentIndex(currentIndex + 1);
         } else {
           setBatchMode('idle');
@@ -232,7 +240,7 @@ export function AnimationControls() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [batchMode, progress, isPlaying, currentIndex, queue.length, setCurrentIndex, setBatchMode, clearQueue]);
+  }, [batchMode, progress, isPlaying, currentIndex, queueLength, setCurrentIndex, setBatchMode, clearQueue]);
 
   // Stop recording automatically when animation finishes
   useEffect(() => {

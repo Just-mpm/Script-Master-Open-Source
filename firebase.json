@@ -26,72 +26,7 @@
         ]
       },
       {
-        "source": "/estudio**",
-        "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
-          }
-        ]
-      },
-      {
-        "source": "/video**",
-        "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
-          }
-        ]
-      },
-      {
-        "source": "/image**",
-        "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
-          }
-        ]
-      },
-      {
-        "source": "/assistant**",
-        "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
-          }
-        ]
-      },
-      {
-        "source": "/library**",
-        "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "credentialless"
-          }
-        ]
-      },
-      {
-        "source": "/speed-paint**",
+        "source": "/app/**",
         "headers": [
           {
             "key": "Cross-Origin-Opener-Policy",

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -14,9 +14,24 @@ import { WarningToast } from './components/WarningToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useStudioState } from './features/studio/useStudioState';
 import { useVideoRenderBridge } from './features/video-render/store/videoRenderBridge';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
+
+// ─── Páginas públicas (lazy) ───────────────────────────────
+
+const LandingPage = lazy(async () => {
+  const module = await import('./pages/public/LandingPage');
+  return { default: module.default };
+});
+
+const FeaturesPage = lazy(async () => {
+  const module = await import('./pages/public/FeaturesPage');
+  return { default: module.default };
+});
+
+// ─── Páginas do app (lazy) ─────────────────────────────────
 
 const StudioPage = lazy(async () => {
   const module = await import('./pages/StudioPage');
@@ -75,21 +90,22 @@ function RouteFallback() {
 export default function App() {
   const location = useLocation();
   const currentPath = location.pathname;
-  const isAssistantRoute = currentPath === '/assistant';
-  const isLoginRoute = currentPath === '/login';
   const { authError, clearAuthError } = useAuth();
   const studio = useStudioState();
   const { toggle } = useGlobalAudioActions();
 
+  // ─── Classificação de rotas ──────────────────────────────
+  const isAppRoute = currentPath.startsWith('/app/');
+  const isAssistantRoute = currentPath === '/app/assistant';
+  const isStudioRoute = currentPath === '/app/estudio';
+  const isVideoRoute = currentPath === '/app/video';
+
   // Ref compartilhado entre VideoPage (dono) e ActionBar (consumidor)
-  // para controlar o Remotion Player na rota /video
   const videoPlayerRef = useRef<VideoPreviewHandle>(null);
 
-  // Bridge store — lê estado dos hooks que vivem em VideoPage (code-splitting)
-  const {
-    isExportingVideo,
-    videoExportProgress,
-  } = useVideoRenderBridge();
+  // Bridge store — lê apenas as slices necessárias (evita re-render 30x/s)
+  const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
+  const videoExportProgress = useVideoRenderBridge((s) => s.videoExportProgress);
 
   const {
     error,
@@ -112,7 +128,6 @@ export default function App() {
     durationInFrames,
   } = studio;
 
-  // Scroll para o painel de exportação de vídeo (rota /video)
   const scrollToExport = useCallback(() => {
     const element = document.getElementById('video-export-panel');
     if (element) {
@@ -127,7 +142,6 @@ export default function App() {
     if (error) { setError(''); return; }
   }, [authError, clearAuthError, error, setError]);
 
-  // Desativa warning de cena após auto-hide
   const [localSceneWarning, setLocalSceneWarning] = useState<string | null>(null);
 
   useEffect(() => {
@@ -137,19 +151,23 @@ export default function App() {
   }, [sceneGenerationWarning]);
 
   const dismissSceneWarning = useCallback(() => setLocalSceneWarning(null), []);
+  const dismissSuccess = useCallback(() => setSuccessMsg(null), [setSuccessMsg]);
 
-  const appRoutes = (
+  // ─── Rotas ───────────────────────────────────────────────
+  const routes = useMemo(() => (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        {/* Rota pública */}
+        {/* Rotas públicas */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Rotas protegidas */}
+        {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/estudio" element={<StudioPage {...studio} />} />
+          <Route path="/app/estudio" element={<StudioPage {...studio} />} />
 
           <Route
-            path="/video"
+            path="/app/video"
             element={
               <VideoPage
                 {...studio}
@@ -158,68 +176,41 @@ export default function App() {
             }
           />
 
-          <Route path="/image" element={<ImageStudio />} />
+          <Route path="/app/image" element={<ImageStudio />} />
 
           <Route
-            path="/assistant"
+            path="/app/assistant"
             element={<AssistantPage currentState={studio.currentState} onApplySettings={studio.handleApplySettings} />}
           />
 
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/speed-paint" element={<SpeedPaintPage />} />
+          <Route path="/app/library" element={<LibraryPage />} />
+          <Route path="/app/speed-paint" element={<SpeedPaintPage />} />
         </Route>
 
-        {/* Redirect raiz */}
-        <Route path="/" element={<Navigate to="/estudio" replace />} />
+        {/* Redirect raiz do app */}
+        <Route path="/app" element={<Navigate to="/app/estudio" replace />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
-  );
+  ), [studio]);
 
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+  // ─── Atalhos de teclado ────────────────────────────────────
+  useKeyboardShortcuts({
+    videoPlayerRef,
+    onGenerate: handleGenerate,
+    isStudioRoute,
+    isVideoRoute,
+    isGenerating,
+    isGenerateDisabled,
+    toggleAudioPlayer: toggle,
+  });
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        if (!isGenerateDisabled && currentPath === '/estudio') {
-          e.preventDefault();
-          handleGenerate();
-        }
-      }
-
-      if (e.code === 'Space' && !isTyping) {
-        const activeTag = target.tagName;
-        const isControlTarget = activeTag === 'BUTTON' || activeTag === 'A' || activeTag === 'SELECT' || activeTag === 'SUMMARY';
-
-        if (isControlTarget) {
-          return;
-        }
-
-        e.preventDefault();
-
-        if (!isGenerating) {
-          if (currentPath === '/video' && videoPlayerRef.current) {
-            // Na rota /video, controla o Remotion Player (evita dual-play)
-            const player = videoPlayerRef.current;
-            if (player.isPlaying()) {
-              player.pause();
-            } else {
-              player.play();
-            }
-          } else {
-            toggle('studio');
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPath, handleGenerate, isGenerateDisabled, isGenerating, toggle, videoPlayerRef]);
+  // ─── Renderização ────────────────────────────────────────
+  // Páginas públicas (/, /features) e login usam layout próprio — sem Header/ActionBar
+  // Rotas do app (/app/*) usam Header + Container + ActionBar
+  const isPublicOrLogin = !isAppRoute;
 
   return (
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
@@ -247,14 +238,25 @@ export default function App() {
         Pular para o conteúdo
       </Typography>
 
-      {!isLoginRoute && <Header />}
+      {/* Header do app — apenas nas rotas /app/* */}
+      {isAppRoute && <Header />}
 
-      <Box component="main" id="main-content" tabIndex={-1} sx={{ minHeight: isLoginRoute ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, outline: 'none' }}>
-        {isLoginRoute ? (
-          appRoutes
+      <Box
+        component="main"
+        id="main-content"
+        aria-label="Conteúdo principal"
+        tabIndex={-1}
+        sx={{
+          minHeight: isPublicOrLogin ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`,
+          outline: 'none',
+        }}
+      >
+        {/* Páginas públicas e login — renderizam próprio layout */}
+        {isPublicOrLogin ? (
+          routes
         ) : isAssistantRoute ? (
           <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
-            {appRoutes}
+            {routes}
           </Box>
         ) : (
           <Container
@@ -266,16 +268,17 @@ export default function App() {
               pb: { xs: 16, md: 18 },
             }}
           >
-            {appRoutes}
+            {routes}
           </Container>
         )}
       </Box>
 
       <ErrorToast error={activeError} onDismiss={dismissError} />
       <WarningToast warning={localSceneWarning} onDismiss={dismissSceneWarning} />
-      <SuccessToast message={successMsg} onDismiss={() => setSuccessMsg(null)} />
+      <SuccessToast message={successMsg} onDismiss={dismissSuccess} />
 
-      {(currentPath === '/estudio' || currentPath === '/video') && (
+      {/* ActionBar — apenas nas rotas /app/estudio e /app/video */}
+      {(isStudioRoute || isVideoRoute) && (
         <ActionBar
           isGenerating={isGenerating}
           audioUrl={audioUrl}
@@ -289,7 +292,6 @@ export default function App() {
           videoPlayerRef={videoPlayerRef}
           videoFps={videoFps}
           videoDurationInFrames={durationInFrames}
-          // Props do exportador de vídeo (rota /video, via bridge store)
           onScrollToExport={scrollToExport}
           isExportingVideo={isExportingVideo}
           videoExportProgress={videoExportProgress}

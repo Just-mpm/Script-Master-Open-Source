@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -191,6 +191,26 @@ export function ImageStudio() {
   };
 
   const isSidebarOpen = isDesktop || !isSidebarCollapsed;
+
+  // Memoiza blob URLs de imagens salvas para evitar criar novas referências a cada render
+  const blobUrls = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const img of savedImages) {
+      if (img.imageBlob && !img.imageUrl) {
+        map.set(img.id, URL.createObjectURL(img.imageBlob));
+      }
+    }
+    return map;
+  }, [savedImages]);
+
+  // Revoga blob URLs quando o mapa é recalculado (cleanup de memória)
+  useEffect(() => {
+    return () => {
+      for (const url of blobUrls.values()) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [blobUrls]);
 
   return (
     <>
@@ -439,7 +459,7 @@ export function ImageStudio() {
                       <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
                         <Box
                           component="img"
-                          src={img.imageUrl || (img.imageBlob ? URL.createObjectURL(img.imageBlob) : '')}
+                          src={img.imageUrl || blobUrls.get(img.id) || ''}
                           alt={img.name}
                           loading="lazy"
                           sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }}

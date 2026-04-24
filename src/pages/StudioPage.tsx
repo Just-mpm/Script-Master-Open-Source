@@ -1,7 +1,7 @@
 import Grid from '@mui/material/Grid';
 import { Inspector } from '../components/Inspector';
 import { ScriptEditor } from '../components/ScriptEditor';
-import { useGlobalAudioState } from '../contexts/AudioContext';
+import { useAudioCurrentTime } from '../contexts/AudioContext';
 import type { StudioStateController } from '../features/studio/useStudioState';
 
 // Props da página via Pick — mantém compatibilidade com spread de useStudioState (bp #1)
@@ -26,7 +26,7 @@ type StudioPageProps = Pick<StudioStateController,
 >;
 
 export function StudioPage(props: StudioPageProps) {
-  const { currentTime } = useGlobalAudioState();
+  const currentTime = useAudioCurrentTime();
 
   const {
     script,

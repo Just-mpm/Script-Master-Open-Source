@@ -7,10 +7,12 @@ import { alpha } from '@mui/material/styles';
 import { useDropzone } from 'react-dropzone';
 import { useAnimationStore } from '../../store/animationStore';
 import type { QueuedImage } from '../../types';
-import { CYAN_GLOW_SOFT, BRAND_PRIMARY } from '../../../../theme/tokens';
+import {   BRAND_PRIMARY_GLOW_SOFT, BRAND_PRIMARY } from '../../../../theme/tokens';
 
 export function ImageUpload() {
-  const { setQueue, setCurrentIndex, setBatchMode } = useAnimationStore();
+  const setQueue = useAnimationStore((s) => s.setQueue);
+  const setCurrentIndex = useAnimationStore((s) => s.setCurrentIndex);
+  const setBatchMode = useAnimationStore((s) => s.setBatchMode);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -72,7 +74,7 @@ export function ImageUpload() {
         WebkitBackdropFilter: 'blur(8px)',
         transition: 'border-color 200ms, background-color 200ms, box-shadow 200ms',
         boxShadow: isDragActive
-          ? `0 0 0 4px ${CYAN_GLOW_SOFT}`
+          ? `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`
           : 'none',
         '&:hover': {
           borderColor: 'primary.light',
@@ -80,16 +82,7 @@ export function ImageUpload() {
         },
       })}
     >
-      {/* Input oculto conectado ao Button acessível abaixo */}
-      <Button
-        component="label"
-        variant="outlined"
-        startIcon={<CloudUploadIcon />}
-        sx={{ mt: 2 }}
-      >
-        Escolher arquivos
-        <input {...getInputProps()} style={{ display: 'none' }} />
-      </Button>
+      {/* Ícone de upload */}
       <Box
         sx={{
           width: 56,
@@ -107,9 +100,19 @@ export function ImageUpload() {
         {isDragActive ? 'Solte as imagens aqui' : 'Envie uma ou mais imagens'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420 }}>
-        Arraste e solte suas imagens aqui, ou use o botão acima.
+        Arraste e solte suas imagens aqui, ou use o botão abaixo.
         Suporta JPG, PNG e WebP. Processamento em lote suportado!
       </Typography>
+      {/* Botão de escolha de arquivo */}
+      <Button
+        component="label"
+        variant="outlined"
+        startIcon={<CloudUploadIcon />}
+        sx={{ mt: 2 }}
+      >
+        Escolher arquivos
+        <input {...getInputProps()} style={{ display: 'none' }} />
+      </Button>
     </Box>
   );
 }

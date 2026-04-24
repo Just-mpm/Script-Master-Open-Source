@@ -80,7 +80,8 @@ function drawTool(ctx: Konva.Context, x: number, y: number, tool: 'pencil' | 'br
 }
 
 export function StrokeRenderer() {
-  const { job, progress } = useAnimationStore();
+  const job = useAnimationStore((s) => s.job);
+  const progress = useAnimationStore((s) => s.progress);
   const animation = job.animation;
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);

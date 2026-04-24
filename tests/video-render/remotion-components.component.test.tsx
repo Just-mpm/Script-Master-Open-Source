@@ -61,6 +61,8 @@ vi.mock('../../src/theme/tokens', () => ({
   BRAND_GLOW: '0 0 20px rgba(0, 229, 255, 0.3)',
   CYAN_GLOW: '0 0 30px rgba(0, 229, 255, 0.5)',
   CYAN_GLOW_SOFT: '0 0 15px rgba(0, 229, 255, 0.15)',
+  BRAND_PRIMARY_GLOW: '0 0 30px rgba(0, 229, 255, 0.5)',
+  BRAND_PRIMARY_GLOW_SOFT: '0 0 15px rgba(0, 229, 255, 0.15)',
   SUCCESS_MAIN: '#10b981',
   ERROR_MAIN: '#ef4444',
   WARNING_BG_SUBTLE: 'rgba(245, 158, 11, 0.08)',

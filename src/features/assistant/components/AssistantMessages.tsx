@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -26,6 +26,221 @@ import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
 import { assistantInsetSx, assistantMarkdownSx } from './assistantUi';
 import { BRAND_PRIMARY, WHITE_06, WHITE_82, WHITE_16, AVATAR_SIZE_SM, ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_XS, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED } from '../../../theme/tokens';
 
+// --- Props de cada bubble isolado ---
+
+interface MessageBubbleProps {
+  message: ChatMessage;
+  isCurrentlyStreaming: boolean;
+  isApplied: boolean;
+  isSavedToMemory: boolean;
+  isCopied: boolean;
+  onCopy: (text: string, messageId: string) => void;
+  onApply: (settings: AssistantSettings, messageId: string) => void;
+  onSaveToMemory: (text: string, messageId: string) => void;
+  onStopGeneration: () => void;
+}
+
+// --- Memo comparator: só re-renderiza quando dados da mensagem mudam ---
+
+function arePropsEqual(prev: MessageBubbleProps, next: MessageBubbleProps): boolean {
+  return (
+    prev.message.id === next.message.id
+    && prev.message.text === next.message.text
+    && prev.message.role === next.message.role
+    && prev.message.attachments === next.message.attachments
+    && prev.isCurrentlyStreaming === next.isCurrentlyStreaming
+    && prev.isApplied === next.isApplied
+    && prev.isSavedToMemory === next.isSavedToMemory
+    && prev.isCopied === next.isCopied
+    && prev.onCopy === next.onCopy
+    && prev.onApply === next.onApply
+    && prev.onSaveToMemory === next.onSaveToMemory
+    && prev.onStopGeneration === next.onStopGeneration
+  );
+}
+
+// --- Bubble individual: memoizado para evitar re-renders durante streaming ---
+
+const MessageBubble = React.memo(function MessageBubble({
+  message,
+  isCurrentlyStreaming,
+  isApplied,
+  isSavedToMemory,
+  isCopied,
+  onCopy,
+  onApply,
+  onSaveToMemory,
+  onStopGeneration,
+}: MessageBubbleProps) {
+  const isModel = message.role === 'model';
+  const extracted = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
+  const settings: AssistantSettings | null = extracted && !extracted.parseError ? extracted.settings : null;
+  const hasMalformedJson = extracted?.parseError === true;
+  const cleanText = stripJsonSettingsBlock(message.text);
+
+  return (
+    <Stack direction="row" spacing={GAP_MEDIUM} sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
+      {isModel ? (
+        <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
+          <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
+        </Avatar>
+      ) : null}
+
+      <Stack spacing={GAP_COMPACT} sx={{ width: '100%', maxWidth: { xs: '100%', md: '82%' }, alignItems: isModel ? 'flex-start' : 'flex-end' }}>
+        {message.attachments && message.attachments.length > 0 ? (
+          <Stack direction="row" spacing={GAP_COMPACT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
+            {message.attachments.map((attachment, index) => {
+              const isImage = attachment.mimeType.startsWith('image/');
+
+              return (
+                <Box key={`${message.id}-${index}`} sx={(theme) => ({ ...assistantInsetSx(theme), px: 1.25, py: 1 })}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    {isImage ? (
+                      <Box
+                        component="img"
+                        src={`data:${attachment.mimeType};base64,${attachment.data}`}
+                        alt={attachment.name}
+                        sx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 1.5 }}
+                      />
+                    ) : (
+                        <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                    )}
+                    <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }} noWrap>
+                      {attachment.name || 'Arquivo'}
+                    </Typography>
+                  </Stack>
+                </Box>
+              );
+            })}
+          </Stack>
+        ) : null}
+
+        <Card
+          elevation={0}
+          sx={(theme) => ({
+            width: '100%',
+            px: { xs: 1.25, md: 1.75 },
+            py: { xs: 1, md: 1.25 },
+            borderRadius: RADIUS_XS,
+            border: '1px solid',
+            borderColor: isModel ? 'divider' : 'transparent',
+            background: isModel
+              ? alpha(theme.palette.background.paper, 0.66)
+              : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.94)} 0%, ${alpha(theme.palette.secondary.main, 0.88)} 100%)`,
+            color: isModel ? 'text.primary' : 'common.white',
+          })}
+        >
+          <Stack spacing={GAP_COMPACT}>
+            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                  {isModel ? <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} /> : <Person sx={{ fontSize: ICON_SIZE_MD }} />}
+                <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? 'text.secondary' : WHITE_82 }}>
+                  {isModel ? 'Assistente' : 'Você'}
+                </Typography>
+              </Stack>
+
+              {isCurrentlyStreaming ? (
+                <Tooltip title="Parar geração">
+                  <IconButton
+                    onClick={onStopGeneration}
+                    size="small"
+                    aria-label="Parar geração de resposta"
+                    sx={{
+                      color: 'error.main',
+                      '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
+                    }}
+                  >
+                    <Stop sx={{ fontSize: ICON_SIZE_MD }} />
+                  </IconButton>
+                </Tooltip>
+              ) : isModel && cleanText ? (
+                <Tooltip title={isCopied ? 'Copiado!' : 'Copiar texto'}>
+                  <IconButton
+                    onClick={() => void onCopy(cleanText, message.id)}
+                    size="small"
+                    aria-label="Copiar texto da mensagem"
+                    sx={{
+                      color: isCopied ? 'success.main' : 'text.secondary',
+                      '&:hover': { backgroundColor: 'action.hover' },
+                    }}
+                  >
+                    {isCopied ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+            </Stack>
+
+            <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>
+              {cleanText ? <ReactMarkdown>{cleanText}</ReactMarkdown> : null}
+              {isCurrentlyStreaming ? (
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-block',
+                    width: 2,
+                    height: '1.1em',
+                    bgcolor: 'text.primary',
+                    ml: 0.5,
+                    verticalAlign: 'text-bottom',
+                    animation: 'assistantCursorBlink 1s step-end infinite',
+                    '@keyframes assistantCursorBlink': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0 },
+                    },
+                  }}
+                />
+              ) : null}
+
+              {hasMalformedJson ? (
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.5 }}>
+                  O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.
+                </Typography>
+              ) : null}
+            </Box>
+
+             {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming) ? <Divider sx={{ borderColor: isModel ? 'divider' : WHITE_16 }} /> : null}
+
+            <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
+               {!isCurrentlyStreaming && settings ? (
+                 <Button
+                  onClick={() => onApply(settings, message.id)}
+                  variant="contained"
+                  color="secondary"
+                  size="small"
+                    startIcon={isApplied ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
+                 >
+                   {isApplied ? 'Aplicado' : 'Aplicar no estúdio'}
+                 </Button>
+               ) : null}
+
+               {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
+                 <Button
+                  onClick={() => onSaveToMemory(cleanText, message.id)}
+                  variant="outlined"
+                  color="inherit"
+                  size="small"
+                    startIcon={isSavedToMemory ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
+                    sx={{ borderColor: isModel ? 'divider' : 'action.hover' }}
+                 >
+                   {isSavedToMemory ? 'Salvo na memória' : 'Salvar insight'}
+                 </Button>
+               ) : null}
+             </Stack>
+           </Stack>
+         </Card>
+       </Stack>
+
+       {!isModel ? (
+         <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
+           <Person sx={{ fontSize: ICON_SIZE_SM }} />
+         </Avatar>
+       ) : null}
+    </Stack>
+  );
+}, arePropsEqual);
+
+// --- Componente pai (lista de mensagens) ---
+
 interface AssistantMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
@@ -50,7 +265,13 @@ export function AssistantMessages({
   onStopGeneration,
 }: AssistantMessagesProps) {
   // Última mensagem do modelo — pode estar em streaming (texto progressivo)
-  const lastModelMessage = [...messages].reverse().find(m => m.role === 'model');
+  // useMemo evita alocação de array a cada render (substitui [...messages].reverse().find())
+  const lastModelMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'model') return messages[i];
+    }
+    return undefined;
+  }, [messages]);
 
   // Oculta skeleton quando o primeiro token já chegou (texto parcial > '')
   const showSkeleton = isLoading && !isStreaming;
@@ -71,176 +292,20 @@ export function AssistantMessages({
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: { xs: 1, md: 1.5 } }}>
       <Stack spacing={GAP_RELAXED}>
-        {messages.map((message) => {
-          const isModel = message.role === 'model';
-          // Verifica se esta é a mensagem que está sendo gerada via streaming
-          const isCurrentlyStreaming = isStreaming
-            && lastModelMessage?.id === message.id;
-          const extracted = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
-          const settings: AssistantSettings | null = extracted && !extracted.parseError ? extracted.settings : null;
-          const hasMalformedJson = extracted?.parseError === true;
-          const cleanText = stripJsonSettingsBlock(message.text);
-
-          return (
-              <Stack key={message.id} direction="row" spacing={GAP_MEDIUM} sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
-                {isModel ? (
-                  <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
-                    <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
-                  </Avatar>
-                ) : null}
-
-              <Stack spacing={GAP_COMPACT} sx={{ width: '100%', maxWidth: { xs: '100%', md: '82%' }, alignItems: isModel ? 'flex-start' : 'flex-end' }}>
-                {message.attachments && message.attachments.length > 0 ? (
-                  <Stack direction="row" spacing={GAP_COMPACT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
-                    {message.attachments.map((attachment, index) => {
-                      const isImage = attachment.mimeType.startsWith('image/');
-
-                      return (
-                        <Box key={`${message.id}-${index}`} sx={(theme) => ({ ...assistantInsetSx(theme), px: 1.25, py: 1 })}>
-                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                            {isImage ? (
-                              <Box
-                                component="img"
-                                src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                                alt={attachment.name}
-                                sx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 1.5 }}
-                              />
-                            ) : (
-                                <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
-                            )}
-                            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }} noWrap>
-                              {attachment.name || 'Arquivo'}
-                            </Typography>
-                          </Stack>
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-                ) : null}
-
-                <Card
-                  elevation={0}
-                  sx={(theme) => ({
-                    width: '100%',
-                    px: { xs: 1.25, md: 1.75 },
-                    py: { xs: 1, md: 1.25 },
-                    borderRadius: RADIUS_XS,
-                    border: '1px solid',
-                    borderColor: isModel ? 'divider' : 'transparent',
-                    background: isModel
-                      ? alpha(theme.palette.background.paper, 0.66)
-                      : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.94)} 0%, ${alpha(theme.palette.secondary.main, 0.88)} 100%)`,
-                    color: isModel ? 'text.primary' : 'common.white',
-                  })}
-                >
-                  <Stack spacing={GAP_COMPACT}>
-                    <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-                          {isModel ? <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} /> : <Person sx={{ fontSize: ICON_SIZE_MD }} />}
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? 'text.secondary' : WHITE_82 }}>
-                          {isModel ? 'Assistente' : 'Você'}
-                        </Typography>
-                      </Stack>
-
-                      {isCurrentlyStreaming ? (
-                        <Tooltip title="Parar geração">
-                          <IconButton
-                            onClick={onStopGeneration}
-                            size="small"
-                            aria-label="Parar geração de resposta"
-                            sx={{
-                              color: 'error.main',
-                              '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
-                            }}
-                          >
-                            <Stop sx={{ fontSize: ICON_SIZE_MD }} />
-                          </IconButton>
-                        </Tooltip>
-                      ) : isModel && cleanText ? (
-                        <Tooltip title={copiedMessageId === message.id ? 'Copiado!' : 'Copiar texto'}>
-                          <IconButton
-                            onClick={() => void handleCopyMessage(cleanText, message.id)}
-                            size="small"
-                            aria-label="Copiar texto da mensagem"
-                            sx={{
-                              color: copiedMessageId === message.id ? 'success.main' : 'text.secondary',
-                              '&:hover': { backgroundColor: 'action.hover' },
-                            }}
-                          >
-                            {copiedMessageId === message.id ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
-                          </IconButton>
-                        </Tooltip>
-                      ) : null}
-                    </Stack>
-
-                    <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>
-                      {cleanText ? <ReactMarkdown>{cleanText}</ReactMarkdown> : null}
-                      {isCurrentlyStreaming ? (
-                        <Box
-                          component="span"
-                          sx={{
-                            display: 'inline-block',
-                            width: 2,
-                            height: '1.1em',
-                            bgcolor: 'text.primary',
-                            ml: 0.5,
-                            verticalAlign: 'text-bottom',
-                            animation: 'assistantCursorBlink 1s step-end infinite',
-                            '@keyframes assistantCursorBlink': {
-                              '0%, 100%': { opacity: 1 },
-                              '50%': { opacity: 0 },
-                            },
-                          }}
-                        />
-                      ) : null}
-
-                      {hasMalformedJson ? (
-                        <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.5 }}>
-                          O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.
-                        </Typography>
-                      ) : null}
-                    </Box>
-
-                     {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming) ? <Divider sx={{ borderColor: isModel ? 'divider' : WHITE_16 }} /> : null}
-
-                    <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                       {!isCurrentlyStreaming && settings ? (
-                         <Button
-                           onClick={() => onApply(settings, message.id)}
-                           variant="contained"
-                           color="secondary"
-                           size="small"
-                             startIcon={appliedMessageId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
-                         >
-                           {appliedMessageId === message.id ? 'Aplicado' : 'Aplicar no estúdio'}
-                         </Button>
-                       ) : null}
-
-                       {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
-                         <Button
-                           onClick={() => onSaveToMemory(cleanText, message.id)}
-                           variant="outlined"
-                           color="inherit"
-                           size="small"
-                            startIcon={savedToMemoryId === message.id ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
-                            sx={{ borderColor: isModel ? 'divider' : 'action.hover' }}
-                         >
-                           {savedToMemoryId === message.id ? 'Salvo na memória' : 'Salvar insight'}
-                         </Button>
-                       ) : null}
-                     </Stack>
-                  </Stack>
-                </Card>
-              </Stack>
-
-              {!isModel ? (
-                <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
-                  <Person sx={{ fontSize: ICON_SIZE_SM }} />
-                </Avatar>
-              ) : null}
-            </Stack>
-          );
-        })}
+        {messages.map((message) => (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isCurrentlyStreaming={isStreaming && lastModelMessage?.id === message.id}
+            isApplied={appliedMessageId === message.id}
+            isSavedToMemory={savedToMemoryId === message.id}
+            isCopied={copiedMessageId === message.id}
+            onCopy={handleCopyMessage}
+            onApply={onApply}
+            onSaveToMemory={onSaveToMemory}
+            onStopGeneration={onStopGeneration}
+          />
+        ))}
 
         {showSkeleton ? (
           <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>

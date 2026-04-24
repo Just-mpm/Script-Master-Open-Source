@@ -23,14 +23,17 @@ export const GAP_DEFAULT = 1;
 export const GAP_MEDIUM = 1.5;
 export const GAP_RELAXED = 2;
 
-export const BRAND_PRIMARY = '#22d3ee';
-export const BRAND_PRIMARY_LIGHT = '#67e8f9';
-export const BRAND_PRIMARY_DARK = '#0891b2';
-export const BRAND_SECONDARY = '#8b5cf6';
-export const BRAND_SECONDARY_LIGHT = '#c4b5fd';
-export const BRAND_SECONDARY_DARK = '#6d28d9';
-export const BRAND_PRIMARY_CONTRAST_TEXT = '#03111d';
-export const BRAND_SECONDARY_CONTRAST_TEXT = '#f8fafc';
+// Cores da marca extraídas das logos (azul + laranja)
+// Azul: loop esquerdo do símbolo infinito + ícone de roteiro
+// Laranja: loop direito do infinito + ícone de vídeo/play
+export const BRAND_PRIMARY = '#2E75B6';
+export const BRAND_PRIMARY_LIGHT = '#5BA3D0';
+export const BRAND_PRIMARY_DARK = '#1A5B8E';
+export const BRAND_SECONDARY = '#F7941E';
+export const BRAND_SECONDARY_LIGHT = '#FFB74D';
+export const BRAND_SECONDARY_DARK = '#E67300';
+export const BRAND_PRIMARY_CONTRAST_TEXT = '#ffffff';
+export const BRAND_SECONDARY_CONTRAST_TEXT = '#1A1A1A';
 export const WHITE = '#ffffff';
 export const BLACK = '#000000';
 
@@ -46,10 +49,10 @@ export const TEXT_SECONDARY = 'rgba(248, 250, 252, 0.68)';
 export const TEXT_DISABLED = 'rgba(248, 250, 252, 0.38)';
 export const ACTION_ACTIVE = TEXT_PRIMARY;
 export const ACTION_HOVER = 'rgba(248, 250, 252, 0.05)';
-export const ACTION_SELECTED = 'rgba(34, 211, 238, 0.14)';
+export const ACTION_SELECTED = 'rgba(46, 117, 182, 0.14)';
 export const ACTION_DISABLED = 'rgba(248, 250, 252, 0.3)';
 export const ACTION_DISABLED_BACKGROUND = 'rgba(248, 250, 252, 0.08)';
-export const ACTION_FOCUS = 'rgba(34, 211, 238, 0.22)';
+export const ACTION_FOCUS = 'rgba(46, 117, 182, 0.22)';
 
 export const APP_BACKGROUND = '#050816';
 export const APP_BACKGROUND_DARKER = '#070b18';
@@ -91,9 +94,18 @@ export const BLACK_38 = 'rgba(0, 0, 0, 0.38)';
 export const BLACK_40 = 'rgba(0, 0, 0, 0.40)';
 export const BLACK_46 = 'rgba(0, 0, 0, 0.46)';
 export const BLACK_55 = 'rgba(0, 0, 0, 0.55)';
-export const CYAN_GLOW = 'rgba(34, 211, 238, 0.28)';
-export const CYAN_GLOW_SOFT = 'rgba(34, 211, 238, 0.12)';
-export const PURPLE_GLOW_SOFT = 'rgba(139, 92, 246, 0.12)';
+// Glow tokens — valores refletindo as cores da marca (azul + laranja)
+// Canônicos: BRAND_PRIMARY_GLOW / BRAND_PRIMARY_GLOW_SOFT / BRAND_SECONDARY_GLOW_SOFT
+// Legado: CYAN_GLOW / CYAN_GLOW_SOFT / PURPLE_GLOW_SOFT mantidos como alias
+export const BRAND_PRIMARY_GLOW = 'rgba(46, 117, 182, 0.28)';
+export const BRAND_PRIMARY_GLOW_SOFT = 'rgba(46, 117, 182, 0.12)';
+export const BRAND_SECONDARY_GLOW_SOFT = 'rgba(247, 148, 30, 0.12)';
+/** @deprecated Use BRAND_PRIMARY_GLOW */
+export const CYAN_GLOW = BRAND_PRIMARY_GLOW;
+/** @deprecated Use BRAND_PRIMARY_GLOW_SOFT */
+export const CYAN_GLOW_SOFT = BRAND_PRIMARY_GLOW_SOFT;
+/** @deprecated Use BRAND_SECONDARY_GLOW_SOFT */
+export const PURPLE_GLOW_SOFT = BRAND_SECONDARY_GLOW_SOFT;
 export const BLACK_12 = 'rgba(0, 0, 0, 0.12)';
 export const BLACK_10 = 'rgba(0, 0, 0, 0.1)';
 export const WHITE_16 = 'rgba(255, 255, 255, 0.16)';
@@ -121,10 +133,10 @@ export const EMPTY_WRAPPER_PADDING_MD = 4;
 
 export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 100%)`;
 export const BRAND_GRADIENT_HOVER = `linear-gradient(135deg, ${BRAND_PRIMARY_LIGHT} 0%, ${BRAND_SECONDARY} 100%)`;
-export const BRAND_GLOW = '0 14px 36px rgba(34, 211, 238, 0.26)';
-export const BRAND_GLOW_FOCUS = '0 0 0 3px rgba(34, 211, 238, 0.45)';
+export const BRAND_GLOW = '0 14px 36px rgba(46, 117, 182, 0.26)';
+export const BRAND_GLOW_FOCUS = '0 0 0 3px rgba(46, 117, 182, 0.45)';
 export const APP_BACKGROUND_GLOW = `
-  radial-gradient(circle at 15% 15%, rgba(34, 211, 238, 0.12) 0%, transparent 34%),
-  radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 30%),
+  radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%),
+  radial-gradient(circle at 85% 20%, rgba(247, 148, 30, 0.12) 0%, transparent 30%),
   linear-gradient(180deg, #050816 0%, #070b18 100%)
 `;

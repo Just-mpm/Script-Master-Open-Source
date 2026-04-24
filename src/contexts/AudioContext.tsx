@@ -279,3 +279,76 @@ export function useGlobalAudioActions() {
     setDurationOverride: context.setDurationOverride,
   };
 }
+
+// ── Seletores primitivos (evita re-renders em consumidores que só precisam de 1 campo) ──
+// Cada hook retorna um primitivo do snapshot via useSyncExternalStore.
+// React compara o valor retornado com Object.is — primitivos mudam menos que objetos espalhados.
+// getServerSnapshot retorna valor padrão seguro para futura compatibilidade SSR/hydration.
+
+const SERVER_SNAPSHOT_DEFAULTS = {
+  isPlaying: false,
+  currentTime: 0,
+  duration: 0,
+  progress: 0,
+  activeId: null as string | null,
+};
+
+export function useAudioIsPlaying(): boolean {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudioIsPlaying must be used within an AudioProvider');
+  }
+  return useSyncExternalStore(
+    context.subscribe,
+    () => context.getSnapshot().isPlaying,
+    () => SERVER_SNAPSHOT_DEFAULTS.isPlaying,
+  );
+}
+
+export function useAudioCurrentTime(): number {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudioCurrentTime must be used within an AudioProvider');
+  }
+  return useSyncExternalStore(
+    context.subscribe,
+    () => context.getSnapshot().currentTime,
+    () => SERVER_SNAPSHOT_DEFAULTS.currentTime,
+  );
+}
+
+export function useAudioDuration(): number {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudioDuration must be used within an AudioProvider');
+  }
+  return useSyncExternalStore(
+    context.subscribe,
+    () => context.getSnapshot().duration,
+    () => SERVER_SNAPSHOT_DEFAULTS.duration,
+  );
+}
+
+export function useAudioProgress(): number {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudioProgress must be used within an AudioProvider');
+  }
+  return useSyncExternalStore(
+    context.subscribe,
+    () => context.getSnapshot().progress,
+    () => SERVER_SNAPSHOT_DEFAULTS.progress,
+  );
+}
+
+export function useAudioActiveId(): string | null {
+  const context = useContext(AudioContext);
+  if (context === undefined) {
+    throw new Error('useAudioActiveId must be used within an AudioProvider');
+  }
+  return useSyncExternalStore(
+    context.subscribe,
+    () => context.getSnapshot().activeId,
+    () => SERVER_SNAPSHOT_DEFAULTS.activeId,
+  );
+}

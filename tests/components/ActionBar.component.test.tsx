@@ -62,6 +62,7 @@ vi.mock('../../src/theme/tokens', () => ({
   RADIUS_SM: 8,
   RADIUS_CHIP: 16,
   CYAN_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
 }));
 
 const defaultProps = {

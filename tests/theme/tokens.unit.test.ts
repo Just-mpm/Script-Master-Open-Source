@@ -35,6 +35,9 @@ import {
   WHITE_01,
   CYAN_GLOW,
   PURPLE_GLOW_SOFT,
+  BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
+  BRAND_SECONDARY_GLOW_SOFT,
   SHADOW_DEEP,
   SHADOW_IMAGE,
   EMPTY_ICON_SIZE,
@@ -201,12 +204,24 @@ describe('Design Tokens', () => {
   });
 
   describe('Glows', () => {
-    it('CYAN_GLOW deve ser rgba', () => {
-      expect(CYAN_GLOW).toMatch(/^rgba\(/);
+    it('BRAND_PRIMARY_GLOW deve ser rgba', () => {
+      expect(BRAND_PRIMARY_GLOW).toMatch(/^rgba\(/);
     });
 
-    it('PURPLE_GLOW_SOFT deve ser rgba', () => {
-      expect(PURPLE_GLOW_SOFT).toMatch(/^rgba\(/);
+    it('BRAND_PRIMARY_GLOW_SOFT deve ser rgba', () => {
+      expect(BRAND_PRIMARY_GLOW_SOFT).toMatch(/^rgba\(/);
+    });
+
+    it('BRAND_SECONDARY_GLOW_SOFT deve ser rgba', () => {
+      expect(BRAND_SECONDARY_GLOW_SOFT).toMatch(/^rgba\(/);
+    });
+
+    it('CYAN_GLOW alias deve apontar para BRAND_PRIMARY_GLOW', () => {
+      expect(CYAN_GLOW).toBe(BRAND_PRIMARY_GLOW);
+    });
+
+    it('PURPLE_GLOW_SOFT alias deve apontar para BRAND_SECONDARY_GLOW_SOFT', () => {
+      expect(PURPLE_GLOW_SOFT).toBe(BRAND_SECONDARY_GLOW_SOFT);
     });
   });
 
@@ -223,7 +238,7 @@ describe('Design Tokens', () => {
 
     it('BRAND_GLOW deve ser um box-shadow CSS com brand primary', () => {
       // BRAND_GLOW é o valor CSS do box-shadow (sem a propriedade "box-shadow:")
-      expect(BRAND_GLOW).toContain('rgba(34, 211, 238');
+      expect(BRAND_GLOW).toContain('rgba(46, 117, 182');
       expect(BRAND_GLOW).toContain('px');
     });
 

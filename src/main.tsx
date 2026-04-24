@@ -10,6 +10,13 @@ import { AuthProvider } from './contexts/AuthContext.tsx';
 import { AppThemeProvider } from './theme/AppThemeProvider';
 import './index.css';
 
+// Registra o service worker apenas em produção
+if (import.meta.env.PROD) {
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({ immediate: true });
+  });
+}
+
 /**
  * Wrapper que usa useLocation para resetar o ErrorBoundary a cada mudança de rota.
  * O key dinâmico força o React a destruir e recriar o ErrorBoundary,

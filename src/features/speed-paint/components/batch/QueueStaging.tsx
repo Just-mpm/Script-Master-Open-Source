@@ -16,16 +16,14 @@ import { glassPanelSx } from '../../../../theme/surfaces';
 import { SpeedSelector } from '../SpeedSelector';
 
 export function QueueStaging() {
-  const {
-    queue,
-    setQueue,
-    setBatchMode,
-    clearQueue,
-    speed,
-    setSpeed,
-    paintSpeed,
-    setPaintSpeed,
-  } = useAnimationStore();
+  const queue = useAnimationStore((s) => s.queue);
+  const speed = useAnimationStore((s) => s.speed);
+  const paintSpeed = useAnimationStore((s) => s.paintSpeed);
+  const setQueue = useAnimationStore((s) => s.setQueue);
+  const setBatchMode = useAnimationStore((s) => s.setBatchMode);
+  const clearQueue = useAnimationStore((s) => s.clearQueue);
+  const setSpeed = useAnimationStore((s) => s.setSpeed);
+  const setPaintSpeed = useAnimationStore((s) => s.setPaintSpeed);
 
   const handleRemove = (id: string) => {
     setQueue((prev) => prev.filter((img) => img.id !== id));

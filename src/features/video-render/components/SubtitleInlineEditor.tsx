@@ -22,8 +22,8 @@ import {
   BRAND_PRIMARY,
   BRAND_PRIMARY_LIGHT,
   BRAND_PRIMARY_DARK,
-  CYAN_GLOW,
-  CYAN_GLOW_SOFT,
+  BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
   SUCCESS_MAIN,
   ERROR_MAIN,
   TEXT_SECONDARY,
@@ -533,7 +533,7 @@ export function SubtitleInlineEditor({
               height: 12,
               transition: 'box-shadow 0.15s ease',
               '&:hover, &.Mui-focusVisible': {
-                boxShadow: `0 0 0 4px ${CYAN_GLOW_SOFT}`,
+                boxShadow: `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`,
               },
             },
             '& .MuiSlider-rail': {
@@ -586,7 +586,7 @@ export function SubtitleInlineEditor({
               height: 12,
               transition: 'box-shadow 0.15s ease',
               '&:hover, &.Mui-focusVisible': {
-                boxShadow: `0 0 0 4px ${CYAN_GLOW_SOFT}`,
+                boxShadow: `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`,
               },
             },
             '& .MuiSlider-rail': {
@@ -749,22 +749,22 @@ export function SubtitleInlineEditor({
               border: `1px solid ${APP_BORDER}`,
               color: BRAND_PRIMARY,
               // Glow sutil para chamar atenção
-              boxShadow: `0 0 16px ${CYAN_GLOW_SOFT}, 0 4px 12px ${BLACK_40}`,
+              boxShadow: `0 0 16px ${BRAND_PRIMARY_GLOW_SOFT}, 0 4px 12px ${BLACK_40}`,
               // Animação de pulso sutil
               animation: 'subtitle-edit-pulse 2.4s ease-in-out infinite',
               '@keyframes subtitle-edit-pulse': {
                 '0%, 100%': {
-                  boxShadow: `0 0 16px ${CYAN_GLOW_SOFT}, 0 4px 12px ${BLACK_40}`,
+                  boxShadow: `0 0 16px ${BRAND_PRIMARY_GLOW_SOFT}, 0 4px 12px ${BLACK_40}`,
                 },
                 '50%': {
-                  boxShadow: `0 0 24px ${CYAN_GLOW}, 0 4px 16px ${BLACK_50}`,
+                  boxShadow: `0 0 24px ${BRAND_PRIMARY_GLOW}, 0 4px 16px ${BLACK_50}`,
                 },
               },
               transition: 'all 0.2s ease',
               '&:hover': {
                 backgroundColor: APP_SURFACE,
                 color: BRAND_PRIMARY_LIGHT,
-                boxShadow: `0 0 28px ${CYAN_GLOW}, 0 6px 20px ${BLACK_50}`,
+                boxShadow: `0 0 28px ${BRAND_PRIMARY_GLOW}, 0 6px 20px ${BLACK_50}`,
                 borderColor: BRAND_PRIMARY_DARK,
               },
               '&:active': {
@@ -804,8 +804,8 @@ export function SubtitleInlineEditor({
               backgroundColor: `rgba(0, 0, 0, ${editingStyle.backgroundOpacity})`,
               boxShadow: `0 0 ${40 * scale}px ${20 * scale}px rgba(0, 0, 0, ${editingStyle.backgroundOpacity * 0.8})`,
               // Outline sutil com glow cyan em vez de dashed
-              border: `1.5px solid ${CYAN_GLOW_SOFT}`,
-              outline: `1px solid rgba(34, 211, 238, 0.15)`,
+              border: `1.5px solid ${BRAND_PRIMARY_GLOW_SOFT}`,
+              outline: `1px solid rgba(46, 117, 182, 0.15)`,
               outlineOffset: '3px',
               // Transição suave
               transition: 'border-color 0.2s ease, outline-color 0.2s ease',

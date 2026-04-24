@@ -7,11 +7,17 @@ import { alpha } from '@mui/material/styles';
 import { useAnimationStore } from '../../store/animationStore';
 import { StrokeRenderer } from './StrokeRenderer';
 import { AnimationControls } from './AnimationControls';
-import { CYAN_GLOW_SOFT } from '../../../../theme/tokens';
+import {   BRAND_PRIMARY_GLOW_SOFT } from '../../../../theme/tokens';
 
 export function AnimationPlayer() {
-  const { job, isPlaying, setIsPlaying, setProgress, hasAutoPlayed, setHasAutoPlayed, resetAutoPlay } = useAnimationStore();
+  const job = useAnimationStore((s) => s.job);
+  const isPlaying = useAnimationStore((s) => s.isPlaying);
   const batchMode = useAnimationStore((s) => s.batchMode);
+  const hasAutoPlayed = useAnimationStore((s) => s.hasAutoPlayed);
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying);
+  const setProgress = useAnimationStore((s) => s.setProgress);
+  const setHasAutoPlayed = useAnimationStore((s) => s.setHasAutoPlayed);
+  const resetAutoPlay = useAnimationStore((s) => s.resetAutoPlay);
   const requestRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number | undefined>(undefined);
 
@@ -133,7 +139,7 @@ export function AnimationPlayer() {
               '& .MuiLinearProgress-bar': {
                 bgcolor: 'primary.main',
                 borderRadius: 5,
-                boxShadow: `0 0 12px ${CYAN_GLOW_SOFT}`,
+                boxShadow: `0 0 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
               },
             })}
           />

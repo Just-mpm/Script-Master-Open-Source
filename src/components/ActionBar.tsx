@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -23,7 +23,7 @@ import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
 import type { VideoPreviewHandle } from './VideoPreview';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
-import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP, CYAN_GLOW_SOFT } from '../theme/tokens';
+import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP,   BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface ActionBarProps {
@@ -71,7 +71,7 @@ export function ActionBar({
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
   const location = useLocation();
-  const isVideoRoute = location.pathname === '/video';
+  const isVideoRoute = location.pathname === '/app/video';
 
   // Estado do AudioContext (rota /)
   const audioState = useGlobalAudioState();
@@ -81,6 +81,21 @@ export function ActionBar({
   // (sincronizado pelo VideoPreview RAF ~30x/s — sem polling duplicado)
   const bridgeFrame = useVideoRenderBridge((state) => state.currentFrame);
   const bridgeIsPlaying = useVideoRenderBridge((state) => state.isPlaying);
+
+  // Throttle do frame para display ~4x/s durante playback (evita 30 re-renders/s)
+  // Quando pausado/seek, atualiza imediatamente via dependência bridgeFrame
+  const [displayFrame, setDisplayFrame] = useState(bridgeFrame);
+  useEffect(() => {
+    if (!bridgeIsPlaying) {
+      setDisplayFrame(bridgeFrame);
+      return;
+    }
+    const id = setInterval(() => {
+      setDisplayFrame(useVideoRenderBridge.getState().currentFrame);
+    }, 250); // 4 atualizações/segundo
+    return () => clearInterval(id);
+  }, [bridgeIsPlaying, bridgeFrame]);
+
   // Na rota /video o player sempre está montado; guards em handleToggle/seekToPercentage
   // verificam videoPlayerRef?.current antes de operar no player
   const isRemotionActive = isVideoRoute;
@@ -96,7 +111,7 @@ export function ActionBar({
   const displayIsPlaying = isRemotionActive ? bridgeIsPlaying : audioState.isPlaying;
 
   const displayCurrentTime = isRemotionActive && videoFps
-    ? bridgeFrame / videoFps
+    ? displayFrame / videoFps
     : audioState.currentTime;
 
   const displayDuration = isRemotionActive && videoFps && videoDurationInFrames
@@ -380,7 +395,7 @@ export function ActionBar({
                         aria-label={isExportingVideo ? 'Exportando vídeo' : 'Exportar vídeo MP4'}
                         sx={{
                           bgcolor: isExportingVideo
-                            ? CYAN_GLOW_SOFT
+                            ? BRAND_PRIMARY_GLOW_SOFT
                             : 'action.hover',
                           color: isExportingVideo ? 'primary.main' : 'default',
                         }}

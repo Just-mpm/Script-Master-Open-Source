@@ -40,6 +40,7 @@ vi.mock('@mui/icons-material/Close', () => ({
 }));
 
 import { AudioProvider, useGlobalAudioState, useGlobalAudioActions } from '../../src/contexts/AudioContext';
+import { useAudioIsPlaying, useAudioCurrentTime, useAudioDuration, useAudioProgress, useAudioActiveId } from '../../src/contexts/AudioContext';
 
 describe('AudioContext', () => {
   beforeEach(() => {
@@ -157,5 +158,147 @@ describe('AudioContext', () => {
     // REM-003: Teste "fora do provider" removido — IIFE com hooks não funciona
     // no jsdom. O erro real "useGlobalAudioState must be used within an AudioProvider"
     // é suprimido pelo React error boundary e retorna "Invalid hook call".
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Hooks seletivos (usados via useSyncExternalStore)
+  // ──────────────────────────────────────────────────────────────────────
+
+  describe('useAudioIsPlaying', () => {
+    function PlayingComponent() {
+      const isPlaying = useAudioIsPlaying();
+      return <span data-testid="result">{String(isPlaying)}</span>;
+    }
+
+    it('deve retornar false como valor inicial dentro do provider', () => {
+      render(
+        <AudioProvider>
+          <PlayingComponent />
+        </AudioProvider>
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('false');
+    });
+
+    it('deve lançar erro se usado fora do provider', () => {
+      // useAudioIsPlaying faz useContext + throw — precisa de render + expect error
+      // Em jsdom, hooks fora de provider lançam erros que o React catch internamente
+      // Testamos que o componente não renderiza normalmente
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => {
+        render(<PlayingComponent />);
+      }).toThrow();
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('useAudioCurrentTime', () => {
+    function CurrentTimeComponent() {
+      const time = useAudioCurrentTime();
+      return <span data-testid="result">{time}</span>;
+    }
+
+    it('deve retornar 0 como valor inicial dentro do provider', () => {
+      render(
+        <AudioProvider>
+          <CurrentTimeComponent />
+        </AudioProvider>
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('0');
+    });
+
+    it('deve lançar erro se usado fora do provider', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => {
+        render(<CurrentTimeComponent />);
+      }).toThrow();
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('useAudioDuration', () => {
+    function DurationComponent() {
+      const duration = useAudioDuration();
+      return <span data-testid="result">{duration}</span>;
+    }
+
+    it('deve retornar 0 como valor inicial dentro do provider', () => {
+      render(
+        <AudioProvider>
+          <DurationComponent />
+        </AudioProvider>
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('0');
+    });
+
+    it('deve lançar erro se usado fora do provider', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => {
+        render(<DurationComponent />);
+      }).toThrow();
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('useAudioProgress', () => {
+    function ProgressComponent() {
+      const progress = useAudioProgress();
+      return <span data-testid="result">{progress}</span>;
+    }
+
+    it('deve retornar 0 como valor inicial dentro do provider', () => {
+      render(
+        <AudioProvider>
+          <ProgressComponent />
+        </AudioProvider>
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('0');
+    });
+
+    it('deve lançar erro se usado fora do provider', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => {
+        render(<ProgressComponent />);
+      }).toThrow();
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('useAudioActiveId', () => {
+    function ActiveIdComponent() {
+      const activeId = useAudioActiveId();
+      return <span data-testid="result">{activeId ?? 'null'}</span>;
+    }
+
+    it('deve retornar null como valor inicial dentro do provider', () => {
+      render(
+        <AudioProvider>
+          <ActiveIdComponent />
+        </AudioProvider>
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('null');
+    });
+
+    it('deve lançar erro se usado fora do provider', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => {
+        render(<ActiveIdComponent />);
+      }).toThrow();
+
+      consoleSpy.mockRestore();
+    });
   });
 });

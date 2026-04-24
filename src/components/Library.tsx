@@ -43,7 +43,7 @@ import {
   type AudioSource,
   type ProjectImage,
 } from '../lib/db';
-import { useGlobalAudioState } from '../contexts/AudioContext';
+import { useAudioIsPlaying, useAudioActiveId, useGlobalAudioActions } from '../contexts/AudioContext';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
@@ -76,7 +76,9 @@ export function Library() {
   const [audioToDelete, setAudioToDelete] = useState<string | null>(null);
   const [deletingAudio, setDeletingAudio] = useState(false);
 
-  const { isPlaying, activeId, play, toggle } = useGlobalAudioState();
+  const isPlaying = useAudioIsPlaying();
+  const activeId = useAudioActiveId();
+  const { play, toggle } = useGlobalAudioActions();
 
   // Rastreia blob URLs criados para limpeza ao desmontar/trocar projeto
   const blobUrlsRef = useRef<string[]>([]);
