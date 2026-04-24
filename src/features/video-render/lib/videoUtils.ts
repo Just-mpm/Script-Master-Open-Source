@@ -1,10 +1,13 @@
 import type { SceneRatio, StudioScene } from '../../studio/types';
-import type { VideoScene } from '../types';
+import type { VideoExportQuality, VideoScene } from '../types';
 
 /** Converte milissegundos para frames */
 export function msToFrames(ms: number, fps: number): number {
   return Math.round((ms / 1000) * fps);
 }
+
+/** Qualidade padrão de exportação de vídeo */
+export const DEFAULT_EXPORT_QUALITY: VideoExportQuality = '1080p';
 
 /** Converte frames para milissegundos */
 export function framesToMs(frames: number, fps: number): number {
@@ -19,6 +22,57 @@ export function getResolutionFromRatio(ratio: SceneRatio): { width: number; heig
     '1:1': { width: 1080, height: 1080 },
   };
   return resolutions[ratio] ?? resolutions['16:9'];
+}
+
+/** Retorna resolução customizada baseada na qualidade e ratio */
+export function getResolutionFromQuality(
+  ratio: SceneRatio,
+  quality: VideoExportQuality,
+): { width: number; height: number } {
+  // Base: ratio determina a proporção, quality determina o "lado maior"
+  const baseResolution: Record<VideoExportQuality, number> = {
+    '720p': 1280,
+    '1080p': 1920,
+    '1440p': 2560,
+    '4k': 3840,
+  };
+
+  const base = baseResolution[quality];
+
+  switch (ratio) {
+    case '16:9': return { width: base, height: Math.round(base * 9 / 16) };
+    case '9:16': return { width: Math.round(base * 9 / 16), height: base };
+    case '1:1': return { width: base, height: base };
+    default: return { width: base, height: Math.round(base * 9 / 16) };
+  }
+}
+
+/**
+ * Estima tamanho do arquivo exportado em bytes.
+ * Fórmula aproximada: duration * bitrate / 8.
+ * Bitrate típico H264: 1080p ≈ 8Mbps, escalando linearmente com pixels.
+ */
+export function estimateFileSize(
+  durationInSeconds: number,
+  width: number,
+  height: number,
+  codec: string,
+): number {
+  // Bitrate base para 1080p H264 ≈ 8 Mbps (8_000_000 bits/s)
+  const baseBitrate = 8_000_000;
+  const basePixels = 1920 * 1080;
+  const pixels = width * height;
+
+  // Multiplicadores de bitrate por codec relativos ao H264
+  const codecMultiplier: Record<string, number> = {
+    vp8: 1.2,   // ~20% mais bitrate
+    vp9: 0.6,   // ~40% menor
+    h265: 0.5,  // ~50% menor
+  };
+  const multiplier = codecMultiplier[codec.toLowerCase()] ?? 1.0;
+
+  const bitrate = (baseBitrate * (pixels / basePixels)) * multiplier;
+  return Math.round((durationInSeconds * bitrate) / 8);
 }
 
 /**

@@ -4,9 +4,9 @@ import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
-import type { CaptionWord, SubtitleStyle } from '../types';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
-import { getResolutionFromRatio, mapScenesToVideoScenes } from '../lib/videoUtils';
+import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
@@ -27,6 +27,10 @@ export interface VideoExportOptions {
   subtitleStyle?: SubtitleStyle;
   projectId?: string;
   userId?: string;
+  /** Qualidade de exportação (default: '1080p') */
+  quality?: VideoExportQuality;
+  /** Nome personalizado para o arquivo de download */
+  fileName?: string;
 }
 
 export interface VideoExporterState {
@@ -44,6 +48,8 @@ export interface VideoExporterState {
   resolvedVideoCodec: string;
   /** Container resolvido após checkSupport ('mp4' ou 'webm') */
   resolvedContainer: string;
+  /** Nome do arquivo para download */
+  exportFileName: string;
 }
 
 const INITIAL_STATE: VideoExporterState = {
@@ -57,6 +63,7 @@ const INITIAL_STATE: VideoExporterState = {
   saveWarning: null,
   resolvedVideoCodec: 'h264',
   resolvedContainer: 'mp4',
+  exportFileName: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -139,11 +146,17 @@ export function useVideoExporter() {
   /** Codec de vídeo e container resolvidos por checkSupport */
   const resolvedVideoCodecRef = useRef<string>('h264');
   const resolvedContainerRef = useRef<string>('mp4');
+  /** Nome do arquivo para download */
+  const exportFileNameRef = useRef<string>('');
 
-  // Mantém ref sincronizada para uso em callbacks sem depender do estado
+  // Mantém refs sincronizadas para uso em callbacks sem depender do estado
   useEffect(() => {
     outputUrlRef.current = state.outputUrl;
   }, [state.outputUrl]);
+
+  useEffect(() => {
+    exportFileNameRef.current = state.exportFileName;
+  }, [state.exportFileName]);
 
   // Cleanup de blob URL ao desmontar e aborta renderização em andamento
   useEffect(() => {
@@ -274,12 +287,26 @@ export function useVideoExporter() {
       subtitleStyle,
       projectId,
       userId,
+      quality,
+      fileName,
     } = options;
 
     if (!audioUrl || scenes.length === 0) return;
 
-    const resolution = getResolutionFromRatio(ratio);
+    // Previne dupla renderização — aborta a anterior se existir
+    if (abortControllerRef.current) {
+      log.warn('Renderização já em andamento — abortando anterior antes de iniciar nova');
+      abortControllerRef.current.abort();
+    }
+
+    const resolvedQuality = quality ?? DEFAULT_EXPORT_QUALITY;
+    const resolution = getResolutionFromQuality(ratio, resolvedQuality);
     const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
+
+    // Atualiza o nome do arquivo no estado
+    if (fileName) {
+      setState(prev => ({ ...prev, exportFileName: fileName }));
+    }
 
     // Monta inputProps com tipo compatível com Record<string, unknown>
     const exportableInputProps: ExportableProps = {
@@ -425,7 +452,8 @@ export function useVideoExporter() {
     const url = outputUrlRef.current;
     if (!url) return;
     const ext = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
-    void downloadFile(url, `video-export-${Date.now()}.${ext}`);
+    const name = exportFileNameRef.current || `video-export-${Date.now()}`;
+    void downloadFile(url, `${name}.${ext}`);
   }, []);
 
   // -------------------------------------------------------------------------

@@ -99,6 +99,7 @@ export function VideoComposition({
                 text={sceneCaptions.length === 0 ? scene.subtitle : undefined}
                 durationInFrames={adjustedDuration}
                 subtitleStyle={subtitleStyle}
+                position={subtitleStyle?.position ?? 'bottom'}
               />
             )}
 

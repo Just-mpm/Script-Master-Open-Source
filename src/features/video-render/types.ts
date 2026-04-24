@@ -1,5 +1,8 @@
 import type { StudioScene } from '../studio/types';
 
+/** Qualidade de exportação do vídeo */
+export type VideoExportQuality = '720p' | '1080p' | '1440p' | '4k';
+
 /** Cena estendida para vídeo Remotion */
 export interface VideoScene extends StudioScene {
   /** Duração da cena em frames */
@@ -69,6 +72,9 @@ export interface TranscriptionResult {
   scriptHash?: string;
 }
 
+/** Posição vertical da legenda no vídeo */
+export type SubtitlePosition = 'bottom' | 'center' | 'top';
+
 /** Estilo personalizável das legendas no vídeo */
 export interface SubtitleStyle {
   /** Tamanho da fonte em px (default: 28) */
@@ -85,6 +91,8 @@ export interface SubtitleStyle {
   gap: number;
   /** Offset vertical do container de legendas em px — positivo sobe, negativo desce (default: 0) */
   verticalOffset: number;
+  /** Posição vertical da legenda (default: 'bottom') */
+  position?: SubtitlePosition;
 }
 
 /** Estilo padrão das legendas */
@@ -96,4 +104,5 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   backgroundOpacity: 0.5,
   gap: 8,
   verticalOffset: 0,
+  position: 'bottom',
 };

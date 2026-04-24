@@ -4,7 +4,10 @@ import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ActionBar } from './components/ActionBar';
 import { ErrorToast } from './components/ErrorToast';
 import { Header } from './components/Header';
@@ -129,6 +132,7 @@ function RouteFallback() {
 
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   const { authError, clearAuthError } = useAuth();
   const studio = useStudioState();
@@ -336,6 +340,50 @@ export default function App() {
       <ErrorToast error={activeError} onDismiss={dismissError} />
       <WarningToast warning={localSceneWarning} onDismiss={dismissSceneWarning} />
       <SuccessToast message={successMsg} onDismiss={dismissSuccess} />
+
+      {/* Toast de progresso de exportação — visível quando exportando fora da página /video */}
+      {isExportingVideo && !isVideoRoute && (
+        <Snackbar
+          open
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          sx={{ bottom: { xs: 80, md: 96 } }}
+        >
+          <Alert
+            severity="info"
+            variant="filled"
+            role="progressbar"
+            aria-valuenow={videoExportProgress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Exportando vídeo: ${videoExportProgress}%`}
+            icon={<CircularProgress size={20} color="inherit" />}
+            action={
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => navigate('/app/video')}
+                sx={{ fontWeight: 600 }}
+              >
+                Ver vídeo
+              </Button>
+            }
+            sx={{
+              width: '100%',
+              alignItems: 'center',
+              minWidth: { xs: 'min(92vw, 360px)', sm: 400 },
+            }}
+          >
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Exportando vídeo...
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                {videoExportProgress}%
+              </Typography>
+            </Stack>
+          </Alert>
+        </Snackbar>
+      )}
 
       {/* ActionBar — apenas nas rotas /app/estudio e /app/video */}
       {(isStudioRoute || isVideoRoute) && (

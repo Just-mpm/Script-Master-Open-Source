@@ -42,6 +42,15 @@ export const ERROR_MAIN = '#ef4444';
 export const WARNING_MAIN = '#f59e0b';
 export const ERROR_BG_SUBTLE = 'rgba(239, 68, 68, 0.08)';
 export const ERROR_BG_MEDIUM = 'rgba(239, 68, 68, 0.12)';
+export const SUCCESS_BG_SUBTLE = 'rgba(16, 185, 129, 0.08)';
+export const SUCCESS_BG_MEDIUM = 'rgba(16, 185, 129, 0.16)';
+export const SUCCESS_BORDER = 'rgba(16, 185, 129, 0.18)';
+export const SUCCESS_BORDER_HOVER = 'rgba(16, 185, 129, 0.32)';
+export const SUCCESS_GLOW = 'rgba(16, 185, 129, 0.2)';
+export const ERROR_BG_SUBTLE_2 = 'rgba(239, 68, 68, 0.06)';
+export const ERROR_BORDER = 'rgba(239, 68, 68, 0.14)';
+export const ERROR_BORDER_HOVER = 'rgba(239, 68, 68, 0.28)';
+export const ERROR_GLOW = 'rgba(239, 68, 68, 0.15)';
 export const WARNING_BG_SUBTLE = 'rgba(245, 158, 11, 0.08)';
 
 export const TEXT_PRIMARY = '#f8fafc';

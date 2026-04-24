@@ -5,10 +5,14 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import MovieCreation from '@mui/icons-material/MovieCreation';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
+import SubtitlesOutlined from '@mui/icons-material/SubtitlesOutlined';
+import SubtitlesOffOutlined from '@mui/icons-material/SubtitlesOffOutlined';
 import { createLogger } from '../lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
@@ -18,7 +22,7 @@ import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/vide
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
-import { GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, TEXT_SECONDARY } from '../theme/tokens';
+import { GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, TEXT_SECONDARY, GLASS_BG, APP_BORDER, BLACK_40 } from '../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -39,6 +43,12 @@ interface VideoPreviewProps {
   captions?: CaptionWord[];
   /** Estilo personalizável das legendas */
   subtitleStyle?: SubtitleStyle;
+  /** Exibe botão flutuante para alternar legenda no preview */
+  showCaptionToggle?: boolean;
+  /** Callback quando o toggle de legenda é clicado */
+  onCaptionToggle?: () => void;
+  /** Legenda está visível no preview? (default: true) */
+  captionVisible?: boolean;
 }
 
 /** Handle imperativo exposto ao pai para controlar o Remotion Player */
@@ -127,7 +137,7 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle, showCaptionToggle, onCaptionToggle, captionVisible = true }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
@@ -188,9 +198,9 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       scenes: mappedScenes,
       audioUrl: audioUrl ?? '',
       fps,
-      captions: captions ?? undefined,
+      captions: captionVisible ? (captions ?? undefined) : undefined,
       subtitleStyle,
-    }), [mappedScenes, audioUrl, fps, captions, subtitleStyle]);
+    }), [mappedScenes, audioUrl, fps, captions, subtitleStyle, captionVisible]);
 
     // Estado vazio: sem áudio e sem cenas
     if (!audioUrl && scenes.length === 0) {
@@ -264,6 +274,43 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             acknowledgeRemotionLicense
           />
         </VideoPlayerErrorBoundary>
+
+        {/* Botão flutuante para alternar legenda no preview */}
+        {showCaptionToggle && captions != null && captions.length > 0 && (
+          <Tooltip title={captionVisible ? 'Legenda visível' : 'Legenda oculta'} placement="left" arrow>
+            <IconButton
+              aria-label={captionVisible ? 'Ocultar legenda' : 'Mostrar legenda'}
+              onClick={onCaptionToggle}
+              size="small"
+              sx={{
+                position: 'absolute',
+                bottom: 12,
+                right: 12,
+                zIndex: 10,
+                width: 36,
+                height: 36,
+                backgroundColor: GLASS_BG,
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: `1px solid ${APP_BORDER}`,
+                color: captionVisible ? '#fff' : 'text.secondary',
+                boxShadow: `0 4px 12px ${BLACK_40}`,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                },
+                '&:active': {
+                  transform: 'scale(0.92)',
+                },
+              }}
+            >
+              {captionVisible
+                ? <SubtitlesOutlined sx={{ fontSize: 20 }} />
+                : <SubtitlesOffOutlined sx={{ fontSize: 20 }} />}
+            </IconButton>
+          </Tooltip>
+        )}
       </Paper>
     );
   },

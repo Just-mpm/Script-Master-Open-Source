@@ -142,7 +142,8 @@ bun run clean            # remove dist/
 | **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
 | **Crossfade** | Overlap de 400ms entre cenas. Fade = 12 frames, spring `{damping:26, stiffness:100, mass:1}` |
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
-| **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE` configuram fontSize, padding, borderRadius, opacity, gap, verticalOffset. `SubtitleInlineEditor` editor inline via portal |
+| **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE` configuram fontSize, padding, borderRadius, opacity, gap, verticalOffset, position. `SubtitleInlineEditor` editor inline via portal com toggle de posição (bottom/center/top) |
+| **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec (H.264, VP8, VP9, H.265) |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
 | **ScrollingPhrase** | Texto contínuo com variantes `active` (fade in + translateY) e `previous` (opacidade 1.0→0.5). Suporte a **bold** via markdown |
 | **Whisper** | Modelo `base` (~75MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
@@ -200,11 +201,11 @@ bun run clean            # remove dist/
 |---|---|
 | **Arquivos** | `src/components/Library.tsx`, `src/components/VideoLibrary.tsx`, `src/lib/db/projects.ts`, `src/lib/db/generations.ts` |
 | **Library** | `/biblioteca` — lista projetos expansível com áudios, cenas e roteiro |
-| **VideoLibrary** | `/video` (abaixo do player) — galeria horizontal com seleção rápida + batch download |
+| **VideoLibrary** | `/video` (abaixo do player) — galeria horizontal com busca, ordenação, seleção rápida + batch download. Thumbnails via `extractVideoThumbnail()` |
 | **Projetos** | Firestore usa subcoleções: `projects/{id}/audios`, `projects/{id}/images`, `projects/{id}/videos` |
 | **Gerações** | Coleção flat `generations`. Storage: `audios/{userId}/{id}.wav`, cenas em `generations_images/` |
 | **Download** | `downloadFile()`: blob/data URLs direto, remotas via fetch→blob, fallback abre no browser |
-| **Blob cleanup** | Library usa `useRef<string[]>`. VideoLibrary usa `Set<string>` com revogação automática |
+| **Blob cleanup** | Library usa `useRef<string[]>`. VideoLibrary usa `Set<string>` com revogação seletiva por item |
 
 ### Speed Paint & Animação
 
@@ -248,7 +249,7 @@ bun run clean            # remove dist/
 | **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
 | **Stack** | MUI v9 + Emotion. `StyledEngineProvider` com `enableCssLayer`. CSS layers: `theme, base, mui, components, utilities` |
 | **Modo** | Dark only na prática (light existe com palette idêntica). Font: Inter (sans), JetBrains Mono (mono), Playfair Display (serif) |
-| **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients |
+| **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients, status (success/error borders/glows) |
 | **Surfaces** | `glassPanelSx` (blur+gradiente+shadow), `insetPanelSx` (recessado), `glassSurfaceSx` (blur fixo) — todas em `surfaces.ts` |
 | **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
 | **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
@@ -277,13 +278,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.18.1`
+- **Current:** `0.19.0`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.19.0 | Export quality selector (720p–4k); `estimateFileSize` com VP9/H265; posição de legendas (bottom/center/top); thumbnails na VideoLibrary; busca/ordenação na galeria; 9 novos tokens de tema; progress semântico; 10 correções de audit (blob URL seletiva, guard dupla render, thumbnail timeout, a11y slider, useEffect deps, tokens hardcoded, slider styles, default duplicado); 911 testes (total: 911) |
 | 0.18.1 | Remoção da ChangelogPage (`/novidades`); `framesToSeconds` duplicada removida; relatórios de teste consolidados removidos; PublicHeader corrigido (links PT-BR); FAQ/Pricing/About/Status atualizados; audio-analysis refatorado; db/chats ajustado; 911 testes (total: 911) |
 | 0.18.0 | 9 novas páginas públicas (Pricing, FAQ, Contact, About, Terms, Privacy, Cookies, Changelog, Status); PricingCard e FAQAccordion; react-helmet-async para SEO per-page; robots.txt + sitemap.xml; tradução completa de rotas para português (públicas + app); redirects de compatibilidade; 66 testes novos (total: 923) |
 | 0.17.0 | LandingPage + FeaturesPage + 10 componentes públicos; paleta blue/orange; PWA base (vite-plugin-pwa); SEO (OG, Twitter, Schema.org); keyboard shortcuts hook; AudioContext selectors; 77 testes novos (total: 857); COEP simplificado em /app/**; prefixo /app/ em rotas autenticadas |

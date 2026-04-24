@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.19.0] - 2026-04-24
+
+### Adicionado
+
+- **Export quality selector** (`VideoExportPanel`): seletor de resolução 720p/1080p/1440p/4k com `VideoExportQuality` type e `getResolutionFromQuality()` em `videoUtils.ts`
+- **Estimativa de tamanho de arquivo** (`estimateFileSize()`): calcula tamanho estimado do vídeo exportado baseado em duração, resolução e codec (H.264, VP8, VP9, H.265)
+- **Posição de legendas** (`SubtitlePosition`): novo tipo `'bottom' | 'center' | 'top'` com toggle no SubtitleInlineEditor e propagação para VideoComposition
+- **Extração de thumbnail de vídeo** (`extractVideoThumbnail()`): gera thumbnail via canvas a partir de blob de vídeo, usado na VideoLibrary
+- **Busca e ordenação na VideoLibrary**: campo de busca por nome e ordenação por data (recent/oldest) na galeria de vídeos
+- **Tokens de tema** (`tokens.ts`): 9 novos tokens — `SUCCESS_BG_SUBTLE`, `SUCCESS_BG_MEDIUM`, `SUCCESS_BORDER`, `SUCCESS_BORDER_HOVER`, `SUCCESS_GLOW`, `ERROR_BG_SUBTLE_2`, `ERROR_BORDER`, `ERROR_BORDER_HOVER`, `ERROR_GLOW`
+- **Progress semântico** (`VideoExportPanel`): progress bar usa `<progress>` HTML nativo com `aria-valuenow/valuemin/valuemax` para acessibilidade
+- **Teste**: assertion atualizada para 8 keys no type de legendas (incluindo `position`)
+
+### Corrigido
+
+- **Blob URL revogação seletiva** (`VideoLibrary`): ao excluir um vídeo, apenas o blob URL do item excluído é revogado (antes revogava todos)
+- **`estimateFileSize` VP9/H265**: multiplicadores adicionados para VP9 (~0.6) e H.265 (~0.5) (antes só VP8)
+- **Guard dupla renderização** (`useVideoExporter`): `startRender` agora verifica `isRendering` antes de iniciar, previne duplo clique
+- **Thumbnail timeout** (`extractVideoThumbnail`): Promise rejeita após 10s se vídeo não carregar (previne hang)
+- **A11y slider** (`SubtitleInlineEditor`): sliders com `aria-label` e `aria-valuetext` descritivos
+- **useEffect deps** (`VideoPreview`, `SubtitleInlineEditor`, `VideoExportPanel`): arrays de dependência corrigidos
+- **Tokens hardcoded** (`SubtitleInlineEditor`): valores hardcoded de cor substituídos por tokens de tema (`SLIDER_SHARED_SX`, `THUMBNAIL_GLOW_SHADOW`)
+- **Slider styles duplicados** (`SubtitleInlineEditor`): estilos compartilhados extraídos para `SLIDER_SHARED_SX`
+- **Default duplicado** (`videoUtils`): `DEFAULT_EXPORT_QUALITY` centralizado como constante exportável
+
+---
+
 ## [0.18.1] - 2026-04-24
 
 ### Removido

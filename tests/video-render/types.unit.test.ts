@@ -15,7 +15,7 @@ describe('types', () => {
 
     it('contém apenas as propriedades esperadas', () => {
       const keys = Object.keys(DEFAULT_SUBTITLE_STYLE);
-      expect(keys).toHaveLength(7);
+      expect(keys).toHaveLength(8);
       expect(keys.sort()).toEqual([
         'backgroundOpacity',
         'borderRadius',
@@ -23,6 +23,7 @@ describe('types', () => {
         'gap',
         'paddingX',
         'paddingY',
+        'position',
         'verticalOffset',
       ]);
     });

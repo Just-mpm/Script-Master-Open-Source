@@ -8,6 +8,8 @@ import Collapse from '@mui/material/Collapse';
 import Fade from '@mui/material/Fade';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Add from '@mui/icons-material/Add';
@@ -17,6 +19,8 @@ import OpenWith from '@mui/icons-material/OpenWith';
 import Refresh from '@mui/icons-material/Refresh';
 import Remove from '@mui/icons-material/Remove';
 import Subtitles from '@mui/icons-material/Subtitles';
+import VerticalAlignBottom from '@mui/icons-material/VerticalAlignBottom';
+import VerticalAlignTop from '@mui/icons-material/VerticalAlignTop';
 import Visibility from '@mui/icons-material/Visibility';
 import {
   BRAND_PRIMARY,
@@ -25,7 +29,16 @@ import {
   BRAND_PRIMARY_GLOW,
   BRAND_PRIMARY_GLOW_SOFT,
   SUCCESS_MAIN,
+  SUCCESS_BG_SUBTLE,
+  SUCCESS_BG_MEDIUM,
+  SUCCESS_BORDER,
+  SUCCESS_BORDER_HOVER,
+  SUCCESS_GLOW,
   ERROR_MAIN,
+  ERROR_BG_SUBTLE_2,
+  ERROR_BORDER,
+  ERROR_BORDER_HOVER,
+  ERROR_GLOW,
   TEXT_SECONDARY,
   TEXT_DISABLED,
   APP_SURFACE,
@@ -42,13 +55,14 @@ import {
   BLACK_40,
   BLACK_50,
   BLACK_55,
+  BLACK_74,
   GLASS_BG,
   SHADOW_DEEP,
   RADIUS_CHIP,
 } from '../../../theme/tokens';
 import { getResolutionFromRatio } from '../lib/videoUtils';
 import { DEFAULT_SUBTITLE_STYLE } from '../types';
-import type { SubtitleStyle } from '../types';
+import type { SubtitleStyle, SubtitlePosition } from '../types';
 import type { SceneRatio } from '../../studio/types';
 
 // ---------------------------------------------------------------------------
@@ -109,6 +123,10 @@ interface SubtitleInlineEditorProps {
    *  Quando fornecido, a toolbar aparece fora do preview (fluxo normal).
    *  Quando omitido, a toolbar fica dentro do preview (comportamento atual). */
   toolbarPortal?: React.RefObject<HTMLDivElement | null>;
+  /** Posição vertical da legenda (default: 'bottom') */
+  subtitlePosition?: SubtitlePosition;
+  /** Callback quando a posição vertical muda */
+  onSubtitlePositionChange?: (value: SubtitlePosition) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +142,31 @@ const TOOLBAR_ICON_BTN_BASE = {
   transition: 'all 0.15s ease',
   '&:active': {
     transform: 'scale(0.88)',
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// Estilos compartilhados dos sliders
+// ---------------------------------------------------------------------------
+
+const THUMBNAIL_GLOW_SHADOW = `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`;
+
+const SLIDER_SHARED_SX = {
+  color: BRAND_PRIMARY,
+  p: '4px 0',
+  '& .MuiSlider-thumb': {
+    width: 12,
+    height: 12,
+    transition: 'box-shadow 0.15s ease',
+    '&:hover, &.Mui-focusVisible': {
+      boxShadow: THUMBNAIL_GLOW_SHADOW,
+    },
+  },
+  '& .MuiSlider-rail': {
+    backgroundColor: WHITE_10,
+  },
+  '& .MuiSlider-track': {
+    border: 'none',
   },
 } as const;
 
@@ -184,6 +227,8 @@ export function SubtitleInlineEditor({
   children,
   ratio,
   toolbarPortal,
+  subtitlePosition = 'bottom',
+  onSubtitlePositionChange,
 }: SubtitleInlineEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -248,6 +293,17 @@ export function SubtitleInlineEditor({
   const handleReset = useCallback(() => {
     setEditingStyle({ ...DEFAULT_SUBTITLE_STYLE });
   }, []);
+
+  // --- Posição vertical (alteração imediata — sem precisar confirmar) ---
+
+  const handlePositionChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, value: string | null) => {
+      if (value !== null && onSubtitlePositionChange) {
+        onSubtitlePositionChange(value as SubtitlePosition);
+      }
+    },
+    [onSubtitlePositionChange],
+  );
 
   // --- Fonte size (atualiza state local) ---
 
@@ -500,6 +556,58 @@ export function SubtitleInlineEditor({
         sx={{ borderColor: WHITE_14, mx: 0.25 }}
       />
 
+      {/* ── Grupo: Posição (bottom/top) — ToggleButtonGroup ── */}
+      <Tooltip title="Posição da legenda" placement="top" arrow>
+        <ToggleButtonGroup
+          value={subtitlePosition}
+          exclusive
+          onChange={handlePositionChange}
+          size="small"
+          aria-label="Posição vertical da legenda"
+          sx={{
+            '& .MuiToggleButton-root': {
+              color: TEXT_SECONDARY,
+              border: `1px solid ${WHITE_08}`,
+              backgroundColor: 'transparent',
+              padding: '4px 8px',
+              minHeight: 24,
+              '&:hover': {
+                backgroundColor: WHITE_06,
+              },
+              '&.Mui-selected': {
+                color: BRAND_PRIMARY_LIGHT,
+                backgroundColor: `${BRAND_PRIMARY_GLOW_SOFT}`,
+                borderColor: `${BRAND_PRIMARY_DARK}`,
+                '&:hover': {
+                  backgroundColor: `${BRAND_PRIMARY_GLOW}`,
+                },
+              },
+            },
+            '& .MuiToggleButtonGroup-grouped': {
+              border: 'none',
+              '&:not(:first-of-type)': {
+                marginLeft: `1px`,
+                borderLeft: `1px solid ${WHITE_08}`,
+              },
+            },
+          }}
+        >
+          <ToggleButton value="bottom" aria-label="Posição inferior">
+            <VerticalAlignBottom sx={{ fontSize: 16 }} />
+          </ToggleButton>
+          <ToggleButton value="top" aria-label="Posição superior">
+            <VerticalAlignTop sx={{ fontSize: 16 }} />
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Tooltip>
+
+      {/* Divider */}
+      <Divider
+        orientation="vertical"
+        flexItem
+        sx={{ borderColor: WHITE_14, mx: 0.25 }}
+      />
+
       {/* ── Grupo: Opacidade do fundo ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 0.5 }}>
         <Typography
@@ -524,25 +632,7 @@ export function SubtitleInlineEditor({
           step={OPACITY_STEP}
           size="small"
           aria-label="Opacidade do fundo da legenda"
-          sx={{
-            width: 72,
-            color: BRAND_PRIMARY,
-            p: '4px 0',
-            '& .MuiSlider-thumb': {
-              width: 12,
-              height: 12,
-              transition: 'box-shadow 0.15s ease',
-              '&:hover, &.Mui-focusVisible': {
-                boxShadow: `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`,
-              },
-            },
-            '& .MuiSlider-rail': {
-              backgroundColor: WHITE_10,
-            },
-            '& .MuiSlider-track': {
-              border: 'none',
-            },
-          }}
+          sx={{ width: 72, ...SLIDER_SHARED_SX }}
         />
       </Box>
 
@@ -557,6 +647,8 @@ export function SubtitleInlineEditor({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 0.5 }}>
         <Typography
           variant="caption"
+          component="label"
+          htmlFor="subtitle-vertical-offset"
           sx={{
             color: TEXT_DISABLED,
             fontFamily: '"JetBrains Mono", monospace',
@@ -576,26 +668,9 @@ export function SubtitleInlineEditor({
           max={maxOffset}
           step={DRAG_SNAP}
           size="small"
+          id="subtitle-vertical-offset"
           aria-label="Posição vertical da legenda"
-          sx={{
-            width: 80,
-            color: BRAND_PRIMARY,
-            p: '4px 0',
-            '& .MuiSlider-thumb': {
-              width: 12,
-              height: 12,
-              transition: 'box-shadow 0.15s ease',
-              '&:hover, &.Mui-focusVisible': {
-                boxShadow: `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`,
-              },
-            },
-            '& .MuiSlider-rail': {
-              backgroundColor: WHITE_10,
-            },
-            '& .MuiSlider-track': {
-              border: 'none',
-            },
-          }}
+          sx={{ width: 80, ...SLIDER_SHARED_SX }}
         />
       </Box>
 
@@ -663,13 +738,13 @@ export function SubtitleInlineEditor({
               width: 28,
               height: 28,
               borderRadius: 2,
-              backgroundColor: `rgba(16, 185, 129, 0.08)`,
-              border: `1px solid rgba(16, 185, 129, 0.18)`,
+              backgroundColor: SUCCESS_BG_SUBTLE,
+              border: `1px solid ${SUCCESS_BORDER}`,
               transition: 'all 0.15s ease',
               '&:hover': {
-                backgroundColor: `rgba(16, 185, 129, 0.16)`,
-                borderColor: `rgba(16, 185, 129, 0.32)`,
-                boxShadow: `0 0 12px rgba(16, 185, 129, 0.2)`,
+                backgroundColor: SUCCESS_BG_MEDIUM,
+                borderColor: SUCCESS_BORDER_HOVER,
+                boxShadow: `0 0 12px ${SUCCESS_GLOW}`,
               },
               '&:active': {
                 transform: 'scale(0.88)',
@@ -691,13 +766,13 @@ export function SubtitleInlineEditor({
               width: 28,
               height: 28,
               borderRadius: 2,
-              backgroundColor: `rgba(239, 68, 68, 0.06)`,
-              border: `1px solid rgba(239, 68, 68, 0.14)`,
+              backgroundColor: ERROR_BG_SUBTLE_2,
+              border: `1px solid ${ERROR_BORDER}`,
               transition: 'all 0.15s ease',
               '&:hover': {
-                backgroundColor: `rgba(239, 68, 68, 0.14)`,
-                borderColor: `rgba(239, 68, 68, 0.28)`,
-                boxShadow: `0 0 12px rgba(239, 68, 68, 0.15)`,
+                backgroundColor: ERROR_BORDER,
+                borderColor: ERROR_BORDER_HOVER,
+                boxShadow: `0 0 12px ${ERROR_GLOW}`,
               },
               '&:active': {
                 transform: 'scale(0.88)',
@@ -805,7 +880,7 @@ export function SubtitleInlineEditor({
               boxShadow: `0 0 ${40 * scale}px ${20 * scale}px rgba(0, 0, 0, ${editingStyle.backgroundOpacity * 0.8})`,
               // Outline sutil com glow cyan em vez de dashed
               border: `1.5px solid ${BRAND_PRIMARY_GLOW_SOFT}`,
-              outline: `1px solid rgba(46, 117, 182, 0.15)`,
+              outline: `1px solid ${WHITE_04}`,
               outlineOffset: '3px',
               // Transição suave
               transition: 'border-color 0.2s ease, outline-color 0.2s ease',
@@ -900,8 +975,7 @@ export function SubtitleInlineEditor({
                 px: 2,
                 py: 1,
                 borderRadius: `${RADIUS_CHIP}px`,
-                backgroundColor: `rgba(0, 0, 0, 0.72)`,
-                backdropFilter: 'blur(12px)',
+                backgroundColor: BLACK_74,                backdropFilter: 'blur(12px)',
                 border: `1px solid ${APP_BORDER}`,
                 boxShadow: `0 4px 16px rgba(0, 0, 0, 0.4)`,
                 zIndex: 9,

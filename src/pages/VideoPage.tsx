@@ -14,7 +14,7 @@ import { useVideoExporter } from '../features/video-render/hooks/useVideoExporte
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
-import type { SubtitleStyle } from '../features/video-render/types';
+import type { SubtitleStyle, SubtitlePosition, VideoExportQuality } from '../features/video-render/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import type { AudioSegment } from '../lib/db/types';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
@@ -94,6 +94,50 @@ export function VideoPage({
       // Quota cheia ou SecurityError — falha silenciosa
     }
   }, [subtitleStyle]);
+
+  // Toggle: exportar vídeo com legenda (default: true)
+  const [includeSubtitles, setIncludeSubtitles] = useState(true);
+
+  // Qualidade de exportação (default: 1080p)
+  const [exportQuality, setExportQuality] = useState<VideoExportQuality>('1080p');
+
+  // Nome personalizado do arquivo de exportação
+  const [exportFileName, setExportFileName] = useState('');
+
+  // Toggle: legenda visível no preview (estado local, não afeta exportação)
+  const [captionVisible, setCaptionVisible] = useState(true);
+
+  // Posição vertical da legenda — persistido no localStorage
+  const [subtitlePosition, setSubtitlePosition] = useState<SubtitlePosition>(() => {
+    try {
+      const stored = localStorage.getItem('s2a_subtitlePosition');
+      if (stored === 'top' || stored === 'center') return stored;
+    } catch {
+      // SecurityError (Safari Private Browsing)
+    }
+    return 'bottom';
+  });
+
+  // Persiste posição no localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('s2a_subtitlePosition', subtitlePosition);
+    } catch {
+      // Quota cheia ou SecurityError — falha silenciosa
+    }
+  }, [subtitlePosition]);
+
+  // Sincroniza position no subtitleStyle para o VideoComposition
+  const mergedSubtitleStyle = useMemo<SubtitleStyle>(() => ({
+    ...subtitleStyle,
+    position: subtitlePosition,
+  }), [subtitleStyle, subtitlePosition]);
+
+  // Duração total em segundos para estimativa de tamanho
+  const durationInSeconds = useMemo(
+    () => durationInFrames / videoFps,
+    [durationInFrames, videoFps],
+  );
 
   // Ref para portal da toolbar de legenda — renderizada fora do preview
   const toolbarPortalRef = useRef<HTMLDivElement>(null);
@@ -179,22 +223,27 @@ export function VideoPage({
       </Box>
 
        <SubtitleInlineEditor
-          hasCaptions={captions.length > 0}
-          subtitleStyle={subtitleStyle}
-          onSubtitleStyleChange={setSubtitleStyle}
-          ratio={sceneRatio}
-          toolbarPortal={toolbarPortalRef}
-        >
-         <VideoPreview
-          ref={videoPlayerRef}
-          scenes={scenes}
-          audioUrl={audioUrl}
-          fps={videoFps}
-          durationInFrames={durationInFrames}
-          ratio={sceneRatio}
-          captions={captions.length > 0 ? captions : undefined}
-          subtitleStyle={subtitleStyle}
-        />
+           hasCaptions={captions.length > 0}
+           subtitleStyle={subtitleStyle}
+           onSubtitleStyleChange={setSubtitleStyle}
+           ratio={sceneRatio}
+           toolbarPortal={toolbarPortalRef}
+           subtitlePosition={subtitlePosition}
+           onSubtitlePositionChange={setSubtitlePosition}
+         >
+          <VideoPreview
+           ref={videoPlayerRef}
+           scenes={scenes}
+           audioUrl={audioUrl}
+           fps={videoFps}
+           durationInFrames={durationInFrames}
+           ratio={sceneRatio}
+           captions={captions.length > 0 ? captions : undefined}
+           subtitleStyle={mergedSubtitleStyle}
+           showCaptionToggle={includeSubtitles}
+           captionVisible={captionVisible}
+           onCaptionToggle={() => setCaptionVisible((v) => !v)}
+         />
        </SubtitleInlineEditor>
 
        {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
@@ -228,19 +277,26 @@ export function VideoPage({
         onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
       />
 
-      {/* Painel de exportação MP4 */}
-      <VideoExportPanel
-        scenes={scenes}
-        audioUrl={audioUrl}
-        fps={videoFps}
-        durationInFrames={durationInFrames}
-        ratio={sceneRatio}
-        projectId={currentProjectId ?? undefined}
-        userId={userId}
-        exporter={videoExporter}
-        captions={captions.length > 0 ? captions : undefined}
-        subtitleStyle={subtitleStyle}
-      />
+       {/* Painel de exportação MP4 */}
+        <VideoExportPanel
+          scenes={scenes}
+          audioUrl={audioUrl}
+          fps={videoFps}
+          durationInFrames={durationInFrames}
+          ratio={sceneRatio}
+          projectId={currentProjectId ?? undefined}
+          userId={userId}
+          exporter={videoExporter}
+          captions={captions.length > 0 ? captions : undefined}
+          subtitleStyle={mergedSubtitleStyle}
+          includeSubtitles={includeSubtitles}
+          onIncludeSubtitlesChange={setIncludeSubtitles}
+          quality={exportQuality}
+          onQualityChange={setExportQuality}
+          durationInSeconds={durationInSeconds}
+          fileName={exportFileName}
+          onFileNameChange={setExportFileName}
+        />
 
       <VideoLibrary
         activeProjectId={currentProjectId}

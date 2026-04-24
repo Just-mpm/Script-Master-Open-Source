@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,7 +20,11 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import AccessTime from '@mui/icons-material/AccessTime';
+import ArrowDownward from '@mui/icons-material/ArrowDownward';
+import ArrowUpward from '@mui/icons-material/ArrowUpward';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Close from '@mui/icons-material/Close';
 import Delete from '@mui/icons-material/Delete';
@@ -28,6 +32,7 @@ import Download from '@mui/icons-material/Download';
 import FolderOpen from '@mui/icons-material/FolderOpen';
 import Movie from '@mui/icons-material/Movie';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import Search from '@mui/icons-material/Search';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { getProjects, getProjectsDetailsMap, getGenerations, deleteVideoFromProject, deleteGeneration } from '../lib/db';
@@ -55,6 +60,82 @@ interface VideoLibraryItem extends Project {
 interface VideoLibraryProps {
   onSelect: (projectId: string, audioUrl: string, scenes: { imageUrl: string; timestamp: number }[], script: string) => void;
   activeProjectId?: string | null;
+}
+
+type SortOrder = 'recent' | 'oldest';
+
+/**
+ * Extrai um frame de preview de um blob de vídeo.
+ * Cria um elemento <video> oculto, busca o frame em 2 segundos,
+ * desenha em <canvas> e retorna data URL.
+ *
+ * NOTA: Atualmente não utilizado porque `getProjectsDetailsMap` não inclui
+ * vídeos na sua estrutura de retorno ({ audios, images }). Quando vídeos
+ * forem adicionados ao bulk fetch, esta função pode ser integrada.
+ */
+export async function extractVideoThumbnail(videoBlob: Blob): Promise<string | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.preload = 'metadata';
+
+    const url = URL.createObjectURL(videoBlob);
+    video.src = url;
+
+    // Timeout de 10s para evitar pendurar indefinidamente (blob corrompido)
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, 10_000);
+
+    const cleanup = (): void => {
+      clearTimeout(timeoutId);
+      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+      video.removeEventListener('stalled', onStalled);
+      URL.revokeObjectURL(url);
+    };
+
+    const onLoadedData = (): void => {
+      // Seek para 2 segundos (ou 25% da duração se menor)
+      video.currentTime = Math.min(2, video.duration * 0.25);
+    };
+
+    const onSeeked = (): void => {
+      const canvas = document.createElement('canvas');
+      const scale = 320 / video.videoWidth; // Thumbnail de ~320px
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+
+      const ctx = canvas.getContext('2d');
+      cleanup();
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      } else {
+        resolve(null);
+      }
+    };
+
+    const onError = (): void => {
+      cleanup();
+      resolve(null);
+    };
+
+    const onStalled = (): void => {
+      // Se o vídeo travar no carregamento, cancela após um tempo adicional
+      setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, 5_000);
+    };
+
+    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('error', onError);
+    video.addEventListener('stalled', onStalled);
+  });
 }
 
 function MetadataPill({
@@ -95,18 +176,24 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<VideoLibraryItem | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const blobUrlsRef = useRef<Set<string>>(new Set());
+   const blobUrlsRef = useRef<Set<string>>(new Set());
+  /** Mapeia blob URL → ID do item para revogação seletiva */
+  const blobUrlItemMapRef = useRef<Map<string, string>>(new Map());
 
-  const createTrackedBlobUrl = useCallback((blob: Blob): string => {
+  const createTrackedBlobUrl = useCallback((blob: Blob, itemId: string): string => {
     const url = URL.createObjectURL(blob);
     blobUrlsRef.current.add(url);
+    blobUrlItemMapRef.current.set(url, itemId);
     return url;
   }, []);
 
   const revokeAllBlobUrls = useCallback(() => {
     blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     blobUrlsRef.current.clear();
+    blobUrlItemMapRef.current.clear();
   }, []);
 
   useEffect(() => revokeAllBlobUrls, [revokeAllBlobUrls]);
@@ -165,9 +252,9 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           }
           return {
             ...item,
-            thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? createTrackedBlobUrl(details.images[0].imageBlob) : undefined),
-            audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? createTrackedBlobUrl(details.audios[0].audioBlob) : ''),
-            scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? createTrackedBlobUrl(img.imageBlob) : ''), timestamp: img.timestamp })),
+            thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? createTrackedBlobUrl(details.images[0].imageBlob, item.id) : undefined),
+            audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? createTrackedBlobUrl(details.audios[0].audioBlob, item.id) : ''),
+            scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? createTrackedBlobUrl(img.imageBlob, item.id) : ''), timestamp: img.timestamp })),
           };
         } catch {
           return item;
@@ -186,6 +273,28 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
+
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [...projects].sort((a, b) =>
+        sortOrder === 'recent'
+          ? b.createdAt - a.createdAt
+          : a.createdAt - b.createdAt,
+      );
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    const matched = projects.filter((p) =>
+      p.name.toLowerCase().includes(query) ||
+      p.script.toLowerCase().includes(query),
+    );
+
+    return matched.sort((a, b) =>
+      sortOrder === 'recent'
+        ? b.createdAt - a.createdAt
+        : a.createdAt - b.createdAt,
+    );
+  }, [projects, searchQuery, sortOrder]);
 
   const handleDownloadSequence = async (e: React.MouseEvent, item: VideoLibraryItem) => {
     e.stopPropagation();
@@ -238,9 +347,14 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
       setProjects((prev) => prev.filter((p) => p.id !== itemToDelete.id));
       setItemToDelete(null);
 
-      // Revoga blob URLs do item excluído
-      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      blobUrlsRef.current.clear();
+      // Revoga apenas os blob URLs do item excluído
+      blobUrlsRef.current.forEach((url) => {
+        if (blobUrlItemMapRef.current.get(url) === itemToDelete.id) {
+          URL.revokeObjectURL(url);
+          blobUrlsRef.current.delete(url);
+          blobUrlItemMapRef.current.delete(url);
+        }
+      });
     } catch (err) {
       log.error('Falha ao excluir item da galeria', { error: err });
     } finally {
@@ -302,6 +416,22 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     );
   }
 
+  if (filteredProjects.length === 0 && searchQuery.trim()) {
+    return (
+      <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD } })}>
+        <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center', textAlign: 'center' }}>
+          <Search sx={{ fontSize: 24, opacity: 0.35 }} />
+          <Stack spacing={GAP_COMPACT}>
+            <Typography variant="h6">Nenhum resultado</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Nenhum projeto corresponde a &ldquo;{searchQuery}&rdquo;.
+            </Typography>
+          </Stack>
+        </Stack>
+      </Paper>
+    );
+  }
+
   return (
     <Stack spacing={GAP_RELAXED}>
       <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -310,14 +440,41 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
             Sua galeria
           </Typography>
+          <Chip label={`${filteredProjects.length} itens`} size="small" variant="outlined" />
         </Stack>
 
-        <Chip label={`${projects.length} itens`} size="small" variant="outlined" />
+        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ fontSize: ICON_SIZE_SM, color: 'text.secondary' }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ width: 200 }}
+          />
+
+          <Tooltip title={sortOrder === 'recent' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}>
+            <IconButton size="small" onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}>
+              {sortOrder === 'recent'
+                ? <ArrowDownward sx={{ fontSize: ICON_SIZE_MD }} />
+                : <ArrowUpward sx={{ fontSize: ICON_SIZE_MD }} />
+              }
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
 
       <Box sx={{ overflowX: 'auto', pb: 1.5, mx: -0.5, px: 0.5 }}>
         <Stack direction="row" spacing={2} useFlexGap sx={{ minWidth: 'max-content', pr: 0.5 }}>
-          {projects.map((project) => {
+          {filteredProjects.map((project) => {
             const isActive = activeProjectId === project.id;
             const canSelect = Boolean(project.audioUrl && project.scenes);
 

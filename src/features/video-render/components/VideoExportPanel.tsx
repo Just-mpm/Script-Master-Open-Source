@@ -6,17 +6,23 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
+import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Close from '@mui/icons-material/Close';
 import Download from '@mui/icons-material/Download';
+import Replay from '@mui/icons-material/Replay';
 import VideoFile from '@mui/icons-material/VideoFile';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { VideoExportOptions, VideoExporter } from '../hooks/useVideoExporter';
-import { getResolutionFromRatio } from '../lib/videoUtils';
+import { getResolutionFromQuality, estimateFileSize, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
   GAP_COMPACT,
@@ -33,7 +39,30 @@ import {
   ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord, SubtitleStyle } from '../types';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
+
+// ---------------------------------------------------------------------------
+// Constantes
+// ---------------------------------------------------------------------------
+
+const QUALITY_OPTIONS: { value: VideoExportQuality; label: string }[] = [
+  { value: '720p', label: '720p' },
+  { value: '1080p', label: '1080p' },
+  { value: '1440p', label: '1440p' },
+  { value: '4k', label: '4K' },
+];
+
+/**
+ * Formata bytes em string legível (KB / MB / GB).
+ * Retorna `null` para valores não positivos.
+ */
+function formatFileSize(bytes: number): string | null {
+  if (bytes <= 0) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -56,6 +85,20 @@ interface VideoExportPanelProps {
   captions?: CaptionWord[];
   /** Estilo personalizável das legendas */
   subtitleStyle?: SubtitleStyle;
+  /** Incluir legenda no vídeo exportado (default: true) */
+  includeSubtitles?: boolean;
+  /** Callback quando o toggle de legenda muda */
+  onIncludeSubtitlesChange?: (value: boolean) => void;
+  /** Qualidade selecionada para exportação */
+  quality?: VideoExportQuality;
+  /** Callback quando qualidade muda */
+  onQualityChange?: (quality: VideoExportQuality) => void;
+  /** Duração total em segundos (para estimativa de tamanho) */
+  durationInSeconds?: number;
+  /** Nome do arquivo customizado */
+  fileName?: string;
+  /** Callback quando nome do arquivo muda */
+  onFileNameChange?: (name: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,14 +116,33 @@ export function VideoExportPanel({
   exporter,
   captions,
   subtitleStyle,
+  includeSubtitles = true,
+  onIncludeSubtitlesChange,
+  quality = DEFAULT_EXPORT_QUALITY,
+  onQualityChange,
+  durationInSeconds,
+  fileName,
+  onFileNameChange,
 }: VideoExportPanelProps) {
-  const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
+  const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
+
+  // Estimativa de tamanho do arquivo
+  const estimatedSize = useMemo(() => {
+    if (durationInSeconds == null || durationInSeconds <= 0) return null;
+    const bytes = estimateFileSize(
+      durationInSeconds,
+      resolution.width,
+      resolution.height,
+      exporter.resolvedVideoCodec,
+    );
+    return formatFileSize(bytes);
+  }, [durationInSeconds, resolution.width, resolution.height, exporter.resolvedVideoCodec]);
 
   // Sincroniza ref com a função estável do hook
   useEffect(() => {
     checkSupportRef.current = exporter.checkSupport;
-  });
+  }, [exporter.checkSupport]);
 
   // Verifica suporte do browser ao montar (quando há conteúdo para exportar)
   useEffect(() => {
@@ -92,6 +154,7 @@ export function VideoExportPanel({
   // Se não há conteúdo, não renderiza nada
   const hasContent = Boolean(audioUrl && scenes.length > 0);
   const isExportable = hasContent && exporter.canRender === true;
+  const hasCaptions = captions != null && captions.length > 0;
 
   const handleStartExport = () => {
     const options: VideoExportOptions = {
@@ -100,12 +163,19 @@ export function VideoExportPanel({
       fps,
       durationInFrames,
       ratio,
-      captions,
-      subtitleStyle,
+      captions: includeSubtitles ? captions : undefined,
+      subtitleStyle: includeSubtitles ? subtitleStyle : undefined,
       projectId,
       userId,
+      quality,
+      fileName: fileName || undefined,
     };
     void exporter.startRender(options);
+  };
+
+  const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
+    onFileNameChange?.(sanitized);
   };
 
   return (
@@ -152,18 +222,95 @@ export function VideoExportPanel({
           </Alert>
         )}
 
-        {/* Info de resolução e codec */}
+        {/* Painel de configuração antes de exportar */}
         {!exporter.isRendering && !exporter.outputUrl && (
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={{ xs: GAP_MEDIUM, sm: GAP_DEFAULT }}
-            sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
-          >
+          <Stack spacing={GAP_MEDIUM}>
+            {/* Info de resolução, codec e estimativa */}
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}
+              Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}{estimatedSize ? ` | ~${estimatedSize}` : ''}
             </Typography>
 
-            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+            {/* Seletor de qualidade */}
+            <ToggleButtonGroup
+              value={quality}
+              exclusive
+              onChange={(_, value: VideoExportQuality | null) => {
+                if (value) onQualityChange?.(value);
+              }}
+              size="small"
+              aria-label="Qualidade de exportação"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  px: 1.5,
+                  py: 0.4,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&.Mui-selected': {
+                    background: BRAND_GRADIENT,
+                    color: '#fff',
+                    borderColor: 'transparent',
+                    boxShadow: BRAND_GLOW,
+                    '&:hover': { background: BRAND_GRADIENT_HOVER },
+                  },
+                },
+              }}
+            >
+              {QUALITY_OPTIONS.map((opt) => (
+                <ToggleButton key={opt.value} value={opt.value}>
+                  {opt.label}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+
+            {/* Campo de nome do arquivo */}
+            <TextField
+              label="Nome do arquivo"
+              placeholder="video-export"
+              variant="outlined"
+              size="small"
+              value={fileName ?? ''}
+              onChange={handleFileNameChange}
+              fullWidth
+              slotProps={{
+                htmlInput: {
+                  'aria-label': 'Nome do arquivo de exportação',
+                  maxLength: 100,
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '0.875rem',
+                },
+              }}
+            />
+
+            {/* Ações: toggle legenda + botão exportar */}
+            <Stack
+              direction="row"
+              spacing={GAP_DEFAULT}
+              sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              {hasCaptions && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={includeSubtitles}
+                      onChange={(e) => onIncludeSubtitlesChange?.(e.target.checked)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      Legenda
+                    </Typography>
+                  }
+                  sx={{ mr: 0 }}
+                />
+              )}
+
               <Button
                 variant="contained"
                 size="small"
@@ -241,6 +388,14 @@ export function VideoExportPanel({
             </Stack>
 
             <Stack direction="row" spacing={GAP_DEFAULT}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={exporter.reset}
+                startIcon={<Replay sx={{ fontSize: ICON_SIZE_MD }} />}
+              >
+                Exportar novamente
+              </Button>
               <Button
                 variant="text"
                 size="small"
