@@ -14,7 +14,7 @@ import { useVideoExporter } from '../features/video-render/hooks/useVideoExporte
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
-import type { SubtitleStyle, SubtitlePosition, VideoExportQuality } from '../features/video-render/types';
+import type { SubtitleStyle, SubtitlePosition, VideoExportQuality, SpeedPaintSpeed } from '../features/video-render/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import type { AudioSegment } from '../lib/db/types';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
@@ -103,6 +103,12 @@ export function VideoPage({
 
   // Nome personalizado do arquivo de exportação
   const [exportFileName, setExportFileName] = useState('');
+
+  // Toggle: animar cenas com Speed Paint na exportação (default: false)
+  const [animateScenes, setAnimateScenes] = useState(false);
+
+  // Velocidade da animação speed paint (default: 'normal')
+  const [speedPaintSpeed, setSpeedPaintSpeed] = useState<SpeedPaintSpeed>('normal');
 
   // Toggle: legenda visível no preview (estado local, não afeta exportação)
   const [captionVisible, setCaptionVisible] = useState(true);
@@ -294,9 +300,13 @@ export function VideoPage({
           quality={exportQuality}
           onQualityChange={setExportQuality}
           durationInSeconds={durationInSeconds}
-          fileName={exportFileName}
-          onFileNameChange={setExportFileName}
-        />
+           fileName={exportFileName}
+           onFileNameChange={setExportFileName}
+            animateScenes={animateScenes}
+            onAnimateScenesChange={setAnimateScenes}
+            speedPaintSpeed={speedPaintSpeed}
+            onSpeedPaintSpeedChange={setSpeedPaintSpeed}
+          />
 
       <VideoLibrary
         activeProjectId={currentProjectId}

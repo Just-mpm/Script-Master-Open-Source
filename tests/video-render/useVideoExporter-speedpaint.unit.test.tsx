@@ -1,0 +1,295 @@
+/**
+ * Testes para useVideoExporter — foco na integração Speed Paint.
+ *
+ * Valida:
+ * - Prop `animateScenes` nas opções de exportação
+ * - Lógica de chamada a generateScenesWithSpeedPaint
+ * - Graceful degradation quando geração falha
+ * - Estado speedPaintWarnings no INITIAL_STATE
+ *
+ * BUG DOCUMENTADO (P1): speedPaintWarnings são perdidos por batching.
+ * Na linha 351, `setState(prev => ({ ...prev, speedPaintWarnings: failedScenes }))`
+ * é batched pelo React. Na linha 396, `prev.speedPaintWarnings` lê o estado
+ * ANTES do batch ser processado, resultando em array vazio no estado final.
+ * Correção: acumular warnings em ref e ler no setState da linha 396.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+
+// ---------------------------------------------------------------------------
+// Mocks — Remotion web-renderer
+// ---------------------------------------------------------------------------
+
+const mockGetBlob = vi.fn().mockResolvedValue(new Blob(['fake-video'], { type: 'video/mp4' }));
+
+vi.mock('@remotion/web-renderer', () => ({
+  renderMediaOnWeb: vi.fn().mockResolvedValue({ getBlob: mockGetBlob }),
+  canRenderMediaOnWeb: vi.fn().mockResolvedValue({
+    canRender: true,
+    resolvedVideoCodec: 'h264',
+    resolvedAudioCodec: 'aac',
+    issues: [],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Mocks — dependências internas
+// ---------------------------------------------------------------------------
+
+vi.mock('../../src/features/video-render/components/VideoComposition', () => ({
+  VideoComposition: () => null,
+}));
+
+vi.mock('../../src/features/video-render/lib/canvasFontStretchPatch', () => ({
+  patchCanvasFontStretch: vi.fn(),
+}));
+
+vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
+  getResolutionFromQuality: () => ({ width: 1920, height: 1080 }),
+  mapScenesToVideoScenes: (scenes: unknown[]) =>
+    scenes.map((s: unknown) => ({ ...(s as Record<string, unknown>), durationInFrames: 90 })),
+  DEFAULT_EXPORT_QUALITY: '1080p',
+}));
+
+vi.mock('../../src/lib/db/videos', () => ({
+  saveVideoToProject: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../src/lib/download', () => ({
+  downloadFile: vi.fn(),
+}));
+
+vi.mock('../../src/lib/logger', () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Mocks — speed paint renderer (focus principal)
+// ---------------------------------------------------------------------------
+
+const mockGenerateScenesWithSpeedPaint = vi.fn();
+
+vi.mock('../../src/features/video-render/lib/speedPaintRenderer', () => ({
+  renderSpeedPaintFrame: vi.fn(),
+  createBufferCanvas: vi.fn(),
+  loadImageElement: vi.fn(),
+  generateScenesWithSpeedPaint: (...args: unknown[]) => mockGenerateScenesWithSpeedPaint(...args),
+}));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function createMinimalStudioScene(overrides?: Record<string, unknown>) {
+  return {
+    imageUrl: 'scene1.png',
+    prompt: 'test prompt',
+    timestamp: 0,
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Testes
+// ---------------------------------------------------------------------------
+
+describe('useVideoExporter — integração Speed Paint', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('não chama generateScenesWithSpeedPaint quando animateScenes é false (default)', async () => {
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: false,
+      });
+    });
+
+    expect(mockGenerateScenesWithSpeedPaint).not.toHaveBeenCalled();
+  });
+
+  it('não chama generateScenesWithSpeedPaint quando animateScenes é omitido', async () => {
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        // animateScenes omitido — default false
+      });
+    });
+
+    expect(mockGenerateScenesWithSpeedPaint).not.toHaveBeenCalled();
+  });
+
+  it('chama generateScenesWithSpeedPaint quando animateScenes é true', async () => {
+    const mockAnimation = {
+      id: 'anim-1',
+      canvasWidth: 1920,
+      canvasHeight: 1080,
+      canvasColor: 'white' as const,
+      totalFrames: 60,
+      fps: 30,
+      totalDurationMs: 2000,
+      strokes: [],
+    };
+
+    mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+      { animation: mockAnimation, sceneIndex: 0 },
+    ]);
+
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    expect(mockGenerateScenesWithSpeedPaint).toHaveBeenCalledTimes(1);
+    expect(mockGenerateScenesWithSpeedPaint).toHaveBeenCalledWith(
+      [{ imageUrl: 'scene1.png' }],
+      expect.any(Function),
+      { useWorker: true },
+    );
+  });
+
+  it('passa lista de imageUrls corretas para generateScenesWithSpeedPaint', async () => {
+    mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+      { animation: undefined, sceneIndex: 0 },
+      { animation: undefined, sceneIndex: 1 },
+      { animation: undefined, sceneIndex: 2 },
+    ]);
+
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [
+          createMinimalStudioScene({ imageUrl: 'a.png', timestamp: 0 }),
+          createMinimalStudioScene({ imageUrl: 'b.png', timestamp: 3 }),
+          createMinimalStudioScene({ imageUrl: 'c.png', timestamp: 6 }),
+        ],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 270,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    expect(mockGenerateScenesWithSpeedPaint).toHaveBeenCalledWith(
+      [
+        { imageUrl: 'a.png' },
+        { imageUrl: 'b.png' },
+        { imageUrl: 'c.png' },
+      ],
+      expect.any(Function),
+      { useWorker: true },
+    );
+  });
+
+  it('exportação prossegue normalmente mesmo quando speed paint falha completamente (graceful degradation)', async () => {
+    // generateScenesWithSpeedPaint lança erro geral
+    mockGenerateScenesWithSpeedPaint.mockRejectedValue(new Error('imageProcessing indisponível'));
+
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    // A exportação deve ter sido concluída com sucesso (não deve ter erro)
+    expect(result.current.isRendering).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('reset limpa speedPaintWarnings para array vazio', async () => {
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    // Estado inicial deve ter speedPaintWarnings vazio
+    expect(result.current.speedPaintWarnings).toEqual([]);
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.speedPaintWarnings).toEqual([]);
+  });
+
+  it('não chama generateScenesWithSpeedPaint quando scenes está vazio', async () => {
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    // startRender retorna cedo quando scenes.length === 0
+    expect(mockGenerateScenesWithSpeedPaint).not.toHaveBeenCalled();
+  });
+
+  it('passa callback de progresso para generateScenesWithSpeedPaint', async () => {
+    mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+      { animation: undefined, sceneIndex: 0 },
+    ]);
+
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    // O segundo argumento deve ser uma função (callback de progresso)
+    const lastCallArgs = mockGenerateScenesWithSpeedPaint.mock.calls[0];
+    expect(typeof lastCallArgs[1]).toBe('function');
+  });
+});

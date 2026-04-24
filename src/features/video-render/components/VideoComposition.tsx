@@ -2,8 +2,11 @@ import { useMemo } from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps } from '../types';
+import { SPEED_PAINT_MULTIPLIERS } from '../types';
+import type { SpeedPaintSpeed } from '../types';
 import { msToFrames } from '../lib/videoUtils';
 import { SceneSequence } from './SceneSequence';
+import { SpeedPaintScene } from './SpeedPaintScene';
 import { SubtitleOverlay } from './SubtitleOverlay';
 import { WaveformOverlay } from './WaveformOverlay';
 
@@ -27,6 +30,7 @@ export function VideoComposition({
   captions,
   subtitleStyle,
   isExporting,
+  speedPaintSpeed = 'normal',
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
@@ -77,6 +81,7 @@ export function VideoComposition({
         const sceneCaptions = sceneCaptionsMap.get(index) ?? [];
 
         const isLastScene = index === totalScenes - 1;
+        const speedMultiplier = SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal;
 
         return (
           <Sequence
@@ -84,13 +89,24 @@ export function VideoComposition({
             from={adjustedFrom}
             durationInFrames={adjustedDuration}
           >
-            {/* Imagem da cena com fade padrão */}
-            <SceneSequence
-              imageUrl={scene.imageUrl}
-              durationInFrames={adjustedDuration}
-              fadeFrames={FADE_FRAMES}
-              isLastScene={isLastScene}
-            />
+            {/* Imagem da cena: SpeedPaint animado ou fade estático */}
+            {scene.strokeAnimation ? (
+              <SpeedPaintScene
+                animation={scene.strokeAnimation}
+                imageSource={scene.imageUrl}
+                durationInFrames={adjustedDuration}
+                fadeFrames={FADE_FRAMES}
+                isLastScene={isLastScene}
+                speedMultiplier={speedMultiplier}
+              />
+            ) : (
+              <SceneSequence
+                imageUrl={scene.imageUrl}
+                durationInFrames={adjustedDuration}
+                fadeFrames={FADE_FRAMES}
+                isLastScene={isLastScene}
+              />
+            )}
 
             {/* Legenda: captions com timestamps ou texto fallback */}
             {(sceneCaptions.length > 0 || scene.subtitle) && (

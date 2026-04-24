@@ -1,7 +1,18 @@
 import type { StudioScene } from '../studio/types';
+import type { StrokeAnimation } from '../speed-paint/types';
 
 /** Qualidade de exportação do vídeo */
 export type VideoExportQuality = '720p' | '1080p' | '1440p' | '4k';
+
+/** Velocidade da animação speed paint */
+export type SpeedPaintSpeed = 'slow' | 'normal' | 'fast';
+
+/** Mapeamento de SpeedPaintSpeed para multiplicador numérico */
+export const SPEED_PAINT_MULTIPLIERS: Readonly<Record<SpeedPaintSpeed, number>> = {
+  slow: 0.5,
+  normal: 1.0,
+  fast: 1.5,
+} as const;
 
 /** Cena estendida para vídeo Remotion */
 export interface VideoScene extends StudioScene {
@@ -9,6 +20,8 @@ export interface VideoScene extends StudioScene {
   durationInFrames: number;
   /** Legenda opcional para esta cena */
   subtitle?: string;
+  /** Dados de animação speed paint — se presente, a cena é animada via canvas */
+  strokeAnimation?: StrokeAnimation;
 }
 
 /** Props da Composition Remotion */
@@ -25,6 +38,8 @@ export interface VideoCompositionProps {
   subtitleStyle?: SubtitleStyle;
   /** Indica se está em modo exportação — desabilita overlays pesados (ex: waveform) */
   isExporting?: boolean;
+  /** Velocidade da animação speed paint (default: 'normal') */
+  speedPaintSpeed?: SpeedPaintSpeed;
 }
 
 /** Configuração de renderização (Fase 3) */

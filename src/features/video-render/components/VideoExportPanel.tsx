@@ -37,9 +37,10 @@ import {
   SUCCESS_MAIN,
   WARNING_BG_SUBTLE,
   ERROR_BG_SUBTLE,
+  WHITE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintSpeed } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -51,6 +52,33 @@ const QUALITY_OPTIONS: { value: VideoExportQuality; label: string }[] = [
   { value: '1440p', label: '1440p' },
   { value: '4k', label: '4K' },
 ];
+
+/** Opções de velocidade da animação speed paint */
+const SPEED_OPTIONS: { value: SpeedPaintSpeed; label: string }[] = [
+  { value: 'slow', label: '0.5x Lento' },
+  { value: 'normal', label: '1x Normal' },
+  { value: 'fast', label: '1.5x Rápido' },
+];
+
+/** Estilo compartilhado dos ToggleButtonGroups de exportação (fontSize parametrizado) */
+const EXPORT_TOGGLE_GROUP_SX = (fontSize: string) => ({
+  '& .MuiToggleButton-root': {
+    px: 1.5,
+    py: 0.4,
+    fontSize,
+    fontWeight: 600,
+    border: '1px solid',
+    borderColor: 'divider',
+    color: 'text.secondary',
+    '&.Mui-selected': {
+      background: BRAND_GRADIENT,
+      color: WHITE,
+      borderColor: 'transparent',
+      boxShadow: BRAND_GLOW,
+      '&:hover': { background: BRAND_GRADIENT_HOVER },
+    },
+  },
+});
 
 /**
  * Formata bytes em string legível (KB / MB / GB).
@@ -99,6 +127,14 @@ interface VideoExportPanelProps {
   fileName?: string;
   /** Callback quando nome do arquivo muda */
   onFileNameChange?: (name: string) => void;
+  /** Animar cenas com Speed Paint na exportação (default: false) */
+  animateScenes?: boolean;
+  /** Callback quando o toggle de animação muda */
+  onAnimateScenesChange?: (value: boolean) => void;
+  /** Velocidade da animação speed paint (default: 'normal') */
+  speedPaintSpeed?: SpeedPaintSpeed;
+  /** Callback quando a velocidade muda */
+  onSpeedPaintSpeedChange?: (speed: SpeedPaintSpeed) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +159,10 @@ export function VideoExportPanel({
   durationInSeconds,
   fileName,
   onFileNameChange,
+  animateScenes = false,
+  onAnimateScenesChange,
+  speedPaintSpeed = 'normal',
+  onSpeedPaintSpeedChange,
 }: VideoExportPanelProps) {
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -169,6 +209,8 @@ export function VideoExportPanel({
       userId,
       quality,
       fileName: fileName || undefined,
+      animateScenes,
+      speedPaintSpeed,
     };
     void exporter.startRender(options);
   };
@@ -222,6 +264,24 @@ export function VideoExportPanel({
           </Alert>
         )}
 
+        {/* Alerta: cenas com speed paint que falharam */}
+        {exporter.speedPaintWarnings.length > 0 && (
+          <Alert
+            severity="warning"
+            icon={<WarningAmber sx={{ fontSize: 20 }} />}
+            sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Algumas cenas não puderam ser animadas:
+            </Typography>
+            <Typography variant="caption" component="ul" sx={{ pl: 2, mt: 0.5 }}>
+              {exporter.speedPaintWarnings.map((warning, i) => (
+                <li key={i}>{warning}</li>
+              ))}
+            </Typography>
+          </Alert>
+        )}
+
         {/* Painel de configuração antes de exportar */}
         {!exporter.isRendering && !exporter.outputUrl && (
           <Stack spacing={GAP_MEDIUM}>
@@ -229,6 +289,49 @@ export function VideoExportPanel({
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}{estimatedSize ? ` | ~${estimatedSize}` : ''}
             </Typography>
+
+            {/* Toggle: animar cenas com Speed Paint */}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={animateScenes}
+                  onChange={(e) => onAnimateScenesChange?.(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={
+                <Tooltip
+                  title="Adiciona animação de pintura a cada cena. Pode aumentar o tempo de exportação consideravelmente."
+                  placement="top"
+                  arrow
+                >
+                  <Typography variant="caption" sx={{ color: 'text.secondary', cursor: 'help' }}>
+                    Animar cenas (Speed Paint)
+                  </Typography>
+                </Tooltip>
+              }
+              sx={{ mr: 0 }}
+            />
+
+            {/* Seletor de velocidade do Speed Paint — visível apenas quando toggle ativo */}
+            {animateScenes && (
+              <ToggleButtonGroup
+                value={speedPaintSpeed}
+                exclusive
+                onChange={(_, value: SpeedPaintSpeed | null) => {
+                  if (value) onSpeedPaintSpeedChange?.(value);
+                }}
+                size="small"
+                aria-label="Velocidade da animação speed paint"
+                sx={EXPORT_TOGGLE_GROUP_SX('0.75rem')}
+              >
+                {SPEED_OPTIONS.map((opt) => (
+                  <ToggleButton key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            )}
 
             {/* Seletor de qualidade */}
             <ToggleButtonGroup
@@ -239,24 +342,7 @@ export function VideoExportPanel({
               }}
               size="small"
               aria-label="Qualidade de exportação"
-              sx={{
-                '& .MuiToggleButton-root': {
-                  px: 1.5,
-                  py: 0.4,
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  color: 'text.secondary',
-                  '&.Mui-selected': {
-                    background: BRAND_GRADIENT,
-                    color: '#fff',
-                    borderColor: 'transparent',
-                    boxShadow: BRAND_GLOW,
-                    '&:hover': { background: BRAND_GRADIENT_HOVER },
-                  },
-                },
-              }}
+              sx={EXPORT_TOGGLE_GROUP_SX('0.8rem')}
             >
               {QUALITY_OPTIONS.map((opt) => (
                 <ToggleButton key={opt.value} value={opt.value}>

@@ -7,6 +7,59 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.20.0] - 2026-04-24
+
+### Adicionado
+
+- **Speed Paint pipeline completo** (`video-render/lib/speedPaintRenderer.ts`): `generateScenesWithSpeedPaint()` com suporte a Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas, fallback automático para main thread
+- **SpeedPaintScene** (`video-render/components/SpeedPaintScene.tsx`): componente Remotion nativo para renderização de Speed Paint no vídeo, com suporte a multi-velocidade
+- **Stroke cache** (`video-render/lib/strokeCache.ts`): cache LRU com máximo de 20 entradas, chave SHA-256, funções `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()`
+- **Stroke worker** (`video-render/lib/strokeWorker.ts`): `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` — Web Worker inline para processamento de strokes via OffscreenCanvas
+- **Transitions modularizadas** (`video-render/lib/transitions.ts`): `SPRING_TRANSICAO`, `computeSafeFadeFrames()`, `springFadeIn()`, `springFadeOut()` extraídas de SceneSequence
+- **SpeedPaintSpeed type** (`video-render/types.ts`): tipo `'slow' | 'normal' | 'fast'` com `SPEED_PAINT_MULTIPLIERS`
+- **Controle de velocidade no VideoExportPanel**: toggle Speed Paint + seletor de velocidade (0.5x/1x/1.5x)
+- **speedPaintWarnings** no estado do exporter: array para capturar avisos durante renderização de Speed Paint
+- **renderSpeedPaintFrame()** exportado no barrel de `video-render/index.ts`
+
+### Alterado
+
+- **VideoLibrary refatorada** (700→216 linhas, -69%): componente monolítico dividido em 8 módulos em `src/components/video-library/`:
+  - `GalleryCard.tsx` — card individual com thumbnail, metadata pills e ações
+  - `DeleteConfirmationDialog.tsx` — dialog de confirmação de exclusão
+  - `MetadataPill.tsx` — pill de metadado (duração, data)
+  - `extractVideoThumbnail.ts` — extração de thumbnail com timeout
+  - `useProjectGallery.ts` — hook de busca, ordenação e carregamento de vídeos
+  - `useBatchDownload.ts` — hook de download em lote
+  - `types.ts` — tipos `VideoLibraryItem`, `VideoLibraryProps`, `VideoLibraryScene`
+  - `index.ts` — barrel exports
+- **SubtitleInlineEditor refatorada** (1006→401 linhas, -60%): subcomponentes extraídos para `subtitle-editor/`:
+  - `EditorToolbar.tsx`, `EditorButton.tsx`, `FontSizeControls.tsx`, `PositionToggle.tsx`, `StyleSlider.tsx`, `ToolbarActions.tsx`, `SubtitlePreview.tsx`, `DragOverlay.tsx`
+  - `constants.ts` — constantes centralizadas (DRAG_SNAP, BASE_PADDING_BOTTOM, FONT_SIZE_STEP, etc.)
+  - `utils.ts` — `clamp()`, `calculatePreviewBottom()`
+  - `index.ts` — barrel exports
+- **useVideoExporter**: integração com Speed Paint pipeline (`generateScenesWithSpeedPaint()`), limpeza de cache via `clearStrokeCache()`, fase de peso Speed Paint (SPEED_PAINT_PHASE_WEIGHT = 50)
+- **VideoComposition**: integração com `SpeedPaintScene` e `SPEED_PAINT_MULTIPLIERS`
+- **SceneSequence**: transições importadas de `../lib/transitions` (removidas definições locais duplicadas)
+- **VideoExportPanel**: opções de Speed Paint (`SPEED_OPTIONS`) e toggle group estilizado
+
+### Removido
+
+- **Relatório de auditoria** (`docs/audits/1.md`): relatório temporário de audit removido
+- **Definições duplicadas de transição** (`SceneSequence`): `SPRING_TRANSICAO`, `springFadeIn`, `springFadeOut` removidas do componente e centralizadas em `transitions.ts`
+
+### Testes
+
+- 61 testes novos (total: 972):
+  - `speedPaintRenderer.unit.test.ts` (499 linhas) — pipeline completo de renderização
+  - `strokeCache.unit.test.ts` (154 linhas) — cache LRU
+  - `strokeWorker.unit.test.ts` (206 linhas) — Web Worker inline
+  - `transitions.unit.test.ts` (37 linhas) — funções de transição
+  - `useVideoExporter-speedpaint.unit.test.tsx` (296 linhas) — integração Speed Paint no exporter
+  - `videoComposition.component.test.tsx` (223 linhas) — componente de composição
+  - `types.unit.test.ts` atualizado — novas assertions para SpeedPaintSpeed e multipliers
+
+---
+
 ## [0.19.0] - 2026-04-24
 
 ### Adicionado

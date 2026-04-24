@@ -5,8 +5,11 @@ import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
+import type { SpeedPaintSpeed } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
+import { generateScenesWithSpeedPaint } from '../lib/speedPaintRenderer';
+import { clearStrokeCache } from '../lib/strokeCache';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
@@ -31,6 +34,10 @@ export interface VideoExportOptions {
   quality?: VideoExportQuality;
   /** Nome personalizado para o arquivo de download */
   fileName?: string;
+  /** Animar cenas com Speed Paint (default: false) */
+  animateScenes?: boolean;
+  /** Velocidade da animação speed paint (default: 'normal') */
+  speedPaintSpeed?: SpeedPaintSpeed;
 }
 
 export interface VideoExporterState {
@@ -44,6 +51,8 @@ export interface VideoExporterState {
   canRender: boolean | null;
   /** Aviso quando o salvamento no projeto falha após exportação bem-sucedida */
   saveWarning: string | null;
+  /** Lista de cenas cuja geração de speed paint falhou (para feedback ao usuário) */
+  speedPaintWarnings: string[];
   /** Codec de vídeo resolvido após checkSupport ('h264', 'vp8', etc.) */
   resolvedVideoCodec: string;
   /** Container resolvido após checkSupport ('mp4' ou 'webm') */
@@ -61,6 +70,7 @@ const INITIAL_STATE: VideoExporterState = {
   error: null,
   canRender: null,
   saveWarning: null,
+  speedPaintWarnings: [],
   resolvedVideoCodec: 'h264',
   resolvedContainer: 'mp4',
   exportFileName: '',
@@ -81,7 +91,7 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, captions, subtitleStyle } = props;
+  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed } = props;
   return (
     <VideoComposition
       scenes={scenes}
@@ -90,6 +100,7 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
       captions={captions}
       subtitleStyle={subtitleStyle}
       isExporting={true}
+      speedPaintSpeed={speedPaintSpeed}
     />
   );
 }
@@ -148,6 +159,8 @@ export function useVideoExporter() {
   const resolvedContainerRef = useRef<string>('mp4');
   /** Nome do arquivo para download */
   const exportFileNameRef = useRef<string>('');
+  /** Peso acumulado da fase de speed paint no progresso total (0 se não houve speed paint) */
+  const speedPaintPhaseWeightRef = useRef(0);
 
   // Mantém refs sincronizadas para uso em callbacks sem depender do estado
   useEffect(() => {
@@ -289,6 +302,7 @@ export function useVideoExporter() {
       userId,
       quality,
       fileName,
+      animateScenes = false,
     } = options;
 
     if (!audioUrl || scenes.length === 0) return;
@@ -301,12 +315,61 @@ export function useVideoExporter() {
 
     const resolvedQuality = quality ?? DEFAULT_EXPORT_QUALITY;
     const resolution = getResolutionFromQuality(ratio, resolvedQuality);
-    const mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
+    let mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
+
+    // Warnings de speed paint acumulados em variável local — evita bug de React batching
+    // onde setState intermediário (speedPaintWarnings) é perdido ao ser lido no setState final
+    let collectedWarnings: string[] = [];
+
+    // Gera strokeAnimations para cenas quando o toggle está ativo
+    if (animateScenes && mappedScenes.length > 0) {
+      const SPEED_PAINT_PHASE_WEIGHT = 50;
+
+      try {
+        log.info('Gerando strokeAnimations para cenas', { sceneCount: mappedScenes.length });
+        const strokeResults = await generateScenesWithSpeedPaint(
+          mappedScenes.map((s) => ({ imageUrl: s.imageUrl })),
+          (progress) => {
+            const pct = Math.round(progress * SPEED_PAINT_PHASE_WEIGHT);
+            if (pct !== lastReportedPercentRef.current) {
+              lastReportedPercentRef.current = pct;
+              setState(prev => ({
+                ...prev,
+                renderProgress: pct,
+                renderStatusText: `Gerando animações... ${pct}%`,
+              }));
+            }
+          },
+          { useWorker: true },
+        );
+
+        // Mapeia resultados para as cenas e coleta avisos de falha
+        mappedScenes = mappedScenes.map((scene, index) => {
+          const result = strokeResults[index];
+          if (result?.error) {
+            collectedWarnings.push(`Cena ${index + 1}: ${result.error}`);
+          }
+          return {
+            ...scene,
+            strokeAnimation: result?.animation,
+          };
+        });
+
+        // Armazena o peso da fase de speed paint para progresso acumulado
+        speedPaintPhaseWeightRef.current = SPEED_PAINT_PHASE_WEIGHT;
+      } catch (err) {
+        log.warn('Falha ao gerar strokeAnimations — exportando sem animação', { error: err });
+        collectedWarnings = ['Falha geral ao gerar animações de speed paint.'];
+      }
+    }
 
     // Atualiza o nome do arquivo no estado
     if (fileName) {
       setState(prev => ({ ...prev, exportFileName: fileName }));
     }
+
+    // Destrutura com default para speedPaintSpeed
+    const speedPaintSpeed = options.speedPaintSpeed ?? 'normal';
 
     // Monta inputProps com tipo compatível com Record<string, unknown>
     const exportableInputProps: ExportableProps = {
@@ -315,6 +378,7 @@ export function useVideoExporter() {
       fps,
       captions,
       subtitleStyle,
+      speedPaintSpeed,
     };
 
     // Cria AbortController para cancelamento
@@ -327,12 +391,17 @@ export function useVideoExporter() {
       URL.revokeObjectURL(prevUrl);
     }
 
+    // Peso acumulado da fase de speed paint (progresso contínuo: não reseta para 0)
+    const speedPaintOffset = speedPaintPhaseWeightRef.current;
+    const remainingWeight = 100 - speedPaintOffset;
+
     setState({
       ...INITIAL_STATE,
       canRender: true,
       isRendering: true,
-      renderProgress: 0,
+      renderProgress: speedPaintOffset,
       renderStatusText: 'Iniciando renderização...',
+      speedPaintWarnings: collectedWarnings,
     });
 
     try {
@@ -371,7 +440,8 @@ export function useVideoExporter() {
         licenseKey: 'free-license',
         signal: abortController.signal,
         onProgress: (progress: RenderMediaOnWebProgress) => {
-          const percent = Math.round(progress.progress * 100);
+          // Progresso acumulado: speed paint ocupa [0, speedPaintOffset], render ocupa o restante
+          const percent = speedPaintOffset + Math.round(progress.progress * remainingWeight);
           // Throttle: só atualiza estado quando o percentual inteiro mudar
           if (percent === lastReportedPercentRef.current) return;
           lastReportedPercentRef.current = percent;
@@ -435,6 +505,7 @@ export function useVideoExporter() {
       }));
     } finally {
       abortControllerRef.current = null;
+      speedPaintPhaseWeightRef.current = 0;
     }
   }, []);
 
@@ -471,6 +542,8 @@ export function useVideoExporter() {
     if (url && url.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
+    speedPaintPhaseWeightRef.current = 0;
+    clearStrokeCache();
     setState(INITIAL_STATE);
   }, []);
 

@@ -28,10 +28,14 @@ export {
 // ─── Componentes ──────────────────────────────────────────
 export { VideoComposition } from './components/VideoComposition';
 export { SceneSequence } from './components/SceneSequence';
+export { SpeedPaintScene } from './components/SpeedPaintScene';
 export { SubtitleOverlay } from './components/SubtitleOverlay';
 export { WaveformOverlay } from './components/WaveformOverlay';
 export { VideoExportPanel } from './components/VideoExportPanel';
 export { CaptionEditorPanel } from './components/CaptionEditorPanel';
+
+// ─── Libs ────────────────────────────────────────────────
+export { renderSpeedPaintFrame, generateScenesWithSpeedPaint } from './lib/speedPaintRenderer';
 
 // ─── Hooks ────────────────────────────────────────────────
 export { useVideoExporter } from './hooks/useVideoExporter';
