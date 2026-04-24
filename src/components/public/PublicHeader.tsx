@@ -45,8 +45,8 @@ interface PublicNavItem {
 const PUBLIC_NAV_ITEMS: PublicNavItem[] = [
   { to: '/', label: 'Home' },
   { to: '/funcionalidades', label: 'Funcionalidades' },
-  { to: '/pricing', label: 'Preços' },
-  { to: '/faq', label: 'FAQ' },
+  { to: '/precos', label: 'Preços' },
+  { to: '/perguntas-frequentes', label: 'FAQ' },
 ];
 
 export function PublicHeader() {

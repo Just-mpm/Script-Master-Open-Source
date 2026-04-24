@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createLogger } from '../lib/logger';
 
 const log = createLogger('useVoicePreviews');
@@ -14,6 +14,16 @@ export function useVoicePreviews() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cleanup ao desmontar: pausa preview em andamento se o usuário navegar para outra rota
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const stop = (): void => {
     if (audioRef.current) {

@@ -6,6 +6,7 @@ vi.mock('firebase/firestore', () => ({
   getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   query: vi.fn().mockReturnValue({}),
   where: vi.fn().mockReturnValue({}),
+  collection: vi.fn().mockReturnValue({ withConverter: vi.fn().mockReturnValue({}) }),
 }));
 
 vi.mock('../../src/lib/firebase', () => ({

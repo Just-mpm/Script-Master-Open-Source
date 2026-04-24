@@ -3,6 +3,7 @@ import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -92,7 +93,7 @@ const STATUS_CONFIG: Record<ServiceStatus, StatusConfigItem> = {
 };
 
 const GLOBAL_STATUS = 'Todos os sistemas operacionais';
-const LAST_CHECK = 'Verificado agora';
+const LAST_CHECK = 'Página informativa — sem monitoramento em tempo real';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -239,8 +240,15 @@ export default function StatusPage() {
       />
 
       {/* Banner de status global */}
-      <Box sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 4, md: 6 } }}>
+      <Box sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 2, md: 3 } }}>
         <GlobalStatusBanner />
+      </Box>
+
+      {/* Disclaimer — dados informativos */}
+      <Box sx={{ pb: { xs: 4, md: 6 }, mx: { xs: 2, sm: 3 } }}>
+        <Alert severity="info" variant="outlined" role="status">
+          Os dados exibidos nesta página são informativos e não representam monitoramento em tempo real. O status real dos serviços depende de terceiros (Google Gemini, Firebase).
+        </Alert>
       </Box>
 
       {/* Grid de serviços */}

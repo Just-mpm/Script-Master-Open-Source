@@ -20,7 +20,6 @@ export type {
 export {
   msToFrames,
   framesToMs,
-  framesToSeconds,
   getResolutionFromRatio,
   calculateDurationFromWav,
   mapScenesToVideoScenes,

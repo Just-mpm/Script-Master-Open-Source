@@ -72,7 +72,6 @@ bun run clean            # remove dist/
 | `/termos` | TermsPage | Não |
 | `/privacidade` | PrivacyPage | Não |
 | `/cookies` | CookiesPage | Não |
-| `/novidades` | ChangelogPage | Não |
 | `/status` | StatusPage | Não |
 | `/login` | LoginPage | Não |
 | `/app/estudio` | StudioPage | Sim |
@@ -83,7 +82,7 @@ bun run clean            # remove dist/
 | `/app/biblioteca` | LibraryPage | Sim |
 | `/app` | Redirect → `/app/estudio` | — |
 
-**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/changelog` → `/novidades`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
+**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
 
 ---
 
@@ -103,11 +102,10 @@ bun run clean            # remove dist/
 | **TermsPage** | `/termos` — termos de uso |
 | **PrivacyPage** | `/privacidade` — política de privacidade |
 | **CookiesPage** | `/cookies` — política de cookies |
-| **ChangelogPage** | `/novidades` — histórico de versões e novidades |
 | **StatusPage** | `/status` — status dos serviços |
 | **Componentes** | 12 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion expansível), barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`; `sitemap.xml` com 11 URLs públicas priorizadas |
+| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`; `sitemap.xml` com 9 URLs públicas priorizadas |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -279,13 +277,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.18.0`
+- **Current:** `0.18.1`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.18.1 | Remoção da ChangelogPage (`/novidades`); `framesToSeconds` duplicada removida; relatórios de teste consolidados removidos; PublicHeader corrigido (links PT-BR); FAQ/Pricing/About/Status atualizados; audio-analysis refatorado; db/chats ajustado; 911 testes (total: 911) |
 | 0.18.0 | 9 novas páginas públicas (Pricing, FAQ, Contact, About, Terms, Privacy, Cookies, Changelog, Status); PricingCard e FAQAccordion; react-helmet-async para SEO per-page; robots.txt + sitemap.xml; tradução completa de rotas para português (públicas + app); redirects de compatibilidade; 66 testes novos (total: 923) |
 | 0.17.0 | LandingPage + FeaturesPage + 10 componentes públicos; paleta blue/orange; PWA base (vite-plugin-pwa); SEO (OG, Twitter, Schema.org); keyboard shortcuts hook; AudioContext selectors; 77 testes novos (total: 857); COEP simplificado em /app/**; prefixo /app/ em rotas autenticadas |
 | 0.16.1 | Estado do player centralizado no videoRenderBridge (currentFrame/isPlaying); ActionBar/VideoPreview/CaptionEditorPanel consomem bridge; VideoPage remove estado local; frameToSeconds/secondsToFrame; testes de bridge, sticky fallback e conversão de frames |

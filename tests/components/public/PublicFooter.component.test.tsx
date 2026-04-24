@@ -52,7 +52,6 @@ describe('PublicFooter', () => {
     expect(screen.getByText('Funcionalidades')).toBeDefined();
     expect(screen.getByText('Preços')).toBeDefined();
     expect(screen.getByText('Perguntas Frequentes')).toBeDefined();
-    expect(screen.getByText('Novidades')).toBeDefined();
     expect(screen.getByText('Status')).toBeDefined();
   });
 

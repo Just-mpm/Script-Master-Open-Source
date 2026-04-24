@@ -98,13 +98,19 @@ const ROADMAP: readonly RoadmapItem[] = [
     version: '0.17',
     title: 'Páginas Públicas',
     description: 'Landing page, funcionalidades, login e páginas legais com SEO otimizado',
-    status: 'current',
+    status: 'done',
   },
   {
     version: '0.18',
+    title: 'Novas Páginas Públicas',
+    description: 'Pricing, FAQ, Contato, Sobre, Status e páginas legais complementares',
+    status: 'done',
+  },
+  {
+    version: '0.19',
     title: 'Planos e Pagamentos',
     description: 'Integração com Stripe para assinaturas, pagamentos e gerenciamento de plano',
-    status: 'planned',
+    status: 'current',
   },
   {
     version: '0.19',

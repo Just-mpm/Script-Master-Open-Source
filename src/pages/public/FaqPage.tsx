@@ -88,22 +88,22 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Posso cancelar a qualquer momento?',
         answer:
-          'Sim, você pode cancelar sua assinatura a qualquer momento. Continuará tendo acesso até o final do período pago.',
+          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
       },
       {
         question: 'Quais as formas de pagamento?',
         answer:
-          'Aceitamos cartão de crédito (Visa, Mastercard, Elo, American Express), PIX e boleto bancário.',
+          'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
       },
       {
         question: 'Existe desconto para pagamento anual?',
         answer:
-          'Sim! O plano anual tem 20% de desconto em relação ao plano mensal. Pagamento único com economia garantida.',
+          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
       },
       {
         question: 'O que acontece se exceder os limites do plano?',
         answer:
-          'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo ou fazer upgrade.',
+          'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
       },
     ],
   },
@@ -130,7 +130,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Qual a qualidade do áudio gerado?',
         answer:
-          'O áudio é gerado em WAV 24kHz mono 16-bit PCM, com qualidade profissional. No plano Pro, também é possível exportar em MP3.',
+          'O áudio é gerado em WAV 24kHz mono 16-bit PCM, com qualidade profissional.',
       },
       {
         question: 'Como funcionam as legendas automáticas?',

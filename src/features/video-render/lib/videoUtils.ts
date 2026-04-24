@@ -11,11 +11,6 @@ export function framesToMs(frames: number, fps: number): number {
   return (frames / fps) * 1000;
 }
 
-/** Converte frames para segundos */
-export function framesToSeconds(frames: number, fps: number): number {
-  return frames / fps;
-}
-
 /** Retorna resolução baseada no ratio da cena */
 export function getResolutionFromRatio(ratio: SceneRatio): { width: number; height: number } {
   const resolutions: Record<SceneRatio, { width: number; height: number }> = {

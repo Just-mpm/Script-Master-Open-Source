@@ -27,7 +27,6 @@ const FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Funcionalidades', href: '/funcionalidades' },
       { label: 'Preços', href: '/precos' },
       { label: 'Perguntas Frequentes', href: '/perguntas-frequentes' },
-      { label: 'Novidades', href: '/novidades' },
       { label: 'Status', href: '/status' },
     ],
   },

@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   msToFrames,
   framesToMs,
-  framesToSeconds,
   getResolutionFromRatio,
   calculateDurationFromWav,
   mapScenesToVideoScenes,
 } from '../../src/features/video-render/lib/videoUtils';
+import { frameToSeconds } from '../../src/features/video-render/lib/formatTimestamp';
 import type { StudioScene } from '../../src/features/studio/types';
 
 describe('videoUtils', () => {
@@ -42,17 +42,17 @@ describe('videoUtils', () => {
     });
   });
 
-  describe('framesToSeconds', () => {
+  describe('frameToSeconds', () => {
     it('converte 30 frames a 30fps para 1 segundo', () => {
-      expect(framesToSeconds(30, 30)).toBe(1);
+      expect(frameToSeconds(30, 30)).toBe(1);
     });
 
     it('converte 90 frames a 30fps para 3 segundos', () => {
-      expect(framesToSeconds(90, 30)).toBe(3);
+      expect(frameToSeconds(90, 30)).toBe(3);
     });
 
     it('retorna 0 para 0 frames', () => {
-      expect(framesToSeconds(0, 30)).toBe(0);
+      expect(frameToSeconds(0, 30)).toBe(0);
     });
   });
 

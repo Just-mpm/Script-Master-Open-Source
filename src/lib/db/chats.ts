@@ -18,14 +18,14 @@ const chatSessionConverter = createFirestoreConverter<ChatSession>();
 const chatsCollection = collection(db, 'chats').withConverter(chatSessionConverter);
 
 /** Limite seguro do Firestore (~1MB) com margem para metadados do documento */
-const FIRESTORE_MAX_DOC_SIZE_BYTES = 900_000;
+export const FIRESTORE_MAX_DOC_SIZE_BYTES = 900_000;
 
 function sortChatSessions(items: ChatSession[]): ChatSession[] {
   return [...items].sort((firstItem, secondItem) => secondItem.updatedAt - firstItem.updatedAt);
 }
 
 /** Estima o tamanho em bytes que o documento ocupará no Firestore (JSON serializado). */
-function estimateDocumentSize(session: ChatSession, userId: string): number {
+export function estimateDocumentSize(session: ChatSession, userId: string): number {
   const docData = { ...session, userId };
   return JSON.stringify(docData).length;
 }

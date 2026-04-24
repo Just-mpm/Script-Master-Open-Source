@@ -28,6 +28,10 @@ import type {
   SavedImage,
   UserSetting,
 } from './types';
+import {
+  estimateDocumentSize,
+  FIRESTORE_MAX_DOC_SIZE_BYTES,
+} from './chats';
 
 /** Resultado da verificação de dados migráveis */
 export interface MigrationCheckResult {
@@ -163,9 +167,18 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     );
   }
 
-  // --- Chats ---
+  // --- Chats (com validação de tamanho para Firestore) ---
   const chats = await getAllIndexedDbItems<ChatSession>(CHAT_STORE);
   for (const chat of chats) {
+    const estimatedSize = estimateDocumentSize(chat, userId);
+    if (estimatedSize > FIRESTORE_MAX_DOC_SIZE_BYTES) {
+      log.warn('Chat excede limite do Firestore — migração pulada, permanecerá no IndexedDB', {
+        chatId: chat.id,
+        estimatedSizeBytes: estimatedSize,
+        maxAllowedBytes: FIRESTORE_MAX_DOC_SIZE_BYTES,
+      });
+      continue;
+    }
     trackMigration(
       CHAT_STORE,
       chat.id,
@@ -232,6 +245,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
         userId,
         audioUrl: audio.audioUrl ?? '',
         createdAt: audio.createdAt,
+        audioSegments: audio.audioSegments ?? [],
       }),
     );
   }

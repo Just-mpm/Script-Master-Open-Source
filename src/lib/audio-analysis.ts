@@ -124,15 +124,19 @@ export async function detectSceneBoundaries(
 ): Promise<number[]> {
   // Decodifica o blob WAV em AudioBuffer
   const audioContext = new AudioContext();
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  let audioBuffer: AudioBuffer;
+
+  try {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  } finally {
+    // Garante liberação do AudioContext mesmo se decodeAudioData lançar erro
+    void audioContext.close();
+  }
 
   // Extrai dados do primeiro canal (mono)
   const channelData = audioBuffer.getChannelData(0);
   const sampleRate = audioBuffer.sampleRate;
-
-  // Libera recursos do AudioContext após decodificação
-  void audioContext.close();
 
   // Calibra o threshold para se aproximar do targetSceneCount
   const expectedBoundaries = Math.max(0, targetSceneCount - 1);

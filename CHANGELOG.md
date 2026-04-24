@@ -7,6 +7,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.18.1] - 2026-04-24
+
+### Removido
+
+- **ChangelogPage** (`/novidades`): página de changelog dedicada removida — histórico de versões permanece disponível no `CHANGELOG.md` do repositório
+- **`framesToSeconds`** (`src/features/video-render/lib/videoUtils.ts`): função duplicada removida, mantida em `formatTimestamp.ts`
+- **Relatórios de teste** (`docs/test/`): 2 relatórios consolidados removidos (public-components, public-pages)
+- **Entrada `/novidades`** do `sitemap.xml` e da lista de `navigateFallbackDenylist` no Vite config
+- **Link "Novidades"** do PublicFooter
+
+### Alterado
+
+- **PublicHeader**: links de navegação corrigidos para rotas em português (`/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`)
+- **FaqPage**: 5 respostas do FAQ atualizadas com conteúdo revisado
+- **PricingPage**: adicionada navegação via `useNavigate` do react-router-dom
+- **AboutPage**: roadmap atualizado — status `planned`/`current` → `done` com descrição de páginas públicas
+- **StatusPage**: `LAST_CHECK` atualizado; componente `Alert` importado do MUI
+- **useVoicePreviews**: implementação do hook ajustada
+- **audio-analysis.ts**: decodificação de áudio refatorada com `AudioBuffer` tipado
+- **db/chats.ts**: `estimateDocumentSize` e `FIRESTORE_MAX_DOC_SIZE_BYTES` ajustados
+- **db/migration.ts**: importação explícita de `estimateDocumentSize` e `FIRESTORE_MAX_DOC_SIZE_BYTES` de `./chats`
+- **db/projects.ts**: importação de `deleteTranscription` adicionada
+- **AGENTS.md**: remoção de referências a ChangelogPage, atualização de redirects e contagem de URLs no sitemap
+- **index.css**: comentário alinhado (removida referência a CYAN_GLOW)
+
+### Corrigido
+
+- **videoUtils.unit.test.ts**: import de `frameToSeconds` corrigido para `formatTimestamp.ts`
+
+---
+
 ## [0.18.0] - 2026-04-24
 
 ### Adicionado

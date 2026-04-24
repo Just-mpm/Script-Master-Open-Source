@@ -66,11 +66,6 @@ const CookiesPage = lazy(async () => {
   return { default: module.default };
 });
 
-const ChangelogPage = lazy(async () => {
-  const module = await import('./pages/public/ChangelogPage');
-  return { default: module.default };
-});
-
 const StatusPage = lazy(async () => {
   const module = await import('./pages/public/StatusPage');
   return { default: module.default };
@@ -212,7 +207,6 @@ export default function App() {
         <Route path="/termos" element={<TermsPage />} />
         <Route path="/privacidade" element={<PrivacyPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
-        <Route path="/novidades" element={<ChangelogPage />} />
         <Route path="/status" element={<StatusPage />} />
         <Route path="/login" element={<LoginPage />} />
 
@@ -224,8 +218,6 @@ export default function App() {
         <Route path="/terms" element={<Navigate to="/termos" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacidade" replace />} />
         <Route path="/cookies" element={<Navigate to="/cookies" replace />} />
-        <Route path="/changelog" element={<Navigate to="/novidades" replace />} />
-
         {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/app/estudio" element={<StudioPage {...studio} />} />

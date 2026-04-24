@@ -16,6 +16,7 @@ import {
   updateIndexedDbItem,
   uploadBlobAndGetUrl,
 } from './shared';
+import { deleteTranscription } from './transcriptions';
 import { deleteVideoFromProject, getProjectVideos } from './videos';
 
 type FirestoreAudioSource = Omit<AudioSource, 'audioBlob'>;
@@ -256,6 +257,7 @@ export async function deleteProject(projectId: string, userId?: string): Promise
       }
 
       await Promise.all(operations);
+      await deleteTranscription(projectId);
       return;
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}`);
@@ -280,6 +282,7 @@ export async function deleteProject(projectId: string, userId?: string): Promise
     ...allVideos
       .filter((video) => video.projectId === projectId)
       .map((video) => deleteIndexedDbItem(VIDEOS_STORE, video.id)),
+    deleteTranscription(projectId),
   ]);
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
@@ -75,7 +76,6 @@ const PLANS: readonly PlanData[] = [
       { text: '3 pinturas rápidas por mês', included: true },
       { text: '5 projetos na biblioteca', included: true },
       { text: 'Exportar áudio WAV', included: true },
-      { text: 'Exportar áudio MP3', included: false },
       { text: 'Suporte prioritário', included: false },
     ],
     recommended: false,
@@ -96,7 +96,7 @@ const PLANS: readonly PlanData[] = [
       { text: 'Assistente IA ilimitado', included: true },
       { text: '50 pinturas rápidas por mês', included: true },
       { text: '100 projetos na biblioteca', included: true },
-      { text: 'Exportar áudio WAV + MP3', included: true },
+      { text: 'Exportar áudio WAV', included: true },
       { text: 'Suporte por email', included: true },
       { text: 'Suporte prioritário', included: false },
     ],
@@ -117,7 +117,7 @@ const PLANS: readonly PlanData[] = [
       { text: 'Assistente IA ilimitado', included: true },
       { text: 'Pinturas rápidas ilimitadas', included: true },
       { text: 'Projetos ilimitados', included: true },
-      { text: 'Exportar áudio WAV + MP3', included: true },
+      { text: 'Exportar áudio WAV', included: true },
       { text: 'Suporte por email', included: true },
       { text: 'Suporte prioritário', included: true },
     ],
@@ -137,27 +137,27 @@ const PRICING_FAQ = [
   {
     question: 'Posso cancelar a qualquer momento?',
     answer:
-      'Sim, você pode cancelar sua assinatura a qualquer momento. Continuará tendo acesso até o final do período pago.',
+      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
   },
   {
     question: 'Quais as formas de pagamento?',
     answer:
-      'Aceitamos cartão de crédito (Visa, Mastercard, Elo, American Express), PIX e boleto bancário.',
+      'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
   },
   {
     question: 'O que acontece se exceder os limites do plano?',
     answer:
-      'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo ou fazer upgrade.',
+      'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
   },
   {
     question: 'Existe desconto para pagamento anual?',
     answer:
-      'Sim! O plano anual tem 20% de desconto em relação ao plano mensal. Pagamento único com economia garantida.',
+      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
   },
   {
     question: 'Posso trocar de plano?',
     answer:
-      'Sim, você pode fazer upgrade ou downgrade a qualquer momento. O valor será proporcional ao período restante.',
+      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que disponível, você poderá fazer upgrade ou downgrade a qualquer momento.',
   },
 ] as const;
 
@@ -170,7 +170,7 @@ const COMPARISON_TABLE: readonly ComparisonRow[] = [
   { feature: 'Assistente IA', gratuito: '20 msgs/dia', pro: 'Ilimitado', equipe: 'Ilimitado' },
   { feature: 'Pintura Rápida', gratuito: '3/mês', pro: '50/mês', equipe: 'Ilimitado' },
   { feature: 'Biblioteca', gratuito: '5 projetos', pro: '100 projetos', equipe: 'Ilimitado' },
-  { feature: 'Exportar áudio', gratuito: 'WAV', pro: 'WAV + MP3', equipe: 'WAV + MP3' },
+  { feature: 'Exportar áudio', gratuito: 'WAV', pro: 'WAV', equipe: 'WAV' },
   { feature: 'Suporte', gratuito: 'Comunidade', pro: 'Email', equipe: 'Prioritário' },
 ];
 
@@ -343,6 +343,7 @@ function ComparisonTable() {
 // ── Componente principal ──────────────────────────────────────────────
 
 export default function PricingPage() {
+  const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   /** Resolve o preço exibido com base no período de cobrança selecionado */
@@ -410,6 +411,7 @@ export default function PricingPage() {
                 recommended={plan.recommended}
                 ctaLabel={plan.ctaLabel}
                 ctaVariant={plan.ctaVariant}
+                onCtaClick={() => navigate('/login')}
               />
             </Grid>
           ))}
