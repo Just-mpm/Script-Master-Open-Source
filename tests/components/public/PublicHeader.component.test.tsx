@@ -88,7 +88,7 @@ describe('PublicHeader', () => {
   it('renderiza todos os itens de navegação públicos', () => {
     render(<PublicHeader />, { wrapper: Wrapper });
     expect(screen.getAllByText('Home').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Features').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Funcionalidades').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Preços').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('FAQ').length).toBeGreaterThanOrEqual(1);
   });

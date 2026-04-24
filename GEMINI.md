@@ -30,6 +30,7 @@ bun run clean            # remove dist/
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
+- **react-helmet-async** — SEO per-page (meta tags OG, Twitter Cards, canonical)
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
 
@@ -63,30 +64,50 @@ bun run clean            # remove dist/
 | Rota | Componente | Protegida |
 |------|-----------|-----------|
 | `/` | LandingPage | Não |
-| `/features` | FeaturesPage | Não |
+| `/funcionalidades` | FuncionalidadesPage | Não |
+| `/precos` | PricingPage | Não |
+| `/perguntas-frequentes` | FaqPage | Não |
+| `/contato` | ContactPage | Não |
+| `/sobre` | AboutPage | Não |
+| `/termos` | TermsPage | Não |
+| `/privacidade` | PrivacyPage | Não |
+| `/cookies` | CookiesPage | Não |
+| `/novidades` | ChangelogPage | Não |
+| `/status` | StatusPage | Não |
 | `/login` | LoginPage | Não |
 | `/app/estudio` | StudioPage | Sim |
 | `/app/video` | VideoPage | Sim |
-| `/app/assistant` | AssistantPage | Sim |
-| `/app/library` | LibraryPage | Sim |
-| `/app/speed-paint` | SpeedPaintPage | Sim |
-| `/app/image` | ImageStudio | Sim |
+| `/app/imagens` | ImageStudio | Sim |
+| `/app/pintura-rapida` | SpeedPaintPage | Sim |
+| `/app/assistente` | AssistantPage | Sim |
+| `/app/biblioteca` | LibraryPage | Sim |
 | `/app` | Redirect → `/app/estudio` | — |
+
+**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/changelog` → `/novidades`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
 
 ---
 
 ## Domínios
 
-### Audio & TTS
+### Páginas Públicas
 
 | | |
 |---|---|
-| **Arquivos** | `src/pages/public/`, `src/components/public/` |
+| **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/lib/seo.ts` |
 | **LandingPage** | `/` — hero com CTA, social proof bar, 6 feature cards, 3 feature showcases, seção "como funciona" (3 steps), CTA final |
-| **FeaturesPage** | `/features` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
-| **Componentes** | 10 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter, PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, barrel `index.ts` |
+| **FuncionalidadesPage** | `/funcionalidades` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
+| **PricingPage** | `/precos` — cards de plano (mensal/anual), FAQ de preços, CTA |
+| **FaqPage** | `/perguntas-frequentes` — FAQ por categorias via tabs, accordion expansível |
+| **ContactPage** | `/contato` — formulário de contato, links sociais, informações de suporte |
+| **AboutPage** | `/sobre` — missão, valores, diferenciais do produto |
+| **TermsPage** | `/termos` — termos de uso |
+| **PrivacyPage** | `/privacidade` — política de privacidade |
+| **CookiesPage** | `/cookies` — política de cookies |
+| **ChangelogPage** | `/novidades` — histórico de versões e novidades |
+| **StatusPage** | `/status` — status dos serviços |
+| **Componentes** | 12 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion expansível), barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | Open Graph, Twitter Cards, Schema.org Organization, canonical URL, theme-color |
+| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`; `sitemap.xml` com 11 URLs públicas priorizadas |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -258,13 +279,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.17.0`
+- **Current:** `0.18.0`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.18.0 | 9 novas páginas públicas (Pricing, FAQ, Contact, About, Terms, Privacy, Cookies, Changelog, Status); PricingCard e FAQAccordion; react-helmet-async para SEO per-page; robots.txt + sitemap.xml; tradução completa de rotas para português (públicas + app); redirects de compatibilidade; 66 testes novos (total: 923) |
 | 0.17.0 | LandingPage + FeaturesPage + 10 componentes públicos; paleta blue/orange; PWA base (vite-plugin-pwa); SEO (OG, Twitter, Schema.org); keyboard shortcuts hook; AudioContext selectors; 77 testes novos (total: 857); COEP simplificado em /app/**; prefixo /app/ em rotas autenticadas |
 | 0.16.1 | Estado do player centralizado no videoRenderBridge (currentFrame/isPlaying); ActionBar/VideoPreview/CaptionEditorPanel consomem bridge; VideoPage remove estado local; frameToSeconds/secondsToFrame; testes de bridge, sticky fallback e conversão de frames |
 | 0.16.0 | Suite de testes Vitest completa (62 testes cobrindo todas as áreas); scripts test/test:watch; vitest.config com jsdom + fake-indexeddb; correção da lógica do logger em produção; normalização de bold markdown no subtitleUtils |

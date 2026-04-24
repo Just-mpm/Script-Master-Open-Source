@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { MutableRefObject } from 'react';
 import { useKeyboardShortcuts } from '../../src/hooks/useKeyboardShortcuts';
+import type { VideoPreviewHandle } from '../../src/components/VideoPreview';
 
 // --- Tipos e helpers ---
 
@@ -29,7 +30,7 @@ type UseKeyboardShortcutsOptions = Parameters<typeof useKeyboardShortcuts>[0];
 function createDefaultOptions(overrides: Partial<UseKeyboardShortcutsOptions> = {}): UseKeyboardShortcutsOptions & Required<Pick<UseKeyboardShortcutsOptions, 'videoPlayerRef'>> {
   const mockPlayer = createMockPlayer();
   return {
-    videoPlayerRef: { current: mockPlayer } as MutableRefObject<MockVideoPlayerHandle | null>,
+    videoPlayerRef: { current: mockPlayer } as MutableRefObject<VideoPreviewHandle>,
     onGenerate: vi.fn(),
     isStudioRoute: true,
     isVideoRoute: false,
@@ -173,7 +174,7 @@ describe('useKeyboardShortcuts', () => {
       const options = createDefaultOptions({
         isVideoRoute: true,
         isGenerating: false,
-        videoPlayerRef: { current: mockPlayer } as MutableRefObject<MockVideoPlayerHandle | null>,
+        videoPlayerRef: { current: mockPlayer } as MutableRefObject<VideoPreviewHandle>,
       });
       renderHook(() => useKeyboardShortcuts(options));
 
@@ -189,7 +190,7 @@ describe('useKeyboardShortcuts', () => {
       const options = createDefaultOptions({
         isVideoRoute: true,
         isGenerating: false,
-        videoPlayerRef: { current: mockPlayer } as MutableRefObject<MockVideoPlayerHandle | null>,
+        videoPlayerRef: { current: mockPlayer } as MutableRefObject<VideoPreviewHandle>,
       });
       renderHook(() => useKeyboardShortcuts(options));
 
@@ -218,7 +219,7 @@ describe('useKeyboardShortcuts', () => {
       const options = createDefaultOptions({
         isVideoRoute: true,
         isGenerating: false,
-        videoPlayerRef: { current: null } as MutableRefObject<MockVideoPlayerHandle | null>,
+        videoPlayerRef: { current: null } as unknown as MutableRefObject<VideoPreviewHandle>,
         toggleAudioPlayer,
       });
       renderHook(() => useKeyboardShortcuts(options));

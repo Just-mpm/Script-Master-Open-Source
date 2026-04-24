@@ -13,6 +13,8 @@ import Storage from '@mui/icons-material/Storage';
 import Subtitles from '@mui/icons-material/Subtitles';
 import Hd from '@mui/icons-material/Hd';
 import Groups from '@mui/icons-material/Groups';
+import { Helmet } from 'react-helmet-async';
+import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { FeatureCard } from '../../components/public/FeatureCard';
 import { FeatureShowcase } from '../../components/public/FeatureShowcase';
@@ -70,9 +72,17 @@ const SECTIONS: FeatureSection[] = [
   { id: 'platform', title: 'Plataforma', features: PLATFORM_FEATURES },
 ];
 
-export default function FeaturesPage() {
+export default function FuncionalidadesPage() {
+  const seo = getPageSeo({
+    title: 'Funcionalidades',
+    description: 'Conheça todas as funcionalidades do Script Master: geração de áudio, imagens, vídeos, assistente IA e mais.',
+    path: '/funcionalidades',
+  });
+
   return (
-    <PageLayout>
+    <>
+      <Helmet {...seo} />
+      <PageLayout>
       {/* Hero */}
       <Box sx={{ textAlign: 'center', pb: { xs: 6, md: 8 } }}>
         <Typography variant="h1" component="h1" sx={{ mb: 2 }}>
@@ -195,5 +205,6 @@ export default function FeaturesPage() {
         />
       </Box>
     </PageLayout>
+    </>
   );
 }

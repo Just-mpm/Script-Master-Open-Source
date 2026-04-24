@@ -26,8 +26,53 @@ const LandingPage = lazy(async () => {
   return { default: module.default };
 });
 
-const FeaturesPage = lazy(async () => {
-  const module = await import('./pages/public/FeaturesPage');
+const FuncionalidadesPage = lazy(async () => {
+  const module = await import('./pages/public/FuncionalidadesPage');
+  return { default: module.default };
+});
+
+const PricingPage = lazy(async () => {
+  const module = await import('./pages/public/PricingPage');
+  return { default: module.default };
+});
+
+const FaqPage = lazy(async () => {
+  const module = await import('./pages/public/FaqPage');
+  return { default: module.default };
+});
+
+const ContactPage = lazy(async () => {
+  const module = await import('./pages/public/ContactPage');
+  return { default: module.default };
+});
+
+const AboutPage = lazy(async () => {
+  const module = await import('./pages/public/AboutPage');
+  return { default: module.default };
+});
+
+const TermsPage = lazy(async () => {
+  const module = await import('./pages/public/TermsPage');
+  return { default: module.default };
+});
+
+const PrivacyPage = lazy(async () => {
+  const module = await import('./pages/public/PrivacyPage');
+  return { default: module.default };
+});
+
+const CookiesPage = lazy(async () => {
+  const module = await import('./pages/public/CookiesPage');
+  return { default: module.default };
+});
+
+const ChangelogPage = lazy(async () => {
+  const module = await import('./pages/public/ChangelogPage');
+  return { default: module.default };
+});
+
+const StatusPage = lazy(async () => {
+  const module = await import('./pages/public/StatusPage');
   return { default: module.default };
 });
 
@@ -96,7 +141,7 @@ export default function App() {
 
   // ─── Classificação de rotas ──────────────────────────────
   const isAppRoute = currentPath.startsWith('/app/');
-  const isAssistantRoute = currentPath === '/app/assistant';
+  const isAssistantRoute = currentPath === '/app/assistente';
   const isStudioRoute = currentPath === '/app/estudio';
   const isVideoRoute = currentPath === '/app/video';
 
@@ -159,8 +204,27 @@ export default function App() {
       <Routes>
         {/* Rotas públicas */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/funcionalidades" element={<FuncionalidadesPage />} />
+        <Route path="/precos" element={<PricingPage />} />
+        <Route path="/perguntas-frequentes" element={<FaqPage />} />
+        <Route path="/contato" element={<ContactPage />} />
+        <Route path="/sobre" element={<AboutPage />} />
+        <Route path="/termos" element={<TermsPage />} />
+        <Route path="/privacidade" element={<PrivacyPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
+        <Route path="/novidades" element={<ChangelogPage />} />
+        <Route path="/status" element={<StatusPage />} />
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Redirects de rotas públicas antigas */}
+        <Route path="/features" element={<Navigate to="/funcionalidades" replace />} />
+        <Route path="/pricing" element={<Navigate to="/precos" replace />} />
+        <Route path="/faq" element={<Navigate to="/perguntas-frequentes" replace />} />
+        <Route path="/contact" element={<Navigate to="/contato" replace />} />
+        <Route path="/terms" element={<Navigate to="/termos" replace />} />
+        <Route path="/privacy" element={<Navigate to="/privacidade" replace />} />
+        <Route path="/cookies" element={<Navigate to="/cookies" replace />} />
+        <Route path="/changelog" element={<Navigate to="/novidades" replace />} />
 
         {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
@@ -176,15 +240,19 @@ export default function App() {
             }
           />
 
-          <Route path="/app/image" element={<ImageStudio />} />
+          <Route path="/app/imagens" element={<ImageStudio />} />
+          <Route path="/app/image" element={<Navigate to="/app/imagens" replace />} />
 
           <Route
-            path="/app/assistant"
+            path="/app/assistente"
             element={<AssistantPage currentState={studio.currentState} onApplySettings={studio.handleApplySettings} />}
           />
+          <Route path="/app/assistant" element={<Navigate to="/app/assistente" replace />} />
 
-          <Route path="/app/library" element={<LibraryPage />} />
-          <Route path="/app/speed-paint" element={<SpeedPaintPage />} />
+          <Route path="/app/biblioteca" element={<LibraryPage />} />
+          <Route path="/app/library" element={<Navigate to="/app/biblioteca" replace />} />
+          <Route path="/app/pintura-rapida" element={<SpeedPaintPage />} />
+          <Route path="/app/speed-paint" element={<Navigate to="/app/pintura-rapida" replace />} />
         </Route>
 
         {/* Redirect raiz do app */}
@@ -208,7 +276,7 @@ export default function App() {
   });
 
   // ─── Renderização ────────────────────────────────────────
-  // Páginas públicas (/, /features) e login usam layout próprio — sem Header/ActionBar
+  // Páginas públicas (/, /funcionalidades) e login usam layout próprio — sem Header/ActionBar
   // Rotas do app (/app/*) usam Header + Container + ActionBar
   const isPublicOrLogin = !isAppRoute;
 

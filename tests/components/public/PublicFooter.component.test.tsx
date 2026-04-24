@@ -43,16 +43,24 @@ describe('PublicFooter', () => {
   it('renderiza o título de todos os grupos de links', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
     expect(screen.getByText('Produto')).toBeDefined();
+    expect(screen.getByText('Empresa')).toBeDefined();
     expect(screen.getByText('Legal')).toBeDefined();
-    expect(screen.getByText('Contato')).toBeDefined();
   });
 
   it('renderiza links do grupo Produto', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
-    expect(screen.getByText('Features')).toBeDefined();
+    expect(screen.getByText('Funcionalidades')).toBeDefined();
     expect(screen.getByText('Preços')).toBeDefined();
-    expect(screen.getByText('FAQ')).toBeDefined();
-    expect(screen.getByText('Changelog')).toBeDefined();
+    expect(screen.getByText('Perguntas Frequentes')).toBeDefined();
+    expect(screen.getByText('Novidades')).toBeDefined();
+    expect(screen.getByText('Status')).toBeDefined();
+  });
+
+  it('renderiza links do grupo Empresa', () => {
+    render(<PublicFooter />, { wrapper: Wrapper });
+    expect(screen.getByText('Sobre')).toBeDefined();
+    expect(screen.getByText('Contato')).toBeDefined();
+    expect(screen.getByText('E-mail')).toBeDefined();
   });
 
   it('renderiza links do grupo Legal', () => {
@@ -60,12 +68,6 @@ describe('PublicFooter', () => {
     expect(screen.getByText('Termos de Uso')).toBeDefined();
     expect(screen.getByText('Privacidade')).toBeDefined();
     expect(screen.getByText('Cookies')).toBeDefined();
-  });
-
-  it('renderiza links do grupo Contato', () => {
-    render(<PublicFooter />, { wrapper: Wrapper });
-    expect(screen.getByText('Suporte')).toBeDefined();
-    expect(screen.getByText('E-mail')).toBeDefined();
   });
 
   it('renderiza copyright com ano atual', () => {

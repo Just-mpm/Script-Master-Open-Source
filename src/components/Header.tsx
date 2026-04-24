@@ -43,11 +43,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/app/estudio', label: 'Estúdio', icon: Mic },
-  { to: '/app/image', label: 'Imagem', icon: ImageIcon },
+  { to: '/app/imagens', label: 'Imagem', icon: ImageIcon },
   { to: '/app/video', label: 'Vídeo', icon: PlayCircle },
-  { to: '/app/speed-paint', label: 'Speed Paint', icon: Palette },
-  { to: '/app/assistant', label: 'IA', icon: Sparkles, accent: true },
-  { to: '/app/library', label: 'Biblioteca', icon: LocalLibrary },
+  { to: '/app/pintura-rapida', label: 'Speed Paint', icon: Palette },
+  { to: '/app/assistente', label: 'IA', icon: Sparkles, accent: true },
+  { to: '/app/biblioteca', label: 'Biblioteca', icon: LocalLibrary },
 ];
 
 export function Header() {

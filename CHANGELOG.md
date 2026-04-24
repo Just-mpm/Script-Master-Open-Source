@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.18.0] - 2026-04-24
+
+### Adicionado
+
+- **9 novas páginas públicas** (`src/pages/public/`): PricingPage (`/precos`), FaqPage (`/perguntas-frequentes`), ContactPage (`/contato`), AboutPage (`/sobre`), TermsPage (`/termos`), PrivacyPage (`/privacidade`), CookiesPage (`/cookies`), ChangelogPage (`/novidades`), StatusPage (`/status`) — todas com layout responsivo, SEO per-page via react-helmet-async e navegação consistente via PageLayout
+- **2 novos componentes públicos**: `PricingCard` (card de plano com features, toggle mensal/anual, badge "Popular"), `FAQAccordion` (accordion expansível com animação controlada)
+- **SEO per-page** (`react-helmet-async`): `HelmetProvider` no `main.tsx`, helper `getPageSeo()` em `src/lib/seo.ts` com OG, Twitter Cards e canonical URL dinâmicos por página
+- **robots.txt** e **sitemap.xml** (`public/`): sitemap com 11 URLs públicas priorizadas, robots bloqueia `/app/` e referencia sitemap
+- **Redirects de compatibilidade**: rotas antigas em inglês (`/features`, `/pricing`, `/faq`, `/contact`, `/changelog`) redirecionam via `Navigate replace` para equivalentes em português
+- **Testes**: 66 testes novos para páginas públicas (PricingPage 6, FaqPage 4, ContactPage 5, AboutPage 5, ChangelogPage 4, StatusPage 4, TermsPage 3, PrivacyPage 4, CookiesPage 4, FuncionalidadesPage 11, PricingCard 11, FAQAccordion 8)
+
+### Alterado
+
+- **Tradução completa de rotas**: rotas do app migradas para português — `/app/image` → `/app/imagens`, `/app/speed-paint` → `/app/pintura-rapida`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca` (redirects de compatibilidade mantidos)
+- **FeaturesPage → FuncionalidadesPage**: rota `/features` → `/funcionalidades`, componente reescrito com Helmet SEO
+- **LandingPage**: SEO migrado de meta tags estáticas em `index.html` para `<Helmet>` dinâmico via `getPageSeo()`
+- **PublicFooter**: reestruturado em 3 grupos (Produto, Empresa, Legal) com links atualizados para rotas em português
+- **PublicHeader**: link Features → Funcionalidades
+
+### Removido
+
+- `src/pages/public/FeaturesPage.tsx` (substituída por `FuncionalidadesPage.tsx`)
+- `docs/public-pages-plan.md` (plano concluído)
+- `docs/test/2026-04-24-hooks-contexts-vitest.md` (relatório consolidado)
+
+---
+
 ## [0.17.0] - 2026-04-24
 
 ### Adicionado

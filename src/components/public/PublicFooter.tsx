@@ -24,25 +24,27 @@ const FOOTER_GROUPS: FooterLinkGroup[] = [
   {
     title: 'Produto',
     links: [
-      { label: 'Features', href: '/features' },
-      { label: 'Preços', href: '/pricing' },
-      { label: 'FAQ', href: '/faq' },
-      { label: 'Changelog', href: '/changelog' },
+      { label: 'Funcionalidades', href: '/funcionalidades' },
+      { label: 'Preços', href: '/precos' },
+      { label: 'Perguntas Frequentes', href: '/perguntas-frequentes' },
+      { label: 'Novidades', href: '/novidades' },
+      { label: 'Status', href: '/status' },
+    ],
+  },
+  {
+    title: 'Empresa',
+    links: [
+      { label: 'Sobre', href: '/sobre' },
+      { label: 'Contato', href: '/contato' },
+      { label: 'E-mail', href: 'mailto:contato@scriptmaster.app' },
     ],
   },
   {
     title: 'Legal',
     links: [
-      { label: 'Termos de Uso', href: '/terms' },
-      { label: 'Privacidade', href: '/privacy' },
+      { label: 'Termos de Uso', href: '/termos' },
+      { label: 'Privacidade', href: '/privacidade' },
       { label: 'Cookies', href: '/cookies' },
-    ],
-  },
-  {
-    title: 'Contato',
-    links: [
-      { label: 'Suporte', href: '/contact' },
-      { label: 'E-mail', href: 'mailto:contato@scriptmaster.app' },
     ],
   },
 ];

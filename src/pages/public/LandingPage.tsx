@@ -10,6 +10,8 @@ import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import EditNote from '@mui/icons-material/EditNote';
 import Speed from '@mui/icons-material/Speed';
 import Storage from '@mui/icons-material/Storage';
+import { Helmet } from 'react-helmet-async';
+import { getPageSeo, DEFAULT_DESCRIPTION } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { FeatureCard } from '../../components/public/FeatureCard';
@@ -91,14 +93,22 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
+  const seo = getPageSeo({
+    title: 'Roteiros em Áudio com IA',
+    description: DEFAULT_DESCRIPTION,
+    path: '/',
+  });
+
   return (
-    <PageLayout>
+    <>
+      <Helmet {...seo} />
+      <PageLayout>
       {/* Hero */}
       <HeroSection
         title="Transforme roteiros em arte com IA"
         subtitle="Plataforma completa para criar áudio, vídeo e imagens profissionais a partir de roteiros. Tudo client-side com Gemini AI."
         primaryCta={{ label: 'Começar Grátis', to: '/login' }}
-        secondaryCta={{ label: 'Ver Features', to: '/features' }}
+        secondaryCta={{ label: 'Ver Funcionalidades', to: '/funcionalidades' }}
         visual={
           <Box
             component="img"
@@ -273,5 +283,6 @@ export default function LandingPage() {
         />
       </Box>
     </PageLayout>
+    </>
   );
 }

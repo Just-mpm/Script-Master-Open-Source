@@ -51,7 +51,7 @@ describe('HeroSection', () => {
       <HeroSection
         {...defaultProps}
         primaryCta={{ label: 'Começar', to: '/login' }}
-        secondaryCta={{ label: 'Saiba Mais', to: '/features' }}
+        secondaryCta={{ label: 'Saiba Mais', to: '/funcionalidades' }}
       />,
       { wrapper: Wrapper }
     );

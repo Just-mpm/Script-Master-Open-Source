@@ -7,3 +7,5 @@ export { FeatureShowcase } from './FeatureShowcase';
 export { CTASection } from './CTASection';
 export { StepCard } from './StepCard';
 export { SocialProofBar } from './SocialProofBar';
+export { PricingCard } from './PricingCard';
+export { FAQAccordion } from './FAQAccordion';

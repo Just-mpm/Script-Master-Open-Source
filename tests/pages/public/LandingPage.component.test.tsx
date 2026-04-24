@@ -49,7 +49,7 @@ describe('LandingPage', () => {
   it('renderiza os CTAs do hero', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     expect(screen.getByRole('link', { name: /Começar Grátis/i })).toBeDefined();
-    expect(screen.getByRole('link', { name: /Ver Features/i })).toBeDefined();
+    expect(screen.getByRole('link', { name: /Ver Funcionalidades/i })).toBeDefined();
   });
 
   it('renderiza a barra SocialProofBar', () => {
@@ -115,9 +115,9 @@ describe('LandingPage', () => {
     expect(ctaLink.getAttribute('href')).toBe('/login');
   });
 
-  it('o CTA "Ver Features" aponta para /features', () => {
+  it('o CTA "Ver Funcionalidades" aponta para /funcionalidades', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    const ctaLink = screen.getByRole('link', { name: /Ver Features/i });
-    expect(ctaLink.getAttribute('href')).toBe('/features');
+    const ctaLink = screen.getByRole('link', { name: /Ver Funcionalidades/i });
+    expect(ctaLink.getAttribute('href')).toBe('/funcionalidades');
   });
 });
