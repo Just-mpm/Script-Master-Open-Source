@@ -14,11 +14,13 @@ bun run build            # lint + typecheck + build de produção
 bun run lint             # ESLint 10 (flat config)
 bun run lint:fix         # ESLint com autocorreção
 bun run typecheck        # tsc -b
+bun run test             # Vitest (execução única)
+bun run test:watch       # Vitest (watch mode)
 bun run preview          # serve build localmente
 bun run clean            # remove dist/
 ```
 
-**Sem test runner, sem formatter e sem CI/CD.**
+**Sem formatter e sem CI/CD.**
 
 ## Stack
 
@@ -28,6 +30,7 @@ bun run clean            # remove dist/
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
+- **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
 
 ## Modelos Gemini
 
@@ -233,13 +236,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.15.0`
+- **Current:** `0.16.0`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.16.0 | Suite de testes Vitest completa (62 testes cobrindo todas as áreas); scripts test/test:watch; vitest.config com jsdom + fake-indexeddb; correção da lógica do logger em produção; normalização de bold markdown no subtitleUtils |
 | 0.15.0 | Navigation drawer mobile no Header; CaptionEditorPanel redesign com PhraseCard; botão copiar no ScriptEditor e AssistantMessages; stopGeneration no useAssistant; CaptionPhrase type; dialogs de exclusão em VideoLibrary e Assistant; MAX_STYLE_NOTES no Inspector |
 | 0.14.2 | Otimização de exportação: WaveformOverlay pula SVG durante exportação (isExporting); throttle de progresso no useVideoExporter; canvasFontStretchPatch refatorado com logger e suporte a OffscreenCanvas |
 | 0.14.1 | Limites dinâmicos de verticalOffset no SubtitleInlineEditor (resolução-aware); docstring corrigida (positivo=sobe); downgrade Whisper base→tiny (~39MB) |

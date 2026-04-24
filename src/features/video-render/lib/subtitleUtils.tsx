@@ -510,11 +510,14 @@ export function segmentScriptByCenes(
           endFrame = wordFrame + wordFrames;
         }
 
+        // Normaliza word removendo markdown bold (**texto**) para comparar com boldWords
+        const normalizedWord = word.replace(/^\*\*(.+)\*\*$/, '$1').toLowerCase();
+
         result.push({
           text: word,
           startFrame,
           endFrame: Math.min(endFrame, sceneEndFrame),
-          bold: boldWords.has(word.toLowerCase()),
+          bold: boldWords.has(normalizedWord),
         });
 
         wordFrame = endFrame;

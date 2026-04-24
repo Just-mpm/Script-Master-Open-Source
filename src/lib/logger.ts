@@ -41,7 +41,7 @@ const IS_PROD = import.meta.env.PROD;
 
 /**
  * Ordem de severidade — níveis com valor numérico menor são mais severos.
- * Em produção, só exibe níveis >= `warn` (índice 2).
+ * Em produção, só exibe níveis <= `warn` (índice 1).
  */
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 0,
@@ -59,7 +59,7 @@ const MIN_LEVEL: LogLevel = IS_PROD ? 'warn' : 'debug';
 
 /** Verifica se o nível deve ser exibido com base no ambiente. */
 function shouldLog(level: LogLevel): boolean {
-  return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[MIN_LEVEL];
+  return LEVEL_PRIORITY[level] <= LEVEL_PRIORITY[MIN_LEVEL];
 }
 
 /** Retorna o método nativo do console correspondente ao nível. */

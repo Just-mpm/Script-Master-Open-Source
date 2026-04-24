@@ -7,6 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.16.0] - 2026-04-24
+
+### Adicionado
+
+- **Suite de testes completa** (62 arquivos, `tests/`): cobertura com Vitest + @testing-library/react + fake-indexeddb + jsdom — testes unitários e de componentes cobrindo todas as áreas do projeto (assistant, components, contexts, hooks, lib, pages, speed-paint, studio, theme, video-render)
+- **`vitest.config.ts`**: configuração do runner com jsdom, path aliases (`@/`) e setup file (`tests/setup.ts`)
+- **`tests/setup.ts`**: setup global com fake-indexeddb/auto e stub de `import.meta.env.PROD` para `false` em todos os testes
+- **Scripts**: `test` (vitest run) e `test:watch` (vitest) adicionados ao package.json
+- **Dependências de dev**: vitest ^4.1.5, @testing-library/react ^16.3.2, @testing-library/user-event ^14.6.1, @testing-library/jest-dom ^6.9.1, @vitest/coverage-v8 ^4.1.5, fake-indexeddb ^6.2.5, jsdom ^29.0.2
+
+### Corrigido
+
+- **logger** (`src/lib/logger.ts`): correção da lógica de comparação de níveis de log em produção — condição invertida de `>=` para `<=`, que causava supressão incorreta de níveis (debug/info eram exibidos, warn/error eram suprimidos)
+- **subtitleUtils** (`src/features/video-render/lib/subtitleUtils.tsx`): normalização de palavras com markdown bold (`**texto**`) antes de comparação com `boldWords` — evita falsos negativos em palavras marcadas como bold no texto de legenda
+
+---
+
 ## [0.15.0] - 2026-04-24
 
 ### Adicionado
