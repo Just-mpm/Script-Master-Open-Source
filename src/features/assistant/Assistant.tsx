@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Typography from '@mui/material/Typography';
 import {
   deleteChatSession,
   deleteMemory,
@@ -39,7 +45,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
-  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, messagesEndRef } = useAssistant(currentState);
+  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, messagesEndRef } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -57,6 +63,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+
+  // Confirmação de exclusão
+  const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [deletingConfirm, setDeletingConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -160,15 +171,39 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     await loadMemories();
   };
 
-  const handleDeleteMemory = async (id: string) => {
-    await deleteMemory(id, user?.uid);
-    await loadMemories();
+  const handleDeleteMemory = (id: string) => {
+    setMemoryToDelete(id);
   };
 
-  const handleDeleteHistory = async (event: MouseEvent<HTMLButtonElement>, id: string) => {
+  const confirmDeleteMemory = async () => {
+    if (!memoryToDelete) return;
+
+    setDeletingConfirm(true);
+    try {
+      await deleteMemory(memoryToDelete, user?.uid);
+      await loadMemories();
+    } finally {
+      setMemoryToDelete(null);
+      setDeletingConfirm(false);
+    }
+  };
+
+  const handleDeleteHistory = (event: MouseEvent<HTMLButtonElement>, id: string) => {
     event.stopPropagation();
-    await deleteChatSession(id, user?.uid);
-    await loadHistory();
+    setChatToDelete(id);
+  };
+
+  const confirmDeleteChat = async () => {
+    if (!chatToDelete) return;
+
+    setDeletingConfirm(true);
+    try {
+      await deleteChatSession(chatToDelete, user?.uid);
+      await loadHistory();
+    } finally {
+      setChatToDelete(null);
+      setDeletingConfirm(false);
+    }
   };
 
   const handleSaveMessageToMemory = async (text: string, messageId: string) => {
@@ -323,6 +358,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         messagesEndRef={messagesEndRef}
         onApply={handleApply}
         onSaveToMemory={handleSaveMessageToMemory}
+        onStopGeneration={stopGeneration}
       />
 
       <AssistantComposer
@@ -337,6 +373,56 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           setPendingFiles((previousFiles) => previousFiles.filter((_, fileIndex) => fileIndex !== index));
         }}
       />
+
+      <Dialog
+        open={Boolean(memoryToDelete)}
+        onClose={deletingConfirm ? undefined : () => setMemoryToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-memory-title"
+      >
+        <DialogTitle id="delete-memory-title">
+          {deletingConfirm ? 'Excluindo...' : 'Excluir memória?'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setMemoryToDelete(null)} color="inherit" disabled={deletingConfirm}>
+            Cancelar
+          </Button>
+          <Button onClick={() => void confirmDeleteMemory()} color="error" variant="contained" disabled={deletingConfirm}>
+            {deletingConfirm ? 'Excluindo...' : 'Excluir'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(chatToDelete)}
+        onClose={deletingConfirm ? undefined : () => setChatToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-chat-title"
+      >
+        <DialogTitle id="delete-chat-title">
+          {deletingConfirm ? 'Excluindo...' : 'Excluir conversa?'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Esta conversa será removida permanentemente do seu histórico.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setChatToDelete(null)} color="inherit" disabled={deletingConfirm}>
+            Cancelar
+          </Button>
+          <Button onClick={() => void confirmDeleteChat()} color="error" variant="contained" disabled={deletingConfirm}>
+            {deletingConfirm ? 'Excluindo...' : 'Excluir'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ErrorToast error={documentError} onDismiss={() => setDocumentError(null)} />
       <ErrorToast error={attachmentError} onDismiss={() => setAttachmentError(null)} />

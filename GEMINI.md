@@ -233,13 +233,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.14.2`
-- **Last release:** 2026-04-23
+- **Current:** `0.15.0`
+- **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.15.0 | Navigation drawer mobile no Header; CaptionEditorPanel redesign com PhraseCard; botão copiar no ScriptEditor e AssistantMessages; stopGeneration no useAssistant; CaptionPhrase type; dialogs de exclusão em VideoLibrary e Assistant; MAX_STYLE_NOTES no Inspector |
 | 0.14.2 | Otimização de exportação: WaveformOverlay pula SVG durante exportação (isExporting); throttle de progresso no useVideoExporter; canvasFontStretchPatch refatorado com logger e suporte a OffscreenCanvas |
 | 0.14.1 | Limites dinâmicos de verticalOffset no SubtitleInlineEditor (resolução-aware); docstring corrigida (positivo=sobe); downgrade Whisper base→tiny (~39MB) |
 | 0.14.0 | SubtitleInlineEditor — editor inline de estilo de legendas (fontSize, padding, borderRadius, opacity, gap, verticalOffset); SubtitleStyle + DEFAULT_SUBTITLE_STYLE; getAlignment no SubtitleOverlay; limpeza de código morto (SubtitleMode, AnimatedWord, VisiblePhrase) |

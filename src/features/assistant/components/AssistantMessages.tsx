@@ -1,8 +1,11 @@
 import type { RefObject } from 'react';
+import { useCallback, useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
@@ -12,9 +15,11 @@ import { alpha } from '@mui/material/styles';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import BookmarkAdd from '@mui/icons-material/BookmarkAdd';
 import Check from '@mui/icons-material/Check';
+import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
 import Person from '@mui/icons-material/Person';
 import SmartToy from '@mui/icons-material/SmartToy';
+import Stop from '@mui/icons-material/Stop';
 import ReactMarkdown from 'react-markdown';
 import type { AssistantSettings, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
@@ -30,6 +35,7 @@ interface AssistantMessagesProps {
   messagesEndRef: RefObject<HTMLDivElement | null>;
   onApply: (settings: AssistantSettings, messageId: string) => void;
   onSaveToMemory: (text: string, messageId: string) => void;
+  onStopGeneration: () => void;
 }
 
 export function AssistantMessages({
@@ -41,12 +47,27 @@ export function AssistantMessages({
   messagesEndRef,
   onApply,
   onSaveToMemory,
+  onStopGeneration,
 }: AssistantMessagesProps) {
   // Última mensagem do modelo — pode estar em streaming (texto progressivo)
   const lastModelMessage = [...messages].reverse().find(m => m.role === 'model');
 
   // Oculta skeleton quando o primeiro token já chegou (texto parcial > '')
   const showSkeleton = isLoading && !isStreaming;
+
+  // Estado para feedback de "copiado" no clipboard
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+  const handleCopyMessage = useCallback(async (text: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(messageId);
+      window.setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch {
+      // Clipboard API pode falhar em contextos restritos — falha silenciosa
+    }
+  }, []);
+
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: { xs: 1, md: 1.5 } }}>
       <Stack spacing={GAP_RELAXED}>
@@ -120,6 +141,36 @@ export function AssistantMessages({
                           {isModel ? 'Assistente' : 'Você'}
                         </Typography>
                       </Stack>
+
+                      {isCurrentlyStreaming ? (
+                        <Tooltip title="Parar geração">
+                          <IconButton
+                            onClick={onStopGeneration}
+                            size="small"
+                            aria-label="Parar geração de resposta"
+                            sx={{
+                              color: 'error.main',
+                              '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
+                            }}
+                          >
+                            <Stop sx={{ fontSize: ICON_SIZE_MD }} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : isModel && cleanText ? (
+                        <Tooltip title={copiedMessageId === message.id ? 'Copiado!' : 'Copiar texto'}>
+                          <IconButton
+                            onClick={() => void handleCopyMessage(cleanText, message.id)}
+                            size="small"
+                            aria-label="Copiar texto da mensagem"
+                            sx={{
+                              color: copiedMessageId === message.id ? 'success.main' : 'text.secondary',
+                              '&:hover': { backgroundColor: 'action.hover' },
+                            }}
+                          >
+                            {copiedMessageId === message.id ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
+                          </IconButton>
+                        </Tooltip>
+                      ) : null}
                     </Stack>
 
                     <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>

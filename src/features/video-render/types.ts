@@ -40,6 +40,20 @@ export interface CaptionWord {
   bold: boolean;
 }
 
+/** Frase agrupada de legendas — unidade primária do editor */
+export interface CaptionPhrase {
+  /** Identificador único e estável (crypto.randomUUID()) — usado como key no React */
+  id: string;
+  /** Texto completo da frase */
+  text: string;
+  /** Palavras individuais com timing granular (usado pelo Remotion/SubtitleOverlay) */
+  words: CaptionWord[];
+  /** Frame de início da frase (derivado de words[0].startFrame) */
+  startFrame: number;
+  /** Frame de fim da frase (derivado de words[words.length - 1].endFrame) */
+  endFrame: number;
+}
+
 /** Fonte dos dados de temporização das legendas */
 export type CaptionSource =
   | 'whisper-aligned'      // Timing Whisper refinado + texto do roteiro

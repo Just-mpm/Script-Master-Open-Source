@@ -306,6 +306,15 @@ export function useAssistant(currentState?: AssistantStudioState) {
     }));
   };
 
+  /** Interrompe a geração em andamento via AbortController. */
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    streamActiveRef.current = false;
+  };
+
   return {
     messages,
     isLoading,
@@ -314,6 +323,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     sendMessage,
     startNewChat,
     loadSession,
+    stopGeneration,
     messagesEndRef,
   };
 }

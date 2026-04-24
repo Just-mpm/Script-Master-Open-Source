@@ -7,6 +7,35 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.15.0] - 2026-04-24
+
+### Adicionado
+
+- **Header** (`src/components/Header.tsx`): navigation drawer responsivo para mobile com MUI Drawer, List, ListItemButton e menu hamburger — navegação lateral em telas pequenas via `useMediaQuery`
+- **ScriptEditor** (`src/components/ScriptEditor.tsx`): botão copiar roteiro com feedback visual (ícone ContentCopy → Check) e Tooltip
+- **AssistantMessages** (`src/features/assistant/components/AssistantMessages.tsx`): componente dedicado com botão copiar mensagem e botão parar geração (stop) com AbortController — interação independente por mensagem
+- **CaptionEditorPanel** (`src/features/video-render/components/CaptionEditorPanel.tsx`): redesign completo com PhraseCard, AddPhraseButton, `PhraseCardProps`/`AddPhraseButtonProps` tipados — edição visual de frases de legenda com hover transitions e ícones (Add, Delete, Undo, Expand)
+- **`CaptionPhrase`** (`src/features/video-render/types.ts`): interface tipada para representar uma frase de legenda (grupo de palavras com timing)
+- **`formatTimestamp`** (`src/features/video-render/lib/formatTimestamp.ts`): utilitário extraído para formatação de timestamps de legenda
+- **`stopGeneration`** (`src/hooks/useAssistant.ts`): método público para interromper geração em andamento via AbortController
+- **`wordsToPhrases`** (`src/features/video-render/lib/subtitleUtils.tsx`): conversão de array de palavras para array de frases de legenda
+- **`phrasesToWords`** (`src/features/video-render/lib/subtitleUtils.tsx`): conversão inversa — array de frases de legenda de volta para palavras
+- **`MAX_STYLE_NOTES`** (`src/components/Inspector.tsx`): limite de 500 caracteres para notas de estilo com feedback visual via InputAdornment + ícone Warning
+- **VideoLibrary** (`src/components/VideoLibrary.tsx`): diálogo de confirmação para exclusão de vídeos com MUI Dialog
+- **Assistant** (`src/features/assistant/Assistant.tsx`): diálogo de confirmação para limpar sessão do assistente
+
+### Alterado
+
+- **CaptionEditorPanel** (`src/features/video-render/components/CaptionEditorPanel.tsx`): refatoração completa — remoção de `PhraseRow`/`PhraseRowProps`/`CaptionPhrase` (movidos para types.ts e subtitleUtils.tsx); remoção de ícones CallSplitOutlined/MergeOutlined; novo layout com cards, hover transitions e constantes de UI (`PHRASE_LIST_MAX_HEIGHT`, `ADD_BUTTON_HEIGHT`, `HOVER_TRANSITION_DURATION`, etc.)
+- **Header** (`src/components/Header.tsx`): +214/-62 linhas — reestruturação completa do header com suporte a drawer mobile e responsividade
+- **ScriptEditor** (`src/components/ScriptEditor.tsx`): +80/-48 linhas — melhoria de UX com botão copiar e estilos refinados
+- **Library** (`src/components/Library.tsx`): +96/-23 linhas — melhoria de estilos e experiência visual
+- **VideoLibrary** (`src/components/VideoLibrary.tsx`): +99/-7 linhas — adição de diálogo de exclusão e melhoria de estilos
+- **video-render/index.ts**: exportação de `CaptionPhrase` adicionada ao barrel
+- **subtitleUtils.tsx**: funções `parseBoldMarkdown` existentes mantidas, novas funções `wordsToPhrases`/`phrasesToWords` adicionadas
+
+---
+
 ## [0.14.2] - 2026-04-23
 
 ### Adicionado

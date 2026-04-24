@@ -7,6 +7,10 @@ import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -19,19 +23,20 @@ import type { SystemStyleObject } from '@mui/system';
 import AccessTime from '@mui/icons-material/AccessTime';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Close from '@mui/icons-material/Close';
+import Delete from '@mui/icons-material/Delete';
 import Download from '@mui/icons-material/Download';
 import FolderOpen from '@mui/icons-material/FolderOpen';
 import Movie from '@mui/icons-material/Movie';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { getProjects, getProjectsDetailsMap, getGenerations } from '../lib/db';
+import { getProjects, getProjectsDetailsMap, getGenerations, deleteVideoFromProject, deleteGeneration } from '../lib/db';
 import type { Project } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, RADIUS_CHIP, BLACK_66 } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, RADIUS_CHIP, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BLACK_66 } from '../theme/tokens';
 
 const log = createLogger('VideoLibrary');
 
@@ -88,6 +93,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<VideoLibraryItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState(false);
 
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
@@ -213,6 +220,31 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   const handleSelect = async (item: VideoLibraryItem) => {
     if (item.audioUrl && item.scenes) {
       onSelect(item.id, item.audioUrl, item.scenes, item.script);
+    }
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+
+    setDeletingItem(true);
+    try {
+      if (itemToDelete.isGeneration) {
+        await deleteGeneration(itemToDelete.id, user?.uid);
+      } else {
+        await deleteVideoFromProject(itemToDelete.id, itemToDelete.id, user?.uid);
+      }
+
+      // Atualiza lista local removendo o item excluído
+      setProjects((prev) => prev.filter((p) => p.id !== itemToDelete.id));
+      setItemToDelete(null);
+
+      // Revoga blob URLs do item excluído
+      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      blobUrlsRef.current.clear();
+    } catch (err) {
+      log.error('Falha ao excluir item da galeria', { error: err });
+    } finally {
+      setDeletingItem(false);
     }
   };
 
@@ -393,11 +425,11 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                         onClick={(event) => handleDownloadSequence(event, project)}
                         disabled={downloadingId === project.id}
                         aria-label={`Baixar arquivos do projeto ${project.name}`}
-                      sx={(theme): SystemStyleObject<Theme> => ({
-                        position: 'absolute',
-                        top: 10,
-                        right: 10,
-                          zIndex: 2,
+                        sx={(theme): SystemStyleObject<Theme> => ({
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                            zIndex: 2,
                           width: 34,
                           height: 34,
                           backgroundColor: downloadingId === project.id
@@ -416,12 +448,72 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                       </IconButton>
                     </span>
                   </Tooltip>
+
+                  <Tooltip title="Excluir item da galeria">
+                    <span>
+                      <IconButton
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setItemToDelete(project);
+                        }}
+                        aria-label={`Excluir ${project.name} da galeria`}
+                        sx={(theme): SystemStyleObject<Theme> => ({
+                          position: 'absolute',
+                          top: 10,
+                          right: 48,
+                          zIndex: 2,
+                          width: 34,
+                          height: 34,
+                          backgroundColor: alpha(theme.palette.common.black, 0.42),
+                          color: theme.palette.common.white,
+                          backdropFilter: 'blur(12px)',
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.error.main, 0.72),
+                          },
+                        })}
+                      >
+                        <Delete sx={{ fontSize: ICON_SIZE_MD }} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 </Card>
               </motion.div>
             );
           })}
         </Stack>
       </Box>
+
+      <Dialog
+        open={Boolean(itemToDelete)}
+        onClose={deletingItem ? undefined : () => setItemToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-gallery-item-title"
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: RADIUS_SM,
+            },
+          },
+        }}
+      >
+        <DialogTitle id="delete-gallery-item-title">
+          {deletingItem ? 'Excluindo...' : `Excluir "${itemToDelete?.name ?? 'item'}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Esta ação remove permanentemente o item e seus arquivos associados.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setItemToDelete(null)} color="inherit" disabled={deletingItem}>
+            Cancelar
+          </Button>
+          <Button onClick={() => void confirmDeleteItem()} color="error" variant="contained" disabled={deletingItem}>
+            {deletingItem ? 'Excluindo...' : 'Excluir'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={Boolean(downloadError)}

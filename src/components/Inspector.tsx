@@ -7,6 +7,7 @@ import Collapse from '@mui/material/Collapse';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 
 
@@ -34,11 +35,14 @@ import Pause from '@mui/icons-material/Pause';
 import People from '@mui/icons-material/People';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Settings from '@mui/icons-material/Settings';
+import Warning from '@mui/icons-material/Warning';
 import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS } from '../theme/tokens';
+
+const MAX_STYLE_NOTES = 500;
 
 interface InspectorProps {
   isMultiSpeaker: boolean;
@@ -285,7 +289,19 @@ export function Inspector({
                     onChange={(event) => setSpeakerAName(event.target.value)}
                     disabled={isGenerating}
                     placeholder="Ex: Voz A"
-                    helperText="Use exatamente o nome que aparece antes da fala no roteiro."
+                    error={isMultiSpeaker && speakerAName.trim() === ''}
+                    helperText={isMultiSpeaker && speakerAName.trim() === '' ? 'O nome do Locutor A é obrigatório no modo podcast' : 'Use exatamente o nome que aparece antes da fala no roteiro.'}
+                    slotProps={{
+                      input: {
+                        ...(isMultiSpeaker && speakerAName.trim() === '' ? {
+                          startAdornment: (
+                            <InputAdornment position="start" sx={{ mr: 0.5 }}>
+                              <Warning sx={{ fontSize: ICON_SIZE_SM, color: 'error.main' }} />
+                            </InputAdornment>
+                          ),
+                        } : {}),
+                      },
+                    }}
                   />
                 </VoiceTabPanel>
 
@@ -489,10 +505,19 @@ export function Inspector({
                   fullWidth
                   label="Sotaque"
                   value={styleNotes}
-                  onChange={(event) => setStyleNotes(event.target.value)}
+                  onChange={(event) => {
+                    if (event.target.value.length <= MAX_STYLE_NOTES) {
+                      setStyleNotes(event.target.value);
+                    }
+                  }}
                   disabled={isGenerating}
                   placeholder='Ex: "Paulista"'
-                  helperText={!styleNotes ? 'Ex: Paulista, Mineiro, Carrioca' : undefined}
+                  error={styleNotes.length === MAX_STYLE_NOTES}
+                  helperText={styleNotes.length === MAX_STYLE_NOTES
+                    ? `Limite de ${MAX_STYLE_NOTES} caracteres atingido`
+                    : !styleNotes
+                      ? 'Ex: Paulista, Mineiro, Carrioca'
+                      : `${styleNotes.length}/${MAX_STYLE_NOTES}`}
                 />
               </Grid>
             </Grid>

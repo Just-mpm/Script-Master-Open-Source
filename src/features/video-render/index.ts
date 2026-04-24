@@ -11,6 +11,7 @@ export { DEFAULT_SUBTITLE_STYLE } from './types';
 // ─── Tipos de legenda/transcrição ──────────────────────────
 export type {
   CaptionWord,
+  CaptionPhrase,
   CaptionSource,
   TranscriptionResult,
 } from './types';

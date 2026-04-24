@@ -38,6 +38,7 @@ import {
   deleteProject,
   updateProjectName,
   getProjectDetails,
+  deleteGeneration,
   type Project,
   type AudioSource,
   type ProjectImage,
@@ -72,6 +73,8 @@ export function Library() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [audioToDelete, setAudioToDelete] = useState<string | null>(null);
+  const [deletingAudio, setDeletingAudio] = useState(false);
 
   const { isPlaying, activeId, play, toggle } = useGlobalAudioState();
 
@@ -200,6 +203,25 @@ export function Library() {
     }
 
     setEditingId(null);
+  };
+
+  const confirmDeleteAudio = async () => {
+    if (!audioToDelete) return;
+
+    setDeletingAudio(true);
+    try {
+      await deleteGeneration(audioToDelete, user?.uid);
+      setAudioToDelete(null);
+      // Atualiza lista local removendo o áudio excluído
+      setProjectData((prev) => ({
+        ...prev,
+        audios: prev.audios.filter((a) => a.id !== audioToDelete),
+      }));
+    } catch (err) {
+      log.error('Falha ao excluir áudio', { error: err });
+    } finally {
+      setDeletingAudio(false);
+    }
   };
 
   return (
@@ -462,29 +484,48 @@ export function Library() {
                                             </Stack>
 
                                             <Stack direction="row" spacing={GAP_COMPACT}>
-                                              <IconButton
-                                                onClick={() => handlePlay(audio)}
-                                                color={isCurrent ? 'secondary' : 'primary'}
-                                                aria-label={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}
-                                              >
-                                                {isPlaying && isCurrent ? <Pause sx={{ fontSize: ICON_SIZE_LG }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_LG }} />}
-                                              </IconButton>
+                                              <Tooltip title={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}>
+                                                <span>
+                                                  <IconButton
+                                                    onClick={() => handlePlay(audio)}
+                                                    color={isCurrent ? 'secondary' : 'primary'}
+                                                    aria-label={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}
+                                                  >
+                                                    {isPlaying && isCurrent ? <Pause sx={{ fontSize: ICON_SIZE_LG }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_LG }} />}
+                                                  </IconButton>
+                                                </span>
+                                              </Tooltip>
 
-                                              <IconButton
-                                                onClick={() => {
-                                                  const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
-                                                  if (url) {
-                                                    // Registra blob URL criado para cleanup ao desmontar
-                                                    if (!audio.audioUrl && url.startsWith('blob:')) {
-                                                      blobUrlsRef.current.push(url);
-                                                    }
-                                                    void downloadFile(url, `${project.name}-${audio.id}.wav`);
-                                                  }
-                                                }}
-                                                aria-label="Baixar áudio"
-                                              >
-                                                <Download sx={{ fontSize: ICON_SIZE_MD }} />
-                                              </IconButton>
+                                              <Tooltip title="Baixar áudio">
+                                                <span>
+                                                  <IconButton
+                                                    onClick={() => {
+                                                      const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
+                                                      if (url) {
+                                                        if (!audio.audioUrl && url.startsWith('blob:')) {
+                                                          blobUrlsRef.current.push(url);
+                                                        }
+                                                        void downloadFile(url, `${project.name}-${audio.id}.wav`);
+                                                      }
+                                                    }}
+                                                    aria-label="Baixar áudio"
+                                                  >
+                                                    <Download sx={{ fontSize: ICON_SIZE_MD }} />
+                                                  </IconButton>
+                                                </span>
+                                              </Tooltip>
+
+                                              <Tooltip title="Excluir áudio">
+                                                <span>
+                                                  <IconButton
+                                                    onClick={() => setAudioToDelete(audio.id)}
+                                                    color="error"
+                                                    aria-label="Excluir áudio"
+                                                  >
+                                                    <Delete sx={{ fontSize: ICON_SIZE_MD }} />
+                                                  </IconButton>
+                                                </span>
+                                              </Tooltip>
                                             </Stack>
                                           </Stack>
                                         </Card>
@@ -610,6 +651,38 @@ export function Library() {
           </Button>
           <Button onClick={() => void confirmDelete()} color="error" variant="contained" disabled={deleting}>
             {deleting ? 'Excluindo...' : 'Excluir projeto'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(audioToDelete)}
+        onClose={deletingAudio ? undefined : () => setAudioToDelete(null)}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-audio-title"
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: RADIUS_SM,
+            },
+          },
+        }}
+      >
+        <DialogTitle id="delete-audio-title">
+          {deletingAudio ? 'Excluindo áudio...' : 'Excluir versão de áudio?'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do Storage.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setAudioToDelete(null)} color="inherit" disabled={deletingAudio}>
+            Cancelar
+          </Button>
+          <Button onClick={() => void confirmDeleteAudio()} color="error" variant="contained" disabled={deletingAudio}>
+            {deletingAudio ? 'Excluindo...' : 'Excluir'}
           </Button>
         </DialogActions>
       </Dialog>

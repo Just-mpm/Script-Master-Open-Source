@@ -1,5 +1,5 @@
 import { createLogger } from '../../../lib/logger';
-import type { CaptionWord } from '../types';
+import type { CaptionPhrase, CaptionWord } from '../types';
 
 const log = createLogger('subtitleUtils');
 
@@ -525,4 +525,64 @@ export function segmentScriptByCenes(
   }
 
   return result;
+}
+
+// ─── Conversão CaptionWord ↔ CaptionPhrase ──────────────────
+
+/**
+ * Agrupa CaptionWord[] em frases (CaptionPhrase[]) usando pontuação ou limite de palavras.
+ *
+ * Lógica de agrupamento idêntica ao SubtitleOverlay:
+ * - Pontuação final [ .!?;: ] força quebra de frase
+ * - Máximo de 12 palavras por frase
+ *
+ * Cada frase recebe id estável via crypto.randomUUID(), com startFrame/endFrame derivados
+ * das palavras contidas. O campo `text` é o join das palavras.
+ */
+export function wordsToPhrases(words: CaptionWord[]): CaptionPhrase[] {
+  if (words.length === 0) return [];
+
+  const groups: CaptionWord[][] = [];
+  let current: CaptionWord[] = [];
+
+  for (const word of words) {
+    current.push(word);
+    const isEndOfSentence = /[.!?;:]$/.test(word.text);
+    if (isEndOfSentence || current.length >= 12) {
+      groups.push(current);
+      current = [];
+    }
+  }
+  if (current.length > 0) groups.push(current);
+
+  return groups.map((group) => ({
+    id: crypto.randomUUID(),
+    words: group,
+    startFrame: group[0].startFrame,
+    endFrame: group[group.length - 1].endFrame,
+    text: group.map((w) => w.text).join(' '),
+  }));
+}
+
+/**
+ * Flatten de frases (CaptionPhrase[]) de volta para CaptionWord[].
+ *
+ * Recalcula o timing das palavras internas proporcionalmente dentro de cada frase
+ * para que fiquem contíguas (sem gaps entre palavras de uma mesma frase).
+ */
+export function phrasesToWords(phrases: CaptionPhrase[]): CaptionWord[] {
+  return phrases.flatMap((phrase) => {
+    if (phrase.words.length === 0) return [];
+
+    // Recalcula timing proporcional dentro de cada frase
+    const duration = phrase.endFrame - phrase.startFrame;
+    const framePerWord = duration / phrase.words.length;
+
+    return phrase.words.map((w, i) => ({
+      text: w.text,
+      bold: w.bold,
+      startFrame: Math.round(phrase.startFrame + i * framePerWord),
+      endFrame: Math.round(phrase.startFrame + (i + 1) * framePerWord),
+    }));
+  });
 }
