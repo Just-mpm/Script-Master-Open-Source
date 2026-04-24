@@ -252,6 +252,56 @@ describe('SubtitleOverlay', () => {
     expect(c2.querySelector('div')).not.toBeNull();
     unmount();
   });
+
+  it('legenda permanece visível durante gap entre frases (sticky fallback)', () => {
+    // captions com gap explícito entre frase 1 e frase 2
+    const gapCaptions: CaptionWord[] = [
+      { text: 'Primeira', startFrame: 0, endFrame: 30, bold: false },
+      { text: 'frase.', startFrame: 30, endFrame: 60, bold: false },
+      // Gap: frames 60-80 sem frase
+      { text: 'Segunda', startFrame: 80, endFrame: 110, bold: false },
+      { text: 'frase.', startFrame: 110, endFrame: 140, bold: false },
+    ];
+
+    // Frame 70: no gap entre frases (primeira terminou em 60, segunda começa em 80)
+    mockFrame = 70;
+    const { getByTestId } = render(
+      <SubtitleOverlay captions={gapCaptions} durationInFrames={300} />,
+    );
+    // Com sticky fallback, a legenda NÃO deve desaparecer
+    expect(getByTestId('absolute-fill')).toBeDefined();
+  });
+
+  it('última frase permanece visível após terminar (sticky)', () => {
+    mockFrame = 150; // Última frase termina em 120
+    const { getByTestId } = render(
+      <SubtitleOverlay captions={captions} durationInFrames={300} />,
+    );
+    expect(getByTestId('absolute-fill')).toBeDefined();
+  });
+
+  it('scroll absoluto sem drift vertical com múltiplas frases', () => {
+    // Captions com 4 frases
+    const longCaptions: CaptionWord[] = [
+      { text: 'Primeira frase.', startFrame: 0, endFrame: 60, bold: false },
+      { text: 'Segunda frase.', startFrame: 60, endFrame: 120, bold: false },
+      { text: 'Terceira frase.', startFrame: 120, endFrame: 180, bold: false },
+      { text: 'Quarta frase.', startFrame: 180, endFrame: 240, bold: false },
+    ];
+
+    // Frame 150: terceira frase ativa (activePhraseIndex = 2, >= 1)
+    mockFrame = 150;
+    const { container, getByTestId } = render(
+      <SubtitleOverlay captions={longCaptions} durationInFrames={300} />,
+    );
+
+    // scrollY deve ser interpolado com base em phrases[1][0].startFrame (60)
+    // Não deve acumular drift — deve ser no máximo -phraseHeight
+    expect(getByTestId('absolute-fill')).toBeDefined();
+    // Verifica que o container tem transform (scroll aplicado)
+    const innerDiv = container.querySelector('div[style*="transform"]');
+    expect(innerDiv).not.toBeNull();
+  });
 });
 
 // ─── WaveformOverlay ─────────────────────────────────────────

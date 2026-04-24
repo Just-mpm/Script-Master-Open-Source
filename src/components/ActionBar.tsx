@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -22,6 +22,7 @@ import VideoFile from '@mui/icons-material/VideoFile';
 import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
 import type { VideoPreviewHandle } from './VideoPreview';
+import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP, CYAN_GLOW_SOFT } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
@@ -76,43 +77,13 @@ export function ActionBar({
   const audioState = useGlobalAudioState();
   const audioActions = useGlobalAudioActions();
 
-  // Estado do Remotion Player (rota /video) — polling otimizado
-  const [playerFrame, setPlayerFrame] = useState(0);
-  const [playerIsPlaying, setPlayerIsPlaying] = useState(false);
-  const [isRemotionActive, setIsRemotionActive] = useState(false);
-
-  // Refs para evitar state updates desnecessários durante polling
-  const prevFrameRef = useRef(0);
-  const prevPlayingRef = useRef(false);
-
-  // Polling do frame e estado do Remotion Player — pausado quando não está reproduzindo
-  useEffect(() => {
-    if (!isVideoRoute || !videoFps) return;
-
-    const intervalId = setInterval(() => {
-      const player = videoPlayerRef?.current;
-      const active = isVideoRoute && !!player;
-      setIsRemotionActive(active);
-
-      if (player) {
-        const currentFrame = Math.round(player.getCurrentTime() * videoFps);
-        const playing = player.isPlaying();
-
-        // Só atualiza state se os valores mudaram (evita re-renders desnecessários)
-        if (currentFrame !== prevFrameRef.current) {
-          prevFrameRef.current = currentFrame;
-          setPlayerFrame(currentFrame);
-        }
-
-        if (playing !== prevPlayingRef.current) {
-          prevPlayingRef.current = playing;
-          setPlayerIsPlaying(playing);
-        }
-      }
-    }, 100);
-
-    return () => clearInterval(intervalId);
-  }, [isVideoRoute, videoPlayerRef, videoFps]);
+  // Frame e estado de reprodução do Remotion Player via bridge store
+  // (sincronizado pelo VideoPreview RAF ~30x/s — sem polling duplicado)
+  const bridgeFrame = useVideoRenderBridge((state) => state.currentFrame);
+  const bridgeIsPlaying = useVideoRenderBridge((state) => state.isPlaying);
+  // Na rota /video o player sempre está montado; guards em handleToggle/seekToPercentage
+  // verificam videoPlayerRef?.current antes de operar no player
+  const isRemotionActive = isVideoRoute;
 
   if (!isGenerating && !audioUrl) return null;
 
@@ -122,10 +93,10 @@ export function ActionBar({
   const isDownloadMenuOpen = Boolean(downloadAnchorEl);
 
   // ---- Estado unificado: Remotion na /video, AudioContext na / ----
-  const displayIsPlaying = isRemotionActive ? playerIsPlaying : audioState.isPlaying;
+  const displayIsPlaying = isRemotionActive ? bridgeIsPlaying : audioState.isPlaying;
 
   const displayCurrentTime = isRemotionActive && videoFps
-    ? playerFrame / videoFps
+    ? bridgeFrame / videoFps
     : audioState.currentTime;
 
   const displayDuration = isRemotionActive && videoFps && videoDurationInFrames

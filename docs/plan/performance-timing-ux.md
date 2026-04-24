@@ -171,30 +171,71 @@ Sugestão: `fix-worker`
 
 **11. Corrigir desaparecimento entre frases (SubtitleOverlay)**
 - Arquivos: `src/features/video-render/components/SubtitleOverlay.tsx`
-- Alterar a lógica de `activePhraseIndex` para estender a última frase ativa até o início da próxima frase, eliminando o gap onde `activePhraseIndex = -1`:
-  - Quando `frame >= currentPhrase.endFrame` e `frame < nextPhrase.startFrame`, manter `activePhraseIndex = currentIndex` em vez de `-1`
-  - Alternativa: após o loop principal, se `activePhraseIndex === -1` mas `frame >= phrases[0][0].startFrame`, atribuir a última frase cujo `endFrame <= frame` (fallback "sticky")
-- Atualizar `hasVisiblePhrases` para não depender exclusivamente de `activePhraseIndex !== -1`
-- **Resultado:** Transição contínua entre frases sem flash de "nada na tela"
+- **Estratégia: Fallback sticky pós-loop** (recomendada — menor risco, não altera loop principal)
+- Após o loop principal de `activePhraseIndex` (linha 128), adicionar fallback "sticky":
+  - Se `activePhraseIndex === -1` e `frame >= phrases[0][0].startFrame`, percorrer frases de trás pra frente e atribuir a última cujo `endFrame <= frame`
+  - Isso cobre: (a) gaps entre frases, (b) período após a última frase (legenda permanece visível até `globalOpacity` fade-out da cena)
+- Simplificar `hasVisiblePhrases` (linha 171): como `activePhraseIndex` sempre terá valor válido após o início da primeira frase, reduzir para `activePhraseIndex !== -1` (manter como safety check)
+- Implementação sugerida:
+  ```typescript
+  // Após o loop principal (após linha 128)
+  if (activePhraseIndex === -1 && phrases.length > 0 && frame >= phrases[0][0].startFrame) {
+    for (let i = phrases.length - 1; i >= 0; i--) {
+      const lastWord = phrases[i][phrases[i].length - 1];
+      if (lastWord.endFrame <= frame) {
+        activePhraseIndex = i;
+        break;
+      }
+    }
+  }
+  ```
+- **Resultado:** Transição contínua entre frases sem flash de "nada na tela"; última frase permanece visível até fade-out global da cena
 
 Sugestão: `fix-worker` | Notebook: `{3333bad6-daf0-4f5a-9a82-e5f0c038ef20}` (Remotion Docs — interpolate, useCurrentFrame)
 
 **12. Corrigir drift vertical no translateY (SubtitleOverlay)**
 - Arquivos: `src/features/video-render/components/SubtitleOverlay.tsx`
-- Substituir a estratégia de `translateY` acumulativo por scroll baseado na frase atual:
-  - **Opção A (recomendada):** Usar apenas 2 posições relativas — `0` (frase ativa na base) e `-phraseHeight` (frase anterior acima). O container sempre mostra no máximo 2 frases, então o scroll é sempre 0 ou `-phraseHeight`, sem acumulação.
-  - Calcular `scrollY = activePhraseIndex > 0 ? -phraseHeight : 0` e interpolar a transição com `interpolate` usando o frame de entrada da frase ativa atual.
-  - Isso elimina completamente o drift porque o deslocamento é absoluto (0 ou -phraseHeight), não cumulativo.
+- Substituir a estratégia de `translateY` acumulativo por scroll absoluto (2 posições fixas):
+  - O container mostra no máximo 2 frases: posição `0` (frase ativa na base) e `-phraseHeight` (frase anterior acima)
+  - **ATENÇÃO — NÃO interpolar usando `phrases[activePhraseIndex][0].startFrame` como referência.** Isso causaria bounce (scrollY vai de -phraseHeight → 0 → -phraseHeight a cada transição). A interpolação deve acontecer **apenas uma vez**, na primeira transição (frase 0 → frase 1).
+- Implementação sugerida (substituir linhas 134-146):
+  ```typescript
+  let scrollY = 0;
+  if (activePhraseIndex >= 1) {
+    // Interpola APENAS na primeira transição (frase 0 → frase 1)
+    // Para todas as frases subsequentes, scrollY permanece em -phraseHeight (clamped)
+    const firstScrollFrame = phrases[1][0].startFrame;
+    scrollY = interpolate(
+      frame,
+      [firstScrollFrame, firstScrollFrame + SUBTITLE_FADE],
+      [0, -phraseHeight],
+      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+    );
+  }
+  ```
 - Ajustar `phraseHeight` para usar `gap` entre as frases no container (já incluído no cálculo) e garantir consistência com o `gap` do CSS flex.
-- **Resultado:** Legenda permanece na posição correta durante toda a duração do vídeo, sem subir progressivamente
+- **Resultado:** Legenda permanece na posição correta durante toda a duração do vídeo, sem subir progressivamente e sem bounce entre frases
+- **Extra:** Atualizar JSDoc do componente `SubtitleOverlay` (linhas 63-78) — o comentário "container inteiro desliza para cima via translateY acumulado" ficará desatualizado (scroll não é mais acumulativo, é absoluto)
 
 Sugestão: `fix-worker` | Notebook: `{3333bad6-daf0-4f5a-9a82-e5f0c038ef20}` (Remotion Docs — interpolate, useCurrentFrame)
 
-**13. Validar ScrollingPhrase remain consistente após correções**
+**13. Validar ScrollingPhrase permanece consistente após correções**
 - Arquivos: `src/features/video-render/components/ScrollingPhrase.tsx`
-- Garantir que as correções no SubtitleOverlay não quebram o fade in/out da variante `active` e `previous`
-- Verificar que `fadeOutFrame` da variante `previous` ainda funciona corretamente quando a frase ativa não mais "pula" para `-1`
-- **Resultado:** Animações de opacidade intactas com o novo comportamento contínuo
+- **Nota:** ScrollingPhrase provavelmente não precisa de mudança de código — a validação é confirmar que as animações existentes funcionam com o novo comportamento sticky + scroll absoluto.
+- Checklist de verificação:
+
+  | Ponto | O que verificar | Por que importa |
+  |-------|-----------------|-----------------|
+  | `fadeIn` da variante active | `interpolate(frame, [firstWord.startFrame, startFrame + SUBTITLE_FADE], [0, 1])` não é re-triggerado pelo sticky | O fade-in já completou quando a frase ficou sticky; não há re-execução |
+  | `transitionToPrevious` | `interpolate(frame, [lastWord.endFrame, endFrame + SUBTITLE_FADE], [1.0, 0.5])` — quando sticky muda a frase, frame já passou de `endFrame + SUBTITLE_FADE` | Opacidade já está em 0.5, sem salto visual |
+  | `fadeOutFrame` | `phrases[activePhraseIndex + 1][0].startFrame` — índice `activePhraseIndex + 1` ainda é correto com sticky | A frase "previous" fadeia para 0 antes de ser desmontada |
+  | `Math.min(transitionToPrevious, fadeOut)` | Combinação das duas interpolações | Prevalece o menor, sem conflito |
+
+- Adicionar testes em `tests/video-render/remotion-components.component.test.tsx` para:
+  - Sticky phrase: legenda visível durante gap entre frases
+  - Scroll absoluto: posição estável após 10+ frases (sem drift)
+  - Última frase: permanece visível após terminar até fade-out global
+- **Resultado:** Animações de opacidade intactas com o novo comportamento contínuo; testes cobrindo os novos comportamentos
 
 Sugestão: `fix-worker`
 
@@ -226,6 +267,8 @@ Sugestão: `fix-worker`
 | Correção de gap entre frases causar sobreposição de legendas | Médio | Testar com roteiros longos (20+ frases) e frases curtas (< 5 palavras); garantir que a frase "sticky" não interfere com a fade out da variante previous |
 | Scroll absoluto (0 ou -phraseHeight) causar transição abrupta entre frases | Baixo | Interpolar a transição com `interpolate` sobre `SUBTITLE_FADE` frames — mesma técnica já usada no fade in/out |
 | `phraseHeight` teórico não corresponder à altura real renderizada pelo navegador | Baixo | A nova estratégia (apenas 2 posições) minimiza o impacto: erro é fixo (1 phraseHeight) e não acumulativo como antes |
+| Transição de opacidade 1.0→0.5 abrupta quando gap entre frases > SUBTITLE_FADE | Baixo | Comportamento esperado — a transição `transitionToPrevious` já completou durante o gap; a mudança para "previous" apenas confirma o estado. Testar com gaps de 5-50 frames |
+| Interpolação de scrollY causar bounce (scrollY volta a 0 antes de ir para -phraseHeight) | Crítico | Mitigado no passo 12: interpolação usa referência fixa `phrases[1][0].startFrame` (primeira transição), não `phrases[activePhraseIndex][0].startFrame` |
 
 ## Verificação
 
@@ -243,6 +286,9 @@ Sugestão: `fix-worker`
 - [ ] Posição vertical das legendas permanece estável do início ao fim do vídeo (sem drift)
 - [ ] Transição entre frases é suave (fade out/in sem flash)
 - [ ] Animação de opacidade da variante `previous` funciona corretamente
+- [ ] Com roteiro de 15+ frases, legenda permanece na posição vertical correta do início ao fim (sem drift)
+- [ ] Última frase permanece visível após terminar (até fade-out global da cena)
+- [ ] Sem bounce visual na transição entre frases (scroll suave, sem descer-subir)
 
 ## Notebooks Relevantes
 

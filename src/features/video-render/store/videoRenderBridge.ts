@@ -17,9 +17,15 @@ interface VideoRenderBridgeState {
   transcriptionProgress: number;
   transcriptionStatusText: string;
 
+  // Estado do player (frame e reprodução)
+  currentFrame: number;
+  isPlaying: boolean;
+
   // Ações de sincronização
   syncExportState: (rendering: boolean, progress: number) => void;
   syncTranscriptionState: (transcribing: boolean, progress: number, statusText: string) => void;
+  syncCurrentFrame: (frame: number) => void;
+  syncIsPlaying: (playing: boolean) => void;
   resetBridge: () => void;
 }
 
@@ -29,6 +35,8 @@ const INITIAL_BRIDGE_STATE = {
   isTranscribing: false,
   transcriptionProgress: 0,
   transcriptionStatusText: '',
+  currentFrame: 0,
+  isPlaying: false,
 };
 
 export const useVideoRenderBridge = create<VideoRenderBridgeState>()((set) => ({
@@ -39,6 +47,12 @@ export const useVideoRenderBridge = create<VideoRenderBridgeState>()((set) => ({
 
   syncTranscriptionState: (transcribing, progress, statusText) =>
     set({ isTranscribing: transcribing, transcriptionProgress: progress, transcriptionStatusText: statusText }),
+
+  syncCurrentFrame: (frame) =>
+    set({ currentFrame: frame }),
+
+  syncIsPlaying: (playing) =>
+    set({ isPlaying: playing }),
 
   resetBridge: () => set(INITIAL_BRIDGE_STATE),
 }));

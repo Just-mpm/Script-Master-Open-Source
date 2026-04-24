@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
@@ -39,7 +39,8 @@ import {
 } from '../../../theme/tokens';
 import { wordsToPhrases, phrasesToWords, parseBoldMarkdown } from '../lib/subtitleUtils';
 import type { CaptionWord, CaptionPhrase } from '../types';
-import { formatTimestamp } from '../lib/formatTimestamp';
+import { formatTimestamp, frameToSeconds, secondsToFrame } from '../lib/formatTimestamp';
+import { useVideoRenderBridge } from '../store/videoRenderBridge';
 
 // ---------------------------------------------------------------------------
 // Constantes (F13 — números mágicos extraídos)
@@ -76,8 +77,6 @@ interface CaptionEditorPanelProps {
   fps: number;
   /** Função para pular o player para um frame específico */
   onSeekToFrame?: (frame: number) => void;
-  /** Frame atual do player (para highlight da frase ativa) */
-  currentFrame?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +157,7 @@ interface PhraseCardProps {
   onDelete: () => void;
 }
 
-function PhraseCard({
+const PhraseCard = React.memo(function PhraseCard({
   phrase,
   isActive,
   isEditing,
@@ -370,15 +369,15 @@ function PhraseCard({
             <TextField
               type="number"
               size="small"
-              value={startFrameEdit}
+              value={parseFloat(frameToSeconds(startFrameEdit, fps).toFixed(2))}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                if (!Number.isNaN(val)) onTimingChange(val, endFrameEdit);
+                if (!Number.isNaN(val)) onTimingChange(secondsToFrame(val, fps), endFrameEdit);
               }}
               onBlur={onTimingBlur}
               onClick={(e) => e.stopPropagation()}
               aria-labelledby={`timing-start-${phrase.id}`}
-              slotProps={{ htmlInput: { min: 0, style: { fontSize: '0.75rem' } } }}
+              slotProps={{ htmlInput: { min: 0, step: 0.01, style: { fontSize: '0.75rem' } } }}
               sx={{
                 flex: 1,
                 '& .MuiOutlinedInput-root': {
@@ -412,15 +411,15 @@ function PhraseCard({
             <TextField
               type="number"
               size="small"
-              value={endFrameEdit}
+              value={parseFloat(frameToSeconds(endFrameEdit, fps).toFixed(2))}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                if (!Number.isNaN(val)) onTimingChange(startFrameEdit, val);
+                if (!Number.isNaN(val)) onTimingChange(startFrameEdit, secondsToFrame(val, fps));
               }}
               onBlur={onTimingBlur}
               onClick={(e) => e.stopPropagation()}
               aria-labelledby={`timing-end-${phrase.id}`}
-              slotProps={{ htmlInput: { min: 0, style: { fontSize: '0.75rem' } } }}
+              slotProps={{ htmlInput: { min: 0, step: 0.01, style: { fontSize: '0.75rem' } } }}
               error={hasTimingError}
               helperText={hasTimingError ? 'Início deve ser menor que fim' : undefined}
               sx={{
@@ -455,7 +454,22 @@ function PhraseCard({
       </Collapse>
     </Box>
   );
-}
+}, (prevProps, nextProps) => {
+  // Só re-renderiza se props que afetam a saída mudarem
+  return (
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.isEditing === nextProps.isEditing &&
+    prevProps.isTimingExpanded === nextProps.isTimingExpanded &&
+    prevProps.phrase.id === nextProps.phrase.id &&
+    prevProps.phrase.startFrame === nextProps.phrase.startFrame &&
+    prevProps.phrase.endFrame === nextProps.phrase.endFrame &&
+    prevProps.phrase.text === nextProps.phrase.text &&
+    prevProps.fps === nextProps.fps &&
+    prevProps.editValue === nextProps.editValue &&
+    prevProps.startFrameEdit === nextProps.startFrameEdit &&
+    prevProps.endFrameEdit === nextProps.endFrameEdit
+  );
+});
 
 // ---------------------------------------------------------------------------
 // AddPhraseButton — divisor com botão "+" entre frases
@@ -516,8 +530,10 @@ export function CaptionEditorPanel({
   onUpdateCaptions,
   fps,
   onSeekToFrame,
-  currentFrame,
 }: CaptionEditorPanelProps) {
+  // Frame atual do player via bridge store (evita prop drilling)
+  const currentFrame = useVideoRenderBridge((state) => state.currentFrame);
+
   // ─── Estado local ────────────────────────────────────────
 
   const [phrases, setPhrases] = useState<CaptionPhrase[]>(() => wordsToPhrases(captions));
@@ -692,35 +708,26 @@ export function CaptionEditorPanel({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deletedPhrase, handleUndoDelete]);
 
-  // ─── Auto-scroll para frase ativa ────────────────────────
+  // ─── Auto-scroll para frase ativa (throttle 500ms) ──────
+
+  const lastScrollTimeRef = useRef(0);
 
   useEffect(() => {
-    if (activePhraseRef.current) {
-      activePhraseRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    if (!activePhraseRef.current) return;
+
+    const now = Date.now();
+    if (now - lastScrollTimeRef.current < 500) return;
+    lastScrollTimeRef.current = now;
+
+    activePhraseRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [currentFrame]);
 
   // ─── Determina frase ativa ───────────────────────────────
 
-  const activePhraseId = currentFrame !== undefined
-    ? phrases.find(
-        (p) => currentFrame >= p.startFrame && currentFrame < p.endFrame,
-      )?.id ?? null
-    : null;
-
-  // ─── Memoiza callbacks estáveis para o map (F6) ──────────
-
-  const handleStartEditForPhrase = useCallback((phrase: CaptionPhrase) => {
-    handleStartEdit(phrase);
-  }, [handleStartEdit]);
-
-  const handleToggleTimingForPhrase = useCallback((phrase: CaptionPhrase) => {
-    handleToggleTiming(phrase);
-  }, [handleToggleTiming]);
-
-  const handleDeleteForPhrase = useCallback((phrase: CaptionPhrase) => {
-    handleDelete(phrase);
-  }, [handleDelete]);
+  const activePhraseId = useMemo(
+    () => phrases.find((p) => currentFrame >= p.startFrame && currentFrame < p.endFrame)?.id ?? null,
+    [phrases, currentFrame],
+  );
 
   // ─── Render ──────────────────────────────────────────────
 
@@ -783,14 +790,14 @@ export function CaptionEditorPanel({
                       startFrameEdit={edits.start}
                       endFrameEdit={edits.end}
                       onSeek={handleSeek}
-                      onStartEdit={() => handleStartEditForPhrase(phrase)}
+                      onStartEdit={() => handleStartEdit(phrase)}
                       onEditChange={setEditValue}
                       onConfirmEdit={handleConfirmEdit}
                       onCancelEdit={handleCancelEdit}
-                      onToggleTiming={() => handleToggleTimingForPhrase(phrase)}
+                      onToggleTiming={() => handleToggleTiming(phrase)}
                       onTimingChange={(start, end) => handleTimingChange(phrase.id, start, end)}
                       onTimingBlur={() => handleTimingBlur(phrase.id)}
-                      onDelete={() => handleDeleteForPhrase(phrase)}
+                      onDelete={() => handleDelete(phrase)}
                     />
                   </div>
                   {/* Botão de adicionar frase entre frases */}

@@ -98,7 +98,7 @@ describe('ImageStudio', () => {
     expect(btn.hasAttribute('disabled')).toBe(false);
   });
 
-  it('chama generateImage ao clicar no botão', 15_000, async () => {
+  it('chama generateImage ao clicar no botão', { timeout: 15_000 }, async () => {
     const user = userEvent.setup({ delay: 0 });
     render(<ImageStudio />, { wrapper: Wrapper });
 

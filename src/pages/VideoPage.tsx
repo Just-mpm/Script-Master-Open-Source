@@ -72,9 +72,6 @@ export function VideoPage({
     updateCaptions,
   } = useTranscription(currentProjectId, script, userId);
 
-  // Frame atual do player (para sync com CaptionEditorPanel)
-  const [currentPlayerFrame, setCurrentPlayerFrame] = useState(0);
-
   // Estilo personalizável das legendas — controlado pelo SubtitleInlineEditor
   // Persistido no localStorage com prefixo s2a_ (padrão das 14 preferências do estúdio)
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>(() => {
@@ -184,7 +181,6 @@ export function VideoPage({
           ratio={sceneRatio}
           captions={captions.length > 0 ? captions : undefined}
           subtitleStyle={subtitleStyle}
-          onFrameUpdate={setCurrentPlayerFrame}
         />
        </SubtitleInlineEditor>
 
@@ -217,7 +213,6 @@ export function VideoPage({
         onUpdateCaptions={updateCaptions}
         fps={videoFps}
         onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
-        currentFrame={currentPlayerFrame}
       />
 
       {/* Painel de exportação MP4 */}

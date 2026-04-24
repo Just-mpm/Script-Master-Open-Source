@@ -7,6 +7,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.16.1] - 2026-04-24
+
+### Adicionado
+
+- **`frameToSeconds()` / `secondsToFrame()`** (`src/features/video-render/lib/formatTimestamp.ts`): utilitários de conversão entre frames e segundos com parâmetro `fps`
+- **Testes**: novo teste de legenda com sticky fallback para gaps entre frases (`remotion-components.component.test.tsx`); testes do `videoRenderBridge` para `syncCurrentFrame`/`syncIsPlaying`; testes de `frameToSeconds`/`secondsToFrame` no `formatTimestamp.unit.test.ts`
+
+### Alterado
+
+- **`videoRenderBridge`** (`src/features/video-render/store/videoRenderBridge.ts`): estado do player (`currentFrame`, `isPlaying`) movido para o bridge com `syncCurrentFrame()`/`syncIsPlaying()` — centralização do estado de reprodução
+- **`ActionBar.tsx`**: consome `currentFrame`/`isPlaying` via `useVideoRenderBridge` em vez de props, simplificação (-40/+11)
+- **`VideoPreview.tsx`**: mesma simplificação via bridge
+- **`CaptionEditorPanel.tsx`**: consome `currentFrame`/`isPlaying` via bridge diretamente; ajustes em PhraseCard e formatação de timestamps
+- **`VideoPage.tsx`**: remoção de estado local `currentPlayerFrame` — agora gerenciado pelo bridge
+- **`SubtitleOverlay.tsx`**: refatoração interna do scroll de legendas (+37/-21), documentação JSDoc atualizada
+
+---
+
 ## [0.16.0] - 2026-04-24
 
 ### Adicionado

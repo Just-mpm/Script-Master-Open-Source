@@ -4,6 +4,16 @@
  * Utilidade compartilhada entre componentes que exibem timing de vídeo
  * (CaptionEditorPanel, SubtitleOverlay, VideoExportPanel, etc.).
  */
+/** Converte frame para segundos (função pura) */
+export function frameToSeconds(frame: number, fps: number): number {
+  return frame / fps;
+}
+
+/** Converte segundos para frames (arredonda para inteiro mais próximo) */
+export function secondsToFrame(seconds: number, fps: number): number {
+  return Math.round(seconds * fps);
+}
+
 export function formatTimestamp(frame: number, fps: number): string {
   const totalSeconds = frame / fps;
   const minutes = Math.floor(totalSeconds / 60);

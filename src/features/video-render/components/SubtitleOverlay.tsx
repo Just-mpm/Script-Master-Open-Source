@@ -67,14 +67,18 @@ function groupCaptionWordsIntoPhrases(words: CaptionWord[]): CaptionWord[][] {
  * - `captions`: CaptionWord[] com timestamps reais (prioridade)
  * - `text`: string simples (backward compat, convertido para CaptionWord[])
  *
- * Layout vertical estilo karaoke com scroll suave:
- * - O container inteiro desliza para cima via translateY acumulado
+ * Scroll absoluto com 2 posições fixas no container:
+ * - Posição 0: frase ativa na base
+ * - -phraseHeight: frase anterior acima da ativa
+ * Interpolação suave apenas na primeira transição (frase 0 → frase 1),
+ * evitando drift vertical e bounce em frases subsequentes.
+ *
+ * Fallback sticky: entre gaps de frases (quando nenhuma está "ativa"),
+ * mantém a última frase concluída visível para evitar piscada.
+ *
+ * Máximo de 2 frases visíveis por vez:
  * - Frase ANTERIOR em cima (opacidade 0.5, fade out suave)
  * - Frase ATIVA embaixo (opacidade 1.0, fade in suave)
- * Máximo de 2 frases visíveis por vez.
- *
- * A animação de scroll é feita no container (não em cada frase individual),
- * garantindo transição contínua sem "pulos" entre trocas de frase.
  */
 export function SubtitleOverlay({
   captions,
@@ -127,22 +131,34 @@ export function SubtitleOverlay({
     }
   }
 
-  // ── Calcula translateY acumulado do container ──
-  // Cada vez que uma nova frase se torna ativa, o container sobe phraseHeight.
-  // Usa phraseHeight dinâmico para corresponder à altura real das frases.
-  // O interpolate garante transição suave ao invés de pulo instantâneo.
-  let scrollY = 0;
-  if (activePhraseIndex > 0) {
-    for (let i = 1; i <= activePhraseIndex; i++) {
-      const entryFrame = phrases[i][0].startFrame;
-      const shift = interpolate(
-        frame,
-        [entryFrame, entryFrame + SUBTITLE_FADE],
-        [0, phraseHeight],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      );
-      scrollY -= shift;
+  // Fallback sticky: cobre gaps entre frases sem causar piscada.
+  // Quando a frase N termina mas a N+1 ainda não começou, atribui a última
+  // frase concluída para manter a legenda visível durante a transição.
+  if (activePhraseIndex === -1 && phrases.length > 0 && frame >= phrases[0][0].startFrame) {
+    for (let i = phrases.length - 1; i >= 0; i--) {
+      const lastWord = phrases[i][phrases[i].length - 1];
+      if (lastWord.endFrame <= frame) {
+        activePhraseIndex = i;
+        break;
+      }
     }
+  }
+
+  // ── Scroll absoluto com 2 posições fixas ──
+  // Container mostra no máximo 2 frases visíveis:
+  // - Posição 0 (frase ativa na base)
+  // - -phraseHeight (frase anterior acima da ativa)
+  // Interpolação suave APENAS na primeira transição (frase 0 → frase 1).
+  // A referência é phrases[1][0].startFrame (fixa) para evitar bounce.
+  let scrollY = 0;
+  if (activePhraseIndex >= 1) {
+    const firstScrollFrame = phrases[1][0].startFrame;
+    scrollY = interpolate(
+      frame,
+      [firstScrollFrame, firstScrollFrame + SUBTITLE_FADE],
+      [0, -phraseHeight],
+      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+    );
   }
 
   // ── Determina range de frases visíveis (máx 2) ──

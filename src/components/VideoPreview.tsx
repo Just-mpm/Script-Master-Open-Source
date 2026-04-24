@@ -15,6 +15,7 @@ import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
 import type { CaptionWord, SubtitleStyle } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
+import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
 import { GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, TEXT_SECONDARY } from '../theme/tokens';
@@ -38,8 +39,6 @@ interface VideoPreviewProps {
   captions?: CaptionWord[];
   /** Estilo personalizável das legendas */
   subtitleStyle?: SubtitleStyle;
-  /** Callback executado a cada frame renderizado (para sync com editor de legendas) */
-  onFrameUpdate?: (frame: number) => void;
 }
 
 /** Handle imperativo exposto ao pai para controlar o Remotion Player */
@@ -128,28 +127,28 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle, onFrameUpdate }, ref) {
+  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
 
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
-    // Polling de frame: sincroniza o frame atual com componentes externos
-    // enquanto o player estiver tocando
+    // Polling de frame: sincroniza o frame atual e estado de reprodução
+    // com o bridge store (consumido por CaptionEditorPanel e outros)
     const rafRef = useRef<number | null>(null);
     useEffect(() => {
-      if (!onFrameUpdate) return;
-
       const tick = () => {
         const playerRef = internalRef.current;
         if (playerRef && playerRef.isPlaying()) {
-          onFrameUpdate(playerRef.getCurrentFrame());
+          useVideoRenderBridge.getState().syncCurrentFrame(playerRef.getCurrentFrame());
+          useVideoRenderBridge.getState().syncIsPlaying(true);
           rafRef.current = requestAnimationFrame(tick);
         } else {
-          // Pausado: emite frame atual uma vez e para
+          // Pausado: emite frame atual e estado uma vez e para
           if (playerRef) {
-            onFrameUpdate(playerRef.getCurrentFrame());
+            useVideoRenderBridge.getState().syncCurrentFrame(playerRef.getCurrentFrame());
           }
+          useVideoRenderBridge.getState().syncIsPlaying(false);
           rafRef.current = null;
         }
       };
@@ -162,7 +161,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           rafRef.current = null;
         }
       };
-    }, [onFrameUpdate]);
+    }, []);
 
     const mappedScenes = useMemo(
       () => mapScenesToVideoScenes(scenes, durationInFrames, fps),
@@ -175,14 +174,14 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       pause: () => internalRef.current?.pause(),
       seekTo: (frame: number) => {
         internalRef.current?.seekTo(frame);
-        onFrameUpdate?.(frame);
+        useVideoRenderBridge.getState().syncCurrentFrame(frame);
       },
       getCurrentTime: () => {
         if (!internalRef.current) return 0;
         return internalRef.current.getCurrentFrame() / fps;
       },
       isPlaying: () => internalRef.current?.isPlaying() ?? false,
-    }), [fps, onFrameUpdate]);
+    }), [fps]);
 
     // Memoiza inputProps — o Player usa igualdade referencial para detectar mudanças
     const inputProps = useMemo(() => ({

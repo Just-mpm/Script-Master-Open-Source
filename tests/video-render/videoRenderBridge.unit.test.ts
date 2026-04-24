@@ -14,6 +14,8 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.isTranscribing).toBe(false);
     expect(state.transcriptionProgress).toBe(0);
     expect(state.transcriptionStatusText).toBe('');
+    expect(state.currentFrame).toBe(0);
+    expect(state.isPlaying).toBe(false);
   });
 
   it('syncExportState atualiza estado de exportação', () => {
@@ -51,6 +53,8 @@ describe('videoRenderBridge (Zustand store)', () => {
   it('resetBridge volta ao estado inicial', () => {
     useVideoRenderBridge.getState().syncExportState(true, 75);
     useVideoRenderBridge.getState().syncTranscriptionState(true, 50, 'Status');
+    useVideoRenderBridge.getState().syncCurrentFrame(120);
+    useVideoRenderBridge.getState().syncIsPlaying(true);
     useVideoRenderBridge.getState().resetBridge();
     const state = useVideoRenderBridge.getState();
     expect(state.isExportingVideo).toBe(false);
@@ -58,6 +62,8 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.isTranscribing).toBe(false);
     expect(state.transcriptionProgress).toBe(0);
     expect(state.transcriptionStatusText).toBe('');
+    expect(state.currentFrame).toBe(0);
+    expect(state.isPlaying).toBe(false);
   });
 
   it('exportação e transcrição são independentes', () => {
@@ -72,5 +78,39 @@ describe('videoRenderBridge (Zustand store)', () => {
     // Reset de um não afeta o outro
     useVideoRenderBridge.getState().syncExportState(false, 100);
     expect(state.isTranscribing).toBe(true);
+  });
+
+  it('syncCurrentFrame atualiza o frame do player', () => {
+    useVideoRenderBridge.getState().syncCurrentFrame(45);
+    const state = useVideoRenderBridge.getState();
+    expect(state.currentFrame).toBe(45);
+
+    useVideoRenderBridge.getState().syncCurrentFrame(150);
+    expect(useVideoRenderBridge.getState().currentFrame).toBe(150);
+  });
+
+  it('syncIsPlaying atualiza o estado de reprodução', () => {
+    useVideoRenderBridge.getState().syncIsPlaying(true);
+    expect(useVideoRenderBridge.getState().isPlaying).toBe(true);
+
+    useVideoRenderBridge.getState().syncIsPlaying(false);
+    expect(useVideoRenderBridge.getState().isPlaying).toBe(false);
+  });
+
+  it('currentFrame e isPlaying são independentes dos demais campos', () => {
+    useVideoRenderBridge.getState().syncExportState(true, 50);
+    useVideoRenderBridge.getState().syncCurrentFrame(200);
+    useVideoRenderBridge.getState().syncIsPlaying(true);
+
+    const state = useVideoRenderBridge.getState();
+    expect(state.isExportingVideo).toBe(true);
+    expect(state.videoExportProgress).toBe(50);
+    expect(state.currentFrame).toBe(200);
+    expect(state.isPlaying).toBe(true);
+
+    // Alterar exportação não afeta frame/isPlaying
+    useVideoRenderBridge.getState().syncExportState(false, 100);
+    expect(useVideoRenderBridge.getState().currentFrame).toBe(200);
+    expect(useVideoRenderBridge.getState().isPlaying).toBe(true);
   });
 });

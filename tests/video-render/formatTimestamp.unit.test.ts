@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTimestamp } from '../../src/features/video-render/lib/formatTimestamp';
+import { formatTimestamp, frameToSeconds, secondsToFrame } from '../../src/features/video-render/lib/formatTimestamp';
 
 describe('formatTimestamp', () => {
   it('formata frame 0 como 00:00.00', () => {
@@ -43,5 +43,35 @@ describe('formatTimestamp', () => {
   it('lida com fps baixo (1fps)', () => {
     // 90 frames a 1fps = 90s = 1:30
     expect(formatTimestamp(90, 1)).toBe('01:30.00');
+  });
+});
+
+describe('frameToSeconds', () => {
+  it('converte frame 0 para 0 segundos', () => {
+    expect(frameToSeconds(0, 30)).toBe(0);
+  });
+
+  it('converte 30 frames em 1 segundo a 30fps', () => {
+    expect(frameToSeconds(30, 30)).toBe(1);
+  });
+
+  it('converte 337 frames em segundos fracionados a 30fps', () => {
+    const result = frameToSeconds(337, 30);
+    expect(result).toBeCloseTo(11.233, 2);
+  });
+});
+
+describe('secondsToFrame', () => {
+  it('converte 0 segundos para frame 0', () => {
+    expect(secondsToFrame(0, 30)).toBe(0);
+  });
+
+  it('converte 1 segundo para 30 frames a 30fps', () => {
+    expect(secondsToFrame(1, 30)).toBe(30);
+  });
+
+  it('arredonda para o frame mais próximo', () => {
+    // 11.23 * 30 = 336.9 → Math.round(336.9) = 337
+    expect(secondsToFrame(11.23, 30)).toBe(337);
   });
 });

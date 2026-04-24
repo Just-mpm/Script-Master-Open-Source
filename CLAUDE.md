@@ -116,7 +116,7 @@ bun run clean            # remove dist/
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
 | **ScrollingPhrase** | Texto contínuo com variantes `active` (fade in + translateY) e `previous` (opacidade 1.0→0.5). Suporte a **bold** via markdown |
 | **Whisper** | Modelo `base` (~75MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
-| **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição entre VideoPage e App |
+| **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição/reprodução (currentFrame, isPlaying) entre VideoPage e App |
 | **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Suporta canvas regular e OffscreenCanvas via `patchPrototype()`. Usa `createLogger` |
 | **Resoluções** | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
 | **Exportação** | `isExporting` em CompositionConfig desabilita overlays pesados (WaveformOverlay) durante renderização |
@@ -236,13 +236,14 @@ bun run clean            # remove dist/
 
 ## Version
 
-- **Current:** `0.16.0`
+- **Current:** `0.16.1`
 - **Last release:** 2026-04-24
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.16.1 | Estado do player centralizado no videoRenderBridge (currentFrame/isPlaying); ActionBar/VideoPreview/CaptionEditorPanel consomem bridge; VideoPage remove estado local; frameToSeconds/secondsToFrame; testes de bridge, sticky fallback e conversão de frames |
 | 0.16.0 | Suite de testes Vitest completa (62 testes cobrindo todas as áreas); scripts test/test:watch; vitest.config com jsdom + fake-indexeddb; correção da lógica do logger em produção; normalização de bold markdown no subtitleUtils |
 | 0.15.0 | Navigation drawer mobile no Header; CaptionEditorPanel redesign com PhraseCard; botão copiar no ScriptEditor e AssistantMessages; stopGeneration no useAssistant; CaptionPhrase type; dialogs de exclusão em VideoLibrary e Assistant; MAX_STYLE_NOTES no Inspector |
 | 0.14.2 | Otimização de exportação: WaveformOverlay pula SVG durante exportação (isExporting); throttle de progresso no useVideoExporter; canvasFontStretchPatch refatorado com logger e suporte a OffscreenCanvas |
