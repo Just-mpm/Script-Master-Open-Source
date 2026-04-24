@@ -20,6 +20,8 @@ export interface VideoCompositionProps {
   captions?: CaptionWord[];
   /** Estilo personalizável das legendas */
   subtitleStyle?: SubtitleStyle;
+  /** Indica se está em modo exportação — desabilita overlays pesados (ex: waveform) */
+  isExporting?: boolean;
 }
 
 /** Configuração de renderização (Fase 3) */

@@ -26,6 +26,7 @@ export function VideoComposition({
   fps,
   captions,
   subtitleStyle,
+  isExporting,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
@@ -110,6 +111,7 @@ export function VideoComposition({
                 frame={frame - adjustedFrom}
                 fps={fps}
                 opacity={0.3}
+                isExporting={isExporting}
               />
             )}
           </Sequence>

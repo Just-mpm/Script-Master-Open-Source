@@ -7,6 +7,22 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.14.2] - 2026-04-23
+
+### Adicionado
+
+- **WaveformOverlay** (`src/features/video-render/components/WaveformOverlay.tsx`): prop `isExporting` — quando `true`, pula renderização do SVG pesado durante exportação para economizar CPU
+- **VideoComposition** (`src/features/video-render/components/VideoComposition.tsx`): prop `isExporting` repassada para WaveformOverlay durante exportação
+- **CompositionConfig** (`src/features/video-render/types.ts`): campo `isExporting?: boolean` — indica modo exportação, desabilita overlays pesados
+
+### Alterado
+
+- **useVideoExporter** (`src/features/video-render/hooks/useVideoExporter.tsx`): throttle de percentual de progresso via `lastReportedPercentRef` — evita re-renders desnecessários quando o inteiro não muda; reset automático no início de nova renderização
+- **canvasFontStretchPatch** (`src/features/video-render/lib/canvasFontStretchPatch.ts`): refatoração — extração de `patchPrototype()` com tipo `CanvasPrototype` (suporta canvas regular e OffscreenCanvas); integração com `createLogger` no lugar de `console.log`
+- **SubtitleInlineEditor** (`src/features/video-render/components/SubtitleInlineEditor.tsx`): import de `Collapse` adicionado (preparação para colapsar seções)
+
+---
+
 ## [0.14.1] - 2026-04-23
 
 ### Corrigido

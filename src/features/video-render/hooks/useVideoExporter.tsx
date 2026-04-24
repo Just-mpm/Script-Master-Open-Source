@@ -82,6 +82,7 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
       fps={fps}
       captions={captions}
       subtitleStyle={subtitleStyle}
+      isExporting={true}
     />
   );
 }
@@ -131,6 +132,8 @@ export function useVideoExporter() {
   const [state, setState] = useState<VideoExporterState>(INITIAL_STATE);
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputUrlRef = useRef<string | null>(null);
+  /** Último percentual reportado — evita re-renders quando o inteiro não mudou */
+  const lastReportedPercentRef = useRef(-1);
   /** Codec de áudio resolvido por checkSupport — 'aac' ou null (muted) */
   const resolvedAudioCodecRef = useRef<string | null>('aac');
   /** Codec de vídeo e container resolvidos por checkSupport */
@@ -310,6 +313,9 @@ export function useVideoExporter() {
       // Corrige bug do @remotion/web-renderer 4.0.450 que causa centenas de warnings
       patchCanvasFontStretch();
 
+      // Reseta o throttle de percentual para nova renderização
+      lastReportedPercentRef.current = -1;
+
       // Usa o wrapper ExportableComposition para satisfazer as constraints de tipo
       const composition: {
         component: ComponentType<ExportableProps>;
@@ -339,6 +345,9 @@ export function useVideoExporter() {
         signal: abortController.signal,
         onProgress: (progress: RenderMediaOnWebProgress) => {
           const percent = Math.round(progress.progress * 100);
+          // Throttle: só atualiza estado quando o percentual inteiro mudar
+          if (percent === lastReportedPercentRef.current) return;
+          lastReportedPercentRef.current = percent;
           setState(prev => ({
             ...prev,
             renderProgress: percent,

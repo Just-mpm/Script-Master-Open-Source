@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
+import Collapse from '@mui/material/Collapse';
 import Fade from '@mui/material/Fade';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
@@ -213,7 +214,9 @@ export function SubtitleInlineEditor({
   const minOffset = margin - BASE_PADDING_BOTTOM;
   const maxOffset = compositionHeight - margin - BASE_PADDING_BOTTOM;
   const limitsRef = useRef({ min: minOffset, max: maxOffset });
-  limitsRef.current = { min: minOffset, max: maxOffset };
+  useEffect(() => {
+    limitsRef.current = { min: minOffset, max: maxOffset };
+  }, [minOffset, maxOffset]);
 
   // Sincroniza editingStyle se subtitleStyle mudar externamente (edge case)
   useEffect(() => {
@@ -333,7 +336,7 @@ export function SubtitleInlineEditor({
       window.addEventListener('mousemove', handleDragMove);
       window.addEventListener('mouseup', handleDragEnd);
     },
-    [compositionHeight, limitsRef],
+    [compositionHeight, editingStyle.verticalOffset],
   );
 
   // --- Atalho Escape ---
@@ -708,18 +711,16 @@ export function SubtitleInlineEditor({
     </Box>
   );
 
-  // Toolbar com animação Fade — renderizada via portal ou inline
-  const toolbarWithFade = (
-    <Fade in={isEditing} timeout={300}>
-      {toolbarJsx}
-    </Fade>
-  );
+  // Toolbar com animação — Collapse no portal (colapsa espaço) ou Fade no overlay
+  const toolbarAnimated = usePortal
+    ? <Collapse in={isEditing} timeout={300}>{toolbarJsx}</Collapse>
+    : <Fade in={isEditing} timeout={300}>{toolbarJsx}</Fade>;
 
   // Renderiza via portal (fora do preview) ou inline (dentro do overlay)
   const portalTarget = toolbarPortal?.current;
   const toolbarElement = usePortal && portalTarget
-    ? createPortal(toolbarWithFade, portalTarget)
-    : toolbarWithFade;
+    ? createPortal(toolbarAnimated, portalTarget)
+    : toolbarAnimated;
 
   return (
     <Box ref={containerRef} sx={{ position: 'relative', lineHeight: 0 }}>

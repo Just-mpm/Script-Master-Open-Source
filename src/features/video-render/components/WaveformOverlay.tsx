@@ -33,6 +33,8 @@ interface WaveformOverlayProps {
   fps: number;
   /** Opacidade geral do waveform (default: 0.3) */
   opacity?: number;
+  /** true durante exportação — pula renderização para economizar CPU */
+  isExporting?: boolean;
 }
 
 // ─── Constantes de renderização ─────────────────────────────
@@ -115,6 +117,7 @@ export function WaveformOverlay({
   frame,
   fps,
   opacity = 0.3,
+  isExporting,
 }: WaveformOverlayProps) {
   // ── Carrega dados de áudio via hook do Remotion ──
   const audioData = useAudioData(audioUrl ?? '');
@@ -167,6 +170,9 @@ export function WaveformOverlay({
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
       )
     : 0;
+
+  // Durante exportação, pula renderização do SVG pesado (hooks já executaram por Rules of Hooks)
+  if (isExporting) return null;
 
   // ── Posição X do indicador de progresso ──
   const progressX = progress * SVG_WIDTH;
