@@ -7,6 +7,40 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.22.0] - 2026-04-25
+
+### Alterado
+
+- **useStudioState → useStudioStore (Zustand)**: hook `useStudioState()` (364 linhas) substituído por store Zustand em `src/features/studio/store/` — elimina re-renders em cascata ao digitar no roteiro ou trocar configurações; consumidores (App.tsx, StudioPage, VideoPage, AssistantPage) migram para `useStudioStore` com `useShallow` para seletores otimizados
+
+### Adicionado
+
+- **`useStudioStore`** (`src/features/studio/store/studioStore.ts`): store Zustand flat gerenciando 14 preferências + `referenceImage` (session-only); `applySettings(patch)` para patch parcial; `reset()` para restaurar padrões; `subscribe` com `PERSIST_MAP` para sync automático com localStorage (sem middleware persist)
+- **`useCurrentStudioState()`**: hook derivado com `useShallow` que retorna `StudioDraftState` para consumo seguro sem re-renders excessivos
+- **`buildGenerateOptions()`** (`src/features/studio/store/studio.utils.ts`): construtor DRY de opções de geração, usado por App.tsx e StudioPage (elimina duplicação)
+- **`studio.utils.ts`**: helpers puros de localStorage extraídos — `STORAGE_KEYS`, `SCENE_RATIOS`, `VIDEO_FPS`, `getStoredValue`, `getStoredBoolean`, `getStoredNumber`, `isSceneRatio`, `getStoredSceneRatio`, `getInitialStudioConfig`, `safeSetItem`
+- **`useAudioGenerator.scenesData`**: novo campo `scenesData` no retorno da geração
+
+### Corrigido
+
+- **`getStoredNumber`**: validação corrigida — rejeita `NaN` e valores negativos (`Number.isFinite && >= 0`)
+- **Audit findings**: `useShallow` adicionado em StudioPage e VideoPage para seletores Zustand; barrel `store/index.ts` limpo sem re-exports duplicados
+
+### Removido
+
+- **`useStudioState.ts`**: hook monolítico (364 linhas) removido, funcionalidade migrada para store
+- **`ScriptEditorController`** type: removido de `src/features/studio/types.ts`
+- **Relatórios de teste/docs**: `docs/test/2026-04-25-auth-vitest.md`, `docs/plan/firebase-hosting-setup.md` removidos
+
+### Testes
+
+- 24 testes novos (total: 1064):
+  - `studioStore.unit.test.ts` (212 linhas) — store Zustand completo (estado inicial, setters, applySettings, reset, subscribe localStorage)
+  - `studio.utils.unit.test.ts` (189 linhas) — helpers de localStorage, getStoredNumber, buildGenerateOptions
+  - `useStudioState.unit.test.ts` (274 linhas) removido — funcionalidade testada via store
+
+---
+
 ## [0.21.1] - 2026-04-25
 
 ### Alterado

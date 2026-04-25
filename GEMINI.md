@@ -194,12 +194,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/studio/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx` |
-| **Estado** | `useStudioState()` centralizado em App.tsx, propagado via Pick para componentes |
-| **Persistência** | 14 preferências no localStorage (prefixo `s2a_`). `referenceImage` é session-only |
+| **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx` |
+| **Estado** | `useStudioStore` (Zustand) com `useShallow` para seletores otimizados; `useCurrentStudioState()` deriva `StudioDraftState`; sem hook `useStudioState` (removido na 0.22.0) |
+| **Store** | `studioStore.ts` (state + setters + actions), `studio.utils.ts` (localStorage helpers puros), `index.ts` (barrel exports) |
+| **Persistência** | 14 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only |
 | **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
 | **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo |
-| **Geração** | `handleGenerate` coleta `currentState` e delega para `useAudioGenerator.generateAudio()` |
+| **Geração** | `handleGenerate` via `useCallback` com `buildGenerateOptions(userId, store.getState())` + `useAudioGenerator.generateAudio()` |
+| **buildGenerateOptions** | Construtor DRY em `store/studio.utils.ts` — recebe estado e userId, retorna opções de geração (usado por App.tsx e StudioPage) |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
 | **Keyboard shortcuts** | `useKeyboardShortcuts`: Ctrl+Enter (gerar), Space (play/pause vídeo e toggle áudio), proteção contra inputs/blocos editáveis focados |
 
@@ -289,13 +291,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.21.1`
+- **Current:** `0.22.0`
 - **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.22.0 | Refatoração `useStudioState` → Zustand store (`useStudioStore`, `useCurrentStudioState`, `buildGenerateOptions`); 3 arquivos criados em `store/` (studioStore, studio.utils, barrel); `useShallow` em StudioPage/VideoPage; `getStoredNumber` corrigido; `ScriptEditorController` type removido; 24 testes novos (total: 1064) |
 | 0.21.1 | Otimização de performance: `React.memo` em 10 componentes (Inspector, CaptionEditorPanel, SubtitleInlineEditor, TranscriptionPanel, VideoExportPanel, AssistantComposer, AssistantHeader, AssistantHistoryPanel, AssistantMemoriesPanel, AssistantSettingsPanel); `useCallback` em 12 handlers do Assistant.tsx; state lifting invertido no VideoExportPanel (quality/fileName/animateScenes/speedPaintSpeed como state local); `VideoPreview` memoizado no VideoPage; `useMemo` no retorno de `useVideoExporter` |
 | 0.21.0 | Autenticação email/senha + cadastro (RegisterPage `/cadastro`); LoginPage reformulada (email/senha + reset dialog); biblioteca `error-mapping.ts` (`createErrorMapper`, `sharedErrorRules`); Firebase Hosting completo (.firebaserc, 404.html, cleanUrls, 8 redirects 301, cache immutable, headers de segurança); scripts deploy/deploy:preview; firebase-tools devDep; 68 testes novos (total: 1040) |
 | 0.20.0 | Fase 3+4 do Speed Paint completas; Web Worker inline (OffscreenCanvas, >5 cenas); cache LRU (20 entradas, SHA-256); controle de velocidade (0.5x/1x/1.5x); limpeza de memória; bug fix React batching (speedPaintWarnings); refatoração VideoLibrary 700→216 linhas (-69%); refatoração SubtitleInlineEditor 1006→401 linhas (-60%); 9 novos tokens de tema; 61 testes novos (total: 972) |

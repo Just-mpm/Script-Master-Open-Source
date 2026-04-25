@@ -15,41 +15,46 @@ import { useTranscription } from '../features/video-render/hooks/useTranscriptio
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
 import type { SubtitleStyle, SubtitlePosition } from '../features/video-render/types';
-import type { StudioStateController } from '../features/studio/useStudioState';
-import type { AudioSegment } from '../lib/db/types';
-import type { SceneRatio, StudioScene } from '../features/studio/types';
+import { useAudioGenerator } from '../hooks/useAudioGenerator';
+import { useStudioStore, VIDEO_FPS } from '../features/studio/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuth } from '../contexts/AuthContext';
 
 interface VideoPageProps {
-  currentProjectId: StudioStateController['currentProjectId'];
-  loadProjectData: StudioStateController['loadProjectData'];
-  scenes: StudioScene[];
-  setScript: StudioStateController['setScript'];
-  script: string;
-  audioUrl: string | null;
-  videoFps: number;
-  durationInFrames: number;
-  sceneRatio: SceneRatio;
   videoPlayerRef: RefObject<VideoPreviewHandle | null>;
-  audioSegments: AudioSegment[];
 }
 
 export function VideoPage({
-  currentProjectId,
-  loadProjectData,
-  scenes,
-  setScript,
-  script,
-  audioUrl,
-  videoFps,
-  durationInFrames,
-  sceneRatio,
   videoPlayerRef,
-  audioSegments,
 }: VideoPageProps) {
   const { pause: pauseGlobalAudio } = useGlobalAudioActions();
   const { user } = useAuth();
   const userId = user?.uid;
+
+  // Estado de config do store — useShallow evita re-renders quando outros campos mudam
+  const { script, setScript, sceneRatio } = useStudioStore(useShallow((s) => ({
+    script: s.script,
+    setScript: s.setScript,
+    sceneRatio: s.sceneRatio,
+  })));
+
+  // Estado de geração de áudio (hook)
+  const {
+    audioUrl,
+    scenes,
+    audioSegments,
+    projectId: currentProjectId,
+    durationInSeconds: audioDuration,
+    loadProjectData,
+  } = useAudioGenerator();
+
+  const videoFps = VIDEO_FPS;
+
+  // Duração total do vídeo em frames (derivada do áudio e FPS)
+  const durationInFrames = useMemo(
+    () => Math.round(audioDuration * videoFps),
+    [audioDuration, videoFps],
+  );
 
   // Hook de exportação — instanciado aqui para code-splitting
   // (Remotion só é carregado quando a rota /video é acessada)
@@ -140,7 +145,6 @@ export function VideoPage({
   const scenesForTranscription = useMemo(
     () => scenes.map(s => ({
       timestamp: s.timestamp,
-      prompt: s.prompt ?? '',
       imageUrl: s.imageUrl,
     })),
     [scenes],

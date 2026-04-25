@@ -22,6 +22,8 @@ export interface StudioDraftState {
   referenceImage: string | null;
 }
 
+/** Patch parcial para aplicar configurações do estúdio (usado pelo assistente IA).
+ *  Não inclui referenceImage — é session-only (data URL binário), não sugerível via JSON. */
 export interface StudioSettingsPatch {
   script?: string;
   isMultiSpeaker?: boolean;
@@ -37,15 +39,4 @@ export interface StudioSettingsPatch {
   sceneDensity?: number;
   sceneRatio?: SceneRatio;
   visualFramework?: string;
-}
-
-// Props agrupadas para ScriptEditor
-export interface ScriptEditorController {
-  script: string;
-  setScript: (value: string) => void;
-  isGenerating: boolean;
-  handleGenerate: () => void;
-  isGenerateDisabled: boolean;
-  scenes: StudioScene[];
-  currentTime: number;
 }

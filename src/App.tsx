@@ -17,10 +17,16 @@ import { WarningToast } from './components/WarningToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
+import { useAudioGenerator } from './hooks/useAudioGenerator';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { useStudioState } from './features/studio/useStudioState';
+import { MAX_CHARS } from './lib/constants';
+import { saveGeneration, type SavedAudio } from './lib/db';
+import { createLogger } from './lib/logger';
+import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from './features/studio/store';
 import { useVideoRenderBridge } from './features/video-render/store/videoRenderBridge';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
+
+const log = createLogger('App');
 
 // ─── Páginas públicas (lazy) ───────────────────────────────
 
@@ -139,9 +145,44 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const { authError, clearAuthError } = useAuth();
-  const studio = useStudioState();
-  const { toggle } = useGlobalAudioActions();
+  const { authError, clearAuthError, user } = useAuth();
+  const userId = user?.uid;
+  const { toggle, setDurationOverride } = useGlobalAudioActions();
+
+  // ─── Estado de geração de áudio (hook) ────────────────────
+  const {
+    isGenerating,
+    statusText,
+    generationProgress,
+    audioUrl,
+    audioBlob,
+    scenes,
+    error,
+    setError,
+    sceneGenerationWarning,
+    generateAudio,
+    handleCancel,
+    durationInSeconds,
+  } = useAudioGenerator();
+
+  // ─── Estado de config do store (Zustand) ──────────────────
+  const script = useStudioStore((s) => s.script);
+
+  // Derivações para ActionBar e atalhos
+  const isGenerateDisabled = isGenerating || !script.trim() || script.length > MAX_CHARS;
+  const durationInFrames = useMemo(
+    () => Math.round(durationInSeconds * VIDEO_FPS),
+    [durationInSeconds],
+  );
+
+  // Sincroniza duração com AudioContext
+  useEffect(() => {
+    setDurationOverride(durationInSeconds > 0 ? durationInSeconds : null);
+  }, [durationInSeconds, setDurationOverride]);
+
+  // ─── UI state transitório ─────────────────────────────────
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   // ─── Classificação de rotas ──────────────────────────────
   const isAppRoute = currentPath.startsWith('/app/');
@@ -156,26 +197,53 @@ export default function App() {
   const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
   const videoExportProgress = useVideoRenderBridge((s) => s.videoExportProgress);
 
-  const {
-    error,
-    generationProgress,
-    handleCancel,
-    handleDownload,
-    handleGenerate,
-    handleSaveToLibrary,
-    isGenerateDisabled,
-    isGenerating,
-    isSaved,
-    scenes,
-    setError,
-    setSuccessMsg,
-    statusText,
-    successMsg,
-    sceneGenerationWarning,
-    audioUrl,
-    videoFps,
-    durationInFrames,
-  } = studio;
+  // ─── Handlers ─────────────────────────────────────────────
+
+  // handleGenerate: lê config do store via getState() no momento da execução.
+  // Deps apenas em generateAudio (estável via useCallback) e userId.
+  const handleGenerate = useCallback(() => {
+    generateAudio(buildGenerateOptions(userId, useStudioStore.getState()));
+  }, [generateAudio, userId]);
+
+  const handleDownload = useCallback(() => {
+    if (!audioUrl) return;
+
+    const voice = useStudioStore.getState().selectedVoice;
+    const safeVoiceName = voice.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'audio';
+    const anchor = document.createElement('a');
+    anchor.href = audioUrl;
+    anchor.download = `roteiro-${safeVoiceName}-${Date.now()}.wav`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }, [audioUrl]);
+
+  const handleSaveToLibrary = useCallback(async () => {
+    if (!audioBlob || isSaved) return;
+
+    try {
+      const s = useStudioStore.getState();
+      const voiceLabel = s.isMultiSpeaker ? `${s.selectedVoice} & ${s.speakerBVoice}` : s.selectedVoice;
+      const newItem: SavedAudio = {
+        id: crypto.randomUUID(),
+        name: `Roteiro - ${voiceLabel} - ${new Date().toLocaleDateString()}`,
+        createdAt: Date.now(),
+        audioBlob,
+        script: s.script,
+        voice: voiceLabel,
+        scenes: scenes.length > 0 ? scenes : [],
+      };
+
+      await saveGeneration(newItem, userId);
+      setIsSaved(true);
+      setSuccessMsg(user
+        ? 'Áudio salvo na nuvem com sucesso!'
+        : 'Áudio salvo na biblioteca local!');
+    } catch (saveError: unknown) {
+      log.error('Erro ao salvar na biblioteca', { error: saveError });
+      setError('Erro ao salvar na biblioteca.');
+    }
+  }, [audioBlob, isSaved, scenes, user, userId, setError]);
 
   const scrollToExport = useCallback(() => {
     const element = document.getElementById('video-export-panel');
@@ -200,9 +268,15 @@ export default function App() {
   }, [sceneGenerationWarning]);
 
   const dismissSceneWarning = useCallback(() => setLocalSceneWarning(null), []);
-  const dismissSuccess = useCallback(() => setSuccessMsg(null), [setSuccessMsg]);
+  const dismissSuccess = useCallback(() => setSuccessMsg(null), []);
+
+  // Reseta isSaved ao iniciar nova geração
+  useEffect(() => {
+    if (isGenerating) setIsSaved(false);
+  }, [isGenerating]);
 
   // ─── Rotas ───────────────────────────────────────────────
+  // Rotas são estáticas: imports lazy e refs não mudam entre renders.
   const routes = useMemo(() => (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
@@ -232,13 +306,12 @@ export default function App() {
         <Route path="/cookies" element={<Navigate to="/cookies" replace />} />
         {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/app/estudio" element={<StudioPage {...studio} />} />
+          <Route path="/app/estudio" element={<StudioPage />} />
 
           <Route
             path="/app/video"
             element={
               <VideoPage
-                {...studio}
                 videoPlayerRef={videoPlayerRef}
               />
             }
@@ -249,7 +322,7 @@ export default function App() {
 
           <Route
             path="/app/assistente"
-            element={<AssistantPage currentState={studio.currentState} onApplySettings={studio.handleApplySettings} />}
+            element={<AssistantPage />}
           />
           <Route path="/app/assistant" element={<Navigate to="/app/assistente" replace />} />
 
@@ -266,7 +339,7 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
-  ), [studio]);
+  ), []);
 
   // ─── Atalhos de teclado ────────────────────────────────────
   useKeyboardShortcuts({
@@ -280,8 +353,6 @@ export default function App() {
   });
 
   // ─── Renderização ────────────────────────────────────────
-  // Páginas públicas (/, /funcionalidades) e login usam layout próprio — sem Header/ActionBar
-  // Rotas do app (/app/*) usam Header + Container + ActionBar
   const isPublicOrLogin = !isAppRoute;
 
   return (
@@ -323,7 +394,6 @@ export default function App() {
           outline: 'none',
         }}
       >
-        {/* Páginas públicas e login — renderizam próprio layout */}
         {isPublicOrLogin ? (
           routes
         ) : isAssistantRoute ? (
@@ -406,7 +476,7 @@ export default function App() {
           isSaved={isSaved}
           scenes={scenes}
           videoPlayerRef={videoPlayerRef}
-          videoFps={videoFps}
+          videoFps={VIDEO_FPS}
           videoDurationInFrames={durationInFrames}
           onScrollToExport={scrollToExport}
           isExportingVideo={isExportingVideo}

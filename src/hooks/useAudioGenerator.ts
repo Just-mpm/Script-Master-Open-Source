@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/audio';
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
@@ -139,7 +139,14 @@ export function useAudioGenerator() {
     };
   }, [audioUrl]);
 
-  const loadProjectData = async (url: string, scenesData: { imageUrl: string; timestamp: number }[], audioBlobData?: Blob, id?: string) => {
+  // loadProjectData usa useCallback com dep em audioUrl — quando audioUrl muda
+  // (nova geração), o callback é recriado para revogar o blob URL antigo corretamente.
+  const loadProjectData = useCallback(async (
+    url: string,
+    scenesData: { imageUrl: string; timestamp: number }[],
+    audioBlobData?: Blob,
+    id?: string,
+  ) => {
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
     }
@@ -184,7 +191,7 @@ export function useAudioGenerator() {
         audio.src = url;
       }
     }
-  };
+  }, [audioUrl]);
 
   const handleCancel = () => {
     cancelRef.current = true;
@@ -197,7 +204,10 @@ export function useAudioGenerator() {
     setAudioSegments(lastSuccessfulStateRef.current.audioSegments);
   };
 
-  const generateAudio = async (options: GenerateOptions, onStart?: () => void) => {
+  // generateAudio usa useCallback com deps [] — acessa refs internas (cancelRef,
+  // lastSuccessfulStateRef) e setters (estáveis) diretamente. A instância `ai`
+  // já é useMemo (estável). As opções de config são recebidas por parâmetro.
+  const generateAudio = useCallback(async (options: GenerateOptions, onStart?: () => void) => {
     const {
       userId,
       projectName,
@@ -618,7 +628,8 @@ export function useAudioGenerator() {
       setIsGenerating(false);
       setStatusText('');
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Duração do áudio em segundos: prioriza blob WAV (tamanho exato),
   // fallback para duração via metadados de URL (carregamento da galeria)

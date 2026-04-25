@@ -291,6 +291,100 @@ vi.mock('../../src/theme/tokens', () => ({
   APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%), radial-gradient(circle at 85% 20%, rgba(247, 148, 30, 0.12) 0%, transparent 30%), linear-gradient(180deg, #050816 0%, #070b18 100%)',
 }));
 
+// Mock do store Zustand (usado por StudioPage, AssistantPage, VideoPage)
+vi.mock('../../src/features/studio/store', () => {
+  const storeState = {
+    script: '',
+    setScript: vi.fn(),
+    isMultiSpeaker: false,
+    setIsMultiSpeaker: vi.fn(),
+    speakerAName: 'Voz A',
+    setSpeakerAName: vi.fn(),
+    selectedVoice: 'Puck',
+    setSelectedVoice: vi.fn(),
+    speakerBName: 'Voz B',
+    setSpeakerBName: vi.fn(),
+    speakerBVoice: 'Zephyr',
+    setSpeakerBVoice: vi.fn(),
+    audioProfile: '',
+    setAudioProfile: vi.fn(),
+    scene: '',
+    setScene: vi.fn(),
+    pace: 'normal',
+    setPace: vi.fn(),
+    styleNotes: '',
+    setStyleNotes: vi.fn(),
+    generateScenes: false,
+    setGenerateScenes: vi.fn(),
+    sceneDensity: 15,
+    setSceneDensity: vi.fn(),
+    sceneRatio: '16:9',
+    setSceneRatio: vi.fn(),
+    visualFramework: 'general',
+    setVisualFramework: vi.fn(),
+    referenceImage: null,
+    setReferenceImage: vi.fn(),
+    applySettings: vi.fn(),
+    reset: vi.fn(),
+    videoFps: 30,
+  };
+  return {
+    useStudioStore: (selector?: (s: typeof storeState) => unknown) =>
+      selector ? selector(storeState) : storeState,
+    useCurrentStudioState: () => ({
+      script: '',
+      selectedVoice: 'Puck',
+      isMultiSpeaker: false,
+      audioProfile: '',
+      scene: '',
+      pace: 'normal',
+      styleNotes: '',
+      generateScenes: false,
+      sceneRatio: '16:9',
+      sceneDensity: 15,
+      visualFramework: 'general',
+      referenceImage: null,
+    }),
+    VIDEO_FPS: 30,
+  };
+});
+
+// Mock do useAudioGenerator (usado por StudioPage, VideoPage)
+vi.mock('../../src/hooks/useAudioGenerator', () => ({
+  useAudioGenerator: () => ({
+    isGenerating: false,
+    statusText: '',
+    generationProgress: 0,
+    audioUrl: null,
+    audioBlob: null,
+    scenes: [],
+    audioSegments: [],
+    projectId: null,
+    error: null,
+    setError: vi.fn(),
+    sceneGenerationWarning: null,
+    generateAudio: vi.fn(),
+    handleCancel: vi.fn(),
+    loadProjectData: vi.fn(),
+    durationInSeconds: 0,
+  }),
+}));
+
+// Mock do logger
+vi.mock('../../src/lib/logger', () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
+
+// Mock do db (usado pelo App.tsx para saveGeneration)
+vi.mock('../../src/lib/db', () => ({
+  saveGeneration: vi.fn(() => Promise.resolve()),
+}));
+
 import { LibraryPage } from '../../src/pages/LibraryPage';
 import { NotFoundPage } from '../../src/pages/NotFoundPage';
 import { AssistantPage } from '../../src/pages/AssistantPage';
@@ -354,25 +448,7 @@ describe('Pages — Renderização', () => {
 
   describe('AssistantPage', () => {
     it('deve renderizar sem crash', () => {
-      renderWithRouter(
-        <AssistantPage
-          currentState={{
-            script: '',
-            selectedVoice: 'Puck',
-            audioProfile: '',
-            scene: '',
-            pace: 'normal',
-            styleNotes: '',
-            isMultiSpeaker: false,
-            generateScenes: false,
-            sceneRatio: '16:9',
-            sceneDensity: 15,
-            visualFramework: 'general',
-            referenceImage: null,
-          }}
-          onApplySettings={vi.fn()}
-        />
-      );
+      renderWithRouter(<AssistantPage />);
       expect(screen.getByTestId('assistant')).toBeTruthy();
     });
   });
@@ -447,45 +523,8 @@ describe('Pages — Renderização', () => {
   });
 
   describe('StudioPage', () => {
-    const minimalProps = {
-      script: '',
-      setScript: vi.fn(),
-      isGenerating: false,
-      handleGenerate: vi.fn(),
-      isGenerateDisabled: false,
-      scenes: [],
-      isMultiSpeaker: false,
-      setIsMultiSpeaker: vi.fn(),
-      speakerAName: '',
-      setSpeakerAName: vi.fn(),
-      selectedVoice: 'Puck',
-      setSelectedVoice: vi.fn(),
-      speakerBName: '',
-      setSpeakerBName: vi.fn(),
-      speakerBVoice: '',
-      setSpeakerBVoice: vi.fn(),
-      audioProfile: '',
-      setAudioProfile: vi.fn(),
-      scene: '',
-      setScene: vi.fn(),
-      pace: 'normal',
-      setPace: vi.fn(),
-      styleNotes: '',
-      setStyleNotes: vi.fn(),
-      generateScenes: false,
-      setGenerateScenes: vi.fn(),
-      sceneDensity: 15,
-      setSceneDensity: vi.fn(),
-      sceneRatio: '16:9' as const,
-      setSceneRatio: vi.fn(),
-      visualFramework: 'general',
-      setVisualFramework: vi.fn(),
-      referenceImage: null,
-      setReferenceImage: vi.fn(),
-    };
-
     it('deve renderizar sem crash', () => {
-      renderWithRouter(<StudioPage {...minimalProps} />);
+      renderWithRouter(<StudioPage />);
       expect(screen.getByTestId('inspector')).toBeTruthy();
       expect(screen.getByTestId('script-editor')).toBeTruthy();
     });
