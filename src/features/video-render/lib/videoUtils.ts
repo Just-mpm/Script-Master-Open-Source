@@ -49,8 +49,12 @@ export function getResolutionFromQuality(
 
 /**
  * Estima tamanho do arquivo exportado em bytes.
- * Fórmula aproximada: duration * bitrate / 8.
- * Bitrate típico H264: 1080p ≈ 8Mbps, escalando linearmente com pixels.
+ *
+ * Alinhada ao bitrate padrão do Remotion/mediabunny (Quality "medium", factor=1):
+ *   referenceBitrate = 3 Mbps para 1920x1080, com escala pow(pixels/ref, 0.95).
+ *
+ * Os multiplicadores de codec refletem os codecEfficiencyFactors do mediabunny:
+ *   avc=1, hevc=0.6, vp9=0.6, av1=0.4, vp8=1.2
  */
 export function estimateFileSize(
   durationInSeconds: number,
@@ -58,20 +62,25 @@ export function estimateFileSize(
   height: number,
   codec: string,
 ): number {
-  // Bitrate base para 1080p H264 ≈ 8 Mbps (8_000_000 bits/s)
-  const baseBitrate = 8_000_000;
-  const basePixels = 1920 * 1080;
+  // Bitrate base do mediabunny para 1080p em qualidade "medium" (3_000_000 bits/s)
+  const baseBitrate = 3_000_000;
+  const referencePixels = 1920 * 1080;
   const pixels = width * height;
 
-  // Multiplicadores de bitrate por codec relativos ao H264
-  const codecMultiplier: Record<string, number> = {
-    vp8: 1.2,   // ~20% mais bitrate
-    vp9: 0.6,   // ~40% menor
-    h265: 0.5,  // ~50% menor
-  };
-  const multiplier = codecMultiplier[codec.toLowerCase()] ?? 1.0;
+  // Escala não-linear usada pelo mediabunny (pow ao invés de linear)
+  const scaleFactor = Math.pow(pixels / referencePixels, 0.95);
 
-  const bitrate = (baseBitrate * (pixels / basePixels)) * multiplier;
+  // Multiplicadores de eficiência por codec (mesmos do mediabunny)
+  const codecEfficiency: Record<string, number> = {
+    avc: 1,     // H.264
+    hevc: 0.6,  // H.265 (~40% mais eficiente)
+    vp9: 0.6,   // Similar ao HEVC
+    av1: 0.4,   // ~60% mais eficiente
+    vp8: 1.2,   // Um pouco menos eficiente que H.264
+  };
+  const multiplier = codecEfficiency[codec.toLowerCase()] ?? 1.0;
+
+  const bitrate = baseBitrate * scaleFactor * multiplier;
   return Math.round((durationInSeconds * bitrate) / 8);
 }
 

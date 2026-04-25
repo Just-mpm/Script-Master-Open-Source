@@ -7,6 +7,22 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.1] - 2026-04-25
+
+### Corrigido
+
+- **`useVideoExporter`**: `exportFileName` removido do estado e gravado diretamente na ref antes de qualquer reset, evitando perda do nome do arquivo durante renderização
+- **`useVideoExporter`**: feedback visual de renderização exibido imediatamente (antes do mapeamento de cenas), reduzindo latência percebida
+- **`useVideoExporter`**: segundo `setState` agora preserva estado anterior via `prev` em vez de resetar com `INITIAL_STATE`, evitando perda de `speedPaintWarnings` coletadas
+- **`estimateFileSize`**: bitrate base realinhado de 8 Mbps para 3 Mbps (corresponde ao mediabunny Quality "medium"), com escala não-linear `pow(pixels/ref, 0.95)` e multiplicadores de codec atualizados (adicionados `avc`, `hevc`, `av1`; removido `h265`)
+- **`VideoPage`**: `showCaptionToggle` definido como `true` fixo em vez de depender de `includeSubtitles`, garantindo que o toggle de legenda esteja sempre acessível
+
+### Removido
+
+- **`exportFileName`** de `VideoExporterState` e `INITIAL_STATE` (agora gerenciado apenas via ref)
+
+---
+
 ## [0.24.0] - 2026-04-25
 
 ### Adicionado

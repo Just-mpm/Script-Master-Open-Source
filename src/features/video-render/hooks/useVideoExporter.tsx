@@ -59,8 +59,7 @@ export interface VideoExporterState {
   resolvedVideoCodec: string;
   /** Container resolvido após checkSupport ('mp4' ou 'webm') */
   resolvedContainer: string;
-  /** Nome do arquivo para download */
-  exportFileName: string;
+
 }
 
 const INITIAL_STATE: VideoExporterState = {
@@ -75,7 +74,6 @@ const INITIAL_STATE: VideoExporterState = {
   speedPaintWarnings: [],
   resolvedVideoCodec: 'h264',
   resolvedContainer: 'mp4',
-  exportFileName: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -169,10 +167,6 @@ export function useVideoExporter() {
   useEffect(() => {
     outputUrlRef.current = state.outputUrl;
   }, [state.outputUrl]);
-
-  useEffect(() => {
-    exportFileNameRef.current = state.exportFileName;
-  }, [state.exportFileName]);
 
   // Cleanup de blob URL ao desmontar e aborta renderização em andamento
   useEffect(() => {
@@ -308,6 +302,9 @@ export function useVideoExporter() {
       animateScenes = false,
     } = options;
 
+    // Grava o nome do arquivo diretamente na ref (antes de qualquer reset de estado)
+    exportFileNameRef.current = fileName || '';
+
     if (!audioUrl || scenes.length === 0) return;
 
     // Previne dupla renderização — aborta a anterior se existir
@@ -315,6 +312,15 @@ export function useVideoExporter() {
       log.warn('Renderização já em andamento — abortando anterior antes de iniciar nova');
       abortControllerRef.current.abort();
     }
+
+    // Entra em modo renderização imediatamente para mostrar feedback visual
+    setState({
+      ...INITIAL_STATE,
+      canRender: true,
+      isRendering: true,
+      renderProgress: 0,
+      renderStatusText: 'Preparando exportação...',
+    });
 
     const resolvedQuality = quality ?? DEFAULT_EXPORT_QUALITY;
     const resolution = getResolutionFromQuality(ratio, resolvedQuality);
@@ -366,11 +372,6 @@ export function useVideoExporter() {
       }
     }
 
-    // Atualiza o nome do arquivo no estado
-    if (fileName) {
-      setState(prev => ({ ...prev, exportFileName: fileName }));
-    }
-
     // Destrutura com default para speedPaintSpeed
     const speedPaintSpeed = options.speedPaintSpeed ?? 'normal';
 
@@ -399,14 +400,12 @@ export function useVideoExporter() {
     const speedPaintOffset = speedPaintPhaseWeightRef.current;
     const remainingWeight = 100 - speedPaintOffset;
 
-    setState({
-      ...INITIAL_STATE,
-      canRender: true,
-      isRendering: true,
-      renderProgress: speedPaintOffset,
+    setState(prev => ({
+      ...prev,
+      renderProgress: speedPaintOffset || 0,
       renderStatusText: 'Iniciando renderização...',
       speedPaintWarnings: collectedWarnings,
-    });
+    }));
 
     try {
       // Aplica patch que traduz fontStretch percentual → keyword para a Canvas API

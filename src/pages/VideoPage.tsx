@@ -224,12 +224,12 @@ export function VideoPage({
         ratio={sceneRatio}
         captions={captions.length > 0 ? captions : undefined}
         subtitleStyle={mergedSubtitleStyle}
-        showCaptionToggle={includeSubtitles}
+        showCaptionToggle={true}
         captionVisible={captionVisible}
         onCaptionToggle={handleCaptionToggle}
       />
     ),
-    [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, includeSubtitles, captionVisible, handleCaptionToggle, videoPlayerRef],
+    [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, captionVisible, handleCaptionToggle, videoPlayerRef],
   );
 
   return (

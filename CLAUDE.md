@@ -295,13 +295,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.0`
+- **Current:** `0.24.1`
 - **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.1 | `exportFileName` movido do estado para ref (evita perda em reset); feedback visual de renderização antecipado; `speedPaintWarnings` preservado entre `setState` calls; `estimateFileSize` realinhado ao mediabunny (3 Mbps base, escala pow 0.95, codecs avc/hevc/av1); caption toggle sempre visível no VideoPage |
 | 0.24.0 | `SpeedPaintMultipliers` (controle granular sketch/reveal 0.25x–4.0x); `SpeedPaintControls` com sliders independentes; `SpeedPaintPhaseBadge` no preview; renderer com suporte a multiplicadores por fase (backward compat); CHANGELOG limpo (versões antigas em `docs/`); 30 testes novos (total: 1185) |
 | 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |
 | 0.22.0 | Refatoração `useStudioState` → Zustand store (`useStudioStore`, `useCurrentStudioState`, `buildGenerateOptions`); 3 arquivos criados em `store/` (studioStore, studio.utils, barrel); `useShallow` em StudioPage/VideoPage; `getStoredNumber` corrigido; `ScriptEditorController` type removido; 24 testes novos (total: 1064) |
