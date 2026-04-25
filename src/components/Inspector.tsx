@@ -133,7 +133,7 @@ function VoiceTabPanel({
   );
 }
 
-export function Inspector({
+export const Inspector = React.memo(function Inspector({
   isMultiSpeaker,
   setIsMultiSpeaker,
   speakerAName,
@@ -679,4 +679,5 @@ export function Inspector({
       </Paper>
     </Stack>
   );
-}
+});
+

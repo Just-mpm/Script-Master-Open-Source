@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent, RefObject } from 'react';
+import React, { type ChangeEvent, type FormEvent, type RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DialogContent from '@mui/material/DialogContent';
@@ -36,7 +36,7 @@ interface AssistantMemoriesPanelProps {
   onDocumentUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function AssistantMemoriesPanel({
+export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel({
   memories,
   isLoading = false,
   newMemory,
@@ -196,4 +196,5 @@ export function AssistantMemoriesPanel({
       </DialogContent>
     </Drawer>
   );
-}
+});
+

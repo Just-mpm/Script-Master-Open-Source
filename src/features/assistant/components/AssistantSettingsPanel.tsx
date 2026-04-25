@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import React, { type ChangeEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -22,7 +22,7 @@ interface AssistantSettingsPanelProps {
   onSave: () => void;
 }
 
-export function AssistantSettingsPanel({
+export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel({
   customSystemPrompt,
   isSavingSettings,
   onClose,
@@ -103,4 +103,5 @@ export function AssistantSettingsPanel({
       </DialogContent>
     </Drawer>
   );
-}
+});
+

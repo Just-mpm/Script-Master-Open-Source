@@ -7,6 +7,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.21.1] - 2026-04-25
+
+### Alterado
+
+- **VideoExportPanel**: state lifting invertido — `quality`, `fileName`, `animateScenes` e `speedPaintSpeed` movidos de props para state local do componente, eliminando re-renders em cascata no VideoPage; `React.memo` adicionado
+- **VideoPage**: removido state local de opções de exportação (agora gerenciado internamente pelo VideoExportPanel); `VideoPreview` memoizado com `useMemo` para evitar nova referência a children a cada render
+- **Assistant.tsx**: 12 handlers convertidos de funções inline para `useCallback` com deps corretas (`handleSaveSettings`, `handleDocumentUpload`, `handleAddMemory`, `handleDeleteMemory`, `handleDeleteHistory`, `handleSaveMessageToMemory`, `handleSelectSession`, `handleSubmit`, `handleFileChange`, `handleApply`, `handleRemoveFile`, `handleDismiss*` e `handleOpen*/Close*`)
+- **useVideoExporter**: retorno do hook memoizado com `useMemo` para estabilizar referência do objeto
+
+### Alterado (React.memo em componentes)
+
+- `Inspector`, `CaptionEditorPanel`, `SubtitleInlineEditor`, `TranscriptionPanel`, `VideoExportPanel`, `AssistantComposer`, `AssistantHeader`, `AssistantHistoryPanel`, `AssistantMemoriesPanel`, `AssistantSettingsPanel` — envolvidos em `React.memo` para evitar re-renders desnecessários quando props não mudam
+
+---
+
 ## [0.21.0] - 2026-04-25
 
 ### Adicionado

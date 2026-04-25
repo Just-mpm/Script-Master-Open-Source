@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import Box from '@mui/material/Box';
 import DialogContent from '@mui/material/DialogContent';
@@ -31,7 +31,7 @@ interface AssistantHistoryPanelProps {
   onDeleteHistory: (event: MouseEvent<HTMLButtonElement>, id: string) => void;
 }
 
-export function AssistantHistoryPanel({
+export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
   history,
   isLoading = false,
   onClose,
@@ -202,4 +202,5 @@ export function AssistantHistoryPanel({
       </DialogContent>
     </Drawer>
   );
-}
+});
+

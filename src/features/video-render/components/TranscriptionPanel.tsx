@@ -1,3 +1,4 @@
+import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
@@ -74,7 +75,7 @@ interface TranscriptionPanelProps {
 // Componente
 // ---------------------------------------------------------------------------
 
-export function TranscriptionPanel({
+export const TranscriptionPanel = React.memo(function TranscriptionPanel({
   audioUrl,
   scenes,
   transcriptionSource,
@@ -297,4 +298,4 @@ export function TranscriptionPanel({
       </Box>
     </Collapse>
   );
-}
+});

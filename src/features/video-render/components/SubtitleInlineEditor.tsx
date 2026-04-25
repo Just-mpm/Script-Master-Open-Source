@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import Collapse from '@mui/material/Collapse';
@@ -86,7 +86,7 @@ interface SubtitleInlineEditorProps {
 // Componente
 // ---------------------------------------------------------------------------
 
-export function SubtitleInlineEditor({
+export const SubtitleInlineEditor = React.memo(function SubtitleInlineEditor({
   hasCaptions,
   subtitleStyle,
   onSubtitleStyleChange,
@@ -370,7 +370,7 @@ export function SubtitleInlineEditor({
       {toolbarElement}
     </Box>
   );
-}
+});
 
 // Re-exportar subcomponentes para consumo externo se necessário
 export { EditorToolbar } from './subtitle-editor/EditorToolbar';

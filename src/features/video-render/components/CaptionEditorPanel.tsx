@@ -525,7 +525,7 @@ const AddPhraseButton = React.memo(function AddPhraseButton({ onClick }: AddPhra
 // Componente principal
 // ---------------------------------------------------------------------------
 
-export function CaptionEditorPanel({
+export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
   captions,
   onUpdateCaptions,
   fps,
@@ -852,4 +852,4 @@ export function CaptionEditorPanel({
       />
     </>
   );
-}
+});

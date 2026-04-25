@@ -14,7 +14,7 @@ import { useVideoExporter } from '../features/video-render/hooks/useVideoExporte
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
-import type { SubtitleStyle, SubtitlePosition, VideoExportQuality, SpeedPaintSpeed } from '../features/video-render/types';
+import type { SubtitleStyle, SubtitlePosition } from '../features/video-render/types';
 import type { StudioStateController } from '../features/studio/useStudioState';
 import type { AudioSegment } from '../lib/db/types';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
@@ -97,18 +97,6 @@ export function VideoPage({
 
   // Toggle: exportar vídeo com legenda (default: true)
   const [includeSubtitles, setIncludeSubtitles] = useState(true);
-
-  // Qualidade de exportação (default: 1080p)
-  const [exportQuality, setExportQuality] = useState<VideoExportQuality>('1080p');
-
-  // Nome personalizado do arquivo de exportação
-  const [exportFileName, setExportFileName] = useState('');
-
-  // Toggle: animar cenas com Speed Paint na exportação (default: false)
-  const [animateScenes, setAnimateScenes] = useState(false);
-
-  // Velocidade da animação speed paint (default: 'normal')
-  const [speedPaintSpeed, setSpeedPaintSpeed] = useState<SpeedPaintSpeed>('normal');
 
   // Toggle: legenda visível no preview (estado local, não afeta exportação)
   const [captionVisible, setCaptionVisible] = useState(true);
@@ -217,6 +205,29 @@ export function VideoPage({
     // não chamar play() do AudioContext para evitar dual-play
   }, [loadProjectData, setScript]);
 
+  // Callback memoizado para toggle de legenda visível no preview (Fix 4)
+  const handleCaptionToggle = useCallback(() => setCaptionVisible((v) => !v), []);
+
+  // Memoiza o JSX do VideoPreview — evita nova referência a children em cada render (Fix 4)
+  const videoPreviewElement = useMemo(
+    () => (
+      <VideoPreview
+        ref={videoPlayerRef}
+        scenes={scenes}
+        audioUrl={audioUrl}
+        fps={videoFps}
+        durationInFrames={durationInFrames}
+        ratio={sceneRatio}
+        captions={captions.length > 0 ? captions : undefined}
+        subtitleStyle={mergedSubtitleStyle}
+        showCaptionToggle={includeSubtitles}
+        captionVisible={captionVisible}
+        onCaptionToggle={handleCaptionToggle}
+      />
+    ),
+    [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, includeSubtitles, captionVisible, handleCaptionToggle, videoPlayerRef],
+  );
+
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
       <Box>
@@ -229,27 +240,15 @@ export function VideoPage({
       </Box>
 
        <SubtitleInlineEditor
-           hasCaptions={captions.length > 0}
-           subtitleStyle={subtitleStyle}
-           onSubtitleStyleChange={setSubtitleStyle}
-           ratio={sceneRatio}
-           toolbarPortal={toolbarPortalRef}
-           subtitlePosition={subtitlePosition}
-           onSubtitlePositionChange={setSubtitlePosition}
-         >
-          <VideoPreview
-           ref={videoPlayerRef}
-           scenes={scenes}
-           audioUrl={audioUrl}
-           fps={videoFps}
-           durationInFrames={durationInFrames}
-           ratio={sceneRatio}
-           captions={captions.length > 0 ? captions : undefined}
-           subtitleStyle={mergedSubtitleStyle}
-           showCaptionToggle={includeSubtitles}
-           captionVisible={captionVisible}
-           onCaptionToggle={() => setCaptionVisible((v) => !v)}
-         />
+            hasCaptions={captions.length > 0}
+            subtitleStyle={subtitleStyle}
+            onSubtitleStyleChange={setSubtitleStyle}
+            ratio={sceneRatio}
+            toolbarPortal={toolbarPortalRef}
+            subtitlePosition={subtitlePosition}
+            onSubtitlePositionChange={setSubtitlePosition}
+          >
+           {videoPreviewElement}
        </SubtitleInlineEditor>
 
        {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
@@ -284,29 +283,21 @@ export function VideoPage({
       />
 
        {/* Painel de exportação MP4 */}
-        <VideoExportPanel
-          scenes={scenes}
-          audioUrl={audioUrl}
-          fps={videoFps}
-          durationInFrames={durationInFrames}
-          ratio={sceneRatio}
-          projectId={currentProjectId ?? undefined}
-          userId={userId}
-          exporter={videoExporter}
-          captions={captions.length > 0 ? captions : undefined}
-          subtitleStyle={mergedSubtitleStyle}
-          includeSubtitles={includeSubtitles}
-          onIncludeSubtitlesChange={setIncludeSubtitles}
-          quality={exportQuality}
-          onQualityChange={setExportQuality}
-          durationInSeconds={durationInSeconds}
-           fileName={exportFileName}
-           onFileNameChange={setExportFileName}
-            animateScenes={animateScenes}
-            onAnimateScenesChange={setAnimateScenes}
-            speedPaintSpeed={speedPaintSpeed}
-            onSpeedPaintSpeedChange={setSpeedPaintSpeed}
-          />
+         <VideoExportPanel
+           scenes={scenes}
+           audioUrl={audioUrl}
+           fps={videoFps}
+           durationInFrames={durationInFrames}
+           ratio={sceneRatio}
+           projectId={currentProjectId ?? undefined}
+           userId={userId}
+           exporter={videoExporter}
+           captions={captions.length > 0 ? captions : undefined}
+           subtitleStyle={mergedSubtitleStyle}
+           includeSubtitles={includeSubtitles}
+           onIncludeSubtitlesChange={setIncludeSubtitles}
+           durationInSeconds={durationInSeconds}
+           />
 
       <VideoLibrary
         activeProjectId={currentProjectId}

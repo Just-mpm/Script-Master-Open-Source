@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent, KeyboardEvent, RefObject } from 'react';
+import React, { type ChangeEvent, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -26,7 +26,7 @@ interface AssistantComposerProps {
   onRemoveFile: (index: number) => void;
 }
 
-export function AssistantComposer({
+export const AssistantComposer = React.memo(function AssistantComposer({
   input,
   pendingFiles,
   isLoading,
@@ -150,4 +150,5 @@ export function AssistantComposer({
       </Stack>
     </Box>
   );
-}
+});
+

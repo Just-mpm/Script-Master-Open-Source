@@ -1,3 +1,4 @@
+import React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -21,7 +22,7 @@ interface AssistantHeaderProps {
   onOpenSettings: () => void;
 }
 
-export function AssistantHeader({
+export const AssistantHeader = React.memo(function AssistantHeader({
   onStartNewChat,
   onOpenHistory,
   onOpenMemories,
@@ -102,4 +103,5 @@ export function AssistantHeader({
       </Stack>
     </Stack>
   );
-}
+});
+

@@ -289,13 +289,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.21.0`
+- **Current:** `0.21.1`
 - **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.21.1 | Otimização de performance: `React.memo` em 10 componentes (Inspector, CaptionEditorPanel, SubtitleInlineEditor, TranscriptionPanel, VideoExportPanel, AssistantComposer, AssistantHeader, AssistantHistoryPanel, AssistantMemoriesPanel, AssistantSettingsPanel); `useCallback` em 12 handlers do Assistant.tsx; state lifting invertido no VideoExportPanel (quality/fileName/animateScenes/speedPaintSpeed como state local); `VideoPreview` memoizado no VideoPage; `useMemo` no retorno de `useVideoExporter` |
 | 0.21.0 | Autenticação email/senha + cadastro (RegisterPage `/cadastro`); LoginPage reformulada (email/senha + reset dialog); biblioteca `error-mapping.ts` (`createErrorMapper`, `sharedErrorRules`); Firebase Hosting completo (.firebaserc, 404.html, cleanUrls, 8 redirects 301, cache immutable, headers de segurança); scripts deploy/deploy:preview; firebase-tools devDep; 68 testes novos (total: 1040) |
 | 0.20.0 | Fase 3+4 do Speed Paint completas; Web Worker inline (OffscreenCanvas, >5 cenas); cache LRU (20 entradas, SHA-256); controle de velocidade (0.5x/1x/1.5x); limpeza de memória; bug fix React batching (speedPaintWarnings); refatoração VideoLibrary 700→216 linhas (-69%); refatoração SubtitleInlineEditor 1006→401 linhas (-60%); 9 novos tokens de tema; 61 testes novos (total: 972) |
 | 0.19.0 | Export quality selector (720p–4k); `estimateFileSize` com VP9/H265; posição de legendas (bottom/center/top); thumbnails na VideoLibrary; busca/ordenação na galeria; 9 novos tokens de tema; progress semântico; 10 correções de audit (blob URL seletiva, guard dupla render, thumbnail timeout, a11y slider, useEffect deps, tokens hardcoded, slider styles, default duplicado); 911 testes (total: 911) |

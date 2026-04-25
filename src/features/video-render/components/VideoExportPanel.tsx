@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
@@ -117,31 +117,15 @@ interface VideoExportPanelProps {
   includeSubtitles?: boolean;
   /** Callback quando o toggle de legenda muda */
   onIncludeSubtitlesChange?: (value: boolean) => void;
-  /** Qualidade selecionada para exportação */
-  quality?: VideoExportQuality;
-  /** Callback quando qualidade muda */
-  onQualityChange?: (quality: VideoExportQuality) => void;
   /** Duração total em segundos (para estimativa de tamanho) */
   durationInSeconds?: number;
-  /** Nome do arquivo customizado */
-  fileName?: string;
-  /** Callback quando nome do arquivo muda */
-  onFileNameChange?: (name: string) => void;
-  /** Animar cenas com Speed Paint na exportação (default: false) */
-  animateScenes?: boolean;
-  /** Callback quando o toggle de animação muda */
-  onAnimateScenesChange?: (value: boolean) => void;
-  /** Velocidade da animação speed paint (default: 'normal') */
-  speedPaintSpeed?: SpeedPaintSpeed;
-  /** Callback quando a velocidade muda */
-  onSpeedPaintSpeedChange?: (speed: SpeedPaintSpeed) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
-export function VideoExportPanel({
+export const VideoExportPanel = React.memo(function VideoExportPanel({
   scenes,
   audioUrl,
   fps,
@@ -154,16 +138,14 @@ export function VideoExportPanel({
   subtitleStyle,
   includeSubtitles = true,
   onIncludeSubtitlesChange,
-  quality = DEFAULT_EXPORT_QUALITY,
-  onQualityChange,
   durationInSeconds,
-  fileName,
-  onFileNameChange,
-  animateScenes = false,
-  onAnimateScenesChange,
-  speedPaintSpeed = 'normal',
-  onSpeedPaintSpeedChange,
 }: VideoExportPanelProps) {
+  // --- State local de opções de exportação (elimina re-renders em cascata no pai) ---
+  const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
+  const [fileName, setFileName] = useState('');
+  const [animateScenes, setAnimateScenes] = useState(false);
+  const [speedPaintSpeed, setSpeedPaintSpeed] = useState<SpeedPaintSpeed>('normal');
+
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
 
@@ -217,7 +199,7 @@ export function VideoExportPanel({
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const sanitized = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
-    onFileNameChange?.(sanitized);
+    setFileName(sanitized);
   };
 
   return (
@@ -295,7 +277,7 @@ export function VideoExportPanel({
               control={
                 <Switch
                   checked={animateScenes}
-                  onChange={(e) => onAnimateScenesChange?.(e.target.checked)}
+                  onChange={(e) => setAnimateScenes(e.target.checked)}
                   size="small"
                 />
               }
@@ -319,7 +301,7 @@ export function VideoExportPanel({
                 value={speedPaintSpeed}
                 exclusive
                 onChange={(_, value: SpeedPaintSpeed | null) => {
-                  if (value) onSpeedPaintSpeedChange?.(value);
+                  if (value) setSpeedPaintSpeed(value);
                 }}
                 size="small"
                 aria-label="Velocidade da animação speed paint"
@@ -338,7 +320,7 @@ export function VideoExportPanel({
               value={quality}
               exclusive
               onChange={(_, value: VideoExportQuality | null) => {
-                if (value) onQualityChange?.(value);
+                if (value) setQuality(value);
               }}
               size="small"
               aria-label="Qualidade de exportação"
@@ -527,4 +509,4 @@ export function VideoExportPanel({
       </Box>
     </Collapse>
   );
-}
+});

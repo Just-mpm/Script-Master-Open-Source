@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { renderMediaOnWeb, canRenderMediaOnWeb } from '@remotion/web-renderer';
 import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
@@ -547,7 +547,7 @@ export function useVideoExporter() {
     setState(INITIAL_STATE);
   }, []);
 
-  return {
+  return useMemo(() => ({
     ...state,
     checkSupport,
     startRender,
@@ -555,7 +555,7 @@ export function useVideoExporter() {
     handleDownload,
     dismissSaveWarning,
     reset,
-  };
+  }), [state, checkSupport, startRender, handleCancel, handleDownload, dismissSaveWarning, reset]);
 }
 
 /** Tipo do retorno do hook useVideoExporter — útil para passar via props */

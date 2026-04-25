@@ -118,7 +118,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     }
   }, [loadSettings, showSettings]);
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = useCallback(async () => {
     setIsSavingSettings(true);
 
     try {
@@ -127,9 +127,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     } finally {
       setIsSavingSettings(false);
     }
-  };
+  }, [customSystemPrompt, user?.uid]);
 
-  const handleDocumentUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -157,9 +157,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     if (documentInputRef.current) {
       documentInputRef.current.value = '';
     }
-  };
+  }, [user?.uid, loadMemories]);
 
-  const handleAddMemory = async (event: FormEvent<HTMLFormElement>) => {
+  const handleAddMemory = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!newMemory.trim()) {
@@ -169,11 +169,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     await saveMemory(newMemory, user?.uid);
     setNewMemory('');
     await loadMemories();
-  };
+  }, [newMemory, user?.uid, loadMemories]);
 
-  const handleDeleteMemory = (id: string) => {
+  const handleDeleteMemory = useCallback((id: string) => {
     setMemoryToDelete(id);
-  };
+  }, []);
 
   const confirmDeleteMemory = async () => {
     if (!memoryToDelete) return;
@@ -188,10 +188,10 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     }
   };
 
-  const handleDeleteHistory = (event: MouseEvent<HTMLButtonElement>, id: string) => {
+  const handleDeleteHistory = useCallback((event: MouseEvent<HTMLButtonElement>, id: string) => {
     event.stopPropagation();
     setChatToDelete(id);
-  };
+  }, []);
 
   const confirmDeleteChat = async () => {
     if (!chatToDelete) return;
@@ -206,18 +206,18 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     }
   };
 
-  const handleSaveMessageToMemory = async (text: string, messageId: string) => {
+  const handleSaveMessageToMemory = useCallback(async (text: string, messageId: string) => {
     await saveMemory(text, user?.uid);
     setSavedToMemoryId(messageId);
     window.setTimeout(() => setSavedToMemoryId(null), 3000);
-  };
+  }, [user?.uid]);
 
-  const handleSelectSession = (session: ChatSession) => {
+  const handleSelectSession = useCallback((session: ChatSession) => {
     loadSession(session);
     setShowHistory(false);
-  };
+  }, [loadSession]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if ((!input.trim() && pendingFiles.length === 0) || isLoading) {
       return;
     }
@@ -227,9 +227,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     await sendMessage(input, attachments);
     setInput('');
     setPendingFiles([]);
-  };
+  }, [input, pendingFiles, isLoading, sendMessage]);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
 
@@ -270,13 +270,25 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  };
+  }, []);
 
-  const handleApply = (settings: AssistantSettings, messageId: string) => {
+  const handleApply = useCallback((settings: AssistantSettings, messageId: string) => {
     onApplySettings(settings);
     setAppliedMessageId(messageId);
     window.setTimeout(() => setAppliedMessageId(null), 3000);
-  };
+  }, [onApplySettings]);
+
+  const handleCloseMemories = useCallback(() => setShowMemories(false), []);
+  const handleCloseHistory = useCallback(() => setShowHistory(false), []);
+  const handleCloseSettings = useCallback(() => setShowSettings(false), []);
+  const handleOpenHistory = useCallback(() => setShowHistory(true), []);
+  const handleOpenMemories = useCallback(() => setShowMemories(true), []);
+  const handleOpenSettings = useCallback(() => setShowSettings(true), []);
+  const handleRemoveFile = useCallback((index: number) => {
+    setPendingFiles((previousFiles) => previousFiles.filter((_, fileIndex) => fileIndex !== index));
+  }, []);
+  const handleDismissDocumentError = useCallback(() => setDocumentError(null), []);
+  const handleDismissAttachmentError = useCallback(() => setAttachmentError(null), []);
 
   return (
     <Box
@@ -298,7 +310,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           isLoading={isLoadingMemories}
           newMemory={newMemory}
           documentInputRef={documentInputRef}
-          onClose={() => setShowMemories(false)}
+          onClose={handleCloseMemories}
           onNewMemoryChange={setNewMemory}
           onSubmit={handleAddMemory}
           onDeleteMemory={handleDeleteMemory}
@@ -310,7 +322,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         <AssistantHistoryPanel
           history={history}
           isLoading={isLoadingHistory}
-          onClose={() => setShowHistory(false)}
+          onClose={handleCloseHistory}
           onSelectSession={handleSelectSession}
           onDeleteHistory={handleDeleteHistory}
         />
@@ -320,7 +332,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         <AssistantSettingsPanel
           customSystemPrompt={customSystemPrompt}
           isSavingSettings={isSavingSettings}
-          onClose={() => setShowSettings(false)}
+          onClose={handleCloseSettings}
           onChangePrompt={setCustomSystemPrompt}
           onSave={handleSaveSettings}
         />
@@ -328,9 +340,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       <AssistantHeader
         onStartNewChat={startNewChat}
-        onOpenHistory={() => setShowHistory(true)}
-        onOpenMemories={() => setShowMemories(true)}
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenHistory={handleOpenHistory}
+        onOpenMemories={handleOpenMemories}
+        onOpenSettings={handleOpenSettings}
       />
 
       {!user ? (
@@ -369,9 +381,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onInputChange={setInput}
         onSubmit={handleSubmit}
         onFileChange={handleFileChange}
-        onRemoveFile={(index) => {
-          setPendingFiles((previousFiles) => previousFiles.filter((_, fileIndex) => fileIndex !== index));
-        }}
+        onRemoveFile={handleRemoveFile}
       />
 
       <Dialog
@@ -424,8 +434,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </DialogActions>
       </Dialog>
 
-      <ErrorToast error={documentError} onDismiss={() => setDocumentError(null)} />
-      <ErrorToast error={attachmentError} onDismiss={() => setAttachmentError(null)} />
+      <ErrorToast error={documentError} onDismiss={handleDismissDocumentError} />
+      <ErrorToast error={attachmentError} onDismiss={handleDismissAttachmentError} />
     </Box>
   );
 }
