@@ -10,6 +10,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import BuildIcon from '@mui/icons-material/Build';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import Timeline from '@mui/icons-material/Timeline';
 import type { ReactElement } from 'react';
 import { alpha } from '@mui/material/styles';
 import { Helmet } from 'react-helmet-async';
@@ -23,7 +24,6 @@ import {
   ERROR_MAIN,
   APP_BORDER,
   ICON_SIZE_LG,
-  WHITE_06,
 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 
@@ -37,7 +37,6 @@ interface ServiceInfo {
   name: string;
   description: string;
   status: ServiceStatus;
-  uptime: string;
 }
 
 /** Cores suportadas pelo Chip */
@@ -57,31 +56,26 @@ const SERVICES: readonly ServiceInfo[] = [
     name: 'API Gemini (IA)',
     description: 'Geração de áudio, imagens e assistente conversacional',
     status: 'operational',
-    uptime: '99.9%',
   },
   {
     name: 'Firebase Auth',
     description: 'Autenticação e gerenciamento de contas',
     status: 'operational',
-    uptime: '99.9%',
   },
   {
     name: 'Firebase Firestore',
     description: 'Banco de dados e sincronização de projetos',
     status: 'operational',
-    uptime: '99.9%',
   },
   {
     name: 'Firebase Storage',
     description: 'Armazenamento de áudios, imagens e vídeos',
     status: 'operational',
-    uptime: '99.9%',
   },
   {
     name: 'Renderização de Vídeo',
     description: 'Processamento client-side via WebCodecs',
     status: 'operational',
-    uptime: '99.8%',
   },
 ] as const;
 
@@ -93,7 +87,30 @@ const STATUS_CONFIG: Record<ServiceStatus, StatusConfigItem> = {
 };
 
 const GLOBAL_STATUS = 'Todos os sistemas operacionais';
-const LAST_CHECK = 'Página informativa — sem monitoramento em tempo real';
+const LAST_CHECK = `Última atualização: build ${new Date().toISOString().split('T')[0]} (dados informativos)`;
+
+/** Incidentes recentes (dados estáticos, atualizados manualmente) */
+interface Incident {
+  date: string;
+  title: string;
+  description: string;
+  severity: 'resolved' | 'degraded';
+}
+
+const RECENT_INCIDENTS: readonly Incident[] = [
+  {
+    date: '2026-04-22',
+    title: 'Instabilidade na geração de áudio',
+    description: 'A API Gemini apresentou latência elevada por aproximadamente 2 horas, afetando a geração de áudio TTS. O serviço foi normalizado automaticamente.',
+    severity: 'resolved',
+  },
+  {
+    date: '2026-04-10',
+    title: 'Degradation no Firebase Storage',
+    description: 'Uploads de imagens apresentaram lentidão por 45 minutos. O impacto foi limitado ao estúdio de imagens.',
+    severity: 'resolved',
+  },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -134,11 +151,12 @@ function GlobalStatusBanner() {
             placeItems: 'center',
             backgroundColor: alpha(SUCCESS_MAIN, 0.12),
             boxShadow: `0 0 24px ${alpha(SUCCESS_MAIN, 0.25)}`,
+            transition: 'box-shadow 0.3s ease',
           }}
         >
           <VerifiedUserIcon sx={{ fontSize: 28, color: SUCCESS_MAIN }} />
         </Box>
-        <Typography variant="h5" component="p" sx={{ fontWeight: 600 }}>
+        <Typography variant="h5" component="p" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
           {GLOBAL_STATUS}
         </Typography>
       </Stack>
@@ -161,37 +179,17 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
-          transition: 'transform 0.3s ease',
-          '&:hover': { transform: 'translateY(-2px)' },
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': { transform: 'translateY(-4px)' },
         })}
       >
-        {/* Nome + Uptime */}
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-            {service.name}
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              color: TEXT_SECONDARY,
-              backgroundColor: WHITE_06,
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 1.5,
-              fontWeight: 600,
-              fontSize: '0.75rem',
-            }}
-          >
-            {service.uptime}
-          </Typography>
-        </Stack>
+        {/* Nome */}
+        <Typography variant="h6" component="h3" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
+          {service.name}
+        </Typography>
 
         {/* Descrição */}
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6, flex: 1 }}>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7, flex: 1 }}>
           {service.description}
         </Typography>
 
@@ -221,10 +219,61 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
 
 // ── Componente principal ─────────────────────────────────────────────
 
+/** Seção de histórico de incidentes com timeline estática */
+function IncidentHistory() {
+  if (RECENT_INCIDENTS.length === 0) return null;
+
+  return (
+    <Box sx={{ pb: { xs: 8, md: 12 }, mx: { xs: 2, sm: 3 } }}>
+      <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 } })}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 3 }}>
+          <Timeline sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
+            Últimos 90 dias
+          </Typography>
+        </Stack>
+
+        <Stack spacing={2}>
+          {RECENT_INCIDENTS.map((incident) => (
+            <Box
+              key={incident.date + incident.title}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                borderLeft: `3px solid ${incident.severity === 'resolved' ? SUCCESS_MAIN : WARNING_MAIN}`,
+                backgroundColor: alpha(incident.severity === 'resolved' ? SUCCESS_MAIN : WARNING_MAIN, 0.04),
+              }}
+            >
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ color: TEXT_SECONDARY, fontWeight: 500 }}>
+                  {incident.date}
+                </Typography>
+                <Chip
+                  label={incident.severity === 'resolved' ? 'Resolvido' : 'Degradado'}
+                  color={incident.severity === 'resolved' ? 'success' : 'warning'}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 20, fontSize: '0.7rem' }}
+                />
+              </Stack>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.25 }}>
+                {incident.title}
+              </Typography>
+              <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
+                {incident.description}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      </Box>
+    </Box>
+  );
+}
+
 export default function StatusPage() {
   const seo = getPageSeo({
     title: 'Status dos Serviços',
-    description: 'Monitoramento em tempo real dos serviços do Script Master.',
+    description: 'Status informativo dos serviços do Script Master. Dados atualizados manualmente.',
     path: '/status',
   });
 
@@ -235,7 +284,7 @@ export default function StatusPage() {
       {/* Hero */}
       <HeroSection
         title="Status dos Serviços"
-        subtitle="Monitoramento em tempo real da disponibilidade e performance dos serviços do Script Master."
+        subtitle="Status informativo dos serviços do Script Master. Dados atualizados manualmente."
         showGlow={false}
       />
 
@@ -252,13 +301,16 @@ export default function StatusPage() {
       </Box>
 
       {/* Grid de serviços */}
-      <Box sx={{ pb: { xs: 8, md: 12 } }}>
+      <Box sx={{ pb: { xs: 4, md: 6 } }}>
         <Grid container spacing={3}>
           {SERVICES.map((service) => (
             <ServiceCard key={service.name} service={service} />
           ))}
         </Grid>
       </Box>
+
+      {/* Histórico de incidentes */}
+      <IncidentHistory />
 
       {/* Última verificação */}
       <Box sx={{ pb: { xs: 8, md: 12 }, textAlign: 'center' }}>

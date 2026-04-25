@@ -32,6 +32,11 @@ vi.mock('../../src/lib/logger', () => ({
 // Mock do tokens
 vi.mock('../../src/theme/tokens', () => ({
   ERROR_MAIN: '#ef4444',
+  BRAND_PRIMARY: '#2e75b6',
+  BRAND_PRIMARY_LIGHT: '#5ba3d0',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  WHITE_06: 'rgba(255,255,255,0.06)',
+  WHITE_14: 'rgba(255,255,255,0.14)',
 }));
 
 // Mock do surfaces

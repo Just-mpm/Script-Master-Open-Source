@@ -58,6 +58,16 @@ export const GalleryCard = memo(function GalleryCard({
             ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.32)}, 0 24px 60px ${alpha(theme.palette.primary.main, 0.18)}`
             : `0 20px 48px ${alpha(theme.palette.common.black, 0.22)}`,
           backdropFilter: 'blur(18px)',
+          transition: theme.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
+          '&:hover': {
+            borderColor: isActive ? alpha(theme.palette.primary.main, 0.7) : alpha(theme.palette.common.white, 0.14),
+            boxShadow: isActive
+              ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.38)}, 0 28px 64px ${alpha(theme.palette.primary.main, 0.22)}`
+              : `0 24px 56px ${alpha(theme.palette.common.black, 0.3)}`,
+            '& .gallery-thumb-gradient': {
+              background: 'linear-gradient(180deg, transparent 10%, rgba(0, 0, 0, 0.78) 100%)',
+            },
+          },
         })}
       >
         <CardActionArea onClick={() => onSelect(project)} disabled={!canSelect} sx={{ height: '100%', alignItems: 'stretch' }}>
@@ -85,7 +95,15 @@ export const GalleryCard = memo(function GalleryCard({
               </Stack>
             )}
 
-            <Box sx={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, transparent 20%, ${BLACK_66} 100%)` }} />
+            <Box
+              className="gallery-thumb-gradient"
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                background: `linear-gradient(180deg, transparent 20%, ${BLACK_66} 100%)`,
+                transition: 'background 0.3s ease',
+              }}
+            />
 
             <Chip
               label={project.isGeneration ? 'Geração' : 'Projeto'}
@@ -107,6 +125,11 @@ export const GalleryCard = memo(function GalleryCard({
                 backgroundColor: isActive ? theme.palette.primary.main : alpha(theme.palette.common.black, 0.44),
                 color: isActive ? theme.palette.primary.contrastText : theme.palette.common.white,
                 border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  backgroundColor: isActive ? theme.palette.primary.dark : alpha(theme.palette.common.black, 0.64),
+                },
               })}
             >
                <PlayArrow sx={{ fontSize: ICON_SIZE_MD }} />
@@ -160,10 +183,12 @@ export const GalleryCard = memo(function GalleryCard({
                   : alpha(theme.palette.common.black, 0.42),
                 color: theme.palette.common.white,
                 backdropFilter: 'blur(12px)',
+                transition: 'background-color 0.2s ease, transform 0.2s ease',
                 '&:hover': {
                   backgroundColor: isDownloading
                     ? theme.palette.primary.dark
                     : alpha(theme.palette.primary.main, 0.72),
+                  transform: 'scale(1.08)',
                 },
             })}
             >
@@ -190,8 +215,10 @@ export const GalleryCard = memo(function GalleryCard({
                 backgroundColor: alpha(theme.palette.common.black, 0.42),
                 color: theme.palette.common.white,
                 backdropFilter: 'blur(12px)',
+                transition: 'background-color 0.2s ease, transform 0.2s ease',
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.error.main, 0.72),
+                  transform: 'scale(1.08)',
                 },
               })}
             >

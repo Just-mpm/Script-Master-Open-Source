@@ -14,6 +14,8 @@ function Wrapper({ children }: { children: ReactNode }) {
 // Mock dos tokens
 vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY: '#06b6d4',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
   ICON_SIZE_SM: 16,
   ICON_SIZE_MD: 20,
   ICON_SIZE_LG: 28,
@@ -26,6 +28,8 @@ vi.mock('../../src/theme/tokens', () => ({
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantDrawerPaperSx: vi.fn(() => ({})),
   assistantInsetSx: vi.fn(() => ({})),
+  assistantDrawerHeaderSx: {},
+  assistantHistoryItemSx: {},
 }));
 
 const defaultProps = {
@@ -78,13 +82,13 @@ describe('AssistantHistoryPanel', () => {
       { wrapper: Wrapper },
     );
 
-    expect(screen.getByPlaceholderText('Buscar no histórico...')).toBeDefined();
+    expect(screen.getByPlaceholderText('Buscar no histórico…')).toBeDefined();
   });
 
   it('NÃO mostra campo de busca quando não há histórico', () => {
     render(<AssistantHistoryPanel {...defaultProps} />, { wrapper: Wrapper });
 
-    expect(screen.queryByPlaceholderText('Buscar no histórico...')).toBeNull();
+    expect(screen.queryByPlaceholderText('Buscar no histórico…')).toBeNull();
   });
 
   it('lista sessões do histórico', () => {
@@ -113,7 +117,7 @@ describe('AssistantHistoryPanel', () => {
       { wrapper: Wrapper },
     );
 
-    const searchInput = screen.getByPlaceholderText('Buscar no histórico...');
+    const searchInput = screen.getByPlaceholderText('Buscar no histórico…');
     fireEvent.change(searchInput, { target: { value: 'podcast' } });
 
     expect(screen.getByText('Roteiro de podcast')).toBeDefined();
@@ -128,7 +132,7 @@ describe('AssistantHistoryPanel', () => {
       { wrapper: Wrapper },
     );
 
-    const searchInput = screen.getByPlaceholderText('Buscar no histórico...');
+    const searchInput = screen.getByPlaceholderText('Buscar no histórico…');
     fireEvent.change(searchInput, { target: { value: 'xyz-inexistente' } });
 
     expect(screen.getByText('Nenhum chat encontrado')).toBeDefined();
@@ -182,7 +186,7 @@ describe('AssistantHistoryPanel', () => {
       { wrapper: Wrapper },
     );
 
-    const searchInput = screen.getByPlaceholderText('Buscar no histórico...');
+    const searchInput = screen.getByPlaceholderText('Buscar no histórico…');
     fireEvent.change(searchInput, { target: { value: 'texto' } });
 
     const clearBtn = screen.getByLabelText('Limpar busca');

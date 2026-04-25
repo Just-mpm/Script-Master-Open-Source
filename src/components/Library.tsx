@@ -48,7 +48,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -283,7 +283,28 @@ export function Library() {
                   } : {}),
                 },
               }}
-              sx={{ minWidth: 220 }}
+              sx={{
+                minWidth: 220,
+                '& .MuiOutlinedInput-root': {
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 1,
+                  },
+                  '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255, 255, 255, 0.16)',
+                  },
+                  '&.Mui-focused': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#2E75B6',
+                      borderWidth: 2,
+                    },
+                    boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.15)',
+                  },
+                },
+              }}
             />
           )}
         </Stack>
@@ -324,7 +345,18 @@ export function Library() {
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
             <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-            <Album sx={{ fontSize: EMPTY_ICON_SIZE, color: 'text.secondary' }} />
+            <Box sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              background: BRAND_GRADIENT,
+              opacity: 0.2,
+              mb: 0.5,
+            }}>
+              <Album sx={{ fontSize: 28, color: 'common.white' }} />
+            </Box>
             <Typography variant="h5">Sua biblioteca ainda está vazia</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               Quando você salvar áudios e cenas do estúdio, os projetos aparecem aqui com acesso rápido a downloads e histórico visual.
@@ -334,7 +366,18 @@ export function Library() {
       ) : filteredProjects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
             <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-            <Search sx={{ fontSize: EMPTY_ICON_SIZE, color: 'text.secondary' }} />
+            <Box sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              background: BRAND_GRADIENT,
+              opacity: 0.2,
+              mb: 0.5,
+            }}>
+              <Search sx={{ fontSize: 28, color: 'common.white' }} />
+            </Box>
             <Typography variant="h5">Nenhum projeto encontrado</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               Nenhum projeto corresponde a &ldquo;{searchQuery}&rdquo;. Tente outro termo de busca.
@@ -347,7 +390,15 @@ export function Library() {
             const isExpanded = expandedProjectId === project.id;
 
             return (
-              <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), overflow: 'hidden' })}>
+              <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({
+                ...glassPanelSx(theme),
+                overflow: 'hidden',
+                transition: theme.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
+                '&:hover': {
+                  borderColor: alpha(theme.palette.primary.main, 0.2),
+                  boxShadow: `0 24px 80px ${alpha(theme.palette.common.black, 0.55)}, 0 0 0 1px ${alpha(theme.palette.primary.main, 0.06)}`,
+                },
+              })}>
                 <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
                   <Stack spacing={GAP_RELAXED}>
                     <Stack
@@ -492,6 +543,12 @@ export function Library() {
                                             p: 1.5,
                                               borderRadius: RADIUS_SM,
                                             bgcolor: alpha(theme.palette.common.white, 0.03),
+                                            border: '1px solid transparent',
+                                            transition: theme.transitions.create(['background-color', 'border-color'], { duration: 150 }),
+                                            '&:hover': {
+                                              bgcolor: alpha(theme.palette.common.white, 0.06),
+                                              borderColor: alpha(theme.palette.common.white, 0.08),
+                                            },
                                           })}
                                         >
                                             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -591,6 +648,11 @@ export function Library() {
                                             borderRadius: RADIUS_SM,
                                               overflow: 'hidden',
                                               bgcolor: alpha(theme.palette.common.white, 0.03),
+                                              transition: theme.transitions.create(['box-shadow', 'transform'], { duration: 200 }),
+                                              '&:hover': {
+                                                boxShadow: `0 12px 36px ${alpha(theme.palette.common.black, 0.36)}`,
+                                                transform: 'translateY(-2px)',
+                                              },
                                             })}
                                           >
                                             <Box
@@ -657,9 +719,11 @@ export function Library() {
         aria-describedby="delete-project-description"
         slotProps={{
           paper: {
-            sx: {
+            sx: (theme) => ({
+              ...glassPanelSx(theme),
               borderRadius: RADIUS_SM,
-            },
+              backgroundImage: 'none',
+            }),
           },
         }}
       >
@@ -694,9 +758,11 @@ export function Library() {
         aria-labelledby="delete-audio-title"
         slotProps={{
           paper: {
-            sx: {
+            sx: (theme) => ({
+              ...glassPanelSx(theme),
               borderRadius: RADIUS_SM,
-            },
+              backgroundImage: 'none',
+            }),
           },
         }}
       >

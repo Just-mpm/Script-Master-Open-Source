@@ -4,6 +4,7 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -77,6 +78,8 @@ interface PricingCardProps {
   recommended?: boolean;
   ctaLabel: string;
   ctaVariant?: PricingCtaVariant;
+  ctaDisabled?: boolean;
+  ctaTooltip?: string;
   onCtaClick?: () => void;
 }
 
@@ -121,6 +124,8 @@ export function PricingCard({
   recommended = false,
   ctaLabel,
   ctaVariant = 'outlined',
+  ctaDisabled = false,
+  ctaTooltip,
   onCtaClick,
 }: PricingCardProps) {
   const buttonStyle = resolveButtonStyle(ctaVariant, recommended);
@@ -134,9 +139,9 @@ export function PricingCard({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-4px)',
+          transform: 'translateY(-6px)',
           boxShadow: `0 32px 96px ${alpha(SHADOW_DEEP, recommended ? 0.7 : 0.45)}`,
         },
 
@@ -214,32 +219,55 @@ export function PricingCard({
           role="list"
           aria-label={`Funcionalidades do plano ${name}`}
         >
-          {features.map((feature, index) => (
-            <Box component="li" key={index}>
+          {features.map((feature) => (
+            <Box component="li" key={feature.text}>
               <FeatureItem feature={feature} />
             </Box>
           ))}
         </Stack>
 
         {/* Botão CTA */}
-        <Button
-          variant={buttonStyle.variant}
-          color={buttonStyle.color}
-          size="large"
-          fullWidth
-          onClick={onCtaClick}
-          aria-label={ctaLabel}
-          sx={{
-            mt: 1,
-            py: 1.5,
-            fontWeight: 600,
-            ...(recommended && {
-              boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW}`,
-            }),
-          }}
-        >
-          {ctaLabel}
-        </Button>
+        {ctaDisabled && ctaTooltip ? (
+          <Tooltip title={ctaTooltip} arrow>
+            <span style={{ width: '100%' }}>
+              <Button
+                variant={buttonStyle.variant}
+                color={buttonStyle.color}
+                size="large"
+                fullWidth
+                disabled
+                aria-label={ctaLabel}
+                sx={{
+                  mt: 1,
+                  py: 1.5,
+                  fontWeight: 600,
+                }}
+              >
+                {ctaLabel}
+              </Button>
+            </span>
+          </Tooltip>
+        ) : (
+          <Button
+            variant={buttonStyle.variant}
+            color={buttonStyle.color}
+            size="large"
+            fullWidth
+            disabled={ctaDisabled}
+            onClick={onCtaClick}
+            aria-label={ctaLabel}
+            sx={{
+              mt: 1,
+              py: 1.5,
+              fontWeight: 600,
+              ...(recommended && {
+                boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW}`,
+              }),
+            }}
+          >
+            {ctaLabel}
+          </Button>
+        )}
       </Stack>
     </Paper>
   );

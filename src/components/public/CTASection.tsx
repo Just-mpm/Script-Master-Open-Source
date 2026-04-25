@@ -36,6 +36,16 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
           background: `radial-gradient(circle, ${alpha(theme.palette.secondary.main, 0.08)} 0%, transparent 60%)`,
           pointerEvents: 'none',
         },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: '-30%',
+          left: '-10%',
+          width: '40%',
+          height: '120%',
+          background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.06)} 0%, transparent 60%)`,
+          pointerEvents: 'none',
+        },
       })}
     >
       <Container maxWidth={false} sx={{ maxWidth: 720, textAlign: 'center', position: 'relative', zIndex: 1 }}>
@@ -48,13 +58,14 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.035em',
             }}
           >
             {title}
           </Typography>
 
           {subtitle && (
-            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 480 }}>
+            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 480, lineHeight: 1.7 }}>
               {subtitle}
             </Typography>
           )}
@@ -65,7 +76,17 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
             variant="contained"
             color="secondary"
             size="large"
-            sx={{ px: 5, py: 1.5, mt: 1, boxShadow: `0 18px 44px ${BRAND_PRIMARY_GLOW}` }}
+            sx={{
+              px: 5,
+              py: 1.5,
+              mt: 1,
+              boxShadow: `0 12px 36px ${BRAND_PRIMARY_GLOW}`,
+              transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+              '&:hover': {
+                boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
+                transform: 'translateY(-1px)',
+              },
+            }}
           >
             {buttonLabel}
           </Button>

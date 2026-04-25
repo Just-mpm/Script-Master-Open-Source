@@ -23,7 +23,13 @@ import { useAnimationStore } from '../../store/animationStore';
 import { getStageRef } from '../../lib/stageRef';
 import { createLogger } from '../../../../lib/logger';
 import { glassSurfaceSx } from '../../../../theme/surfaces';
-import { ERROR_MAIN } from '../../../../theme/tokens';
+import {
+  ERROR_MAIN,
+  BRAND_PRIMARY,
+  BRAND_PRIMARY_GLOW_SOFT,
+  BRAND_PRIMARY_LIGHT,
+  WHITE_14,
+} from '../../../../theme/tokens';
 import { SpeedSelector } from '../SpeedSelector';
 
 const log = createLogger('AnimationControls');
@@ -284,14 +290,15 @@ export function AnimationControls() {
         <Typography
           variant="body2"
           sx={{
-            fontWeight: 500,
-            transition: 'color 300ms',
+            fontWeight: 600,
+            letterSpacing: '-0.02em',
+            transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             color: isRecording ? ERROR_MAIN : 'text.primary',
           }}
         >
           {currentPhase}
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.02em' }}>
           {Math.round(progress * 100)}%
         </Typography>
       </Stack>
@@ -306,10 +313,28 @@ export function AnimationControls() {
           step={0.001}
           aria-label="Progresso da animação"
           sx={{
-            color: 'primary.main',
+            color: isRecording ? ERROR_MAIN : BRAND_PRIMARY,
+            p: '4px 0',
+            transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             '& .MuiSlider-thumb': {
               width: 16,
               height: 16,
+              transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease',
+              '&:hover, &.Mui-focusVisible': {
+                boxShadow: isRecording
+                  ? '0 0 0 4px rgba(239, 68, 68, 0.12), 0 0 12px rgba(239, 68, 68, 0.08)'
+                  : `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}, 0 0 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                transform: 'scale(1.15)',
+              },
+              '&:active': {
+                transform: 'scale(1.2)',
+              },
+            },
+            '& .MuiSlider-rail': {
+              backgroundColor: WHITE_14,
+            },
+            '& .MuiSlider-track': {
+              border: 'none',
             },
           }}
         />
@@ -326,8 +351,10 @@ export function AnimationControls() {
                 sx={(theme) => ({
                   bgcolor: alpha(theme.palette.primary.main, 0.15),
                   color: 'primary.main',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
                     bgcolor: alpha(theme.palette.primary.main, 0.25),
+                    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
                   },
                 })}
               >
@@ -342,6 +369,14 @@ export function AnimationControls() {
                 onClick={() => { setProgress(0); setIsPlaying(false); }}
                 disabled={isRecording}
                 aria-label="Reiniciar animação"
+                sx={{
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    bgcolor: alpha(BRAND_PRIMARY, 0.08),
+                    color: BRAND_PRIMARY_LIGHT,
+                    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                }}
               >
                 <ReplayIcon />
               </IconButton>
@@ -405,6 +440,14 @@ export function AnimationControls() {
                   onClick={handleDownloadImage}
                   disabled={progress === 0 || isRecording}
                   aria-label="Baixar imagem"
+                  sx={{
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover:not(:disabled)': {
+                      bgcolor: alpha(BRAND_PRIMARY, 0.08),
+                      color: BRAND_PRIMARY_LIGHT,
+                      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                    },
+                  }}
                 >
                   <PhotoCameraIcon />
                 </IconButton>
@@ -417,7 +460,14 @@ export function AnimationControls() {
                   onClick={handleDownloadVideo}
                   disabled={isRecording}
                   aria-label="Baixar vídeo"
-                  sx={isRecording ? { color: ERROR_MAIN } : undefined}
+                  sx={isRecording ? { color: ERROR_MAIN } : {
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      bgcolor: alpha(BRAND_PRIMARY, 0.08),
+                      color: BRAND_PRIMARY_LIGHT,
+                      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                    },
+                  }}
                 >
                   {isRecording
                     ? <CircularProgress size={20} sx={{ color: ERROR_MAIN }} />
@@ -427,18 +477,20 @@ export function AnimationControls() {
             </Tooltip>
 
             <Tooltip title={batchMode !== 'idle' ? 'Sair da fila' : 'Enviar nova imagem'}>
-              <Button
-                onClick={batchMode !== 'idle' ? clearQueue : resetJob}
-                disabled={isRecording}
-                startIcon={<ImageIcon sx={{ fontSize: 18 }} />}
-                sx={(theme) => ({
-                  color: 'text.primary',
-                  bgcolor: alpha(theme.palette.background.default, 0.5),
-                  '&:hover': {
-                    bgcolor: alpha(theme.palette.common.white, 0.08),
-                  },
-                })}
-              >
+                <Button
+                  onClick={batchMode !== 'idle' ? clearQueue : resetJob}
+                  disabled={isRecording}
+                  startIcon={<ImageIcon sx={{ fontSize: 18 }} />}
+                  sx={{
+                    color: 'text.primary',
+                    bgcolor: alpha(BRAND_PRIMARY, 0.08),
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      bgcolor: alpha(BRAND_PRIMARY, 0.15),
+                      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                    },
+                  }}
+                >
                 <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'inline' } }}>
                   {batchMode !== 'idle' ? 'Sair/Cancelar' : 'Nova Imagem'}
                 </Typography>

@@ -9,6 +9,12 @@ interface WarningToastProps {
   onDismiss: () => void;
 }
 
+const TOAST_SX = {
+  width: '100%',
+  alignItems: 'center',
+  minWidth: { xs: 'min(92vw, 320px)', sm: 400 },
+} as const;
+
 /** Snackbar de aviso para falhas parciais (ex: cenas que falharam na geração). */
 export function WarningToast({ warning, onDismiss }: WarningToastProps) {
   return (
@@ -33,7 +39,7 @@ export function WarningToast({ warning, onDismiss }: WarningToastProps) {
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         }
-        sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
+        sx={TOAST_SX}
       >
         {warning}
       </Alert>

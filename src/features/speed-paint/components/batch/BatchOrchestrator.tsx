@@ -6,7 +6,10 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { useAnimationStore } from '../../store/animationStore';
 import { generateStrokesFromImage } from '../../lib/imageProcessing';
 import { createLogger } from '../../../../lib/logger';
-import { ERROR_MAIN } from '../../../../theme/tokens';
+import {
+  ERROR_MAIN,
+  BRAND_GRADIENT,
+} from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 
 const log = createLogger('BatchOrchestrator');
@@ -92,11 +95,24 @@ export function BatchOrchestrator() {
         })}
         role="alert"
       >
-        <ErrorOutlineOutlined sx={{ fontSize: 40, color: ERROR_MAIN, mb: 1.5 }} />
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            background: BRAND_GRADIENT,
+            opacity: 0.2,
+            mb: 1.5,
+          }}
+        >
+          <ErrorOutlineOutlined sx={{ fontSize: 40, color: ERROR_MAIN }} />
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: '-0.02em', mb: 0.5 }}>
           Falha ao processar imagem
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
           {nextInQueue
             ? 'Avançando automaticamente para a próxima imagem...'
             : 'Todas as imagens restantes na fila serão puladas.'}

@@ -33,6 +33,7 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_MEDIUM: 12,
   RADIUS_SM: 8,
   RADIUS_XS: 4,
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
 }));
 
 const defaultProps = {

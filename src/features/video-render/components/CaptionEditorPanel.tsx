@@ -30,6 +30,7 @@ import {
   WHITE_10,
   WHITE_14,
   BRAND_PRIMARY,
+  BRAND_PRIMARY_LIGHT,
   BRAND_PRIMARY_GLOW_SOFT,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -208,6 +209,7 @@ const PhraseCard = React.memo(function PhraseCard({
           backgroundColor: isActive ? BRAND_PRIMARY_GLOW_SOFT : WHITE_08,
           borderColor: isActive ? BRAND_PRIMARY : WHITE_14,
           borderLeftColor: isActive ? BRAND_PRIMARY : WHITE_14,
+          transform: 'translateX(2px)',
         },
         '&:focus-visible': {
           outline: `2px solid ${BRAND_PRIMARY}`,
@@ -247,7 +249,14 @@ const PhraseCard = React.memo(function PhraseCard({
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onConfirmEdit(editValue); }}
-                  sx={{ color: 'success.main' }}
+                  sx={{
+                    color: 'success.main',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.12)',
+                      transform: 'scale(1.08)',
+                    },
+                  }}
                 >
                   <CheckOutlined sx={{ fontSize: ICON_SIZE_LG }} />
                 </IconButton>
@@ -256,6 +265,13 @@ const PhraseCard = React.memo(function PhraseCard({
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onCancelEdit(); }}
+                  sx={{
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      color: 'error.main',
+                      boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.12)',
+                    },
+                  }}
                 >
                   <CloseOutlined sx={{ fontSize: ICON_SIZE_LG }} />
                 </IconButton>
@@ -269,7 +285,11 @@ const PhraseCard = React.memo(function PhraseCard({
                   onClick={(e) => { e.stopPropagation(); onToggleTiming(); }}
                   sx={{
                     transform: isTimingExpanded ? 'rotate(180deg)' : 'none',
-                    transition: `transform ${HOVER_TRANSITION_DURATION} ease`,
+                    transition: `transform ${HOVER_TRANSITION_DURATION} cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease, box-shadow 0.2s ease`,
+                    '&:hover': {
+                      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                      color: BRAND_PRIMARY_LIGHT,
+                    },
                   }}
                 >
                   <ExpandMoreOutlined sx={{ fontSize: ICON_SIZE_LG }} />
@@ -279,6 +299,13 @@ const PhraseCard = React.memo(function PhraseCard({
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onStartEdit(); }}
+                  sx={{
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                      color: BRAND_PRIMARY_LIGHT,
+                    },
+                  }}
                 >
                   <EditOutlined sx={{ fontSize: ICON_SIZE_LG }} />
                 </IconButton>
@@ -287,7 +314,14 @@ const PhraseCard = React.memo(function PhraseCard({
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                  sx={{ color: TEXT_DISABLED, '&:hover': { color: ERROR_MAIN } }}
+                  sx={{
+                    color: TEXT_DISABLED,
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      color: ERROR_MAIN,
+                      boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.12)',
+                    },
+                  }}
                 >
                   <DeleteOutlineOutlined sx={{ fontSize: ICON_SIZE_LG }} />
                 </IconButton>
@@ -327,6 +361,12 @@ const PhraseCard = React.memo(function PhraseCard({
               '& .MuiOutlinedInput-notchedOutline': {
                 borderRadius: RADIUS_SM,
                 borderColor: BRAND_PRIMARY,
+              },
+              '& .MuiOutlinedInput-root': {
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: BRAND_PRIMARY_LIGHT,
+                  boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                },
               },
             }}
           />
@@ -383,6 +423,14 @@ const PhraseCard = React.memo(function PhraseCard({
                 '& .MuiOutlinedInput-root': {
                   fontSize: '0.75rem',
                   height: 32,
+                  transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease',
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: BRAND_PRIMARY_LIGHT,
+                    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: WHITE_14,
+                  },
                 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderRadius: RADIUS_SM,
@@ -427,6 +475,14 @@ const PhraseCard = React.memo(function PhraseCard({
                 '& .MuiOutlinedInput-root': {
                   fontSize: '0.75rem',
                   height: 32,
+                  transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease',
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: BRAND_PRIMARY_LIGHT,
+                    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: WHITE_14,
+                  },
                 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderRadius: RADIUS_SM,
@@ -503,12 +559,12 @@ const AddPhraseButton = React.memo(function AddPhraseButton({ onClick }: AddPhra
         height: ADD_BUTTON_HEIGHT,
         cursor: 'pointer',
         borderTop: `1px solid ${WHITE_04}`,
-        transition: 'border-color 0.15s ease, background-color 0.15s ease',
+        transition: 'border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         color: TEXT_DISABLED,
         '&:hover': {
           borderTopColor: WHITE_10,
           backgroundColor: WHITE_08,
-          color: TEXT_SECONDARY,
+          color: BRAND_PRIMARY_LIGHT,
         },
         '&:focus-visible': {
           outline: `2px solid ${BRAND_PRIMARY}`,
@@ -751,7 +807,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
           {/* Cabeçalho */}
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: 2 }}>
             <ClosedCaptionOutlined sx={{ fontSize: HEADER_ICON_SIZE, color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
               Editor de legendas
             </Typography>
             <Chip
@@ -770,11 +826,15 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
             sx={{
               maxHeight: PHRASE_LIST_MAX_HEIGHT,
               overflowY: 'auto',
+              scrollBehavior: 'smooth',
               '&::-webkit-scrollbar': { width: 4 },
               '&::-webkit-scrollbar-track': { background: 'transparent' },
               '&::-webkit-scrollbar-thumb': {
                 borderRadius: 2,
                 backgroundColor: WHITE_08,
+                '&:hover': {
+                  backgroundColor: WHITE_14,
+                },
               },
             }}
           >
@@ -815,7 +875,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
           </Stack>
 
           {/* Rodapé informativo */}
-          <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: TEXT_SECONDARY }}>
+          <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: TEXT_SECONDARY, lineHeight: 1.7 }}>
             {totalWords} palavras em {phrases.length} {phrases.length === 1 ? 'frase' : 'frases'}
             {' '}&middot;{' '}
             Clique em uma frase para pular no vídeo. Use **negrito** para destacar palavras.

@@ -24,8 +24,10 @@ import {
   BRAND_GRADIENT,
   BRAND_GRADIENT_HOVER,
   BRAND_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
   WHITE_08,
   SUCCESS_MAIN,
+  SUCCESS_GLOW,
   WARNING_BG_SUBTLE,
   ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
@@ -125,7 +127,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         {/* Cabeçalho */}
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: 2 }}>
           <ClosedCaption sx={{ fontSize: 22, color: 'primary.main' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
             Legendas
           </Typography>
         </Stack>
@@ -150,8 +152,8 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
             sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
           >
             <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center' }}>
-              <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN }} />
-              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600 }}>
+              <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN, filter: `drop-shadow(0 0 6px ${SUCCESS_GLOW})` }} />
+              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: '-0.01em' }}>
                 {captionCount} palavras transcritas
               </Typography>
               {sourceLabel && (
@@ -192,27 +194,38 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         {isTranscribing && (
           <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }} noWrap>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', letterSpacing: '-0.01em' }} noWrap>
                 {transcriptionStatusText}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                 {Math.round(transcriptionProgress)}%
               </Typography>
             </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={transcriptionProgress}
-              aria-label="Progresso da transcrição"
+            <Box
               sx={{
+                position: 'relative',
                 height: 8,
                 borderRadius: RADIUS_CHIP,
                 bgcolor: WHITE_08,
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: RADIUS_CHIP,
-                  background: BRAND_GRADIENT,
-                },
+                overflow: 'hidden',
               }}
-            />
+            >
+              <LinearProgress
+                variant="determinate"
+                value={transcriptionProgress}
+                aria-label="Progresso da transcrição"
+                sx={{
+                  height: 8,
+                  borderRadius: RADIUS_CHIP,
+                  bgcolor: 'transparent',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: RADIUS_CHIP,
+                    background: BRAND_GRADIENT,
+                    boxShadow: `0 0 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                }}
+              />
+            </Box>
             <Button
               variant="outlined"
               color="error"
@@ -270,7 +283,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
               spacing={{ xs: GAP_MEDIUM, sm: GAP_DEFAULT }}
               sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between' }}
             >
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
                 {whisperSupported
                   ? 'Transcreve o áudio com Whisper para legendas palavra-a-palavra sincronizadas.'
                   : 'Distribui o roteiro proporcionalmente pelo tempo de áudio.'}

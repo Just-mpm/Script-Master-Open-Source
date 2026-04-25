@@ -171,6 +171,13 @@ const components: Components = {
               color: TEXT_PRIMARY,
             },
           },
+          {
+            props: { variant: 'filled', color: 'warning' },
+            style: {
+              backgroundColor: alpha(WARNING_MAIN, 0.92),
+              color: TEXT_PRIMARY,
+            },
+          },
         ],
       },
     },

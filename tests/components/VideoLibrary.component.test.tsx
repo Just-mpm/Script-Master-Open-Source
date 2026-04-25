@@ -65,6 +65,7 @@ vi.mock('../../src/theme/tokens', () => ({
   EMPTY_WRAPPER_PADDING_XS: 16,
   EMPTY_WRAPPER_PADDING_MD: 24,
   BLACK_66: 'rgba(0,0,0,0.66)',
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
 }));
 
 describe('VideoLibrary', () => {

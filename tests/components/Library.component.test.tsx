@@ -81,6 +81,7 @@ vi.mock('../../src/theme/tokens', () => ({
   EMPTY_WRAPPER_MAX_WIDTH: 400,
   EMPTY_WRAPPER_PADDING_XS: 16,
   EMPTY_WRAPPER_PADDING_MD: 24,
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
 }));
 
 describe('Library', () => {
@@ -232,6 +233,7 @@ describe('Library', () => {
       signup: vi.fn(),
       loginWithEmail: vi.fn(),
       resetPassword: vi.fn(),
+      deleteAccount: vi.fn(),
       logout: vi.fn(),
     });
 

@@ -13,6 +13,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
 import Add from '@mui/icons-material/Add';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import CloudUpload from '@mui/icons-material/CloudUpload';
@@ -21,8 +22,22 @@ import Description from '@mui/icons-material/Description';
 import Delete from '@mui/icons-material/Delete';
 import Psychology from '@mui/icons-material/Psychology';
 import type { Memory } from '../../../lib/db';
-import { BRAND_PRIMARY, BRAND_SECONDARY, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM } from '../../../theme/tokens';
-import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
+import {
+  BRAND_PRIMARY,
+  BRAND_SECONDARY,
+  BRAND_PRIMARY_GLOW_SOFT,
+  BRAND_SECONDARY_GLOW_SOFT,
+  APP_BORDER,
+  TEXT_DISABLED,
+  TEXT_SECONDARY,
+  ICON_SIZE_MD,
+  ICON_SIZE_LG,
+  GAP_COMPACT,
+  GAP_DEFAULT,
+  GAP_MEDIUM,
+  WHITE_06,
+} from '../../../theme/tokens';
+import { assistantDrawerPaperSx, assistantDrawerHeaderSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantMemoriesPanelProps {
   memories: Memory[];
@@ -62,23 +77,29 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
       }}
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Stack direction="row" sx={assistantDrawerHeaderSx}>
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <Psychology sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6">Memórias e documentos</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>Memórias e documentos</Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
               Ensine preferências, contexto de marca e anexos que ajudam o assistente a responder melhor.
             </Typography>
           </Stack>
 
-          <IconButton onClick={onClose} aria-label="Fechar memórias">
+          <IconButton
+            onClick={onClose}
+            aria-label="Fechar memórias"
+            sx={{
+              '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT },
+            }}
+          >
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Stack>
 
-          <Stack spacing={2} sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Stack spacing={2} sx={{ p: 2.5, borderBottom: `1px solid ${APP_BORDER}` }}>
           <Box component="form" onSubmit={onSubmit}>
             <TextField
               fullWidth
@@ -90,7 +111,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                       <Button type="submit" variant="contained" size="small" startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />}>
+                      <Button type="submit" variant="contained" size="small" startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />}>
                         Salvar
                       </Button>
                     </InputAdornment>
@@ -115,14 +136,20 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                 <Typography variant="subtitle2">Base de conhecimento</Typography>
               </Stack>
 
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                 Envie .md, .txt ou .csv com diretrizes, documentação ou repertório que o assistente deve considerar.
               </Typography>
 
               <Button
                 onClick={() => documentInputRef.current?.click()}
                 variant="outlined"
-                 startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
+                startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
+                sx={{
+                  '&:hover': {
+                    borderColor: BRAND_PRIMARY,
+                    backgroundColor: BRAND_SECONDARY_GLOW_SOFT,
+                  },
+                }}
               >
                 Anexar documento
               </Button>
@@ -152,9 +179,22 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
             </List>
           ) : memories.length === 0 ? (
             <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 280, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
-                <Description sx={{ fontSize: 42, color: 'text.secondary' }} />
-              <Typography variant="subtitle1">Ainda não há memórias salvas</Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  backgroundColor: BRAND_SECONDARY_GLOW_SOFT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 0.5,
+                }}
+              >
+                <Description sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
+              </Box>
+              <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Ainda não há memórias salvas</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, maxWidth: 320 }}>
                 Salve preferências e referências para tornar as respostas mais consistentes com sua operação.
               </Typography>
             </Stack>
@@ -166,12 +206,31 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                   disablePadding
                   secondaryAction={
                     <Tooltip title="Excluir memória">
-                      <IconButton edge="end" onClick={() => onDeleteMemory(memory.id)} color="error" aria-label="Excluir memória">
-                         <Delete sx={{ fontSize: ICON_SIZE_MD }} />
+                      <IconButton
+                        edge="end"
+                        onClick={() => onDeleteMemory(memory.id)}
+                        color="error"
+                        aria-label="Excluir memória"
+                        sx={{
+                          opacity: 0.5,
+                          transition: 'opacity 0.15s ease',
+                          '&:hover': { opacity: 1 },
+                        }}
+                      >
+                        <Delete sx={{ fontSize: ICON_SIZE_MD }} />
                       </IconButton>
                     </Tooltip>
                   }
-                  sx={(theme) => ({ ...assistantInsetSx(theme), alignItems: 'flex-start', p: 2, pr: 7 })}
+                  sx={(theme) => ({
+                    ...assistantInsetSx(theme),
+                    alignItems: 'flex-start',
+                    p: 2,
+                    pr: 7,
+                    transition: 'background-color 0.15s ease',
+                    '&:hover': {
+                      backgroundColor: alpha(WHITE_06, 0.3),
+                    },
+                  })}
                 >
                   <ListItemText
                     primary={memory.content.length > 320 ? `${memory.content.slice(0, 320)}…` : memory.content}
@@ -180,11 +239,11 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                       primary: {
                         variant: 'body2',
                         color: 'text.primary',
-                        sx: { whiteSpace: 'pre-wrap', pr: 1 },
+                        sx: { whiteSpace: 'pre-wrap', pr: 1, lineHeight: 1.5 },
                       },
                       secondary: {
                         variant: 'caption',
-                        color: 'text.secondary',
+                        color: TEXT_SECONDARY,
                       },
                     }}
                   />
@@ -197,4 +256,3 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
     </Drawer>
   );
 });
-

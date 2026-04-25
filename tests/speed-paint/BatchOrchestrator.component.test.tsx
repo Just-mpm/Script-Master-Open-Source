@@ -27,6 +27,7 @@ vi.mock('../../src/lib/logger', () => ({
 // Mock do tokens
 vi.mock('../../src/theme/tokens', () => ({
   ERROR_MAIN: '#ef4444',
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2e75b6, #f7941e)',
 }));
 
 // Mock do surfaces

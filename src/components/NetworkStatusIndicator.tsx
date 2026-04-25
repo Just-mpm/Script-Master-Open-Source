@@ -31,11 +31,15 @@ export function NetworkStatusIndicator() {
           fontSize: '0.75rem',
           fontWeight: 600,
           lineHeight: 1,
+          letterSpacing: '0.02em',
           whiteSpace: 'nowrap',
           cursor: 'default',
         }}
       >
-        <WifiOff sx={{ fontSize: ICON_SIZE_SM }} aria-hidden="true" />
+        <WifiOff
+          sx={{ fontSize: ICON_SIZE_SM, animation: 'pulse 2s ease-in-out infinite' }}
+          aria-hidden="true"
+        />
         Offline
       </Typography>
     </Tooltip>

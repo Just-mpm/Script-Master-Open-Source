@@ -323,7 +323,7 @@ export default function FaqPage() {
       {/* Seção "Ainda tem dúvidas?" */}
       <Box sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}>
         <Box sx={{ maxWidth: 560, mx: 'auto', px: 2 }}>
-          <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2, letterSpacing: '-0.03em' }}>
             {STILL_HAVE_DOUBTS_TITLE}
           </Typography>
           <Typography

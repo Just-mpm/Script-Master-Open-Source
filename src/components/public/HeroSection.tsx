@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import {
   APP_MAX_WIDTH,
   BRAND_GRADIENT,
+  BRAND_PRIMARY_GLOW,
   BRAND_SECONDARY_GLOW_SOFT,
   TEXT_SECONDARY,
 } from '../../theme/tokens';
@@ -41,6 +42,8 @@ export function HeroSection({
         alignItems: 'center',
         justifyContent: 'center',
         order: visualPosition === 'left' ? { md: -1, xs: undefined } : undefined,
+        position: 'relative',
+        zIndex: 2,
       }}
     >
       {visual}
@@ -100,6 +103,7 @@ export function HeroSection({
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-0.04em',
                 }}
               >
                 {title}
@@ -112,7 +116,7 @@ export function HeroSection({
                   color: TEXT_SECONDARY,
                   fontWeight: 400,
                   maxWidth: 560,
-                  lineHeight: 1.6,
+                  lineHeight: 1.7,
                 }}
               >
                 {subtitle}
@@ -133,7 +137,12 @@ export function HeroSection({
                     sx={{
                       px: 4,
                       py: 1.5,
-                      boxShadow: `0 18px 44px ${BRAND_SECONDARY_GLOW_SOFT}`,
+                      boxShadow: `0 12px 36px ${BRAND_SECONDARY_GLOW_SOFT}`,
+                      transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+                      '&:hover': {
+                        boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
+                        transform: 'translateY(-1px)',
+                      },
                     }}
                   >
                     {primaryCta.label}
@@ -146,7 +155,15 @@ export function HeroSection({
                     variant="outlined"
                     color="primary"
                     size="large"
-                    sx={{ px: 4, py: 1.5 }}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      borderWidth: 1.5,
+                      transition: 'border-color 0.2s ease, background-color 0.2s ease',
+                      '&:hover': {
+                        borderWidth: 1.5,
+                      },
+                    }}
                   >
                     {secondaryCta.label}
                   </Button>

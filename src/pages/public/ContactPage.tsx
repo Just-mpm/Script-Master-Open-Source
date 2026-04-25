@@ -6,6 +6,7 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import EmailIcon from '@mui/icons-material/Email';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -153,11 +154,11 @@ function ContactInfoItem({ info }: { info: ContactInfo }) {
         alignItems: 'center',
         p: 2,
         borderRadius: 2,
-        transition: 'background-color 0.2s ease',
+        transition: 'background-color 0.2s ease, transform 0.2s ease',
         textDecoration: 'none',
         color: 'inherit',
         '&:hover': info.href
-          ? { backgroundColor: WHITE_04 }
+          ? { backgroundColor: WHITE_04, transform: 'translateX(4px)' }
           : {},
       }}
     >
@@ -232,6 +233,7 @@ function ContactInfoPanel() {
               sx={{
                 color: TEXT_SECONDARY,
                 borderColor: WHITE_12,
+                transition: 'color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
                 '&:hover': {
                   color: BRAND_PRIMARY,
                   borderColor: BRAND_PRIMARY,
@@ -262,11 +264,14 @@ function ContactForm() {
     setErrors((prev) => ({ ...prev, [field]: false }));
   };
 
-  /** Valida campos obrigatórios e retorna true se tudo válido */
+  /** Validação regex básica de email */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Valida campos obrigatórios e formato de email. Retorna true se tudo válido */
   const validate = (): boolean => {
     const newErrors: FormErrors = {
       name: form.name.trim().length === 0,
-      email: form.email.trim().length === 0,
+      email: form.email.trim().length === 0 || !EMAIL_REGEX.test(form.email.trim()),
       message: form.message.trim().length === 0,
     };
     setErrors(newErrors);
@@ -297,10 +302,17 @@ function ContactForm() {
       <Typography
         variant="h5"
         component="h2"
-        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 3 }}
+        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 1 }}
       >
         Envie uma mensagem
       </Typography>
+
+      <Alert severity="info" variant="outlined" sx={{ mb: 3 }}>
+        Ao enviar, seu cliente de email será aberto com os dados preenchidos. Se preferir, envie diretamente para{' '}
+        <Box component="span" sx={{ fontWeight: 600 }}>
+          contato@scriptmaster.app
+        </Box>.
+      </Alert>
 
       <Stack spacing={2.5}>
         {/* Nome */}
@@ -325,7 +337,7 @@ function ContactForm() {
           value={form.email}
           onChange={(e) => handleChange('email', e)}
           error={errors.email}
-          helperText={errors.email ? 'Email é obrigatório' : ' '}
+          helperText={errors.email ? (form.email.trim().length === 0 ? 'Email é obrigatório' : 'Formato de email inválido') : ' '}
         />
 
         {/* Assunto */}

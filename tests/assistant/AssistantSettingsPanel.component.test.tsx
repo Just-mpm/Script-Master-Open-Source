@@ -12,7 +12,13 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 // Mock dos tokens
 vi.mock('../../src/theme/tokens', () => ({
+  BRAND_PRIMARY: '#2E75B6',
   BRAND_SECONDARY: '#8b5cf6',
+  BRAND_SECONDARY_GLOW_SOFT: 'rgba(247,148,30,0.12)',
+  APP_BORDER: 'rgba(255,255,255,0.08)',
+  APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
+  TEXT_SECONDARY: 'rgba(248,250,252,0.68)',
   ICON_SIZE_MD: 20,
   ICON_SIZE_LG: 28,
   GAP_DEFAULT: 12,
@@ -23,6 +29,7 @@ vi.mock('../../src/theme/tokens', () => ({
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantDrawerPaperSx: vi.fn(() => ({})),
   assistantInsetSx: vi.fn(() => ({})),
+  assistantDrawerHeaderSx: {},
 }));
 
 const defaultProps = {

@@ -7,7 +7,13 @@ import { alpha } from '@mui/material/styles';
 import { useDropzone } from 'react-dropzone';
 import { useAnimationStore } from '../../store/animationStore';
 import type { QueuedImage } from '../../types';
-import {   BRAND_PRIMARY_GLOW_SOFT, BRAND_PRIMARY } from '../../../../theme/tokens';
+import {
+  BRAND_PRIMARY,
+  BRAND_PRIMARY_LIGHT,
+  BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
+  BRAND_GRADIENT,
+} from '../../../../theme/tokens';
 
 export function ImageUpload() {
   const setQueue = useAnimationStore((s) => s.setQueue);
@@ -58,7 +64,7 @@ export function ImageUpload() {
         mx: 'auto',
         p: 6,
         border: '2px dashed',
-        borderColor: isDragActive ? 'primary.main' : 'divider',
+        borderColor: isDragActive ? BRAND_PRIMARY_LIGHT : 'divider',
         borderRadius: 3,
         cursor: 'pointer',
         display: 'flex',
@@ -67,18 +73,20 @@ export function ImageUpload() {
         justifyContent: 'center',
         minHeight: 260,
         bgcolor: isDragActive
-          ? alpha(theme.palette.primary.main, 0.06)
+          ? alpha(BRAND_PRIMARY, 0.06)
           : alpha(theme.palette.background.paper, 0.4),
         backgroundImage: 'none',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        transition: 'border-color 200ms, background-color 200ms, box-shadow 200ms',
+        transition: 'border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         boxShadow: isDragActive
-          ? `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`
+          ? `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}, 0 0 32px ${BRAND_PRIMARY_GLOW}`
           : 'none',
+        transform: isDragActive ? 'scale(1.01)' : 'none',
         '&:hover': {
-          borderColor: 'primary.light',
+          borderColor: BRAND_PRIMARY_LIGHT,
           bgcolor: alpha(theme.palette.background.paper, 0.55),
+          boxShadow: `0 0 0 1px ${BRAND_PRIMARY_GLOW_SOFT}`,
         },
       })}
     >
@@ -90,16 +98,18 @@ export function ImageUpload() {
           borderRadius: '50%',
           display: 'grid',
           placeItems: 'center',
-          bgcolor: alpha(BRAND_PRIMARY, 0.1),
+          background: BRAND_GRADIENT,
+          opacity: isDragActive ? 0.25 : 0.15,
           mb: 2.5,
+          transition: 'opacity 0.3s ease',
         }}
       >
-        <CloudUploadIcon sx={{ fontSize: 28, color: 'primary.main' }} aria-hidden="true" />
+        <CloudUploadIcon sx={{ fontSize: 28, color: BRAND_PRIMARY_LIGHT }} aria-hidden="true" />
       </Box>
-      <Typography variant="h6" sx={{ mb: 0.75, fontWeight: 700 }}>
+      <Typography variant="h6" sx={{ mb: 0.75, fontWeight: 700, letterSpacing: '-0.02em' }}>
         {isDragActive ? 'Solte as imagens aqui' : 'Envie uma ou mais imagens'}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420, lineHeight: 1.7 }}>
         Arraste e solte suas imagens aqui, ou use o botão abaixo.
         Suporta JPG, PNG e WebP. Processamento em lote suportado!
       </Typography>
@@ -108,7 +118,14 @@ export function ImageUpload() {
         component="label"
         variant="outlined"
         startIcon={<CloudUploadIcon />}
-        sx={{ mt: 2 }}
+        sx={{
+          mt: 2,
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            borderColor: BRAND_PRIMARY_LIGHT,
+            boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+          },
+        }}
       >
         Escolher arquivos
         <input {...getInputProps()} style={{ display: 'none' }} />

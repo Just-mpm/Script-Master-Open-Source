@@ -85,10 +85,10 @@ export default function FuncionalidadesPage() {
       <PageLayout>
       {/* Hero */}
       <Box sx={{ textAlign: 'center', pb: { xs: 6, md: 8 } }}>
-        <Typography variant="h1" component="h1" sx={{ mb: 2 }}>
+        <Typography variant="h1" component="h1" sx={{ mb: 2, letterSpacing: '-0.04em' }}>
           Tudo que você precisa para criar
         </Typography>
-        <Typography variant="h6" component="p" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', fontWeight: 400 }}>
+        <Typography variant="h6" component="p" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', fontWeight: 400, lineHeight: 1.7 }}>
           Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional.
         </Typography>
       </Box>
@@ -97,7 +97,7 @@ export default function FuncionalidadesPage() {
       {SECTIONS.map((section) => (
         <Box key={section.id} id={section.id} sx={{ scrollMarginTop: 80 }}>
           <Box sx={{ mb: { xs: 3, md: 4 } }}>
-            <Typography variant="h4" component="h2">
+            <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
               {section.title}
             </Typography>
           </Box>

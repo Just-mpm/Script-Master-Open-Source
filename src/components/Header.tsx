@@ -19,10 +19,16 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState, type ElementType } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
 import ImageIcon from '@mui/icons-material/Image';
 import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
+import DeleteForever from '@mui/icons-material/DeleteForever';
 import Mic from '@mui/icons-material/Mic';
 import Palette from '@mui/icons-material/Palette';
 import Person from '@mui/icons-material/Person';
@@ -30,8 +36,23 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
-import { useLocation } from 'react-router-dom';
-import { APP_HEADER_HEIGHT, APP_MAX_WIDTH, BRAND_GRADIENT,   BRAND_PRIMARY_GLOW, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM, APP_SURFACE, APP_BORDER, WHITE_05, WHITE_015 } from '../theme/tokens';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  APP_HEADER_HEIGHT,
+  APP_MAX_WIDTH,
+  BRAND_GRADIENT,
+  BRAND_PRIMARY_GLOW,
+  ICON_SIZE_MD,
+  ICON_SIZE_SM,
+  ICON_SIZE_LG,
+  GAP_COMPACT,
+  GAP_MEDIUM,
+  APP_SURFACE,
+  APP_BORDER,
+  SHADOW_DEEP,
+  WHITE_05,
+  WHITE_015,
+} from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 
 interface NavItem {
@@ -51,15 +72,39 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function Header() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, deleteAccount } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const closeDrawer = () => setDrawerOpen(false);
+
+  const handleOpenDeleteDialog = () => {
+    setDeleteConfirmText('');
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setDeleteConfirmText('');
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (deleteConfirmText !== 'EXCLUIR') return;
+    setIsDeleting(true);
+    try {
+      await deleteAccount();
+    } catch {
+      // Erro já tratado no AuthContext
+      setIsDeleting(false);
+    }
+  };
 
   /** Estilo glass do drawer (fundo + borda) */
   const drawerPaperSx = {
@@ -69,10 +114,35 @@ export function Header() {
   };
 
   return (
-    <AppBar position="sticky" component="header" role="banner">
+    <AppBar
+      position="sticky"
+      component="header"
+      role="banner"
+      sx={{
+        transition: 'box-shadow 0.3s ease, background-color 0.3s ease',
+        '&:not(:first-of-type)': {
+          boxShadow: `0 4px 24px ${SHADOW_DEEP}`,
+        },
+      }}
+    >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1, md: 1.5 } }}>
-          <Stack direction="row" spacing={1.5} sx={{ minWidth: 0, flexShrink: 0, alignItems: 'center' }}>
+          {/* Logo — clicável para voltar ao estúdio */}
+          <Box
+            component={Link}
+            to="/app/estudio"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              textDecoration: 'none',
+              color: 'inherit',
+              minWidth: 0,
+              flexShrink: 0,
+              transition: 'opacity 0.2s ease',
+              '&:hover': { opacity: 0.88 },
+            }}
+          >
             <Box
               aria-hidden="true"
               sx={{
@@ -83,21 +153,25 @@ export function Header() {
                 placeItems: 'center',
                 color: 'common.white',
                 background: BRAND_GRADIENT,
-                boxShadow: `0 18px 40px ${BRAND_PRIMARY_GLOW}`,
+                boxShadow: `0 4px 16px ${BRAND_PRIMARY_GLOW}`,
+                transition: 'box-shadow 0.3s ease',
               }}
             >
               <Mic sx={{ fontSize: ICON_SIZE_LG }} />
             </Box>
 
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: 'text.secondary', lineHeight: 1.1, letterSpacing: '0.08em', fontSize: '0.625rem' }}
+              >
                 AI Studio
               </Typography>
               <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
                 Script Master
               </Typography>
             </Box>
-          </Stack>
+          </Box>
 
           {/* Navegação desktop — oculta em mobile */}
           {!isMobile && (
@@ -130,22 +204,22 @@ export function Header() {
                 return (
                   <Button
                     key={item.to}
-                    href={item.to}
+                    component={Link}
+                    to={item.to}
                     aria-current={isActive ? 'page' : undefined}
-                    variant={isActive ? 'contained' : 'text'}
-                    color={item.accent && isActive ? 'secondary' : 'primary'}
+                    variant="text"
                     sx={{
                       flexShrink: 0,
                       minWidth: 'auto',
                       px: { xs: 1, sm: 1.75 },
                       color: isActive ? 'common.white' : item.accent ? 'secondary.light' : 'text.secondary',
-                      bgcolor: isActive && !item.accent ? 'action.hover' : undefined,
+                      bgcolor: isActive ? 'action.selected' : 'transparent',
+                      fontWeight: isActive ? 600 : 400,
+                      borderRadius: 1.5,
+                      transition: 'color 0.2s ease, background-color 0.2s ease',
                       '&:hover': {
-                        bgcolor: isActive
-                          ? item.accent
-                            ? 'secondary.dark'
-                            : 'action.hover'
-                          : 'action.hover',
+                        bgcolor: isActive ? 'action.selected' : 'action.hover',
+                        color: 'text.primary',
                       },
                     }}
                     startIcon={<Icon sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />}
@@ -174,12 +248,18 @@ export function Header() {
                       color="inherit"
                       aria-label="Abrir menu de navegação"
                       onClick={toggleDrawer}
+                      sx={{
+                        color: 'text.secondary',
+                        transition: 'color 0.2s ease',
+                        '&:hover': { color: 'text.primary' },
+                      }}
                     >
                       <MenuIcon sx={{ fontSize: ICON_SIZE_LG }} />
                     </IconButton>
                   </Tooltip>
                 )}
 
+                <Tooltip title={user.email ?? user.displayName ?? 'Usuário'}>
                 <Paper
                   variant="outlined"
                   sx={(theme) => ({
@@ -187,6 +267,10 @@ export function Header() {
                     px: { xs: 1, sm: 1.5 },
                     py: 0.75,
                     borderRadius: 8,
+                    transition: 'border-color 0.2s ease',
+                    '&:hover': {
+                      borderColor: 'rgba(255, 255, 255, 0.14)',
+                    },
                   })}
                 >
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -202,21 +286,40 @@ export function Header() {
                       variant="body2"
                       sx={{ display: { xs: 'none', lg: 'block' }, color: 'text.secondary', fontWeight: 600 }}
                     >
-                      {user.displayName?.split(' ')[0] ?? 'Conta'}
+                      {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'Conta'}
                     </Typography>
                   </Stack>
                 </Paper>
+                </Tooltip>
 
                 {!isMobile && (
                   <Tooltip title="Sair">
-                    <IconButton onClick={logout} color="error" aria-label="Sair">
+                    <IconButton
+                      onClick={logout}
+                      color="error"
+                      aria-label="Sair"
+                      sx={{
+                        transition: 'background-color 0.2s ease, color 0.2s ease',
+                      }}
+                    >
                       <Logout sx={{ fontSize: ICON_SIZE_LG }} />
                     </IconButton>
                   </Tooltip>
                 )}
               </>
             ) : (
-              <Button href="/login" variant="contained" startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}>
+              <Button
+                component={Link}
+                to="/login"
+                variant="contained"
+                startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}
+                sx={{
+                  transition: 'box-shadow 0.2s ease',
+                  '&:hover': {
+                    boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW}`,
+                  },
+                }}
+              >
                 Login
               </Button>
             ))}
@@ -233,6 +336,11 @@ export function Header() {
         ModalProps={{ keepMounted: true }}
         slotProps={{ paper: { sx: drawerPaperSx } }}
         aria-label="Menu de navegação"
+        sx={{
+          '& .MuiDrawer-paper': {
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          },
+        }}
       >
         {/* Cabeçalho do drawer */}
         <Box sx={{ px: 2.5, py: 2 }}>
@@ -269,7 +377,8 @@ export function Header() {
               return (
                 <ListItemButton
                   key={item.to}
-                  href={item.to}
+                  component={Link}
+                  to={item.to}
                   aria-current={isActive ? 'page' : undefined}
                   selected={isActive}
                   sx={{
@@ -280,17 +389,15 @@ export function Header() {
                       : item.accent
                         ? 'secondary.light'
                         : 'text.secondary',
-                    bgcolor: isActive ? 'action.hover' : 'transparent',
+                    bgcolor: isActive ? 'action.selected' : 'transparent',
+                    transition: 'color 0.2s ease, background-color 0.2s ease',
                     '&:hover': {
-                      bgcolor: isActive
-                        ? item.accent
-                          ? 'secondary.dark'
-                          : 'action.hover'
-                        : 'action.hover',
+                      bgcolor: isActive ? 'action.selected' : 'action.hover',
+                      color: 'text.primary',
                     },
                     '&.Mui-selected': {
-                      bgcolor: 'action.hover',
-                      '&:hover': { bgcolor: 'action.hover' },
+                      bgcolor: 'action.selected',
+                      '&:hover': { bgcolor: 'action.selected' },
                     },
                   }}
                 >
@@ -307,7 +414,7 @@ export function Header() {
           </List>
         </Box>
 
-        {/* Rodapé do drawer — logout */}
+        {/* Rodapé do drawer — ações da conta */}
         {user && (
           <>
             <Divider sx={{ borderColor: APP_BORDER }} />
@@ -317,6 +424,7 @@ export function Header() {
                 sx={{
                   borderRadius: 2,
                   color: 'error.main',
+                  transition: 'background-color 0.2s ease',
                   '&:hover': { bgcolor: 'action.hover' },
                 }}
               >
@@ -328,10 +436,74 @@ export function Header() {
                   slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 400 } } }}
                 />
               </ListItemButton>
+              <ListItemButton
+                onClick={() => { closeDrawer(); handleOpenDeleteDialog(); }}
+                sx={{
+                  borderRadius: 2,
+                  color: 'error.main',
+                  opacity: 0.7,
+                  transition: 'background-color 0.2s ease, opacity 0.2s ease',
+                  '&:hover': { bgcolor: 'action.hover', opacity: 1 },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                  <DeleteForever sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Excluir conta"
+                  slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 400 } } }}
+                />
+              </ListItemButton>
             </Box>
           </>
         )}
       </Drawer>
+
+      {/* Dialog de confirmação de exclusão de conta */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={isDeleting ? undefined : handleCloseDeleteDialog}
+        fullWidth
+        maxWidth="xs"
+        aria-labelledby="delete-account-title"
+        slotProps={{
+          paper: { sx: { borderRadius: 2 } },
+        }}
+      >
+        <DialogTitle id="delete-account-title">
+          {isDeleting ? 'Excluindo conta...' : 'Excluir conta permanentemente'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+            Esta ação não pode ser desfeita. Todos os seus projetos, áudios, imagens, vídeos, memórias e configurações serão permanentemente removidos.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Digite <strong>EXCLUIR</strong> para confirmar:
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="EXCLUIR"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            disabled={isDeleting}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleCloseDeleteDialog} color="inherit" disabled={isDeleting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmDeleteAccount}
+            color="error"
+            variant="contained"
+            disabled={deleteConfirmText !== 'EXCLUIR' || isDeleting}
+          >
+            {isDeleting ? 'Excluindo...' : 'Excluir conta'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 }

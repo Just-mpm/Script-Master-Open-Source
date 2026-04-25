@@ -25,15 +25,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   APP_HEADER_HEIGHT,
   APP_MAX_WIDTH,
+  APP_BORDER,
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
   ICON_SIZE_MD,
   ICON_SIZE_LG,
   GAP_MEDIUM,
   APP_SURFACE,
-  APP_BORDER,
   WHITE_05,
   WHITE_015,
+  SHADOW_DEEP,
 } from '../../theme/tokens';
 import { glassSurfaceSx } from '../../theme/surfaces';
 
@@ -66,7 +68,17 @@ export function PublicHeader() {
   };
 
   return (
-    <AppBar position="sticky" component="header" role="banner">
+    <AppBar
+      position="sticky"
+      component="header"
+      role="banner"
+      sx={{
+        transition: 'box-shadow 0.3s ease, background-color 0.3s ease',
+        '&:not(:first-of-type)': {
+          boxShadow: `0 4px 24px ${SHADOW_DEEP}`,
+        },
+      }}
+    >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1, md: 1.5 } }}>
           {/* Logo */}
@@ -81,6 +93,8 @@ export function PublicHeader() {
               color: 'inherit',
               minWidth: 0,
               flexShrink: 0,
+              transition: 'opacity 0.2s ease',
+              '&:hover': { opacity: 0.88 },
             }}
           >
             <Box
@@ -93,13 +107,14 @@ export function PublicHeader() {
                 placeItems: 'center',
                 color: 'common.white',
                 background: BRAND_GRADIENT,
-                boxShadow: `0 18px 40px ${BRAND_PRIMARY_GLOW}`,
+                boxShadow: `0 4px 16px ${BRAND_PRIMARY_GLOW}`,
+                transition: 'box-shadow 0.3s ease',
               }}
             >
               <Mic sx={{ fontSize: ICON_SIZE_LG }} />
             </Box>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1 }}>
+              <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1, letterSpacing: '0.08em', fontSize: '0.625rem' }}>
                 AI Studio
               </Typography>
               <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
@@ -137,7 +152,9 @@ export function PublicHeader() {
                       bgcolor: isActive ? 'action.selected' : 'transparent',
                       fontWeight: isActive ? 600 : 400,
                       px: 1.5,
+                      py: 0.75,
                       borderRadius: 1.5,
+                      transition: 'color 0.2s ease, background-color 0.2s ease',
                       '&:hover': { color: 'text.primary', bgcolor: isActive ? 'action.selected' : 'action.hover' },
                     }}
                   >
@@ -150,35 +167,54 @@ export function PublicHeader() {
 
           {isMobile && <Box sx={{ flex: 1 }} />}
 
-          {/* CTA / Avatar */}
+          {/* CTA / Avatar — mobile: sempre mostrar hamburger + botão */}
           {!loading && (
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
+              {isMobile && (
+                <IconButton
+                  color="inherit"
+                  aria-label="Menu"
+                  onClick={toggleDrawer}
+                  sx={{
+                    color: 'text.secondary',
+                    transition: 'color 0.2s ease',
+                    '&:hover': { color: 'text.primary' },
+                  }}
+                >
+                  <MenuIcon sx={{ fontSize: ICON_SIZE_LG }} />
+                </IconButton>
+              )}
               {user ? (
-                <>
-                  {isMobile && (
-                    <IconButton color="inherit" aria-label="Menu" onClick={toggleDrawer}>
-                      <MenuIcon sx={{ fontSize: ICON_SIZE_LG }} />
-                    </IconButton>
-                  )}
-                  <Button
-                    component={Link}
-                    to="/app/estudio"
-                    variant="contained"
-                    startIcon={<AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
-                    size="small"
-                  >
-                    Abrir App
-                  </Button>
-                </>
+                <Button
+                  component={Link}
+                  to="/app/estudio"
+                  variant="contained"
+                  startIcon={<AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
+                  size="small"
+                  sx={{
+                    transition: 'box-shadow 0.2s ease',
+                    '&:hover': {
+                      boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                    },
+                  }}
+                >
+                  Abrir App
+                </Button>
               ) : (
                 <Button
                   component={Link}
                   to="/login"
                   variant="contained"
-                  startIcon={<Login sx={{ fontSize: ICON_SIZE_MD }} />}
+                  startIcon={!isMobile ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
                   size="small"
+                  sx={{
+                    transition: 'box-shadow 0.2s ease',
+                    '&:hover': {
+                      boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                    },
+                  }}
                 >
-                  Entrar
+                  {isMobile ? 'Entrar' : 'Entrar'}
                 </Button>
               )}
             </Stack>
@@ -195,6 +231,11 @@ export function PublicHeader() {
         ModalProps={{ keepMounted: true }}
         slotProps={{ paper: { sx: drawerPaperSx } }}
         aria-label="Menu de navegação"
+        sx={{
+          '& .MuiDrawer-paper': {
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          },
+        }}
       >
         <Box sx={{ px: 2.5, py: 2 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -236,6 +277,7 @@ export function PublicHeader() {
                     mb: 0.5,
                     color: isActive ? 'text.primary' : 'text.secondary',
                     bgcolor: isActive ? 'action.selected' : 'transparent',
+                    transition: 'color 0.2s ease, background-color 0.2s ease',
                     '&:hover': { bgcolor: isActive ? 'action.selected' : 'action.hover', color: 'text.primary' },
                   }}
                 >
@@ -255,7 +297,12 @@ export function PublicHeader() {
             <Box sx={{ px: 1, py: 1 }}>
               <ListItemButton
                 onClick={() => { closeDrawer(); logout(); }}
-                sx={{ borderRadius: 2, color: 'error.main', '&:hover': { bgcolor: 'action.hover' } }}
+                sx={{
+                  borderRadius: 2,
+                  color: 'error.main',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
                   <Logout sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />

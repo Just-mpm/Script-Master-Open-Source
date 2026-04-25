@@ -19,6 +19,7 @@ export function SocialProofBar({ label, sublabel }: SocialProofBarProps) {
         py: { xs: 3, md: 4 },
         borderTop: `1px solid ${APP_BORDER}`,
         borderBottom: `1px solid ${APP_BORDER}`,
+        position: 'relative',
       }}
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
@@ -40,6 +41,7 @@ export function SocialProofBar({ label, sublabel }: SocialProofBarProps) {
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.02em',
             }}
           >
             {label}
@@ -51,7 +53,7 @@ export function SocialProofBar({ label, sublabel }: SocialProofBarProps) {
                 flexItem
                 sx={{ display: { xs: 'none', sm: 'block' }, borderColor: APP_BORDER }}
               />
-              <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+              <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
                 {sublabel}
               </Typography>
             </>

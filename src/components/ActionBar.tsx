@@ -237,6 +237,7 @@ export function ActionBar({
             py: 1.25,
             borderRadius: 8,
             pointerEvents: 'auto',
+            borderTop: '1px solid rgba(46, 117, 182, 0.15)',
           })}
         >
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
@@ -258,7 +259,11 @@ export function ActionBar({
                   mt: 0.5,
                   height: 8,
                   borderRadius: RADIUS_CHIP,
-                    bgcolor: 'action.hover',
+                  bgcolor: 'action.hover',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundImage: BRAND_GRADIENT,
+                    borderRadius: RADIUS_CHIP,
+                  },
                 }}
               />
               </Stack>
@@ -283,6 +288,7 @@ export function ActionBar({
             px: { xs: 1.5, sm: 2, md: 3 },
             py: { xs: 1.5, md: 1.75 },
             pointerEvents: 'auto',
+            borderTop: '1px solid rgba(46, 117, 182, 0.15)',
           })}
         >
           <Stack
@@ -311,6 +317,10 @@ export function ActionBar({
                       height: 8,
                       borderRadius: RADIUS_CHIP,
                       bgcolor: WHITE_08,
+                      '& .MuiLinearProgress-bar': {
+                        backgroundImage: BRAND_GRADIENT,
+                        borderRadius: RADIUS_CHIP,
+                      },
                     }}
                   />
                 </Stack>
@@ -325,8 +335,14 @@ export function ActionBar({
                       color: 'primary.contrastText',
                           background: BRAND_GRADIENT,
                       boxShadow: BRAND_GLOW,
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                       '&:hover': {
                             background: BRAND_GRADIENT_HOVER,
+                            transform: 'scale(1.06)',
+                            boxShadow: '0 18px 48px rgba(46, 117, 182, 0.36)',
+                      },
+                      '&:active': {
+                            transform: 'scale(0.98)',
                       },
                     }}
                   >
@@ -359,8 +375,13 @@ export function ActionBar({
                           cursor: 'pointer',
                           overflow: 'hidden',
                           outline: 'none',
+                          transition: 'height 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': {
+                            height: 12,
+                          },
                           '&:focus-visible': {
                             boxShadow: BRAND_GLOW_FOCUS,
+                            height: 12,
                           },
                         }}
                       >
@@ -398,6 +419,12 @@ export function ActionBar({
                             ? BRAND_PRIMARY_GLOW_SOFT
                             : 'action.hover',
                           color: isExportingVideo ? 'primary.main' : 'default',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': {
+                            bgcolor: isExportingVideo
+                              ? BRAND_PRIMARY_GLOW_SOFT
+                              : BRAND_PRIMARY_GLOW_SOFT,
+                          },
                         }}
                       >
                         {isExportingVideo
@@ -419,6 +446,10 @@ export function ActionBar({
                           aria-label={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}
                           sx={{
                             bgcolor: isSaved ? 'success.main' : 'action.hover',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                              bgcolor: isSaved ? 'success.main' : BRAND_PRIMARY_GLOW_SOFT,
+                            },
                           }}
                         >
                           {isSaved ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <Bookmark sx={{ fontSize: ICON_SIZE_MD }} />}
@@ -430,7 +461,11 @@ export function ActionBar({
                       <IconButton
                         onClick={(event) => setDownloadAnchorEl(event.currentTarget)}
                         aria-label="Opções de download"
-                        sx={{ bgcolor: 'action.hover' }}
+                        sx={{
+                          bgcolor: 'action.hover',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': { bgcolor: BRAND_PRIMARY_GLOW_SOFT },
+                        }}
                       >
                         <Download sx={{ fontSize: ICON_SIZE_MD }} />
                       </IconButton>
@@ -439,7 +474,12 @@ export function ActionBar({
                 ) : null}
 
                 {isGenerating ? (
-                  <Button onClick={handleCancel} variant="outlined" color="error" startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />}>
+                  <Button onClick={handleCancel} variant="outlined" color="error" startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />} sx={{
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      boxShadow: '0 4px 16px rgba(239, 68, 68, 0.2)',
+                    },
+                  }}>
                     Cancelar
                   </Button>
                 ) : null}

@@ -9,13 +9,18 @@ import {
 // Mock das dependências de tema
 vi.mock('../../src/theme/tokens', () => ({
   APP_BORDER: 'rgba(255,255,255,0.08)',
+  APP_BORDER_STRONG: 'rgba(255,255,255,0.14)',
   APP_SURFACE: 'rgba(20,20,30,1)',
   APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
   SHADOW_DEEP: 'rgba(0,0,0,0.5)',
   WHITE_04: 'rgba(255,255,255,0.04)',
   WHITE_01: 'rgba(255,255,255,0.01)',
+  WHITE_06: 'rgba(255,255,255,0.06)',
   WHITE_08: 'rgba(255,255,255,0.08)',
+  WHITE_10: 'rgba(255,255,255,0.10)',
   BLACK_50: 'rgba(0,0,0,0.5)',
+  BRAND_PRIMARY: '#2E75B6',
+  BRAND_SECONDARY: '#F7941E',
   GAP_COMPACT: 4,
   GAP_MEDIUM: 8,
   GAP_DEFAULT: 12,

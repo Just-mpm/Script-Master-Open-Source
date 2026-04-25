@@ -249,9 +249,12 @@ export function RegisterPage() {
                             bgcolor: 'action.hover',
                             color: 'primary.main',
                             flexShrink: 0,
-                            transition: 'background-color 0.2s ease, transform 0.2s ease',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            transition: 'background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                             '&:hover': {
                               bgcolor: 'action.selected',
+                              borderColor: 'rgba(46, 117, 182, 0.2)',
+                              boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.08)',
                               transform: 'scale(1.06)',
                             },
                           }}
@@ -336,7 +339,7 @@ export function RegisterPage() {
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}`,
+                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
                       },
                       '&:active': {
                         transform: 'translateY(0)',
@@ -416,7 +419,7 @@ export function RegisterPage() {
                           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover:not(.Mui-disabled)': {
                             transform: 'translateY(-1px)',
-                            boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}`,
+                            boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
                           },
                           '&:active:not(.Mui-disabled)': {
                             transform: 'translateY(0)',

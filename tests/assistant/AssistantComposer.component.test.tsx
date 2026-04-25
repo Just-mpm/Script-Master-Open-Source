@@ -16,6 +16,21 @@ vi.mock('../../src/theme/tokens', () => ({
   ICON_SIZE_SM: 16,
   ICON_SIZE_MD: 20,
   RADIUS_XS: 8,
+  WHITE_06: 'rgba(255,255,255,0.06)',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
+  BRAND_PRIMARY: '#2E75B6',
+  APP_BORDER: 'rgba(255,255,255,0.08)',
+  APP_BORDER_STRONG: 'rgba(255,255,255,0.14)',
+  APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
+  SHADOW_DEEP: 'rgba(0,0,0,0.5)',
+}));
+
+// Mock do assistantUi
+vi.mock('../../src/features/assistant/components/assistantUi', () => ({
+  assistantComposerContainerSx: vi.fn(() => ({})),
+  assistantComposerInputSx: vi.fn(() => ({})),
+  assistantAttachmentChipSx: {},
+  assistantSendButtonSx: {},
 }));
 
 const defaultProps = {
@@ -72,14 +87,17 @@ describe('AssistantComposer', () => {
     expect(btn.hasAttribute('disabled')).toBe(false);
   });
 
-  it('desabilita o botão Enviar quando isLoading é true', () => {
+  it('mostra botão de parar geração quando isLoading é true', () => {
     render(
       <AssistantComposer {...defaultProps} input='texto' isLoading={true} />,
       { wrapper: Wrapper },
     );
 
-    const btn = screen.getByRole('button', { name: /Enviar/i });
-    expect(btn.hasAttribute('disabled')).toBe(true);
+    // Quando loading, o botão "Enviar" é substituído por "Parar geração"
+    const stopBtn = screen.getByRole('button', { name: /Parar geração/i });
+    expect(stopBtn).toBeDefined();
+    // O botão de parar deve estar habilitado (permite interromper)
+    expect(stopBtn.hasAttribute('disabled')).toBe(false);
   });
 
   it('chama onInputChange ao digitar no campo de texto', async () => {
@@ -183,8 +201,8 @@ describe('AssistantComposer', () => {
       { wrapper: Wrapper },
     );
 
-    // O botão deve ter o indicador de loading
-    const btn = screen.getByRole('button', { name: /Enviar/i });
+    // Quando loading, o botão muda para "Parar geração"
+    const btn = screen.getByRole('button', { name: /Parar geração/i });
     expect(btn).toBeDefined();
   });
 

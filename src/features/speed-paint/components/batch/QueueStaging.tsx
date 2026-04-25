@@ -11,7 +11,16 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { alpha } from '@mui/material/styles';
 import { useAnimationStore } from '../../store/animationStore';
-import { ERROR_MAIN } from '../../../../theme/tokens';
+import {
+  ERROR_MAIN,
+  BRAND_GRADIENT,
+  BRAND_GRADIENT_HOVER,
+  BRAND_GLOW,
+  BRAND_PRIMARY,
+  BRAND_SECONDARY,
+  BRAND_SECONDARY_LIGHT,
+  BRAND_SECONDARY_GLOW_SOFT,
+} from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 import { SpeedSelector } from '../SpeedSelector';
 
@@ -56,10 +65,10 @@ export function QueueStaging() {
         }}
       >
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.03em', mb: 0.5 }}>
             Fila de Produção
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
             {queue.length} imagem(ns) na fila. Configure a velocidade padrão abaixo.
           </Typography>
         </Box>
@@ -103,9 +112,11 @@ export function QueueStaging() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'border-color 200ms',
+              transition: 'border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease',
               '&:hover': {
                 borderColor: alpha(theme.palette.common.white, 0.14),
+                transform: 'translateY(-2px)',
+                boxShadow: `0 8px 24px ${alpha(BRAND_PRIMARY, 0.06)}`,
               },
             })}
           >
@@ -200,7 +211,14 @@ export function QueueStaging() {
         <Button
           onClick={clearQueue}
           startIcon={<CancelIcon sx={{ fontSize: 18 }} />}
-          sx={{ color: 'text.secondary' }}
+          sx={{
+            color: 'text.secondary',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              color: ERROR_MAIN,
+              bgcolor: alpha(ERROR_MAIN, 0.06),
+            },
+          }}
         >
           Cancelar Fila
         </Button>
@@ -209,14 +227,33 @@ export function QueueStaging() {
           variant="contained"
           color="primary"
           startIcon={<PlayArrowIcon sx={{ fontSize: 18 }} />}
+          sx={{
+            background: BRAND_GRADIENT,
+            boxShadow: BRAND_GLOW,
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              background: BRAND_GRADIENT_HOVER,
+            },
+          }}
         >
           Apenas Assistir
         </Button>
         <Button
           onClick={startRecording}
           variant="contained"
-          color="secondary"
           startIcon={<VideocamIcon sx={{ fontSize: 18 }} />}
+          sx={{
+            background: `linear-gradient(135deg, ${BRAND_SECONDARY} 0%, ${BRAND_SECONDARY_LIGHT} 100%)`,
+            boxShadow: `0 12px 32px ${BRAND_SECONDARY_GLOW_SOFT}`,
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              background: `linear-gradient(135deg, ${BRAND_SECONDARY_LIGHT} 0%, ${BRAND_SECONDARY} 100%)`,
+            },
+          }}
         >
           Gravar Tudo Automático
         </Button>

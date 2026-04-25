@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -8,6 +8,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SavingsIcon from '@mui/icons-material/Savings';
+import Alert from '@mui/material/Alert';
 import { alpha } from '@mui/material/styles';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
@@ -122,7 +123,7 @@ const PLANS: readonly PlanData[] = [
       { text: 'Suporte prioritário', included: true },
     ],
     recommended: false,
-    ctaLabel: 'Falar com vendas',
+    ctaLabel: 'Em breve',
     ctaVariant: 'outlined',
   },
 ];
@@ -348,12 +349,12 @@ export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   /** Resolve o preço exibido com base no período de cobrança selecionado */
-  const getPrice = (plan: PlanData): string => {
+  const getPrice = useCallback((plan: PlanData): string => {
     if (billingPeriod === 'annual' && plan.priceAnnual) {
       return plan.priceAnnual;
     }
     return plan.priceMonthly;
-  };
+  }, [billingPeriod]);
 
   const seo = getPageSeo({
     title: 'Preços e Planos',
@@ -399,7 +400,7 @@ export default function PricingPage() {
       </Box>
 
       {/* Cards de planos — Grid 3 colunas */}
-      <Box sx={{ pb: { xs: 8, md: 12 } }}>
+      <Box sx={{ pb: { xs: 4, md: 6 } }}>
         <Grid container spacing={3}>
           {PLANS.map((plan) => (
             <Grid size={{ xs: 12, md: 4 }} key={plan.name}>
@@ -412,22 +413,31 @@ export default function PricingPage() {
                 recommended={plan.recommended}
                 ctaLabel={plan.ctaLabel}
                 ctaVariant={plan.ctaVariant}
-                onCtaClick={() => navigate('/login')}
+                ctaDisabled={plan.name !== 'Gratuito'}
+                ctaTooltip="Pagamentos em breve — fique ligado nas novidades!"
+                onCtaClick={plan.name === 'Gratuito' ? () => navigate('/login') : undefined}
               />
             </Grid>
           ))}
         </Grid>
       </Box>
 
+      {/* Disclaimer — limites não aplicados */}
+      <Box sx={{ pb: { xs: 6, md: 8 }, mx: { xs: 2, sm: 3 } }}>
+        <Alert severity="info" variant="outlined">
+          Os limites por plano ainda não são aplicados automaticamente. Todos os recursos estão disponíveis para uso durante o período de desenvolvimento.
+        </Alert>
+      </Box>
+
       {/* Tabela Comparativa */}
       <Box sx={{ pb: { xs: 8, md: 12 } }} id="comparison">
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             Compare os planos em detalhes
           </Typography>
           <Typography
             variant="body1"
-            sx={{ color: 'text.secondary', maxWidth: 520, mx: 'auto' }}
+            sx={{ color: 'text.secondary', maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}
           >
             Veja lado a lado tudo que cada plano oferece para escolher o melhor para suas
             necessidades.

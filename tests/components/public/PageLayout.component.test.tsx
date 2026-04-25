@@ -25,6 +25,8 @@ vi.mock('../../../src/components/public/PublicFooter', () => ({
 
 vi.mock('../../../src/theme/tokens', () => ({
   APP_MAX_WIDTH: 1600,
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+  APP_BACKGROUND: '#050816',
 }));
 
 describe('PageLayout', () => {

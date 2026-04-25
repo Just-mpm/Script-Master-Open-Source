@@ -10,6 +10,8 @@ const mockCreateUserWithEmailAndPassword = vi.fn();
 const mockSignInWithEmailAndPassword = vi.fn();
 const mockSignInWithPopup = vi.fn();
 const mockSendPasswordResetEmail = vi.fn();
+const mockSendEmailVerification = vi.fn();
+const mockDeleteUser = vi.fn();
 const mockSignOut = vi.fn();
 
 vi.mock('../../src/lib/firebase', () => ({
@@ -19,6 +21,8 @@ vi.mock('../../src/lib/firebase', () => ({
   signInWithEmailAndPassword: (...args: unknown[]) => mockSignInWithEmailAndPassword(...args),
   createUserWithEmailAndPassword: (...args: unknown[]) => mockCreateUserWithEmailAndPassword(...args),
   sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
+  sendEmailVerification: (...args: unknown[]) => mockSendEmailVerification(...args),
+  deleteUser: (...args: unknown[]) => mockDeleteUser(...args),
   signOut: (...args: unknown[]) => mockSignOut(...args),
   onAuthStateChanged: vi.fn().mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
     callback(null);
@@ -93,10 +97,10 @@ describe('AuthContext', () => {
 
   it('deve expor login, signup, loginWithEmail, resetPassword e logout como funções', () => {
     function ActionsChecker() {
-      const { login, signup, loginWithEmail, resetPassword, logout, clearAuthError } = useAuth();
+      const { login, signup, loginWithEmail, resetPassword, deleteAccount, logout, clearAuthError } = useAuth();
       return (
         <span data-testid="actions">
-          {typeof login} {typeof signup} {typeof loginWithEmail} {typeof resetPassword} {typeof logout} {typeof clearAuthError}
+          {typeof login} {typeof signup} {typeof loginWithEmail} {typeof resetPassword} {typeof deleteAccount} {typeof logout} {typeof clearAuthError}
         </span>
       );
     }
@@ -108,7 +112,7 @@ describe('AuthContext', () => {
     );
 
     expect(screen.getByTestId('actions').textContent).toBe(
-      'function function function function function function'
+      'function function function function function function function'
     );
   });
 
@@ -155,6 +159,58 @@ describe('AuthContext', () => {
         'novo@test.com',
         'senha123'
       );
+    });
+
+    it('deve chamar sendEmailVerification após cadastro bem-sucedido', async () => {
+      mockCreateUserWithEmailAndPassword.mockResolvedValue({ user: { uid: 'new-uid', email: 'novo@test.com' } });
+      mockSendEmailVerification.mockResolvedValue(undefined);
+
+      function SignupTest() {
+        const { signup } = useAuth();
+        return (
+          <button onClick={() => signup('novo@test.com', 'senha123')}>Cadastrar</button>
+        );
+      }
+
+      render(
+        <AuthProvider>
+          <SignupTest />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Cadastrar').click();
+      });
+
+      expect(mockSendEmailVerification).toHaveBeenCalled();
+    });
+
+    it('não deve falhar signup se sendEmailVerification falhar', async () => {
+      mockCreateUserWithEmailAndPassword.mockResolvedValue({ user: { uid: 'new-uid', email: 'novo@test.com' } });
+      mockSendEmailVerification.mockRejectedValue(new Error('Email not sent'));
+
+      function SignupTest() {
+        const { signup, authError: err } = useAuth();
+        return (
+          <>
+            <button onClick={() => signup('novo@test.com', 'senha123')}>Cadastrar</button>
+            <span data-testid="auth-error">{err ?? 'null'}</span>
+          </>
+        );
+      }
+
+      render(
+        <AuthProvider>
+          <SignupTest />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Cadastrar').click();
+      });
+
+      // signup não deve setar authError quando sendEmailVerification falha
+      expect(screen.getByTestId('auth-error').textContent).toBe('null');
     });
 
     it('deve setar wasLoginRequested e disparar COEP reload em sucesso', async () => {
@@ -636,6 +692,112 @@ describe('AuthContext', () => {
         expect.anything(),
         expect.anything()
       );
+    });
+  });
+
+  // ─── deleteAccount ──────────────────────────────────────────
+
+  describe('deleteAccount', () => {
+    it('deve chamar deleteUser quando usuário está logado', async () => {
+      const mockUser = { uid: 'u1', email: 'user@test.com' };
+      const { auth: authMock } = await import('../../src/lib/firebase');
+      Object.defineProperty(authMock, 'currentUser', { value: mockUser, writable: true, configurable: true });
+      mockDeleteUser.mockResolvedValue(undefined);
+
+      // Spy de window.location.href
+      const locationSetSpy = vi.fn();
+      const origDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: {
+          ...window.location,
+          set href(value: string) { locationSetSpy(value); },
+        },
+      });
+
+      function DeleteTest() {
+        const { deleteAccount } = useAuth();
+        return <button onClick={() => deleteAccount().catch(() => {})}>Excluir</button>;
+      }
+
+      render(
+        <AuthProvider>
+          <DeleteTest />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Excluir').click();
+      });
+
+      expect(mockDeleteUser).toHaveBeenCalledWith(mockUser);
+      expect(locationSetSpy).toHaveBeenCalledWith('/login');
+
+      // Cleanup
+      Object.defineProperty(authMock, 'currentUser', { value: null, writable: true, configurable: true });
+      if (origDescriptor) Object.defineProperty(window, 'location', origDescriptor);
+    });
+
+    it('deve setar authError quando não há usuário logado', async () => {
+      function DeleteTest() {
+        const { deleteAccount, authError: err } = useAuth();
+        return (
+          <>
+            <button onClick={() => deleteAccount().catch(() => {})}>Excluir</button>
+            <span data-testid="auth-error">{err ?? 'null'}</span>
+          </>
+        );
+      }
+
+      render(
+        <AuthProvider>
+          <DeleteTest />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Excluir').click();
+      });
+
+      expect(screen.getByTestId('auth-error').textContent).toBe('Nenhum usuário logado para excluir.');
+      expect(mockDeleteUser).not.toHaveBeenCalled();
+    });
+
+    it('deve exibir mensagem pt-BR para "requires-recent-login"', async () => {
+      const mockUser = { uid: 'u1', email: 'user@test.com' };
+      const { auth: authMock } = await import('../../src/lib/firebase');
+      Object.defineProperty(authMock, 'currentUser', { value: mockUser, writable: true, configurable: true });
+
+      const authError = new Error('Requires recent login') as Error & { code: string };
+      authError.code = 'auth/requires-recent-login';
+      mockDeleteUser.mockRejectedValue(authError);
+
+      function DeleteTest() {
+        const { deleteAccount, authError: err } = useAuth();
+        return (
+          <>
+            <button onClick={() => deleteAccount().catch(() => {})}>Excluir</button>
+            <span data-testid="auth-error">{err ?? 'null'}</span>
+          </>
+        );
+      }
+
+      render(
+        <AuthProvider>
+          <DeleteTest />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Excluir').click();
+      });
+
+      expect(screen.getByTestId('auth-error').textContent).toBe(
+        'Sessão expirada. Faça login novamente e tente excluir sua conta.'
+      );
+
+      // Cleanup
+      Object.defineProperty(authMock, 'currentUser', { value: null, writable: true, configurable: true });
     });
   });
 

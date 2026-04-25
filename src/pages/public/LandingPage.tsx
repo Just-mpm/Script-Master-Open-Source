@@ -120,7 +120,8 @@ export default function LandingPage() {
               width: '100%',
               height: 'auto',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 20px 60px rgba(46, 117, 182, 0.3))',
+              filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
+              borderRadius: 2,
             }}
           />
         }
@@ -135,10 +136,14 @@ export default function LandingPage() {
       {/* Features Highlights — Grid 3x2 */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography
+            variant="h3"
+            component="h2"
+            sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+          >
             Tudo que você precisa para criar
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
             Seis ferramentas integradas em uma única plataforma para transformar suas ideias em conteúdo profissional.
           </Typography>
         </Box>
@@ -240,10 +245,10 @@ export default function LandingPage() {
       {/* Como Funciona — 3 steps */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             Como Funciona
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 480, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 480, mx: 'auto', lineHeight: 1.7 }}>
             Três passos para transformar seu roteiro em conteúdo profissional.
           </Typography>
         </Box>
@@ -260,7 +265,7 @@ export default function LandingPage() {
       {/* Mais Features */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             E Muito Mais
           </Typography>
         </Box>

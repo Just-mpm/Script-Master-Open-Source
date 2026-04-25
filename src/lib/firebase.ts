@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  deleteUser,
   signOut,
   onAuthStateChanged,
   type User,
@@ -25,5 +27,5 @@ export const db = appletConfig.firestoreDatabaseId
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged };
+export { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged };
 export type { User };

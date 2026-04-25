@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Check from '@mui/icons-material/Check';
 import type { ElementType, ReactNode } from 'react';
-import { APP_MAX_WIDTH, TEXT_SECONDARY, ICON_SIZE_MD } from '../../theme/tokens';
+import { APP_MAX_WIDTH, TEXT_SECONDARY, ICON_SIZE_MD, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 
 interface FeatureShowcaseProps {
   /** Ícone representativo */
@@ -31,7 +31,12 @@ export function FeatureShowcase({
   const imageFirst = position === 'left';
 
   return (
-    <Box sx={{ py: { xs: 6, md: 10 } }}>
+    <Box
+      sx={{
+        py: { xs: 6, md: 10 },
+        position: 'relative',
+      }}
+    >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
@@ -66,20 +71,21 @@ export function FeatureShowcase({
                   placeItems: 'center',
                   bgcolor: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                   color: 'common.white',
+                  boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
                 })}
               >
                 <Icon sx={{ fontSize: 24 }} aria-hidden="true" />
               </Box>
 
-              <Typography variant="h4" component="h2">
+              <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
                 {title}
               </Typography>
 
-              <Typography variant="body1" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7 }}>
+              <Typography variant="body1" sx={{ color: TEXT_SECONDARY, lineHeight: 1.75 }}>
                 {description}
               </Typography>
 
-              <Stack spacing={1} sx={{ pt: 1 }}>
+              <Stack spacing={1.25} sx={{ pt: 1 }}>
                 {benefits.map((benefit) => (
                   <Stack key={benefit} direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
                     <Check
@@ -87,11 +93,11 @@ export function FeatureShowcase({
                         fontSize: ICON_SIZE_MD + 4,
                         color: 'secondary.main',
                         flexShrink: 0,
-                        mt: 0.25,
+                        mt: 0.3,
                       }}
                       aria-hidden="true"
                     />
-                    <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
+                    <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.65 }}>
                       {benefit}
                     </Typography>
                   </Stack>

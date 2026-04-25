@@ -15,6 +15,12 @@ function Wrapper({ children }: { children: ReactNode }) {
 vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY: '#06b6d4',
   BRAND_SECONDARY: '#8b5cf6',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  BRAND_SECONDARY_GLOW_SOFT: 'rgba(247,148,30,0.12)',
+  APP_BORDER: 'rgba(255,255,255,0.08)',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
+  TEXT_SECONDARY: 'rgba(248,250,252,0.68)',
+  WHITE_06: 'rgba(255,255,255,0.06)',
   ICON_SIZE_MD: 20,
   ICON_SIZE_LG: 28,
   GAP_COMPACT: 4,
@@ -26,6 +32,7 @@ vi.mock('../../src/theme/tokens', () => ({
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantDrawerPaperSx: vi.fn(() => ({})),
   assistantInsetSx: vi.fn(() => ({})),
+  assistantDrawerHeaderSx: {},
 }));
 
 const defaultProps = {

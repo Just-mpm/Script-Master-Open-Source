@@ -20,8 +20,18 @@ import History from '@mui/icons-material/History';
 import Search from '@mui/icons-material/Search';
 import SmartToy from '@mui/icons-material/SmartToy';
 import type { ChatSession } from '../../../lib/db';
-import { BRAND_PRIMARY, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT } from '../../../theme/tokens';
-import { assistantDrawerPaperSx, assistantInsetSx } from './assistantUi';
+import {
+  BRAND_PRIMARY,
+  BRAND_PRIMARY_GLOW_SOFT,
+  TEXT_DISABLED,
+  ICON_SIZE_SM,
+  ICON_SIZE_MD,
+  ICON_SIZE_LG,
+  GAP_COMPACT,
+  GAP_MEDIUM,
+  GAP_DEFAULT,
+} from '../../../theme/tokens';
+import { assistantDrawerPaperSx, assistantDrawerHeaderSx, assistantInsetSx, assistantHistoryItemSx } from './assistantUi';
 
 interface AssistantHistoryPanelProps {
   history: ChatSession[];
@@ -64,18 +74,24 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
       }}
     >
       <DialogContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Stack direction="row" sx={{ px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Stack direction="row" sx={assistantDrawerHeaderSx}>
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <History sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6">Histórico de chats</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>Histórico de chats</Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
               Retome conversas anteriores sem perder o contexto criativo.
             </Typography>
           </Stack>
 
-          <IconButton onClick={onClose} aria-label="Fechar histórico">
+          <IconButton
+            onClick={onClose}
+            aria-label="Fechar histórico"
+            sx={{
+              '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT },
+            }}
+          >
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Stack>
@@ -86,7 +102,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
             <TextField
               type="search"
               size="small"
-              placeholder="Buscar no histórico..."
+              placeholder="Buscar no histórico…"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               fullWidth
@@ -94,7 +110,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search sx={{ fontSize: ICON_SIZE_SM, color: 'text.secondary' }} />
+                      <Search sx={{ fontSize: ICON_SIZE_SM, color: TEXT_DISABLED }} />
                     </InputAdornment>
                   ),
                   ...(searchQuery ? {
@@ -131,24 +147,33 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
               ))}
             </List>
           ) : history.length === 0 ? (
-            <Stack spacing={2} sx={{ minHeight: 320, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
-              <History sx={{ fontSize: 44, color: 'text.secondary' }} />
+            <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 320, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 0.5,
+                }}
+              >
+                <History sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
+              </Box>
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1">Nenhum chat salvo ainda</Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Nenhum chat salvo ainda</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                   Quando você conversar com o assistente, as sessões aparecem aqui para reuso rápido.
                 </Typography>
               </Stack>
-              <Stack spacing={1} sx={{ width: '100%', maxWidth: 280 }}>
-                <Skeleton variant="rounded" animation="wave" height={64} />
-                <Skeleton variant="rounded" animation="wave" height={64} />
-              </Stack>
             </Stack>
           ) : filteredHistory.length === 0 ? (
-            <Stack spacing={2} sx={{ minHeight: 240, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
-              <Search sx={{ fontSize: 44, color: 'text.secondary' }} />
+            <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 240, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
+              <Search sx={{ fontSize: 44, color: TEXT_DISABLED }} />
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1">Nenhum chat encontrado</Typography>
+                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Nenhum chat encontrado</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Nenhuma sessão corresponde a &ldquo;{searchQuery}&rdquo;.
                 </Typography>
@@ -160,12 +185,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                 <Box key={session.id} sx={(theme) => ({ ...assistantInsetSx(theme), overflow: 'hidden' })}>
                   <ListItemButton
                     onClick={() => onSelectSession(session)}
-                    sx={{
-                      alignItems: 'flex-start',
-                      px: 2,
-                      py: 1.75,
-                      gap: GAP_MEDIUM,
-                    }}
+                    sx={assistantHistoryItemSx}
                   >
                     <ListItemIcon sx={{ minWidth: 0, mt: 0.2 }}>
                       <SmartToy sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
@@ -189,6 +209,11 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                         onClick={(event) => onDeleteHistory(event, session.id)}
                         color="error"
                         aria-label="Excluir conversa"
+                        sx={{
+                          opacity: 0.5,
+                          transition: 'opacity 0.15s ease',
+                          '&:hover': { opacity: 1 },
+                        }}
                       >
                         <Delete sx={{ fontSize: ICON_SIZE_MD }} />
                       </IconButton>
@@ -203,4 +228,3 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
     </Drawer>
   );
 });
-

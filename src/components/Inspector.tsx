@@ -9,8 +9,6 @@ import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-
-
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
@@ -30,8 +28,6 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import GraphicEq from '@mui/icons-material/GraphicEq';
 import Image from '@mui/icons-material/Image';
-
-
 import Pause from '@mui/icons-material/Pause';
 import People from '@mui/icons-material/People';
 import PlayArrow from '@mui/icons-material/PlayArrow';
@@ -41,7 +37,7 @@ import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 
 const MAX_STYLE_NOTES = 500;
 
@@ -232,6 +228,11 @@ export const Inspector = React.memo(function Inspector({
             px: { xs: 2.5, md: 3 },
             py: 2,
             textAlign: 'left',
+            borderRadius: { xs: 3, md: 4 },
+            transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            },
           }}
         >
           <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -242,7 +243,7 @@ export const Inspector = React.memo(function Inspector({
                   Voz do locutor
                 </Typography>
               </Stack>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                 Escolha a assinatura vocal e organize vozes para narração ou podcast.
               </Typography>
             </Stack>
@@ -350,7 +351,7 @@ export const Inspector = React.memo(function Inspector({
                         height: '100%',
                         overflow: 'hidden',
                         borderRadius: RADIUS_SM,
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                         borderColor: isActiveVoice
                           ? alpha(currentTheme.palette.primary.main, 0.55)
                           : alpha(currentTheme.palette.common.white, 0.08),
@@ -360,6 +361,19 @@ export const Inspector = React.memo(function Inspector({
                         boxShadow: isActiveVoice
                           ? `0 0 0 1px ${alpha(currentTheme.palette.primary.main, 0.35)}, 0 18px 45px ${alpha(currentTheme.palette.primary.main, 0.16)}`
                           : 'none',
+                        transform: 'translateY(0)',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          borderColor: isActiveVoice
+                            ? alpha(currentTheme.palette.primary.main, 0.65)
+                            : alpha(currentTheme.palette.common.white, 0.14),
+                          backgroundColor: isActiveVoice
+                            ? alpha(currentTheme.palette.primary.main, 0.16)
+                            : alpha(currentTheme.palette.background.default, 0.38),
+                          boxShadow: isActiveVoice
+                            ? `0 0 0 1px ${alpha(currentTheme.palette.primary.main, 0.45)}, 0 22px 54px ${alpha(currentTheme.palette.primary.main, 0.22)}`
+                            : `0 0 0 1px ${alpha(currentTheme.palette.common.white, 0.06)}, 0 8px 24px rgba(0, 0, 0, 0.2)`,
+                        },
                       })}
                     >
                       <ButtonBase
@@ -414,18 +428,22 @@ export const Inspector = React.memo(function Inspector({
                                 : hasError
                                   ? alpha(currentTheme.palette.error.main, 0.12)
                                   : alpha(currentTheme.palette.background.paper, 0.6),
-                              color: isPlaying ? currentTheme.palette.primary.contrastText
-                                : hasError
-                                  ? currentTheme.palette.error.main
-                                  : currentTheme.palette.text.secondary,
-                              '&:hover': {
-                                backgroundColor: isPlaying
-                                  ? currentTheme.palette.primary.dark
-                                  : hasError
-                                    ? alpha(currentTheme.palette.error.main, 0.2)
-                                    : alpha(currentTheme.palette.primary.main, 0.16),
-                              },
-                            })}
+          color: isPlaying ? currentTheme.palette.primary.contrastText
+            : hasError
+              ? currentTheme.palette.error.main
+              : currentTheme.palette.text.secondary,
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            backgroundColor: isPlaying
+              ? currentTheme.palette.primary.dark
+              : hasError
+                ? alpha(currentTheme.palette.error.main, 0.2)
+                : alpha(currentTheme.palette.primary.main, 0.16),
+            boxShadow: !isPlaying && !hasError
+              ? `0 6px 20px ${BRAND_PRIMARY_GLOW_SOFT}`
+              : 'none',
+          },
+        })}
                           >
                             {isPlaying
                               ? <Pause sx={{ fontSize: ICON_SIZE_SM }} />
@@ -456,11 +474,16 @@ export const Inspector = React.memo(function Inspector({
            aria-expanded={isDirectionOpen}
           aria-controls={directionSectionId}
            sx={{
-             width: '100%',
-             px: { xs: 2.5, md: 3 },
-             py: 2,
-             textAlign: 'left',
-           }}
+              width: '100%',
+              px: { xs: 2.5, md: 3 },
+              py: 2,
+              textAlign: 'left',
+              borderRadius: { xs: 3, md: 4 },
+              transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              },
+            }}
          >
            <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
              <Stack spacing={GAP_COMPACT}>
@@ -470,7 +493,7 @@ export const Inspector = React.memo(function Inspector({
                   Direção de arte
                 </Typography>
               </Stack>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                 Defina personagem, atmosfera e regras visuais para guiar a geração.
               </Typography>
             </Stack>

@@ -22,7 +22,7 @@ import Search from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
 import { GalleryCard } from './video-library/GalleryCard';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
 import { useProjectGallery } from './video-library/useProjectGallery';
@@ -100,7 +100,18 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     return (
       <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD } })}>
         <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center', textAlign: 'center' }}>
-          <FolderOpen sx={{ fontSize: 24, opacity: 0.35 }} />
+          <Box sx={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            background: BRAND_GRADIENT,
+            opacity: 0.2,
+            mb: 0.5,
+          }}>
+            <FolderOpen sx={{ fontSize: 24, color: 'common.white' }} />
+          </Box>
           <Stack spacing={GAP_COMPACT}>
             <Typography variant="h6">Sua galeria ainda está vazia</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -124,7 +135,18 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
     return (
       <Paper elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD } })}>
         <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center', textAlign: 'center' }}>
-          <Search sx={{ fontSize: 24, opacity: 0.35 }} />
+          <Box sx={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            background: BRAND_GRADIENT,
+            opacity: 0.2,
+            mb: 0.5,
+          }}>
+            <Search sx={{ fontSize: 24, color: 'common.white' }} />
+          </Box>
           <Stack spacing={GAP_COMPACT}>
             <Typography variant="h6">Nenhum resultado</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -166,7 +188,28 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
                 ),
               },
             }}
-            sx={{ width: 200 }}
+            sx={{
+              width: 200,
+              '& .MuiOutlinedInput-root': {
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.08)',
+                  borderWidth: 1,
+                },
+                '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.16)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#2E75B6',
+                    borderWidth: 2,
+                  },
+                  boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.15)',
+                },
+              },
+            }}
           />
 
           <Tooltip title={sortOrder === 'recent' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}>

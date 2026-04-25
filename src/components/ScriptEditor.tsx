@@ -17,7 +17,7 @@ import { MAX_CHARS } from '../lib/constants';
 import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16 } from '../theme/tokens';
+import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS } from '../theme/tokens';
 
 export interface ScriptEditorProps {
   script: string;
@@ -108,7 +108,7 @@ export function ScriptEditor({
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               opacity: 0.36,
-              transition: 'opacity 0.6s ease',
+              transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
         )}
@@ -159,12 +159,16 @@ export function ScriptEditor({
           >
             {script.length > 0 && !isGenerating && (
               <Stack direction="row" spacing={GAP_COMPACT}>
-                <Tooltip title={copiedScript ? 'Copiado!' : 'Copiar roteiro'}>
-                  <IconButton
+                  <Tooltip title={copiedScript ? 'Copiado!' : 'Copiar roteiro'}>
+                    <IconButton
                     onClick={() => void handleCopyScript()}
                     size="small"
                     aria-label="Copiar roteiro"
                     color={copiedScript ? 'success' : 'inherit'}
+                    sx={{
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': { bgcolor: BRAND_PRIMARY_GLOW_SOFT },
+                    }}
                   >
                     {copiedScript ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_MD }} />}
                   </IconButton>
@@ -174,7 +178,11 @@ export function ScriptEditor({
                   color="inherit"
                   onClick={handleClearScript}
                   aria-label="Limpar roteiro"
-                  sx={{ minHeight: 40 }}
+                  sx={{
+                    minHeight: 40,
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': { color: 'error.main' },
+                  }}
                 >
                   Limpar
                 </Button>
@@ -188,6 +196,7 @@ export function ScriptEditor({
                 fontFamily: 'monospace',
                 color: isOverLimit ? 'error.main' : 'text.secondary',
                 letterSpacing: '0.08em',
+                transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
               aria-label={`${script.length} de ${MAX_CHARS} caracteres utilizados`}
             >
@@ -226,11 +235,15 @@ export function ScriptEditor({
                 backdropFilter: 'none',
                 px: { xs: 0.5, sm: 1 },
                 py: { xs: 0.5, sm: 1 },
+                transition: 'box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '& fieldset': {
                   borderColor: 'transparent',
                 },
                 '&:hover fieldset, &.Mui-focused fieldset': {
                   borderColor: 'transparent',
+                },
+                '&.Mui-focused': {
+                  boxShadow: 'inset 0 -1px 0 rgba(46, 117, 182, 0.2)',
                 },
               },
               '& .MuiInputBase-inputMultiline': {
@@ -266,9 +279,17 @@ export function ScriptEditor({
                 fontWeight: 700,
                 backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
                 boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.32)}`,
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
                   boxShadow: `0 24px 56px ${alpha(theme.palette.primary.main, 0.38)}`,
+                  transform: 'translateY(-2px)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                },
+                '&:focus-visible': {
+                  boxShadow: BRAND_GLOW_FOCUS,
                 },
               })}
             >

@@ -47,19 +47,32 @@ export function safeSetItem(key: string, value: string): void {
 }
 
 export function getStoredValue(key: string, fallbackValue: string): string {
-  return localStorage.getItem(key) ?? fallbackValue;
+  try {
+    return localStorage.getItem(key) ?? fallbackValue;
+  } catch {
+    // Safari Private Browsing / storage desabilitado — fallback silencioso
+    return fallbackValue;
+  }
 }
 
 export function getStoredBoolean(key: string, fallbackValue = false): boolean {
-  const storedValue = localStorage.getItem(key);
-  return storedValue === null ? fallbackValue : storedValue === 'true';
+  try {
+    const storedValue = localStorage.getItem(key);
+    return storedValue === null ? fallbackValue : storedValue === 'true';
+  } catch {
+    return fallbackValue;
+  }
 }
 
 export function getStoredNumber(key: string, fallbackValue: number): number {
-  const raw = localStorage.getItem(key);
-  if (raw === null) return fallbackValue;
-  const storedValue = Number(raw);
-  return Number.isFinite(storedValue) && storedValue >= 0 ? storedValue : fallbackValue;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallbackValue;
+    const storedValue = Number(raw);
+    return Number.isFinite(storedValue) && storedValue >= 0 ? storedValue : fallbackValue;
+  } catch {
+    return fallbackValue;
+  }
 }
 
 export function isSceneRatio(value: string | null): value is SceneRatio {
@@ -67,8 +80,12 @@ export function isSceneRatio(value: string | null): value is SceneRatio {
 }
 
 export function getStoredSceneRatio(): SceneRatio {
-  const storedValue = localStorage.getItem(STORAGE_KEYS.sceneRatio);
-  return isSceneRatio(storedValue) ? storedValue : '16:9';
+  try {
+    const storedValue = localStorage.getItem(STORAGE_KEYS.sceneRatio);
+    return isSceneRatio(storedValue) ? storedValue : '16:9';
+  } catch {
+    return '16:9';
+  }
 }
 
 // ---------------------------------------------------------------------------

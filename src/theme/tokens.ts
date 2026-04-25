@@ -52,6 +52,8 @@ export const ERROR_BORDER = 'rgba(239, 68, 68, 0.14)';
 export const ERROR_BORDER_HOVER = 'rgba(239, 68, 68, 0.28)';
 export const ERROR_GLOW = 'rgba(239, 68, 68, 0.15)';
 export const WARNING_BG_SUBTLE = 'rgba(245, 158, 11, 0.08)';
+export const WARNING_BORDER = 'rgba(245, 158, 11, 0.14)';
+export const WARNING_GLOW = 'rgba(245, 158, 11, 0.15)';
 
 export const TEXT_PRIMARY = '#f8fafc';
 export const TEXT_SECONDARY = 'rgba(248, 250, 252, 0.68)';

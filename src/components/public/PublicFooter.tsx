@@ -11,6 +11,7 @@ import {
   APP_BORDER,
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
   ICON_SIZE_MD,
   TEXT_SECONDARY,
 } from '../../theme/tokens';
@@ -53,10 +54,20 @@ export function PublicFooter() {
     <Box
       component="footer"
       sx={{
-        borderTop: `1px solid ${APP_BORDER}`,
+        position: 'relative',
         mt: 'auto',
         pt: { xs: 6, md: 8 },
         pb: { xs: 4, md: 6 },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '10%',
+          right: '10%',
+          height: 1,
+          background: `linear-gradient(90deg, transparent 0%, ${BRAND_PRIMARY_GLOW} 50%, transparent 100%)`,
+        },
+        borderTop: `1px solid ${APP_BORDER}`,
       }}
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
@@ -67,7 +78,11 @@ export function PublicFooter() {
         >
           {/* Logo + descrição */}
           <Box sx={{ flex: { md: 1.5 }, minWidth: 0 }}>
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1.5 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: 'center', mb: 1.5 }}
+            >
               <Box
                 aria-hidden="true"
                 sx={{
@@ -78,7 +93,7 @@ export function PublicFooter() {
                   placeItems: 'center',
                   color: 'common.white',
                   background: BRAND_GRADIENT,
-                  boxShadow: `0 12px 28px ${BRAND_PRIMARY_GLOW}`,
+                  boxShadow: `0 4px 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
                 }}
               >
                 <Mic sx={{ fontSize: ICON_SIZE_MD }} />
@@ -87,7 +102,7 @@ export function PublicFooter() {
                 Script Master
               </Typography>
             </Stack>
-            <Typography variant="body2" sx={{ color: TEXT_SECONDARY, maxWidth: 320 }}>
+            <Typography variant="body2" sx={{ color: TEXT_SECONDARY, maxWidth: 320, lineHeight: 1.7 }}>
               Transforme roteiros em arte com IA. Áudio, vídeo e imagens profissionais gerados por Gemini.
             </Typography>
           </Box>
@@ -95,7 +110,7 @@ export function PublicFooter() {
           {/* Grupos de links */}
           {FOOTER_GROUPS.map((group) => (
             <Box key={group.title} sx={{ flex: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, fontSize: '0.8125rem', letterSpacing: '0.02em' }}>
                 {group.title}
               </Typography>
               <Stack spacing={0.75}>
@@ -108,8 +123,8 @@ export function PublicFooter() {
                     sx={{
                       color: TEXT_SECONDARY,
                       textDecoration: 'none',
-                      transition: 'color 0.2s',
-                      '&:hover': { color: 'text.primary' },
+                      transition: 'color 0.2s ease, padding-left 0.2s ease',
+                      '&:hover': { color: 'text.primary', pl: 0.5 },
                     }}
                   >
                     {link.label}
@@ -127,10 +142,10 @@ export function PublicFooter() {
           spacing={1}
           sx={{ justifyContent: 'space-between', alignItems: 'center' }}
         >
-          <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
+          <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
             &copy; {new Date().getFullYear()} Script Master. Todos os direitos reservados.
           </Typography>
-          <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
+          <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
             Feito com IA e Gemini
           </Typography>
         </Stack>

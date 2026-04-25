@@ -79,6 +79,11 @@ body {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 @media (max-width: 640px) {
   button,
   a {

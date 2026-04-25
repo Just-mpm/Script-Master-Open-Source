@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { alpha } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -31,6 +33,7 @@ import { AssistantSettingsPanel } from './components/AssistantSettingsPanel';
 import type { AssistantSettings, AssistantStudioState } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
+import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -347,7 +350,15 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       {!user ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
-          <Alert variant="outlined" severity="info">
+          <Alert
+            variant="outlined"
+            severity="info"
+            sx={{
+              borderRadius: 2,
+              borderColor: alpha(BRAND_PRIMARY, 0.24),
+              '& .MuiAlert-icon': { color: BRAND_PRIMARY },
+            }}
+          >
             Você pode usar o assistente sem login, mas o histórico, as memórias e as diretrizes ficam locais ao navegador atual.
           </Alert>
         </Box>
@@ -355,7 +366,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       {error ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
-          <Alert variant="outlined" severity="error">
+          <Alert
+            variant="outlined"
+            severity="error"
+            sx={{ borderRadius: 2 }}
+          >
             {error}
           </Alert>
         </Box>
@@ -390,16 +405,26 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         fullWidth
         maxWidth="xs"
         aria-labelledby="delete-memory-title"
+        slotProps={{
+          paper: {
+            sx: (theme: Theme) => ({
+              backgroundColor: alpha(theme.palette.background.paper, 0.96),
+              backdropFilter: 'blur(20px)',
+              borderRadius: 3,
+              border: `1px solid ${APP_BORDER}`,
+            }),
+          },
+        }}
       >
         <DialogTitle id="delete-memory-title">
           {deletingConfirm ? 'Excluindo...' : 'Excluir memória?'}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
             Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button onClick={() => setMemoryToDelete(null)} color="inherit" disabled={deletingConfirm}>
             Cancelar
           </Button>
@@ -415,16 +440,26 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         fullWidth
         maxWidth="xs"
         aria-labelledby="delete-chat-title"
+        slotProps={{
+          paper: {
+            sx: (theme: Theme) => ({
+              backgroundColor: alpha(theme.palette.background.paper, 0.96),
+              backdropFilter: 'blur(20px)',
+              borderRadius: 3,
+              border: `1px solid ${APP_BORDER}`,
+            }),
+          },
+        }}
       >
         <DialogTitle id="delete-chat-title">
           {deletingConfirm ? 'Excluindo...' : 'Excluir conversa?'}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
             Esta conversa será removida permanentemente do seu histórico.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button onClick={() => setChatToDelete(null)} color="inherit" disabled={deletingConfirm}>
             Cancelar
           </Button>

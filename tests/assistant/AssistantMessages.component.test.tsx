@@ -14,12 +14,20 @@ function Wrapper({ children }: { children: ReactNode }) {
 // Mock dos tokens
 vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY: '#06b6d4',
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+  APP_BORDER: 'rgba(255,255,255,0.08)',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
   WHITE_06: 'rgba(255,255,255,0.06)',
-  WHITE_82: 'rgba(255,255,255,0.82)',
+  WHITE_08: 'rgba(255,255,255,0.08)',
   WHITE_16: 'rgba(255,255,255,0.16)',
+  WHITE_82: 'rgba(255,255,255,0.82)',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
+  TEXT_SECONDARY: 'rgba(248,250,252,0.68)',
   AVATAR_SIZE_SM: 36,
+  AVATAR_SIZE_MD: 48,
   ICON_SIZE_SM: 16,
   ICON_SIZE_MD: 20,
+  ICON_SIZE_LG: 28,
   RADIUS_XS: 8,
   GAP_COMPACT: 4,
   GAP_DEFAULT: 12,
@@ -31,6 +39,11 @@ vi.mock('../../src/theme/tokens', () => ({
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantInsetSx: vi.fn(() => ({})),
   assistantMarkdownSx: {},
+  assistantBubbleModelSx: vi.fn(() => ({})),
+  assistantBubbleUserSx: vi.fn(() => ({})),
+  assistantMessagesContainerSx: {},
+  assistantTypingIndicatorSx: {},
+  assistantEmptyStateSx: {},
 }));
 
 // Mock do react-markdown

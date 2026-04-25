@@ -98,7 +98,7 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
                   <ExpandMoreIcon
                     sx={{
                       color: 'text.secondary',
-                      transition: `transform ${EXPAND_TRANSITION_MS}ms ease-in-out`,
+                      transition: `transform ${EXPAND_TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.2, 1), color ${EXPAND_TRANSITION_MS}ms ease`,
                     }}
                   />
                 }
@@ -107,14 +107,18 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
                   px: { xs: 3, md: 5 },
                   py: { xs: 1.5, md: 2 },
                   // Hover sutil
+                  transition: 'background-color 200ms ease',
                   '&:hover': {
-                    backgroundColor: alpha(theme.palette.background.paper, 0.04),
+                    backgroundColor: alpha(theme.palette.background.paper, 0.06),
                   },
                   // Diminuir padding do conteúdo quando expandido
                   '&.Mui-expanded': {
                     minHeight: 'auto',
                     '& .MuiAccordionSummary-content': {
                       my: { xs: 1.5, md: 2 },
+                    },
+                    '& .MuiAccordionSummary-expandIcon': {
+                      color: BRAND_PRIMARY,
                     },
                   },
                   '& .MuiAccordionSummary-content': {

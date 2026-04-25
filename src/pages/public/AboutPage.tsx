@@ -20,6 +20,7 @@ import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
 import {
   BRAND_GRADIENT,
+  BRAND_PRIMARY_GLOW,
   TEXT_SECONDARY,
   SUCCESS_MAIN,
   WARNING_MAIN,
@@ -187,9 +188,9 @@ function ValueCardComponent({ icon, title, description }: ValueCard) {
         p: { xs: 3, md: 4 },
         textAlign: 'center',
         height: '100%',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-4px)',
+          transform: 'translateY(-6px)',
           boxShadow: `0 28px 80px ${alpha(theme.palette.common.black, 0.3)}`,
         },
       })}
@@ -204,14 +205,15 @@ function ValueCardComponent({ icon, title, description }: ValueCard) {
             placeItems: 'center',
             background: BRAND_GRADIENT,
             color: 'common.white',
+            boxShadow: `0 8px 24px ${alpha(BRAND_PRIMARY_GLOW, 0.3)}`,
           }}
         >
           {icon}
         </Box>
-        <Typography variant="h6" component="h3">
+        <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
           {title}
         </Typography>
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7 }}>
           {description}
         </Typography>
       </Stack>
@@ -229,10 +231,10 @@ function TeamCard({ name, role, avatarUrl }: TeamMember) {
         p: 3,
         textAlign: 'center',
         height: '100%',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
         '&:hover': {
           transform: 'translateY(-4px)',
-          boxShadow: `0 28px 80px ${alpha(theme.palette.common.black, 0.3)}`,
+          boxShadow: `0 24px 64px ${alpha(theme.palette.common.black, 0.25)}`,
         },
       })}
     >
@@ -246,14 +248,15 @@ function TeamCard({ name, role, avatarUrl }: TeamMember) {
             fontSize: '1.5rem',
             bgcolor: theme.palette.primary.main,
             color: 'common.white',
+            boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
           })}
         >
           {name.charAt(0)}
         </Avatar>
-        <Typography variant="h6" component="h3">
+        <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
           {name}
         </Typography>
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
           {role}
         </Typography>
       </Stack>
@@ -383,7 +386,8 @@ export default function AboutPage() {
               width: '100%',
               height: 'auto',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 20px 60px rgba(46, 117, 182, 0.3))',
+              filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
+              borderRadius: 2,
             }}
           />
         }
@@ -430,10 +434,10 @@ export default function AboutPage() {
       {/* Nossos Valores */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             Nossos Valores
           </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
             Três pilares que guiam cada decisão e funcionalidade da plataforma.
           </Typography>
         </Box>
@@ -450,10 +454,10 @@ export default function AboutPage() {
       {/* Time */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             {TEAM_TITLE}
           </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 560, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
             {TEAM_DESCRIPTION}
           </Typography>
         </Box>
@@ -470,10 +474,10 @@ export default function AboutPage() {
       {/* Roadmap Público */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5 }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             {ROADMAP_TITLE}
           </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto' }}>
+          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
             {ROADMAP_DESCRIPTION}
           </Typography>
         </Box>

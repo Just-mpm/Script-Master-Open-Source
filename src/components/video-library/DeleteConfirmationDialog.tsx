@@ -6,6 +6,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import { RADIUS_SM } from '../../theme/tokens';
+import { glassPanelSx } from '../../theme/surfaces';
 import type { VideoLibraryItem } from './types';
 
 interface DeleteConfirmationDialogProps {
@@ -35,9 +36,11 @@ export function DeleteConfirmationDialog({
       aria-labelledby="delete-gallery-item-title"
       slotProps={{
         paper: {
-          sx: {
+          sx: (theme) => ({
+            ...glassPanelSx(theme),
             borderRadius: RADIUS_SM,
-          },
+            backgroundImage: 'none',
+          }),
         },
       }}
     >

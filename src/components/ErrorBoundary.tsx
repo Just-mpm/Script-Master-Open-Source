@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -6,6 +7,13 @@ import Typography from '@mui/material/Typography';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import Refresh from '@mui/icons-material/Refresh';
 import { createLogger } from '../lib/logger';
+import {
+  APP_BORDER,
+  WHITE_05,
+  WHITE_015,
+  SHADOW_DEEP,
+  ERROR_GLOW,
+} from '../theme/tokens';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
 
@@ -13,6 +21,8 @@ const log = createLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** Fallback customizado exibido quando ocorre erro. Se omitido, usa o fallback padrão. */
+  fallback?: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -56,6 +66,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return this.props.children;
     }
 
+    // Se houver fallback customizado, usá-lo em vez do fallback padrão
+    if (this.props.fallback) {
+      return this.props.fallback;
+    }
+
     return (
       <Box
         sx={{
@@ -66,24 +81,40 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         }}
       >
         <Paper
-          variant="outlined"
           sx={{
             maxWidth: 440,
-            p: 4,
+            p: { xs: 4, sm: 5 },
             textAlign: 'center',
+            borderRadius: { xs: 3, md: 4 },
+            border: `1px solid ${APP_BORDER}`,
+            backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
+            backdropFilter: { xs: 'blur(14px)', md: 'blur(22px)' },
+            boxShadow: `0 24px 80px ${alpha(SHADOW_DEEP, 0.55)}`,
           }}
         >
-          <Stack spacing={2} sx={{ alignItems: 'center' }}>
-            <ErrorOutlineOutlined
-              sx={{ fontSize: 48, color: 'error.main' }}
-              aria-hidden="true"
-            />
+          <Stack spacing={2.5} sx={{ alignItems: 'center' }}>
+            <Box
+              sx={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: alpha(ERROR_GLOW, 0.3),
+                boxShadow: `0 8px 32px ${ERROR_GLOW}`,
+              }}
+            >
+              <ErrorOutlineOutlined
+                sx={{ fontSize: 36, color: 'error.main' }}
+                aria-hidden="true"
+              />
+            </Box>
 
-            <Typography variant="h5" component="h1">
+            <Typography variant="h5" component="h1" sx={{ letterSpacing: '-0.025em' }}>
               Algo deu errado
             </Typography>
 
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
               Ocorreu um erro inesperado ao renderizar esta página.
               Tente recarregar para continuar.
             </Typography>
@@ -93,12 +124,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 variant="outlined"
                 onClick={this.handleRetry}
                 startIcon={<Refresh />}
+                sx={{ transition: 'background-color 0.2s ease, color 0.2s ease' }}
               >
                 Tentar novamente
               </Button>
               <Button
                 variant="contained"
                 onClick={this.handleReload}
+                sx={{ transition: 'box-shadow 0.2s ease' }}
               >
                 Recarregar página
               </Button>

@@ -33,8 +33,12 @@ import {
   BRAND_GRADIENT,
   BRAND_GRADIENT_HOVER,
   BRAND_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
+  BRAND_PRIMARY_LIGHT,
   WHITE_08,
+  WHITE_14,
   SUCCESS_MAIN,
+  SUCCESS_GLOW,
   WARNING_BG_SUBTLE,
   ERROR_BG_SUBTLE,
   WHITE,
@@ -67,14 +71,17 @@ const EXPORT_TOGGLE_GROUP_SX = (fontSize: string) => ({
     py: 0.4,
     fontSize,
     fontWeight: 600,
+    letterSpacing: '-0.01em',
     border: '1px solid',
     borderColor: 'divider',
     color: 'text.secondary',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     '&.Mui-selected': {
       background: BRAND_GRADIENT,
       color: WHITE,
       borderColor: 'transparent',
       boxShadow: BRAND_GLOW,
+      transform: 'translateY(-1px)',
       '&:hover': { background: BRAND_GRADIENT_HOVER },
     },
   },
@@ -215,7 +222,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         {/* Cabeçalho */}
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: exporter.isRendering || exporter.outputUrl ? 2 : 0 }}>
           <VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
             Exportar vídeo
           </Typography>
         </Stack>
@@ -268,7 +275,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         {!exporter.isRendering && !exporter.outputUrl && (
           <Stack spacing={GAP_MEDIUM}>
             {/* Info de resolução, codec e estimativa */}
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
               Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}{estimatedSize ? ` | ~${estimatedSize}` : ''}
             </Typography>
 
@@ -351,6 +358,19 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               sx={{
                 '& .MuiOutlinedInput-root': {
                   fontSize: '0.875rem',
+                  transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease',
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: BRAND_PRIMARY_LIGHT,
+                    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: WHITE_14,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  '&.Mui-focused': {
+                    color: BRAND_PRIMARY_LIGHT,
+                  },
                 },
               }}
             />
@@ -403,27 +423,38 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         {exporter.isRendering && (
           <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }} noWrap>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', letterSpacing: '-0.01em' }} noWrap>
                 {exporter.renderStatusText}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                 {exporter.renderProgress}%
               </Typography>
             </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={exporter.renderProgress}
-              aria-label="Progresso da exportação de vídeo"
+            <Box
               sx={{
+                position: 'relative',
                 height: 8,
                 borderRadius: RADIUS_CHIP,
                 bgcolor: WHITE_08,
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: RADIUS_CHIP,
-                  background: BRAND_GRADIENT,
-                },
+                overflow: 'hidden',
               }}
-            />
+            >
+              <LinearProgress
+                variant="determinate"
+                value={exporter.renderProgress}
+                aria-label="Progresso da exportação de vídeo"
+                sx={{
+                  height: 8,
+                  borderRadius: RADIUS_CHIP,
+                  bgcolor: 'transparent',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: RADIUS_CHIP,
+                    background: BRAND_GRADIENT,
+                    boxShadow: `0 0 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                }}
+              />
+            </Box>
             <Button
               variant="outlined"
               color="error"
@@ -444,8 +475,8 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             sx={{ alignItems: 'center', justifyContent: 'space-between' }}
           >
             <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center' }}>
-              <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN }} />
-              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600 }}>
+              <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN, filter: `drop-shadow(0 0 6px ${SUCCESS_GLOW})` }} />
+              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: '-0.01em' }}>
                 {exporter.renderStatusText}
               </Typography>
               {exporter.outputBlob && (

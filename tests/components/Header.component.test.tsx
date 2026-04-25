@@ -14,6 +14,9 @@ function Wrapper({ children }: { children: ReactNode }) {
 const mockUseAuth = vi.fn();
 vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/estudio' }),
+  Link: ({ children, to, ...rest }: { children: React.ReactNode; to: string; [key: string]: unknown }) => (
+    <a href={to} {...rest}>{children}</a>
+  ),
 }));
 
 vi.mock('../../src/contexts/AuthContext', () => ({
@@ -45,6 +48,7 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_MEDIUM: 12,
   APP_SURFACE: '#1a1a2e',
   APP_BORDER: 'rgba(255,255,255,0.08)',
+  SHADOW_DEEP: '#020617',
   WHITE_05: 'rgba(255,255,255,0.05)',
   WHITE_015: 'rgba(255,255,255,0.015)',
 }));

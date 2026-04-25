@@ -28,6 +28,8 @@ vi.mock('../../src/theme/tokens', () => ({
   BLACK_18: 'rgba(0,0,0,0.18)',
   BLACK_24: 'rgba(0,0,0,0.24)',
   WHITE_16: 'rgba(255,255,255,0.16)',
+  BRAND_GLOW_FOCUS: '0 0 0 3px rgba(46, 117, 182, 0.45)',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
 }));
 
 const defaultProps = {

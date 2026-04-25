@@ -23,7 +23,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import Check from '@mui/icons-material/Check';
 import ChevronDown from '@mui/icons-material/ExpandMore';
@@ -41,7 +41,7 @@ import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
 
 const log = createLogger('ImageStudio');
 
@@ -290,7 +290,19 @@ export function ImageStudio() {
                         onClick={() => fileInputRef.current?.click()}
                         variant="outlined"
                         startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
-                        sx={{ borderStyle: 'dashed', minHeight: 56 }}
+                        sx={{
+                          borderStyle: 'dashed',
+                          minHeight: 56,
+                          borderColor: 'rgba(255, 255, 255, 0.12)',
+                          color: 'text.secondary',
+                          transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            backgroundColor: 'rgba(46, 117, 182, 0.06)',
+                            borderStyle: 'dashed',
+                          },
+                        }}
                       >
                         Enviar imagem de referência
                       </Button>
@@ -338,6 +350,26 @@ export function ImageStudio() {
                 onChange={(event) => setPrompt(event.target.value)}
                 placeholder="Descreva a composição, o clima, a iluminação, o enquadramento e o estilo visual desejado."
                 disabled={isGenerating}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(255, 255, 255, 0.08)',
+                    },
+                    '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(255, 255, 255, 0.16)',
+                    },
+                    '&.Mui-focused': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#2E75B6',
+                        borderWidth: 2,
+                      },
+                      boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
+                    },
+                  },
+                }}
               />
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
@@ -451,6 +483,19 @@ export function ImageStudio() {
                 </Grid>
               ) : savedImages.length === 0 && !imagesError ? (
                 <Box sx={{ py: 3, textAlign: 'center' }}>
+                  <Box sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: BRAND_GRADIENT,
+                    opacity: 0.2,
+                    mx: 'auto',
+                    mb: 1,
+                  }}>
+                    <ImageIcon sx={{ fontSize: 22, color: 'common.white' }} />
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Nenhuma imagem salva ainda. Gere e salve sua primeira imagem acima.
                   </Typography>
@@ -471,14 +516,40 @@ export function ImageStudio() {
                 <Grid container spacing={1.5}>
                   {savedImages.map((img) => (
                     <Grid key={img.id} size={{ xs: 6, sm: 4, md: 3 }}>
-                      <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
-                        <Box
-                          component="img"
-                          src={img.imageUrl || blobUrls.get(img.id) || ''}
-                          alt={img.name}
-                          loading="lazy"
-                          sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }}
-                        />
+                      <Card
+                        elevation={0}
+                        sx={(currentTheme): SystemStyleObject<Theme> => ({
+                          borderRadius: RADIUS_SM,
+                          overflow: 'hidden',
+                          position: 'relative',
+                          transition: currentTheme.transitions.create(['box-shadow', 'transform'], { duration: 200 }),
+                          '&:hover': {
+                            boxShadow: `0 12px 36px ${alpha(currentTheme.palette.common.black, 0.36)}`,
+                            transform: 'translateY(-2px)',
+                            '& .gallery-img-overlay': { opacity: 1 },
+                          },
+                        })}
+                      >
+                        <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+                          <Box
+                            component="img"
+                            src={img.imageUrl || blobUrls.get(img.id) || ''}
+                            alt={img.name}
+                            loading="lazy"
+                            sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease' }}
+                          />
+                          <Box
+                            className="gallery-img-overlay"
+                            sx={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.5) 100%)',
+                              opacity: 0,
+                              transition: 'opacity 0.25s ease',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        </Box>
                         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ p: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                           <Tooltip title={img.prompt || img.name}>
                             <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -528,9 +599,11 @@ export function ImageStudio() {
       aria-describedby="delete-image-description"
       slotProps={{
         paper: {
-          sx: {
+          sx: (currentTheme) => ({
+            ...glassPanelSx(currentTheme),
             borderRadius: RADIUS_SM,
-          },
+            backgroundImage: 'none',
+          }),
         },
       }}
     >

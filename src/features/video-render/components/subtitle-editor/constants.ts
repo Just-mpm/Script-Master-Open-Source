@@ -27,7 +27,6 @@ import {
   WHITE_10,
   WHITE_14,
   WHITE_22,
-  WHITE_50,
   BLACK_40,
   BLACK_50,
   BLACK_74,
@@ -47,7 +46,11 @@ export const TOOLBAR_ICON_BTN_BASE = {
   width: 28,
   height: 28,
   borderRadius: RADIUS_XS,
-  transition: 'all 0.15s ease',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    color: BRAND_PRIMARY_LIGHT,
+    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+  },
   '&:active': {
     transform: 'scale(0.88)',
   },
@@ -57,24 +60,35 @@ export const TOOLBAR_ICON_BTN_BASE = {
 // Estilos compartilhados dos sliders
 // ---------------------------------------------------------------------------
 
-export const THUMBNAIL_GLOW_SHADOW = `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}`;
+export const THUMBNAIL_GLOW_SHADOW = `0 0 0 4px ${BRAND_PRIMARY_GLOW_SOFT}, 0 0 12px ${BRAND_PRIMARY_GLOW_SOFT}`;
 
 export const SLIDER_SHARED_SX = {
   color: BRAND_PRIMARY,
   p: '4px 0',
+  transition: 'color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   '& .MuiSlider-thumb': {
     width: 12,
     height: 12,
-    transition: 'box-shadow 0.15s ease',
+    transition: 'box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease',
     '&:hover, &.Mui-focusVisible': {
       boxShadow: THUMBNAIL_GLOW_SHADOW,
+      transform: 'scale(1.15)',
+    },
+    '&:active': {
+      boxShadow: `0 0 0 6px ${BRAND_PRIMARY_GLOW_SOFT}, 0 0 20px ${BRAND_PRIMARY_GLOW}`,
+      transform: 'scale(1.2)',
     },
   },
   '& .MuiSlider-rail': {
     backgroundColor: WHITE_10,
+    transition: 'background-color 0.2s ease',
   },
   '& .MuiSlider-track': {
     border: 'none',
+    borderRadius: 3,
+  },
+  '&:hover .MuiSlider-rail': {
+    backgroundColor: WHITE_14,
   },
 };
 
@@ -113,15 +127,19 @@ export const TOGGLE_BUTTON_GROUP_SX = {
     backgroundColor: 'transparent',
     padding: '4px 8px',
     minHeight: 24,
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     '&:hover': {
       backgroundColor: WHITE_06,
+      borderColor: WHITE_14,
     },
     '&.Mui-selected': {
       color: BRAND_PRIMARY_LIGHT,
       backgroundColor: `${BRAND_PRIMARY_GLOW_SOFT}`,
       borderColor: `${BRAND_PRIMARY_DARK}`,
+      boxShadow: `0 0 0 2px ${BRAND_PRIMARY_GLOW_SOFT}`,
       '&:hover': {
         backgroundColor: `${BRAND_PRIMARY_GLOW}`,
+        boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
       },
     },
   },
@@ -154,6 +172,7 @@ export const FONT_CHIP_SX = {
   backgroundColor: WHITE_05,
   border: `1px solid ${WHITE_08}`,
   userSelect: 'none',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
 export const RESET_BTN_SX = {
@@ -161,19 +180,17 @@ export const RESET_BTN_SX = {
   width: 28,
   height: 28,
   borderRadius: RADIUS_XS,
-  transition: 'all 0.2s ease',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    color: BRAND_PRIMARY_LIGHT,
+    backgroundColor: ACTION_SELECTED,
+    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+  },
   '&:active': {
     transform: 'scale(0.88)',
   },
-  '&:hover': {
-    color: WHITE_50,
-    backgroundColor: WHITE_06,
-    '& .MuiSvgIcon-root': {
-      transform: 'rotate(-45deg)',
-    },
-  },
   '& .MuiSvgIcon-root': {
-    transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
   },
 };
 
@@ -184,11 +201,12 @@ export const CONFIRM_BTN_SX = {
   borderRadius: RADIUS_XS,
   backgroundColor: SUCCESS_BG_SUBTLE,
   border: `1px solid ${SUCCESS_BORDER}`,
-  transition: 'all 0.15s ease',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
     backgroundColor: SUCCESS_BG_MEDIUM,
     borderColor: SUCCESS_BORDER_HOVER,
-    boxShadow: `0 0 12px ${SUCCESS_GLOW}`,
+    boxShadow: `0 0 14px ${SUCCESS_GLOW}`,
+    transform: 'scale(1.05)',
   },
   '&:active': {
     transform: 'scale(0.88)',
@@ -202,11 +220,12 @@ export const CANCEL_BTN_SX = {
   borderRadius: RADIUS_XS,
   backgroundColor: ERROR_BG_SUBTLE_2,
   border: `1px solid ${ERROR_BORDER}`,
-  transition: 'all 0.15s ease',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
     backgroundColor: ERROR_BORDER,
     borderColor: ERROR_BORDER_HOVER,
-    boxShadow: `0 0 12px ${ERROR_GLOW}`,
+    boxShadow: `0 0 14px ${ERROR_GLOW}`,
+    transform: 'scale(1.05)',
   },
   '&:active': {
     transform: 'scale(0.88)',
@@ -240,12 +259,13 @@ export const EDITOR_BTN_SX = {
       boxShadow: `0 0 24px ${BRAND_PRIMARY_GLOW}, 0 4px 16px ${BLACK_50}`,
     },
   },
-  transition: 'all 0.2s ease',
+  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
     backgroundColor: APP_SURFACE,
     color: BRAND_PRIMARY_LIGHT,
     boxShadow: `0 0 28px ${BRAND_PRIMARY_GLOW}, 0 6px 20px ${BLACK_50}`,
     borderColor: BRAND_PRIMARY_DARK,
+    transform: 'scale(1.06)',
   },
   '&:active': {
     transform: 'scale(0.92)',
@@ -313,4 +333,8 @@ export const TOOLBAR_CONTAINER_SHARED_SX = {
   borderRadius: 4,
   border: `1px solid ${APP_BORDER}`,
   boxShadow: `0 12px 40px ${SHADOW_DEEP}, 0 0 0 1px rgba(0, 0, 0, 0.2)`,
+  transition: 'border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    borderColor: WHITE_14,
+  },
 };

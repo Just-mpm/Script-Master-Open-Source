@@ -7,6 +7,70 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.23.0] - 2026-04-25
+
+### Adicionado
+
+- **Exclusão de conta (LGPD)** (`src/lib/db/account-cleanup.ts`): pipeline de limpeza completa — remove projetos + subcoleções (audios, images, videos), gerações flat, gerações de imagem, chats, memórias, user settings e objetos do Storage; estratégia best-effort com log de erros parciais
+- **`deleteAccount()`** no `AuthContext`: executa `deleteAllUserData(userId)` → `deleteUser(currentUser)` → redirect para `/login`; novo erro pt-BR `auth/requires-recent-login` para sessão expirada
+- **Dialog de confirmação de exclusão** no Header: campo de texto "EXCLUIR" obrigatório, estado `isDeleting` com loading, integrado no drawer mobile e disponível via ícone DeleteForever
+- **Verificação de email pós-cadastro**: `sendEmailVerification()` enviada automaticamente após `createUserWithEmailAndPassword()`; falha na verificação não bloqueia o cadastro
+- **`sendEmailVerification` e `deleteUser`** exportados de `src/lib/firebase.ts`
+- **UI centralizada do assistente** (`assistantUi.ts`): 13 estilos exportados — `assistantDrawerPaperSx`, `assistantDrawerHeaderSx`, `assistantInsetSx`, `assistantBubbleModelSx`, `assistantBubbleUserSx`, `assistantComposerInputSx`, `assistantComposerContainerSx`, `assistantTypingIndicatorSx`, `assistantMarkdownSx`, `assistantMessagesContainerSx`, `assistantHistoryItemSx`, `assistantEmptyStateSx`, `assistantAttachmentChipSx`, `assistantSendButtonSx`
+- **`EmptyChatState`** no AssistantMessages: estado vazio do chat com ícone e call-to-action
+- **Chips de anexo** no AssistantMessages: anexos exibidos como `Chip` MUI com estilo premium
+- **2 novos tokens de tema** (`tokens.ts`): `WARNING_BORDER`, `WARNING_GLOW`
+- **`WarningAlert` override** no `appTheme.ts`: variante `filled` + `warning` com estilo customizado
+- **`pulse` keyframe** no `index.css`: animação de pulso para indicador de desconexão
+- **Firestore composite index**: `projects` por `userId` ASC + `createdAt` DESC
+
+### Alterado
+
+- **Header**: redesign da navegação desktop (glass surface no nav), avatar com glass panel, drawer mobile com opção "Excluir conta"; remoção de import de `tokens.ts` (substituído por `glassSurfaceSx` + tokens individuais)
+- **AuthContext**: interface `AuthContextType` com novo método `deleteAccount`; `signup()` agora envia verificação de email
+- **NotFoundPage**: redesign com ícone `TravelExplore`, glass surface, backdrop-filter responsivo, tipografia responsiva (80px/120px)
+- **ErrorBoundary**: glass surface com backdrop-filter responsivo, border-radius responsivo
+- **Toasts** (Error, Success, Warning): `minWidth` responsivo `min(92vw, 320px)` / `sm:400`
+- **AssistantMessages**: remoção de import de `assistantUi` e `tokens` (refatorados); novo `EmptyChatState`; anexos como `Chip`
+- **AssistantComposer**: ícone `Stop` para parar geração; remoção de import de `tokens`, `px`, `py`
+- **AssistantHeader**: responsividade refinada (display, width, minWidth); remoção de import de `tokens`
+- **AssistantHistoryPanel**, **AssistantSettingsPanel**, **AssistantMemoriesPanel**: remoção de import de `tokens` (centralizado em `assistantUi.ts`)
+- **CaptionEditorPanel**: transições refinadas (cubic-bezier), estilos de ícones atualizados
+- **TranscriptionPanel**: tipografia e ícones refinados
+- **VideoExportPanel**: tipografia, ícones e progress bar refinados
+- **Componentes públicos**: PageLayout (padding refinado), PublicHeader/PublicFooter (remoção de APP_BORDER hardcoded), HeroSection (BRAND_PRIMARY_GLOW), FeatureCard (cubic-bezier), FeatureShowcase (py refinado), FAQAccordion (timing), StepCard (alpha), SocialProofBar (letter-spacing, position relative), CTASection (pseudo-elemento decorativo), PricingCard (Tooltip)
+- **Inspector**: border-radius refinado; imports de `tokens.ts` ajustados
+- **ActionBar**: borda superior accent `rgba(46, 117, 182, 0.15)`
+- **ScriptEditor**, **ImageStudio**, **Library**, **VideoLibrary**: imports de `tokens.ts` ajustados
+- **NetworkStatusIndicator**: animação `pulse` no ícone WifiOff, letter-spacing
+- **StatusPage**: novo componente `IncidentHistory` com Timeline, dados de incidentes recentes, `LAST_CHECK` atualizado
+- **ContactPage**: validação de email via regex (`EMAIL_REGEX`), `Alert` para feedback
+- **PricingPage**: `Alert` para feedback
+- **LoginPage**, **RegisterPage**: border sutil nos botões, transições refinadas
+- **AboutPage**, **LandingPage**, **FuncionalidadesPage**, **FaqPage**, **PrivacyPage**, **TermsPage**, **CookiesPage**: tipografia refinada (letter-spacing, lineHeight)
+- **Speed Paint**: SpeedSelector com imports de tokens; BatchOrchestrator, QueueStaging, AnimationControls, ImageUpload — remoção de imports hardcoded de `tokens.ts`
+- **`studio.utils.ts`**: helpers de localStorage simplificados
+- **`tests/setup.ts`**: `MockResizeObserver` adicionado para testes que dependem de ResizeObserver
+- **Testes existentes**: mocks de tokens atualizados em 25 arquivos de teste (BRAND_GRADIENT, BRAND_PRIMARY_GLOW, etc.)
+
+### Removido
+
+- **`docs/plan/refactor-studio-state-to-zustand-c2.md`**: plano concluído na v0.22.0
+
+### Testes
+
+- 91 testes novos (total: 1155):
+  - `ErrorBoundary.component.test.tsx` (92 linhas) — renderização com glass surface, children, erro
+  - `ProtectedRoute.component.test.tsx` (63 linhas) — redirect sem autenticação, renderização com user
+  - `useTranscription.unit.test.ts` (429 linhas) — pipeline completo de transcrição Whisper
+  - `NotFoundPage.component.test.tsx` (84 linhas) — renderização, link para home
+  - `CaptionEditorPanel.unit.test.tsx` (285 linhas) — edição de legendas
+  - `SubtitleInlineEditor.unit.test.tsx` (275 linhas) — editor inline de estilo
+  - `VideoExportPanel.unit.test.tsx` (382 linhas) — painel de exportação
+  - AuthContext: testes de signup e deleteAccount adicionados
+
+---
+
 ## [0.22.0] - 2026-04-25
 
 ### Alterado

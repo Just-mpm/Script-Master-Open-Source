@@ -55,7 +55,8 @@ describe('ContactPage', () => {
 
   it('renderiza informações de contato', () => {
     render(<ContactPage />, { wrapper: Wrapper });
-    expect(screen.getByText('contato@scriptmaster.app')).toBeDefined();
+    // Email aparece tanto no painel lateral quanto no disclaimer do formulário
+    expect(screen.getAllByText('contato@scriptmaster.app').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Em até 24h úteis')).toBeDefined();
     expect(screen.getByText('Português (Brasil)')).toBeDefined();
   });

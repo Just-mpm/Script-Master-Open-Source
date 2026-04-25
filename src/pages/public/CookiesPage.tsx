@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -104,13 +104,16 @@ function TableOfContents(): ReactNode {
               color: TEXT_SECONDARY,
               textDecoration: 'none',
               fontSize: '0.95rem',
-              pl: 1,
+              pl: 1.5,
+              py: 0.5,
               borderLeft: `2px solid ${APP_BORDER}`,
-              transition: 'color 0.2s, border-color 0.2s',
+              borderRadius: '0 4px 4px 0',
+              transition: 'color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
               cursor: 'pointer',
               '&:hover': {
                 color: BRAND_PRIMARY,
                 borderLeftColor: BRAND_PRIMARY,
+                backgroundColor: alpha(BRAND_PRIMARY, 0.04),
               },
             }}
           >
@@ -146,13 +149,14 @@ export default function CookiesPage(): ReactNode {
             sx={{
               fontWeight: 700,
               color: TEXT_PRIMARY,
-              mb: 1,
+              mb: 1.5,
+              letterSpacing: '-0.035em',
             }}
           >
             {PAGE_TITLE}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+          <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.5 }}>
             Última atualização: {LAST_UPDATE}
           </Typography>
         </Box>

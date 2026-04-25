@@ -4,6 +4,7 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
@@ -23,8 +24,37 @@ import Stop from '@mui/icons-material/Stop';
 import ReactMarkdown from 'react-markdown';
 import type { AssistantSettings, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
-import { assistantInsetSx, assistantMarkdownSx } from './assistantUi';
-import { BRAND_PRIMARY, WHITE_06, WHITE_82, WHITE_16, AVATAR_SIZE_SM, ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_XS, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED } from '../../../theme/tokens';
+import {
+  assistantInsetSx,
+  assistantMarkdownSx,
+  assistantBubbleModelSx,
+  assistantBubbleUserSx,
+  assistantMessagesContainerSx,
+  assistantTypingIndicatorSx,
+  assistantEmptyStateSx,
+} from './assistantUi';
+import {
+  BRAND_PRIMARY,
+  BRAND_GRADIENT,
+  APP_BORDER,
+  BRAND_PRIMARY_GLOW_SOFT,
+  WHITE_06,
+  WHITE_08,
+  WHITE_16,
+  WHITE_82,
+  TEXT_DISABLED,
+  TEXT_SECONDARY,
+  AVATAR_SIZE_SM,
+  AVATAR_SIZE_MD,
+  ICON_SIZE_SM,
+  ICON_SIZE_MD,
+  ICON_SIZE_LG,
+  RADIUS_XS,
+  GAP_COMPACT,
+  GAP_DEFAULT,
+  GAP_MEDIUM,
+  GAP_RELAXED,
+} from '../../../theme/tokens';
 
 // --- Props de cada bubble isolado ---
 
@@ -79,9 +109,21 @@ const MessageBubble = React.memo(function MessageBubble({
   const cleanText = stripJsonSettingsBlock(message.text);
 
   return (
-    <Stack direction="row" spacing={GAP_MEDIUM} sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
+    <Stack
+      direction="row"
+      spacing={GAP_MEDIUM}
+      sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end', alignItems: 'flex-start' }}
+    >
       {isModel ? (
-        <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
+        <Avatar
+          sx={{
+            bgcolor: WHITE_06,
+            border: `1px solid ${APP_BORDER}`,
+            width: AVATAR_SIZE_SM,
+            height: AVATAR_SIZE_SM,
+            flexShrink: 0,
+          }}
+        >
           <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
         </Avatar>
       ) : null}
@@ -100,10 +142,10 @@ const MessageBubble = React.memo(function MessageBubble({
                         component="img"
                         src={`data:${attachment.mimeType};base64,${attachment.data}`}
                         alt={attachment.name}
-                        sx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 1.5 }}
+                        sx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: RADIUS_XS }}
                       />
                     ) : (
-                        <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                      <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                     )}
                     <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }} noWrap>
                       {attachment.name || 'Arquivo'}
@@ -117,24 +159,15 @@ const MessageBubble = React.memo(function MessageBubble({
 
         <Card
           elevation={0}
-          sx={(theme) => ({
-            width: '100%',
-            px: { xs: 1.25, md: 1.75 },
-            py: { xs: 1, md: 1.25 },
-            borderRadius: RADIUS_XS,
-            border: '1px solid',
-            borderColor: isModel ? 'divider' : 'transparent',
-            background: isModel
-              ? alpha(theme.palette.background.paper, 0.66)
-              : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.94)} 0%, ${alpha(theme.palette.secondary.main, 0.88)} 100%)`,
-            color: isModel ? 'text.primary' : 'common.white',
-          })}
+          sx={(theme) => (isModel ? assistantBubbleModelSx(theme) : assistantBubbleUserSx(theme))}
         >
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-                  {isModel ? <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} /> : <Person sx={{ fontSize: ICON_SIZE_MD }} />}
-                <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? 'text.secondary' : WHITE_82 }}>
+                {isModel
+                  ? <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                  : <Person sx={{ fontSize: ICON_SIZE_MD }} />}
+                <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? TEXT_SECONDARY : WHITE_82 }}>
                   {isModel ? 'Assistente' : 'Você'}
                 </Typography>
               </Stack>
@@ -160,8 +193,8 @@ const MessageBubble = React.memo(function MessageBubble({
                     size="small"
                     aria-label="Copiar texto da mensagem"
                     sx={{
-                      color: isCopied ? 'success.main' : 'text.secondary',
-                      '&:hover': { backgroundColor: 'action.hover' },
+                      color: isCopied ? 'success.main' : TEXT_DISABLED,
+                      '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT, color: 'text.secondary' },
                     }}
                   >
                     {isCopied ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
@@ -183,6 +216,7 @@ const MessageBubble = React.memo(function MessageBubble({
                     ml: 0.5,
                     verticalAlign: 'text-bottom',
                     animation: 'assistantCursorBlink 1s step-end infinite',
+                    borderRadius: 1,
                     '@keyframes assistantCursorBlink': {
                       '0%, 100%': { opacity: 1 },
                       '50%': { opacity: 0 },
@@ -192,52 +226,123 @@ const MessageBubble = React.memo(function MessageBubble({
               ) : null}
 
               {hasMalformedJson ? (
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: TEXT_DISABLED, fontStyle: 'italic', mt: 0.5 }}>
                   O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.
                 </Typography>
               ) : null}
             </Box>
 
-             {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming) ? <Divider sx={{ borderColor: isModel ? 'divider' : WHITE_16 }} /> : null}
+            {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming)
+              ? <Divider sx={{ borderColor: isModel ? APP_BORDER : WHITE_16 }} />
+              : null}
 
             <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-               {!isCurrentlyStreaming && settings ? (
-                 <Button
+              {!isCurrentlyStreaming && settings ? (
+                <Button
                   onClick={() => onApply(settings, message.id)}
                   variant="contained"
                   color="secondary"
                   size="small"
-                    startIcon={isApplied ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
-                 >
-                   {isApplied ? 'Aplicado' : 'Aplicar no estúdio'}
-                 </Button>
-               ) : null}
+                  startIcon={isApplied ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
+                >
+                  {isApplied ? 'Aplicado' : 'Aplicar no estúdio'}
+                </Button>
+              ) : null}
 
-               {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
-                 <Button
+              {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
+                <Button
                   onClick={() => onSaveToMemory(cleanText, message.id)}
                   variant="outlined"
                   color="inherit"
                   size="small"
-                    startIcon={isSavedToMemory ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
-                    sx={{ borderColor: isModel ? 'divider' : 'action.hover' }}
-                 >
-                   {isSavedToMemory ? 'Salvo na memória' : 'Salvar insight'}
-                 </Button>
-               ) : null}
-             </Stack>
-           </Stack>
-         </Card>
-       </Stack>
+                  startIcon={isSavedToMemory ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
+                  sx={{
+                    borderColor: isModel ? APP_BORDER : 'action.hover',
+                    '&:hover': { borderColor: APP_BORDER, backgroundColor: alpha(WHITE_08, 0.3) },
+                  }}
+                >
+                  {isSavedToMemory ? 'Salvo na memória' : 'Salvar insight'}
+                </Button>
+              ) : null}
+            </Stack>
+          </Stack>
+        </Card>
+      </Stack>
 
-       {!isModel ? (
-         <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
-           <Person sx={{ fontSize: ICON_SIZE_SM }} />
-         </Avatar>
-       ) : null}
+      {!isModel ? (
+        <Avatar
+          sx={{
+            background: BRAND_GRADIENT,
+            width: AVATAR_SIZE_SM,
+            height: AVATAR_SIZE_SM,
+            flexShrink: 0,
+            boxShadow: `0 4px 12px ${alpha(BRAND_PRIMARY, 0.16)}`,
+          }}
+        >
+          <Person sx={{ fontSize: ICON_SIZE_SM }} />
+        </Avatar>
+      ) : null}
     </Stack>
   );
 }, arePropsEqual);
+
+// --- Empty State: quando não há mensagens ---
+
+function EmptyChatState() {
+  return (
+    <Box sx={assistantEmptyStateSx}>
+      <Box
+        sx={{
+          width: AVATAR_SIZE_MD * 2.5,
+          height: AVATAR_SIZE_MD * 2.5,
+          borderRadius: '50%',
+          background: BRAND_GRADIENT,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 3,
+          boxShadow: `0 12px 40px ${alpha(BRAND_PRIMARY, 0.2)}`,
+        }}
+      >
+        <AutoAwesome sx={{ fontSize: ICON_SIZE_LG * 1.8 }} />
+      </Box>
+
+      <Typography variant="h6" sx={{ mb: 0.75, letterSpacing: '-0.02em' }}>
+        Como posso ajudar?
+      </Typography>
+
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, lineHeight: 1.6 }}>
+        Pergunte sobre ajustes de roteiro, sugestões de voz, ideias de cena, ou envie anexos para análise criativa.
+      </Typography>
+
+      <Stack
+        direction="row"
+        spacing={GAP_COMPACT}
+        useFlexGap
+        sx={{ flexWrap: 'wrap', mt: 3, justifyContent: 'center' }}
+      >
+        {['Ajustar ritmo', 'Sugerir cena', 'Revisar texto', 'Analisar áudio'].map((label) => (
+          <Chip
+            key={label}
+            label={label}
+            size="small"
+            variant="outlined"
+            sx={{
+              borderColor: APP_BORDER,
+              color: TEXT_SECONDARY,
+              fontWeight: 500,
+              '&:hover': {
+                borderColor: BRAND_PRIMARY,
+                color: 'text.primary',
+                backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
+              },
+            }}
+          />
+        ))}
+      </Stack>
+    </Box>
+  );
+}
 
 // --- Componente pai (lista de mensagens) ---
 
@@ -265,7 +370,6 @@ export function AssistantMessages({
   onStopGeneration,
 }: AssistantMessagesProps) {
   // Última mensagem do modelo — pode estar em streaming (texto progressivo)
-  // useMemo evita alocação de array a cada render (substitui [...messages].reverse().find())
   const lastModelMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'model') return messages[i];
@@ -273,7 +377,7 @@ export function AssistantMessages({
     return undefined;
   }, [messages]);
 
-  // Oculta skeleton quando o primeiro token já chegou (texto parcial > '')
+  // Oculta skeleton quando o primeiro token já chegou
   const showSkeleton = isLoading && !isStreaming;
 
   // Estado para feedback de "copiado" no clipboard
@@ -289,46 +393,65 @@ export function AssistantMessages({
     }
   }, []);
 
+  // Se não há mensagens e não está carregando, mostra empty state
+  const isEmptyChat = messages.length === 0 && !isLoading;
+
   return (
-    <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, md: 3 }, py: { xs: 1, md: 1.5 } }}>
-      <Stack spacing={GAP_RELAXED}>
-        {messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            isCurrentlyStreaming={isStreaming && lastModelMessage?.id === message.id}
-            isApplied={appliedMessageId === message.id}
-            isSavedToMemory={savedToMemoryId === message.id}
-            isCopied={copiedMessageId === message.id}
-            onCopy={handleCopyMessage}
-            onApply={onApply}
-            onSaveToMemory={onSaveToMemory}
-            onStopGeneration={onStopGeneration}
-          />
-        ))}
+    <Box sx={assistantMessagesContainerSx}>
+      {isEmptyChat ? (
+        <EmptyChatState />
+      ) : (
+        <Stack spacing={GAP_RELAXED}>
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isCurrentlyStreaming={isStreaming && lastModelMessage?.id === message.id}
+              isApplied={appliedMessageId === message.id}
+              isSavedToMemory={savedToMemoryId === message.id}
+              isCopied={copiedMessageId === message.id}
+              onCopy={handleCopyMessage}
+              onApply={onApply}
+              onSaveToMemory={onSaveToMemory}
+              onStopGeneration={onStopGeneration}
+            />
+          ))}
 
-        {showSkeleton ? (
-          <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>
-            <Avatar sx={{ bgcolor: WHITE_06, border: '1px solid', borderColor: 'divider', width: AVATAR_SIZE_SM, height: AVATAR_SIZE_SM }}>
+          {showSkeleton ? (
+            <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>
+              <Avatar
+                sx={{
+                  bgcolor: WHITE_06,
+                  border: `1px solid ${APP_BORDER}`,
+                  width: AVATAR_SIZE_SM,
+                  height: AVATAR_SIZE_SM,
+                }}
+              >
                 <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
-            </Avatar>
+              </Avatar>
 
-            <Card elevation={0} sx={{ p: GAP_MEDIUM * 2, borderRadius: RADIUS_XS, width: '100%', maxWidth: 560 }}>
-              <Stack spacing={GAP_DEFAULT}>
-                <Skeleton variant="text" animation="wave" width="28%" />
-                <Skeleton variant="rounded" animation="wave" height={16} width="92%" />
-                <Skeleton variant="rounded" animation="wave" height={16} width="80%" />
-                <Stack direction="row" spacing={GAP_COMPACT}>
-                  <Skeleton variant="rounded" animation="wave" width={112} height={30} />
-                  <Skeleton variant="rounded" animation="wave" width={108} height={30} />
+              <Card elevation={0} sx={(theme) => ({ ...assistantBubbleModelSx(theme), p: GAP_MEDIUM * 2, width: '100%', maxWidth: 560 })}>
+                <Stack spacing={GAP_DEFAULT}>
+                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                    <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: TEXT_SECONDARY }}>Assistente</Typography>
+                  </Stack>
+                  <Skeleton variant="rounded" animation="wave" height={16} width="92%" />
+                  <Skeleton variant="rounded" animation="wave" height={16} width="80%" />
+                  <Skeleton variant="rounded" animation="wave" height={16} width="64%" />
+                  <Box sx={assistantTypingIndicatorSx}>
+                    <Box className="typing-dot" />
+                    <Box className="typing-dot" />
+                    <Box className="typing-dot" />
+                  </Box>
                 </Stack>
-              </Stack>
-            </Card>
-          </Stack>
-        ) : null}
+              </Card>
+            </Stack>
+          ) : null}
 
-        <div ref={messagesEndRef} />
-      </Stack>
+          <div ref={messagesEndRef} />
+        </Stack>
+      )}
     </Box>
   );
 }

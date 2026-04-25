@@ -8,12 +8,24 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
-import { ICON_SIZE_SM, ICON_SIZE_MD, RADIUS_XS } from '../../../theme/tokens';
+import {
+  ICON_SIZE_SM,
+  ICON_SIZE_MD,
+  WHITE_06,
+  TEXT_DISABLED,
+} from '../../../theme/tokens';
+import {
+  assistantComposerContainerSx,
+  assistantComposerInputSx,
+  assistantAttachmentChipSx,
+  assistantSendButtonSx,
+} from './assistantUi';
 import AttachFile from '@mui/icons-material/AttachFile';
 import Close from '@mui/icons-material/Close';
 import Description from '@mui/icons-material/Description';
 import Image from '@mui/icons-material/Image';
 import SendIcon from '@mui/icons-material/Send';
+import Stop from '@mui/icons-material/Stop';
 
 interface AssistantComposerProps {
   input: string;
@@ -48,21 +60,13 @@ export const AssistantComposer = React.memo(function AssistantComposer({
     }
   };
 
+  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading;
+
   return (
     <Box
       component="form"
       onSubmit={handleSubmit}
-      sx={{
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 2,
-        px: { xs: 2, md: 3 },
-        py: { xs: 1.25, md: 1.5 },
-        borderTop: '1px solid',
-        borderColor: 'divider',
-        background: (theme) => `linear-gradient(180deg, ${alpha(theme.palette.background.default, 0)} 0%, ${alpha(theme.palette.background.paper, 0.92)} 18%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`,
-        backdropFilter: 'blur(18px)',
-      }}
+      sx={(theme) => assistantComposerContainerSx(theme)}
     >
       <Stack spacing={1}>
         {pendingFiles.length > 0 ? (
@@ -73,12 +77,15 @@ export const AssistantComposer = React.memo(function AssistantComposer({
               return (
                 <Chip
                   key={`${file.name}-${index}`}
-                   icon={isImage ? <Image sx={{ fontSize: ICON_SIZE_SM }} /> : <Description sx={{ fontSize: ICON_SIZE_SM }} />}
-                   label={file.name}
-                   onDelete={() => onRemoveFile(index)}
-                   deleteIcon={<Close sx={{ fontSize: ICON_SIZE_SM }} />}
+                  icon={isImage
+                    ? <Image sx={{ fontSize: ICON_SIZE_SM }} />
+                    : <Description sx={{ fontSize: ICON_SIZE_SM }} />}
+                  label={file.name}
+                  onDelete={() => onRemoveFile(index)}
+                  deleteIcon={<Close sx={{ fontSize: ICON_SIZE_SM }} />}
                   variant="outlined"
-                  sx={{ maxWidth: '100%', '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' } }}
+                  size="small"
+                  sx={assistantAttachmentChipSx}
                 />
               );
             })}
@@ -108,47 +115,67 @@ export const AssistantComposer = React.memo(function AssistantComposer({
           slotProps={{
             input: {
               startAdornment: (
-                <InputAdornment position="start" sx={{ alignSelf: 'flex-end', mb: 0.5 }}>
+                <InputAdornment position="start" sx={{ alignSelf: 'flex-end', mb: 0.25 }}>
                   <Tooltip title="Anexar arquivo">
                     <IconButton
                       onClick={() => fileInputRef.current?.click()}
                       edge="start"
                       aria-label="Anexar arquivo"
+                      size="small"
+                      sx={{
+                        color: TEXT_DISABLED,
+                        '&:hover': { color: 'text.secondary', backgroundColor: alpha(WHITE_06, 0.5) },
+                      }}
                     >
-                       <AttachFile sx={{ fontSize: ICON_SIZE_MD }} />
+                      <AttachFile sx={{ fontSize: ICON_SIZE_MD }} />
                     </IconButton>
                   </Tooltip>
                 </InputAdornment>
               ),
               endAdornment: (
-                <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 0.5, mr: 0.5 }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="small"
-                    loading={isLoading}
-                    disabled={(!input.trim() && pendingFiles.length === 0) || isLoading}
-                      endIcon={!isLoading ? <SendIcon sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
-                    sx={{ minWidth: 96 }}
-                  >
-                    Enviar
-                  </Button>
+                <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 0.25, mr: 0.25 }}>
+                  {isLoading ? (
+                    <Tooltip title="Parar geração">
+                      <IconButton
+                        onClick={onSubmit}
+                        aria-label="Parar geração"
+                        size="small"
+                        sx={{
+                          ...assistantSendButtonSx,
+                          minWidth: 40,
+                          width: 40,
+                          height: 40,
+                          backgroundColor: 'error.main',
+                          boxShadow: `0 4px 16px ${alpha('#ef4444', 0.24)}`,
+                          '&:hover': {
+                            ...assistantSendButtonSx['&:hover'],
+                            backgroundColor: 'error.dark',
+                            boxShadow: `0 6px 24px ${alpha('#ef4444', 0.36)}`,
+                          },
+                        }}
+                      >
+                        <Stop sx={{ fontSize: ICON_SIZE_SM }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="small"
+                      disabled={!canSend}
+                      endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM, ml: -0.5 }} />}
+                      sx={assistantSendButtonSx}
+                    >
+                      Enviar
+                    </Button>
+                  )}
                 </InputAdornment>
               ),
             },
           }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              alignItems: 'flex-end',
-              borderRadius: RADIUS_XS,
-              px: 0.5,
-              py: 0.5,
-              backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.72),
-            },
-          }}
+          sx={(theme) => assistantComposerInputSx(theme)}
         />
       </Stack>
     </Box>
   );
 });
-

@@ -158,14 +158,14 @@ function SectionBlock({ section }: { readonly section: LegalSection }) {
       <Typography
         variant="h6"
         component="h3"
-        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 1.5 }}
+        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 1.5, letterSpacing: '-0.01em' }}
       >
         {section.title}
       </Typography>
 
       <Typography
         variant="body1"
-        sx={{ color: TEXT_SECONDARY, lineHeight: 1.8 }}
+        sx={{ color: TEXT_SECONDARY, lineHeight: 1.85 }}
       >
         {section.content}
       </Typography>
@@ -198,12 +198,13 @@ export default function PrivacyPage() {
             fontWeight: 800,
             mb: 1.5,
             fontSize: { xs: '1.75rem', md: '2.5rem' },
+            letterSpacing: '-0.035em',
           }}
         >
           {PAGE_TITLE}
         </Typography>
 
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.5 }}>
           Última atualização: {LAST_UPDATE}
         </Typography>
       </Box>

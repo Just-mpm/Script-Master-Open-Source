@@ -1,8 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, type User } from '../lib/firebase';
+import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged, type User } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
+import { deleteAllUserData } from '../lib/db/account-cleanup';
 
 const log = createLogger('AuthContext');
 
@@ -18,6 +19,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/user-not-found': 'Nenhuma conta encontrada com este email.',
   'auth/wrong-password': 'Senha incorreta.',
   'auth/invalid-credential': 'Email ou senha incorretos.',
+  'auth/requires-recent-login': 'Sessão expirada. Faça login novamente e tente excluir sua conta.',
 };
 
 function getAuthErrorMessage(error: unknown): string {
@@ -37,6 +39,7 @@ interface AuthContextType {
   signup: (email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -100,7 +103,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthError(null);
       wasLoginRequested.current = true;
-      await createUserWithEmailAndPassword(auth, email, password);
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      // Envia email de verificação após cadastro bem-sucedido
+      try {
+        await sendEmailVerification(credential.user);
+      } catch {
+        // Falha na verificação não deve bloquear o cadastro
+        log.warn('Falha ao enviar email de verificação', { email });
+      }
     } catch (error) {
       wasLoginRequested.current = false;
       log.error('Erro no cadastro', { error });
@@ -143,8 +153,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      setAuthError(null);
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setAuthError('Nenhum usuário logado para excluir.');
+        return;
+      }
+
+      // Pipeline de limpeza LGPD — remove todos os dados do Firestore e Storage
+      await deleteAllUserData(currentUser.uid);
+
+      // Remove a autenticação do usuário
+      await deleteUser(currentUser);
+
+      // Usuário deletado — redireciona para login
+      window.location.href = '/login';
+    } catch (error) {
+      log.error('Erro ao excluir conta', { error });
+      setAuthError(getAuthErrorMessage(error));
+      throw error;
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, signup, loginWithEmail, resetPassword, logout }}>
+    <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, signup, loginWithEmail, resetPassword, deleteAccount, logout }}>
       {children}
       {showMigrationDialog && user && (
         <DataMigrationDialog

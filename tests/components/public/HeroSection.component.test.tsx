@@ -18,6 +18,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 vi.mock('../../../src/theme/tokens', () => ({
   APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+  BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
 }));

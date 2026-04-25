@@ -2,6 +2,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { BRAND_PRIMARY, BRAND_PRIMARY_LIGHT, BRAND_PRIMARY_GLOW_SOFT, WHITE_06 } from '../../../theme/tokens';
 
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
 
@@ -69,24 +70,35 @@ export function SpeedSelector({
             disabled={disabled}
             aria-pressed={value === s}
             aria-label={`${s}x`}
-            sx={(theme) => ({
+            sx={{
               minWidth: 'auto',
               px: isInline ? 0.75 : 1,
               py: 0.25,
               fontSize: isInline ? '0.625rem' : '0.75rem',
-              fontWeight: 500,
+              fontWeight: value === s ? 600 : 500,
+              letterSpacing: '-0.01em',
               borderRadius: 1,
-              color: value === s ? 'text.primary' : 'text.secondary',
+              color: value === s ? BRAND_PRIMARY_LIGHT : 'text.secondary',
               bgcolor: value === s
-                ? alpha(theme.palette.primary.main, 0.15)
+                ? alpha(BRAND_PRIMARY, 0.15)
                 : 'transparent',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: value === s
+                ? `0 0 0 2px ${BRAND_PRIMARY_GLOW_SOFT}`
+                : 'none',
               '&:hover': {
                 bgcolor: value === s
-                  ? alpha(theme.palette.primary.main, 0.2)
-                  : alpha(theme.palette.common.white, 0.05),
-                color: 'text.primary',
+                  ? alpha(BRAND_PRIMARY, 0.22)
+                  : WHITE_06,
+                color: value === s ? BRAND_PRIMARY_LIGHT : 'text.primary',
+                boxShadow: value === s
+                  ? `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`
+                  : 'none',
               },
-            })}
+              '&:active': {
+                transform: 'scale(0.94)',
+              },
+            }}
           >
             {s}x
           </Button>

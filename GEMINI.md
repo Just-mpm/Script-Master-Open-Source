@@ -180,13 +180,15 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/hooks/useAssistant.ts` |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/hooks/useAssistant.ts` |
 | **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via `generateContentStream`) |
+| **UI centralizada** | `assistantUi.ts` — 13 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button); componentes internos importam de `assistantUi` em vez de `tokens.ts` |
+| **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action |
+| **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini. Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
 | **System prompt** | Montado dinamicamente: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
 | **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
-| **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini |
 | **Auto-save** | Salva sessão ao final de cada resposta (quando `isStreaming` → `false`). Título: primeiros 40 chars da primeira msg |
 | **Abort** | Novo envio aborta chamada anterior. Desmontagem aborta em andamento |
 
@@ -233,12 +235,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts` |
-| **Provider** | Google popup + email/senha + reset de senha. `AuthContext` + `useAuth()` — 9 componentes consumidores |
-| **Métodos** | `login()` (Google), `signup(email, password)` (criação), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `clearAuthError()` |
-| **COEP conflict** | Login/logout fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
+| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts`, `src/lib/db/account-cleanup.ts` |
+| **Provider** | Google popup + email/senha + reset de senha + exclusão de conta. `AuthContext` + `useAuth()` — 10 componentes consumidores |
+| **Métodos** | `login()` (Google), `signup(email, password)` (criação + verificação de email), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `deleteAccount()` (cleanup LGPD + deleteUser), `clearAuthError()` |
+| **Exclusão de conta** | Pipeline LGPD: `deleteAllUserData(userId)` remove projetos + subcoleções, gerações, chats, memórias, settings e Storage objects; `deleteUser(currentUser)` remove autenticação; dialog "EXCLUIR" de confirmação no Header |
+| **Verificação de email** | `sendEmailVerification()` enviada automaticamente pós-cadastro; falha não bloqueia cadastro |
+| **COEP conflict** | Login/logout/delete fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
-| **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`) |
+| **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`, `auth/requires-recent-login`) |
 | **Estilos compartilhados** | `authTextFieldSx` (TextField dark theme) e `authLinkSx` (link inline hover) definidos em LoginPage e RegisterPage |
 
 ### Environment & COEP
@@ -261,11 +265,11 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
 | **Stack** | MUI v9 + Emotion. `StyledEngineProvider` com `enableCssLayer`. CSS layers: `theme, base, mui, components, utilities` |
 | **Modo** | Dark only na prática (light existe com palette idêntica). Font: Inter (sans), JetBrains Mono (mono), Playfair Display (serif) |
-| **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients, status (success/error borders/glows) |
+| **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients, status (success/error/warning borders/glows) |
 | **Surfaces** | `glassPanelSx` (blur+gradiente+shadow), `insetPanelSx` (recessado), `glassSurfaceSx` (blur fixo) — todas em `surfaces.ts` |
 | **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
 | **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
-| **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient` |
+| **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient`, keyframes `pulse` |
 | **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant`, `/login` e `/cadastro` sem Container |
 
 ### PWA
@@ -291,13 +295,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.22.0`
+- **Current:** `0.23.0`
 - **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |
 | 0.22.0 | Refatoração `useStudioState` → Zustand store (`useStudioStore`, `useCurrentStudioState`, `buildGenerateOptions`); 3 arquivos criados em `store/` (studioStore, studio.utils, barrel); `useShallow` em StudioPage/VideoPage; `getStoredNumber` corrigido; `ScriptEditorController` type removido; 24 testes novos (total: 1064) |
 | 0.21.1 | Otimização de performance: `React.memo` em 10 componentes (Inspector, CaptionEditorPanel, SubtitleInlineEditor, TranscriptionPanel, VideoExportPanel, AssistantComposer, AssistantHeader, AssistantHistoryPanel, AssistantMemoriesPanel, AssistantSettingsPanel); `useCallback` em 12 handlers do Assistant.tsx; state lifting invertido no VideoExportPanel (quality/fileName/animateScenes/speedPaintSpeed como state local); `VideoPreview` memoizado no VideoPage; `useMemo` no retorno de `useVideoExporter` |
 | 0.21.0 | Autenticação email/senha + cadastro (RegisterPage `/cadastro`); LoginPage reformulada (email/senha + reset dialog); biblioteca `error-mapping.ts` (`createErrorMapper`, `sharedErrorRules`); Firebase Hosting completo (.firebaserc, 404.html, cleanUrls, 8 redirects 301, cache immutable, headers de segurança); scripts deploy/deploy:preview; firebase-tools devDep; 68 testes novos (total: 1040) |

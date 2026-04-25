@@ -9,6 +9,12 @@ interface ErrorToastProps {
   onDismiss: () => void;
 }
 
+const TOAST_SX = {
+  width: '100%',
+  alignItems: 'center',
+  minWidth: { xs: 'min(92vw, 320px)', sm: 400 },
+} as const;
+
 export function ErrorToast({ error, onDismiss }: ErrorToastProps) {
   return (
     <Snackbar
@@ -27,12 +33,12 @@ export function ErrorToast({ error, onDismiss }: ErrorToastProps) {
         severity="error"
         variant="filled"
         onClose={onDismiss}
-          action={
+        action={
           <IconButton color="inherit" size="small" aria-label="Fechar mensagem de erro" onClick={onDismiss}>
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         }
-        sx={{ width: '100%', alignItems: 'center', minWidth: { xs: 'min(92vw, 320px)', sm: 360 } }}
+        sx={TOAST_SX}
       >
         {error}
       </Alert>

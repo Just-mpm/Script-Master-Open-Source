@@ -2,8 +2,9 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
 import type { ElementType } from 'react';
-import { BRAND_GRADIENT, TEXT_SECONDARY } from '../../theme/tokens';
+import { BRAND_GRADIENT, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 
 interface StepCardProps {
   number: number;
@@ -21,15 +22,18 @@ export function StepCard({ number, title, description, icon: Icon }: StepCardPro
         textAlign: 'center',
         height: '100%',
         backgroundColor: theme.palette.background.paper,
-        transition: 'transform 0.3s ease',
-        '&:hover': { transform: 'translateY(-2px)' },
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: `0 20px 60px ${alpha(theme.palette.common.black, 0.2)}`,
+        },
       })}
     >
       <Stack spacing={2} sx={{ alignItems: 'center' }}>
         {/* Número + ícone */}
         <Box sx={{ position: 'relative' }}>
           <Box
-            sx={(theme) => ({
+            sx={{
               width: 64,
               height: 64,
               borderRadius: '50%',
@@ -37,8 +41,9 @@ export function StepCard({ number, title, description, icon: Icon }: StepCardPro
               placeItems: 'center',
               background: BRAND_GRADIENT,
               color: 'common.white',
-              boxShadow: `0 12px 32px ${theme.palette.primary.main}40`,
-            })}
+              boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
+              transition: 'box-shadow 0.3s ease',
+            }}
           >
             <Icon sx={{ fontSize: 28 }} aria-hidden="true" />
           </Box>
@@ -58,17 +63,18 @@ export function StepCard({ number, title, description, icon: Icon }: StepCardPro
               color: 'secondary.contrastText',
               fontWeight: 700,
               fontSize: '0.75rem',
+              boxShadow: `0 2px 8px rgba(247, 148, 30, 0.3)`,
             }}
           >
             {number}
           </Typography>
         </Box>
 
-        <Typography variant="h6" component="h3">
+        <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
           {title}
         </Typography>
 
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7 }}>
           {description}
         </Typography>
       </Stack>
