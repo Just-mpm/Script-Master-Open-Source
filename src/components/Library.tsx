@@ -72,6 +72,7 @@ export function Library() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [audioToDelete, setAudioToDelete] = useState<string | null>(null);
   const [deletingAudio, setDeletingAudio] = useState(false);
@@ -115,6 +116,7 @@ export function Library() {
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null);
       setProjectData(EMPTY_PROJECT_DATA);
+      setDetailError(null);
       cleanupBlobUrls();
       return;
     }
@@ -123,11 +125,14 @@ export function Library() {
     cleanupBlobUrls();
     setExpandedProjectId(projectId);
     setDetailLoading(true);
+    setDetailError(null);
+    setProjectData(EMPTY_PROJECT_DATA);
     try {
       const { audios, images } = await getProjectDetails(projectId, user?.uid);
       setProjectData({ audios, images });
     } catch (err) {
       log.error('Falha ao carregar detalhes do projeto', { error: err });
+      setDetailError('Não foi possível carregar os detalhes do projeto. Verifique sua conexão e tente novamente.');
     } finally {
       setDetailLoading(false);
     }
@@ -458,7 +463,19 @@ export function Library() {
                                   Versões de áudio
                                 </Typography>
 
-                                {projectData.audios.length === 0 ? (
+                                {detailError ? (
+                                  <Alert
+                                    variant="outlined"
+                                    severity="error"
+                                    action={
+                                      <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
+                                        Tentar novamente
+                                      </Button>
+                                    }
+                                  >
+                                    {detailError}
+                                  </Alert>
+                                ) : projectData.audios.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
                                     Nenhum áudio encontrado neste projeto.
                                   </Typography>
@@ -546,7 +563,19 @@ export function Library() {
                                   Cenas geradas
                                 </Typography>
 
-                                {projectData.images.length === 0 ? (
+                                {detailError ? (
+                                  <Alert
+                                    variant="outlined"
+                                    severity="error"
+                                    action={
+                                      <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
+                                        Tentar novamente
+                                      </Button>
+                                    }
+                                  >
+                                    {detailError}
+                                  </Alert>
+                                ) : projectData.images.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
                                     Nenhuma imagem encontrada neste projeto.
                                   </Typography>

@@ -63,10 +63,15 @@ export function useVoicePreviews() {
     });
   };
 
+  const clearError = (): void => {
+    setErrorId(null);
+  };
+
   return {
     playingId,
     errorId,
     playPreview,
     stop,
+    clearError,
   };
 }

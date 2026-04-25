@@ -69,6 +69,7 @@ export function ImageStudio() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
+  const [imagesError, setImagesError] = useState<string | null>(null);
   const [imageToDelete, setImageToDelete] = useState<SavedImage | null>(null);
   const [deletingImage, setDeletingImage] = useState(false);
 
@@ -79,11 +80,13 @@ export function ImageStudio() {
   // Carrega imagens salvas na biblioteca
   const loadSavedImages = useCallback(async () => {
     setImagesLoading(true);
+    setImagesError(null);
     try {
       const images = await getImageGenerations(user?.uid);
       setSavedImages(images);
     } catch (loadError) {
       log.error('Falha ao carregar imagens salvas', { error: loadError });
+      setImagesError('Não foi possível carregar as imagens salvas. Verifique sua conexão e tente novamente.');
     } finally {
       setImagesLoading(false);
     }
@@ -446,12 +449,24 @@ export function ImageStudio() {
                     </Grid>
                   ))}
                 </Grid>
-              ) : savedImages.length === 0 ? (
+              ) : savedImages.length === 0 && !imagesError ? (
                 <Box sx={{ py: 3, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
                     Nenhuma imagem salva ainda. Gere e salve sua primeira imagem acima.
                   </Typography>
                 </Box>
+              ) : imagesError ? (
+                <Alert
+                  variant="outlined"
+                  severity="error"
+                  action={
+                    <Button color="inherit" size="small" onClick={() => void loadSavedImages()}>
+                      Tentar novamente
+                    </Button>
+                  }
+                >
+                  {imagesError}
+                </Alert>
               ) : (
                 <Grid container spacing={1.5}>
                   {savedImages.map((img) => (

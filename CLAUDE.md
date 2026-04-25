@@ -18,6 +18,8 @@ bun run test             # Vitest (execução única)
 bun run test:watch       # Vitest (watch mode)
 bun run preview          # serve build localmente
 bun run clean            # remove dist/
+bun run deploy           # lint + typecheck + build + firebase deploy (produção)
+bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:deploy preview
 ```
 
 **Sem formatter e sem CI/CD.**
@@ -27,7 +29,7 @@ bun run clean            # remove dist/
 - **React 19** + **Vite 8** + **react-router-dom v7** (lazy loading por rota)
 - **MUI v9** — tema em `src/theme/*`, sem Tailwind
 - **@google/genai** (cliente direto) — TTS, imagens, prompts de cena
-- **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage)
+- **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) | `firebase-tools` ^15.3.0 (deploy)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
 - **react-helmet-async** — SEO per-page (meta tags OG, Twitter Cards, canonical)
@@ -74,6 +76,7 @@ bun run clean            # remove dist/
 | `/cookies` | CookiesPage | Não |
 | `/status` | StatusPage | Não |
 | `/login` | LoginPage | Não |
+| `/cadastro` | RegisterPage | Não |
 | `/app/estudio` | StudioPage | Sim |
 | `/app/video` | VideoPage | Sim |
 | `/app/imagens` | ImageStudio | Sim |
@@ -82,7 +85,7 @@ bun run clean            # remove dist/
 | `/app/biblioteca` | LibraryPage | Sim |
 | `/app` | Redirect → `/app/estudio` | — |
 
-**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
+**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/register` → `/cadastro`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
 
 ---
 
@@ -105,7 +108,7 @@ bun run clean            # remove dist/
 | **StatusPage** | `/status` — status dos serviços |
 | **Componentes** | 12 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion expansível), barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`; `sitemap.xml` com 9 URLs públicas priorizadas |
+| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -228,11 +231,13 @@ bun run clean            # remove dist/
 
 | | |
 |---|---|
-| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/lib/firebase.ts` |
-| **Provider** | Google popup only. Sem email/senha. `AuthContext` + `useAuth()` — 9 componentes consumidores |
+| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts` |
+| **Provider** | Google popup + email/senha + reset de senha. `AuthContext` + `useAuth()` — 9 componentes consumidores |
+| **Métodos** | `login()` (Google), `signup(email, password)` (criação), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `clearAuthError()` |
 | **COEP conflict** | Login/logout fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
-| **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, etc.) |
+| **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`) |
+| **Estilos compartilhados** | `authTextFieldSx` (TextField dark theme) e `authLinkSx` (link inline hover) definidos em LoginPage e RegisterPage |
 
 ### Environment & COEP
 
@@ -241,9 +246,9 @@ bun run clean            # remove dist/
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
 | **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 2 opcionais |
 | **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()` |
-| **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`: SEM COEP (popup Firebase) |
-| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` |
-| **Prod** | Headers em `firebase.json` (COEP em `/app/**` + `/404.html`). SPA rewrite: `**` → `/index.html` |
+| **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login` e `/cadastro`: SEM COEP (popup Firebase) |
+| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` e `/cadastro` |
+| **Prod** | Headers em `firebase.json` (COEP em `/app/**` + `/404.html`). SPA rewrite: `**` → `/index.html`. `cleanUrls`: true. 8 redirects 301. Cache immutable para assets estáticos. Headers de segurança (`X-Content-Type-Options`, `Referrer-Policy`) |
 | **Razão** | `SharedArrayBuffer` necessário para Whisper WASM e Remotion |
 | **Segurança** | `VITE_GEMINI_API_KEY` exposta no bundle (aceito por contexto privado). Segurança dos dados via Firestore/Storage Rules |
 
@@ -259,7 +264,7 @@ bun run clean            # remove dist/
 | **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
 | **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
 | **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient` |
-| **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant` e `/login` sem Container |
+| **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant`, `/login` e `/cadastro` sem Container |
 
 ### PWA
 
@@ -269,27 +274,29 @@ bun run clean            # remove dist/
 | **Manifest** | Ícones 192/512, `theme_color` #0a0a0f, `display: standalone` |
 | **Workbox** | Runtime caching para assets estáticos (1 ano) e Google Fonts (30 dias) |
 | **Registro** | Apenas em produção (`import.meta.env.PROD`), `immediate: true` |
-| **Exceções** | `/login` em `navigateFallbackDenylist` (sem COEP, não interceptado pelo SW) |
+| **Exceções** | `/login` e `/cadastro` em `navigateFallbackDenylist` (sem COEP, não interceptado pelo SW) |
 
-### Logger & Rate Limiter
+### Logger, Error Mapping & Rate Limiter
 
 | | |
 |---|---|
-| **Arquivos** | `src/lib/logger.ts`, `src/lib/rate-limiter.ts` |
+| **Arquivos** | `src/lib/logger.ts`, `src/lib/error-mapping.ts`, `src/lib/rate-limiter.ts` |
 | **Logger** | `createLogger('context')` com níveis debug/info/warn/error. `debug` e `info` suprimidos em produção (`import.meta.env.PROD`) |
+| **Error mapping** | `createErrorMapper(config)` genérico com `ErrorMappingRule[]` por domínio. `sharedErrorRules` comuns (quota, API key, unavailable). Substitui funções `toUserFriendly*` duplicadas |
 | **Rate limiter** | `withRetry<T>(fn, config?)` — genérico, reutilizável. Detecta `ApiError.status` + keywords em mensagens |
 
 ---
 
 ## Version
 
-- **Current:** `0.20.0`
-- **Last release:** 2026-04-24
+- **Current:** `0.21.0`
+- **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.21.0 | Autenticação email/senha + cadastro (RegisterPage `/cadastro`); LoginPage reformulada (email/senha + reset dialog); biblioteca `error-mapping.ts` (`createErrorMapper`, `sharedErrorRules`); Firebase Hosting completo (.firebaserc, 404.html, cleanUrls, 8 redirects 301, cache immutable, headers de segurança); scripts deploy/deploy:preview; firebase-tools devDep; 68 testes novos (total: 1040) |
 | 0.20.0 | Fase 3+4 do Speed Paint completas; Web Worker inline (OffscreenCanvas, >5 cenas); cache LRU (20 entradas, SHA-256); controle de velocidade (0.5x/1x/1.5x); limpeza de memória; bug fix React batching (speedPaintWarnings); refatoração VideoLibrary 700→216 linhas (-69%); refatoração SubtitleInlineEditor 1006→401 linhas (-60%); 9 novos tokens de tema; 61 testes novos (total: 972) |
 | 0.19.0 | Export quality selector (720p–4k); `estimateFileSize` com VP9/H265; posição de legendas (bottom/center/top); thumbnails na VideoLibrary; busca/ordenação na galeria; 9 novos tokens de tema; progress semântico; 10 correções de audit (blob URL seletiva, guard dupla render, thumbnail timeout, a11y slider, useEffect deps, tokens hardcoded, slider styles, default duplicado); 911 testes (total: 911) |
 | 0.18.1 | Remoção da ChangelogPage (`/novidades`); `framesToSeconds` duplicada removida; relatórios de teste consolidados removidos; PublicHeader corrigido (links PT-BR); FAQ/Pricing/About/Status atualizados; audio-analysis refatorado; db/chats ajustado; 911 testes (total: 911) |

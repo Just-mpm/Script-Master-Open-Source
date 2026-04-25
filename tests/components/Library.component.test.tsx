@@ -15,7 +15,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 const mockUser = { uid: 'user-123', displayName: 'Test', photoURL: null };
 
 vi.mock('../../src/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: mockUser, loading: false, authError: null, clearAuthError: vi.fn(), login: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({ user: mockUser, loading: false, authError: null, clearAuthError: vi.fn(), login: vi.fn(), signup: vi.fn(), loginWithEmail: vi.fn(), resetPassword: vi.fn(), logout: vi.fn() }),
 }));
 
 vi.mock('../../src/contexts/AudioContext', () => ({
@@ -229,6 +229,9 @@ describe('Library', () => {
       authError: null,
       clearAuthError: vi.fn(),
       login: vi.fn(),
+      signup: vi.fn(),
+      loginWithEmail: vi.fn(),
+      resetPassword: vi.fn(),
       logout: vi.fn(),
     });
 

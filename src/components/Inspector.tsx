@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -25,6 +25,7 @@ import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Close from '@mui/icons-material/Close';
+import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import GraphicEq from '@mui/icons-material/GraphicEq';
@@ -178,8 +179,17 @@ export function Inspector({
 
   const {
     playingId,
+    errorId,
     playPreview,
+    clearError,
   } = useVoicePreviews();
+
+  // Limpa erro de preview após 3 segundos para não travar o ícone indefinidamente
+  useEffect(() => {
+    if (!errorId) return;
+    const timer = window.setTimeout(clearError, 3000);
+    return () => window.clearTimeout(timer);
+  }, [errorId, clearError]);
 
   const isVoiceOpen = !isVoiceCollapsed;
   const isDirectionOpen = !isDirectionCollapsed;
@@ -328,6 +338,7 @@ export function Inspector({
               {VOICES.map((voice) => {
                 const isActiveVoice = activeVoiceTab === 'A' ? selectedVoice === voice.id : speakerBVoice === voice.id;
                 const isPlaying = playingId === voice.id;
+                const hasError = errorId === voice.id;
 
                 return (
                   <Grid key={voice.id} size={{ xs: 12, sm: 6 }}>
@@ -380,7 +391,7 @@ export function Inspector({
                         </Stack>
                       </ButtonBase>
 
-                      <Tooltip title={`Ouvir amostra da voz ${voice.name}`}>
+                      <Tooltip title={hasError ? 'Erro ao reproduzir preview' : `Ouvir amostra da voz ${voice.name}`}>
                         <span>
                           <IconButton
                             size="small"
@@ -389,25 +400,39 @@ export function Inspector({
                               playPreview(voice.id);
                             }}
                             disabled={isGenerating}
-                            aria-label={`Ouvir amostra da voz ${voice.name}`}
+                            aria-label={hasError ? 'Erro ao reproduzir preview' : `Ouvir amostra da voz ${voice.name}`}
                             sx={(currentTheme) => ({
                               position: 'absolute',
                               right: 8,
                               bottom: 8,
                               borderRadius: RADIUS_XS,
-                              border: `1px solid ${alpha(currentTheme.palette.common.white, 0.08)}`,
+                              border: `1px solid ${hasError
+                                ? alpha(currentTheme.palette.error.main, 0.4)
+                                : alpha(currentTheme.palette.common.white, 0.08)}`,
                               backgroundColor: isPlaying
                                 ? currentTheme.palette.primary.main
-                                : alpha(currentTheme.palette.background.paper, 0.6),
-                              color: isPlaying ? currentTheme.palette.primary.contrastText : currentTheme.palette.text.secondary,
+                                : hasError
+                                  ? alpha(currentTheme.palette.error.main, 0.12)
+                                  : alpha(currentTheme.palette.background.paper, 0.6),
+                              color: isPlaying ? currentTheme.palette.primary.contrastText
+                                : hasError
+                                  ? currentTheme.palette.error.main
+                                  : currentTheme.palette.text.secondary,
                               '&:hover': {
                                 backgroundColor: isPlaying
                                   ? currentTheme.palette.primary.dark
-                                  : alpha(currentTheme.palette.primary.main, 0.16),
+                                  : hasError
+                                    ? alpha(currentTheme.palette.error.main, 0.2)
+                                    : alpha(currentTheme.palette.primary.main, 0.16),
                               },
                             })}
                           >
-                            {isPlaying ? <Pause sx={{ fontSize: ICON_SIZE_SM }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_SM }} />}
+                            {isPlaying
+                              ? <Pause sx={{ fontSize: ICON_SIZE_SM }} />
+                              : hasError
+                                ? <ErrorOutlineOutlined sx={{ fontSize: ICON_SIZE_SM }} />
+                                : <PlayArrow sx={{ fontSize: ICON_SIZE_SM }} />
+                            }
                           </IconButton>
                         </span>
                       </Tooltip>

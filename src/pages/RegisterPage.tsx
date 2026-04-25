@@ -10,18 +10,15 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Mic from '@mui/icons-material/Mic';
 import Google from '@mui/icons-material/Google';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import ImageIcon from '@mui/icons-material/Image';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
-import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getPageSeo } from '../lib/seo';
 import {
   APP_BORDER_STRONG,
   BRAND_GRADIENT,
@@ -34,7 +31,6 @@ import {
   BRAND_GLOW,
   GAP_RELAXED,
   TEXT_SECONDARY,
-  SUCCESS_MAIN,
 } from '../theme/tokens';
 import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
@@ -90,30 +86,30 @@ const authLinkSx: SxProps<Theme> = {
   },
 };
 
-const LOGIN_BENEFITS = [
+const REGISTER_BENEFITS = [
   { icon: Mic, title: 'Voz com IA', description: 'Roteiros em áudio profissional com Gemini TTS' },
   { icon: PlayCircle, title: 'Vídeo Automático', description: 'Renderização client-side com legendas' },
   { icon: ImageIcon, title: 'Imagens', description: 'Geração com 8 aspect ratios e referência' },
   { icon: AutoAwesome, title: 'Assistente IA', description: 'Chat com memória e integração ao estúdio' },
 ];
 
-export function LoginPage() {
-  const { user, login, loginWithEmail, resetPassword, authError, loading, clearAuthError } = useAuth();
+const SEO_PROPS = getPageSeo({
+  title: 'Cadastro',
+  description: 'Crie sua conta no Script Master e comece a transformar roteiros em audio, video e imagens com inteligencia artificial.',
+  path: '/cadastro',
+});
+
+export function RegisterPage() {
+  const { user, login, signup, authError, loading, clearAuthError } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dialog de reset de senha
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [resetSuccess, setResetSuccess] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
-  // Redireciona usuario ja autenticado para o estudio (full reload para aplicar headers COEP)
+  // Redireciona usuario ja autenticado (full reload para aplicar COEP)
   useEffect(() => {
     if (user && !loading) {
       window.location.href = '/app/estudio';
@@ -131,6 +127,14 @@ export function LoginPage() {
 
     if (!password) {
       errors.password = 'Senha é obrigatória.';
+    } else if (password.length < 6) {
+      errors.password = 'A senha deve ter pelo menos 6 caracteres.';
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Confirme sua senha.';
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'As senhas não conferem.';
     }
 
     setFieldErrors(errors);
@@ -145,38 +149,10 @@ export function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      await loginWithEmail(email, password);
+      await signup(email, password);
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  async function handleResetSubmit(event: FormEvent) {
-    event.preventDefault();
-
-    if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
-      setResetError('Email inválido.');
-      return;
-    }
-
-    setIsResetting(true);
-    setResetError(null);
-    setResetSuccess(false);
-    try {
-      await resetPassword(resetEmail);
-      setResetSuccess(true);
-    } catch {
-      setResetError(authError ?? 'Erro ao enviar email de redefinição.');
-    } finally {
-      setIsResetting(false);
-    }
-  }
-
-  function openResetDialog() {
-    setResetEmail(email);
-    setResetError(null);
-    setResetSuccess(false);
-    setResetOpen(true);
   }
 
   // Verificacao de sessao Firebase
@@ -202,6 +178,8 @@ export function LoginPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
+      <Helmet {...SEO_PROPS} />
+
       {/* Skip-to-content link — acessibilidade */}
       <Typography
         component="a"
@@ -257,7 +235,7 @@ export function LoginPage() {
                 </Box>
 
                 <Stack spacing={2.5}>
-                  {LOGIN_BENEFITS.map((benefit) => {
+                  {REGISTER_BENEFITS.map((benefit) => {
                     const BenefitIcon = benefit.icon;
                     return (
                       <Stack key={benefit.title} direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -293,7 +271,7 @@ export function LoginPage() {
               </Stack>
             </Grid>
 
-            {/* Coluna direita — card de login */}
+            {/* Coluna direita — card de cadastro */}
             <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 variant="outlined"
@@ -330,10 +308,10 @@ export function LoginPage() {
 
                   <Box>
                     <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
-                      Script Master
+                      Criar conta
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Entre com Google ou email
+                      Comece a criar com IA
                     </Typography>
                   </Box>
 
@@ -365,7 +343,7 @@ export function LoginPage() {
                       },
                     }}
                   >
-                    Entrar com Google
+                    Cadastrar com Google
                   </Button>
 
                   <Divider sx={{ width: '100%' }}>
@@ -405,16 +383,29 @@ export function LoginPage() {
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, password: '' })); }}
                         error={Boolean(fieldErrors.password)}
-                        helperText={fieldErrors.password}
+                        helperText={fieldErrors.password || 'Pelo menos 6 caracteres'}
                         fullWidth
                         required
-                        autoComplete="current-password"
+                        autoComplete="new-password"
+                        sx={authTextFieldSx}
+                      />
+
+                      <TextField
+                        label="Confirmar senha"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, confirmPassword: '' })); }}
+                        error={Boolean(fieldErrors.confirmPassword)}
+                        helperText={fieldErrors.confirmPassword}
+                        fullWidth
+                        required
+                        autoComplete="new-password"
                         sx={authTextFieldSx}
                       />
 
                       <Button
                         type="submit"
-                        variant="outlined"
+                        variant="contained"
                         size="large"
                         fullWidth
                         disabled={isSubmitting}
@@ -422,148 +413,41 @@ export function LoginPage() {
                         sx={{
                           mt: 0.5,
                           py: 1.5,
-                          borderWidth: 1.5,
-                          transition: 'border-color 0.2s ease, transform 0.2s ease',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover:not(.Mui-disabled)': {
-                            borderWidth: 2,
+                            transform: 'translateY(-1px)',
+                            boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}`,
                           },
                           '&:active:not(.Mui-disabled)': {
-                            transform: 'scale(0.98)',
+                            transform: 'translateY(0)',
                           },
                         }}
                       >
-                        Entrar
+                        Criar conta
                       </Button>
                     </Stack>
                   </Box>
 
-                  {/* Links auxiliares */}
-                  <Stack spacing={1} sx={{ width: '100%', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Já tem conta?{' '}
                     <Typography
+                      component="span"
                       variant="body2"
                       sx={authLinkSx}
-                      onClick={openResetDialog}
-                      role="button"
+                      onClick={() => navigate('/login')}
+                      role="link"
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') openResetDialog(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') navigate('/login'); }}
                     >
-                      Esqueceu a senha?
+                      Faça login
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Não tem conta?{' '}
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        sx={authLinkSx}
-                        onClick={() => navigate('/cadastro')}
-                        role="link"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter') navigate('/cadastro'); }}
-                      >
-                        Cadastre-se
-                      </Typography>
-                    </Typography>
-                  </Stack>
+                  </Typography>
                 </Stack>
               </Paper>
             </Grid>
           </Grid>
         </Box>
       </Box>
-
-      {/* Dialog de reset de senha */}
-      <Dialog
-        open={resetOpen}
-        onClose={() => setResetOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: (theme) => ({
-              ...glassPanelSx(theme),
-              p: 0,
-              backgroundImage: 'none',
-            }),
-          },
-        }}
-      >
-        <DialogTitle sx={{ pb: 1, fontWeight: 700, letterSpacing: '-0.01em' }}>
-          Redefinir senha
-        </DialogTitle>
-        <DialogContent sx={{ pb: 1 }}>
-          {resetSuccess ? (
-            <Stack spacing={2} sx={{ py: 2, alignItems: 'center', textAlign: 'center' }}>
-              <CheckCircleOutlineRounded sx={{ fontSize: 48, color: SUCCESS_MAIN }} aria-hidden="true" />
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Email enviado!
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-                </Typography>
-              </Box>
-            </Stack>
-          ) : (
-            <Box component="form" onSubmit={handleResetSubmit} sx={{ pt: 1 }}>
-              <Stack spacing={2.5}>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Informe seu email e enviaremos um link para redefinir sua senha.
-                </Typography>
-                {resetError && (
-                  <Alert severity="error" variant="filled">{resetError}</Alert>
-                )}
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => { setResetEmail(e.target.value); setResetError(null); }}
-                  fullWidth
-                  required
-                  autoComplete="email"
-                  autoFocus
-                  sx={authTextFieldSx}
-                />
-              </Stack>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-          {resetSuccess ? (
-            <Button
-              onClick={() => setResetOpen(false)}
-              variant="contained"
-              fullWidth
-              sx={{ py: 1.25 }}
-            >
-              Entendi
-            </Button>
-          ) : (
-            <>
-              <Button
-                onClick={() => setResetOpen(false)}
-                disabled={isResetting}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover:not(.Mui-disabled)': {
-                    color: 'text.primary',
-                  },
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleResetSubmit}
-                variant="contained"
-                disabled={isResetting}
-                startIcon={isResetting ? <CircularProgress size={18} color="inherit" /> : undefined}
-                sx={{ px: 3 }}
-              >
-                Enviar link
-              </Button>
-            </>
-          )}
-        </DialogActions>
-      </Dialog>
 
       <PublicFooter />
     </Box>

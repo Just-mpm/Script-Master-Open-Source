@@ -125,6 +125,7 @@ service cloud.firestore {
       match /audios/{audioId} {
         allow read: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
         allow create: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidAudio(request.resource.data);
+        allow update: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) && isValidAudio(request.resource.data);
         allow delete: if isAuthenticated() && (isAdmin() || get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
       }
 

@@ -48,7 +48,6 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
     } catch (error: unknown) {
       log.error('Erro na migração', { error });
       setMigrationResult({ migrated: 0, errors: 1, details: 'Erro inesperado durante a migração.' });
-      markMigrationCompleted(userId);
     } finally {
       setIsMigrating(false);
     }
@@ -61,7 +60,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
 
   if (!checkResult) {
     return (
-      <Dialog open>
+      <Dialog open aria-label="Migrando dados">
         <DialogContent>
           <Stack spacing={2} sx={{ alignItems: 'center', py: 3 }}>
             <CircularProgress size={28} />
@@ -77,8 +76,8 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
   // Estado pós-migração
   if (migrationResult) {
     return (
-      <Dialog open>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Dialog open aria-labelledby="migration-complete-title">
+        <DialogTitle id="migration-complete-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <CloudUpload color="primary" />
           Migração concluída
         </DialogTitle>
@@ -115,8 +114,8 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
     + summary.memories + summary.chats + (summary.settings ? 1 : 0);
 
   return (
-    <Dialog open maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+    <Dialog open maxWidth="sm" fullWidth aria-labelledby="migration-confirm-title">
+      <DialogTitle id="migration-confirm-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <CloudUpload color="primary" />
         Migrar dados locais?
       </DialogTitle>

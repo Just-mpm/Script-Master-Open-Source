@@ -11,3 +11,6 @@ coverage/
 
 # Previews de voz (gerados pelo script, não versionar binários grandes)
 public/voice-previews/*.wav
+
+# Firebase CLI (cache local e logs de debug)
+.firebase/

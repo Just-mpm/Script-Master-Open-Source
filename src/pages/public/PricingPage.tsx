@@ -195,6 +195,7 @@ function BillingToggle({
         onChange={(_, newValue: BillingPeriod | null) => {
           if (newValue !== null) onChange(newValue);
         }}
+        aria-label="Ciclo de pagamento"
         sx={(theme) => ({
           bgcolor: alpha(theme.palette.common.white, 0.04),
           borderRadius: 3,

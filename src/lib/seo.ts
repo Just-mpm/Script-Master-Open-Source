@@ -4,7 +4,7 @@ const SITE_URL = 'https://scriptmaster.app';
 const SITE_NAME = 'Script Master';
 const DEFAULT_DESCRIPTION =
   'Transforme roteiros em áudio profissional com IA. Geração de voz, imagens e vídeos com inteligência artificial.';
-const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/logo-transparente.webp`;
 
 interface SeoProps {
   title: string;

@@ -170,7 +170,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           />
 
           <Tooltip title={sortOrder === 'recent' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}>
-            <IconButton size="small" onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}>
+            <IconButton size="small" aria-label="Ordenar" onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}>
               {sortOrder === 'recent'
                 ? <ArrowDownward sx={{ fontSize: ICON_SIZE_MD }} />
                 : <ArrowUpward sx={{ fontSize: ICON_SIZE_MD }} />

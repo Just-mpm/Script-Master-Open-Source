@@ -4,6 +4,7 @@ import { getGeminiApiKey } from '../lib/env';
 import { base64ToBlobSync } from '../lib/audio';
 import { withRetry } from '../lib/rate-limiter';
 import { createLogger } from '../lib/logger';
+import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 
 const log = createLogger('useImageGenerator');
 
@@ -11,34 +12,21 @@ const log = createLogger('useImageGenerator');
 // Utilitários
 // ---------------------------------------------------------------------------
 
-/**
- * Mapeia erros técnicos do Gemini para mensagens amigáveis em pt-BR (UX-3).
- */
-function toUserFriendlyImageError(err: unknown): string {
-  if (!(err instanceof Error)) {
-    return 'Ocorreu um erro ao gerar a imagem. Tente novamente.';
-  }
-
-  const msg = err.message.toLowerCase();
-
-  if (msg.includes('quota') || msg.includes('resource_exhausted') || msg.includes('429')) {
-    return 'Limite de uso atingido. Aguarde alguns minutos e tente novamente.';
-  }
-  if (msg.includes('api key') || msg.includes('permission_denied')) {
-    return 'Erro de autenticação. Verifique sua chave de API nas configurações.';
-  }
-  if (msg.includes('deadline') || msg.includes('504') || msg.includes('timeout')) {
-    return 'O servidor demorou demais para responder. Tente novamente.';
-  }
-  if (msg.includes('unavailable') || msg.includes('503')) {
-    return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
-  }
-  if (msg.includes('safety') || msg.includes('blocked')) {
-    return 'Conteúdo bloqueado por filtros de segurança. Altere o prompt e tente novamente.';
-  }
-
-  return 'Não foi possível gerar a imagem. Verifique o prompt e tente novamente.';
-}
+const toUserFriendlyImageError = createErrorMapper({
+  nonErrorMessage: 'Ocorreu um erro ao gerar a imagem. Tente novamente.',
+  defaultMessage: 'Não foi possível gerar a imagem. Verifique o prompt e tente novamente.',
+  rules: [
+    ...sharedErrorRules,
+    {
+      match: (m) => m.includes('deadline') || m.includes('504') || m.includes('timeout'),
+      message: 'O servidor demorou demais para responder. Tente novamente.',
+    },
+    {
+      match: (m) => m.includes('safety') || m.includes('blocked'),
+      message: 'Conteúdo bloqueado por filtros de segurança. Altere o prompt e tente novamente.',
+    },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // Tipos

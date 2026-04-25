@@ -11,6 +11,7 @@ import { calculateDurationFromWav } from '../features/video-render/lib/videoUtil
 import { withRetry } from '../lib/rate-limiter';
 import { detectSceneBoundaries } from '../lib/audio-analysis';
 import { createLogger } from '../lib/logger';
+import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 
 const log = createLogger('useAudioGenerator');
 
@@ -47,38 +48,29 @@ function splitTextProgrammatically(text: string, limit: number): string[] {
   return result;
 }
 
-/**
- * Mapeia erros técnicos do Gemini para mensagens amigáveis em pt-BR (UX-2).
- */
-function toUserFriendlyError(err: unknown): string {
-  if (!(err instanceof Error)) {
-    return 'Ocorreu um erro inesperado. Tente novamente.';
-  }
+// ---------------------------------------------------------------------------
+// Mapeamento de erros amigáveis
+// ---------------------------------------------------------------------------
 
-  const msg = err.message.toLowerCase();
-
-  if (msg.includes('quota') || msg.includes('resource_exhausted') || msg.includes('429')) {
-    return 'Limite de uso atingido. Aguarde alguns minutos e tente novamente.';
-  }
-  if (msg.includes('api key') || msg.includes('key not valid') || msg.includes('permission_denied')) {
-    return 'Erro de autenticação. Verifique sua chave de API nas configurações.';
-  }
-  if (msg.includes('deadline_exceeded') || msg.includes('504')) {
-    return 'O servidor demorou demais para responder. Tente um roteiro menor ou aguarde.';
-  }
-  if (msg.includes('unavailable') || msg.includes('503')) {
-    return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
-  }
-  if (msg.includes('safety') || msg.includes('blocked')) {
-    return 'Conteúdo bloqueado por filtros de segurança. Altere o roteiro e tente novamente.';
-  }
-  if (msg.includes('contexto') && msg.includes('longo')) {
-    return 'O roteiro é muito longo para o modelo atual. Reduza o texto ou divida em partes.';
-  }
-
-  // Mensagem genérica sem expor detalhes técnicos
-  return 'Não foi possível concluir a geração. Verifique o roteiro e tente novamente.';
-}
+const toUserFriendlyError = createErrorMapper({
+  nonErrorMessage: 'Ocorreu um erro inesperado. Tente novamente.',
+  defaultMessage: 'Não foi possível concluir a geração. Verifique o roteiro e tente novamente.',
+  rules: [
+    ...sharedErrorRules,
+    {
+      match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
+      message: 'O servidor demorou demais para responder. Tente um roteiro menor ou aguarde.',
+    },
+    {
+      match: (m) => m.includes('safety') || m.includes('blocked'),
+      message: 'Conteúdo bloqueado por filtros de segurança. Altere o roteiro e tente novamente.',
+    },
+    {
+      match: (m) => m.includes('context') && m.includes('long'),
+      message: 'O roteiro é muito longo para o modelo atual. Reduza o texto ou divida em partes.',
+    },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // Tipos

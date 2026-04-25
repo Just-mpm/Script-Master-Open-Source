@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from '../lib/firebase';
+import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, type User } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
@@ -12,6 +12,12 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/popup-blocked': 'Popup bloqueado pelo navegador. Permita popups para este site.',
   'auth/network-request-failed': 'Erro de conexao. Verifique sua internet.',
   'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento.',
+  'auth/email-already-in-use': 'Este email ja esta cadastrado.',
+  'auth/invalid-email': 'Email invalido.',
+  'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.',
+  'auth/user-not-found': 'Nenhuma conta encontrada com este email.',
+  'auth/wrong-password': 'Senha incorreta.',
+  'auth/invalid-credential': 'Email ou senha incorretos.',
 };
 
 function getAuthErrorMessage(error: unknown): string {
@@ -28,6 +34,9 @@ interface AuthContextType {
   authError: string | null;
   clearAuthError: () => void;
   login: () => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -87,6 +96,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const signup = useCallback(async (email: string, password: string) => {
+    try {
+      setAuthError(null);
+      wasLoginRequested.current = true;
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      wasLoginRequested.current = false;
+      log.error('Erro no cadastro', { error });
+      setAuthError(getAuthErrorMessage(error));
+    }
+  }, []);
+
+  const loginWithEmail = useCallback(async (email: string, password: string) => {
+    try {
+      setAuthError(null);
+      wasLoginRequested.current = true;
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      wasLoginRequested.current = false;
+      log.error('Erro no login com email', { error });
+      setAuthError(getAuthErrorMessage(error));
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      setAuthError(null);
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      log.error('Erro ao enviar email de reset', { error });
+      setAuthError(getAuthErrorMessage(error));
+      throw error;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       setAuthError(null);
@@ -100,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, authError, clearAuthError, login, signup, loginWithEmail, resetPassword, logout }}>
       {children}
       {showMigrationDialog && user && (
         <DataMigrationDialog

@@ -116,6 +116,11 @@ const LoginPage = lazy(async () => {
   return { default: module.LoginPage };
 });
 
+const RegisterPage = lazy(async () => {
+  const module = await import('./pages/RegisterPage');
+  return { default: module.RegisterPage };
+});
+
 function RouteFallback() {
   return (
     <Stack
@@ -213,12 +218,15 @@ export default function App() {
         <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/status" element={<StatusPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/cadastro" element={<RegisterPage />} />
 
         {/* Redirects de rotas públicas antigas */}
         <Route path="/features" element={<Navigate to="/funcionalidades" replace />} />
         <Route path="/pricing" element={<Navigate to="/precos" replace />} />
         <Route path="/faq" element={<Navigate to="/perguntas-frequentes" replace />} />
         <Route path="/contact" element={<Navigate to="/contato" replace />} />
+        <Route path="/about" element={<Navigate to="/sobre" replace />} />
+        <Route path="/register" element={<Navigate to="/cadastro" replace />} />
         <Route path="/terms" element={<Navigate to="/termos" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacidade" replace />} />
         <Route path="/cookies" element={<Navigate to="/cookies" replace />} />

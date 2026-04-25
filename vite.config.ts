@@ -22,8 +22,8 @@ function coepPlugin(): PluginOption {
     const path = req.url?.split('?')[0] ?? '/';
 
     // Rotas públicas (sem COEP) — Firebase Auth precisa de iframes cross-origin
-    const publicRoutes = ['/', '/login', '/features', '/pricing', '/faq', '/about', '/contact',
-      '/terms', '/privacy', '/cookies', '/status', '/blog'];
+    const publicRoutes = ['/', '/login', '/cadastro', '/funcionalidades', '/precos', '/perguntas-frequentes', '/sobre',
+      '/terms', '/privacy', '/cookies', '/status'];
     const isPublic = publicRoutes.some(route => path === route || path.startsWith(route + '/'));
 
     if (!isPublic) {
@@ -106,7 +106,7 @@ export default defineConfig(() => {
           // SPA: navegação sempre volta ao index.html
           navigateFallback: '/index.html',
           // Não interceptar rotas de login (Firebase Auth precisa de rede)
-          navigateFallbackDenylist: [/^\/login/],
+          navigateFallbackDenylist: [/^\/login/, /^\/cadastro/],
         },
       }),
     ],

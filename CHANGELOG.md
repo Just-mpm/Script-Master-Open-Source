@@ -7,6 +7,52 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.21.0] - 2026-04-25
+
+### Adicionado
+
+- **RegisterPage** (`/cadastro`): página de cadastro com Google + email/senha, validação de campos, grid 2 colunas (benefícios + formulário), SEO via `react-helmet-async`, skip-to-content link
+- **Autenticação email/senha** no `AuthContext`: `signup(email, password)`, `loginWithEmail(email, password)`, `resetPassword(email)`, `clearAuthError()` — todos com mensagens pt-BR por código Firebase
+- **LoginPage reformulada**: grid 2 colunas (benefícios + formulário), formulário email/senha, dialog de reset de senha (`openResetDialog`, `handleResetSubmit`), estilos compartilhados com RegisterPage (`authTextFieldSx`, `authLinkSx`)
+- **Biblioteca de error mapping** (`src/lib/error-mapping.ts`): `createErrorMapper(config)` genérico, `sharedErrorRules` (quota, API key, unavailable), `ErrorMappingRule` e `ErrorMapperConfig` types
+- **Firebase Hosting completo**: `.firebaserc` (project ID), `public/404.html` (fallback estilizado), `cleanUrls`, 8 redirects 301, cache immutable para assets estáticos
+- **Headers de segurança** no `firebase.json`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, cache `no-cache` para `/cadastro`, `/sw.js`, `/manifest.webmanifest`
+- **Scripts de deploy** no `package.json`: `bun run deploy` (produção), `bun run deploy:preview` (canal preview)
+- **`firebase-tools`** como devDependency (`^15.3.0`)
+
+### Alterado
+
+- **AuthContext**: de Google-only para Google + email/senha + reset de senha; novos códigos de erro pt-BR (`email-already-in-use`, `user-not-found`, `wrong-password`, `invalid-credential`, `weak-password`)
+- **`useAudioGenerator`**: substituída `toUserFriendlyError()` por `createErrorMapper()` + `sharedErrorRules`
+- **`useImageGenerator`**: substituída `toUserFriendlyImageError()` por `createErrorMapper()` + `sharedErrorRules`
+- **`useAssistant`**: substituída `toUserFriendlyAssistantError()` por `createErrorMapper()` + `sharedErrorRules`
+- **`rate-limiter.ts`**: null safety — `lastError ?? new Error('withRetry: todas as tentativas esgotadas')`
+- **`useVoicePreviews`**: adicionado `clearError()` para limpar estado de erro
+- **`robots.txt`**: bloqueia `/login` e `/cadastro` dos crawlers
+- **`firestore.rules`**: adicionado `allow update` para admin na coleção de gerações
+- **`vite.config.ts`**: `coepPlugin` atualizado com exceção `/cadastro` (sem COEP para popup Firebase)
+
+### Corrigido
+
+- **a11y**: aria-labels em VideoLibrary (ordenar), PricingPage (ciclo de pagamento)
+- **ImageStudio**: estado de erro (`imagesError`) no carregamento de imagens salvas
+- **Library**: estado de erro (`detailError`) no carregamento de detalhes do projeto
+
+### Removido
+
+- `InspectorController` type de `src/features/studio/types.ts`
+- Funções `toUserFriendlyError`, `toUserFriendlyImageError`, `toUserFriendlyAssistantError` (substituídas por `createErrorMapper`)
+
+### Testes
+
+- 68 testes novos (total: 1040)
+  - AuthContext: signup, loginWithEmail, resetPassword, clearAuthError, Google login (regressão)
+  - RegisterPage: renderização, validação, cadastro Google + email, erros, redirect
+  - LoginPage: renderização, login Google + email, reset dialog, erros, redirect
+  - Library: mock atualizado (signup, loginWithEmail, resetPassword)
+
+---
+
 ## [0.20.0] - 2026-04-24
 
 ### Adicionado

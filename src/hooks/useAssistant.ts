@@ -6,44 +6,35 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
 import { getGeminiApiKey } from '../lib/env';
 import { createLogger } from '../lib/logger';
+import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 
 const log = createLogger('useAssistant');
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
 // ---------------------------------------------------------------------------
-// Mapeamento de erros amigáveis (padrão consistente com useAudioGenerator)
+// Mapeamento de erros amigáveis
 // ---------------------------------------------------------------------------
 
-/** Mapeia erros técnicos do Gemini para mensagens amigáveis em pt-BR. */
-function toUserFriendlyAssistantError(err: unknown): string {
-  if (!(err instanceof Error)) {
-    return 'Ocorreu um erro inesperado. Tente novamente.';
-  }
-
-  const msg = err.message.toLowerCase();
-
-  if (msg.includes('quota') || msg.includes('resource_exhausted') || msg.includes('429')) {
-    return 'Limite de uso atingido. Aguarde alguns minutos e tente novamente.';
-  }
-  if (msg.includes('api key') || msg.includes('key not valid') || msg.includes('permission_denied')) {
-    return 'Erro de autenticação. Verifique sua chave de API nas configurações.';
-  }
-  if (msg.includes('deadline_exceeded') || msg.includes('504')) {
-    return 'O servidor demorou demais para responder. Tente novamente em instantes.';
-  }
-  if (msg.includes('unavailable') || msg.includes('503')) {
-    return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
-  }
-  if (msg.includes('safety') || msg.includes('blocked')) {
-    return 'Conteúdo bloqueado por filtros de segurança. Reformule a pergunta.';
-  }
-  if (msg.includes('abort') || msg.includes('cancelled')) {
-    return '';
-  }
-
-  return 'Não foi possível concluir. Tente novamente.';
-}
+const toUserFriendlyAssistantError = createErrorMapper({
+  nonErrorMessage: 'Ocorreu um erro inesperado. Tente novamente.',
+  defaultMessage: 'Não foi possível concluir. Tente novamente.',
+  rules: [
+    ...sharedErrorRules,
+    {
+      match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
+      message: 'O servidor demorou demais para responder. Tente novamente em instantes.',
+    },
+    {
+      match: (m) => m.includes('safety') || m.includes('blocked'),
+      message: 'Conteúdo bloqueado por filtros de segurança. Reformule a pergunta.',
+    },
+    {
+      match: (m) => m.includes('abort') || m.includes('cancelled'),
+      message: '',
+    },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // Constantes

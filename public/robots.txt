@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /app/
+Disallow: /login
+Disallow: /cadastro
 Sitemap: https://scriptmaster.app/sitemap.xml

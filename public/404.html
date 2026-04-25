@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>404 — Página não encontrada | Script Master</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#050816;color:#f8fafc;font-family:'Inter',system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100dvh;-webkit-font-smoothing:antialiased">
+
+  <main style="max-width:400px;width:100%;margin:1.5rem;padding:2rem;text-align:center;border:1px solid rgba(255,255,255,0.08);border-radius:16px;background:rgba(255,255,255,0.03)">
+
+    <!-- Logo -->
+    <img
+      src="/logo-transparente.webp"
+      alt="Script Master"
+      width="80"
+      height="80"
+      style="display:block;margin:0 auto 1.5rem"
+    >
+
+    <!-- Ícone de busca -->
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="rgba(248,250,252,0.4)"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      style="display:block;margin:0 auto 1rem"
+    >
+      <circle cx="11" cy="11" r="7"/>
+      <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+      <line x1="8" y1="11" x2="14" y2="11" stroke-width="2"/>
+      <line x1="11" y1="8" x2="11" y2="14" stroke-width="2"/>
+    </svg>
+
+    <h1 style="margin:0 0 0.5rem;font-size:1.5rem;font-weight:600;color:#f8fafc">404</h1>
+    <p style="margin:0 0 0.75rem;font-size:1.25rem;font-weight:500;color:#f8fafc">Página não encontrada</p>
+    <p style="margin:0 0 1.5rem;font-size:0.875rem;line-height:1.5;color:rgba(248,250,252,0.68)">A URL que você acessou não existe ou foi removida.</p>
+
+    <a
+      href="/"
+      style="display:inline-block;padding:0.625rem 1.5rem;border-radius:14px;background:#2E75B6;color:#f8fafc;text-decoration:none;font-size:0.875rem;font-weight:500;transition:background 0.15s"
+    >Voltar ao início</a>
+  </main>
+
+  <script>
+    setTimeout(function(){ window.location.replace('/'); }, 100);
+  </script>
+</body>
+</html>
