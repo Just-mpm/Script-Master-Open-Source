@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AbsoluteFill, cancelRender, continueRender, delayRender, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { StrokeAnimation } from '../../speed-paint/types';
+import type { SpeedPaintMultipliers } from '../types';
 import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../lib/speedPaintRenderer';
 import { computeSafeFadeFrames, springFadeIn, springFadeOut } from '../lib/transitions';
 
@@ -21,6 +22,12 @@ interface SpeedPaintSceneProps {
   isLastScene?: boolean;
   /** Multiplicador de velocidade da animação (default: 1.0) */
   speedMultiplier?: number;
+  /** Multiplicador de velocidade para a fase de desenho (sketch) — se fornecido junto com paintSpeed, sobrepõe speedMultiplier */
+  drawSpeed?: number;
+  /** Multiplicador de velocidade para a fase de coloração (reveal) — se fornecido junto com drawSpeed, sobrepõe speedMultiplier */
+  paintSpeed?: number;
+  /** Se está em modo exportação — esconde o badge de fase */
+  isExporting?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,6 +50,9 @@ export function SpeedPaintScene({
   fadeFrames: tFrames = 12,
   isLastScene = false,
   speedMultiplier,
+  drawSpeed,
+  paintSpeed,
+  isExporting,
 }: SpeedPaintSceneProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -108,14 +118,19 @@ export function SpeedPaintScene({
       }
     }
 
+    // Determina o multiplicador de velocidade: draw/paint separado > global > default
+    const resolvedSpeedMultiplier = (drawSpeed != null && paintSpeed != null)
+      ? ({ sketch: drawSpeed, reveal: paintSpeed } satisfies SpeedPaintMultipliers)
+      : speedMultiplier;
+
     renderSpeedPaintFrame(ctx, buffer, {
       animation,
       imageElement: img,
       progress: clampedProgress,
       opacity,
-      speedMultiplier,
+      speedMultiplier: resolvedSpeedMultiplier,
     });
-  }, [frame, animation, durationInFrames, tFrames, isLastScene, fps, speedMultiplier]);
+  }, [frame, animation, durationInFrames, tFrames, isLastScene, fps, drawSpeed, paintSpeed, speedMultiplier]);
 
   // Dimensões do canvas — usa as dimensões da animação para pixel-perfect rendering
   const canvasWidth = animation.canvasWidth;
@@ -135,6 +150,62 @@ export function SpeedPaintScene({
           objectPosition: 'center',
         }}
       />
+      {/* Badge de fase — apenas no preview (não durante exportação) */}
+      {!isExporting && (
+        <SpeedPaintPhaseBadge
+          animation={animation}
+          durationInFrames={durationInFrames}
+        />
+      )}
     </AbsoluteFill>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Badge de fase (sub-componente dentro da árvore Remotion)
+// ---------------------------------------------------------------------------
+
+interface SpeedPaintPhaseBadgeProps {
+  animation: StrokeAnimation;
+  durationInFrames: number;
+}
+
+/**
+ * Badge semi-transparente que mostra a fase atual do speed paint.
+ * Usa useCurrentFrame() — determinístico, só funciona dentro de <Composition>.
+ * Calcula a fase baseada em animation.revealThreshold vs progress.
+ */
+function SpeedPaintPhaseBadge({ animation, durationInFrames }: SpeedPaintPhaseBadgeProps) {
+  const frame = useCurrentFrame();
+  const revealThreshold = animation.revealThreshold ?? 0.8;
+  const progress = Math.min(1, Math.max(0, frame / durationInFrames));
+  const isSketchPhase = progress < revealThreshold;
+  const label = isSketchPhase ? 'Desenhando...' : 'Colorindo...';
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        padding: '4px 12px',
+        borderRadius: 8,
+        backgroundColor: isSketchPhase
+          ? 'rgba(255, 255, 255, 0.12)'
+          : 'rgba(91, 154, 255, 0.15)',
+        backdropFilter: 'blur(8px)',
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        fontFamily: "'Inter', sans-serif",
+        pointerEvents: 'none',
+        zIndex: 10,
+        opacity: 0.85,
+        transition: 'background-color 0.3s ease',
+      }}
+    >
+      {label}
+    </div>
   );
 }

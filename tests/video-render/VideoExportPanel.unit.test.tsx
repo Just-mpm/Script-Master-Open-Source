@@ -12,6 +12,23 @@ vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
   DEFAULT_EXPORT_QUALITY: '1080p',
 }));
 
+vi.mock('../../src/features/video-render/components/SpeedPaintControls', () => ({
+  SpeedPaintControls: ({ multipliers, onMultipliersChange }: { multipliers: { sketch: number; reveal: number }; onMultipliersChange: (m: { sketch: number; reveal: number }) => void }) => (
+    <div data-testid="speed-paint-controls" data-sketch={multipliers.sketch} data-reveal={multipliers.reveal}>
+      <button
+        data-testid="sketch-slider"
+        onClick={() => onMultipliersChange({ ...multipliers, sketch: 2.0 })}
+        aria-label="Velocidade do desenho (sketch)"
+      />
+      <button
+        data-testid="reveal-slider"
+        onClick={() => onMultipliersChange({ ...multipliers, reveal: 3.0 })}
+        aria-label="Velocidade da coloração (reveal)"
+      />
+    </div>
+  ),
+}));
+
 vi.mock('../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({ p: 2, borderRadius: 3 }),
 }));
@@ -164,6 +181,103 @@ describe('VideoExportPanel', () => {
       expect(screen.getByText('0.5x Lento')).toBeInTheDocument();
       expect(screen.getByText('1x Normal')).toBeInTheDocument();
       expect(screen.getByText('1.5x Rápido')).toBeInTheDocument();
+    });
+
+    it('não renderiza SpeedPaintControls quando toggle está desligado', () => {
+      render(<VideoExportPanel {...defaultProps} />);
+      expect(screen.queryByTestId('speed-paint-controls')).not.toBeInTheDocument();
+    });
+
+    it('renderiza SpeedPaintControls quando toggle é ativado', () => {
+      render(<VideoExportPanel {...defaultProps} />);
+      const switchEl = screen.getByRole('switch');
+      act(() => {
+        fireEvent.click(switchEl);
+      });
+      expect(screen.getByTestId('speed-paint-controls')).toBeInTheDocument();
+    });
+
+    it('passa DEFAULT_SPEED_PAINT_MULTIPLIERS iniciais para SpeedPaintControls', () => {
+      render(<VideoExportPanel {...defaultProps} />);
+      const switchEl = screen.getByRole('switch');
+      act(() => {
+        fireEvent.click(switchEl);
+      });
+
+      const controls = screen.getByTestId('speed-paint-controls');
+      // Valores iniciais: sketch=1.0, reveal=1.0 (DEFAULT_SPEED_PAINT_MULTIPLIERS)
+      expect(controls.getAttribute('data-sketch')).toBe('1');
+      expect(controls.getAttribute('data-reveal')).toBe('1');
+    });
+
+    it('atualiza multipliers ao interagir com slider de sketch', () => {
+      render(<VideoExportPanel {...defaultProps} />);
+      const switchEl = screen.getByRole('switch');
+      act(() => {
+        fireEvent.click(switchEl);
+      });
+
+      const sketchSlider = screen.getByTestId('sketch-slider');
+      act(() => {
+        fireEvent.click(sketchSlider);
+      });
+
+      const controls = screen.getByTestId('speed-paint-controls');
+      expect(controls.getAttribute('data-sketch')).toBe('2');
+      expect(controls.getAttribute('data-reveal')).toBe('1');
+    });
+
+    it('atualiza multipliers ao interagir com slider de reveal', () => {
+      render(<VideoExportPanel {...defaultProps} />);
+      const switchEl = screen.getByRole('switch');
+      act(() => {
+        fireEvent.click(switchEl);
+      });
+
+      const revealSlider = screen.getByTestId('reveal-slider');
+      act(() => {
+        fireEvent.click(revealSlider);
+      });
+
+      const controls = screen.getByTestId('speed-paint-controls');
+      expect(controls.getAttribute('data-sketch')).toBe('1');
+      expect(controls.getAttribute('data-reveal')).toBe('3');
+    });
+
+    it('passa speedPaintMultipliers atualizados no handleStartExport', () => {
+      const exporter = makeExporter();
+      render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
+
+      // Ativa speed paint
+      const switchEl = screen.getByRole('switch');
+      act(() => {
+        fireEvent.click(switchEl);
+      });
+
+      // Altera sketch multiplier
+      const sketchSlider = screen.getByTestId('sketch-slider');
+      act(() => {
+        fireEvent.click(sketchSlider);
+      });
+
+      // Clica exportar
+      const exportBtn = screen.getByText(/Exportar MP4/i);
+      act(() => {
+        fireEvent.click(exportBtn);
+      });
+
+      // Verifica que startRender foi chamado com speedPaintMultipliers atualizados
+      expect(exporter.startRender).toHaveBeenCalledTimes(1);
+      const callArgs = exporter.startRender.mock.calls[0][0] as Record<string, unknown>;
+      expect(callArgs.speedPaintMultipliers).toEqual({ sketch: 2.0, reveal: 1.0 });
+    });
+
+    it('esconde SpeedPaintControls durante renderização', () => {
+      const exporter = makeExporter({ isRendering: true });
+      render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
+
+      // Mesmo que animateScenes estivesse ativado, durante renderização o painel de configuração não é exibido
+      expect(screen.queryByTestId('speed-paint-controls')).not.toBeInTheDocument();
     });
   });
 

@@ -31,6 +31,7 @@ export function VideoComposition({
   subtitleStyle,
   isExporting,
   speedPaintSpeed = 'normal',
+  speedPaintMultipliers,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
@@ -81,7 +82,7 @@ export function VideoComposition({
         const sceneCaptions = sceneCaptionsMap.get(index) ?? [];
 
         const isLastScene = index === totalScenes - 1;
-        const speedMultiplier = SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal;
+        const globalSpeedMultiplier = SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal;
 
         return (
           <Sequence
@@ -97,7 +98,10 @@ export function VideoComposition({
                 durationInFrames={adjustedDuration}
                 fadeFrames={FADE_FRAMES}
                 isLastScene={isLastScene}
-                speedMultiplier={speedMultiplier}
+                speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier}
+                drawSpeed={speedPaintMultipliers?.sketch}
+                paintSpeed={speedPaintMultipliers?.reveal}
+                isExporting={isExporting}
               />
             ) : (
               <SceneSequence

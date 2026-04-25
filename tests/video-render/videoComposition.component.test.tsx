@@ -32,8 +32,24 @@ vi.mock('@remotion/media', () => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('../../src/features/video-render/components/SpeedPaintScene', () => ({
-  SpeedPaintScene: ({ animation }: { animation: { strokes: { length: number } } }) =>
-    <div data-testid="speed-paint-scene" data-stroke-count={animation.strokes.length} />,
+  SpeedPaintScene: ({
+    animation,
+    isExporting,
+    drawSpeed,
+    paintSpeed,
+  }: {
+    animation: { strokes: { length: number } };
+    isExporting?: boolean;
+    drawSpeed?: number;
+    paintSpeed?: number;
+  }) =>
+    <div
+      data-testid="speed-paint-scene"
+      data-stroke-count={animation.strokes.length}
+      data-exporting={isExporting ? 'true' : 'false'}
+      data-draw-speed={drawSpeed ?? ''}
+      data-paint-speed={paintSpeed ?? ''}
+    />,
 }));
 
 vi.mock('../../src/features/video-render/components/SceneSequence', () => ({
@@ -218,5 +234,128 @@ describe('VideoComposition', () => {
     // A última cena (index 1) tem strokeAnimation → SpeedPaintScene
     const spScenes = screen.getAllByTestId('speed-paint-scene');
     expect(spScenes).toHaveLength(1);
+  });
+
+  describe('speedPaintMultipliers — propagação para SpeedPaintScene', () => {
+    it('passa isExporting=true para SpeedPaintScene quando isExporting é true', async () => {
+      const { VideoComposition } = await import('../../src/features/video-render/components/VideoComposition');
+
+      const scenes: VideoScene[] = [
+        {
+          imageUrl: 'scene1.png',
+          prompt: 'prompt1',
+          timestamp: 0,
+          durationInFrames: 90,
+          strokeAnimation: {
+            id: 'anim-1',
+            canvasWidth: 1920,
+            canvasHeight: 1080,
+            canvasColor: 'white',
+            totalFrames: 60,
+            fps: 30,
+            totalDurationMs: 2000,
+            strokes: [],
+          },
+        },
+      ];
+
+      render(
+        <VideoComposition
+          scenes={scenes}
+          audioUrl="audio.wav"
+          fps={30}
+          captions={undefined}
+          subtitleStyle={undefined}
+          isExporting={true}
+          speedPaintMultipliers={{ sketch: 2.0, reveal: 0.5 }}
+        />,
+      );
+
+      const spScene = screen.getByTestId('speed-paint-scene');
+      expect(spScene.getAttribute('data-exporting')).toBe('true');
+      expect(spScene.getAttribute('data-draw-speed')).toBe('2');
+      expect(spScene.getAttribute('data-paint-speed')).toBe('0.5');
+    });
+
+    it('passa isExporting=false para SpeedPaintScene quando isExporting é false', async () => {
+      const { VideoComposition } = await import('../../src/features/video-render/components/VideoComposition');
+
+      const scenes: VideoScene[] = [
+        {
+          imageUrl: 'scene1.png',
+          prompt: 'prompt1',
+          timestamp: 0,
+          durationInFrames: 90,
+          strokeAnimation: {
+            id: 'anim-1',
+            canvasWidth: 1920,
+            canvasHeight: 1080,
+            canvasColor: 'white',
+            totalFrames: 60,
+            fps: 30,
+            totalDurationMs: 2000,
+            strokes: [],
+          },
+        },
+      ];
+
+      render(
+        <VideoComposition
+          scenes={scenes}
+          audioUrl="audio.wav"
+          fps={30}
+          captions={undefined}
+          subtitleStyle={undefined}
+          isExporting={false}
+          speedPaintMultipliers={{ sketch: 1.5, reveal: 1.0 }}
+        />,
+      );
+
+      const spScene = screen.getByTestId('speed-paint-scene');
+      expect(spScene.getAttribute('data-exporting')).toBe('false');
+      expect(spScene.getAttribute('data-draw-speed')).toBe('1.5');
+      expect(spScene.getAttribute('data-paint-speed')).toBe('1');
+    });
+
+    it('usa speedPaintSpeed (global) quando speedPaintMultipliers não é fornecido', async () => {
+      const { VideoComposition } = await import('../../src/features/video-render/components/VideoComposition');
+
+      const scenes: VideoScene[] = [
+        {
+          imageUrl: 'scene1.png',
+          prompt: 'prompt1',
+          timestamp: 0,
+          durationInFrames: 90,
+          strokeAnimation: {
+            id: 'anim-1',
+            canvasWidth: 1920,
+            canvasHeight: 1080,
+            canvasColor: 'white',
+            totalFrames: 60,
+            fps: 30,
+            totalDurationMs: 2000,
+            strokes: [],
+          },
+        },
+      ];
+
+      render(
+        <VideoComposition
+          scenes={scenes}
+          audioUrl="audio.wav"
+          fps={30}
+          captions={undefined}
+          subtitleStyle={undefined}
+          isExporting={false}
+          speedPaintSpeed="fast"
+          // sem speedPaintMultipliers → SpeedPaintScene recebe speedMultiplier numérico
+        />,
+      );
+
+      const spScene = screen.getByTestId('speed-paint-scene');
+      // drawSpeed e paintSpeed vazios (undefined) → usando speedMultiplier global
+      expect(spScene.getAttribute('data-draw-speed')).toBe('');
+      expect(spScene.getAttribute('data-paint-speed')).toBe('');
+    });
   });
 });

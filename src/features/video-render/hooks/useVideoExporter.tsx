@@ -5,7 +5,7 @@ import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
-import type { SpeedPaintSpeed } from '../types';
+import type { SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
 import { generateScenesWithSpeedPaint } from '../lib/speedPaintRenderer';
@@ -38,6 +38,8 @@ export interface VideoExportOptions {
   animateScenes?: boolean;
   /** Velocidade da animação speed paint (default: 'normal') */
   speedPaintSpeed?: SpeedPaintSpeed;
+  /** Multiplicadores de velocidade separados para sketch/reveal — se fornecido, sobrepõe speedPaintSpeed */
+  speedPaintMultipliers?: SpeedPaintMultipliers;
 }
 
 export interface VideoExporterState {
@@ -91,7 +93,7 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed } = props;
+  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed, speedPaintMultipliers } = props;
   return (
     <VideoComposition
       scenes={scenes}
@@ -101,6 +103,7 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
       subtitleStyle={subtitleStyle}
       isExporting={true}
       speedPaintSpeed={speedPaintSpeed}
+      speedPaintMultipliers={speedPaintMultipliers}
     />
   );
 }
@@ -379,6 +382,7 @@ export function useVideoExporter() {
       captions,
       subtitleStyle,
       speedPaintSpeed,
+      speedPaintMultipliers: options.speedPaintMultipliers,
     };
 
     // Cria AbortController para cancelamento

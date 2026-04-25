@@ -44,7 +44,9 @@ import {
   WHITE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintSpeed } from '../types';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
+import { DEFAULT_SPEED_PAINT_MULTIPLIERS } from '../types';
+import { SpeedPaintControls } from './SpeedPaintControls';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -152,6 +154,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   const [fileName, setFileName] = useState('');
   const [animateScenes, setAnimateScenes] = useState(false);
   const [speedPaintSpeed, setSpeedPaintSpeed] = useState<SpeedPaintSpeed>('normal');
+  const [speedPaintMultipliers, setSpeedPaintMultipliers] = useState<SpeedPaintMultipliers>({ ...DEFAULT_SPEED_PAINT_MULTIPLIERS });
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -200,6 +203,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
       fileName: fileName || undefined,
       animateScenes,
       speedPaintSpeed,
+      speedPaintMultipliers,
     };
     void exporter.startRender(options);
   };
@@ -320,6 +324,14 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
                   </ToggleButton>
                 ))}
               </ToggleButtonGroup>
+            )}
+
+            {/* Controles avançados de velocidade — visível apenas quando toggle ativo */}
+            {animateScenes && (
+              <SpeedPaintControls
+                multipliers={speedPaintMultipliers}
+                onMultipliersChange={setSpeedPaintMultipliers}
+              />
             )}
 
             {/* Seletor de qualidade */}

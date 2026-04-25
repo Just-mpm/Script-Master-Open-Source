@@ -4,9 +4,10 @@ export type {
   VideoCompositionProps,
   VideoRenderConfig,
   SubtitleStyle,
+  SpeedPaintMultipliers,
 } from './types';
 
-export { DEFAULT_SUBTITLE_STYLE } from './types';
+export { DEFAULT_SUBTITLE_STYLE, DEFAULT_SPEED_PAINT_MULTIPLIERS } from './types';
 
 // ─── Tipos de legenda/transcrição ──────────────────────────
 export type {
@@ -32,6 +33,7 @@ export { SpeedPaintScene } from './components/SpeedPaintScene';
 export { SubtitleOverlay } from './components/SubtitleOverlay';
 export { WaveformOverlay } from './components/WaveformOverlay';
 export { VideoExportPanel } from './components/VideoExportPanel';
+export { SpeedPaintControls } from './components/SpeedPaintControls';
 export { CaptionEditorPanel } from './components/CaptionEditorPanel';
 
 // ─── Libs ────────────────────────────────────────────────

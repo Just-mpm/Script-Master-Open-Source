@@ -21,9 +21,10 @@ import { renderHook, act } from '@testing-library/react';
 // ---------------------------------------------------------------------------
 
 const mockGetBlob = vi.fn().mockResolvedValue(new Blob(['fake-video'], { type: 'video/mp4' }));
+const mockRenderMediaOnWeb = vi.fn().mockResolvedValue({ getBlob: mockGetBlob });
 
 vi.mock('@remotion/web-renderer', () => ({
-  renderMediaOnWeb: vi.fn().mockResolvedValue({ getBlob: mockGetBlob }),
+  renderMediaOnWeb: (...args: unknown[]) => mockRenderMediaOnWeb(...args),
   canRenderMediaOnWeb: vi.fn().mockResolvedValue({
     canRender: true,
     resolvedVideoCodec: 'h264',
@@ -291,5 +292,89 @@ describe('useVideoExporter — integração Speed Paint', () => {
     // O segundo argumento deve ser uma função (callback de progresso)
     const lastCallArgs = mockGenerateScenesWithSpeedPaint.mock.calls[0];
     expect(typeof lastCallArgs[1]).toBe('function');
+  });
+
+  // --- speedPaintMultipliers ---
+
+  describe('speedPaintMultipliers', () => {
+    it('repassa speedPaintMultipliers nos inputProps do renderMediaOnWeb', async () => {
+      mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+        { animation: undefined, sceneIndex: 0 },
+      ]);
+
+      const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+      const { result } = renderHook(() => useVideoExporter());
+
+      const multipliers = { sketch: 2.0, reveal: 0.5 };
+
+      await act(async () => {
+        await result.current.startRender({
+          scenes: [createMinimalStudioScene()],
+          audioUrl: 'audio.mp3',
+          fps: 30,
+          durationInFrames: 90,
+          ratio: '16:9',
+          animateScenes: false,
+          speedPaintMultipliers: multipliers,
+        });
+      });
+
+      // Verifica que renderMediaOnWeb foi chamado com speedPaintMultipliers nos inputProps
+      expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
+      const callArgs = mockRenderMediaOnWeb.mock.calls[0][0] as Record<string, unknown>;
+      const inputProps = callArgs.inputProps as Record<string, unknown>;
+      expect(inputProps.speedPaintMultipliers).toEqual(multipliers);
+    });
+
+    it('não inclui speedPaintMultipliers nos inputProps quando omitido', async () => {
+      mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+        { animation: undefined, sceneIndex: 0 },
+      ]);
+
+      const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+      const { result } = renderHook(() => useVideoExporter());
+
+      await act(async () => {
+        await result.current.startRender({
+          scenes: [createMinimalStudioScene()],
+          audioUrl: 'audio.mp3',
+          fps: 30,
+          durationInFrames: 90,
+          ratio: '16:9',
+          animateScenes: false,
+          // sem speedPaintMultipliers
+        });
+      });
+
+      expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
+      const callArgs = mockRenderMediaOnWeb.mock.calls[0][0] as Record<string, unknown>;
+      const inputProps = callArgs.inputProps as Record<string, unknown>;
+      expect(inputProps.speedPaintMultipliers).toBeUndefined();
+    });
+
+    it('repassa speedPaintSpeed nos inputProps do renderMediaOnWeb', async () => {
+      mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+        { animation: undefined, sceneIndex: 0 },
+      ]);
+
+      const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+      const { result } = renderHook(() => useVideoExporter());
+
+      await act(async () => {
+        await result.current.startRender({
+          scenes: [createMinimalStudioScene()],
+          audioUrl: 'audio.mp3',
+          fps: 30,
+          durationInFrames: 90,
+          ratio: '16:9',
+          animateScenes: false,
+          speedPaintSpeed: 'fast',
+        });
+      });
+
+      const callArgs = mockRenderMediaOnWeb.mock.calls[0][0] as Record<string, unknown>;
+      const inputProps = callArgs.inputProps as Record<string, unknown>;
+      expect(inputProps.speedPaintSpeed).toBe('fast');
+    });
   });
 });

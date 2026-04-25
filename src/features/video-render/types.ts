@@ -14,6 +14,20 @@ export const SPEED_PAINT_MULTIPLIERS: Readonly<Record<SpeedPaintSpeed, number>> 
   fast: 1.5,
 } as const;
 
+/** Multiplicadores de velocidade separados para sketch e reveal */
+export interface SpeedPaintMultipliers {
+  /** Multiplicador para a fase de desenho (sketch) — 0.25 = muito lento, 4.0 = muito rápido */
+  sketch: number;
+  /** Multiplicador para a fase de coloração (reveal) — 0.25 = muito lento, 4.0 = muito rápido */
+  reveal: number;
+}
+
+/** Multiplicadores padrão (sem alteração de velocidade) */
+export const DEFAULT_SPEED_PAINT_MULTIPLIERS: Readonly<SpeedPaintMultipliers> = {
+  sketch: 1.0,
+  reveal: 1.0,
+} as const;
+
 /** Cena estendida para vídeo Remotion */
 export interface VideoScene extends StudioScene {
   /** Duração da cena em frames */
@@ -40,6 +54,8 @@ export interface VideoCompositionProps {
   isExporting?: boolean;
   /** Velocidade da animação speed paint (default: 'normal') */
   speedPaintSpeed?: SpeedPaintSpeed;
+  /** Multiplicadores de velocidade separados para sketch/reveal — se fornecido, sobrepõe speedPaintSpeed */
+  speedPaintMultipliers?: SpeedPaintMultipliers;
 }
 
 /** Configuração de renderização (Fase 3) */

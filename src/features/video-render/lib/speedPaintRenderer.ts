@@ -1,4 +1,5 @@
 import type { StrokeAnimation } from '../../speed-paint/types';
+import type { SpeedPaintMultipliers } from '../types';
 import { getStrokeAnimation, setStrokeAnimation } from './strokeCache';
 import {
   createStrokeWorker,
@@ -22,8 +23,8 @@ export interface SpeedPaintFrameOptions {
   progress: number;
   /** Opacidade geral do frame 0-1 (usada para fade in/out) */
   opacity: number;
-  /** Multiplicador de velocidade (default: 1.0) — 0.5 = lento, 1.5 = rápido */
-  speedMultiplier?: number;
+  /** Multiplicador de velocidade — number para global, SpeedPaintMultipliers para sketch/reveal separados */
+  speedMultiplier?: number | SpeedPaintMultipliers;
 }
 
 /** Opções para geração de speed paint em lote */
@@ -79,8 +80,38 @@ export function renderSpeedPaintFrame(
 
   // 3. Desenhar strokes visíveis no buffer — progress ajustado pelo multiplicador de velocidade
   const totalStrokes = strokes.length;
-  const adjustedProgress = Math.min(1, Math.max(0, progress) * (speedMultiplier ?? 1.0));
-  const visibleCount = Math.floor(adjustedProgress * totalStrokes);
+  const revealThreshold = animation.revealThreshold ?? 0.8;
+  const sketchCount = Math.floor(revealThreshold * totalStrokes);
+  const revealCount = totalStrokes - sketchCount;
+
+  let visibleCount: number;
+
+  if (typeof speedMultiplier === 'number') {
+    // Comportamento original — multiplicador global (backward compat)
+    const adjustedProgress = Math.min(1, Math.max(0, progress) * speedMultiplier);
+    visibleCount = Math.floor(adjustedProgress * totalStrokes);
+  } else if (speedMultiplier && sketchCount > 0 && revealCount > 0) {
+    // Multiplicadores separados para sketch e reveal
+    const sketchDuration = revealThreshold; // Proporção do tempo dedicada ao sketch
+    const revealDuration = 1 - revealThreshold;
+
+    if (progress < sketchDuration) {
+      // Fase sketch: progress 0→revealThreshold mapeia para sketch completo
+      const sketchProgress = Math.min(1, (progress / sketchDuration) * speedMultiplier.sketch);
+      visibleCount = Math.floor(sketchProgress * sketchCount);
+    } else {
+      // Fase reveal: todos os sketch já foram desenhados
+      const revealProgress = Math.min(1, ((progress - sketchDuration) / revealDuration) * speedMultiplier.reveal);
+      visibleCount = sketchCount + Math.floor(revealProgress * revealCount);
+    }
+  } else if (speedMultiplier) {
+    // SpeedPaintMultipliers fornecido mas sem divisão clara de strokes
+    const adjustedProgress = Math.min(1, Math.max(0, progress) * ((speedMultiplier.sketch + speedMultiplier.reveal) / 2));
+    visibleCount = Math.floor(adjustedProgress * totalStrokes);
+  } else {
+    // Sem multiplicador — progresso normal
+    visibleCount = Math.floor(Math.min(1, Math.max(0, progress)) * totalStrokes);
+  }
 
   if (visibleCount > 0) {
     bCtx.lineCap = 'round';

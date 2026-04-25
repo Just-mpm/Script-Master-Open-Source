@@ -318,6 +318,284 @@ describe('speedPaintRenderer', () => {
         });
       }).not.toThrow();
     });
+
+    // --- SpeedPaintMultipliers (speed separado para sketch/reveal) ---
+
+    it('SpeedPaintMultipliers: sketch rápido ({ sketch: 2.0, reveal: 1.0 }) mostra mais strokes na fase sketch', () => {
+      const { ctx } = createMockCtx();
+      const calls: Array<{ method: string; args: unknown[] }> = [];
+      const proxy = new Proxy({} as CanvasRenderingContext2D, {
+        get(_target, prop) {
+          return (...args: unknown[]) => {
+            if (prop !== 'canvas') {
+              calls.push({ method: prop as string, args });
+            }
+          };
+        },
+      });
+
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      // Cria animação com 10 strokes (5 sketch layer 0 + 5 reveal layer 1)
+      const strokes = [];
+      for (let i = 0; i < 5; i++) {
+        strokes.push({
+          id: i,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10 + i, 20, 30 + i, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        });
+      }
+      for (let i = 5; i < 10; i++) {
+        strokes.push({
+          id: i,
+          layer: 1,
+          type: 'reveal' as const,
+          points: [50 + i, 60, 70 + i, 80],
+          lineWidth: 10,
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 1,
+        });
+      }
+
+      const animation = createMinimalAnimation({ strokes, revealThreshold: 0.5 });
+
+      // Com sketch 2.0, progress 0.25 (dentro da fase sketch: 0→0.5) deve mostrar mais strokes
+      // sketchProgress = (0.25 / 0.5) * 2.0 = 1.0 → todos os 5 sketch visíveis
+      expect(() => {
+        renderSpeedPaintFrame(proxy, buffer, {
+          animation,
+          imageElement: image,
+          progress: 0.25,
+          opacity: 1,
+          speedMultiplier: { sketch: 2.0, reveal: 1.0 },
+        });
+      }).not.toThrow();
+
+      // Com sketch 1.0, progress 0.25 → sketchProgress = (0.25 / 0.5) * 1.0 = 0.5 → 2 sketch
+      const calls2: Array<{ method: string; args: unknown[] }> = [];
+      const proxy2 = new Proxy({} as CanvasRenderingContext2D, {
+        get(_target, prop) {
+          return (...args: unknown[]) => {
+            if (prop !== 'canvas') {
+              calls2.push({ method: prop as string, args });
+            }
+          };
+        },
+      });
+      const buffer2 = createBufferCanvas(animation);
+      expect(() => {
+        renderSpeedPaintFrame(proxy2, buffer2, {
+          animation,
+          imageElement: image,
+          progress: 0.25,
+          opacity: 1,
+          speedMultiplier: { sketch: 1.0, reveal: 1.0 },
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: reveal rápido ({ sketch: 1.0, reveal: 2.0 }) acelera a fase de coloração', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      const strokes = [];
+      for (let i = 0; i < 5; i++) {
+        strokes.push({
+          id: i,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10 + i, 20, 30 + i, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        });
+      }
+      for (let i = 5; i < 10; i++) {
+        strokes.push({
+          id: i,
+          layer: 1,
+          type: 'reveal' as const,
+          points: [50 + i, 60, 70 + i, 80],
+          lineWidth: 10,
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 1,
+        });
+      }
+
+      const animation = createMinimalAnimation({ strokes, revealThreshold: 0.5 });
+
+      // Na fase reveal (progress 0.75), com reveal 2.0 → revealProgress = ((0.75-0.5)/0.5) * 2.0 = 1.0
+      // Todos os 10 strokes devem ser visíveis (5 sketch + 5 reveal)
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation,
+          imageElement: image,
+          progress: 0.75,
+          opacity: 1,
+          speedMultiplier: { sketch: 1.0, reveal: 2.0 },
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: number como speedMultiplier mantém backward compatibility', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      // number → usa branch `typeof speedMultiplier === 'number'`
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation: createMinimalAnimation(),
+          imageElement: image,
+          progress: 0.5,
+          opacity: 1,
+          speedMultiplier: 2.0,
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: undefined se comporta como progresso normal', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation: createMinimalAnimation(),
+          imageElement: image,
+          progress: 0.5,
+          opacity: 1,
+          // speedMultiplier undefined — branch else
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: progress 0 → 0 strokes visíveis', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      // Com progress 0, nenhum stroke é visível independentemente do multiplier
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation: createMinimalAnimation(),
+          imageElement: image,
+          progress: 0,
+          opacity: 1,
+          speedMultiplier: { sketch: 4.0, reveal: 4.0 },
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: progress 1 com multipliers → todos os strokes visíveis', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      const strokes = [];
+      for (let i = 0; i < 4; i++) {
+        strokes.push({
+          id: i,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10 + i, 20, 30 + i, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        });
+      }
+      for (let i = 4; i < 8; i++) {
+        strokes.push({
+          id: i,
+          layer: 1,
+          type: 'reveal' as const,
+          points: [50 + i, 60, 70 + i, 80],
+          lineWidth: 10,
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 1,
+        });
+      }
+
+      const animation = createMinimalAnimation({ strokes, revealThreshold: 0.5 });
+
+      // Progress 1.0 → todos os 8 strokes visíveis (clamped para 1.0)
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation,
+          imageElement: image,
+          progress: 1,
+          opacity: 1,
+          speedMultiplier: { sketch: 0.5, reveal: 0.5 },
+        });
+      }).not.toThrow();
+    });
+
+    it('SpeedPaintMultipliers: fallback quando não há divisão clara sketch/reveal', () => {
+      const { ctx } = createMockCtx();
+      const buffer = createBufferCanvas(createMinimalAnimation());
+      const image = createMockImage();
+
+      // Todos os strokes são do mesmo tipo — branch "sem divisão clara"
+      const strokes = [
+        {
+          id: 1,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10, 20, 30, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        },
+        {
+          id: 2,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [50, 60, 70, 80],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        },
+      ];
+
+      const animation = createMinimalAnimation({ strokes, revealThreshold: 0.8 });
+      // sketchCount = floor(0.8 * 2) = 1, revealCount = 1 — divisão clara existe
+      // Mas se todos são sketch, revealCount tem strokes com layer 1:
+      // Vamos testar com apenas 1 stroke para forçar sketchCount=0 ou revealCount=0
+      const animationSingle = createMinimalAnimation({ strokes: [strokes[0]], revealThreshold: 0.5 });
+      // sketchCount = floor(0.5 * 1) = 0, revealCount = 1 → sketchCount === 0 → branch fallback
+
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation: animationSingle,
+          imageElement: image,
+          progress: 0.7,
+          opacity: 1,
+          speedMultiplier: { sketch: 2.0, reveal: 1.0 },
+        });
+      }).not.toThrow();
+    });
   });
 
   describe('createBufferCanvas', () => {

@@ -147,9 +147,9 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
 | **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE`. `SubtitleInlineEditor` editor inline via portal. Subcomponentes em `subtitle-editor/` (EditorToolbar, FontSizeControls, PositionToggle, StyleSlider, ToolbarActions, SubtitlePreview, DragOverlay, EditorButton) |
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
-| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) + `SceneSequence` (fallback). Toggle no `VideoExportPanel` + seletor de velocidade (0.5x/1x/1.5x). `SpeedPaintSpeed` type (`slow` | `normal` | `fast`) |
+| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) + `SceneSequence` (fallback). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x). `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase |
 | **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
-| **Speed Paint renderer** | `renderSpeedPaintFrame()` síncrono, `speedMultiplier` em `SpeedPaintFrameOptions`, `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
+| **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
 | **Stroke worker** | `strokeWorker.ts` — `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
@@ -295,13 +295,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.23.0`
+- **Current:** `0.24.0`
 - **Last release:** 2026-04-25
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.0 | `SpeedPaintMultipliers` (controle granular sketch/reveal 0.25x–4.0x); `SpeedPaintControls` com sliders independentes; `SpeedPaintPhaseBadge` no preview; renderer com suporte a multiplicadores por fase (backward compat); CHANGELOG limpo (versões antigas em `docs/`); 30 testes novos (total: 1185) |
 | 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |
 | 0.22.0 | Refatoração `useStudioState` → Zustand store (`useStudioStore`, `useCurrentStudioState`, `buildGenerateOptions`); 3 arquivos criados em `store/` (studioStore, studio.utils, barrel); `useShallow` em StudioPage/VideoPage; `getStoredNumber` corrigido; `ScriptEditorController` type removido; 24 testes novos (total: 1064) |
 | 0.21.1 | Otimização de performance: `React.memo` em 10 componentes (Inspector, CaptionEditorPanel, SubtitleInlineEditor, TranscriptionPanel, VideoExportPanel, AssistantComposer, AssistantHeader, AssistantHistoryPanel, AssistantMemoriesPanel, AssistantSettingsPanel); `useCallback` em 12 handlers do Assistant.tsx; state lifting invertido no VideoExportPanel (quality/fileName/animateScenes/speedPaintSpeed como state local); `VideoPreview` memoizado no VideoPage; `useMemo` no retorno de `useVideoExporter` |
