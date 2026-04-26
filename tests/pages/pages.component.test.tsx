@@ -517,7 +517,14 @@ describe('Pages — Renderização', () => {
 
   describe('StudioPage', () => {
     it('deve renderizar sem crash', () => {
-      renderWithRouter(<StudioPage />);
+      renderWithRouter(
+        <StudioPage
+          isGenerating={false}
+          scenes={[]}
+          handleGenerate={vi.fn()}
+          isGenerateDisabled={false}
+        />,
+      );
       expect(screen.getByTestId('inspector')).toBeTruthy();
       expect(screen.getByTestId('script-editor')).toBeTruthy();
     });

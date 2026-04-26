@@ -1,22 +1,22 @@
-import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import { Inspector } from '../components/Inspector';
 import { ScriptEditor } from '../components/ScriptEditor';
 import { useAudioCurrentTime } from '../contexts/AudioContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useAudioGenerator } from '../hooks/useAudioGenerator';
-import { MAX_CHARS } from '../lib/constants';
-import { useStudioStore, buildGenerateOptions } from '../features/studio/store';
+import { useStudioStore } from '../features/studio/store';
 import { useShallow } from 'zustand/react/shallow';
 
-export function StudioPage() {
-  const { user } = useAuth();
+interface StudioPageProps {
+  isGenerating: boolean;
+  scenes: { imageUrl: string; timestamp: number }[];
+  handleGenerate: () => void;
+  isGenerateDisabled: boolean;
+}
+
+export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDisabled }: StudioPageProps) {
   const currentTime = useAudioCurrentTime();
 
   // Estado de config do store (Zustand) — useShallow evita re-renders ao digitar
   const config = useStudioStore(useShallow((s) => ({
-    script: s.script,
-    setScript: s.setScript,
     isMultiSpeaker: s.isMultiSpeaker,
     setIsMultiSpeaker: s.setIsMultiSpeaker,
     speakerAName: s.speakerAName,
@@ -35,6 +35,8 @@ export function StudioPage() {
     setPace: s.setPace,
     styleNotes: s.styleNotes,
     setStyleNotes: s.setStyleNotes,
+    script: s.script,
+    setScript: s.setScript,
     generateScenes: s.generateScenes,
     setGenerateScenes: s.setGenerateScenes,
     sceneDensity: s.sceneDensity,
@@ -46,18 +48,6 @@ export function StudioPage() {
     referenceImage: s.referenceImage,
     setReferenceImage: s.setReferenceImage,
   })));
-
-  // Estado de geração de áudio (hook)
-  const { isGenerating, scenes, generateAudio } = useAudioGenerator();
-
-  // Derivação
-  const isGenerateDisabled = isGenerating || !config.script.trim() || config.script.length > MAX_CHARS;
-
-  // handleGenerate: lê config do store via getState() no momento da execução.
-  // Deps apenas em generateAudio (estável via useCallback) e userId.
-  const handleGenerate = useCallback(() => {
-    generateAudio(buildGenerateOptions(user?.uid, useStudioStore.getState()));
-  }, [generateAudio, user?.uid]);
 
   return (
     <Grid container spacing={{ xs: 3, lg: 4 }}>

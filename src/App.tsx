@@ -289,7 +289,8 @@ export default function App() {
   }, [isGenerating]);
 
   // ─── Rotas ───────────────────────────────────────────────
-  // Rotas são estáticas: imports lazy e refs não mudam entre renders.
+  // StudioPage recebe props dinâmicas do hook de geração de áudio;
+  // as demais rotas são estáticas (imports lazy, refs não mudam entre renders).
   const routes = useMemo(() => (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
@@ -318,7 +319,14 @@ export default function App() {
         <Route path="/privacy" element={<Navigate to="/privacidade" replace />} />
         {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/app/estudio" element={<StudioPage />} />
+          <Route path="/app/estudio" element={
+            <StudioPage
+              isGenerating={isGenerating}
+              scenes={scenes}
+              handleGenerate={handleGenerate}
+              isGenerateDisabled={isGenerateDisabled}
+            />
+          } />
 
           <Route
             path="/app/video"
@@ -351,7 +359,7 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
-  ), []);
+  ), [isGenerating, scenes, handleGenerate, isGenerateDisabled]);
 
   // ─── Atalhos de teclado ────────────────────────────────────
   useKeyboardShortcuts({

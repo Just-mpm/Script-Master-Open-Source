@@ -1,4 +1,4 @@
-import type { Project } from '../../lib/db';
+import type { Project, ProjectVideo } from '../../lib/db';
 
 /** Cena de vídeo com imagem e timestamp */
 export interface VideoLibraryScene {
@@ -12,6 +12,7 @@ export interface VideoLibraryItem extends Project {
   isGeneration?: boolean;
   audioUrl?: string;
   scenes?: VideoLibraryScene[];
+  videos?: ProjectVideo[];
 }
 
 /** Props públicas do componente VideoLibrary */
