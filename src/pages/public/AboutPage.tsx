@@ -378,7 +378,7 @@ export default function AboutPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/hero-illustration.png"
+            src="/images/public/hero-illustration.webp"
             alt="Ilustração do Script Master"
             sx={{
               maxWidth: { xs: 320, sm: 420, md: 520 },

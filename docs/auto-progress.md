@@ -35,13 +35,21 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Wave 2 concluída — DRY e organização melhorados
-Última atualização: 26/04/2026, 04:30
+Fase: Wave 4 concluída — performance de imagens melhorada
+Última atualização: 26/04/2026, 05:45
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 6: Performance — Conversão de imagens para WebP
+- Resultado: 8 imagens JPEG-saved-as-PNG convertidas para WebP (3.63MB → 343KB, 90.8% redução). 8 referências .png atualizadas para .webp em 3 arquivos TSX (LandingPage, FuncionalidadesPage, AboutPage). 3 imagens não referenciadas confirmadas (cta-illustration, feature-library, feature-speedpaint).
+- Pendências: não
+
+### Etapa 5: Implementação — Melhorias UX + cleanups visuais
+- Resultado: ScrollToTop criado e integrado no App; FuncionalidadesPage usando HeroSection compartilhado; FAQ com 4 ícones distintos por categoria; ContactPage com feedback visual (Snackbar) no mailto; pricing FAQ reescrito com respostas distintas; FeatureShowcase maxWidth unificado (380); StepCard rgba trocado por alpha(). FIND-020 confirmado sem duplicação real. 8 arquivos alterados, lint/typecheck OK, commit a15ba42.
+- Pendências: não
+
 ### Etapa 4: Implementação — Refatoração DRY (legal template, FAQ, nav)
 - Resultado: LegalPageTemplate criado (TermsPage -67%, CookiesPage -67%, PrivacyPage -65% com GAP-009 corrigido). PRICING_FAQ dedup (src/data/pricingFaq.ts). Skip-to-content dedup (App.tsx). /sobre adicionado ao header. 8 arquivos alterados, lint/typecheck OK, commit 46ba8fe.
 - Pendências: não
@@ -62,7 +70,5 @@ Fase: Wave 2 concluída — DRY e organização melhorados
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Etapa 5: Acessibilidade e consistência visual — Tabela comparativa semântica, aria-hidden em ícones, FeatureShowcase maxWidth, drop-shadow/rgba unificados
-2. Etapa 6: Limpeza — Assets de imagem não referenciados, ChipColor type duplicado
-3. Etapa 7: Verificação final — QA de todas as páginas públicas
+1. Etapa 7: Verificação final — QA de todas as páginas públicas
 <<<FIM_PROXIMOS_PASSOS>>>

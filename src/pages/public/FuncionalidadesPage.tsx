@@ -132,7 +132,7 @@ export default function FuncionalidadesPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-tts.png"
+            src="/images/public/feature-tts.webp"
             alt="Geração de áudio TTS"
             loading="lazy"
             sx={{
@@ -161,7 +161,7 @@ export default function FuncionalidadesPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-video.png"
+            src="/images/public/feature-video.webp"
             alt="Renderização de vídeo"
             loading="lazy"
             sx={{
@@ -188,7 +188,7 @@ export default function FuncionalidadesPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-images.png"
+            src="/images/public/feature-images.webp"
             alt="Geração de imagens com IA"
             loading="lazy"
             sx={{

@@ -112,7 +112,7 @@ export default function LandingPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/hero-illustration.png"
+            src="/images/public/hero-illustration.webp"
             alt="Ilustração do Script Master — transformação de roteiros em arte com IA"
             sx={{
               maxWidth: { xs: 320, sm: 420, md: 520 },
@@ -171,7 +171,7 @@ export default function LandingPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-tts.png"
+            src="/images/public/feature-tts.webp"
             alt="Geração de áudio TTS com IA"
             loading="lazy"
             sx={{
@@ -200,7 +200,7 @@ export default function LandingPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-video.png"
+            src="/images/public/feature-video.webp"
             alt="Renderização de vídeo client-side"
             loading="lazy"
             sx={{
@@ -228,7 +228,7 @@ export default function LandingPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/feature-assistant.png"
+            src="/images/public/feature-assistant.webp"
             alt="Assistente IA conversacional"
             loading="lazy"
             sx={{
