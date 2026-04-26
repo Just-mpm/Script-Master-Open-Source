@@ -17,6 +17,7 @@ import { FAQAccordion } from '../../components/public/FAQAccordion';
 import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -79,33 +80,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
     id: 'precos',
     label: 'Preços',
     icon: ContactSupportIcon,
-    items: [
-      {
-        question: 'É realmente grátis?',
-        answer:
-          'Sim! O plano Gratuito não exige cartão de crédito e não possui data de expiração. Você pode usar quantas vezes quiser dentro dos limites do plano.',
-      },
-      {
-        question: 'Posso cancelar a qualquer momento?',
-        answer:
-          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
-      },
-      {
-        question: 'Quais as formas de pagamento?',
-        answer:
-          'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
-      },
-      {
-        question: 'Existe desconto para pagamento anual?',
-        answer:
-          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
-      },
-      {
-        question: 'O que acontece se exceder os limites do plano?',
-        answer:
-          'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
-      },
-    ],
+    items: PRICING_FAQ_ITEMS,
   },
   {
     id: 'tecnico',

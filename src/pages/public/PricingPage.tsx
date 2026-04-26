@@ -26,6 +26,7 @@ import {
   APP_BORDER,
 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -127,40 +128,6 @@ const PLANS: readonly PlanData[] = [
     ctaVariant: 'outlined',
   },
 ];
-
-/** Perguntas frequentes sobre preços */
-const PRICING_FAQ = [
-  {
-    question: 'É realmente grátis?',
-    answer:
-      'Sim! O plano Gratuito não exige cartão de crédito e não possui data de expiração. Você pode usar quantas vezes quiser dentro dos limites do plano.',
-  },
-  {
-    question: 'Posso cancelar a qualquer momento?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
-  },
-  {
-    question: 'Quais as formas de pagamento?',
-    answer:
-      'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
-  },
-  {
-    question: 'O que acontece se exceder os limites do plano?',
-    answer:
-      'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
-  },
-  {
-    question: 'Existe desconto para pagamento anual?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
-  },
-  {
-    question: 'Posso trocar de plano?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que disponível, você poderá fazer upgrade ou downgrade a qualquer momento.',
-  },
-] as const;
 
 /** Tabela comparativa de funcionalidades por plano */
 const COMPARISON_TABLE: readonly ComparisonRow[] = [
@@ -448,7 +415,7 @@ export default function PricingPage() {
 
       {/* FAQ — Perguntas frequentes sobre preços */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <FAQAccordion items={[...PRICING_FAQ]} title="Perguntas frequentes sobre preços" />
+        <FAQAccordion items={[...PRICING_FAQ_ITEMS]} title="Perguntas frequentes sobre preços" />
       </Box>
 
       {/* CTA Final */}

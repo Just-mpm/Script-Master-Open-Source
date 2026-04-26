@@ -9,3 +9,5 @@ export { StepCard } from './StepCard';
 export { SocialProofBar } from './SocialProofBar';
 export { PricingCard } from './PricingCard';
 export { FAQAccordion } from './FAQAccordion';
+export { LegalPageTemplate } from './LegalPageTemplate';
+export type { LegalSection } from './LegalPageTemplate';
