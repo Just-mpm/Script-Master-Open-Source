@@ -7,6 +7,68 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.2] - 2026-04-26
+
+### Corrigido
+
+**Bugs críticos (LGPD / data loss):**
+- **`account-cleanup.ts`**: storage path de vídeo corrigido (`videos/{uid}/{pid}` → `projects/{uid}/{pid}/videos/{id}.{ext}`) — vídeos agora são deletados corretamente durante exclusão de conta
+- **`account-cleanup.ts`**: pipeline LGPD agora deleta imagens de cena da coleção `generations` (antes só deletava imagens standalone de `image_generations`)
+- **`account-cleanup.ts`**: prefixo de imagens standalone corrigido (`generations_images/` → `images/`)
+- **`account-cleanup.ts`**: `collectionGroup` (função) removida de template literal no log; storage deletions agora aguardam conclusão via `Promise.all`
+- **`useAudioGenerator.ts`**: stale closure corrigido — refs espelhadas para `audioUrl/audioBlob/scenes/audioSegments` garantem que `previousState` reflita valores atuais ao restaurar estado após cancelamento/falha
+
+**Bugs de funcionalidade:**
+- **`useVideoExporter.tsx`**: race condition corrigida — `AbortController` movido antes da fase speed paint, cancelamento agora funciona durante toda a renderização
+- **`VideoComposition.tsx`**: WaveformOverlay corrigido — frame passado para `getSceneTime` agora é absoluto (antes era relativo, waveform ausente em cenas >1)
+- **`BatchOrchestrator.tsx`**: jobs órfãos agora são ignorados ao limpar fila (`processingIdRef` checado no `.then()`/`.catch()`)
+- **`LoginPage.tsx`**: mensagem de erro do reset de senha extraída do `Error` lançado em vez do `authError` stale
+- **`ActionBar.tsx`**: throttle de progresso corrigido — `bridgeFrame` removido das deps do `useEffect` (evitava 30 destruições/s do interval); frame sincronizado via ref
+
+**Memory leaks:**
+- **`AnimationControls.tsx`**: `MediaRecorder` agora limpo no `useEffect` cleanup ao desmontar
+- **`Library.tsx`**: blob URLs de projeto anterior revogados ao trocar de projeto
+
+**UI fixes:**
+- **`FeatureShowcase.tsx`**: `bgcolor` trocado por `background` — gradiente de fundo do ícone agora renderiza corretamente
+- **`FeatureCard.tsx`**: mesmo fix aplicado na variante `highlighted` (bug latente)
+- **`FaqPage.tsx`**: classes MUI v9 atualizadas (`.MuiTabs-flexContainer` → `.MuiTabs-list`, `.MuiTab-iconWrapper` → `.MuiTab-icon`)
+
+**Performance:**
+- **`useAssistant.ts`**: streaming do assistente com batching via `requestAnimationFrame` — acumula chunks e faz flush uma vez por frame (reduz renders durante streaming)
+- **`SubtitleOverlay.tsx`**: `getAlignment()` envolvido com `useMemo` — elimina alocação de objeto por frame
+- **`AnimationPlayer.tsx`**: progress do speed paint throttled para ~20fps (antes 60fps causava re-renders excessivos)
+- **`imageProcessing.ts`**: edge detection + BFS + vetorização movidos para Web Worker inline — main thread desbloqueada (antes bloqueava 500-2000ms)
+
+**UX:**
+- **`useImageGenerator.ts` + `ImageStudio.tsx`**: cancelamento de geração de imagem adicionado (`cancelRef` + botão "Parar geração")
+- **`ImageStudio.tsx`**: download agora disponível para imagens IndexedDB (blob URL fallback quando `imageUrl` ausente)
+- **`AssistantMessages.tsx` + `Assistant.tsx`**: chips do empty state agora clicáveis com prompts contextuais
+- **`Library.tsx`**: `saveEdit` com try/catch — erro mantém campo aberto com feedback
+- **`ScriptEditor.tsx`**: confirmação ao limpar roteiro >500 chars via `window.confirm`
+- **`Inspector.tsx`**: validação de 10MB para upload de imagem de referência
+- **`Assistant.tsx`**: `handleDocumentUpload` e `handleAddMemory` com try/catch + loading state + feedback de erro
+- **`ProtectedRoute.tsx`**: texto "Verificando sessão..." adicionado abaixo do spinner
+- **`App.tsx`**: redirect autoreferente `/cookies → /cookies` removido
+- **`ActionBar.tsx`**: botão exportar desabilitado quando não há cenas
+- **`AssistantMessages.tsx`**: fallback `document.execCommand('copy')` quando Clipboard API falha
+- **`AboutPage.tsx`**: `@keyframes pulse` renomeado para `pulseGlow` (evitava conflito com global)
+- **`ContactPage.tsx`**: botões redes sociais com `variant="outlined"` (borderColor funciona)
+
+### Alterado
+
+- **Tokens hardcoded substituídos**: StepCard (`#F7941E` → `BRAND_SECONDARY`), Library + ImageStudio (`#2E75B6` → `BRAND_PRIMARY`), AssistantComposer (`#ef4444` → `ERROR_MAIN`), Header (`borderColor` → `APP_BORDER_STRONG`)
+- **DRY**: `authTextFieldSx` / `authLinkSx` extraídos para novo `src/theme/authStyles.ts` (importados por LoginPage e RegisterPage)
+- **DRY**: `glassPanelSx` duplicado em ErrorBoundary e NotFoundPage substituído por import de `surfaces.ts`
+- **LoginPage.tsx** + **RegisterPage.tsx**: links imperativos trocados por `<Typography component={Link}>` do RouterLink
+- **StatusPage.tsx**: disclaimer movido para antes do banner de status
+
+### Adicionado
+
+- **`src/theme/authStyles.ts`**: estilos compartilhados de autenticação (`authTextFieldSx`, `authLinkSx`) — antes duplicados entre LoginPage e RegisterPage
+
+---
+
 ## [0.24.1] - 2026-04-25
 
 ### Corrigido

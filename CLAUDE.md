@@ -119,7 +119,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
 | **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS) |
 | **Segmentos** | `AudioSegment` persiste chunk→timestamp no IndexedDB (fire-and-forget). Duração: `pcm.length / 48000` |
-| **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef` |
+| **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef`. State values espelhados via refs para evitar stale closure |
 | **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
 | **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
 | **AudioContext selectors** | `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — hooks seletivos para re-render otimizado |
@@ -130,6 +130,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 |---|---|
 | **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx` |
 | **Pipeline** | prompt (opcional + referência) → Gemini via `withRetry` → extrai `inlineData` → base64ToBlob → blob URL |
+| **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
 | **Retry** | `withRetry`: 3 tentativas, 1000ms base, 500ms jitter (mesmo do TTS) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
@@ -183,7 +184,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/hooks/useAssistant.ts` |
 | **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via `generateContentStream`) |
 | **UI centralizada** | `assistantUi.ts` — 13 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button); componentes internos importam de `assistantUi` em vez de `tokens.ts` |
-| **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action |
+| **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
 | **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini. Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
 | **System prompt** | Montado dinamicamente: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
@@ -191,6 +192,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
 | **Auto-save** | Salva sessão ao final de cada resposta (quando `isStreaming` → `false`). Título: primeiros 40 chars da primeira msg |
 | **Abort** | Novo envio aborta chamada anterior. Desmontagem aborta em andamento |
+| **Streaming batch** | Chunks acumulados via `requestAnimationFrame` — flush uma vez por frame de display (reduz re-renders durante streaming) |
 
 ### Estúdio de Produção
 
@@ -224,7 +226,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | | |
 |---|---|
 | **Arquivos** | `src/features/speed-paint/` |
-| **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva no canvas Konva |
+| **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva no canvas Konva. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
 | **Fases** | Sketch (bordas, `layer:0`) → Reveal (coloração com destination-out, `layer:1`) |
 | **Canvas** | Offscreen buffer simula "lousa branca". Reveal apaga lousa revelando imagem original |
 | **Controles** | Play/pause, seek, velocidade dupla (draw + paint), export PNG (2x) e WebM (H.264 > VP9 > padrão, 12Mbps) |
@@ -243,7 +245,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **COEP conflict** | Login/logout/delete fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
 | **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`, `auth/requires-recent-login`) |
-| **Estilos compartilhados** | `authTextFieldSx` (TextField dark theme) e `authLinkSx` (link inline hover) definidos em LoginPage e RegisterPage |
+| **Estilos compartilhados** | `authTextFieldSx` (TextField dark theme) e `authLinkSx` (link inline hover) definidos em `src/theme/authStyles.ts` (importados por LoginPage e RegisterPage) |
 
 ### Environment & COEP
 
@@ -262,7 +264,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
+| **Arquivos** | `src/theme/appTheme.ts`, `src/theme/tokens.ts`, `src/theme/surfaces.ts`, `src/theme/authStyles.ts`, `src/theme/linkBehavior.tsx`, `src/index.css` |
 | **Stack** | MUI v9 + Emotion. `StyledEngineProvider` com `enableCssLayer`. CSS layers: `theme, base, mui, components, utilities` |
 | **Modo** | Dark only na prática (light existe com palette idêntica). Font: Inter (sans), JetBrains Mono (mono), Playfair Display (serif) |
 | **Tokens** | `tokens.ts`: brand (blue/orange), semantic (success/error/warning), text opacidades, surfaces (5 níveis), glow (3 níveis), gradients, status (success/error/warning borders/glows) |
@@ -295,13 +297,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.1`
-- **Last release:** 2026-04-25
+- **Current:** `0.24.2`
+- **Last release:** 2026-04-26
 
 ### Últimas mudanças (atualizado por /fast)
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.2 | 3 CRITICAL bugs LGPD corrigidos (vídeo/imagens de cena nunca deletados); stale closure em `useAudioGenerator` (refs espelhadas); race condition no `useVideoExporter`; WaveformOverlay frame absoluto; MediaRecorder e blob URL cleanup; ActionBar throttle corrigido; streaming assistant batched via RAF; SubtitleOverlay memoizado; AnimationPlayer progress throttled; imageProcessing movido para Web Worker; cancelamento de geração de imagem; download IndexedDB; chips clicáveis no empty state; tokens hardcoded migrados (5 locais); authStyles.ts extraído (DRY); bgcolor→background em FeatureShowcase/FeatureCard; classes MUI v9 atualizadas no FaqPage |
 | 0.24.1 | `exportFileName` movido do estado para ref (evita perda em reset); feedback visual de renderização antecipado; `speedPaintWarnings` preservado entre `setState` calls; `estimateFileSize` realinhado ao mediabunny (3 Mbps base, escala pow 0.95, codecs avc/hevc/av1); caption toggle sempre visível no VideoPage |
 | 0.24.0 | `SpeedPaintMultipliers` (controle granular sketch/reveal 0.25x–4.0x); `SpeedPaintControls` com sliders independentes; `SpeedPaintPhaseBadge` no preview; renderer com suporte a multiplicadores por fase (backward compat); CHANGELOG limpo (versões antigas em `docs/`); 30 testes novos (total: 1185) |
 | 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |
