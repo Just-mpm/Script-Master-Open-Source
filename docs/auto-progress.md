@@ -35,13 +35,17 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Wave 4 concluída — performance de imagens melhorada
-Última atualização: 26/04/2026, 05:45
+Fase: Wave 5 concluída — acessibilidade melhorada
+Última atualização: 26/04/2026, 06:10
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 7: Acessibilidade + cleanups finais
+- Resultado: 5 findings corrigidos — roles ARIA na tabela comparativa (FIND-003), aria-hidden em ícones decorativos do AboutPage (FIND-011), barrel morto removido + imports de testes corrigidos (FIND-015), hierarquia de headings no LegalPageTemplate corrigida h3→h2 (FIND-009), NotFoundPage documentado como layout minimalista intencional (FIND-012). 7 arquivos alterados, lint/typecheck OK, commit 4d956b5.
+- Pendências: não
+
 ### Etapa 6: Performance — Conversão de imagens para WebP
 - Resultado: 8 imagens JPEG-saved-as-PNG convertidas para WebP (3.63MB → 343KB, 90.8% redução). 8 referências .png atualizadas para .webp em 3 arquivos TSX (LandingPage, FuncionalidadesPage, AboutPage). 3 imagens não referenciadas confirmadas (cta-illustration, feature-library, feature-speedpaint).
 - Pendências: não
@@ -70,5 +74,5 @@ Fase: Wave 4 concluída — performance de imagens melhorada
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Etapa 7: Verificação final — QA de todas as páginas públicas
+1. Etapa 8 (final): QA de todas as páginas públicas — verificar rendering, links, a11y no navegador
 <<<FIM_PROXIMOS_PASSOS>>>
