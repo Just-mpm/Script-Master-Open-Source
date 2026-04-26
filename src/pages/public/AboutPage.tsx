@@ -84,39 +84,39 @@ const TEAM: readonly TeamMember[] = [
 
 const ROADMAP: readonly RoadmapItem[] = [
   {
-    version: '0.15',
-    title: 'Pintura Rápida',
-    description: 'Upload de imagens com vetorização e animação progressiva via canvas',
-    status: 'done',
-  },
-  {
-    version: '0.16',
-    title: 'Player de Vídeo Integrado',
-    description: 'Player completo com legendas, waveform e bridge de estado centralizado',
-    status: 'done',
-  },
-  {
     version: '0.17',
-    title: 'Páginas Públicas',
-    description: 'Landing page, funcionalidades, login e páginas legais com SEO otimizado',
+    title: 'Autenticação e Navegação',
+    description: 'Login com Google e email/senha, cadastro, rotas protegidas e SEO com páginas públicas',
     status: 'done',
   },
   {
-    version: '0.18',
-    title: 'Novas Páginas Públicas',
-    description: 'Pricing, FAQ, Contato, Sobre, Status e páginas legais complementares',
+    version: '0.20',
+    title: 'Speed Paint e Vídeo Avançado',
+    description: 'Animação de pintura progressiva, Web Worker para renderização, cache LRU e exportação WebM',
     status: 'done',
   },
   {
-    version: '0.19',
+    version: '0.22',
+    title: 'Estúdio de Produção',
+    description: 'Refatoração completa do estúdio com Zustand, persistência de preferências e controle granular de speed paint',
+    status: 'done',
+  },
+  {
+    version: '0.23',
+    title: 'Exclusão de Conta LGPD',
+    description: 'Pipeline de exclusão completo (Firestore + Storage + IndexedDB), verificação de email e UI centralizada do assistente',
+    status: 'done',
+  },
+  {
+    version: '0.24',
+    title: 'Qualidade de Vídeo e Exportação',
+    description: 'Export quality (720p–4k), estimativa de tamanho, multiplicadores de speed paint por fase e 1185 testes',
+    status: 'done',
+  },
+  {
+    version: 'next',
     title: 'Planos e Pagamentos',
     description: 'Integração com Stripe para assinaturas, pagamentos e gerenciamento de plano',
-    status: 'current',
-  },
-  {
-    version: '0.19',
-    title: 'Multiidioma',
-    description: 'Suporte a roteiros e vozes em múltiplos idiomas (inglês, espanhol)',
     status: 'planned',
   },
   {
@@ -373,14 +373,13 @@ export default function AboutPage() {
       <HeroSection
         title="Sobre o Script Master"
         subtitle="Conheça a história, os valores e o roadmap da plataforma que está transformando a produção de conteúdo com inteligência artificial."
-        primaryCta={{ label: 'Começar Grátis', to: '/login' }}
+        primaryCta={{ label: 'Criar conta gratuita', to: '/cadastro' }}
         secondaryCta={{ label: 'Ver Funcionalidades', to: '/funcionalidades' }}
         visual={
           <Box
             component="img"
             src="/images/public/hero-illustration.png"
             alt="Ilustração do Script Master"
-            loading="lazy"
             sx={{
               maxWidth: { xs: 320, sm: 420, md: 520 },
               width: '100%',
@@ -498,8 +497,8 @@ export default function AboutPage() {
         <CTASection
           title="Faça parte dessa história"
           subtitle="Comece a criar conteúdo profissional com IA. Gratuito, sem cartão de crédito."
-          buttonLabel="Entrar com Google"
-          buttonHref="/login"
+          buttonLabel="Começar agora"
+          buttonHref="/cadastro"
         />
       </Box>
     </PageLayout>

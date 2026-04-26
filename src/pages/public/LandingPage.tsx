@@ -107,14 +107,13 @@ export default function LandingPage() {
       <HeroSection
         title="Transforme roteiros em arte com IA"
         subtitle="Plataforma completa para criar áudio, vídeo e imagens profissionais a partir de roteiros. Tudo client-side com Gemini AI."
-        primaryCta={{ label: 'Começar Grátis', to: '/login' }}
+        primaryCta={{ label: 'Criar conta gratuita', to: '/cadastro' }}
         secondaryCta={{ label: 'Ver Funcionalidades', to: '/funcionalidades' }}
         visual={
           <Box
             component="img"
             src="/images/public/hero-illustration.png"
             alt="Ilustração do Script Master — transformação de roteiros em arte com IA"
-            loading="lazy"
             sx={{
               maxWidth: { xs: 320, sm: 420, md: 520 },
               width: '100%',
@@ -283,8 +282,8 @@ export default function LandingPage() {
         <CTASection
           title="Comece a criar agora"
           subtitle="Crie sua primeira narração gratuitamente. Sem cartão de crédito."
-          buttonLabel="Entrar com Google"
-          buttonHref="/login"
+          buttonLabel="Começar agora"
+          buttonHref="/cadastro"
         />
       </Box>
     </PageLayout>

@@ -214,7 +214,7 @@ export function PublicHeader() {
                     },
                   }}
                 >
-                  {isMobile ? 'Entrar' : 'Entrar'}
+                  Entrar
                 </Button>
               )}
             </Stack>

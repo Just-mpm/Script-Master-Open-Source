@@ -51,7 +51,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Preciso de conta para usar?',
         answer:
-          'Você pode explorar o Script Master sem conta, mas para salvar projetos, gerar áudio e acessar todas as funcionalidades, é necessário criar uma conta gratuita usando seu Google.',
+          'Você pode explorar o Script Master sem conta, mas para salvar projetos, gerar áudio e acessar todas as funcionalidades, é necessário criar uma conta gratuita. Oferecemos login com Google ou por email e senha.',
       },
       {
         question: 'Meus dados estão seguros?',
@@ -147,7 +147,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Como faço login?',
         answer:
-          'O login é feito com sua conta Google. Clique em "Entrar" no canto superior direito e selecione sua conta Google. É rápido e seguro.',
+          'Você pode fazer login de duas formas: com sua conta Google (um clique) ou com email e senha. Clique em "Entrar" no canto superior direito para acessar sua conta. Também oferecemos recuperação de senha caso esqueça.',
       },
       {
         question: 'Posso usar em mais de um dispositivo?',
@@ -157,7 +157,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Como excluo minha conta?',
         answer:
-          'Você pode solicitar a exclusão da sua conta entrando em contato pelo formulário de contato ou email de suporte. Todos os seus dados serão excluídos permanentemente em até 30 dias.',
+          'Você pode excluir sua conta diretamente pelo app: clique no seu avatar no canto superior direito e selecione "Excluir conta". Todos os seus dados (projetos, áudios, chats, memórias e configurações) são removidos permanentemente em conformidade com a LGPD. Também é possível solicitar a exclusão pelo formulário de contato.',
       },
     ],
   },
@@ -225,7 +225,7 @@ export default function FaqPage() {
       <HeroSection
         title="Perguntas Frequentes"
         subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o Script Master."
-        primaryCta={{ label: 'Começar Grátis', to: '/login' }}
+        primaryCta={{ label: 'Criar conta gratuita', to: '/cadastro' }}
         secondaryCta={{ label: 'Ver planos', to: '/precos' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -361,8 +361,8 @@ export default function FaqPage() {
         <CTASection
           title="Pronto para começar?"
           subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão de crédito."
-          buttonLabel="Entrar com Google"
-          buttonHref="/login"
+          buttonLabel="Começar agora"
+          buttonHref="/cadastro"
         />
       </Box>
     </PageLayout>

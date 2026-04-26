@@ -430,8 +430,8 @@ export default function ContactPage() {
       <CTASection
         title="Pronto para começar?"
         subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão."
-        buttonLabel="Entrar com Google"
-        buttonHref="/login"
+        buttonLabel="Começar agora"
+        buttonHref="/cadastro"
       />
     </PageLayout>
     </>
