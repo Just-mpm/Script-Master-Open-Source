@@ -35,13 +35,17 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Wave 5 concluída — acessibilidade melhorada
-Última atualização: 26/04/2026, 06:10
+Fase: Wave 6 concluída — polish visual aplicado
+Última atualização: 26/04/2026, 06:45
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 8: Design — Polish visual das páginas públicas
+- Resultado: animations.ts criado com 11 variantes Motion reutilizáveis (fadeInUp, fadeIn, scaleIn, slideInLeft/Right, staggerContainer, etc.). 14 arquivos alterados: HeroSection (cascata título→subtítulo→CTAs→visual), FeatureCard/StepCard/PricingCard (stagger por index + whileHover scale), FeatureShowcase (slide cruzado texto/imagem), CTASection/SocialProofBar (fadeIn viewport), FAQAccordion (container animado), AboutPage roadmap (timeline sequencial). Spring physics para naturalidade. CSS transitions preservadas como fallback. Lint/typecheck OK, commit b1c912a.
+- Pendências: não
+
 ### Etapa 7: Acessibilidade + cleanups finais
 - Resultado: 5 findings corrigidos — roles ARIA na tabela comparativa (FIND-003), aria-hidden em ícones decorativos do AboutPage (FIND-011), barrel morto removido + imports de testes corrigidos (FIND-015), hierarquia de headings no LegalPageTemplate corrigida h3→h2 (FIND-009), NotFoundPage documentado como layout minimalista intencional (FIND-012). 7 arquivos alterados, lint/typecheck OK, commit 4d956b5.
 - Pendências: não
@@ -74,5 +78,6 @@ Fase: Wave 5 concluída — acessibilidade melhorada
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Etapa 8 (final): QA de todas as páginas públicas — verificar rendering, links, a11y no navegador
+1. Todas as 8 etapas concluídas — task finalizada
+2. Sugestões futuras: QA visual no navegador, performance audit (Lighthouse), teste de responsividade em dispositivos reais
 <<<FIM_PROXIMOS_PASSOS>>>
