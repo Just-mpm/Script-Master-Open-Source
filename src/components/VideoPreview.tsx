@@ -275,20 +275,20 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           />
         </VideoPlayerErrorBoundary>
 
-        {/* Botão flutuante para alternar legenda no preview */}
+        {/* Botão flutuante para alternar legenda no preview (canto inferior esquerdo) */}
         {showCaptionToggle && captions != null && captions.length > 0 && (
-          <Tooltip title={captionVisible ? 'Legenda visível' : 'Legenda oculta'} placement="left" arrow>
+          <Tooltip title={captionVisible ? 'Legenda visível' : 'Legenda oculta'} placement="right" arrow>
             <IconButton
               aria-label={captionVisible ? 'Ocultar legenda' : 'Mostrar legenda'}
               onClick={onCaptionToggle}
               size="small"
               sx={{
                 position: 'absolute',
-                bottom: 12,
-                right: 12,
+                bottom: 16,
+                left: 16,
                 zIndex: 10,
-                width: 36,
-                height: 36,
+                width: 42,
+                height: 42,
                 backgroundColor: GLASS_BG,
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
@@ -306,8 +306,8 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               }}
             >
               {captionVisible
-                ? <SubtitlesOutlined sx={{ fontSize: 20 }} />
-                : <SubtitlesOffOutlined sx={{ fontSize: 20 }} />}
+                ? <SubtitlesOutlined sx={{ fontSize: 22 }} />
+                : <SubtitlesOffOutlined sx={{ fontSize: 22 }} />}
             </IconButton>
           </Tooltip>
         )}
