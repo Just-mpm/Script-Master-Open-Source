@@ -35,16 +35,23 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Correções dos findings concluídas
-Última atualização: 26/04/2026, 14:30
-Findings corrigidos: 8 de 12 (2 ALTO + 4 MÉDIO + 2 BAIXO aplicáveis)
-Findings ignorados por design: 4 (V-01, M-01/M-02, V-03)
-Próxima: Atualizar CHANGELOG, versão, deploy
+Fase: Auditoria UX flows concluída (validação dupla — 3 rounds)
+Última atualização: 26/04/2026, 16:30
+Findings audit UX: 13 validados (2 P1 + 8 P2 + 3 P3) — relatório em docs/audits/1.md
+Findings anteriores corrigidos: 8 de 12 (etapa 2)
+Próxima: Aplicar correções dos findings UX (P1 prioritários), depois CHANGELOG + deploy
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 3: /audit src/ — Auditoria UX flows
+- Resultado: 4 audit agents (3 audit-ux-flow + 1 audit-technical) analisaram 165 arquivos. 27 findings originais → 13 validados após cascata (4 validators) + 3 rounds de re-validação dupla. 14 falsos positivos removidos, 1 duplicata mesclada.
+  - **P1 (2):** EmptyChatState código morto (V02), handleFirestoreError bloqueia fallback IndexedDB (T01)
+  - **P2 (8):** Botão Parar no composer inoperante (V01), exclusão parcial sem aviso (V03), upload >10MB silencioso (V04), URL retorno não preservada (V05), migração marca concluída com erros (V06), truncamento silencioso documento (V07), batch download sem detalhes (V08)
+  - **P3 (3):** Sem beforeunload (V10), mailto com window.location.href (V12), chat IndexedDB sem notificação (T02)
+- Pendências: 13 findings para correção (priorizar P1s)
+- Relatório: `docs/audits/1.md`
 ### Etapa 2: Correção dos findings ALTO + MÉDIO + BAIXO aplicáveis
 - Resultado: 8 findings corrigidos em 3 commits.
   - [A-01] TTS erro 500 agora retentado (rate-limiter.ts — 1 linha)
@@ -70,7 +77,10 @@ Próxima: Atualizar CHANGELOG, versão, deploy
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Atualizar CHANGELOG.md e versão no package.json
-2. Rodar build completo (`bun run build`)
-3. Deploy preview (`bun run deploy:preview`)
+1. Corrigir P1s: EmptyChatState chips mortos (V02) + handleFirestoreError fallback IndexedDB (T01)
+2. Corrigir P2s: botão Parar composer, exclusão conta parcial, upload >10MB feedback, ProtectedRoute URL retorno, migração com erros, truncamento documento, batch download detalhes
+3. Corrigir P3s: beforeunload, mailto, chat IndexedDB notificação
+4. Atualizar CHANGELOG.md e versão no package.json
+5. Rodar build completo (`bun run build`)
+6. Deploy preview (`bun run deploy:preview`)
 <<<FIM_PROXIMOS_PASSOS>>>
