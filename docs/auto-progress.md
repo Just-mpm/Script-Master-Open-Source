@@ -35,16 +35,32 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Auditoria UX flows concluída (validação dupla — 3 rounds)
-Última atualização: 26/04/2026, 16:30
+Fase: Correções UX audit aplicadas (7 de 10 findings corrigidos)
+Última atualização: 26/04/2026, 17:15
 Findings audit UX: 13 validados (2 P1 + 8 P2 + 3 P3) — relatório em docs/audits/1.md
-Findings anteriores corrigidos: 8 de 12 (etapa 2)
-Próxima: Aplicar correções dos findings UX (P1 prioritários), depois CHANGELOG + deploy
+Corrigidos nesta etapa: 7 findings (V02, V01, V03, V04, V07, V08, V06)
+Pulados justificados: V05 (ProtectedRoute — envolve COEP + full reload, complexo), T01 (handleFirestoreError em 9+ funções, arriscado; correção parcial já feita em chats.ts)
+Build completo: lint OK, typecheck OK, vite build OK
+Próxima: P3s opcionais, CHANGELOG + versão, deploy preview
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 4: Correção dos findings UX P1 + P2 (7 findings)
+- Resultado: 7 findings corrigidos em 3 commits. Build completo passou.
+  - [V02 P1] EmptyChatState agora detecta estado "welcome only" (`length === 1 && id === 'welcome'`)
+  - [V01 P2] Botão "Parar" do composer recebe prop `onStopGeneration` e chama `stopGeneration`
+  - [V03 P2] `deleteAllUserData` retorna `string[]`; `deleteAccount` notifica falhas parciais via `setAuthError`
+  - [V04 P2] Upload de imagem >10MB no Inspector exibe Alert de warning (auto-dismiss 5s)
+  - [V07 P2] Truncamento de documento na Base de Conhecimento exibe Alert com contagem de chars (auto-dismiss 6s)
+  - [V08 P2] Batch download com try/catch individual por item; reporta falhas parciais sem interromper
+  - [V06 P2] Migração com erros não marca como concluída; oferece "Tentar novamente" e "Ignorar e continuar"
+- Pendências: V05 (ProtectedRoute URL retorno), T01 (handleFirestoreError em 9+ funções), P3s (V10, V12, T02)
+- Commits:
+  - `auto: [V02 P1] EmptyChatState renderiza ao detectar welcome-only; [V01 P2] botao Parar do composer funciona`
+  - `auto: [V03 P2] exclusao conta notifica falhas parciais; [V04 P2] upload >10MB com feedback visual; [V07 P2] truncamento documento com aviso`
+  - `auto: [V08 P2] batch download com falha individual e relatorio; [V06 P2] migracao com erros oferece Tentar novamente`
 ### Etapa 3: /audit src/ — Auditoria UX flows
 - Resultado: 4 audit agents (3 audit-ux-flow + 1 audit-technical) analisaram 165 arquivos. 27 findings originais → 13 validados após cascata (4 validators) + 3 rounds de re-validação dupla. 14 falsos positivos removidos, 1 duplicata mesclada.
   - **P1 (2):** EmptyChatState código morto (V02), handleFirestoreError bloqueia fallback IndexedDB (T01)
@@ -77,9 +93,9 @@ Próxima: Aplicar correções dos findings UX (P1 prioritários), depois CHANGEL
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Corrigir P1s: EmptyChatState chips mortos (V02) + handleFirestoreError fallback IndexedDB (T01)
-2. Corrigir P2s: botão Parar composer, exclusão conta parcial, upload >10MB feedback, ProtectedRoute URL retorno, migração com erros, truncamento documento, batch download detalhes
-3. Corrigir P3s: beforeunload, mailto, chat IndexedDB notificação
+1. (P3s opcionais) Corrigir V10 (beforeunload), V12 (mailto), T02 (chat IndexedDB notificação)
+2. (Pendência complexa) V05 ProtectedRoute URL retorno — envolve COEP + full reload, requer análise dedicada
+3. (Pendência arriscada) T01 handleFirestoreError — correção em 9+ funções DB, correção parcial já feita em chats.ts
 4. Atualizar CHANGELOG.md e versão no package.json
 5. Rodar build completo (`bun run build`)
 6. Deploy preview (`bun run deploy:preview`)
