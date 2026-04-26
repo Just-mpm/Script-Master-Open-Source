@@ -26,7 +26,6 @@ export function PageLayout({ children }: PageLayoutProps) {
 
       <Box
         component="main"
-        id="main-content"
         tabIndex={-1}
         sx={{
           flex: 1,
