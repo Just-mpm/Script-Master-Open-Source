@@ -198,6 +198,18 @@ export default function App() {
   const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
   const videoExportProgress = useVideoRenderBridge((s) => s.videoExportProgress);
 
+  // Aviso antes de fechar aba durante geração ou exportação
+  useEffect(() => {
+    if (!isGenerating && !isExportingVideo) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isGenerating, isExportingVideo]);
+
   // ─── Handlers ─────────────────────────────────────────────
 
   // handleGenerate: lê config do store via getState() no momento da execução.

@@ -41,7 +41,7 @@ function sumAttachmentSize(messages: ChatSession['messages']): number {
   }, 0);
 }
 
-export async function saveChatSession(session: ChatSession, userId?: string): Promise<void> {
+export async function saveChatSession(session: ChatSession, userId?: string): Promise<boolean> {
   if (userId) {
     // Valida tamanho do documento antes de tentar salvar no Firestore
     const estimatedSize = estimateDocumentSize(session, userId);
@@ -53,25 +53,28 @@ export async function saveChatSession(session: ChatSession, userId?: string): Pr
         attachmentSizeBytes: totalAttachmentSize,
         maxAllowedBytes: FIRESTORE_MAX_DOC_SIZE_BYTES,
       });
-      // Recai para IndexedDB local que não tem limite de documento
+      await putIndexedDbItem(CHAT_STORE, session);
+      return true; // fallback para IndexedDB
     } else {
       try {
         await setDoc(doc(chatsCollection, session.id), {
           ...session,
           userId,
         });
-        return;
+        return false;
       } catch (firestoreError: unknown) {
         log.warn('Falha ao salvar chat no Firestore — fallback para IndexedDB', {
           sessionId: session.id,
           error: firestoreError instanceof Error ? firestoreError.message : String(firestoreError),
         });
-        // Fallback para IndexedDB em vez de lançar
+        await putIndexedDbItem(CHAT_STORE, session);
+        return true; // fallback para IndexedDB
       }
     }
   }
 
   await putIndexedDbItem(CHAT_STORE, session);
+  return false; // sem userId, comportamento normal
 }
 
 export async function getChatSessions(userId?: string): Promise<ChatSession[]> {
