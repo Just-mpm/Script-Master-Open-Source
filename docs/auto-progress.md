@@ -35,15 +35,19 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Correções aplicadas — todos CRITICAL/WARNING do audit 1 + P1 dos audits 2, 3 e 4
+Fase: Correções aplicadas — todos CRITICAL/WARNING do audit 1 + P1 dos audits 2, 3, 4 + P2 dos audits 3, 4
 Última atualização: 26/04/2026
 Relatórios: docs/audits/1.md (geral), docs/audits/2.md (performance), docs/audits/3.md (UX flows), docs/audits/4.md (UI design)
-Lint: limpo | Typecheck: limpo
+Lint: limpo | Typecheck: limpo | Testes: 1185/1185 passando
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 9: Correções P2 — Audit 3 (5x P2 UX) + Audit 4 (6x P2 UI Design)
+- Resultado: 11 findings P2 corrigidos em 13 arquivos de código + 12 arquivos de teste + 1 arquivo novo. Audit 4: P2-1 FeatureCard bgcolor→background, P2-2 StepCard hex→token, P2-3 ErrorBoundary/NotFoundPage glassPanelSx DRY, P2-4 authStyles.ts extraído (LoginPage/RegisterPage), P2-5 Library/ImageStudio hardcoded color→token + ring alpha padronizado, P2-6 AssistantComposer #ef4444→ERROR_MAIN. Audit 3: P2-1 Library saveEdit try/catch, P2-2 ScriptEditor confirm limpar, P2-3 Inspector validação tamanho upload, P2-4 Assistant document upload try/catch+loading, P2-5 Assistant salvar memória try/catch+loading. Testes: 1185/1185 passando.
+- Pendências: P3 de todos os audits; P2 do audit 2 (performance)
+
 ### Etapa 8: Correções — Audit 1 (C1-C3, W1-W9) + Audit 2 (P1) + Audit 3 (3x P1) + Audit 4 (2x P1)
 - Resultado: 19 findings corrigidos em 14 arquivos. Audit 1: C1 stale closure (refs), C2 video Storage path LGPD, C3 scene images LGPD, W1 template literal, W2 Storage fire-and-forget, W3 AbortController timing, W4 waveform frame offset, W5 BatchOrchestrator cancel, W6 authError stale, W7 standalone image path, W8 blob URL leak, W9 MediaRecorder cleanup. Audit 2: P1 ActionBar throttle (ref pattern). Audit 3: P1-1 image cancel, P1-2 download IndexedDB, P1-3 chips onClick. Audit 4: P1-1 bgcolor→background, P1-2 MUI v9 classes.
 - Pendências: P2 e P3 de todos os audits ainda não corrigidos (performance, UX, UI design)
@@ -80,9 +84,8 @@ Lint: limpo | Typecheck: limpo
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Correções P2/P3 do audit 2 (performance) — 4 findings P2 restantes
-2. Correções P2 do audit 3 (UX flows) — 5 findings P2 restantes
-3. Correções P2/P3 do audit 4 (UI design) — 6 P2 + 11 P3 restantes
-4. Correções P3 do audit 3 (UX flows) — 12 findings P3 restantes
-5. Rodar testes completos: bun run test
+1. Correções P2 do audit 2 (performance) — 4 findings P2 restantes
+2. Correções P2/P3 do audit 4 (UI design) — 11 findings P3 restantes
+3. Correções P3 do audit 3 (UX flows) — 12 findings P3 restantes
+4. Correções P3 do audit 1 (sugestões) — 4 findings restantes
 <<<FIM_PROXIMOS_PASSOS>>>
