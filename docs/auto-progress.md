@@ -35,16 +35,32 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Scan de lacunas completo
-Última atualização: 26/04/2026, 13:45
-Relatório final: docs/scan/1.md
-Findings: 12 validados (0 crítico, 2 alto, 4 médio, 6 baixo)
-Próxima: Correção dos findings ALTO e MÉDIO
+Fase: Correções dos findings concluídas
+Última atualização: 26/04/2026, 14:30
+Findings corrigidos: 8 de 12 (2 ALTO + 4 MÉDIO + 2 BAIXO aplicáveis)
+Findings ignorados por design: 4 (V-01, M-01/M-02, V-03)
+Próxima: Atualizar CHANGELOG, versão, deploy
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 2: Correção dos findings ALTO + MÉDIO + BAIXO aplicáveis
+- Resultado: 8 findings corrigidos em 3 commits.
+  - [A-01] TTS erro 500 agora retentado (rate-limiter.ts — 1 linha)
+  - [I-01] `getChatSessions` busca Firestore + IndexedDB, deduplica por session.id preferring updatedAt
+  - [I-03] `saveChatSession` com fallback para IndexedDB ao falhar Firestore (sem lançar)
+  - [I-02] `clearAllIndexedDbStores()` adicionada ao cleanup LGPD (account-cleanup.ts + shared.ts)
+  - [P-01] LoginPage agora tem SEO (Helmet) seguindo padrão RegisterPage
+  - [P-07] `authBenefits.ts` criado — LOGIN_BENEFITS e REGISTER_BENEFITS substituídos por AUTH_BENEFITS
+  - [P-03] `id="main-content"` duplicado removido de PageLayout.tsx
+  - [P-06] Skip-to-content duplicado removido de LoginPage e RegisterPage (App.tsx já fornece)
+  - [V-02] AGENTS.md corrigido: Whisper `base` (~75MB) → `tiny` (~39MB)
+- Pendências: 4 findings BAIXO ignorados por design (V-01: código morto com TODO; M-01/M-02: seletores p/ otimização futura; V-03: contextos diferentes justificam separação)
+- Commits:
+  - `auto: [A-01][I-01][I-03] TTS retry 500, chat sessions merge Firestore+IndexedDB, chat save fallback`
+  - `auto: [I-02] LGPD cleanup agora limpa IndexedDB local (clearAllIndexedDbStores)`
+  - `auto: [P-01][P-07][P-03][P-06][V-02] SEO no LoginPage, authBenefits DRY, remove duplicados skip-to-content/main-content, Whisper tiny no docs`
 ### Etapa 1: /scan src/ — Scan completo de lacunas
 - Resultado: 4 scan-gaps agents analisaram 164 arquivos (283K tokens). 29 findings originais → 12 validados após cascata (3 validators) + 2 rounds de re-validação dupla. 5 falsos positivos removidos, 12 descartados por confidence <80.
 - Pendências: 2 ALTO, 4 MÉDIO, 6 BAIXO para correção
@@ -54,11 +70,7 @@ Próxima: Correção dos findings ALTO e MÉDIO
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Corrigir [A-01] — Adicionar `500` ao `RETRYABLE_STATUS_CODES` em `rate-limiter.ts` (1 linha)
-2. Corrigir [I-01] — `getChatSessions` buscar Firestore + IndexedDB, deduplicar por session.id
-3. Corrigir [P-01] — Adicionar SEO (Helmet) ao LoginPage
-4. Corrigir [I-02] — Adicionar cleanup IndexedDB em `deleteAllUserData`
-5. Corrigir [P-07] — Extrair `authBenefits.ts` compartilhado
-6. Corrigir [I-03] — Adicionar fallback IndexedDB no auto-save do chat
-7. Opcional: Corrigir findings BAIXO (P-03, P-06, V-01, M-01/M-02, V-02, V-03)
+1. Atualizar CHANGELOG.md e versão no package.json
+2. Rodar build completo (`bun run build`)
+3. Deploy preview (`bun run deploy:preview`)
 <<<FIM_PROXIMOS_PASSOS>>>
