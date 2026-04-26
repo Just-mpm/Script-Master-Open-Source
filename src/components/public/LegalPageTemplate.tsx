@@ -51,7 +51,7 @@ function TableOfContents({
     <Box sx={(theme) => ({ ...glassPanelSx(theme), p: 3, mb: 5 })}>
       <Typography
         variant="h6"
-        component="h3"
+        component="h2"
         sx={{ mb: 2, fontWeight: 600, color: TEXT_PRIMARY }}
       >
         Sumário

@@ -241,24 +241,29 @@ function ComparisonCell({
 function ComparisonTable() {
   return (
     <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, minWidth: 560 })}>
+      <Box
+        role="table"
+        aria-label="Comparação de planos"
+        sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, minWidth: 560 })}
+      >
         {/* Cabeçalho da tabela */}
         <Grid
           container
           spacing={2}
+          role="row"
           sx={{ pb: 2, mb: 1, borderBottom: `1px solid ${APP_BORDER}` }}
         >
-          <Grid size={5}>
+          <Grid size={5} role="columnheader">
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Funcionalidade
             </Typography>
           </Grid>
-          <Grid size={2.33}>
+          <Grid size={2.33} role="columnheader">
             <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
               Gratuito
             </Typography>
           </Grid>
-          <Grid size={2.34}>
+          <Grid size={2.34} role="columnheader">
             <Typography
               variant="subtitle2"
               sx={{ textAlign: 'center', color: BRAND_PRIMARY, fontWeight: 700 }}
@@ -266,7 +271,7 @@ function ComparisonTable() {
               Pro
             </Typography>
           </Grid>
-          <Grid size={2.33}>
+          <Grid size={2.33} role="columnheader">
             <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
               Equipe
             </Typography>
@@ -281,24 +286,25 @@ function ComparisonTable() {
             <Grid
               container
               spacing={2}
+              role="row"
               key={row.feature}
               sx={{
                 py: 1.5,
                 borderBottom: isLast ? 'none' : `1px solid ${APP_BORDER}`,
               }}
             >
-              <Grid size={5}>
+              <Grid size={5} role="cell">
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {row.feature}
                 </Typography>
               </Grid>
-              <Grid size={2.33}>
+              <Grid size={2.33} role="cell">
                 <ComparisonCell value={row.gratuito} isHighlighted={false} />
               </Grid>
-              <Grid size={2.34}>
+              <Grid size={2.34} role="cell">
                 <ComparisonCell value={row.pro} isHighlighted={true} />
               </Grid>
-              <Grid size={2.33}>
+              <Grid size={2.33} role="cell">
                 <ComparisonCell value={row.equipe} isHighlighted={false} />
               </Grid>
             </Grid>

@@ -59,19 +59,19 @@ interface RoadmapItem {
 
 const VALUES: readonly ValueCard[] = [
   {
-    icon: <LightbulbIcon />,
+    icon: <LightbulbIcon aria-hidden="true" />,
     title: 'Criatividade',
     description:
       'Acreditamos que a tecnologia deve amplificar a criatividade humana, não substituí-la. Por isso, construímos ferramentas que dão poder ao criador.',
   },
   {
-    icon: <TouchAppIcon />,
+    icon: <TouchAppIcon aria-hidden="true" />,
     title: 'Simplicidade',
     description:
       'Transformar roteiros em produções profissionais não deveria ser complicado. Cada funcionalidade é pensada para ser intuitiva e acessível.',
   },
   {
-    icon: <RocketLaunchIcon />,
+    icon: <RocketLaunchIcon aria-hidden="true" />,
     title: 'Inovação',
     description:
       'Estamos na fronteira da IA generativa aplicada à produção de conteúdo. Nosso compromisso é trazer o que há de mais avançado para seu dia a dia.',
@@ -168,11 +168,11 @@ function getDotColor(status: RoadmapStatus): string {
 function getStatusIcon(status: RoadmapStatus) {
   switch (status) {
     case 'done':
-      return <CheckCircleIcon sx={{ fontSize: 14 }} />;
+      return <CheckCircleIcon sx={{ fontSize: 14 }} aria-hidden="true" />;
     case 'current':
-      return <AutorenewIcon sx={{ fontSize: 14 }} />;
+      return <AutorenewIcon sx={{ fontSize: 14 }} aria-hidden="true" />;
     case 'planned':
-      return <ScheduleIcon sx={{ fontSize: 14 }} />;
+      return <ScheduleIcon sx={{ fontSize: 14 }} aria-hidden="true" />;
   }
 }
 

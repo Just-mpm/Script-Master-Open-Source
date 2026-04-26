@@ -17,6 +17,11 @@ import {
   BRAND_PRIMARY_GLOW,
 } from '../theme/tokens';
 
+/**
+ * Página 404 — layout minimalista intencional sem header/footer.
+ * Usuários que chegam aqui geralmente digitaram uma URL errada ou seguiram
+ * um link quebrado; o foco deve ser o botão de retorno, não a navegação.
+ */
 export function NotFoundPage() {
   const navigate = useNavigate();
   const { user } = useAuth();

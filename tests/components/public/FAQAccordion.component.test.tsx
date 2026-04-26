@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { FAQAccordion } from '../../../src/components/public';
+import { FAQAccordion } from '../../../src/components/public/FAQAccordion';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
