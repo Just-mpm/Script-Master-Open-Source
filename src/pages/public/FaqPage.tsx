@@ -12,6 +12,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
+import { motion } from 'motion/react';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -21,6 +22,7 @@ import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
+import { fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -141,17 +143,17 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
   },
 ] as const;
 
-/** Texto do heading da seção "ainda tem dúvidas" */
+/** Texto do heading da secao "ainda tem duvidas" */
 const STILL_HAVE_DOUBTS_TITLE = 'Ainda tem dúvidas?';
 
-/** Texto do parágrafo da seção "ainda tem dúvidas" */
+/** Texto do paragrafo da secao "ainda tem duvidas" */
 const STILL_HAVE_DOUBTS_TEXT =
   'Não encontrou o que procurava? Entre em contato com nossa equipe e responderemos o mais rápido possível.';
 
-/** Label do botão de contato */
+/** Label do botao de contato */
 const CONTACT_BUTTON_LABEL = 'Fale conosco';
 
-/** Rota de destino do botão de contato */
+/** Rota de destino do botao de contato */
 const CONTACT_ROUTE = '/contato';
 
 /** aria-label do conjunto de tabs */
@@ -199,7 +201,7 @@ export default function FaqPage() {
       <Helmet {...seo} />
       <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       <PageLayout>
-      {/* Hero — H1 + subtítulo */}
+      {/* Hero — H1 + subtitulo */}
       <HeroSection
         title="Perguntas Frequentes"
         subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o Script Master."
@@ -213,9 +215,16 @@ export default function FaqPage() {
         showGlow
       />
 
-      {/* Navegação por categorias — Tabs scrolláveis */}
+      {/* Navegacao por categorias — Tabs scrollaveis */}
       <Box sx={{ py: { xs: 6, md: 10 } }}>
-        <Box sx={(theme) => ({ ...glassPanelSx(theme), mx: { xs: 2, sm: 3 }, p: { xs: 2, md: 3 }, mb: { xs: 4, md: 6 } })}>
+        <Box
+          component={motion.div}
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={(theme) => ({ ...glassPanelSx(theme), mx: { xs: 2, sm: 3 }, p: { xs: 2, md: 3 }, mb: { xs: 4, md: 6 } })}
+        >
           <Tabs
             value={activeTab}
             onChange={(_, newValue: number) => setActiveTab(newValue)}
@@ -234,7 +243,7 @@ export default function FaqPage() {
                 height: 3,
                 borderRadius: 3,
               },
-              // Botões de scroll estilizados
+              // Botoes de scroll estilizados
               '& .MuiTabs-scrollButtons': {
                 color: BRAND_PRIMARY,
                 '&.Mui-disabled': { opacity: 0.3 },
@@ -281,7 +290,7 @@ export default function FaqPage() {
           </Tabs>
         </Box>
 
-        {/* Painel de conteúdo — FAQAccordion da categoria ativa */}
+        {/* Painel de conteudo — FAQAccordion da categoria ativa */}
         <Box
           role="tabpanel"
           id={`faq-tabpanel-${activeTab}`}
@@ -298,8 +307,15 @@ export default function FaqPage() {
         </Box>
       </Box>
 
-      {/* Seção "Ainda tem dúvidas?" */}
-      <Box sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}>
+      {/* Secao "Ainda tem duvidas?" */}
+      <Box
+        component={motion.div}
+        variants={fadeInUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={VIEWPORT_ONCE}
+        sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}
+      >
         <Box sx={{ maxWidth: 560, mx: 'auto', px: 2 }}>
           <Typography variant="h4" component="h2" sx={{ mb: 2, letterSpacing: '-0.03em' }}>
             {STILL_HAVE_DOUBTS_TITLE}

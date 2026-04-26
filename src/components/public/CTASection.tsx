@@ -5,7 +5,9 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { BRAND_GRADIENT, BRAND_PRIMARY_GLOW, TEXT_SECONDARY } from '../../theme/tokens';
+import { fadeInUp, VIEWPORT_ONCE } from './animations';
 
 interface CTASectionProps {
   title: string;
@@ -17,6 +19,11 @@ interface CTASectionProps {
 export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASectionProps) {
   return (
     <Box
+      component={motion.div}
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
       sx={(theme) => ({
         position: 'relative',
         overflow: 'hidden',

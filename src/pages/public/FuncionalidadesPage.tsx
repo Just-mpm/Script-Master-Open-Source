@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import { motion } from 'motion/react';
 import Mic from '@mui/icons-material/Mic';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import ImageIcon from '@mui/icons-material/Image';
@@ -21,6 +22,7 @@ import { FeatureShowcase } from '../../components/public/FeatureShowcase';
 import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY } from '../../theme/tokens';
+import { fadeInUp, VIEWPORT_ONCE } from '../../components/public/animations';
 
 const TTS_FEATURES = [
   { icon: Mic, title: 'Geração de Áudio TTS', description: 'Transforme roteiros em áudio profissional com Gemini TTS (24kHz mono 16-bit PCM).' },
@@ -102,15 +104,22 @@ export default function FuncionalidadesPage() {
       {/* Feature Sections */}
       {SECTIONS.map((section) => (
         <Box key={section.id} id={section.id} sx={{ scrollMarginTop: 80 }}>
-          <Box sx={{ mb: { xs: 3, md: 4 } }}>
+          <Box
+            component={motion.div}
+            variants={fadeInUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEWPORT_ONCE}
+            sx={{ mb: { xs: 3, md: 4 } }}
+          >
             <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
               {section.title}
             </Typography>
           </Box>
           <Grid container spacing={3} sx={{ mb: { xs: 8, md: 10 } }}>
-            {section.features.map((feature) => (
+            {section.features.map((feature, idx) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={feature.title}>
-                <FeatureCard {...feature} />
+                <FeatureCard {...feature} index={idx} />
               </Grid>
             ))}
           </Grid>

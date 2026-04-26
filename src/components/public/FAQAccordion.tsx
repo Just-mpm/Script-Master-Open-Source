@@ -6,18 +6,20 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { motion } from 'motion/react';
 import { BRAND_PRIMARY, TEXT_SECONDARY, GAP_DEFAULT } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { faqContainer, VIEWPORT_ONCE } from './animations';
 
-// ── Constantes de estilização ──────────────────────────────────────────
+// ── Constantes de estilizacao ──────────────────────────────────────────
 
-/** Duração da transição de expand/collapse em milissegundos */
+/** Duracao da transicao de expand/collapse em milissegundos */
 const EXPAND_TRANSITION_MS = 300;
 
 /** Altura da linha do texto de resposta para legibilidade */
 const ANSWER_LINE_HEIGHT = 1.7;
 
-/** Largura máxima do container para leitura confortável em desktop */
+/** Largura maxima do container para leitura confortavel em desktop */
 const CONTAINER_MAX_WIDTH = 800;
 
 /** Espessura da borda indicadora de accordion expandido */
@@ -32,7 +34,7 @@ interface FAQItem {
 
 interface FAQAccordionProps {
   items: FAQItem[];
-  /** Título opcional exibido acima do grupo de accordions */
+  /** Titulo opcional exibido acima do grupo de accordions */
   title?: string;
 }
 
@@ -42,7 +44,14 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
   const theme = useTheme();
 
   return (
-    <Box sx={(theme) => glassPanelSx(theme)}>
+    <Box
+      component={motion.div}
+      variants={faqContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
+      sx={(theme) => glassPanelSx(theme)}
+    >
       {/* Container interno com largura limitada para leitura */}
       <Box sx={{ maxWidth: CONTAINER_MAX_WIDTH, mx: 'auto' }}>
         {title && (
@@ -69,9 +78,9 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
               disableGutters
               slotProps={{ transition: { timeout: EXPAND_TRANSITION_MS } }}
               sx={{
-                // Fundo transparente por padrão
+                // Fundo transparente por padrao
                 backgroundColor: 'transparent',
-                // Borda inferior como divisor (exceto no último item)
+                // Borda inferior como divisor (exceto no ultimo item)
                 borderBottom: isLast ? 'none' : `1px solid ${theme.palette.divider}`,
 
                 // Indicador visual ao expandir: borda esquerda com brand primary
@@ -80,14 +89,14 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
                   borderLeft: `${ACTIVE_INDICATOR_WIDTH}px solid ${BRAND_PRIMARY}`,
                 },
 
-                // Remover sombra padrão do MUI
+                // Remover sombra padrao do MUI
                 boxShadow: 'none',
 
-                // Transição suave no background ao expandir
+                // Transicao suave no background ao expandir
                 transition: `background-color ${EXPAND_TRANSITION_MS}ms ease-in-out, border-color ${EXPAND_TRANSITION_MS}ms ease-in-out`,
 
-                // Espaçamento interno do container
-                '&:before': { display: 'none' }, // remove a linha separadora padrão do MUI
+                // Espacamento interno do container
+                '&:before': { display: 'none' }, // remove a linha separadora padrao do MUI
 
                 // Primeiro item sem borda superior
                 ...(index === 0 && { borderTop: 'none' }),
@@ -111,7 +120,7 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
                   '&:hover': {
                     backgroundColor: alpha(theme.palette.background.paper, 0.06),
                   },
-                  // Diminuir padding do conteúdo quando expandido
+                  // Diminuir padding do conteudo quando expandido
                   '&.Mui-expanded': {
                     minHeight: 'auto',
                     '& .MuiAccordionSummary-content': {

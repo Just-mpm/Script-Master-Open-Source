@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { alpha } from '@mui/material/styles';
+import { motion } from 'motion/react';
 import { glassPanelSx } from '../../theme/surfaces';
 import type { ButtonProps } from '@mui/material/Button';
 import {
@@ -21,16 +22,17 @@ import {
   APP_BORDER,
   SHADOW_DEEP,
 } from '../../theme/tokens';
+import { fadeInUp, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
 // ── Constantes de layout ──────────────────────────────────────
 
 /** Padding interno do card (xs / md) */
 const CARD_PADDING = { xs: 3, md: 4 } as const;
 
-/** Tamanho da fonte do preço */
+/** Tamanho da fonte do preco */
 const PRICE_FONT_SIZE = '2.25rem';
 
-/** Font-family mono para o preço */
+/** Font-family mono para o preco */
 const PRICE_FONT_FAMILY = '"JetBrains Mono", monospace';
 
 /** Gap entre os itens da lista de features */
@@ -44,14 +46,14 @@ interface PricingFeature {
 }
 
 /**
- * Mapeia a variante semântica do PricingCard para variant + color do MUI Button.
+ * Mapeia a variante semantica do PricingCard para variant + color do MUI Button.
  * - 'primary'   → contained + primary
  * - 'secondary' → contained + secondary
  * - 'outlined'  → outlined + primary
  */
 type PricingCtaVariant = 'primary' | 'secondary' | 'outlined';
 
-/** Resolve variant + color a partir da variante semântica */
+/** Resolve variant + color a partir da variante semantica */
 function resolveButtonStyle(
   ctaVariant: PricingCtaVariant,
   recommended: boolean,
@@ -81,6 +83,8 @@ interface PricingCardProps {
   ctaDisabled?: boolean;
   ctaTooltip?: string;
   onCtaClick?: () => void;
+  /** Indice para stagger de entrada no viewport */
+  index?: number;
 }
 
 // ── Subcomponentes ────────────────────────────────────────────
@@ -127,150 +131,163 @@ export function PricingCard({
   ctaDisabled = false,
   ctaTooltip,
   onCtaClick,
+  index = 0,
 }: PricingCardProps) {
   const buttonStyle = resolveButtonStyle(ctaVariant, recommended);
 
   return (
-    <Paper
-      variant="outlined"
-      sx={(theme) => ({
-        ...glassPanelSx(theme),
-        p: CARD_PADDING,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-6px)',
-          boxShadow: `0 32px 96px ${alpha(SHADOW_DEEP, recommended ? 0.7 : 0.45)}`,
+    <motion.div
+      variants={{
+        ...fadeInUp,
+        visible: {
+          ...fadeInUp.visible,
+          transition: { ...SPRING_SMOOTH, delay: index * 0.1 },
         },
-
-        // Borda gradiente para variante recommended (mesma técnica do FeatureCard highlighted)
-        ...(recommended && {
-          borderColor: 'transparent',
-          backgroundImage: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper}), ${BRAND_GRADIENT}`,
-          backgroundOrigin: 'border-box',
-          backgroundClip: 'padding-box, border-box',
-          border: '2px solid transparent',
-          boxShadow: `0 8px 32px ${BRAND_PRIMARY_GLOW}`,
-        }),
-      })}
+      }}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
+      style={{ height: '100%' }}
     >
-      <Stack spacing={3} sx={{ flex: 1 }}>
-        {/* Cabeçalho — nome + badge */}
-        <Stack spacing={1}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h5" component="h3" sx={{ fontWeight: 700 }}>
-              {name}
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          ...glassPanelSx(theme),
+          p: CARD_PADDING,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-6px) scale(1.01)',
+            boxShadow: `0 32px 96px ${alpha(SHADOW_DEEP, recommended ? 0.7 : 0.45)}`,
+          },
+
+          // Borda gradiente para variante recommended (mesma tecnica do FeatureCard highlighted)
+          ...(recommended && {
+            borderColor: 'transparent',
+            backgroundImage: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper}), ${BRAND_GRADIENT}`,
+            backgroundOrigin: 'border-box',
+            backgroundClip: 'padding-box, border-box',
+            border: '2px solid transparent',
+            boxShadow: `0 8px 32px ${BRAND_PRIMARY_GLOW}`,
+          }),
+        })}
+      >
+        <Stack spacing={3} sx={{ flex: 1 }}>
+          {/* Cabecalho — nome + badge */}
+          <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h5" component="h3" sx={{ fontWeight: 700 }}>
+                {name}
+              </Typography>
+              {recommended && (
+                <Chip
+                  label="Popular"
+                  size="small"
+                  sx={(theme) => ({
+                    bgcolor: `${alpha(theme.palette.secondary.main, 0.15)}`,
+                    color: theme.palette.secondary.main,
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                  })}
+                />
+              )}
+            </Box>
+            <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+              {description}
             </Typography>
-            {recommended && (
-              <Chip
-                label="Popular"
-                size="small"
-                sx={(theme) => ({
-                  bgcolor: `${alpha(theme.palette.secondary.main, 0.15)}`,
-                  color: theme.palette.secondary.main,
-                  fontWeight: 600,
-                  fontSize: '0.75rem',
-                  border: `1px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
-                })}
-              />
+          </Stack>
+
+          {/* Preco */}
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+            <Typography
+              variant="h4"
+              component="p"
+              sx={{
+                fontFamily: PRICE_FONT_FAMILY,
+                fontSize: PRICE_FONT_SIZE,
+                fontWeight: 700,
+                color: TEXT_PRIMARY,
+                lineHeight: 1,
+              }}
+            >
+              {price}
+            </Typography>
+            {priceSubtitle && (
+              <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+                {priceSubtitle}
+              </Typography>
             )}
           </Box>
-          <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-            {description}
-          </Typography>
-        </Stack>
 
-        {/* Preço */}
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-          <Typography
-            variant="h4"
-            component="p"
+          <Divider sx={{ borderColor: APP_BORDER }} />
+
+          {/* Lista de features */}
+          <Stack
+            component="ul"
+            spacing={FEATURE_LIST_GAP}
             sx={{
-              fontFamily: PRICE_FONT_FAMILY,
-              fontSize: PRICE_FONT_SIZE,
-              fontWeight: 700,
-              color: TEXT_PRIMARY,
-              lineHeight: 1,
+              flex: 1,
+              listStyle: 'none',
+              m: 0,
+              p: 0,
             }}
+            role="list"
+            aria-label={`Funcionalidades do plano ${name}`}
           >
-            {price}
-          </Typography>
-          {priceSubtitle && (
-            <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-              {priceSubtitle}
-            </Typography>
+            {features.map((feature) => (
+              <Box component="li" key={feature.text}>
+                <FeatureItem feature={feature} />
+              </Box>
+            ))}
+          </Stack>
+
+          {/* Botao CTA */}
+          {ctaDisabled && ctaTooltip ? (
+            <Tooltip title={ctaTooltip} arrow>
+              <span style={{ width: '100%' }}>
+                <Button
+                  variant={buttonStyle.variant}
+                  color={buttonStyle.color}
+                  size="large"
+                  fullWidth
+                  disabled
+                  aria-label={ctaLabel}
+                  sx={{
+                    mt: 1,
+                    py: 1.5,
+                    fontWeight: 600,
+                  }}
+                >
+                  {ctaLabel}
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
+            <Button
+              variant={buttonStyle.variant}
+              color={buttonStyle.color}
+              size="large"
+              fullWidth
+              disabled={ctaDisabled}
+              onClick={onCtaClick}
+              aria-label={ctaLabel}
+              sx={{
+                mt: 1,
+                py: 1.5,
+                fontWeight: 600,
+                ...(recommended && {
+                  boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW}`,
+                }),
+              }}
+            >
+              {ctaLabel}
+            </Button>
           )}
-        </Box>
-
-        <Divider sx={{ borderColor: APP_BORDER }} />
-
-        {/* Lista de features */}
-        <Stack
-          component="ul"
-          spacing={FEATURE_LIST_GAP}
-          sx={{
-            flex: 1,
-            listStyle: 'none',
-            m: 0,
-            p: 0,
-          }}
-          role="list"
-          aria-label={`Funcionalidades do plano ${name}`}
-        >
-          {features.map((feature) => (
-            <Box component="li" key={feature.text}>
-              <FeatureItem feature={feature} />
-            </Box>
-          ))}
         </Stack>
-
-        {/* Botão CTA */}
-        {ctaDisabled && ctaTooltip ? (
-          <Tooltip title={ctaTooltip} arrow>
-            <span style={{ width: '100%' }}>
-              <Button
-                variant={buttonStyle.variant}
-                color={buttonStyle.color}
-                size="large"
-                fullWidth
-                disabled
-                aria-label={ctaLabel}
-                sx={{
-                  mt: 1,
-                  py: 1.5,
-                  fontWeight: 600,
-                }}
-              >
-                {ctaLabel}
-              </Button>
-            </span>
-          </Tooltip>
-        ) : (
-          <Button
-            variant={buttonStyle.variant}
-            color={buttonStyle.color}
-            size="large"
-            fullWidth
-            disabled={ctaDisabled}
-            onClick={onCtaClick}
-            aria-label={ctaLabel}
-            sx={{
-              mt: 1,
-              py: 1.5,
-              fontWeight: 600,
-              ...(recommended && {
-                boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW}`,
-              }),
-            }}
-          >
-            {ctaLabel}
-          </Button>
-        )}
-      </Stack>
-    </Paper>
+      </Paper>
+    </motion.div>
   );
 }
-
-

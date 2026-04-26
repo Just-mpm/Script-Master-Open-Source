@@ -13,6 +13,7 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { ReactNode } from 'react';
 import { alpha } from '@mui/material/styles';
+import { motion } from 'motion/react';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -27,10 +28,16 @@ import {
   APP_BORDER,
 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import {
+  staggerContainer,
+  fadeInUp,
+  VIEWPORT_ONCE,
+  roadmapItem,
+} from '../../components/public/animations';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
-/** Card de valor com ícone, título e descrição */
+/** Card de valor com icone, titulo e descricao */
 interface ValueCard {
   icon: ReactNode;
   title: string;
@@ -47,7 +54,7 @@ interface TeamMember {
 /** Status do item do roadmap */
 type RoadmapStatus = 'done' | 'current' | 'planned';
 
-/** Item do roadmap público */
+/** Item do roadmap publico */
 interface RoadmapItem {
   version: string;
   title: string;
@@ -178,7 +185,7 @@ function getStatusIcon(status: RoadmapStatus) {
 
 // ── Subcomponentes ───────────────────────────────────────────────────
 
-/** Card de valor individual com ícone em gradiente */
+/** Card de valor individual com icone em gradiente */
 function ValueCardComponent({ icon, title, description }: ValueCard) {
   return (
     <Paper
@@ -264,14 +271,21 @@ function TeamCard({ name, role, avatarUrl }: TeamMember) {
   );
 }
 
-/** Linha do roadmap com dot, badge de versão e descrição */
-function RoadmapRow({ item, isLast }: { item: RoadmapItem; isLast: boolean }) {
+/** Linha do roadmap com dot, badge de versao e descricao */
+function RoadmapRow({ item, isLast, index }: { item: RoadmapItem; isLast: boolean; index: number }) {
   const { label, color } = STATUS_CONFIG[item.status];
   const dotColor = getDotColor(item.status);
   const isCurrent = item.status === 'current';
 
   return (
-    <Box sx={{ display: 'flex', position: 'relative', pb: isLast ? 0 : 4 }}>
+    <Box
+      component={motion.div}
+      variants={roadmapItem(index)}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
+      sx={{ display: 'flex', position: 'relative', pb: isLast ? 0 : 4 }}
+    >
       {/* Coluna do dot + linha vertical */}
       <Box
         sx={{
@@ -319,7 +333,7 @@ function RoadmapRow({ item, isLast }: { item: RoadmapItem; isLast: boolean }) {
         )}
       </Box>
 
-      {/* Conteúdo */}
+      {/* Conteudo */}
       <Box sx={{ flex: 1, pb: 1 }}>
         <Stack
           direction="row"
@@ -392,9 +406,14 @@ export default function AboutPage() {
         }
       />
 
-      {/* Missão & Visão */}
+      {/* Missao & Visao */}
       <Box sx={{ py: { xs: 8, md: 12 } }}>
         <Box
+          component={motion.div}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
           sx={(theme) => ({
             ...glassPanelSx(theme),
             p: { xs: 4, md: 6 },
@@ -432,19 +451,39 @@ export default function AboutPage() {
 
       {/* Nossos Valores */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-            Nossos Valores
-          </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
-            Três pilares que guiam cada decisão e funcionalidade da plataforma.
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.1)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              Nossos Valores
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
+              Três pilares que guiam cada decisão e funcionalidade da plataforma.
+            </Typography>
+          </Box>
         </Box>
 
         <Grid container spacing={3}>
           {VALUES.map((value) => (
             <Grid size={{ xs: 12, sm: 4 }} key={value.title}>
-              <ValueCardComponent {...value} />
+              <Box
+                component={motion.div}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={VIEWPORT_ONCE}
+                style={{ height: '100%' }}
+              >
+                <ValueCardComponent {...value} />
+              </Box>
             </Grid>
           ))}
         </Grid>
@@ -452,33 +491,64 @@ export default function AboutPage() {
 
       {/* Time */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-            {TEAM_TITLE}
-          </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
-            {TEAM_DESCRIPTION}
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.08)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              {TEAM_TITLE}
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
+              {TEAM_DESCRIPTION}
+            </Typography>
+          </Box>
         </Box>
 
         <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
           {TEAM.map((member) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={member.name}>
-              <TeamCard {...member} />
+              <Box
+                component={motion.div}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={VIEWPORT_ONCE}
+                style={{ height: '100%' }}
+              >
+                <TeamCard {...member} />
+              </Box>
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {/* Roadmap Público */}
+      {/* Roadmap Publico */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-            {ROADMAP_TITLE}
-          </Typography>
-          <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
-            {ROADMAP_DESCRIPTION}
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.08)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              {ROADMAP_TITLE}
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
+              {ROADMAP_DESCRIPTION}
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ mx: { xs: 2, sm: 3 }, maxWidth: 720 }}>
@@ -487,6 +557,7 @@ export default function AboutPage() {
               key={item.version}
               item={item}
               isLast={index === ROADMAP.length - 1}
+              index={index}
             />
           ))}
         </Box>

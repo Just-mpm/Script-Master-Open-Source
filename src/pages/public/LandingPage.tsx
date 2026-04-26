@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import { motion } from 'motion/react';
 import Mic from '@mui/icons-material/Mic';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import ImageIcon from '@mui/icons-material/Image';
@@ -19,6 +20,7 @@ import { FeatureShowcase } from '../../components/public/FeatureShowcase';
 import { CTASection } from '../../components/public/CTASection';
 import { StepCard } from '../../components/public/StepCard';
 import { SocialProofBar } from '../../components/public/SocialProofBar';
+import { staggerContainer, fadeInUp, VIEWPORT_ONCE } from '../../components/public/animations';
 
 const HIGHLIGHT_FEATURES = [
   {
@@ -134,23 +136,34 @@ export default function LandingPage() {
 
       {/* Features Highlights — Grid 3x2 */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography
-            variant="h3"
-            component="h2"
-            sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
-          >
-            Tudo que você precisa para criar
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
-            Seis ferramentas integradas em uma única plataforma para transformar suas ideias em conteúdo profissional.
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.08)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+            >
+              Tudo que você precisa para criar
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
+              Seis ferramentas integradas em uma única plataforma para transformar suas ideias em conteúdo profissional.
+            </Typography>
+          </Box>
         </Box>
 
         <Grid container spacing={3}>
-          {HIGHLIGHT_FEATURES.map((feature) => (
+          {HIGHLIGHT_FEATURES.map((feature, idx) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={feature.title}>
-              <FeatureCard {...feature} />
+              <FeatureCard {...feature} index={idx} />
             </Grid>
           ))}
         </Grid>
@@ -243,19 +256,30 @@ export default function LandingPage() {
 
       {/* Como Funciona — 3 steps */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-            Como Funciona
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 480, mx: 'auto', lineHeight: 1.7 }}>
-            Três passos para transformar seu roteiro em conteúdo profissional.
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.08)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              Como Funciona
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 480, mx: 'auto', lineHeight: 1.7 }}>
+              Três passos para transformar seu roteiro em conteúdo profissional.
+            </Typography>
+          </Box>
         </Box>
 
         <Grid container spacing={3}>
-          {STEPS.map((step) => (
+          {STEPS.map((step, idx) => (
             <Grid size={{ xs: 12, sm: 4 }} key={step.number}>
-              <StepCard {...step} />
+              <StepCard {...step} index={idx} />
             </Grid>
           ))}
         </Grid>
@@ -263,15 +287,22 @@ export default function LandingPage() {
 
       {/* Mais Features */}
       <Box sx={{ pt: { xs: 8, md: 12 } }}>
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
+        <Box
+          component={motion.div}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
           <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
             E Muito Mais
           </Typography>
         </Box>
         <Grid container spacing={3}>
-          {ALL_FEATURES.map((feature) => (
+          {ALL_FEATURES.map((feature, idx) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={feature.title}>
-              <FeatureCard {...feature} />
+              <FeatureCard {...feature} index={idx} />
             </Grid>
           ))}
         </Grid>
