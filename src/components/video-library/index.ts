@@ -7,9 +7,6 @@ export { MetadataPill } from './MetadataPill';
 export { useProjectGallery } from './useProjectGallery';
 export { useBatchDownload } from './useBatchDownload';
 
-// Utilitários
-export { extractVideoThumbnail } from './extractVideoThumbnail';
-
 // Tipos
 export type {
   VideoLibraryScene,

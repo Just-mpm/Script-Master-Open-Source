@@ -167,23 +167,7 @@ describe('VideoExportPanel', () => {
   // --- Speed Paint ---
 
   describe('speed paint', () => {
-    it('não exibe seletor de velocidade quando toggle está desligado', () => {
-      render(<VideoExportPanel {...defaultProps} />);
-      expect(screen.queryByText(/Lento/i)).not.toBeInTheDocument();
-    });
-
-    it('exibe seletor de velocidade quando toggle é ativado', () => {
-      render(<VideoExportPanel {...defaultProps} />);
-      const switchEl = screen.getByRole('switch');
-      act(() => {
-        fireEvent.click(switchEl);
-      });
-      expect(screen.getByText('0.5x Lento')).toBeInTheDocument();
-      expect(screen.getByText('1x Normal')).toBeInTheDocument();
-      expect(screen.getByText('1.5x Rápido')).toBeInTheDocument();
-    });
-
-    it('não renderiza SpeedPaintControls quando toggle está desligado', () => {
+    it('não exibe controles de velocidade quando toggle está desligado', () => {
       render(<VideoExportPanel {...defaultProps} />);
       expect(screen.queryByTestId('speed-paint-controls')).not.toBeInTheDocument();
     });

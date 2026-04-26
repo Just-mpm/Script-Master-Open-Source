@@ -30,7 +30,6 @@ import { useBatchDownload } from './video-library/useBatchDownload';
 import type { VideoLibraryProps } from './video-library/types';
 
 // Re-export para compatibilidade com consumidores existentes
-export { extractVideoThumbnail } from './video-library/extractVideoThumbnail';
 export type { VideoLibraryItem, VideoLibraryProps, SortOrder } from './video-library/types';
 
 /**
