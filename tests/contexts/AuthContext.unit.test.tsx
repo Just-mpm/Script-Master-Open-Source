@@ -49,6 +49,12 @@ vi.mock('../../src/lib/db/migration', () => ({
   isMigrationAlreadyHandled: vi.fn().mockReturnValue(true),
 }));
 
+const mockDeleteAllUserData = vi.fn();
+
+vi.mock('../../src/lib/db/account-cleanup', () => ({
+  deleteAllUserData: (...args: unknown[]) => mockDeleteAllUserData(...args),
+}));
+
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
 
 describe('AuthContext', () => {
@@ -703,6 +709,7 @@ describe('AuthContext', () => {
       const { auth: authMock } = await import('../../src/lib/firebase');
       Object.defineProperty(authMock, 'currentUser', { value: mockUser, writable: true, configurable: true });
       mockDeleteUser.mockResolvedValue(undefined);
+      mockDeleteAllUserData.mockResolvedValue([]);
 
       // Spy de window.location.href
       const locationSetSpy = vi.fn();
@@ -730,6 +737,7 @@ describe('AuthContext', () => {
         screen.getByText('Excluir').click();
       });
 
+      expect(mockDeleteAllUserData).toHaveBeenCalledWith('u1');
       expect(mockDeleteUser).toHaveBeenCalledWith(mockUser);
       expect(locationSetSpy).toHaveBeenCalledWith('/login');
 
@@ -770,6 +778,7 @@ describe('AuthContext', () => {
 
       const authError = new Error('Requires recent login') as Error & { code: string };
       authError.code = 'auth/requires-recent-login';
+      mockDeleteAllUserData.mockResolvedValue([]);
       mockDeleteUser.mockRejectedValue(authError);
 
       function DeleteTest() {
