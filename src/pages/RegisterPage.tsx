@@ -119,8 +119,8 @@ export function RegisterPage() {
 
       <PublicHeader />
 
+      {/* Landmark main fica em App.tsx — este Box é apenas container de conteúdo */}
       <Box
-        component="main"
         tabIndex={-1}
         sx={{
           flex: 1,

@@ -113,12 +113,14 @@ export async function getChatSessions(userId?: string): Promise<ChatSession[]> {
 
 export async function deleteChatSession(id: string, userId?: string): Promise<void> {
   if (userId) {
-    try {
-      await deleteDoc(doc(chatsCollection, id));
-      return;
-    } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.DELETE, `chats/${id}`);
-    }
+    // Deleta de ambos — getChatSessions faz merge de Firestore + IndexedDB
+    await Promise.all([
+      deleteDoc(doc(chatsCollection, id)).catch((error: unknown) => {
+        handleFirestoreError(error, OperationType.DELETE, `chats/${id}`);
+      }),
+      deleteIndexedDbItem(CHAT_STORE, id),
+    ]);
+    return;
   }
 
   await deleteIndexedDbItem(CHAT_STORE, id);

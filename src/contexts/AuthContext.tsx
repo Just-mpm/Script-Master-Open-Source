@@ -162,15 +162,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Pipeline de limpeza LGPD — remove todos os dados do Firestore e Storage
+      // Remove autenticação PRIMEIRO — se falhar, dados ficam intactos
+      await deleteUser(currentUser);
+
+      // Pipeline de limpeza LGPD — remove dados do Firestore e Storage
       const cleanupErrors = await deleteAllUserData(currentUser.uid);
 
       if (cleanupErrors.length > 0) {
-        setAuthError(`Alguns dados não puderam ser removidos completamente: ${cleanupErrors.join(', ')}. Entre em contato com o suporte se necessário.`);
+        log.warn('Alguns dados não puderam ser removidos completamente após exclusão', {
+          errors: cleanupErrors,
+        });
       }
-
-      // Remove a autenticação do usuário
-      await deleteUser(currentUser);
 
       // Usuário deletado — redireciona para login
       window.location.href = '/login';

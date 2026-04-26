@@ -26,7 +26,11 @@ export function NotFoundPage() {
   const homePath = user ? '/app/estudio' : '/';
 
   return (
-    <Box
+    <>
+      {/* Meta robots noindex — SPA rewrite intercepta 404s antes do 404.html estático */}
+      <title>Página não encontrada | Script Master</title>
+      <meta name="robots" content="noindex, nofollow" />
+      <Box
       sx={{
         display: 'grid',
         placeItems: 'center',
@@ -91,5 +95,6 @@ export function NotFoundPage() {
         </Stack>
       </Paper>
     </Box>
+    </>
   );
 }

@@ -12,7 +12,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFirebaseEnvConfig } from './env';
 
@@ -24,6 +24,14 @@ export const auth = getAuth(app);
 export const db = appletConfig.firestoreDatabaseId 
   ? getFirestore(app, appletConfig.firestoreDatabaseId)
   : getFirestore(app);
+
+// Ativa persistência offline do Firestore (cache local via IndexedDB)
+try {
+  enableIndexedDbPersistence(db);
+} catch {
+  // Múltiplas abas ou browser sem suporte — fallback silencioso para cache em memória
+}
+
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
