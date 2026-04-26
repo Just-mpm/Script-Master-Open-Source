@@ -54,7 +54,12 @@ export function ScriptEditor({
     [setScript],
   );
 
-  const handleClearScript = useCallback(() => setScript(''), [setScript]);
+  const handleClearScript = useCallback(() => {
+    if (script.length > 500 && !window.confirm('O roteiro será apagado permanentemente. Deseja continuar?')) {
+      return;
+    }
+    setScript('');
+  }, [script, setScript]);
 
   const handleCopyScript = useCallback(async () => {
     if (!script) return;

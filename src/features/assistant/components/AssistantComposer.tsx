@@ -13,6 +13,7 @@ import {
   ICON_SIZE_MD,
   WHITE_06,
   TEXT_DISABLED,
+  ERROR_MAIN,
 } from '../../../theme/tokens';
 import {
   assistantComposerContainerSx,
@@ -146,11 +147,11 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                           width: 40,
                           height: 40,
                           backgroundColor: 'error.main',
-                          boxShadow: `0 4px 16px ${alpha('#ef4444', 0.24)}`,
+                          boxShadow: `0 4px 16px ${alpha(ERROR_MAIN, 0.24)}`,
                           '&:hover': {
                             ...assistantSendButtonSx['&:hover'],
                             backgroundColor: 'error.dark',
-                            boxShadow: `0 6px 24px ${alpha('#ef4444', 0.36)}`,
+                            boxShadow: `0 6px 24px ${alpha(ERROR_MAIN, 0.36)}`,
                           },
                         }}
                       >

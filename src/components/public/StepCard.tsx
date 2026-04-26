@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import { motion } from 'motion/react';
 import type { ElementType } from 'react';
-import { BRAND_GRADIENT, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
+import { BRAND_GRADIENT, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, BRAND_SECONDARY } from '../../theme/tokens';
 import { fadeInUp, scaleIn, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
 interface StepCardProps {
@@ -85,7 +85,7 @@ export function StepCard({ number, title, description, icon: Icon, index = 0 }: 
                 color: 'secondary.contrastText',
                 fontWeight: 700,
                 fontSize: '0.75rem',
-                boxShadow: `0 2px 8px ${alpha('#F7941E', 0.3)}`,
+                boxShadow: `0 2px 8px ${alpha(BRAND_SECONDARY, 0.3)}`,
               }}
             >
               {number}

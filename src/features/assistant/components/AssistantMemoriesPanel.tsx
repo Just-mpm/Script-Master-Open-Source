@@ -49,6 +49,8 @@ interface AssistantMemoriesPanelProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onDeleteMemory: (id: string) => void;
   onDocumentUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  isSavingMemory?: boolean;
+  isUploadingDocument?: boolean;
 }
 
 export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel({
@@ -61,6 +63,8 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
   onSubmit,
   onDeleteMemory,
   onDocumentUpload,
+  isSavingMemory = false,
+  isUploadingDocument = false,
 }: AssistantMemoriesPanelProps) {
   return (
     <Drawer
@@ -111,8 +115,8 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <Button type="submit" variant="contained" size="small" startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />}>
-                        Salvar
+                      <Button type="submit" variant="contained" size="small" startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />} disabled={isSavingMemory}>
+                        {isSavingMemory ? 'Salvando...' : 'Salvar'}
                       </Button>
                     </InputAdornment>
                   ),
@@ -144,6 +148,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                 onClick={() => documentInputRef.current?.click()}
                 variant="outlined"
                 startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
+                disabled={isUploadingDocument}
                 sx={{
                   '&:hover': {
                     borderColor: BRAND_PRIMARY,
@@ -151,7 +156,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                   },
                 }}
               >
-                Anexar documento
+                {isUploadingDocument ? 'Enviando...' : 'Anexar documento'}
               </Button>
             </Stack>
           </Box>

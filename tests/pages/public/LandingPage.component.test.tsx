@@ -23,8 +23,10 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
 vi.mock('../../../src/theme/tokens', () => ({
   APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+  BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+  BRAND_SECONDARY: '#F7941E',
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
   ICON_SIZE_MD: 20,
@@ -49,7 +51,7 @@ describe('LandingPage', () => {
 
   it('renderiza os CTAs do hero', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('link', { name: /Começar Grátis/i })).toBeDefined();
+    expect(screen.getByRole('link', { name: /Criar conta gratuita/i })).toBeDefined();
     expect(screen.getByRole('link', { name: /Ver Funcionalidades/i })).toBeDefined();
   });
 
@@ -107,13 +109,13 @@ describe('LandingPage', () => {
   it('renderiza a CTA final', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     expect(screen.getByRole('heading', { level: 2, name: 'Comece a criar agora' })).toBeDefined();
-    expect(screen.getByRole('link', { name: /Entrar com Google/i })).toBeDefined();
+    expect(screen.getByRole('link', { name: /Começar agora/i })).toBeDefined();
   });
 
-  it('o CTA principal aponta para /login', () => {
+  it('o CTA principal aponta para /cadastro', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    const ctaLink = screen.getByRole('link', { name: /Começar Grátis/i });
-    expect(ctaLink.getAttribute('href')).toBe('/login');
+    const ctaLink = screen.getByRole('link', { name: /Criar conta gratuita/i });
+    expect(ctaLink.getAttribute('href')).toBe('/cadastro');
   });
 
   it('o CTA "Ver Funcionalidades" aponta para /funcionalidades', () => {

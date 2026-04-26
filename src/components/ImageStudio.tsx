@@ -42,7 +42,7 @@ import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT, BRAND_PRIMARY } from '../theme/tokens';
 
 const log = createLogger('ImageStudio');
 
@@ -364,7 +364,7 @@ export function ImageStudio() {
                     '&.Mui-focused': {
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#2E75B6',
+                        borderColor: BRAND_PRIMARY,
                         borderWidth: 2,
                       },
                       boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',

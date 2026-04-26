@@ -75,7 +75,8 @@ export function FeatureCard({
               borderRadius: 3,
               display: 'grid',
               placeItems: 'center',
-              bgcolor: highlighted ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})` : 'action.hover',
+              background: highlighted ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})` : undefined,
+              bgcolor: highlighted ? undefined : 'action.hover',
               color: highlighted ? 'common.white' : 'primary.main',
               transition: 'transform 0.3s ease',
             })}

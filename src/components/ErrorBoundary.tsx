@@ -7,13 +7,8 @@ import Typography from '@mui/material/Typography';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import Refresh from '@mui/icons-material/Refresh';
 import { createLogger } from '../lib/logger';
-import {
-  APP_BORDER,
-  WHITE_05,
-  WHITE_015,
-  SHADOW_DEEP,
-  ERROR_GLOW,
-} from '../theme/tokens';
+import { glassPanelSx } from '../theme/surfaces';
+import { ERROR_GLOW } from '../theme/tokens';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
 
@@ -81,16 +76,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         }}
       >
         <Paper
-          sx={{
+          sx={(theme) => ({
+            ...glassPanelSx(theme),
+            position: 'static',
+            overflow: 'visible',
             maxWidth: 440,
             p: { xs: 4, sm: 5 },
             textAlign: 'center',
-            borderRadius: { xs: 3, md: 4 },
-            border: `1px solid ${APP_BORDER}`,
-            backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-            backdropFilter: { xs: 'blur(14px)', md: 'blur(22px)' },
-            boxShadow: `0 24px 80px ${alpha(SHADOW_DEEP, 0.55)}`,
-          }}
+          })}
         >
           <Stack spacing={2.5} sx={{ alignItems: 'center' }}>
             <Box

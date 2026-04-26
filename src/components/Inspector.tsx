@@ -38,6 +38,9 @@ import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('Inspector');
 
 const MAX_STYLE_NOTES = 500;
 
@@ -191,10 +194,18 @@ export const Inspector = React.memo(function Inspector({
   const isDirectionOpen = !isDirectionCollapsed;
   const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
 
+  const MAX_REFERENCE_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleReferenceImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    if (file.size > MAX_REFERENCE_IMAGE_SIZE) {
+      log.warn('Imagem de referência excede o limite de 10MB', { size: file.size, name: file.name });
+      event.target.value = '';
       return;
     }
 

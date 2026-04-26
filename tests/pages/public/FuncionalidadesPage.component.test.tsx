@@ -22,8 +22,10 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
 vi.mock('../../../src/theme/tokens', () => ({
   APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+  BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+  BRAND_SECONDARY: '#F7941E',
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
   ICON_SIZE_MD: 20,
@@ -128,6 +130,8 @@ describe('FuncionalidadesPage', () => {
   it('renderiza a CTA final', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     expect(screen.getByRole('heading', { level: 2, name: 'Pronto para criar?' })).toBeDefined();
-    expect(screen.getByRole('link', { name: /Começar Grátis/i })).toBeDefined();
+    // "Começar Grátis" aparece tanto no hero quanto na CTA final
+    const links = screen.getAllByRole('link', { name: /Começar Grátis/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
   });
 });

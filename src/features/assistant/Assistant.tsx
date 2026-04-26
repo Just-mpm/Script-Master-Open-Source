@@ -66,6 +66,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [isSavingMemory, setIsSavingMemory] = useState(false);
 
   // Confirmação de exclusão
   const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
@@ -149,18 +151,26 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       return;
     }
 
-    const textContent = await file.text();
-    const truncatedText = textContent.length > MAX_MEMORY_DOCUMENT_TEXT
-      ? textContent.slice(0, MAX_MEMORY_DOCUMENT_TEXT)
-      : textContent;
+    setIsUploadingDocument(true);
 
-    await saveMemory(`[Documento Anexado: ${file.name}]\n${truncatedText}`, user?.uid);
-    await loadMemories();
+    try {
+      const textContent = await file.text();
+      const truncatedText = textContent.length > MAX_MEMORY_DOCUMENT_TEXT
+        ? textContent.slice(0, MAX_MEMORY_DOCUMENT_TEXT)
+        : textContent;
 
-    if (documentInputRef.current) {
-      documentInputRef.current.value = '';
+      await saveMemory(`[Documento Anexado: ${file.name}]\n${truncatedText}`, user?.uid);
+      await loadMemories();
+    } catch {
+      setDocumentError('Não foi possível processar o documento. Verifique se o arquivo está correto.');
+    } finally {
+      setIsUploadingDocument(false);
+
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
     }
-  }, [user?.uid, loadMemories]);
+  }, [user, loadMemories]);
 
   const handleAddMemory = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -169,10 +179,18 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       return;
     }
 
-    await saveMemory(newMemory, user?.uid);
-    setNewMemory('');
-    await loadMemories();
-  }, [newMemory, user?.uid, loadMemories]);
+    setIsSavingMemory(true);
+
+    try {
+      await saveMemory(newMemory, user?.uid);
+      setNewMemory('');
+      await loadMemories();
+    } catch {
+      setDocumentError('Não foi possível salvar a memória. Tente novamente.');
+    } finally {
+      setIsSavingMemory(false);
+    }
+  }, [newMemory, user, loadMemories]);
 
   const handleDeleteMemory = useCallback((id: string) => {
     setMemoryToDelete(id);
@@ -324,6 +342,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           onSubmit={handleAddMemory}
           onDeleteMemory={handleDeleteMemory}
           onDocumentUpload={handleDocumentUpload}
+          isSavingMemory={isSavingMemory}
+          isUploadingDocument={isUploadingDocument}
         />
       )}
 

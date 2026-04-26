@@ -15,6 +15,10 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
+vi.mock('../../../src/theme/surfaces', () => ({
+  glassPanelSx: () => ({}),
+}));
+
 vi.mock('../../../src/theme/tokens', () => ({
   APP_MAX_WIDTH: 1600,
   APP_BORDER: 'rgba(255,255,255,0.08)',

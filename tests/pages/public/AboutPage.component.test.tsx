@@ -69,16 +69,16 @@ describe('AboutPage', () => {
   it('renderiza seção de roadmap com versões', () => {
     render(<AboutPage />, { wrapper: Wrapper });
     expect(screen.getByText('Roadmap Público')).toBeDefined();
-    expect(screen.getByText('Pintura Rápida')).toBeDefined();
+    expect(screen.getByText('Speed Paint e Vídeo Avançado')).toBeDefined();
     expect(screen.getByText('Planos e Pagamentos')).toBeDefined();
     expect(screen.getByText('Lançamento Oficial')).toBeDefined();
   });
 
-  it('renderiza status "Concluído" e "Em andamento" no roadmap', () => {
+  it('renderiza status "Concluído" e "Planejado" no roadmap', () => {
     render(<AboutPage />, { wrapper: Wrapper });
-    // "Concluído" aparece múltiplas vezes (v0.15 e v0.16)
     const concluido = screen.getAllByText('Concluído');
     expect(concluido.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Em andamento')).toBeDefined();
+    const planejado = screen.getAllByText('Planejado');
+    expect(planejado.length).toBeGreaterThanOrEqual(1);
   });
 });

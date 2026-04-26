@@ -20,3 +20,18 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
   writable: true,
   value: MockResizeObserver,
 });
+
+// IntersectionObserver não existe no jsdom — necessário para motion/react (viewport)
+class MockIntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin = '';
+  readonly thresholds: readonly number[] = [];
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+}
+Object.defineProperty(globalThis, 'IntersectionObserver', {
+  writable: true,
+  value: MockIntersectionObserver,
+});

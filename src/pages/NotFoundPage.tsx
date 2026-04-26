@@ -1,4 +1,3 @@
-import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -8,11 +7,8 @@ import Home from '@mui/icons-material/Home';
 import TravelExplore from '@mui/icons-material/TravelExplore';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { glassPanelSx } from '../theme/surfaces';
 import {
-  APP_BORDER,
-  WHITE_05,
-  WHITE_015,
-  SHADOW_DEEP,
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
 } from '../theme/tokens';
@@ -39,16 +35,14 @@ export function NotFoundPage() {
       }}
     >
       <Paper
-        sx={{
+        sx={(theme) => ({
+          ...glassPanelSx(theme),
+          position: 'static',
+          overflow: 'visible',
           maxWidth: 420,
           p: { xs: 4, sm: 5 },
           textAlign: 'center',
-          borderRadius: { xs: 3, md: 4 },
-          border: `1px solid ${APP_BORDER}`,
-          backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-          backdropFilter: { xs: 'blur(14px)', md: 'blur(22px)' },
-          boxShadow: `0 24px 80px ${alpha(SHADOW_DEEP, 0.55)}`,
-        }}
+        })}
       >
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
           <Typography

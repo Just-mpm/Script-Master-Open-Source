@@ -82,6 +82,7 @@ vi.mock('../../src/theme/tokens', () => ({
   EMPTY_WRAPPER_PADDING_XS: 16,
   EMPTY_WRAPPER_PADDING_MD: 24,
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+  BRAND_PRIMARY: '#2E75B6',
 }));
 
 describe('Library', () => {

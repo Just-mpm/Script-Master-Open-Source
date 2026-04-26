@@ -65,6 +65,7 @@ vi.mock('../../src/theme/tokens', () => ({
   EMPTY_ICON_SIZE: 48,
   EMPTY_WRAPPER_MAX_WIDTH: 400,
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+  BRAND_PRIMARY: '#2E75B6',
 }));
 
 describe('ImageStudio', () => {

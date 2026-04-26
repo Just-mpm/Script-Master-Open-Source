@@ -48,7 +48,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT, BRAND_PRIMARY } from '../theme/tokens';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -215,12 +215,19 @@ export function Library() {
   };
 
   const saveEdit = async (id: string) => {
-    if (editName.trim()) {
-      await updateProjectName(id, editName.trim(), user?.uid);
-      await loadProjects();
+    if (!editName.trim()) {
+      setEditingId(null);
+      return;
     }
 
-    setEditingId(null);
+    try {
+      await updateProjectName(id, editName.trim(), user?.uid);
+      await loadProjects();
+      setEditingId(null);
+    } catch (err) {
+      log.error('Falha ao renomear projeto', { error: err });
+      setError('Não foi possível renomear o projeto. Tente novamente.');
+    }
   };
 
   const confirmDeleteAudio = async () => {
@@ -309,10 +316,10 @@ export function Library() {
                   '&.Mui-focused': {
                     backgroundColor: 'rgba(255, 255, 255, 0.06)',
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#2E75B6',
+                      borderColor: BRAND_PRIMARY,
                       borderWidth: 2,
                     },
-                    boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.15)',
+                    boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
                   },
                 },
               }}

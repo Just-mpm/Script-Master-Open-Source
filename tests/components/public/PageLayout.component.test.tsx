@@ -71,16 +71,14 @@ describe('PageLayout', () => {
     expect(screen.getByRole('main').id).toBe('main-content');
   });
 
-  it('renderiza link skip-to-content "Pular para o conteúdo"', () => {
+  it('não renderiza link skip-to-content (movido para App.tsx)', () => {
     render(
       <PageLayout>
         <p>Conteúdo</p>
       </PageLayout>,
       { wrapper: Wrapper }
     );
-    const skipLink = screen.getByText('Pular para o conteúdo');
-    expect(skipLink).toBeDefined();
-    const anchor = skipLink.closest('a');
-    expect(anchor?.getAttribute('href')).toBe('#main-content');
+    // skip-to-content agora vive em App.tsx, não no PageLayout
+    expect(screen.queryByText('Pular para o conteúdo')).toBeNull();
   });
 });
