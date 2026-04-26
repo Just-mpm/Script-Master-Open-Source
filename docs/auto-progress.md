@@ -35,18 +35,24 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Correções UX audit aplicadas (10 de 10 findings corrigidos — audit concluído)
-Última atualização: 26/04/2026, 17:30
+Fase: Tests green — todas as correções UX audit aplicadas (10/10 findings) + 7 testes corrigidos
+Última atualização: 26/04/2026, 18:00
 Findings audit UX: 13 validados (2 P1 + 8 P2 + 3 P3) — relatório em docs/audits/1.md
 Corrigidos nesta etapa: 10 findings (V02, V01, V03, V04, V07, V08, V06, V10, V12, T02)
+Testes: 1182 passed (93 files) — lint OK, typecheck OK
 Pulados justificados: V05 (ProtectedRoute — envolve COEP + full reload, complexo), T01 (handleFirestoreError em 9+ funções, arriscado; correção parcial já feita em chats.ts)
-Build completo: lint OK, typecheck OK
 Próxima: CHANGELOG + versão, deploy preview
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 6: Correção de 7 testes quebrados após findings UX
+- Resultado: 7 testes corrigidos em 1 commit. 1182 tests passing (93 files). Lint + typecheck OK.
+  - Grupo 1 (skip-to-content removido): Removidos testes de skip-to-content local em LoginPage, RegisterPage e pages.component.test.tsx (agora global no App.tsx); PageLayout test atualizado para verificar que main NÃO tem id duplicado
+  - Grupo 2 (AuthContext deleteAccount): Adicionado mock de `deleteAllUserData` (retorna `string[]`); testes atualizados para mockar `deleteAllUserData.mockResolvedValue([])` antes de chamar `deleteAccount`
+- Pendências: nenhuma
+- Commit: `auto: fix 7 broken tests — skip-to-content removido + deleteAllUserData mock`
 ### Etapa 5: Correção dos 3 findings UX P3 (V10, V12, T02)
 - Resultado: 3 findings P3 corrigidos em 1 commit. Build passou.
   - [V10 P3] `beforeunload` event adicionado em App.tsx — previne fechamento acidental de aba durante geração de áudio ou exportação de vídeo
