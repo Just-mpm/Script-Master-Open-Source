@@ -15,6 +15,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SuccessToast } from './components/SuccessToast';
 import { WarningToast } from './components/WarningToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
+import { ScrollToTop } from './components/public/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
 import { useGlobalAudioActions } from './contexts/AudioContext';
 import { useAudioGenerator } from './hooks/useAudioGenerator';
@@ -380,6 +381,8 @@ export default function App() {
       >
         Pular para o conteúdo
       </Typography>
+
+      <ScrollToTop />
 
       {/* Header do app — apenas nas rotas /app/* */}
       {isAppRoute && <Header />}

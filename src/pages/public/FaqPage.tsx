@@ -2,6 +2,9 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ContactSupportIcon from '@mui/icons-material/ContactSupport';
+import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
+import BuildOutlined from '@mui/icons-material/BuildOutlined';
+import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
 import EmailIcon from '@mui/icons-material/Email';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import Tab from '@mui/material/Tab';
@@ -79,13 +82,13 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
   {
     id: 'precos',
     label: 'Preços',
-    icon: ContactSupportIcon,
+    icon: PaymentsOutlined,
     items: PRICING_FAQ_ITEMS,
   },
   {
     id: 'tecnico',
     label: 'Técnico',
-    icon: ContactSupportIcon,
+    icon: BuildOutlined,
     items: [
       {
         question: 'Quais vozes estão disponíveis?',
@@ -117,7 +120,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
   {
     id: 'conta',
     label: 'Conta',
-    icon: ContactSupportIcon,
+    icon: AccountCircleOutlined,
     items: [
       {
         question: 'Como faço login?',

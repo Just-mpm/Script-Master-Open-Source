@@ -18,7 +18,9 @@ import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { FeatureCard } from '../../components/public/FeatureCard';
 import { FeatureShowcase } from '../../components/public/FeatureShowcase';
+import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
+import { BRAND_PRIMARY } from '../../theme/tokens';
 
 const TTS_FEATURES = [
   { icon: Mic, title: 'Geração de Áudio TTS', description: 'Transforme roteiros em áudio profissional com Gemini TTS (24kHz mono 16-bit PCM).' },
@@ -84,14 +86,18 @@ export default function FuncionalidadesPage() {
       <Helmet {...seo} />
       <PageLayout>
       {/* Hero */}
-      <Box sx={{ textAlign: 'center', pb: { xs: 6, md: 8 } }}>
-        <Typography variant="h1" component="h1" sx={{ mb: 2, letterSpacing: '-0.04em' }}>
-          Tudo que você precisa para criar
-        </Typography>
-        <Typography variant="h6" component="p" sx={{ color: 'text.secondary', maxWidth: 560, mx: 'auto', fontWeight: 400, lineHeight: 1.7 }}>
-          Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional.
-        </Typography>
-      </Box>
+      <HeroSection
+        title="Tudo que você precisa para criar"
+        subtitle="Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional."
+        primaryCta={{ label: 'Começar Grátis', to: '/cadastro' }}
+        secondaryCta={{ label: 'Ver preços', to: '/precos' }}
+        visual={
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Mic sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
+          </Box>
+        }
+        showGlow
+      />
 
       {/* Feature Sections */}
       {SECTIONS.map((section) => (
@@ -130,7 +136,7 @@ export default function FuncionalidadesPage() {
             alt="Geração de áudio TTS"
             loading="lazy"
             sx={{
-              maxWidth: { xs: 280, md: 360 },
+              maxWidth: { xs: 280, md: 380 },
               width: '100%',
               height: 'auto',
               borderRadius: 4,
@@ -159,7 +165,7 @@ export default function FuncionalidadesPage() {
             alt="Renderização de vídeo"
             loading="lazy"
             sx={{
-              maxWidth: { xs: 280, md: 360 },
+              maxWidth: { xs: 280, md: 380 },
               width: '100%',
               height: 'auto',
               borderRadius: 4,
@@ -186,7 +192,7 @@ export default function FuncionalidadesPage() {
             alt="Geração de imagens com IA"
             loading="lazy"
             sx={{
-              maxWidth: { xs: 280, md: 360 },
+              maxWidth: { xs: 280, md: 380 },
               width: '100%',
               height: 'auto',
               borderRadius: 4,

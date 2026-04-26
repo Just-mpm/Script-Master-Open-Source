@@ -11,3 +11,4 @@ export { PricingCard } from './PricingCard';
 export { FAQAccordion } from './FAQAccordion';
 export { LegalPageTemplate } from './LegalPageTemplate';
 export type { LegalSection } from './LegalPageTemplate';
+export { ScrollToTop } from './ScrollToTop';

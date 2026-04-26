@@ -63,7 +63,7 @@ export function StepCard({ number, title, description, icon: Icon }: StepCardPro
               color: 'secondary.contrastText',
               fontWeight: 700,
               fontSize: '0.75rem',
-              boxShadow: `0 2px 8px rgba(247, 148, 30, 0.3)`,
+              boxShadow: `0 2px 8px ${alpha('#F7941E', 0.3)}`,
             }}
           >
             {number}

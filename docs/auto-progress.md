@@ -35,13 +35,17 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Wave 1 concluída — conteúdo corrigido
-Última atualização: 26/04/2026, 03:00
+Fase: Wave 2 concluída — DRY e organização melhorados
+Última atualização: 26/04/2026, 04:30
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 4: Implementação — Refatoração DRY (legal template, FAQ, nav)
+- Resultado: LegalPageTemplate criado (TermsPage -67%, CookiesPage -67%, PrivacyPage -65% com GAP-009 corrigido). PRICING_FAQ dedup (src/data/pricingFaq.ts). Skip-to-content dedup (App.tsx). /sobre adicionado ao header. 8 arquivos alterados, lint/typecheck OK, commit 46ba8fe.
+- Pendências: não
+
 ### Etapa 3: Implementação — Correção de conteúdo desatualizado + quick wins
 - Resultado: 7 itens corrigidos (GAP-001 FAQ login, GAP-002 FAQ exclusão, GAP-003 roadmap, GAP-004 CTAs 4 páginas, FIND-005 hero lazy loading, FIND-019 ternário, GAP-013 sitemap lastmod). 6 arquivos alterados, lint/typecheck OK, commit 7fa41a8.
 - Pendências: não
@@ -58,7 +62,7 @@ Fase: Wave 1 concluída — conteúdo corrigido
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Etapa 4: Refatorar DRY — Template legal compartilhado, FAQ de preços fonte única, barrel index.ts, NotFoundPage com PageLayout, skip-to-content dedup
-2. Etapa 5: Acessibilidade e consistência visual — Tabela comparativa semântica, páginas legais unificadas, aria-hidden em ícones, FeatureShowcase maxWidth, drop-shadow/rgba unificados
-3. Etapa 6: Limpeza — Assets de imagem não referenciados, ChipColor type duplicado
+1. Etapa 5: Acessibilidade e consistência visual — Tabela comparativa semântica, aria-hidden em ícones, FeatureShowcase maxWidth, drop-shadow/rgba unificados
+2. Etapa 6: Limpeza — Assets de imagem não referenciados, ChipColor type duplicado
+3. Etapa 7: Verificação final — QA de todas as páginas públicas
 <<<FIM_PROXIMOS_PASSOS>>>
