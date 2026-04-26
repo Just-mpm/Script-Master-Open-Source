@@ -35,13 +35,16 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Scan completo finalizado
-Última atualização: 26/04/2026, 20:05
+Fase: Audit completo finalizado
+Última atualização: 26/04/2026, 20:50
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 2: AUDIT — Audit técnico completo do projeto (src/)
+- Resultado: 23 findings validados (1 CRÍTICO, 9 WARNING, 13 SUGGESTION) em 166 arquivos/284K tokens. Relatório em `docs/audits/3.md`. Processo: 6 auditores em paralelo (technical, best-practices, performance, a11y, ux-flow, firebase) → validação cascata (2 batches) → 2 rounds re-validação dupla (22 falsos positivos descartados). Findings principais: C1 (imagens de cena LGPD no cleanup de conta), W6 (exclusão de conta aviso perdido), W8 (Library mensagem enganosa), W9 (ImageStudio erro invisível). Lint/typecheck/build pendente.
+- Pendências: sim — 23 findings para correção via `/run --audit 3.md`
 ### Etapa 1: SCAN — Scan completo do projeto (src/)
 - Resultado: 11 findings validados (1 CRÍTICO, 1 ALTO, 6 MÉDIO, 3 BAIXO) em 165 arquivos/284K tokens. Relatório em `docs/scan/1.md`. Processo: 4 scan-gaps → 2 validação cascata → 2 rounds re-validação dupla (zero falsos positivos). Lint/typecheck/build passaram.
 - Pendências: sim — 11 lacunas para correção via `/run --scan`
@@ -50,7 +53,8 @@ Fase: Scan completo finalizado
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Corrigir findings CRÍTICO e ALTO (dupla instância useAudioGenerator + galeria sem vídeos)
-2. Corrigir findings MÉDIO (duplicate main, noindex, emailVerified, Firestore persistence, deleteAccount order, deleteChatSession dual)
-3. Corrigir findings BAIXO (extractVideoThumbnail, speed paint controles, Ctrl+Enter — este último resolve com o CRÍTICO)
+1. Corrigir C1 (imagens de cena LGPD no cleanup de conta) — prioridade máxima
+2. Corrigir WARNINGs (delete dialog DRY, TextField style, Inspector ISP, a11y tabela/link, exclusão conta aviso, ActionBar re-render, Library mensagem enganosa, ImageStudio erro invisível)
+3. Corrigir SUGGESTIONs (handleFirestoreError cause, useAudioGenerator 3x, Whisper cancel, buildGenerateOptions, applySettings, blob URL Set, aria-labelledby, exclusão áudio feedback, retry assistente, chatSessions userId, Firestore limit, IndexedDB transaction, upload resumável)
+4. Corrigir findings do Scan (Etapa 1)
 <<<FIM_PROXIMOS_PASSOS>>>
