@@ -47,7 +47,7 @@ export async function saveChatSession(session: ChatSession, userId?: string): Pr
     const estimatedSize = estimateDocumentSize(session, userId);
     if (estimatedSize > FIRESTORE_MAX_DOC_SIZE_BYTES) {
       const totalAttachmentSize = sumAttachmentSize(session.messages);
-      log.warn('Sessão excede limite do Firestore — salvamento no Firestore omitido', {
+      log.warn('Sessão excede limite do Firestore — salvamento no IndexedDB', {
         sessionId: session.id,
         estimatedSizeBytes: estimatedSize,
         attachmentSizeBytes: totalAttachmentSize,
@@ -61,8 +61,12 @@ export async function saveChatSession(session: ChatSession, userId?: string): Pr
           userId,
         });
         return;
-      } catch (error: unknown) {
-        handleFirestoreError(error, OperationType.WRITE, `chats/${session.id}`);
+      } catch (firestoreError: unknown) {
+        log.warn('Falha ao salvar chat no Firestore — fallback para IndexedDB', {
+          sessionId: session.id,
+          error: firestoreError instanceof Error ? firestoreError.message : String(firestoreError),
+        });
+        // Fallback para IndexedDB em vez de lançar
       }
     }
   }
@@ -74,7 +78,28 @@ export async function getChatSessions(userId?: string): Promise<ChatSession[]> {
   if (userId) {
     try {
       const snapshot = await getDocs(query(chatsCollection, where('userId', '==', userId)));
-      return sortChatSessions(snapshot.docs.map((chatDocument) => chatDocument.data()));
+      const firestoreSessions = snapshot.docs.map((chatDocument) => chatDocument.data());
+
+      try {
+        const indexedDbSessions = await getAllIndexedDbItems<ChatSession>(CHAT_STORE);
+
+        // Merge e deduplica por id, preferindo updatedAt mais recente
+        const sessionMap = new Map<string, ChatSession>();
+        for (const session of firestoreSessions) {
+          sessionMap.set(session.id, session);
+        }
+        for (const session of indexedDbSessions) {
+          const existing = sessionMap.get(session.id);
+          if (!existing || session.updatedAt > existing.updatedAt) {
+            sessionMap.set(session.id, session);
+          }
+        }
+
+        return sortChatSessions([...sessionMap.values()]);
+      } catch {
+        // Fallback: se IndexedDB falhar, retorna apenas Firestore
+        return sortChatSessions(firestoreSessions);
+      }
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.LIST, 'chats');
     }
