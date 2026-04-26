@@ -30,6 +30,8 @@ export function BatchOrchestrator() {
   const setProgress = useAnimationStore((s) => s.setProgress);
 
   const currentImageIdRef = useRef<string | null>(null);
+  // W5: ref para detectar quando a fila foi limpa durante processamento
+  const processingIdRef = useRef<string | null>(null);
 
   // Handle automatic generation of strokes for the current queued image
   useEffect(() => {
@@ -47,12 +49,18 @@ export function BatchOrchestrator() {
     if (currentImageIdRef.current !== currentImg.id) {
       currentImageIdRef.current = currentImg.id;
 
+      // Marca o ID do item sendo processado para checagem de cancelamento
+      const processId = currentImg.id;
+      processingIdRef.current = processId;
+
       // Update UI state
       setJob({ inputImage: currentImg.dataUrl, status: 'processing', progress: 0 });
 
       generateStrokesFromImage(currentImg.dataUrl, (p) => {
         setJob({ progress: p });
       }).then((animation) => {
+        // Se a fila foi limpa durante o processamento, ignora o resultado
+        if (processingIdRef.current !== processId) return;
         setJob({ status: 'completed', animation, progress: 0 });
         // Autoplay once ready (will be hijacked by recorder if in record mode)
         setProgress(0);
@@ -64,6 +72,8 @@ export function BatchOrchestrator() {
           }, 100);
         }
       }).catch((err) => {
+        // Se a fila foi limpa durante o processamento, ignora o erro
+        if (processingIdRef.current !== processId) return;
         log.error('Falha ao processar imagem em lote', { error: err });
         setJob({ status: 'failed' });
 

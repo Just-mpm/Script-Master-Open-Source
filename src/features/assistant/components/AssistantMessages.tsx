@@ -288,7 +288,14 @@ const MessageBubble = React.memo(function MessageBubble({
 
 // --- Empty State: quando não há mensagens ---
 
-function EmptyChatState() {
+const SUGGESTION_PROMPTS: Record<string, string> = {
+  'Ajustar ritmo': 'Sugira um ritmo de narração mais dinâmico para o meu roteiro, com variações de velocidade para destacar momentos importantes.',
+  'Sugerir cena': 'Crie uma descrição visual detalhada de uma cena cinematográfica que combine com um roteiro de documentário.',
+  'Revisar texto': 'Revise meu roteiro e sugira melhorias de clareza, fluidez e impacto narrativo.',
+  'Analisar áudio': 'Analise as características de áudio do meu roteiro e sugira o perfil de voz ideal para cada parte.',
+};
+
+function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: string) => void }) {
   return (
     <Box sx={assistantEmptyStateSx}>
       <Box
@@ -327,7 +334,9 @@ function EmptyChatState() {
             label={label}
             size="small"
             variant="outlined"
+            onClick={() => onSuggestionClick(SUGGESTION_PROMPTS[label])}
             sx={{
+              cursor: 'pointer',
               borderColor: APP_BORDER,
               color: TEXT_SECONDARY,
               fontWeight: 500,
@@ -356,6 +365,7 @@ interface AssistantMessagesProps {
   onApply: (settings: AssistantSettings, messageId: string) => void;
   onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
+  onSuggestionClick?: (prompt: string) => void;
 }
 
 export function AssistantMessages({
@@ -368,6 +378,7 @@ export function AssistantMessages({
   onApply,
   onSaveToMemory,
   onStopGeneration,
+  onSuggestionClick,
 }: AssistantMessagesProps) {
   // Última mensagem do modelo — pode estar em streaming (texto progressivo)
   const lastModelMessage = useMemo(() => {
@@ -399,7 +410,7 @@ export function AssistantMessages({
   return (
     <Box sx={assistantMessagesContainerSx}>
       {isEmptyChat ? (
-        <EmptyChatState />
+        <EmptyChatState onSuggestionClick={onSuggestionClick || (() => {})} />
       ) : (
         <Stack spacing={GAP_RELAXED}>
           {messages.map((message) => (

@@ -59,6 +59,19 @@ export function AnimationControls() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  // W9: Cleanup do MediaRecorder ao desmontar
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {
+          // Ignora erro se recorder já foi parado
+        }
+      }
+    };
+  }, []);
+
   const handlePlayPause = () => {
     if (progress >= 1 && !isPlaying) {
       setProgress(0);

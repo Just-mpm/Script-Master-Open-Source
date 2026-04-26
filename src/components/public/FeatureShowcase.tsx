@@ -83,7 +83,7 @@ export function FeatureShowcase({
                   borderRadius: 2,
                   display: 'grid',
                   placeItems: 'center',
-                  bgcolor: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                   color: 'common.white',
                   boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
                 })}

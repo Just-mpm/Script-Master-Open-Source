@@ -42,6 +42,8 @@ export interface ImageGenerationOptions {
 // Hook
 // ---------------------------------------------------------------------------
 
+const CANCEL_ERROR_MESSAGE = 'Geração cancelada pelo usuário.';
+
 export function useImageGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -54,6 +56,9 @@ export function useImageGenerator() {
   // Referência para revogar blob URL anterior (tech #6)
   const imageUrlRef = useRef<string | null>(null);
 
+  // Permite cancelar geração em andamento
+  const cancelRef = useRef(false);
+
   // Revoga blob URL anterior quando a imagem muda ou componente desmonta
   useEffect(() => {
     return () => {
@@ -65,6 +70,7 @@ export function useImageGenerator() {
   }, []);
 
   const generateImage = async (options: ImageGenerationOptions) => {
+    cancelRef.current = false;
     setIsGenerating(true);
     setError(null);
 
@@ -101,15 +107,18 @@ export function useImageGenerator() {
       contents.push({ text: options.prompt });
 
       const { value: response } = await withRetry(
-        () => ai.models.generateContent({
-          model: 'gemini-3.1-flash-image-preview',
-          contents,
-          config: {
-            imageConfig: {
-              aspectRatio: options.aspectRatio,
+        () => {
+          if (cancelRef.current) throw new Error(CANCEL_ERROR_MESSAGE);
+          return ai.models.generateContent({
+            model: 'gemini-3.1-flash-image-preview',
+            contents,
+            config: {
+              imageConfig: {
+                aspectRatio: options.aspectRatio,
+              },
             },
-          },
-        }),
+          });
+        },
         { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
       );
 
@@ -137,6 +146,13 @@ export function useImageGenerator() {
         throw new Error('Nenhuma imagem foi retornada pelo modelo.');
       }
     } catch (err: unknown) {
+      // Cancelamento silencioso — sem erro para o usuário
+      const errorMessageText = err instanceof Error ? err.message : '';
+      if (errorMessageText === CANCEL_ERROR_MESSAGE) {
+        setIsGenerating(false);
+        return;
+      }
+
       log.error('Erro ao gerar imagem', { error: err });
       const friendlyMessage = toUserFriendlyImageError(err);
       setError(friendlyMessage);
@@ -157,6 +173,10 @@ export function useImageGenerator() {
     setError(null);
   };
 
+  const handleCancel = () => {
+    cancelRef.current = true;
+  };
+
   return {
     isGenerating,
     imageUrl,
@@ -164,6 +184,7 @@ export function useImageGenerator() {
     error,
     setError,
     generateImage,
+    handleCancel,
     clearImage,
   };
 }

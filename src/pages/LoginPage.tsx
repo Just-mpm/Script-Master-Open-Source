@@ -165,8 +165,16 @@ export function LoginPage() {
     try {
       await resetPassword(resetEmail);
       setResetSuccess(true);
-    } catch {
-      setResetError(authError ?? 'Erro ao enviar email de redefinição.');
+    } catch (err: unknown) {
+      const firebaseMessage = err instanceof Error ? err.message : '';
+      // W6: extrai mensagem do error lançado em vez de depender do state (stale closure)
+      if (firebaseMessage.includes('user-not-found')) {
+        setResetError('Nenhum usuário encontrado com este email.');
+      } else if (firebaseMessage.includes('too-many-requests')) {
+        setResetError('Muitas tentativas. Tente novamente mais tarde.');
+      } else {
+        setResetError(firebaseMessage || 'Erro ao enviar email de redefinição.');
+      }
     } finally {
       setIsResetting(false);
     }

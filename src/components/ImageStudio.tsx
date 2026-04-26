@@ -34,6 +34,7 @@ import Delete from '@mui/icons-material/Delete';
 import Download from '@mui/icons-material/Download';
 import ImageIcon from '@mui/icons-material/Image';
 import Save from '@mui/icons-material/Save';
+import Stop from '@mui/icons-material/Stop';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useImageGenerator } from '../hooks/useImageGenerator';
 import { deleteImageGeneration, getImageGenerations, saveImageGeneration, type SavedImage } from '../lib/db';
@@ -75,7 +76,7 @@ export function ImageStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage } = useImageGenerator();
+  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel } = useImageGenerator();
 
   // Carrega imagens salvas na biblioteca
   const loadSavedImages = useCallback(async () => {
@@ -373,15 +374,27 @@ export function ImageStudio() {
               />
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim()}
-                  variant="contained"
-                  size="large"
-                  startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
-                >
-                  {isGenerating ? 'Gerando imagem...' : 'Gerar imagem'}
-                </Button>
+                {isGenerating ? (
+                  <Button
+                    onClick={handleCancel}
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />}
+                  >
+                    Parar geração
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim()}
+                    variant="contained"
+                    size="large"
+                    startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
+                  >
+                    Gerar imagem
+                  </Button>
+                )}
               </Stack>
 
               <Box
@@ -557,10 +570,13 @@ export function ImageStudio() {
                             </Typography>
                           </Tooltip>
                           <Stack direction="row" spacing={GAP_COMPACT}>
-                            {img.imageUrl && (
+                            {(img.imageUrl || blobUrls.get(img.id)) && (
                               <IconButton
                                 size="small"
-                                onClick={() => downloadFile(img.imageUrl!, `${img.name}.png`)}
+                                onClick={() => {
+                                  const url = img.imageUrl || blobUrls.get(img.id);
+                                  if (url) downloadFile(url, `${img.name}.png`);
+                                }}
                                 aria-label={`Baixar ${img.name}`}
                               >
                                 <Download sx={{ fontSize: ICON_SIZE_SM }} />

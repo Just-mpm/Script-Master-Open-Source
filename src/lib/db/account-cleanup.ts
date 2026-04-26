@@ -10,12 +10,12 @@ const log = createLogger('account-cleanup');
  *
  * Remove todos os dados do usuário do Firestore e Storage:
  * 1. Projetos + subcoleções (audios, images, videos) + transcriptions
- * 2. Gerações flat (audios + cenas)
- * 3. Gerações de imagens
- * 4. Chats
- * 5. Memórias
- * 6. User settings
- * 7. Storage: audios, generations_images, videos
+ * 2. Gerações de áudio + imagens de cena (coleção `generations`)
+ * 3. Gerações de áudio flat (audios)
+ * 4. Gerações de imagens standalone
+ * 5. Chats
+ * 6. Memórias
+ * 7. User settings
  *
  * Erros parciais são logados mas não impedem a exclusão da conta.
  * A estratégia é "best-effort" para maximizar a limpeza.
@@ -31,14 +31,22 @@ export async function deleteAllUserData(userId: string): Promise<void> {
   }
 
   try {
+    await deleteGenerationsAndSceneImages(userId);
+  } catch (error) {
+    log.error('Falha ao deletar gerações de áudio e imagens de cena', { error });
+    errors.push('gerações de áudio');
+  }
+
+  try {
     await deleteCollectionGroup('audios', userId, `audios/${userId}`);
   } catch (error) {
     log.error('Falha ao deletar gerações de áudio', { error });
     errors.push('gerações');
   }
 
+  // W7: imagens standalone usam path `images/${userId}/{id}.png` (ver images.ts)
   try {
-    await deleteCollectionGroup('image_generations', userId, `generations_images/${userId}`);
+    await deleteCollectionGroup('image_generations', userId, `images/${userId}`);
   } catch (error) {
     log.error('Falha ao deletar gerações de imagem', { error });
     errors.push('imagens');
@@ -77,6 +85,34 @@ export async function deleteAllUserData(userId: string): Promise<void> {
 // ── Helpers internos ────────────────────────────────────────────
 
 /**
+ * C3: Deleta todos os documentos da coleção `generations` do usuário,
+ * incluindo imagens de cena do Storage e o áudio WAV.
+ */
+async function deleteGenerationsAndSceneImages(userId: string): Promise<void> {
+  const snapshot = await getDocs(
+    query(collection(db, 'generations'), where('userId', '==', userId)),
+  );
+
+  await Promise.all(
+    snapshot.docs.map((docSnapshot) =>
+      Promise.all([
+        // Deleta imagens de cena do Storage com prefixo generations_images/{userId}/{generationId}
+        deleteStorageObjectSafely(
+          `generations_images/${userId}/${docSnapshot.id}`,
+          'Erro ao deletar imagens de cena do storage durante cleanup:',
+        ),
+        // Deleta também o áudio WAV se existir
+        deleteStorageObjectSafely(
+          `audios/${userId}/${docSnapshot.id}.wav`,
+          'Erro ao deletar áudio do storage durante cleanup:',
+        ),
+        deleteDoc(docSnapshot.ref),
+      ]),
+    ),
+  );
+}
+
+/**
  * Deleta todos os projetos do usuário e suas subcoleções (audios, images, videos).
  * Remove também transcrições e Storage objects.
  */
@@ -93,13 +129,15 @@ async function deleteProjectsAndSubcollections(userId: string): Promise<void> {
       collection(db, 'projects', projectId, 'audios'),
     );
     await Promise.all(
-      audiosSnapshot.docs.map((audioDoc) => {
-        deleteStorageObjectSafely(
-          `projects/${userId}/${projectId}/audios/${audioDoc.id}.wav`,
-          'Erro ao deletar áudio do storage durante cleanup:',
-        );
-        return deleteDoc(audioDoc.ref);
-      }),
+      audiosSnapshot.docs.map((audioDoc) =>
+        Promise.all([
+          deleteStorageObjectSafely(
+            `projects/${userId}/${projectId}/audios/${audioDoc.id}.wav`,
+            'Erro ao deletar áudio do storage durante cleanup:',
+          ),
+          deleteDoc(audioDoc.ref),
+        ]),
+      ),
     );
 
     // Deletar subcoleções de imagens
@@ -107,26 +145,31 @@ async function deleteProjectsAndSubcollections(userId: string): Promise<void> {
       collection(db, 'projects', projectId, 'images'),
     );
     await Promise.all(
-      imagesSnapshot.docs.map((imageDoc) => {
-        deleteStorageObjectSafely(
-          `projects/${userId}/${projectId}/images/${imageDoc.id}.png`,
-          'Erro ao deletar imagem do storage durante cleanup:',
-        );
-        return deleteDoc(imageDoc.ref);
-      }),
+      imagesSnapshot.docs.map((imageDoc) =>
+        Promise.all([
+          deleteStorageObjectSafely(
+            `projects/${userId}/${projectId}/images/${imageDoc.id}.png`,
+            'Erro ao deletar imagem do storage durante cleanup:',
+          ),
+          deleteDoc(imageDoc.ref),
+        ]),
+      ),
     );
 
-    // Deletar subcoleções de vídeos
+    // Deletar subcoleções de vídeos (C2: path corrige para `projects/{userId}/{projectId}/videos/`)
     const videosSnapshot = await getDocs(
       collection(db, 'projects', projectId, 'videos'),
     );
     await Promise.all(
       videosSnapshot.docs.map((videoDoc) => {
-        deleteStorageObjectSafely(
-          `videos/${userId}/${projectId}/${videoDoc.id}.mp4`,
-          'Erro ao deletar vídeo do storage durante cleanup:',
-        );
-        return deleteDoc(videoDoc.ref);
+        const videoFormat = videoDoc.data()?.format === 'webm' ? 'webm' : 'mp4';
+        return Promise.all([
+          deleteStorageObjectSafely(
+            `projects/${userId}/${projectId}/videos/${videoDoc.id}.${videoFormat}`,
+            'Erro ao deletar vídeo do storage durante cleanup:',
+          ),
+          deleteDoc(videoDoc.ref),
+        ]);
       }),
     );
 
@@ -170,13 +213,15 @@ async function deleteCollectionGroup(
   );
 
   await Promise.all(
-    snapshot.docs.map((docSnapshot) => {
-      deleteStorageObjectSafely(
-        `${storagePrefix}/${docSnapshot.id}`,
-        `Erro ao deletar ${collectionGroup} do storage durante cleanup:`,
-      );
-      return deleteDoc(docSnapshot.ref);
-    }),
+    snapshot.docs.map((docSnapshot) =>
+      Promise.all([
+        deleteStorageObjectSafely(
+          `${storagePrefix}/${docSnapshot.id}`,
+          `Erro ao deletar ${collectionGroupName} do storage durante cleanup:`,
+        ),
+        deleteDoc(docSnapshot.ref),
+      ]),
+    ),
   );
 }
 

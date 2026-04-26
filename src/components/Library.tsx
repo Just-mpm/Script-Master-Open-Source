@@ -164,13 +164,24 @@ export function Library() {
     }));
   }, [projectData.images]);
 
-  // Registra blob URLs criados pelo useMemo para cleanup
+  // W8: Registra blob URLs criados pelo useMemo para cleanup, revogando URLs anteriores
   useEffect(() => {
     const blobUrls = resolvedImageUrls
       .map((img) => img.resolvedUrl)
       .filter((url) => url.startsWith('blob:'));
+    // Revoga URLs anteriores que não estão mais no set atual
+    const previousUrls = new Set(blobUrlsRef.current);
     for (const url of blobUrls) {
-      blobUrlsRef.current.push(url);
+      previousUrls.delete(url);
+    }
+    for (const url of previousUrls) {
+      URL.revokeObjectURL(url);
+    }
+    // Acumula apenas as novas
+    for (const url of blobUrls) {
+      if (!blobUrlsRef.current.includes(url)) {
+        blobUrlsRef.current.push(url);
+      }
     }
   }, [resolvedImageUrls]);
 

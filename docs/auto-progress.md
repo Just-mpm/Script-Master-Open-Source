@@ -35,14 +35,23 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Auditoria UX flows completa — relatório validado (20 findings)
+Fase: Correções aplicadas — todos CRITICAL/WARNING do audit 1 + P1 dos audits 2, 3 e 4
 Última atualização: 26/04/2026
-Relatórios: docs/audits/1.md (geral), docs/audits/2.md (performance), docs/audits/3.md (UX flows)
+Relatórios: docs/audits/1.md (geral), docs/audits/2.md (performance), docs/audits/3.md (UX flows), docs/audits/4.md (UI design)
+Lint: limpo | Typecheck: limpo
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 8: Correções — Audit 1 (C1-C3, W1-W9) + Audit 2 (P1) + Audit 3 (3x P1) + Audit 4 (2x P1)
+- Resultado: 19 findings corrigidos em 14 arquivos. Audit 1: C1 stale closure (refs), C2 video Storage path LGPD, C3 scene images LGPD, W1 template literal, W2 Storage fire-and-forget, W3 AbortController timing, W4 waveform frame offset, W5 BatchOrchestrator cancel, W6 authError stale, W7 standalone image path, W8 blob URL leak, W9 MediaRecorder cleanup. Audit 2: P1 ActionBar throttle (ref pattern). Audit 3: P1-1 image cancel, P1-2 download IndexedDB, P1-3 chips onClick. Audit 4: P1-1 bgcolor→background, P1-2 MUI v9 classes.
+- Pendências: P2 e P3 de todos os audits ainda não corrigidos (performance, UX, UI design)
+
+### Etapa 7: Auditoria UI Design — Foco específico em polish visual, tokens/tema, responsividade, MUI styling, cores hardcoded, contraste, estados visuais, transições
+- Resultado: 3 audit-ui-design agents analisaram UI de todo src/ (~262K tokens). 24 findings brutos → 19 (cascata, -2 FP + -3 duplicatas) → 19 (re-validação dupla: 0 FP em ambos os validators). Destaques: P1-1 gradiente FeatureShowcase quebrado em produção, P1-2 classes MUI v9 removidas no FaqPage. Relatório: docs/audits/4.md
+- Pendências: não — sem mudanças de código solicitadas
+
 ### Etapa 6: Auditoria UX Flows — Foco específico em jornadas do usuário, estados de UI, feedback visual, navegação
 - Resultado: 3 audit-ux-flow agents analisaram 122 arquivos (~237K tokens). 34 findings brutos → 24 (cascata) → 20 (re-validação dupla round 1: -4 FP, 2 reclassificações) → 20 (round 2: 0 FP, zero falsos positivos). Relatório: docs/audits/3.md
 - Pendências: não — sem mudanças de código solicitadas
@@ -71,8 +80,9 @@ Relatórios: docs/audits/1.md (geral), docs/audits/2.md (performance), docs/audi
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Correções da auditoria geral: /run --audit 1.md (16 findings: 3 CRITICAL, 9 WARNING, 4 SUGGESTION)
-2. Correções da auditoria de performance: /run --audit 2.md (5 findings: 1 P1, 4 P2)
-3. Correções da auditoria UX flows: /run --audit 3.md (20 findings: 3 P1, 5 P2, 12 P3)
-4. Prioridade: CRITICAL da auditoria geral (LGPD violations + stale closure) > P1 UX (cancelar imagem, download IndexedDB, chips decorativos)
+1. Correções P2/P3 do audit 2 (performance) — 4 findings P2 restantes
+2. Correções P2 do audit 3 (UX flows) — 5 findings P2 restantes
+3. Correções P2/P3 do audit 4 (UI design) — 6 P2 + 11 P3 restantes
+4. Correções P3 do audit 3 (UX flows) — 12 findings P3 restantes
+5. Rodar testes completos: bun run test
 <<<FIM_PROXIMOS_PASSOS>>>

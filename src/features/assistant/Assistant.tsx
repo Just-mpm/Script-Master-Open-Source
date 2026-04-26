@@ -281,6 +281,12 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     window.setTimeout(() => setAppliedMessageId(null), 3000);
   }, [onApplySettings]);
 
+  const handleSuggestionClick = useCallback(async (prompt: string) => {
+    if (isLoading) return;
+    setInput(prompt);
+    await sendMessage(prompt, []);
+  }, [isLoading, sendMessage]);
+
   const handleCloseMemories = useCallback(() => setShowMemories(false), []);
   const handleCloseHistory = useCallback(() => setShowHistory(false), []);
   const handleCloseSettings = useCallback(() => setShowSettings(false), []);
@@ -386,6 +392,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onApply={handleApply}
         onSaveToMemory={handleSaveMessageToMemory}
         onStopGeneration={stopGeneration}
+        onSuggestionClick={handleSuggestionClick}
       />
 
       <AssistantComposer

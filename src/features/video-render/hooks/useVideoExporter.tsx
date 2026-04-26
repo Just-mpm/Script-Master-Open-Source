@@ -326,6 +326,10 @@ export function useVideoExporter() {
     const resolution = getResolutionFromQuality(ratio, resolvedQuality);
     let mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
 
+    // Cria AbortController ANTES da fase de speed paint para permitir cancelamento
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     // Warnings de speed paint acumulados em variável local — evita bug de React batching
     // onde setState intermediário (speedPaintWarnings) é perdido ao ser lido no setState final
     let collectedWarnings: string[] = [];
@@ -385,10 +389,6 @@ export function useVideoExporter() {
       speedPaintSpeed,
       speedPaintMultipliers: options.speedPaintMultipliers,
     };
-
-    // Cria AbortController para cancelamento
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
 
     // Revoga URL anterior
     const prevUrl = outputUrlRef.current;

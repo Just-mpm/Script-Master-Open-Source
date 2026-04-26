@@ -234,7 +234,7 @@ export default function FaqPage() {
             allowScrollButtonsMobile
             sx={{
               minHeight: { xs: 48, md: 56 },
-              '& .MuiTabs-flexContainer': {
+              '& .MuiTabs-list': {
                 gap: 0.5,
                 justifyContent: { xs: 'flex-start', md: 'center' },
               },
@@ -280,7 +280,7 @@ export default function FaqPage() {
                     '&.Mui-selected': {
                       backgroundColor: alpha(theme.palette.primary.main, 0.12),
                     },
-                    '& .MuiTab-iconWrapper': {
+                    '& .MuiTab-icon': {
                       mr: 0.75,
                     },
                   })}

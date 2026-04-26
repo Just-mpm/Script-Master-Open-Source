@@ -115,6 +115,31 @@ export function useAudioGenerator() {
 
   const cancelRef = useRef(false);
 
+  // Refs espelhadas para evitar stale closure em generateAudio (deps [])
+  // Mantém valores sempre atualizados independentemente do closure do useCallback
+  const audioUrlRef = useRef<string | null>(null);
+  const audioBlobRef = useRef<Blob | null>(null);
+  const scenesRef = useRef<{ imageUrl: string; timestamp: number }[]>([]);
+  const audioSegmentsRef = useRef<AudioSegment[]>([]);
+
+  // Wrappers que sincronizam ref + state — usados dentro de generateAudio
+  const updateAudioUrl = useCallback((url: string | null) => {
+    audioUrlRef.current = url;
+    setAudioUrl(url);
+  }, []);
+  const updateAudioBlob = useCallback((blob: Blob | null) => {
+    audioBlobRef.current = blob;
+    setAudioBlob(blob);
+  }, []);
+  const updateScenes = useCallback((s: { imageUrl: string; timestamp: number }[]) => {
+    scenesRef.current = s;
+    setScenes(s);
+  }, []);
+  const updateAudioSegments = useCallback((s: AudioSegment[]) => {
+    audioSegmentsRef.current = s;
+    setAudioSegments(s);
+  }, []);
+
   // Memoiza instância do GoogleGenAI (tech #9 + bp #8 + perf #9)
   const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
 
@@ -198,10 +223,10 @@ export function useAudioGenerator() {
   };
 
   const restoreLastSuccessfulState = () => {
-    setAudioUrl(lastSuccessfulStateRef.current.audioUrl);
-    setAudioBlob(lastSuccessfulStateRef.current.audioBlob);
-    setScenes(lastSuccessfulStateRef.current.scenes);
-    setAudioSegments(lastSuccessfulStateRef.current.audioSegments);
+    updateAudioUrl(lastSuccessfulStateRef.current.audioUrl);
+    updateAudioBlob(lastSuccessfulStateRef.current.audioBlob);
+    updateScenes(lastSuccessfulStateRef.current.scenes);
+    updateAudioSegments(lastSuccessfulStateRef.current.audioSegments);
   };
 
   // generateAudio usa useCallback com deps [] — acessa refs internas (cancelRef,
@@ -276,13 +301,19 @@ export function useAudioGenerator() {
 
     if (onStart) onStart();
 
-    const previousState = { audioUrl, audioBlob, scenes, audioSegments };
+    // Captura estado anterior via refs (evita stale closure — generateAudio usa deps [])
+    const previousState = {
+      audioUrl: audioUrlRef.current,
+      audioBlob: audioBlobRef.current,
+      scenes: scenesRef.current,
+      audioSegments: audioSegmentsRef.current,
+    };
     lastSuccessfulStateRef.current = previousState;
-    setAudioUrl(null);
-    setAudioBlob(null);
+    updateAudioUrl(null);
+    updateAudioBlob(null);
     setAudioDuration(0);
-    setScenes([]);
-    setAudioSegments([]);
+    updateScenes([]);
+    updateAudioSegments([]);
 
     let generatedAudioUrl: string | null = null;
 
@@ -469,9 +500,9 @@ export function useAudioGenerator() {
       const wavBlob = createWavBlob(combinedPcm, 24000);
       const url = URL.createObjectURL(wavBlob);
       generatedAudioUrl = url;
-      setAudioBlob(wavBlob);
-      setAudioUrl(url);
-      setAudioSegments(generatedSegments);
+      updateAudioBlob(wavBlob);
+      updateAudioUrl(url);
+      updateAudioSegments(generatedSegments);
 
       // --- Auto-save áudio (UX-5: feedback em caso de falha) ---
       let savedAudioId: string | null = null;
@@ -581,7 +612,7 @@ export function useAudioGenerator() {
           }
         }
 
-        setScenes(generatedScenes);
+        updateScenes(generatedScenes);
         lastSuccessfulStateRef.current = {
           audioUrl: url,
           audioBlob: wavBlob,

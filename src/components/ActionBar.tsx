@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -83,18 +83,25 @@ export function ActionBar({
   const bridgeIsPlaying = useVideoRenderBridge((state) => state.isPlaying);
 
   // Throttle do frame para display ~4x/s durante playback (evita 30 re-renders/s)
-  // Quando pausado/seek, atualiza imediatamente via dependência bridgeFrame
+  // P1: Usa ref para evitar bridgeFrame (~30x/s) nas deps — destruiria o setInterval antes de disparar
+  const bridgeFrameRef = useRef(bridgeFrame);
   const [displayFrame, setDisplayFrame] = useState(bridgeFrame);
+
+  // Sincroniza ref com o frame atual (via useEffect para não violar react-hooks/refs)
+  useEffect(() => {
+    bridgeFrameRef.current = bridgeFrame;
+  }, [bridgeFrame]);
+
   useEffect(() => {
     if (!bridgeIsPlaying) {
-      setDisplayFrame(bridgeFrame);
+      setDisplayFrame(bridgeFrameRef.current);
       return;
     }
     const id = setInterval(() => {
       setDisplayFrame(useVideoRenderBridge.getState().currentFrame);
     }, 250); // 4 atualizações/segundo
     return () => clearInterval(id);
-  }, [bridgeIsPlaying, bridgeFrame]);
+  }, [bridgeIsPlaying]); // Removido bridgeFrame das deps
 
   // Na rota /video o player sempre está montado; guards em handleToggle/seekToPercentage
   // verificam videoPlayerRef?.current antes de operar no player

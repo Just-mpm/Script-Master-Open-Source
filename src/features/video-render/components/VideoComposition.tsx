@@ -123,13 +123,13 @@ export function VideoComposition({
               />
             )}
 
-            {/* Waveform de áudio sincronizado com a cena — usa frame local da Sequence */}
+            {/* Waveform de áudio sincronizado com a cena — usa frame absoluto (não local da Sequence) */}
             {audioUrl && (
               <WaveformOverlay
                 audioUrl={audioUrl}
                 sceneStartTime={scene.timestamp}
                 sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
-                frame={frame - adjustedFrom}
+                frame={frame}
                 fps={fps}
                 opacity={0.3}
                 isExporting={isExporting}
