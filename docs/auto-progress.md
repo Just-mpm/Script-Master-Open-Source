@@ -35,18 +35,25 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Correções UX audit aplicadas (7 de 10 findings corrigidos)
-Última atualização: 26/04/2026, 17:15
+Fase: Correções UX audit aplicadas (10 de 10 findings corrigidos — audit concluído)
+Última atualização: 26/04/2026, 17:30
 Findings audit UX: 13 validados (2 P1 + 8 P2 + 3 P3) — relatório em docs/audits/1.md
-Corrigidos nesta etapa: 7 findings (V02, V01, V03, V04, V07, V08, V06)
+Corrigidos nesta etapa: 10 findings (V02, V01, V03, V04, V07, V08, V06, V10, V12, T02)
 Pulados justificados: V05 (ProtectedRoute — envolve COEP + full reload, complexo), T01 (handleFirestoreError em 9+ funções, arriscado; correção parcial já feita em chats.ts)
-Build completo: lint OK, typecheck OK, vite build OK
-Próxima: P3s opcionais, CHANGELOG + versão, deploy preview
+Build completo: lint OK, typecheck OK
+Próxima: CHANGELOG + versão, deploy preview
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 5: Correção dos 3 findings UX P3 (V10, V12, T02)
+- Resultado: 3 findings P3 corrigidos em 1 commit. Build passou.
+  - [V10 P3] `beforeunload` event adicionado em App.tsx — previne fechamento acidental de aba durante geração de áudio ou exportação de vídeo
+  - [V12 P3] `window.location.href` → `window.open(..., '_blank')` no ContactPage — preserva SPA ao abrir mailto
+  - [T02 P3] `saveChatSession` retorna `Promise<boolean>` (true = fallback IndexedDB); `useAssistant` loga warning quando chat salva apenas localmente
+- Pendências: nenhuma para a auditoria UX (10/10 findings corrigidos; 3 pulados por justificativa)
+- Commit: `auto: fix 3 P3 UX findings — beforeunload, mailto SPA, chat IndexedDB warning`
 ### Etapa 4: Correção dos findings UX P1 + P2 (7 findings)
 - Resultado: 7 findings corrigidos em 3 commits. Build completo passou.
   - [V02 P1] EmptyChatState agora detecta estado "welcome only" (`length === 1 && id === 'welcome'`)
@@ -93,10 +100,9 @@ Próxima: P3s opcionais, CHANGELOG + versão, deploy preview
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. (P3s opcionais) Corrigir V10 (beforeunload), V12 (mailto), T02 (chat IndexedDB notificação)
-2. (Pendência complexa) V05 ProtectedRoute URL retorno — envolve COEP + full reload, requer análise dedicada
-3. (Pendência arriscada) T01 handleFirestoreError — correção em 9+ funções DB, correção parcial já feita em chats.ts
-4. Atualizar CHANGELOG.md e versão no package.json
-5. Rodar build completo (`bun run build`)
-6. Deploy preview (`bun run deploy:preview`)
+1. (Pulados justificados) V05 ProtectedRoute URL retorno — envolve COEP + full reload, requer análise dedicada
+2. (Pulados justificados) T01 handleFirestoreError — correção em 9+ funções DB, correção parcial já feita em chats.ts
+3. Atualizar CHANGELOG.md e versão no package.json
+4. Rodar build completo (`bun run build`)
+5. Deploy preview (`bun run deploy:preview`)
 <<<FIM_PROXIMOS_PASSOS>>>
