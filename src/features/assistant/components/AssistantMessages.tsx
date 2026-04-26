@@ -419,7 +419,7 @@ export function AssistantMessages({
   }, []);
 
   // Se não há mensagens e não está carregando, mostra empty state
-  const isEmptyChat = messages.length === 0 && !isLoading;
+  const isEmptyChat = messages.length === 1 && messages[0].id === 'welcome' && !isLoading;
 
   return (
     <Box sx={assistantMessagesContainerSx}>

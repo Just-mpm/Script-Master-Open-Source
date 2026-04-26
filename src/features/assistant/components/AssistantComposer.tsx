@@ -37,6 +37,7 @@ interface AssistantComposerProps {
   onSubmit: () => void;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (index: number) => void;
+  onStopGeneration?: () => void;
 }
 
 export const AssistantComposer = React.memo(function AssistantComposer({
@@ -48,6 +49,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   onSubmit,
   onFileChange,
   onRemoveFile,
+  onStopGeneration,
 }: AssistantComposerProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -138,7 +140,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                   {isLoading ? (
                     <Tooltip title="Parar geração">
                       <IconButton
-                        onClick={onSubmit}
+                        onClick={onStopGeneration || onSubmit}
                         aria-label="Parar geração"
                         size="small"
                         sx={{

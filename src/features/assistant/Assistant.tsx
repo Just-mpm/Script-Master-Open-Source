@@ -424,6 +424,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onSubmit={handleSubmit}
         onFileChange={handleFileChange}
         onRemoveFile={handleRemoveFile}
+        onStopGeneration={stopGeneration}
       />
 
       <Dialog
