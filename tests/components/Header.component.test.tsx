@@ -48,6 +48,7 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_MEDIUM: 12,
   APP_SURFACE: '#1a1a2e',
   APP_BORDER: 'rgba(255,255,255,0.08)',
+  APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
   SHADOW_DEEP: '#020617',
   WHITE_05: 'rgba(255,255,255,0.05)',
   WHITE_015: 'rgba(255,255,255,0.015)',

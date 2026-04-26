@@ -19,7 +19,7 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import ImageIcon from '@mui/icons-material/Image';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   BRAND_GRADIENT,
@@ -46,7 +46,6 @@ const LOGIN_BENEFITS = [
 
 export function LoginPage() {
   const { user, login, loginWithEmail, resetPassword, authError, loading, clearAuthError } = useAuth();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -411,13 +410,10 @@ export function LoginPage() {
                     <Typography variant="body2" color="text.secondary">
                       Não tem conta?{' '}
                       <Typography
-                        component="span"
+                        component={Link}
+                        to="/cadastro"
                         variant="body2"
                         sx={authLinkSx}
-                        onClick={() => navigate('/cadastro')}
-                        role="link"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter') navigate('/cadastro'); }}
                       >
                         Cadastre-se
                       </Typography>
@@ -511,7 +507,7 @@ export function LoginPage() {
                 Cancelar
               </Button>
               <Button
-                onClick={handleResetSubmit}
+                type="submit"
                 variant="contained"
                 disabled={isResetting}
                 startIcon={isResetting ? <CircularProgress size={18} color="inherit" /> : undefined}

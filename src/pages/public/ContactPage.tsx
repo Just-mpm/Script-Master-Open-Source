@@ -231,6 +231,7 @@ function ContactInfoPanel() {
               target="_blank"
               rel="noopener noreferrer"
               size="small"
+              variant="outlined"
               startIcon={link.icon}
               sx={{
                 color: TEXT_SECONDARY,

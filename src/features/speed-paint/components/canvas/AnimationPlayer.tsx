@@ -20,6 +20,8 @@ export function AnimationPlayer() {
   const resetAutoPlay = useAnimationStore((s) => s.resetAutoPlay);
   const requestRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number | undefined>(undefined);
+  const lastProgressUpdateRef = useRef<number>(0);
+  const PROGRESS_THROTTLE_MS = 50; // ~20fps para updates de progress
 
   useEffect(() => {
     if (isPlaying) {
@@ -37,14 +39,18 @@ export function AnimationPlayer() {
           const totalDurationMs = state.job.animation.totalDurationMs;
           const progressIncrement = (deltaTime / totalDurationMs) * currentSpeed * 12;
 
-          let newProgress = state.progress + progressIncrement;
+          const newProgress = state.progress + progressIncrement;
 
           if (newProgress >= 1) {
-            newProgress = 1;
+            state.setProgress(1); // Sempre atualizar no final sem throttle
             state.setIsPlaying(false);
+          } else {
+            const now = performance.now();
+            if (now - lastProgressUpdateRef.current >= PROGRESS_THROTTLE_MS) {
+              state.setProgress(newProgress);
+              lastProgressUpdateRef.current = now;
+            }
           }
-
-          state.setProgress(newProgress);
         }
 
         lastTimeRef.current = time;

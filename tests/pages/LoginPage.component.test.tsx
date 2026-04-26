@@ -286,9 +286,10 @@ describe('LoginPage', () => {
       // Abre dialog
       fireEvent.click(screen.getByText('Esqueceu a senha?'));
 
-      // Submete no dialog — o handleResetSubmit é chamado pelo botão "Enviar link"
-      const enviarBtn = screen.getByRole('button', { name: /enviar link/i });
-      fireEvent.click(enviarBtn);
+      // Submete no dialog via fireEvent.submit no form (type="submit" + jsdom HTML5 validation)
+      const dialog = screen.getByRole('dialog');
+      const form = dialog.querySelector('form') as HTMLFormElement;
+      fireEvent.submit(form);
 
       expect(mockResetPassword).toHaveBeenCalledWith('user@test.com');
     });
@@ -301,9 +302,10 @@ describe('LoginPage', () => {
       const emailInput = container.querySelector('input[type="email"]') as HTMLInputElement;
       fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
 
-      // Abre dialog e submete
+      // Abre dialog e submete via form
       fireEvent.click(screen.getByText('Esqueceu a senha?'));
-      fireEvent.click(screen.getByRole('button', { name: /enviar link/i }));
+      const dialog = screen.getByRole('dialog');
+      fireEvent.submit(dialog.querySelector('form') as HTMLFormElement);
 
       // Aguarda feedback de sucesso (atualização de estado React)
       await waitFor(() => {
@@ -359,7 +361,8 @@ describe('LoginPage', () => {
       fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
 
       fireEvent.click(screen.getByText('Esqueceu a senha?'));
-      fireEvent.click(screen.getByRole('button', { name: /enviar link/i }));
+      const dialog = screen.getByRole('dialog');
+      fireEvent.submit(dialog.querySelector('form') as HTMLFormElement);
 
       await waitFor(() => {
         expect(screen.getByText('Entendi')).toBeTruthy();
@@ -378,10 +381,11 @@ describe('LoginPage', () => {
       // Sem preencher email no formulário (vazio)
       fireEvent.click(screen.getByText('Esqueceu a senha?'));
 
-      // Limpa email no dialog e tenta submeter
-      const dialogEmailInput = screen.getByRole('dialog').querySelector('input[type="email"]') as HTMLInputElement;
+      // Limpa email no dialog e tenta submeter via form
+      const dialog = screen.getByRole('dialog');
+      const dialogEmailInput = dialog.querySelector('input[type="email"]') as HTMLInputElement;
       fireEvent.change(dialogEmailInput, { target: { value: 'invalido' } });
-      fireEvent.click(screen.getByRole('button', { name: /enviar link/i }));
+      fireEvent.submit(dialog.querySelector('form') as HTMLFormElement);
 
       expect(screen.getByText('Email inválido.')).toBeTruthy();
     });
@@ -393,9 +397,10 @@ describe('LoginPage', () => {
       fireEvent.click(screen.getByText('Esqueceu a senha?'));
 
       // O campo pode ter o valor do formulário (vazio) — limpa e submete
-      const dialogEmailInput = screen.getByRole('dialog').querySelector('input[type="email"]') as HTMLInputElement;
+      const dialog = screen.getByRole('dialog');
+      const dialogEmailInput = dialog.querySelector('input[type="email"]') as HTMLInputElement;
       fireEvent.change(dialogEmailInput, { target: { value: '' } });
-      fireEvent.click(screen.getByRole('button', { name: /enviar link/i }));
+      fireEvent.submit(dialog.querySelector('form') as HTMLFormElement);
 
       expect(screen.getByText('Email inválido.')).toBeTruthy();
     });

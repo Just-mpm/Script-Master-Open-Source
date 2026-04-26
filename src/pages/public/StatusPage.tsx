@@ -288,16 +288,16 @@ export default function StatusPage() {
         showGlow={false}
       />
 
-      {/* Banner de status global */}
-      <Box sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 2, md: 3 } }}>
-        <GlobalStatusBanner />
-      </Box>
-
-      {/* Disclaimer — dados informativos */}
-      <Box sx={{ pb: { xs: 4, md: 6 }, mx: { xs: 2, sm: 3 } }}>
+      {/* Disclaimer — dados informativos (antes do banner para evitar falsos positivos) */}
+      <Box sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 2, md: 3 }, mx: { xs: 2, sm: 3 } }}>
         <Alert severity="info" variant="outlined" role="status">
           Os dados exibidos nesta página são informativos e não representam monitoramento em tempo real. O status real dos serviços depende de terceiros (Google Gemini, Firebase).
         </Alert>
+      </Box>
+
+      {/* Banner de status global */}
+      <Box sx={{ pb: { xs: 4, md: 6 } }}>
+        <GlobalStatusBanner />
       </Box>
 
       {/* Grid de serviços */}

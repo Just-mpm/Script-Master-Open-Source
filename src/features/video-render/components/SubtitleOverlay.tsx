@@ -117,6 +117,11 @@ export function SubtitleOverlay({
     [allWords],
   );
 
+  // ── Alinhamento vertical (memoizado: position e style não mudam entre frames) ──
+  const basePadding = position === 'center' ? 24 : 40;
+  const offsetPadding = basePadding + style.verticalOffset;
+  const alignment = useMemo(() => getAlignment(position, offsetPadding), [position, offsetPadding]);
+
   if (phrases.length === 0) return null;
 
   // ── Encontra frase ativa (depende de frame) ──
@@ -175,13 +180,6 @@ export function SubtitleOverlay({
     [0, 1, 1, 0],
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
   );
-
-  // ── Posição: usa flexDirection nativa (column) do AbsoluteFill ──
-  // verticalOffset é aplicado como padding extra na direção correspondente
-  const basePadding = position === 'center' ? 24 : 40;
-  const offsetPadding = basePadding + style.verticalOffset;
-
-  const alignment = getAlignment(position, offsetPadding);
 
   // ── Se nenhuma frase está ativa mas já há frases, mostra a primeira com fade in ──
   const hasVisiblePhrases = activePhraseIndex !== -1 || frame < phrases[0][0].startFrame + SUBTITLE_FADE * 3;

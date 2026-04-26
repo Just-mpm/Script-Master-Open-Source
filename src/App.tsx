@@ -304,7 +304,6 @@ export default function App() {
         <Route path="/register" element={<Navigate to="/cadastro" replace />} />
         <Route path="/terms" element={<Navigate to="/termos" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacidade" replace />} />
-        <Route path="/cookies" element={<Navigate to="/cookies" replace />} />
         {/* Rotas protegidas do app (prefixo /app/) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/app/estudio" element={<StudioPage />} />

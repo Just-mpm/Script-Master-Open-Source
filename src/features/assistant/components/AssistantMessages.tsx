@@ -400,7 +400,21 @@ export function AssistantMessages({
       setCopiedMessageId(messageId);
       window.setTimeout(() => setCopiedMessageId(null), 2000);
     } catch {
-      // Clipboard API pode falhar em contextos restritos — falha silenciosa
+      // Clipboard API pode falhar em contextos restritos — fallback para execCommand
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        setCopiedMessageId(messageId);
+        window.setTimeout(() => setCopiedMessageId(null), 2000);
+      } catch {
+        // Falha total — sem feedback negativo para não poluir a UX
+      }
     }
   }, []);
 

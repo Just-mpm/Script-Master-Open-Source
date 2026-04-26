@@ -1,4 +1,283 @@
 import type { Stroke, StrokeAnimation } from '../types';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('imageProcessing');
+
+// ---------------------------------------------------------------------------
+// Web Worker inline para processamento pesado fora da main thread
+// ---------------------------------------------------------------------------
+
+/** Resultado enviado pelo worker via postMessage */
+interface WorkerResult {
+  strokes: Stroke[];
+  revealThreshold: number;
+  totalDurationMs: number;
+}
+
+/**
+ * Cria um Web Worker inline via Blob URL para edge detection + BFS + vetorização.
+ * Segue o mesmo padrão de strokeWorker.ts (video-render).
+ */
+function createImageProcessingWorker(): Worker {
+  const workerCode = `
+    'use strict';
+
+    // --- PHASE 1: SKETCH (Edge Detection) ---
+    function processSketch(imageData) {
+      var data = imageData.data;
+      var width = imageData.width;
+      var height = imageData.height;
+      var strokes = [];
+      var strokeId = 0;
+
+      // Conversão para grayscale
+      var grayscale = new Uint8Array(width * height);
+      for (var i = 0; i < data.length; i += 4) {
+        grayscale[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      }
+
+      // Edge detection (diferença adjacente)
+      var edges = new Uint8Array(width * height);
+      for (var y = 0; y < height - 1; y++) {
+        for (var x = 0; x < width - 1; x++) {
+          var curr = grayscale[y * width + x];
+          var right = grayscale[y * width + x + 1];
+          var bottom = grayscale[(y + 1) * width + x];
+          var diff = Math.abs(curr - right) + Math.abs(curr - bottom);
+          if (diff > 20) {
+            edges[y * width + x] = 1;
+          }
+        }
+      }
+
+      // BFS clustering de edges conectados
+      var visitedEdges = new Uint8Array(width * height);
+      var clusters = [];
+
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          var idx = y * width + x;
+          if (edges[idx] && !visitedEdges[idx]) {
+            var queue = [idx];
+            visitedEdges[idx] = 1;
+            var clusterPixels = [];
+            var minX = width;
+            var minY = height;
+            var maxX = 0;
+            var maxY = 0;
+
+            var head = 0;
+            while (head < queue.length) {
+              var currIdx = queue[head++];
+              clusterPixels.push(currIdx);
+              var cy = Math.floor(currIdx / width);
+              var cx = currIdx % width;
+
+              if (cx < minX) minX = cx;
+              if (cx > maxX) maxX = cx;
+              if (cy < minY) minY = cy;
+              if (cy > maxY) maxY = cy;
+
+              // 5x5 search para saltar gaps em linhas
+              for (var dy = -2; dy <= 2; dy++) {
+                for (var dx = -2; dx <= 2; dx++) {
+                  if (dx === 0 && dy === 0) continue;
+                  var nx = cx + dx;
+                  var ny = cy + dy;
+                  if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    var nIdx = ny * width + nx;
+                    if (edges[nIdx] && !visitedEdges[nIdx]) {
+                      visitedEdges[nIdx] = 1;
+                      queue.push(nIdx);
+                    }
+                  }
+                }
+              }
+            }
+
+            if (clusterPixels.length > 15) {
+              clusters.push({ pixels: clusterPixels, minX: minX, minY: minY, maxX: maxX, maxY: maxY });
+            }
+          }
+        }
+      }
+
+      // Ordenação espacial (top-to-bottom, left-to-right)
+      clusters.sort(function(a, b) {
+        var cyA = (a.minY + a.maxY) / 2;
+        var cxA = (a.minX + a.maxX) / 2;
+        var cyB = (b.minY + b.maxY) / 2;
+        var cxB = (b.minX + b.maxX) / 2;
+        return (cyA * 1000 + cxA) - (cyB * 1000 + cxB);
+      });
+
+      // Tracing e vetorização
+      var visitedForTracing = new Uint8Array(width * height);
+
+      for (var c = 0; c < clusters.length; c++) {
+        var cluster = clusters[c];
+        for (var p = 0; p < cluster.pixels.length; p++) {
+          var idx2 = cluster.pixels[p];
+          if (!visitedForTracing[idx2]) {
+            var cx2 = idx2 % width;
+            var cy2 = Math.floor(idx2 / width);
+            visitedForTracing[idx2] = 1;
+
+            var path = [{ x: cx2, y: cy2 }];
+
+            var continueTracing = true;
+            while (continueTracing) {
+              var found = false;
+              for (var r = 1; r <= 2; r++) {
+                for (var dy2 = -r; dy2 <= r; dy2++) {
+                  for (var dx2 = -r; dx2 <= r; dx2++) {
+                    if (dx2 === 0 && dy2 === 0) continue;
+                    var nx2 = cx2 + dx2;
+                    var ny2 = cy2 + dy2;
+                    if (nx2 >= 0 && nx2 < width && ny2 >= 0 && ny2 < height) {
+                      var nIdx2 = ny2 * width + nx2;
+                      if (edges[nIdx2] && !visitedForTracing[nIdx2]) {
+                        visitedForTracing[nIdx2] = 1;
+                        cx2 = nx2;
+                        cy2 = ny2;
+                        path.push({ x: cx2, y: cy2 });
+                        found = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (found) break;
+                }
+                if (found) break;
+              }
+              continueTracing = found;
+            }
+
+            // Simplificação e curvas orgânicas
+            if (path.length > 2) {
+              var stepSize = 5;
+              var smoothedPath = [];
+              for (var si = 0; si < path.length; si += stepSize) {
+                smoothedPath.push(path[si]);
+              }
+              if (smoothedPath[smoothedPath.length - 1] !== path[path.length - 1]) {
+                smoothedPath.push(path[path.length - 1]);
+              }
+
+              if (smoothedPath.length > 2) {
+                var prevPt = smoothedPath[0];
+                for (var pi = 1; pi < smoothedPath.length - 1; pi++) {
+                  var currPt = smoothedPath[pi];
+                  var nextPt = smoothedPath[pi + 1];
+
+                  var midX = (currPt.x + nextPt.x) / 2;
+                  var midY = (currPt.y + nextPt.y) / 2;
+
+                  var pressure = Math.sin((pi / smoothedPath.length) * Math.PI);
+                  var dynamicWidth = 0.8 + (pressure * 1.8);
+
+                  strokes.push({
+                    id: strokeId++,
+                    layer: 0,
+                    type: 'sketch',
+                    points: [prevPt.x, prevPt.y, currPt.x, currPt.y, midX, midY],
+                    lineWidth: dynamicWidth,
+                    r: 40, g: 40, b: 40, alpha: 0.9,
+                  });
+                  prevPt = { x: midX, y: midY };
+                }
+
+                var lastPt = smoothedPath[smoothedPath.length - 1];
+                strokes.push({
+                  id: strokeId++,
+                  layer: 0,
+                  type: 'sketch',
+                  points: [prevPt.x, prevPt.y, lastPt.x, lastPt.y],
+                  lineWidth: 0.8,
+                  r: 40, g: 40, b: 40, alpha: 0.9,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return { strokes: strokes, strokeId: strokeId };
+    }
+
+    // --- PHASE 2: REVEAL (Coloring) ---
+    function processReveal(width, height, startStrokeId) {
+      var strokes = [];
+      var brushSize = 45;
+
+      var dabs = [];
+      for (var y = -brushSize; y < height + brushSize; y += brushSize * 0.6) {
+        for (var x = -brushSize; x < width + brushSize; x += brushSize * 0.6) {
+          var rx = x + (Math.random() - 0.5) * brushSize * 0.5;
+          var ry = y + (Math.random() - 0.5) * brushSize * 0.5;
+          dabs.push({ x: rx, y: ry });
+        }
+      }
+
+      dabs.sort(function(a, b) {
+        var scoreA = a.y * 10 + a.x + (Math.random() * 300);
+        var scoreB = b.y * 10 + b.x + (Math.random() * 300);
+        return scoreA - scoreB;
+      });
+
+      for (var d = 0; d < dabs.length; d++) {
+        var dab = dabs[d];
+        var angle = (Math.random() - 0.5) * Math.PI / 3;
+        var len = brushSize * (1 + Math.random() * 0.5);
+        var ddx = Math.cos(angle) * len;
+        var ddy = Math.sin(angle) * len;
+
+        var ccx = dab.x + ddx / 2 + (Math.random() - 0.5) * 30;
+        var ccy = dab.y + ddy / 2 + (Math.random() - 0.5) * 30;
+
+        strokes.push({
+          id: startStrokeId++,
+          layer: 1,
+          type: 'reveal',
+          points: [dab.x, dab.y, ccx, ccy, dab.x + ddx, dab.y + ddy],
+          lineWidth: brushSize * 1.8,
+          r: 0, g: 0, b: 0, alpha: 1,
+        });
+      }
+
+      return { strokes: strokes, strokeId: startStrokeId };
+    }
+
+    // --- Handler principal do Worker ---
+    self.onmessage = function(e) {
+      var imageData = e.data.imageData;
+      var sketchResult = processSketch(imageData);
+      var sketchStrokes = sketchResult.strokes;
+      var nextStrokeId = sketchResult.strokeId;
+
+      var revealResult = processReveal(imageData.width, imageData.height, nextStrokeId);
+      var revealStrokes = revealResult.strokes;
+
+      var allStrokes = sketchStrokes.concat(revealStrokes);
+      var revealThreshold = sketchStrokes.length / allStrokes.length;
+
+      self.postMessage({
+        strokes: allStrokes,
+        revealThreshold: revealThreshold,
+        totalDurationMs: Math.max(1000, allStrokes.length * 8),
+      });
+    };
+  `;
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+  URL.revokeObjectURL(url);
+  return worker;
+}
+
+// ---------------------------------------------------------------------------
+// API pública
+// ---------------------------------------------------------------------------
 
 export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: number) => void): Promise<StrokeAnimation> {
   return new Promise((resolve, reject) => {
@@ -31,262 +310,307 @@ export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: 
       // Save the resized image to prevent holding massive 4K images in memory
       const resizedImage = canvas.toDataURL('image/jpeg', 0.9);
 
+      // Extrai imageData na main thread (canvas não disponível no Worker sem OffscreenCanvas)
       const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
 
-      const strokes: Stroke[] = [];
-      let strokeId = 0;
+      onProgress(0.3);
 
-      // Let UI update before heavy processing
-      setTimeout(() => {
-        // --- PHASE 1: SKETCH (Edge Detection) ---
-        const grayscale = new Uint8Array(width * height);
-        for (let i = 0; i < data.length; i += 4) {
-          grayscale[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-        }
+      // Cria Worker e delega o processamento pesado
+      let worker: Worker | null = null;
 
-        const edges = new Uint8Array(width * height);
-        for (let y = 0; y < height - 1; y++) {
-          for (let x = 0; x < width - 1; x++) {
-            const curr = grayscale[y * width + x];
-            const right = grayscale[y * width + x + 1];
-            const bottom = grayscale[(y + 1) * width + x];
-            const diff = Math.abs(curr - right) + Math.abs(curr - bottom);
-            if (diff > 20) { // Lowered threshold for more detailed edges
-              edges[y * width + x] = 1;
-            }
-          }
-        }
+      try {
+        worker = createImageProcessingWorker();
+      } catch (workerError: unknown) {
+        log.warn('Worker indisponível, usando fallback na main thread', { error: workerError });
+        // Fallback: processa na main thread (comportamento original)
+        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolve);
+        return;
+      }
 
-        const visitedEdges = new Uint8Array(width * height);
-        const clusters: Array<{ pixels: number[], minX: number, minY: number, maxX: number, maxY: number }> = [];
+      const handler = (e: MessageEvent<WorkerResult>) => {
+        worker!.removeEventListener('message', handler);
 
-        // 1. Group connected edges into "Objects" (Islands)
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-            if (edges[idx] && !visitedEdges[idx]) {
-              const queue = [idx];
-              visitedEdges[idx] = 1;
-              const clusterPixels: number[] = [];
-              let minX = width;
-              let minY = height;
-              let maxX = 0;
-              let maxY = 0;
+        const result = e.data;
+        onProgress(1.0);
 
-              let head = 0;
-              while (head < queue.length) {
-                const currIdx = queue[head++];
-                clusterPixels.push(currIdx);
-                const cy = Math.floor(currIdx / width);
-                const cx = currIdx % width;
-
-                if (cx < minX) minX = cx;
-                if (cx > maxX) maxX = cx;
-                if (cy < minY) minY = cy;
-                if (cy > maxY) maxY = cy;
-
-                // 5x5 search to jump small gaps in lines and group nearby elements
-                for (let dy = -2; dy <= 2; dy++) {
-                  for (let dx = -2; dx <= 2; dx++) {
-                    if (dx === 0 && dy === 0) continue;
-                    const nx = cx + dx;
-                    const ny = cy + dy;
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                      const nIdx = ny * width + nx;
-                      if (edges[nIdx] && !visitedEdges[nIdx]) {
-                        visitedEdges[nIdx] = 1;
-                        queue.push(nIdx);
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Only keep significant objects (ignore tiny noise)
-              if (clusterPixels.length > 15) {
-                clusters.push({ pixels: clusterPixels, minX, minY, maxX, maxY });
-              }
-            }
-          }
-        }
-
-        // 2. Sort objects spatially (Top-to-bottom, left-to-right) for a more "human" drawing order
-        clusters.sort((a, b) => {
-          const cyA = (a.minY + a.maxY) / 2;
-          const cxA = (a.minX + a.maxX) / 2;
-          const cyB = (b.minY + b.maxY) / 2;
-          const cxB = (b.minX + b.maxX) / 2;
-          // Weight Y heavily so it draws row by row, like a human scanning the page
-          return (cyA * 1000 + cxA) - (cyB * 1000 + cxB);
+        resolve({
+          id: Math.random().toString(36).substring(7),
+          canvasWidth: width,
+          canvasHeight: height,
+          canvasColor: 'white',
+          totalFrames: result.strokes.length,
+          fps: 60,
+          totalDurationMs: result.totalDurationMs,
+          revealThreshold: result.revealThreshold,
+          strokes: result.strokes,
+          resizedImage,
         });
 
-        const sketchSegments: Stroke[] = [];
-        const visitedForTracing = new Uint8Array(width * height);
+        worker!.terminate();
+        worker = null;
+      };
 
-        // 3. Trace continuous lines WITHIN each object sequentially (Vectorization)
-        for (const cluster of clusters) {
-          for (const idx of cluster.pixels) {
-            if (!visitedForTracing[idx]) {
-              let cx = idx % width;
-              let cy = Math.floor(idx / width);
-              visitedForTracing[idx] = 1;
+      worker.addEventListener('message', handler);
 
-              const path: Array<{ x: number; y: number }> = [{ x: cx, y: cy }];
-
-              // Trace path by searching for adjacent edge pixels
-              let continueTracing = true;
-              while (continueTracing) {
-                // Search radius 1 first, then radius 2 to jump small gaps
-                let found = false;
-                for (let r = 1; r <= 2; r++) {
-                  for (let dy = -r; dy <= r; dy++) {
-                    for (let dx = -r; dx <= r; dx++) {
-                      if (dx === 0 && dy === 0) continue;
-                      const nx = cx + dx;
-                      const ny = cy + dy;
-                      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        const nIdx = ny * width + nx;
-                        if (edges[nIdx] && !visitedForTracing[nIdx]) {
-                          visitedForTracing[nIdx] = 1;
-                          cx = nx;
-                          cy = ny;
-                          path.push({ x: cx, y: cy });
-                          found = true;
-                          break;
-                        }
-                      }
-                    }
-                    if (found) break;
-                  }
-                  if (found) break;
-                }
-                continueTracing = found;
-              }
-
-              // Simplify path and apply Organic Curves (Bezier) + Pen Pressure
-              if (path.length > 2) {
-                const stepSize = 5;
-                const smoothedPath: Array<{ x: number; y: number }> = [];
-                for (let i = 0; i < path.length; i += stepSize) {
-                  smoothedPath.push(path[i]);
-                }
-                if (smoothedPath[smoothedPath.length - 1] !== path[path.length - 1]) {
-                  smoothedPath.push(path[path.length - 1]);
-                }
-
-                if (smoothedPath.length > 2) {
-                  let prevPt = smoothedPath[0];
-                  for (let i = 1; i < smoothedPath.length - 1; i++) {
-                    const currPt = smoothedPath[i];
-                    const nextPt = smoothedPath[i + 1];
-
-                    // Midpoint smoothing for bezier curves
-                    const midX = (currPt.x + nextPt.x) / 2;
-                    const midY = (currPt.y + nextPt.y) / 2;
-
-                    // Pen Pressure simulation: thicker in the middle of the stroke, thinner at ends
-                    const progress = i / smoothedPath.length;
-                    const pressure = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
-                    const dynamicWidth = 0.8 + (pressure * 1.8); // Varies from 0.8 to 2.6
-
-                    sketchSegments.push({
-                      id: strokeId++,
-                      layer: 0,
-                      type: 'sketch',
-                      points: [prevPt.x, prevPt.y, currPt.x, currPt.y, midX, midY],
-                      lineWidth: dynamicWidth,
-                      r: 40, g: 40, b: 40, alpha: 0.9,
-                    });
-                    prevPt = { x: midX, y: midY };
-                  }
-                  // Draw the very last segment as a straight line to finish the path
-                  const lastPt = smoothedPath[smoothedPath.length - 1];
-                  sketchSegments.push({
-                    id: strokeId++,
-                    layer: 0,
-                    type: 'sketch',
-                    points: [prevPt.x, prevPt.y, lastPt.x, lastPt.y],
-                    lineWidth: 0.8, // Thin tail
-                    r: 40, g: 40, b: 40, alpha: 0.9,
-                  });
-                }
-              }
-            }
-          }
-        }
-
-        // Use a loop instead of spread operator to avoid "Maximum call stack size exceeded"
-        for (const seg of sketchSegments) strokes.push(seg);
-
-        const sketchCount = strokes.length;
-        onProgress(0.5);
-
-        // --- PHASE 2: REVEAL (Coloring) ---
-        setTimeout(() => {
-          const revealSegments: Stroke[] = [];
-          const brushSize = 45;
-
-          // Create a grid of paint "dabs" for a more organic, painterly fill
-          const dabs: Array<{ x: number; y: number }> = [];
-          for (let y = -brushSize; y < height + brushSize; y += brushSize * 0.6) {
-            for (let x = -brushSize; x < width + brushSize; x += brushSize * 0.6) {
-              // Add randomness to position so it doesn't look like a perfect grid
-              const rx = x + (Math.random() - 0.5) * brushSize * 0.5;
-              const ry = y + (Math.random() - 0.5) * brushSize * 0.5;
-              dabs.push({ x: rx, y: ry });
-            }
-          }
-
-          // Sort dabs generally top-to-bottom, but with noise for an organic, spreading feel
-          dabs.sort((a, b) => {
-            const scoreA = a.y * 10 + a.x + (Math.random() * 300);
-            const scoreB = b.y * 10 + b.x + (Math.random() * 300);
-            return scoreA - scoreB;
-          });
-
-          for (const dab of dabs) {
-            // Randomize the brush stroke direction slightly
-            const angle = (Math.random() - 0.5) * Math.PI / 3;
-            const len = brushSize * (1 + Math.random() * 0.5);
-            const dx = Math.cos(angle) * len;
-            const dy = Math.sin(angle) * len;
-
-            // Curve control point for a natural swish
-            const cx = dab.x + dx / 2 + (Math.random() - 0.5) * 30;
-            const cy = dab.y + dy / 2 + (Math.random() - 0.5) * 30;
-
-            revealSegments.push({
-              id: strokeId++,
-              layer: 1,
-              type: 'reveal',
-              points: [dab.x, dab.y, cx, cy, dab.x + dx, dab.y + dy],
-              lineWidth: brushSize * 1.8, // Thick brush
-              r: 0, g: 0, b: 0, alpha: 1,
-            });
-          }
-
-          for (const seg of revealSegments) strokes.push(seg);
-          onProgress(1.0);
-
-          const revealThreshold = sketchCount / strokes.length;
-
-          resolve({
-            id: Math.random().toString(36).substring(7),
-            canvasWidth: width,
-            canvasHeight: height,
-            canvasColor: 'white',
-            totalFrames: strokes.length,
-            fps: 60,
-            totalDurationMs: Math.max(1000, strokes.length * 8),
-            revealThreshold,
-            strokes,
-            resizedImage,
-          });
-        }, 50);
-      }, 50);
+      // Envia pixels para o Worker processar
+      worker.postMessage({ imageData: { data: imageData.data, width, height } });
+      worker.onerror = (err: ErrorEvent) => {
+        worker!.removeEventListener('message', handler);
+        worker!.terminate();
+        worker = null;
+        log.error('Erro no Worker de image processing, usando fallback', { error: err.message });
+        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolve);
+      };
     };
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = dataUrl;
   });
+}
+
+/**
+ * Fallback: processa edge detection + BFS + vetorização na main thread.
+ * Usado quando o Worker não está disponível ou falha.
+ */
+function processOnMainThread(
+  imageData: ImageData,
+  width: number,
+  height: number,
+  resizedImage: string,
+  onProgress: (p: number) => void,
+  resolve: (value: StrokeAnimation) => void,
+): void {
+  const data = imageData.data;
+  const strokes: Stroke[] = [];
+  let strokeId = 0;
+
+  // Let UI update before heavy processing
+  setTimeout(() => {
+    // --- PHASE 1: SKETCH (Edge Detection) ---
+    const grayscale = new Uint8Array(width * height);
+    for (let i = 0; i < data.length; i += 4) {
+      grayscale[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    }
+
+    const edges = new Uint8Array(width * height);
+    for (let y = 0; y < height - 1; y++) {
+      for (let x = 0; x < width - 1; x++) {
+        const curr = grayscale[y * width + x];
+        const right = grayscale[y * width + x + 1];
+        const bottom = grayscale[(y + 1) * width + x];
+        const diff = Math.abs(curr - right) + Math.abs(curr - bottom);
+        if (diff > 20) {
+          edges[y * width + x] = 1;
+        }
+      }
+    }
+
+    const visitedEdges = new Uint8Array(width * height);
+    const clusters: Array<{ pixels: number[], minX: number, minY: number, maxX: number, maxY: number }> = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        if (edges[idx] && !visitedEdges[idx]) {
+          const queue = [idx];
+          visitedEdges[idx] = 1;
+          const clusterPixels: number[] = [];
+          let minX = width;
+          let minY = height;
+          let maxX = 0;
+          let maxY = 0;
+
+          let head = 0;
+          while (head < queue.length) {
+            const currIdx = queue[head++];
+            clusterPixels.push(currIdx);
+            const cy = Math.floor(currIdx / width);
+            const cx = currIdx % width;
+
+            if (cx < minX) minX = cx;
+            if (cx > maxX) maxX = cx;
+            if (cy < minY) minY = cy;
+            if (cy > maxY) maxY = cy;
+
+            for (let dy = -2; dy <= 2; dy++) {
+              for (let dx = -2; dx <= 2; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                const nx = cx + dx;
+                const ny = cy + dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                  const nIdx = ny * width + nx;
+                  if (edges[nIdx] && !visitedEdges[nIdx]) {
+                    visitedEdges[nIdx] = 1;
+                    queue.push(nIdx);
+                  }
+                }
+              }
+            }
+          }
+
+          if (clusterPixels.length > 15) {
+            clusters.push({ pixels: clusterPixels, minX, minY, maxX, maxY });
+          }
+        }
+      }
+    }
+
+    clusters.sort((a, b) => {
+      const cyA = (a.minY + a.maxY) / 2;
+      const cxA = (a.minX + a.maxX) / 2;
+      const cyB = (b.minY + b.maxY) / 2;
+      const cxB = (b.minX + b.maxX) / 2;
+      return (cyA * 1000 + cxA) - (cyB * 1000 + cxB);
+    });
+
+    const sketchSegments: Stroke[] = [];
+    const visitedForTracing = new Uint8Array(width * height);
+
+    for (const cluster of clusters) {
+      for (const idx of cluster.pixels) {
+        if (!visitedForTracing[idx]) {
+          let cx = idx % width;
+          let cy = Math.floor(idx / width);
+          visitedForTracing[idx] = 1;
+
+          const path: Array<{ x: number; y: number }> = [{ x: cx, y: cy }];
+
+          let continueTracing = true;
+          while (continueTracing) {
+            let found = false;
+            for (let r = 1; r <= 2; r++) {
+              for (let dy = -r; dy <= r; dy++) {
+                for (let dx = -r; dx <= r; dx++) {
+                  if (dx === 0 && dy === 0) continue;
+                  const nx = cx + dx;
+                  const ny = cy + dy;
+                  if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    const nIdx = ny * width + nx;
+                    if (edges[nIdx] && !visitedForTracing[nIdx]) {
+                      visitedForTracing[nIdx] = 1;
+                      cx = nx;
+                      cy = ny;
+                      path.push({ x: cx, y: cy });
+                      found = true;
+                      break;
+                    }
+                  }
+                }
+                if (found) break;
+              }
+              if (found) break;
+            }
+            continueTracing = found;
+          }
+
+          if (path.length > 2) {
+            const stepSize = 5;
+            const smoothedPath: Array<{ x: number; y: number }> = [];
+            for (let i = 0; i < path.length; i += stepSize) {
+              smoothedPath.push(path[i]);
+            }
+            if (smoothedPath[smoothedPath.length - 1] !== path[path.length - 1]) {
+              smoothedPath.push(path[path.length - 1]);
+            }
+
+            if (smoothedPath.length > 2) {
+              let prevPt = smoothedPath[0];
+              for (let i = 1; i < smoothedPath.length - 1; i++) {
+                const currPt = smoothedPath[i];
+                const nextPt = smoothedPath[i + 1];
+
+                const midX = (currPt.x + nextPt.x) / 2;
+                const midY = (currPt.y + nextPt.y) / 2;
+
+                const progress = i / smoothedPath.length;
+                const pressure = Math.sin(progress * Math.PI);
+                const dynamicWidth = 0.8 + (pressure * 1.8);
+
+                sketchSegments.push({
+                  id: strokeId++,
+                  layer: 0,
+                  type: 'sketch',
+                  points: [prevPt.x, prevPt.y, currPt.x, currPt.y, midX, midY],
+                  lineWidth: dynamicWidth,
+                  r: 40, g: 40, b: 40, alpha: 0.9,
+                });
+                prevPt = { x: midX, y: midY };
+              }
+              const lastPt = smoothedPath[smoothedPath.length - 1];
+              sketchSegments.push({
+                id: strokeId++,
+                layer: 0,
+                type: 'sketch',
+                points: [prevPt.x, prevPt.y, lastPt.x, lastPt.y],
+                lineWidth: 0.8,
+                r: 40, g: 40, b: 40, alpha: 0.9,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    for (const seg of sketchSegments) strokes.push(seg);
+
+    const sketchCount = strokes.length;
+    onProgress(0.5);
+
+    // --- PHASE 2: REVEAL (Coloring) ---
+    setTimeout(() => {
+      const revealSegments: Stroke[] = [];
+      const brushSize = 45;
+
+      const dabs: Array<{ x: number; y: number }> = [];
+      for (let y = -brushSize; y < height + brushSize; y += brushSize * 0.6) {
+        for (let x = -brushSize; x < width + brushSize; x += brushSize * 0.6) {
+          const rx = x + (Math.random() - 0.5) * brushSize * 0.5;
+          const ry = y + (Math.random() - 0.5) * brushSize * 0.5;
+          dabs.push({ x: rx, y: ry });
+        }
+      }
+
+      dabs.sort((a, b) => {
+        const scoreA = a.y * 10 + a.x + (Math.random() * 300);
+        const scoreB = b.y * 10 + b.x + (Math.random() * 300);
+        return scoreA - scoreB;
+      });
+
+      for (const dab of dabs) {
+        const angle = (Math.random() - 0.5) * Math.PI / 3;
+        const len = brushSize * (1 + Math.random() * 0.5);
+        const dx = Math.cos(angle) * len;
+        const dy = Math.sin(angle) * len;
+
+        const cx = dab.x + dx / 2 + (Math.random() - 0.5) * 30;
+        const cy = dab.y + dy / 2 + (Math.random() - 0.5) * 30;
+
+        revealSegments.push({
+          id: strokeId++,
+          layer: 1,
+          type: 'reveal',
+          points: [dab.x, dab.y, cx, cy, dab.x + dx, dab.y + dy],
+          lineWidth: brushSize * 1.8,
+          r: 0, g: 0, b: 0, alpha: 1,
+        });
+      }
+
+      for (const seg of revealSegments) strokes.push(seg);
+      onProgress(1.0);
+
+      const revealThreshold = sketchCount / strokes.length;
+
+      resolve({
+        id: Math.random().toString(36).substring(7),
+        canvasWidth: width,
+        canvasHeight: height,
+        canvasColor: 'white',
+        totalFrames: strokes.length,
+        fps: 60,
+        totalDurationMs: Math.max(1000, strokes.length * 8),
+        revealThreshold,
+        strokes,
+        resizedImage,
+      });
+    }, 50);
+  }, 50);
 }

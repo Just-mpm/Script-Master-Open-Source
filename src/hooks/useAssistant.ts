@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GoogleGenAI, type GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
 import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
@@ -60,6 +60,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamActiveRef = useRef(false);
+  const chunkBufferRef = useRef<string>('');
+  const rafRef = useRef<number>(0);
+  const streamingTargetRef = useRef<string>('');
 
   const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
 
@@ -121,6 +124,25 @@ export function useAssistant(currentState?: AssistantStudioState) {
   // ---------------------------------------------------------------------------
   // Controle de sessão
   // ---------------------------------------------------------------------------
+
+  /**
+   * Flush imediato do buffer de chunks de streaming.
+   * Usa refs para evitar closure stale.
+   */
+  const flushChunkBuffer = () => {
+    const buffered = chunkBufferRef.current;
+    if (!buffered) return;
+    chunkBufferRef.current = '';
+    rafRef.current = 0;
+
+    const targetId = streamingTargetRef.current;
+    if (!targetId) return;
+
+    setMessages(prev => prev.map(msg => {
+      if (msg.id !== targetId) return msg;
+      return { ...msg, text: msg.text + buffered };
+    }));
+  };
 
   const startNewChat = () => {
     abortControllerRef.current?.abort();
@@ -246,13 +268,39 @@ export function useAssistant(currentState?: AssistantStudioState) {
         },
       });
 
-      // Processa chunks progressivamente
+      // Salva target ID no ref para o flush acessar sem closure stale
+      streamingTargetRef.current = assistantMsgId;
+
+      // Processa chunks progressivamente com buffer por frame
       for await (const chunk of stream) {
         if (abortController.signal.aborted || !streamActiveRef.current) break;
-        appendChunkText(chunk, assistantMsgId);
+
+        const chunkText = chunk.text;
+        if (!chunkText) continue;
+
+        chunkBufferRef.current += chunkText;
+
+        // Agenda flush para o próximo frame de display (se não houver um pendente)
+        if (!rafRef.current) {
+          rafRef.current = requestAnimationFrame(flushChunkBuffer);
+        }
       }
 
+      // Flush final: aplica qualquer chunk restante no buffer
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      flushChunkBuffer();
+
     } catch (err: unknown) {
+      // Flush final em caso de erro para não perder chunks acumulados
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      flushChunkBuffer();
+
       // Ignora erros de aborto (intencional pelo usuário)
       if (abortController.signal.aborted) return;
 
@@ -277,24 +325,15 @@ export function useAssistant(currentState?: AssistantStudioState) {
         abortControllerRef.current = null;
       }
       streamActiveRef.current = false;
+      streamingTargetRef.current = '';
+      chunkBufferRef.current = '';
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
       setIsLoading(false);
       setIsStreaming(false);
     }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  /** Acumula texto de um chunk na mensagem do assistente. */
-  const appendChunkText = (chunk: GenerateContentResponse, targetId: string) => {
-    const chunkText = chunk.text;
-    if (!chunkText) return;
-
-    setMessages(prev => prev.map(msg => {
-      if (msg.id !== targetId) return msg;
-      return { ...msg, text: msg.text + chunkText };
-    }));
   };
 
   /** Interrompe a geração em andamento via AbortController. */

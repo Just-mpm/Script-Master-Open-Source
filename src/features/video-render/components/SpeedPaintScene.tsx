@@ -192,7 +192,7 @@ function SpeedPaintPhaseBadge({ animation, durationInFrames }: SpeedPaintPhaseBa
         borderRadius: 8,
         backgroundColor: isSketchPhase
           ? 'rgba(255, 255, 255, 0.12)'
-          : 'rgba(91, 154, 255, 0.15)',
+          : 'rgba(46, 117, 182, 0.15)',
         backdropFilter: 'blur(8px)',
         color: '#fff',
         fontSize: 12,

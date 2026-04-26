@@ -20,6 +20,7 @@ import {
   BRAND_SECONDARY,
   BRAND_SECONDARY_LIGHT,
   BRAND_SECONDARY_GLOW_SOFT,
+  WHITE_06,
 } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 import { SpeedSelector } from '../SpeedSelector';
@@ -79,7 +80,7 @@ export function QueueStaging() {
             p: 2,
             bgcolor: alpha(theme.palette.background.default, 0.4),
             borderRadius: 2,
-            border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+            border: `1px solid ${WHITE_06}`,
           })}
         >
           <SpeedSelector label="Draw" value={speed} onChange={setSpeed} variant="panel" />
@@ -107,7 +108,7 @@ export function QueueStaging() {
               bgcolor: alpha(theme.palette.background.default, 0.5),
               borderRadius: 2,
               overflow: 'hidden',
-              border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+              border: `1px solid ${WHITE_06}`,
               aspectRatio: '1/1',
               display: 'flex',
               alignItems: 'center',

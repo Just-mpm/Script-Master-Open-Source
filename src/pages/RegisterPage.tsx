@@ -15,7 +15,7 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import ImageIcon from '@mui/icons-material/Image';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
 import {
@@ -48,7 +48,6 @@ const SEO_PROPS = getPageSeo({
 
 export function RegisterPage() {
   const { user, login, signup, authError, loading, clearAuthError } = useAuth();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -381,13 +380,10 @@ export function RegisterPage() {
                   <Typography variant="body2" color="text.secondary">
                     Já tem conta?{' '}
                     <Typography
-                      component="span"
+                      component={Link}
+                      to="/login"
                       variant="body2"
                       sx={authLinkSx}
-                      onClick={() => navigate('/login')}
-                      role="link"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') navigate('/login'); }}
                     >
                       Faça login
                     </Typography>

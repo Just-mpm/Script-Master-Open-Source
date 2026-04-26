@@ -274,7 +274,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
           if (file.size > maxSize) {
             setAttachmentError(`O arquivo "${file.name}" excede o limite de ${maxSizeLabel} para ${isImage ? 'imagens' : 'documentos'}.`);
-            break;
+            continue;
           }
 
           validFiles.push(file);

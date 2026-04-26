@@ -308,8 +308,8 @@ function RoadmapRow({ item, isLast, index }: { item: RoadmapItem; isLast: boolea
             boxShadow: isCurrent
               ? `0 0 16px ${alpha(WARNING_MAIN, 0.6)}`
               : `0 0 10px ${alpha(dotColor, 0.35)}`,
-            animation: isCurrent ? 'pulse 2s ease-in-out infinite' : 'none',
-            '@keyframes pulse': {
+            animation: isCurrent ? 'pulseGlow 2s ease-in-out infinite' : 'none',
+            '@keyframes pulseGlow': {
               '0%, 100%': { boxShadow: `0 0 16px ${alpha(WARNING_MAIN, 0.6)}` },
               '50%': { boxShadow: `0 0 24px ${alpha(WARNING_MAIN, 0.9)}` },
             },

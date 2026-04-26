@@ -49,6 +49,7 @@ import {
   GAP_MEDIUM,
   APP_SURFACE,
   APP_BORDER,
+  APP_BORDER_STRONG,
   SHADOW_DEEP,
   WHITE_05,
   WHITE_015,
@@ -269,7 +270,7 @@ export function Header() {
                     borderRadius: 8,
                     transition: 'border-color 0.2s ease',
                     '&:hover': {
-                      borderColor: 'rgba(255, 255, 255, 0.14)',
+                      borderColor: APP_BORDER_STRONG,
                     },
                   })}
                 >

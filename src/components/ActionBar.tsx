@@ -414,7 +414,7 @@ export function ActionBar({
             {!isImagePhase && (
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
                 {/* Botão de exportar vídeo (rota /video) */}
-                {isVideoRoute && showPlayer && onScrollToExport && (
+                {isVideoRoute && showPlayer && onScrollToExport && (scenes?.length ?? 0) > 0 && (
                   <Tooltip title={isExportingVideo ? `Exportando vídeo... ${videoExportProgress}%` : 'Exportar vídeo MP4'}>
                     <span>
                       <IconButton
