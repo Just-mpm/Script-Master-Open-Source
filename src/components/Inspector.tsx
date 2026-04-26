@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -169,6 +170,7 @@ export const Inspector = React.memo(function Inspector({
   const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');
   const voiceSectionId = 'inspector-voice-section';
   const directionSectionId = 'inspector-direction-section';
+  const [referenceImageWarning, setReferenceImageWarning] = useState<string | null>(null);
 
   const handleSceneRatioChange = (value: string) => {
     if (value === '16:9' || value === '9:16' || value === '1:1') {
@@ -205,6 +207,8 @@ export const Inspector = React.memo(function Inspector({
 
     if (file.size > MAX_REFERENCE_IMAGE_SIZE) {
       log.warn('Imagem de referência excede o limite de 10MB', { size: file.size, name: file.name });
+      setReferenceImageWarning('Imagem muito grande. Tamanho máximo: 10MB.');
+      window.setTimeout(() => setReferenceImageWarning(null), 5000);
       event.target.value = '';
       return;
     }
@@ -662,6 +666,11 @@ export const Inspector = React.memo(function Inspector({
                     </Grid>
 
                   <Stack spacing={GAP_MEDIUM}>
+                    {referenceImageWarning ? (
+                      <Alert severity="warning" sx={{ borderRadius: 2 }} onClose={() => setReferenceImageWarning(null)}>
+                        {referenceImageWarning}
+                      </Alert>
+                    ) : null}
                     <Stack
                       direction={{ xs: 'column', sm: 'row' }}
                       spacing={GAP_MEDIUM}

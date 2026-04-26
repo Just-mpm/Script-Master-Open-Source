@@ -20,7 +20,7 @@ const log = createLogger('account-cleanup');
  * Erros parciais são logados mas não impedem a exclusão da conta.
  * A estratégia é "best-effort" para maximizar a limpeza.
  */
-export async function deleteAllUserData(userId: string): Promise<void> {
+export async function deleteAllUserData(userId: string): Promise<string[]> {
   const errors: string[] = [];
 
   try {
@@ -88,6 +88,8 @@ export async function deleteAllUserData(userId: string): Promise<void> {
   if (errors.length > 0) {
     log.warn('Limpeza parcial — dados não removidos', { errors });
   }
+
+  return errors;
 }
 
 // ── Helpers internos ────────────────────────────────────────────

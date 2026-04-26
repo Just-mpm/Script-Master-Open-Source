@@ -163,7 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Pipeline de limpeza LGPD — remove todos os dados do Firestore e Storage
-      await deleteAllUserData(currentUser.uid);
+      const cleanupErrors = await deleteAllUserData(currentUser.uid);
+
+      if (cleanupErrors.length > 0) {
+        setAuthError(`Alguns dados não puderam ser removidos completamente: ${cleanupErrors.join(', ')}. Entre em contato com o suporte se necessário.`);
+      }
 
       // Remove a autenticação do usuário
       await deleteUser(currentUser);
