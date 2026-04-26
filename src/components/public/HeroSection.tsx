@@ -4,6 +4,7 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import {
   APP_MAX_WIDTH,
@@ -12,6 +13,7 @@ import {
   BRAND_SECONDARY_GLOW_SOFT,
   TEXT_SECONDARY,
 } from '../../theme/tokens';
+import { fadeInUp } from './animations';
 
 interface HeroSectionProps {
   title: string;
@@ -19,7 +21,7 @@ interface HeroSectionProps {
   primaryCta?: { label: string; to: string };
   secondaryCta?: { label: string; to: string };
   visual?: ReactNode;
-  /** Alinha o visual à esquerda ou direita no desktop (padrão: direita) */
+  /** Alinha o visual a esquerda ou direita no desktop (padrao: direita) */
   visualPosition?: 'left' | 'right';
   /** Mostra background glow decorativo */
   showGlow?: boolean;
@@ -36,6 +38,10 @@ export function HeroSection({
 }: HeroSectionProps) {
   const visualElement = visual ? (
     <Box
+      component={motion.div}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
       sx={{
         flex: { md: 1 },
         display: 'flex',
@@ -91,84 +97,90 @@ export function HeroSection({
             zIndex: 1,
           }}
         >
-          {/* Conteúdo textual */}
+          {/* Conteudo textual */}
           <Box sx={{ flex: { md: 1 }, minWidth: 0 }}>
             <Stack spacing={{ xs: 2, md: 3 }} sx={{ alignItems: { xs: 'center', md: 'flex-start' } }}>
-              <Typography
-                variant="h1"
-                sx={{
-                  fontSize: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
-                  lineHeight: 1.15,
-                  background: BRAND_GRADIENT,
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  letterSpacing: '-0.04em',
-                }}
-              >
-                {title}
-              </Typography>
+              <Box component={motion.div} variants={fadeInUp} initial="hidden" animate="visible">
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontSize: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
+                    lineHeight: 1.15,
+                    background: BRAND_GRADIENT,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    letterSpacing: '-0.04em',
+                  }}
+                >
+                  {title}
+                </Typography>
+              </Box>
 
-              <Typography
-                variant="h6"
-                component="p"
-                sx={{
-                  color: TEXT_SECONDARY,
-                  fontWeight: 400,
-                  maxWidth: 560,
-                  lineHeight: 1.7,
-                }}
-              >
-                {subtitle}
-              </Typography>
+              <Box component={motion.div} variants={fadeInUp} initial="hidden" animate="visible">
+                <Typography
+                  variant="h6"
+                  component="p"
+                  sx={{
+                    color: TEXT_SECONDARY,
+                    fontWeight: 400,
+                    maxWidth: 560,
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {subtitle}
+                </Typography>
+              </Box>
 
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.5}
-                sx={{ pt: 1 }}
-              >
-                {primaryCta && (
-                  <Button
-                    component={Link}
-                    to={primaryCta.to}
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    sx={{
-                      px: 4,
-                      py: 1.5,
-                      boxShadow: `0 12px 36px ${BRAND_SECONDARY_GLOW_SOFT}`,
-                      transition: 'box-shadow 0.3s ease, transform 0.2s ease',
-                      '&:hover': {
-                        boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
-                        transform: 'translateY(-1px)',
-                      },
-                    }}
-                  >
-                    {primaryCta.label}
-                  </Button>
-                )}
-                {secondaryCta && (
-                  <Button
-                    component={Link}
-                    to={secondaryCta.to}
-                    variant="outlined"
-                    color="primary"
-                    size="large"
-                    sx={{
-                      px: 4,
-                      py: 1.5,
-                      borderWidth: 1.5,
-                      transition: 'border-color 0.2s ease, background-color 0.2s ease',
-                      '&:hover': {
+              <Box component={motion.div} variants={fadeInUp} initial="hidden" animate="visible">
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  sx={{ pt: 1 }}
+                >
+                  {primaryCta && (
+                    <Button
+                      component={Link}
+                      to={primaryCta.to}
+                      variant="contained"
+                      color="secondary"
+                      size="large"
+                      sx={{
+                        px: 4,
+                        py: 1.5,
+                        boxShadow: `0 12px 36px ${BRAND_SECONDARY_GLOW_SOFT}`,
+                        transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+                        '&:hover': {
+                          boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
+                          transform: 'translateY(-1px)',
+                        },
+                      }}
+                    >
+                      {primaryCta.label}
+                    </Button>
+                  )}
+                  {secondaryCta && (
+                    <Button
+                      component={Link}
+                      to={secondaryCta.to}
+                      variant="outlined"
+                      color="primary"
+                      size="large"
+                      sx={{
+                        px: 4,
+                        py: 1.5,
                         borderWidth: 1.5,
-                      },
-                    }}
-                  >
-                    {secondaryCta.label}
-                  </Button>
-                )}
-              </Stack>
+                        transition: 'border-color 0.2s ease, background-color 0.2s ease',
+                        '&:hover': {
+                          borderWidth: 1.5,
+                        },
+                      }}
+                    >
+                      {secondaryCta.label}
+                    </Button>
+                  )}
+                </Stack>
+              </Box>
             </Stack>
           </Box>
 

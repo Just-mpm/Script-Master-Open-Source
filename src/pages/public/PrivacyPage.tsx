@@ -1,34 +1,12 @@
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import Link from '@mui/material/Link';
-import Typography from '@mui/material/Typography';
-import { alpha } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
-import { PageLayout } from '../../components/public/PageLayout';
-import {
-  BRAND_PRIMARY,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-  APP_BORDER,
-} from '../../theme/tokens';
-import { glassPanelSx } from '../../theme/surfaces';
-
-// ── Tipos ─────────────────────────────────────────────────────────────
-
-/** Seção individual de conteúdo legal (reaproveitável entre Terms/Privacy) */
-interface LegalSection {
-  readonly id: string;
-  readonly title: string;
-  readonly content: string;
-}
+import { LegalPageTemplate } from '../../components/public/LegalPageTemplate';
+import type { LegalSection } from '../../components/public/LegalPageTemplate';
 
 // ── Constantes de dados ───────────────────────────────────────────────
 
-/** Título principal da página */
 const PAGE_TITLE = 'Política de Privacidade';
-
-/** Data de última atualização exibida no subtítulo */
 const LAST_UPDATE = '24 de abril de 2026';
 
 /** Seções da política de privacidade — SRP: dados separados do layout */
@@ -95,89 +73,9 @@ const PRIVACY_SECTIONS: readonly LegalSection[] = [
   },
 ] as const;
 
-/** aria-label do sumário de navegação */
-const TOC_ARIA_LABEL = 'Sumário da política de privacidade';
-
-// ── Subcomponentes ────────────────────────────────────────────────────
-
-/** Sumário clicável — navegação interna por âncora */
-function TableOfContents() {
-  return (
-    <Box
-      sx={(theme) => ({
-        ...glassPanelSx(theme),
-        p: { xs: 3, md: 4 },
-        mb: { xs: 6, md: 8 },
-        borderRadius: 3,
-      })}
-    >
-      <Typography
-        variant="h6"
-        component="h2"
-        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 2 }}
-      >
-        Sumário
-      </Typography>
-
-      <Box
-        component="nav"
-        aria-label={TOC_ARIA_LABEL}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
-      >
-        {PRIVACY_SECTIONS.map((section) => (
-          <Link
-            key={section.id}
-            href={`#${section.id}`}
-            underline="hover"
-            sx={{
-              color: TEXT_SECONDARY,
-              fontSize: '0.95rem',
-              fontWeight: 500,
-              py: 0.5,
-              px: 1,
-              borderRadius: 1,
-              transition: 'color 200ms ease, background-color 200ms ease',
-              '&:hover': {
-                color: BRAND_PRIMARY,
-                backgroundColor: alpha(BRAND_PRIMARY, 0.08),
-              },
-            }}
-          >
-            {section.title}
-          </Link>
-        ))}
-      </Box>
-    </Box>
-  );
-}
-
-/** Seção individual de conteúdo com título e parágrafo */
-function SectionBlock({ section }: { readonly section: LegalSection }) {
-  return (
-    <Box id={section.id} sx={{ scrollMarginTop: 80 }}>
-      <Typography
-        variant="h6"
-        component="h3"
-        sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 1.5, letterSpacing: '-0.01em' }}
-      >
-        {section.title}
-      </Typography>
-
-      <Typography
-        variant="body1"
-        sx={{ color: TEXT_SECONDARY, lineHeight: 1.85 }}
-      >
-        {section.content}
-      </Typography>
-
-      <Divider sx={{ mt: 4, borderColor: APP_BORDER }} />
-    </Box>
-  );
-}
-
 // ── Componente principal ──────────────────────────────────────────────
 
-export default function PrivacyPage() {
+export default function PrivacyPage(): ReactNode {
   const seo = getPageSeo({
     title: 'Política de Privacidade',
     description: 'Política de privacidade do Script Master. Saiba como tratamos seus dados conforme a LGPD.',
@@ -187,45 +85,12 @@ export default function PrivacyPage() {
   return (
     <>
       <Helmet {...seo} />
-      <PageLayout>
-      {/* Header — título + data de atualização */}
-      <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 } }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          sx={{
-            color: TEXT_PRIMARY,
-            fontWeight: 800,
-            mb: 1.5,
-            fontSize: { xs: '1.75rem', md: '2.5rem' },
-            letterSpacing: '-0.035em',
-          }}
-        >
-          {PAGE_TITLE}
-        </Typography>
-
-        <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.5 }}>
-          Última atualização: {LAST_UPDATE}
-        </Typography>
-      </Box>
-
-      {/* Sumário clicável */}
-      <TableOfContents />
-
-      {/* Seções de conteúdo */}
-      <Box
-        sx={(theme) => ({
-          ...glassPanelSx(theme),
-          p: { xs: 3, md: 4, lg: 5 },
-          borderRadius: 3,
-          '& > :last-child > hr': { display: 'none' },
-        })}
-      >
-        {PRIVACY_SECTIONS.map((section) => (
-          <SectionBlock key={section.id} section={section} />
-        ))}
-      </Box>
-    </PageLayout>
+      <LegalPageTemplate
+        title={PAGE_TITLE}
+        lastUpdated={LAST_UPDATE}
+        sections={PRIVACY_SECTIONS}
+        tocAriaLabel="Sumário da política de privacidade"
+      />
     </>
   );
 }

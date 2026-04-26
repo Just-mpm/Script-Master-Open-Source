@@ -3,18 +3,25 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { motion } from 'motion/react';
 import { APP_MAX_WIDTH, APP_BORDER, BRAND_GRADIENT, TEXT_SECONDARY } from '../../theme/tokens';
+import { fadeIn, VIEWPORT_ONCE } from './animations';
 
 interface SocialProofBarProps {
   /** Texto principal (ex: "Mais de 1.000 criadores") */
   label: string;
-  /** Texto secundário */
+  /** Texto secundario */
   sublabel?: string;
 }
 
 export function SocialProofBar({ label, sublabel }: SocialProofBarProps) {
   return (
     <Box
+      component={motion.div}
+      variants={fadeIn}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
       sx={{
         py: { xs: 3, md: 4 },
         borderTop: `1px solid ${APP_BORDER}`,

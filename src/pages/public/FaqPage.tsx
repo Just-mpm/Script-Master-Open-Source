@@ -2,6 +2,9 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ContactSupportIcon from '@mui/icons-material/ContactSupport';
+import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
+import BuildOutlined from '@mui/icons-material/BuildOutlined';
+import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
 import EmailIcon from '@mui/icons-material/Email';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import Tab from '@mui/material/Tab';
@@ -9,6 +12,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
+import { motion } from 'motion/react';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -17,6 +21,8 @@ import { FAQAccordion } from '../../components/public/FAQAccordion';
 import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
+import { fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -51,7 +57,7 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Preciso de conta para usar?',
         answer:
-          'Você pode explorar o Script Master sem conta, mas para salvar projetos, gerar áudio e acessar todas as funcionalidades, é necessário criar uma conta gratuita usando seu Google.',
+          'Você pode explorar o Script Master sem conta, mas para salvar projetos, gerar áudio e acessar todas as funcionalidades, é necessário criar uma conta gratuita. Oferecemos login com Google ou por email e senha.',
       },
       {
         question: 'Meus dados estão seguros?',
@@ -78,39 +84,13 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
   {
     id: 'precos',
     label: 'Preços',
-    icon: ContactSupportIcon,
-    items: [
-      {
-        question: 'É realmente grátis?',
-        answer:
-          'Sim! O plano Gratuito não exige cartão de crédito e não possui data de expiração. Você pode usar quantas vezes quiser dentro dos limites do plano.',
-      },
-      {
-        question: 'Posso cancelar a qualquer momento?',
-        answer:
-          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
-      },
-      {
-        question: 'Quais as formas de pagamento?',
-        answer:
-          'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
-      },
-      {
-        question: 'Existe desconto para pagamento anual?',
-        answer:
-          'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
-      },
-      {
-        question: 'O que acontece se exceder os limites do plano?',
-        answer:
-          'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
-      },
-    ],
+    icon: PaymentsOutlined,
+    items: PRICING_FAQ_ITEMS,
   },
   {
     id: 'tecnico',
     label: 'Técnico',
-    icon: ContactSupportIcon,
+    icon: BuildOutlined,
     items: [
       {
         question: 'Quais vozes estão disponíveis?',
@@ -142,12 +122,12 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
   {
     id: 'conta',
     label: 'Conta',
-    icon: ContactSupportIcon,
+    icon: AccountCircleOutlined,
     items: [
       {
         question: 'Como faço login?',
         answer:
-          'O login é feito com sua conta Google. Clique em "Entrar" no canto superior direito e selecione sua conta Google. É rápido e seguro.',
+          'Você pode fazer login de duas formas: com sua conta Google (um clique) ou com email e senha. Clique em "Entrar" no canto superior direito para acessar sua conta. Também oferecemos recuperação de senha caso esqueça.',
       },
       {
         question: 'Posso usar em mais de um dispositivo?',
@@ -157,23 +137,23 @@ const FAQ_CATEGORIES: readonly FaqCategory[] = [
       {
         question: 'Como excluo minha conta?',
         answer:
-          'Você pode solicitar a exclusão da sua conta entrando em contato pelo formulário de contato ou email de suporte. Todos os seus dados serão excluídos permanentemente em até 30 dias.',
+          'Você pode excluir sua conta diretamente pelo app: clique no seu avatar no canto superior direito e selecione "Excluir conta". Todos os seus dados (projetos, áudios, chats, memórias e configurações) são removidos permanentemente em conformidade com a LGPD. Também é possível solicitar a exclusão pelo formulário de contato.',
       },
     ],
   },
 ] as const;
 
-/** Texto do heading da seção "ainda tem dúvidas" */
+/** Texto do heading da secao "ainda tem duvidas" */
 const STILL_HAVE_DOUBTS_TITLE = 'Ainda tem dúvidas?';
 
-/** Texto do parágrafo da seção "ainda tem dúvidas" */
+/** Texto do paragrafo da secao "ainda tem duvidas" */
 const STILL_HAVE_DOUBTS_TEXT =
   'Não encontrou o que procurava? Entre em contato com nossa equipe e responderemos o mais rápido possível.';
 
-/** Label do botão de contato */
+/** Label do botao de contato */
 const CONTACT_BUTTON_LABEL = 'Fale conosco';
 
-/** Rota de destino do botão de contato */
+/** Rota de destino do botao de contato */
 const CONTACT_ROUTE = '/contato';
 
 /** aria-label do conjunto de tabs */
@@ -221,11 +201,11 @@ export default function FaqPage() {
       <Helmet {...seo} />
       <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       <PageLayout>
-      {/* Hero — H1 + subtítulo */}
+      {/* Hero — H1 + subtitulo */}
       <HeroSection
         title="Perguntas Frequentes"
         subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o Script Master."
-        primaryCta={{ label: 'Começar Grátis', to: '/login' }}
+        primaryCta={{ label: 'Criar conta gratuita', to: '/cadastro' }}
         secondaryCta={{ label: 'Ver planos', to: '/precos' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -235,9 +215,16 @@ export default function FaqPage() {
         showGlow
       />
 
-      {/* Navegação por categorias — Tabs scrolláveis */}
+      {/* Navegacao por categorias — Tabs scrollaveis */}
       <Box sx={{ py: { xs: 6, md: 10 } }}>
-        <Box sx={(theme) => ({ ...glassPanelSx(theme), mx: { xs: 2, sm: 3 }, p: { xs: 2, md: 3 }, mb: { xs: 4, md: 6 } })}>
+        <Box
+          component={motion.div}
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={(theme) => ({ ...glassPanelSx(theme), mx: { xs: 2, sm: 3 }, p: { xs: 2, md: 3 }, mb: { xs: 4, md: 6 } })}
+        >
           <Tabs
             value={activeTab}
             onChange={(_, newValue: number) => setActiveTab(newValue)}
@@ -256,7 +243,7 @@ export default function FaqPage() {
                 height: 3,
                 borderRadius: 3,
               },
-              // Botões de scroll estilizados
+              // Botoes de scroll estilizados
               '& .MuiTabs-scrollButtons': {
                 color: BRAND_PRIMARY,
                 '&.Mui-disabled': { opacity: 0.3 },
@@ -303,7 +290,7 @@ export default function FaqPage() {
           </Tabs>
         </Box>
 
-        {/* Painel de conteúdo — FAQAccordion da categoria ativa */}
+        {/* Painel de conteudo — FAQAccordion da categoria ativa */}
         <Box
           role="tabpanel"
           id={`faq-tabpanel-${activeTab}`}
@@ -320,8 +307,15 @@ export default function FaqPage() {
         </Box>
       </Box>
 
-      {/* Seção "Ainda tem dúvidas?" */}
-      <Box sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}>
+      {/* Secao "Ainda tem duvidas?" */}
+      <Box
+        component={motion.div}
+        variants={fadeInUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={VIEWPORT_ONCE}
+        sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}
+      >
         <Box sx={{ maxWidth: 560, mx: 'auto', px: 2 }}>
           <Typography variant="h4" component="h2" sx={{ mb: 2, letterSpacing: '-0.03em' }}>
             {STILL_HAVE_DOUBTS_TITLE}
@@ -361,8 +355,8 @@ export default function FaqPage() {
         <CTASection
           title="Pronto para começar?"
           subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão de crédito."
-          buttonLabel="Entrar com Google"
-          buttonHref="/login"
+          buttonLabel="Começar agora"
+          buttonHref="/cadastro"
         />
       </Box>
     </PageLayout>

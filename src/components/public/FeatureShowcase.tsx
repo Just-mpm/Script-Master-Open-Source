@@ -3,19 +3,21 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Check from '@mui/icons-material/Check';
+import { motion } from 'motion/react';
 import type { ElementType, ReactNode } from 'react';
 import { APP_MAX_WIDTH, TEXT_SECONDARY, ICON_SIZE_MD, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
+import { VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
 interface FeatureShowcaseProps {
-  /** Ícone representativo */
+  /** Icone representativo */
   icon: ElementType;
   title: string;
   description: string;
-  /** Lista de benefícios (strings) */
+  /** Lista de beneficios (strings) */
   benefits: string[];
-  /** Imagem/GIF ou conteúdo visual */
+  /** Imagem/GIF ou conteudo visual */
   visual: ReactNode;
-  /** Posição da imagem: 'left' ou 'right' (padrão: alternado) */
+  /** Posicao da imagem: 'left' ou 'right' (padrao: alternado) */
   position?: 'left' | 'right';
 }
 
@@ -27,7 +29,7 @@ export function FeatureShowcase({
   visual,
   position,
 }: FeatureShowcaseProps) {
-  // Posição padrão: esquerda (texto) + direita (imagem)
+  // Posicao padrao: esquerda (texto) + direita (imagem)
   const imageFirst = position === 'left';
 
   return (
@@ -48,6 +50,11 @@ export function FeatureShowcase({
         >
           {/* Imagem */}
           <Box
+            component={motion.div}
+            initial={{ opacity: 0, x: imageFirst ? -40 : 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={VIEWPORT_ONCE}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             sx={{
               flex: 1,
               display: 'flex',
@@ -60,7 +67,14 @@ export function FeatureShowcase({
           </Box>
 
           {/* Texto */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, x: imageFirst ? 40 : -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={VIEWPORT_ONCE}
+            transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
+            sx={{ flex: 1, minWidth: 0 }}
+          >
             <Stack spacing={2}>
               <Box
                 sx={(theme) => ({
@@ -86,8 +100,18 @@ export function FeatureShowcase({
               </Typography>
 
               <Stack spacing={1.25} sx={{ pt: 1 }}>
-                {benefits.map((benefit) => (
-                  <Stack key={benefit} direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                {benefits.map((benefit, idx) => (
+                  <Stack
+                    component={motion.div}
+                    key={benefit}
+                    direction="row"
+                    spacing={1.5}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={VIEWPORT_ONCE}
+                    transition={{ ...SPRING_SMOOTH, delay: 0.2 + idx * 0.06 }}
+                    sx={{ alignItems: 'flex-start' }}
+                  >
                     <Check
                       sx={{
                         fontSize: ICON_SIZE_MD + 4,

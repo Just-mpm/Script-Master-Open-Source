@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { PricingCard } from '../../../src/components/public';
+import { PricingCard } from '../../../src/components/public/PricingCard';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 

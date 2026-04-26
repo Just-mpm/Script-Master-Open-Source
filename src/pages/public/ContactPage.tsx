@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import EmailIcon from '@mui/icons-material/Email';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -23,6 +24,7 @@ import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
 import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, APP_BORDER, WHITE_04, WHITE_12 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { createLogger } from '../../lib/logger';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -252,8 +254,10 @@ function ContactInfoPanel() {
 
 /** Formulário de contato com validação inline e fallback mailto */
 function ContactForm() {
+  const log = createLogger('ContactForm');
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>(INITIAL_ERRORS);
+  const [mailtoOpened, setMailtoOpened] = useState(false);
 
   /** Atualiza campo individual do formulário */
   const handleChange = (
@@ -290,6 +294,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     event.preventDefault();
     if (!validate()) return;
     window.location.href = buildMailtoBody();
+    setMailtoOpened(true);
+    log.info('mailto aberto', { subject: form.subject });
   };
 
   return (
@@ -383,6 +389,18 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           Enviar mensagem
         </Button>
       </Stack>
+
+      <Snackbar
+        open={mailtoOpened}
+        autoHideDuration={4000}
+        onClose={() => setMailtoOpened(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ mb: 4 }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setMailtoOpened(false)}>
+          Seu cliente de email deve abrir automaticamente. Verifique se abriu corretamente.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
@@ -430,8 +448,8 @@ export default function ContactPage() {
       <CTASection
         title="Pronto para começar?"
         subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão."
-        buttonLabel="Entrar com Google"
-        buttonHref="/login"
+        buttonLabel="Começar agora"
+        buttonHref="/cadastro"
       />
     </PageLayout>
     </>

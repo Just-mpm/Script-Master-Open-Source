@@ -49,6 +49,7 @@ const PUBLIC_NAV_ITEMS: PublicNavItem[] = [
   { to: '/funcionalidades', label: 'Funcionalidades' },
   { to: '/precos', label: 'Preços' },
   { to: '/perguntas-frequentes', label: 'FAQ' },
+  { to: '/sobre', label: 'Sobre' },
 ];
 
 export function PublicHeader() {
@@ -214,7 +215,7 @@ export function PublicHeader() {
                     },
                   }}
                 >
-                  {isMobile ? 'Entrar' : 'Entrar'}
+                  Entrar
                 </Button>
               )}
             </Stack>

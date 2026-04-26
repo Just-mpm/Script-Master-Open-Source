@@ -10,6 +10,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SavingsIcon from '@mui/icons-material/Savings';
 import Alert from '@mui/material/Alert';
 import { alpha } from '@mui/material/styles';
+import { motion } from 'motion/react';
 import { Helmet } from 'react-helmet-async';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -26,10 +27,12 @@ import {
   APP_BORDER,
 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
+import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
+import { staggerContainer, fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
-/** Período de cobrança selecionado pelo toggle */
+/** Periodo de cobranca selecionado pelo toggle */
 type BillingPeriod = 'monthly' | 'annual';
 
 /** Feature individual de um plano */
@@ -38,7 +41,7 @@ interface PlanFeature {
   included: boolean;
 }
 
-/** Dados completos de um plano de preços */
+/** Dados completos de um plano de precos */
 interface PlanData {
   name: string;
   priceMonthly: string;
@@ -61,7 +64,7 @@ interface ComparisonRow {
 
 // ── Constantes de dados ───────────────────────────────────────────────
 
-/** Planos disponíveis — OCP: adicionar plano sem alterar componentes */
+/** Planos disponiveis — OCP: adicionar plano sem alterar componentes */
 const PLANS: readonly PlanData[] = [
   {
     name: 'Gratuito',
@@ -128,40 +131,6 @@ const PLANS: readonly PlanData[] = [
   },
 ];
 
-/** Perguntas frequentes sobre preços */
-const PRICING_FAQ = [
-  {
-    question: 'É realmente grátis?',
-    answer:
-      'Sim! O plano Gratuito não exige cartão de crédito e não possui data de expiração. Você pode usar quantas vezes quiser dentro dos limites do plano.',
-  },
-  {
-    question: 'Posso cancelar a qualquer momento?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que estiver disponível, você poderá cancelar sua assinatura a qualquer momento.',
-  },
-  {
-    question: 'Quais as formas de pagamento?',
-    answer:
-      'Nosso sistema de pagamentos ainda está em desenvolvimento. Em breve aceitaremos cartão de crédito, PIX e boleto bancário.',
-  },
-  {
-    question: 'O que acontece se exceder os limites do plano?',
-    answer:
-      'Você será notificado quando estiver próximo do limite. Após exceder, poderá continuar usando no plano Gratuito até o próximo ciclo.',
-  },
-  {
-    question: 'Existe desconto para pagamento anual?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Planos anuais com desconto estarão disponíveis em breve.',
-  },
-  {
-    question: 'Posso trocar de plano?',
-    answer:
-      'Ainda estamos desenvolvendo nosso sistema de pagamentos. Assim que disponível, você poderá fazer upgrade ou downgrade a qualquer momento.',
-  },
-] as const;
-
 /** Tabela comparativa de funcionalidades por plano */
 const COMPARISON_TABLE: readonly ComparisonRow[] = [
   { feature: 'Geração TTS', gratuito: '5/mês', pro: 'Ilimitado', equipe: 'Ilimitado' },
@@ -175,7 +144,7 @@ const COMPARISON_TABLE: readonly ComparisonRow[] = [
   { feature: 'Suporte', gratuito: 'Comunidade', pro: 'Email', equipe: 'Prioritário' },
 ];
 
-/** Rótulo usado para identificar valores "ilimitados" na tabela */
+/** Rotulo usado para identificar valores "ilimitados" na tabela */
 const UNLIMITED_LABEL = 'Ilimitado';
 
 // ── Subcomponentes ────────────────────────────────────────────────────
@@ -189,7 +158,14 @@ function BillingToggle({
   onChange: (period: BillingPeriod) => void;
 }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 4, md: 6 } }}>
+    <Box
+      component={motion.div}
+      variants={fadeIn}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
+      sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 4, md: 6 } }}
+    >
       <ToggleButtonGroup
         exclusive
         value={value}
@@ -241,7 +217,7 @@ function BillingToggle({
   );
 }
 
-/** Célula individual da tabela comparativa — exibe ícone para "Ilimitado" */
+/** Celula individual da tabela comparativa — exibe icone para "Ilimitado" */
 function ComparisonCell({
   value,
   isHighlighted,
@@ -273,25 +249,37 @@ function ComparisonCell({
 /** Tabela comparativa de planos com scroll horizontal em telas pequenas */
 function ComparisonTable() {
   return (
-    <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, minWidth: 560 })}>
-        {/* Cabeçalho da tabela */}
+    <Box
+      component={motion.div}
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT_ONCE}
+      sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
+    >
+      <Box
+        role="table"
+        aria-label="Comparação de planos"
+        sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, minWidth: 560 })}
+      >
+        {/* Cabecalho da tabela */}
         <Grid
           container
           spacing={2}
+          role="row"
           sx={{ pb: 2, mb: 1, borderBottom: `1px solid ${APP_BORDER}` }}
         >
-          <Grid size={5}>
+          <Grid size={5} role="columnheader">
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Funcionalidade
             </Typography>
           </Grid>
-          <Grid size={2.33}>
+          <Grid size={2.33} role="columnheader">
             <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
               Gratuito
             </Typography>
           </Grid>
-          <Grid size={2.34}>
+          <Grid size={2.34} role="columnheader">
             <Typography
               variant="subtitle2"
               sx={{ textAlign: 'center', color: BRAND_PRIMARY, fontWeight: 700 }}
@@ -299,7 +287,7 @@ function ComparisonTable() {
               Pro
             </Typography>
           </Grid>
-          <Grid size={2.33}>
+          <Grid size={2.33} role="columnheader">
             <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
               Equipe
             </Typography>
@@ -314,24 +302,25 @@ function ComparisonTable() {
             <Grid
               container
               spacing={2}
+              role="row"
               key={row.feature}
               sx={{
                 py: 1.5,
                 borderBottom: isLast ? 'none' : `1px solid ${APP_BORDER}`,
               }}
             >
-              <Grid size={5}>
+              <Grid size={5} role="cell">
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {row.feature}
                 </Typography>
               </Grid>
-              <Grid size={2.33}>
+              <Grid size={2.33} role="cell">
                 <ComparisonCell value={row.gratuito} isHighlighted={false} />
               </Grid>
-              <Grid size={2.34}>
+              <Grid size={2.34} role="cell">
                 <ComparisonCell value={row.pro} isHighlighted={true} />
               </Grid>
-              <Grid size={2.33}>
+              <Grid size={2.33} role="cell">
                 <ComparisonCell value={row.equipe} isHighlighted={false} />
               </Grid>
             </Grid>
@@ -348,7 +337,7 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
-  /** Resolve o preço exibido com base no período de cobrança selecionado */
+  /** Resolve o preco exibido com base no periodo de cobranca selecionado */
   const getPrice = useCallback((plan: PlanData): string => {
     if (billingPeriod === 'annual' && plan.priceAnnual) {
       return plan.priceAnnual;
@@ -380,7 +369,7 @@ export default function PricingPage() {
       <Helmet {...seo} />
       <script type="application/ld+json">{JSON.stringify(pricingJsonLd)}</script>
       <PageLayout>
-      {/* Hero — H1 + subtítulo + CTAs */}
+      {/* Hero — H1 + subtitulo + CTAs */}
       <HeroSection
         title="Escolha o plano ideal para você"
         subtitle="Comece grátis, sem cartão de crédito. Cancele quando quiser."
@@ -402,7 +391,7 @@ export default function PricingPage() {
       {/* Cards de planos — Grid 3 colunas */}
       <Box sx={{ pb: { xs: 4, md: 6 } }}>
         <Grid container spacing={3}>
-          {PLANS.map((plan) => (
+          {PLANS.map((plan, idx) => (
             <Grid size={{ xs: 12, md: 4 }} key={plan.name}>
               <PricingCard
                 name={plan.name}
@@ -416,13 +405,14 @@ export default function PricingPage() {
                 ctaDisabled={plan.name !== 'Gratuito'}
                 ctaTooltip="Pagamentos em breve — fique ligado nas novidades!"
                 onCtaClick={plan.name === 'Gratuito' ? () => navigate('/login') : undefined}
+                index={idx}
               />
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {/* Disclaimer — limites não aplicados */}
+      {/* Disclaimer — limites nao aplicados */}
       <Box sx={{ pb: { xs: 6, md: 8 }, mx: { xs: 2, sm: 3 } }}>
         <Alert severity="info" variant="outlined">
           Os limites por plano ainda não são aplicados automaticamente. Todos os recursos estão disponíveis para uso durante o período de desenvolvimento.
@@ -431,24 +421,35 @@ export default function PricingPage() {
 
       {/* Tabela Comparativa */}
       <Box sx={{ pb: { xs: 8, md: 12 } }} id="comparison">
-        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-            Compare os planos em detalhes
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ color: 'text.secondary', maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}
-          >
-            Veja lado a lado tudo que cada plano oferece para escolher o melhor para suas
-            necessidades.
-          </Typography>
+        <Box
+          component={motion.div}
+          variants={staggerContainer(0.08)}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_ONCE}
+          sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
+        >
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              Compare os planos em detalhes
+            </Typography>
+          </Box>
+          <Box component={motion.div} variants={fadeInUp}>
+            <Typography
+              variant="body1"
+              sx={{ color: 'text.secondary', maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}
+            >
+              Veja lado a lado tudo que cada plano oferece para escolher o melhor para suas
+              necessidades.
+            </Typography>
+          </Box>
         </Box>
         <ComparisonTable />
       </Box>
 
-      {/* FAQ — Perguntas frequentes sobre preços */}
+      {/* FAQ — Perguntas frequentes sobre precos */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <FAQAccordion items={[...PRICING_FAQ]} title="Perguntas frequentes sobre preços" />
+        <FAQAccordion items={[...PRICING_FAQ_ITEMS]} title="Perguntas frequentes sobre preços" />
       </Box>
 
       {/* CTA Final */}
