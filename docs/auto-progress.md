@@ -35,15 +35,20 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Correções aplicadas — todos CRITICAL/WARNING do audit 1 + P1 dos audits 2, 3, 4 + P2 dos audits 3, 4
+Fase: Correções aplicadas — todos CRITICAL/WARNING do audit 1 + P1 dos audits 2, 3, 4 + P2 dos audits 2, 3, 4 + P3 aplicáveis dos audits 3, 4
 Última atualização: 26/04/2026
 Relatórios: docs/audits/1.md (geral), docs/audits/2.md (performance), docs/audits/3.md (UX flows), docs/audits/4.md (UI design)
 Lint: limpo | Typecheck: limpo | Testes: 1185/1185 passando
+Pendências: P3 do audit 1 (4 sugestões — skip: puramente opinativas/design); P3 pulados dos audits 3 e 4 documentados abaixo
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 10: Correções P2 (audit 2 performance) + P3 triviais (audits 3 e 4)
+- Resultado: 4 findings P2 performance + 12 findings P3 corrigidos em 17 arquivos de código + 2 arquivos de teste. P2: useAssistant streaming buffer RAF, SubtitleOverlay getAlignment useMemo, AnimationPlayer progress throttle ~20fps, imageProcessing Web Worker. P3 UX: RouterLink nos auth pages, ProtectedRoute texto, StatusPage disclaimer antes do banner, reset button type="submit", redirect /cookies removido, export sem cenas desabilitado, anexos continue sem break, clipboard fallback. P3 UI: pulse→pulseGlow, redes sociais outlined, APP_BORDER_STRONG, SpeedPaint badge BRAND_PRIMARY, WHITE_06. Testes atualizados: mock Header APP_BORDER_STRONG, LoginPage form submit. Testes: 1185/1185 passando.
+- Pendências: P3 do audit 1 (4 SUGGESTION — puramente opinativos, skip)
+
 ### Etapa 9: Correções P2 — Audit 3 (5x P2 UX) + Audit 4 (6x P2 UI Design)
 - Resultado: 11 findings P2 corrigidos em 13 arquivos de código + 12 arquivos de teste + 1 arquivo novo. Audit 4: P2-1 FeatureCard bgcolor→background, P2-2 StepCard hex→token, P2-3 ErrorBoundary/NotFoundPage glassPanelSx DRY, P2-4 authStyles.ts extraído (LoginPage/RegisterPage), P2-5 Library/ImageStudio hardcoded color→token + ring alpha padronizado, P2-6 AssistantComposer #ef4444→ERROR_MAIN. Audit 3: P2-1 Library saveEdit try/catch, P2-2 ScriptEditor confirm limpar, P2-3 Inspector validação tamanho upload, P2-4 Assistant document upload try/catch+loading, P2-5 Assistant salvar memória try/catch+loading. Testes: 1185/1185 passando.
 - Pendências: P3 de todos os audits; P2 do audit 2 (performance)
@@ -84,8 +89,6 @@ Lint: limpo | Typecheck: limpo | Testes: 1185/1185 passando
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Correções P2 do audit 2 (performance) — 4 findings P2 restantes
-2. Correções P2/P3 do audit 4 (UI design) — 11 findings P3 restantes
-3. Correções P3 do audit 3 (UX flows) — 12 findings P3 restantes
-4. Correções P3 do audit 1 (sugestões) — 4 findings restantes
+1. Revisão final — todos os findings aplicáveis corrigidos
+2. Commit final e atualização de CHANGELOG
 <<<FIM_PROXIMOS_PASSOS>>>
