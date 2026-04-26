@@ -7,6 +7,47 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.3] - 2026-04-26
+
+### Corrigido
+
+**Data loss / LGPD:**
+- **`shared.ts`**: `clearAllIndexedDbStores()` — limpa todas as stores IndexedDB na exclusão de conta (antes apenas Firestore + Storage eram limpos)
+- **`account-cleanup.ts`**: `deleteAllUserData()` agora retorna `string[]` com categorias que falharam; `AuthContext` notifica o usuário sobre falhas parciais via `setAuthError`
+- **`chats.ts`**: `saveChatSession()` faz fallback para IndexedDB em erro Firestore (antes `handleFirestoreError` sempre lançava, impedindo o fallback)
+- **`chats.ts`**: `getChatSessions()` busca Firestore + IndexedDB e deduplica por `updatedAt` — sessões migradas para IndexedDB (>900KB) não ficam mais invisíveis
+
+**Bugs de funcionalidade:**
+- **`rate-limiter.ts`**: status HTTP `500` adicionado a `RETRYABLE_STATUS_CODES` — TTS agora retenta erros 500 intermitentes do Gemini
+- **`AssistantMessages.tsx`**: `EmptyChatState` nunca renderizava — condição `messages.length === 0` alterada para `messages.length === 1 && messages[0].id === 'welcome'`
+- **`AssistantComposer.tsx`**: botão "Parar" conectado ao `stopGeneration` real (antes chamava `onSubmit` que ignorava enquanto `isLoading`)
+- **`DataMigrationDialog.tsx`**: migração só marca como concluída quando `result.errors === 0`; adicionados botões "Tentar novamente" e "Ignorar e continuar"
+- **`useBatchDownload.ts`**: batch download com try/catch individual por item — falha parcial não interrompe os demais downloads
+- **`PageLayout.tsx`**: `id="main-content"` duplicado removido (App.tsx já fornece o id)
+
+**UX / feedback visual:**
+- **`Inspector.tsx`**: upload de imagem >10MB agora exibe Alert de warning com auto-dismiss 5s (antes silencioso)
+- **`Assistant.tsx`**: truncamento de documento na Base de Conhecimento exibe Alert com contagem de caracteres
+- **`App.tsx`**: `beforeunload` registrado durante geração de áudio ou exportação de vídeo — previne perda de progresso ao fechar aba
+- **`ContactPage.tsx`**: `window.location.href` trocado por `window.open(..., '_blank')` — preserva SPA se cliente de email não estiver configurado
+
+**SEO:**
+- **`LoginPage.tsx`**: SEO adicionado via `Helmet` + `getPageSeo` (antes era a única página sem SEO)
+
+### Alterado
+
+- **DRY**: `LOGIN_BENEFITS` e `REGISTER_BENEFITS` (idênticos) extraídos para `src/data/authBenefits.ts` como `AUTH_BENEFITS`
+- **`LoginPage.tsx`** + **`RegisterPage.tsx`**: skip-to-content link local removido (App.tsx fornece global); `id="main-content"` duplicado removido
+- **`chats.ts`**: `saveChatSession()` retorna `boolean` indicando fallback para IndexedDB; `useAssistant` loga warning quando salva apenas localmente
+- **`AGENTS.md`**: Whisper `base (~75MB)` corrigido para `tiny (~39MB)`
+
+### Testes
+
+- 7 testes quebrados corrigidos: 4 skip-to-content removidos, 3 AuthContext deleteAccount (assinatura `deleteAllUserData` → `string[]`)
+- Total: 1182 testes (3 removidos por obsolescência, 0 perdidos)
+
+---
+
 ## [0.24.2] - 2026-04-26
 
 ### Corrigido
