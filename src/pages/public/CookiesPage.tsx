@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { LegalPageTemplate } from '../../components/public/LegalPageTemplate';
 import type { LegalSection } from '../../components/public/LegalPageTemplate';
@@ -60,7 +60,7 @@ export default function CookiesPage(): ReactNode {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <LegalPageTemplate
         title={PAGE_TITLE}
         lastUpdated={LAST_UPDATE}

@@ -11,7 +11,7 @@ import SavingsIcon from '@mui/icons-material/Savings';
 import Alert from '@mui/material/Alert';
 import { alpha } from '@mui/material/styles';
 import { motion } from 'motion/react';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
@@ -366,7 +366,7 @@ export default function PricingPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <script type="application/ld+json">{JSON.stringify(pricingJsonLd)}</script>
       <PageLayout>
       {/* Hero — H1 + subtitulo + CTAs */}

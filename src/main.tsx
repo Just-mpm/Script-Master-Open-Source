@@ -3,7 +3,6 @@ import GlobalStyles from '@mui/material/GlobalStyles';
 import { StyledEngineProvider } from '@mui/material/styles';
 import {createRoot} from 'react-dom/client';
 import { BrowserRouter, useLocation } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AudioProvider } from './contexts/AudioContext.tsx';
@@ -42,10 +41,8 @@ createRoot(document.getElementById('root')!).render(
           <RoutableErrorBoundary>
             <AuthProvider>
               <AudioProvider>
-                <HelmetProvider>
                   <App />
-                </HelmetProvider>
-              </AudioProvider>
+                </AudioProvider>
             </AuthProvider>
           </RoutableErrorBoundary>
         </BrowserRouter>

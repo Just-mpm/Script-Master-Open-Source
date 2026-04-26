@@ -14,7 +14,7 @@ import Storage from '@mui/icons-material/Storage';
 import Subtitles from '@mui/icons-material/Subtitles';
 import Hd from '@mui/icons-material/Hd';
 import Groups from '@mui/icons-material/Groups';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { FeatureCard } from '../../components/public/FeatureCard';
@@ -85,7 +85,7 @@ export default function FuncionalidadesPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <PageLayout>
       {/* Hero */}
       <HeroSection

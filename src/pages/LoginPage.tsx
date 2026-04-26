@@ -16,7 +16,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Mic from '@mui/icons-material/Mic';
 import Google from '@mui/icons-material/Google';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
@@ -155,7 +155,7 @@ export function LoginPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
-      <Helmet {...SEO_PROPS} />
+      <DocumentHead {...SEO_PROPS} />
 
       <PublicHeader />
 

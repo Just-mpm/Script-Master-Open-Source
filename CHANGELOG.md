@@ -7,6 +7,22 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.4] - 2026-04-26
+
+### Alterado
+
+- **`react-helmet-async` removido** — migrado para suporte nativo do React 19 (`<title>`, `<meta>`, `<link>` com hoisting automático para o `<head>`)
+- **`src/lib/seo.ts`**: interfaces próprias `SeoMeta`, `SeoLink` e `SeoData` substituem `HelmetProps`; `getPageSeo()` retorna `SeoData` em vez de `HelmetProps` — mesma lógica, tipo próprio
+- **`src/components/DocumentHead.tsx`** (novo): componente que renderiza `<title>`, `<meta>` e `<link>` usando hoisting nativo do React 19; defaults defensivos (`meta = []`, `link = []`) para compatibilidade com mocks de teste
+- **14 páginas**: `<Helmet {...seo} />` substituído por `<DocumentHead {...seo} />` (10 páginas públicas + LoginPage + RegisterPage)
+- **`src/main.tsx`**: `HelmetProvider` removido — `App` agora é filho direto de `AudioProvider` (menos um nível de nesting)
+
+### Removido
+
+- **`react-helmet-async`** (^3.0.0) — dependência removida do `package.json`
+
+---
+
 ## [0.24.3] - 2026-04-26
 
 ### Corrigido

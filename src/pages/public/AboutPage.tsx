@@ -14,7 +14,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { ReactNode } from 'react';
 import { alpha } from '@mui/material/styles';
 import { motion } from 'motion/react';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
@@ -381,7 +381,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <PageLayout>
       {/* Hero */}
       <HeroSection

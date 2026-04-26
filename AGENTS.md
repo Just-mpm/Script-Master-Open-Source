@@ -32,7 +32,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) | `firebase-tools` ^15.3.0 (deploy)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
-- **react-helmet-async** — SEO per-page (meta tags OG, Twitter Cards, canonical)
+- **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
 
@@ -95,7 +95,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/lib/seo.ts` |
+| **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/components/DocumentHead.tsx`, `src/lib/seo.ts` |
 | **LandingPage** | `/` — hero com CTA, social proof bar, 6 feature cards, 3 feature showcases, seção "como funciona" (3 steps), CTA final |
 | **FuncionalidadesPage** | `/funcionalidades` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
 | **PricingPage** | `/precos` — cards de plano (mensal/anual), FAQ de preços, CTA |
@@ -108,7 +108,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **StatusPage** | `/status` — status dos serviços |
 | **Componentes** | 12 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell), HeroSection, FeatureCard, FeatureShowcase, CTASection, StepCard, SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion expansível), barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | `react-helmet-async` com `getPageSeo()` em `src/lib/seo.ts` — meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas |
+| **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -297,7 +297,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.3`
+- **Current:** `0.24.4`
 - **Last release:** 2026-04-26
 
 ### Últimas mudanças (atualizado por /fast)
@@ -306,8 +306,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.4 | `react-helmet-async` removido — migrado para SEO nativo do React 19 (`<title>`, `<meta>`, `<link>` com hoisting automático); `DocumentHead` componente em `src/components/DocumentHead.tsx`; interfaces próprias `SeoMeta`/`SeoLink`/`SeoData` em `seo.ts`; `HelmetProvider` removido do `main.tsx`; 14 páginas migradas |
 | 0.24.3 | IndexedDB cleanup LGPD na exclusão de conta; TTS retry 500; chat sessions merge Firestore+IndexedDB; chat save fallback IndexedDB; EmptyChatState funcional (welcome-only detection); botão Parar do composer conectado; migração com retry em erros parciais; batch download com falha individual; upload >10MB com feedback; truncamento de documento com aviso; beforeunload durante geração/exportação; SEO no LoginPage; authBenefits DRY; skip-to-content/id duplicados removidos; Whisper docs tiny; contactPage window.open |
 | 0.24.2 | 3 CRITICAL bugs LGPD corrigidos (vídeo/imagens de cena nunca deletados); stale closure em `useAudioGenerator` (refs espelhadas); race condition no `useVideoExporter`; WaveformOverlay frame absoluto; MediaRecorder e blob URL cleanup; ActionBar throttle corrigido; streaming assistant batched via RAF; SubtitleOverlay memoizado; AnimationPlayer progress throttled; imageProcessing movido para Web Worker; cancelamento de geração de imagem; download IndexedDB; chips clicáveis no empty state; tokens hardcoded migrados (5 locais); authStyles.ts extraído (DRY); bgcolor→background em FeatureShowcase/FeatureCard; classes MUI v9 atualizadas no FaqPage |
 | 0.24.1 | `exportFileName` movido do estado para ref (evita perda em reset); feedback visual de renderização antecipado; `speedPaintWarnings` preservado entre `setState` calls; `estimateFileSize` realinhado ao mediabunny (3 Mbps base, escala pow 0.95, codecs avc/hevc/av1); caption toggle sempre visível no VideoPage |
 | 0.24.0 | `SpeedPaintMultipliers` (controle granular sketch/reveal 0.25x–4.0x); `SpeedPaintControls` com sliders independentes; `SpeedPaintPhaseBadge` no preview; renderer com suporte a multiplicadores por fase (backward compat); CHANGELOG limpo (versões antigas em `docs/`); 30 testes novos (total: 1185) |
-| 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |

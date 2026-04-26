@@ -11,8 +11,8 @@ import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import EditNote from '@mui/icons-material/EditNote';
 import Speed from '@mui/icons-material/Speed';
 import Storage from '@mui/icons-material/Storage';
-import { Helmet } from 'react-helmet-async';
 import { getPageSeo, DEFAULT_DESCRIPTION } from '../../lib/seo';
+import { DocumentHead } from '../../components/DocumentHead';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { FeatureCard } from '../../components/public/FeatureCard';
@@ -103,7 +103,7 @@ export default function LandingPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <PageLayout>
       {/* Hero */}
       <HeroSection

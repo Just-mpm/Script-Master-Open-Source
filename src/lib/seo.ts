@@ -1,10 +1,26 @@
-import type { HelmetProps } from 'react-helmet-async';
-
 const SITE_URL = 'https://scriptmaster.app';
 const SITE_NAME = 'Script Master';
 const DEFAULT_DESCRIPTION =
   'Transforme roteiros em áudio profissional com IA. Geração de voz, imagens e vídeos com inteligência artificial.';
 const DEFAULT_IMAGE = `${SITE_URL}/logo-transparente.webp`;
+
+interface SeoMeta {
+  name?: string;
+  property?: string;
+  content: string;
+}
+
+interface SeoLink {
+  rel: string;
+  href: string;
+}
+
+/** Dados de SEO para o DocumentHead (hoisting nativo do React 19) */
+export interface SeoData {
+  title: string;
+  meta: SeoMeta[];
+  link: SeoLink[];
+}
 
 interface SeoProps {
   title: string;
@@ -14,14 +30,14 @@ interface SeoProps {
   publishedTime?: string;
 }
 
-/** Gera props padronizadas para o Helmet de cada página pública */
+/** Gera dados padronizados de SEO para o <head> de cada página */
 export function getPageSeo({
   title,
   description,
   path,
   type = 'website',
   publishedTime,
-}: SeoProps): HelmetProps {
+}: SeoProps): SeoData {
   const fullTitle = `${title} | ${SITE_NAME}`;
   const url = `${SITE_URL}${path}`;
 

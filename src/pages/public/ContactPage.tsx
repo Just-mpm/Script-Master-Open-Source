@@ -16,7 +16,7 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import XIcon from '@mui/icons-material/X';
 import type { ReactNode } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { alpha } from '@mui/material/styles';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
@@ -417,7 +417,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <PageLayout>
       {/* Hero — H1 + subtítulo + CTAs */}
       <HeroSection

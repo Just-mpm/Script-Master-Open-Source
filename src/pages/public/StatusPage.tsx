@@ -13,7 +13,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Timeline from '@mui/icons-material/Timeline';
 import type { ReactElement } from 'react';
 import { alpha } from '@mui/material/styles';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
@@ -279,7 +279,7 @@ export default function StatusPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <PageLayout>
       {/* Hero */}
       <HeroSection

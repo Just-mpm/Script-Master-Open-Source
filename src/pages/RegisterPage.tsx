@@ -11,7 +11,7 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import Mic from '@mui/icons-material/Mic';
 import Google from '@mui/icons-material/Google';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
@@ -115,7 +115,7 @@ export function RegisterPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
-      <Helmet {...SEO_PROPS} />
+      <DocumentHead {...SEO_PROPS} />
 
       <PublicHeader />
 

@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
 import { motion } from 'motion/react';
-import { Helmet } from 'react-helmet-async';
+import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
@@ -198,7 +198,7 @@ export default function FaqPage() {
 
   return (
     <>
-      <Helmet {...seo} />
+      <DocumentHead {...seo} />
       <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       <PageLayout>
       {/* Hero — H1 + subtitulo */}
