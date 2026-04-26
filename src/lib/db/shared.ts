@@ -206,6 +206,24 @@ export async function deleteIndexedDbItem(storeName: string, key: IDBValidKey): 
   await runRequest(store.delete(key));
 }
 
+/** Deleta todos os itens de todas as stores IndexedDB (usado no cleanup LGPD) */
+export async function clearAllIndexedDbStores(): Promise<void> {
+  const database = await initDB();
+  const storeNames = Array.from(database.objectStoreNames);
+
+  await Promise.all(
+    storeNames.map(async (storeName) => {
+      try {
+        const transaction = database.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        await runRequest(store.clear());
+      } catch (error) {
+        log.warn(`Falha ao limpar store ${storeName} no IndexedDB`, { error });
+      }
+    }),
+  );
+}
+
 /** Conta itens de uma store sem carregar dados — ideal para checagens leves */
 export async function countIndexedDbItems(storeName: string): Promise<number> {
   const database = await initDB();
