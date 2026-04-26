@@ -115,9 +115,17 @@ export function useAssistant(currentState?: AssistantStudioState) {
         updatedAt: Date.now()
       };
 
-      void Promise.resolve(saveChatSession(session, user?.uid)).catch((sessionError: unknown) => {
-        log.error('Erro ao salvar sessão do assistente', { error: sessionError });
-      });
+      void Promise.resolve(saveChatSession(session, user?.uid))
+        .then((savedLocallyOnly: boolean) => {
+          if (savedLocallyOnly) {
+            log.warn('Chat salvo apenas localmente (IndexedDB). Dados podem não sincronizar entre dispositivos.', {
+              sessionId: currentSessionId,
+            });
+          }
+        })
+        .catch((sessionError: unknown) => {
+          log.error('Erro ao salvar sessão do assistente', { error: sessionError });
+        });
     }
   }, [messages, currentSessionId, user, isStreaming]);
 

@@ -34,7 +34,7 @@ export interface RetryResult<T> {
 }
 
 /** Códigos de erro transitórios que justificam retry */
-const RETRYABLE_STATUS_CODES = new Set([429, 503, 504]);
+const RETRYABLE_STATUS_CODES = new Set([429, 500, 503, 504]);
 
 // ---------------------------------------------------------------------------
 // Configuração padrão

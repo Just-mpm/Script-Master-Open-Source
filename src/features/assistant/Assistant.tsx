@@ -68,6 +68,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [isSavingMemory, setIsSavingMemory] = useState(false);
+  const [documentTruncationWarning, setDocumentTruncationWarning] = useState<string | null>(null);
 
   // Confirmação de exclusão
   const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
@@ -155,9 +156,15 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
     try {
       const textContent = await file.text();
-      const truncatedText = textContent.length > MAX_MEMORY_DOCUMENT_TEXT
+      const wasTruncated = textContent.length > MAX_MEMORY_DOCUMENT_TEXT;
+      const truncatedText = wasTruncated
         ? textContent.slice(0, MAX_MEMORY_DOCUMENT_TEXT)
         : textContent;
+
+      if (wasTruncated) {
+        setDocumentTruncationWarning(`Documento truncado — apenas os primeiros ${MAX_MEMORY_DOCUMENT_TEXT.toLocaleString('pt-BR')} caracteres foram salvos.`);
+        window.setTimeout(() => setDocumentTruncationWarning(null), 6000);
+      }
 
       await saveMemory(`[Documento Anexado: ${file.name}]\n${truncatedText}`, user?.uid);
       await loadMemories();
@@ -316,6 +323,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   }, []);
   const handleDismissDocumentError = useCallback(() => setDocumentError(null), []);
   const handleDismissAttachmentError = useCallback(() => setAttachmentError(null), []);
+  const handleDismissTruncationWarning = useCallback(() => setDocumentTruncationWarning(null), []);
 
   return (
     <Box
@@ -331,6 +339,14 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         borderTopRightRadius: 0,
       })}
     >
+      {documentTruncationWarning ? (
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: 1 }}>
+          <Alert severity="warning" onClose={handleDismissTruncationWarning} sx={{ borderRadius: 2 }}>
+            {documentTruncationWarning}
+          </Alert>
+        </Box>
+      ) : null}
+
       {showMemories && (
         <AssistantMemoriesPanel
           memories={memories}
@@ -424,6 +440,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onSubmit={handleSubmit}
         onFileChange={handleFileChange}
         onRemoveFile={handleRemoveFile}
+        onStopGeneration={stopGeneration}
       />
 
       <Dialog

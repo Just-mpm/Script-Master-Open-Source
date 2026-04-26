@@ -155,7 +155,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Stroke worker** | `strokeWorker.ts` — `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
 | **ScrollingPhrase** | Texto contínuo com variantes `active` (fade in + translateY) e `previous` (opacidade 1.0→0.5). Suporte a **bold** via markdown |
-| **Whisper** | Modelo `base` (~75MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
+| **Whisper** | Modelo `tiny` (~39MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
 | **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição/reprodução (currentFrame, isPlaying) entre VideoPage e App |
 | **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Suporta canvas regular e OffscreenCanvas via `patchPrototype()`. Usa `createLogger` |
 | **Resoluções** | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
@@ -169,7 +169,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Padrão** | `userId` presente → Firestore + Storage. `userId` ausente → IndexedDB local |
 | **Domínios** | memories, user_settings, generations, image_generations, projects (+subcoleções audios/images/videos), chats, transcriptions, audio_segments |
 | **IndexedDB** | `GeminiVoiceStudioDB` v9. Stores: generations, image_generations, projects, audios, project_images, memories, chats, user_settings, videos, transcriptions |
-| **Chat fallback** | Se doc >900KB, salva apenas no IndexedDB (limite seguro Firestore ~1MB) |
+| **Chat fallback** | Se doc >900KB ou erro Firestore, salva no IndexedDB (retorna `true`); `getChatSessions` busca Firestore + IndexedDB e deduplica por `updatedAt` |
 | **Transcriptions** | Apenas IndexedDB (dados temporários por projeto) |
 | **Audio segments** | Apenas IndexedDB, campo `audioSegments` dentro de `AudioSource` existente |
 | **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded |
@@ -240,7 +240,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts`, `src/lib/db/account-cleanup.ts` |
 | **Provider** | Google popup + email/senha + reset de senha + exclusão de conta. `AuthContext` + `useAuth()` — 10 componentes consumidores |
 | **Métodos** | `login()` (Google), `signup(email, password)` (criação + verificação de email), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `deleteAccount()` (cleanup LGPD + deleteUser), `clearAuthError()` |
-| **Exclusão de conta** | Pipeline LGPD: `deleteAllUserData(userId)` remove projetos + subcoleções, gerações, chats, memórias, settings e Storage objects; `deleteUser(currentUser)` remove autenticação; dialog "EXCLUIR" de confirmação no Header |
+| **Exclusão de conta** | Pipeline LGPD: `deleteAllUserData(userId)` remove projetos + subcoleções, gerações, chats, memórias, settings, Storage objects e IndexedDB local; retorna `string[]` com categorias que falharam; `AuthContext` notifica o usuário sobre falhas parciais; `deleteUser(currentUser)` remove autenticação; dialog "EXCLUIR" de confirmação no Header |
 | **Verificação de email** | `sendEmailVerification()` enviada automaticamente pós-cadastro; falha não bloqueia cadastro |
 | **COEP conflict** | Login/logout/delete fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
@@ -297,7 +297,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.2`
+- **Current:** `0.24.3`
 - **Last release:** 2026-04-26
 
 ### Últimas mudanças (atualizado por /fast)
@@ -306,8 +306,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.3 | IndexedDB cleanup LGPD na exclusão de conta; TTS retry 500; chat sessions merge Firestore+IndexedDB; chat save fallback IndexedDB; EmptyChatState funcional (welcome-only detection); botão Parar do composer conectado; migração com retry em erros parciais; batch download com falha individual; upload >10MB com feedback; truncamento de documento com aviso; beforeunload durante geração/exportação; SEO no LoginPage; authBenefits DRY; skip-to-content/id duplicados removidos; Whisper docs tiny; contactPage window.open |
 | 0.24.2 | 3 CRITICAL bugs LGPD corrigidos (vídeo/imagens de cena nunca deletados); stale closure em `useAudioGenerator` (refs espelhadas); race condition no `useVideoExporter`; WaveformOverlay frame absoluto; MediaRecorder e blob URL cleanup; ActionBar throttle corrigido; streaming assistant batched via RAF; SubtitleOverlay memoizado; AnimationPlayer progress throttled; imageProcessing movido para Web Worker; cancelamento de geração de imagem; download IndexedDB; chips clicáveis no empty state; tokens hardcoded migrados (5 locais); authStyles.ts extraído (DRY); bgcolor→background em FeatureShowcase/FeatureCard; classes MUI v9 atualizadas no FaqPage |
 | 0.24.1 | `exportFileName` movido do estado para ref (evita perda em reset); feedback visual de renderização antecipado; `speedPaintWarnings` preservado entre `setState` calls; `estimateFileSize` realinhado ao mediabunny (3 Mbps base, escala pow 0.95, codecs avc/hevc/av1); caption toggle sempre visível no VideoPage |
 | 0.24.0 | `SpeedPaintMultipliers` (controle granular sketch/reveal 0.25x–4.0x); `SpeedPaintControls` com sliders independentes; `SpeedPaintPhaseBadge` no preview; renderer com suporte a multiplicadores por fase (backward compat); CHANGELOG limpo (versões antigas em `docs/`); 30 testes novos (total: 1185) |
 | 0.23.0 | Exclusão de conta LGPD (`account-cleanup.ts`, `deleteAccount`, dialog de confirmação); verificação de email pós-cadastro; UI centralizada do assistente (`assistantUi.ts` — 13 estilos); `EmptyChatState`; chips de anexo; 2 tokens warning; NotFoundPage/ErrorBoundary redesign; polish em 25+ componentes (transições, tipografia, tokens); 91 testes novos (total: 1155) |
-| 0.22.0 | Refatoração `useStudioState` → Zustand store (`useStudioStore`, `useCurrentStudioState`, `buildGenerateOptions`); 3 arquivos criados em `store/` (studioStore, studio.utils, barrel); `useShallow` em StudioPage/VideoPage; `getStoredNumber` corrigido; `ScriptEditorController` type removido; 24 testes novos (total: 1064) |

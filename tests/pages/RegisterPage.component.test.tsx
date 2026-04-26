@@ -297,15 +297,6 @@ describe('RegisterPage', () => {
     }
   });
 
-  // ─── Skip-to-content ────────────────────────────────────
-
-  it('deve exibir link skip-to-content para acessibilidade', () => {
-    renderWithRouter(<RegisterPage />);
-    const skipLink = screen.getByText('Pular para o conteúdo');
-    expect(skipLink).toBeDefined();
-    const anchor = skipLink.closest('a');
-    expect(anchor?.getAttribute('href')).toBe('#main-content');
-  });
 });
 
 // Importação tardia para evitar hoisting issues com mocks

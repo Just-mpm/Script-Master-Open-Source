@@ -61,14 +61,16 @@ describe('PageLayout', () => {
     expect(screen.getByRole('main')).toBeDefined();
   });
 
-  it('main tem id="main-content" para skip-to-content', () => {
+  it('main não tem id duplicado (id fornecido pelo App.tsx)', () => {
     render(
       <PageLayout>
         <p>Conteúdo</p>
       </PageLayout>,
       { wrapper: Wrapper }
     );
-    expect(screen.getByRole('main').id).toBe('main-content');
+    const main = screen.getByRole('main');
+    // id="main-content" agora é responsabilidade do App.tsx (skip-to-content global)
+    expect(main.id).not.toBe('main-content');
   });
 
   it('não renderiza link skip-to-content (movido para App.tsx)', () => {
@@ -78,7 +80,6 @@ describe('PageLayout', () => {
       </PageLayout>,
       { wrapper: Wrapper }
     );
-    // skip-to-content agora vive em App.tsx, não no PageLayout
     expect(screen.queryByText('Pular para o conteúdo')).toBeNull();
   });
 });

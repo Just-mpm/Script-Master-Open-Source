@@ -1,7 +1,7 @@
 import { collection, collectionGroup, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { createLogger } from '../logger';
-import { deleteStorageObjectSafely } from './shared';
+import { deleteStorageObjectSafely, clearAllIndexedDbStores } from './shared';
 
 const log = createLogger('account-cleanup');
 
@@ -20,7 +20,7 @@ const log = createLogger('account-cleanup');
  * Erros parciais são logados mas não impedem a exclusão da conta.
  * A estratégia é "best-effort" para maximizar a limpeza.
  */
-export async function deleteAllUserData(userId: string): Promise<void> {
+export async function deleteAllUserData(userId: string): Promise<string[]> {
   const errors: string[] = [];
 
   try {
@@ -77,9 +77,19 @@ export async function deleteAllUserData(userId: string): Promise<void> {
   // dos documentos Firestore (deleteProjectsAndSubcollections e deleteCollectionGroup).
   // Diretórios vazios são removidos automaticamente pelo Firebase Storage.
 
+  // Limpa IndexedDB local (dados pessoais que ficam no navegador)
+  try {
+    await clearAllIndexedDbStores();
+  } catch (error) {
+    log.error('Falha ao limpar IndexedDB local', { error });
+    errors.push('indexeddb');
+  }
+
   if (errors.length > 0) {
     log.warn('Limpeza parcial — dados não removidos', { errors });
   }
+
+  return errors;
 }
 
 // ── Helpers internos ────────────────────────────────────────────

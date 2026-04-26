@@ -294,7 +294,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) return;
-    window.location.href = buildMailtoBody();
+    window.open(buildMailtoBody(), '_blank');
     setMailtoOpened(true);
     log.info('mailto aberto', { subject: form.subject });
   };

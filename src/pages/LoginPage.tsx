@@ -15,12 +15,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Mic from '@mui/icons-material/Mic';
 import Google from '@mui/icons-material/Google';
-import PlayCircle from '@mui/icons-material/PlayCircle';
-import ImageIcon from '@mui/icons-material/Image';
-import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getPageSeo } from '../lib/seo';
+import { AUTH_BENEFITS } from '../data/authBenefits';
 import {
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
@@ -37,12 +37,11 @@ import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
 import { PublicFooter } from '../components/public/PublicFooter';
 
-const LOGIN_BENEFITS = [
-  { icon: Mic, title: 'Voz com IA', description: 'Roteiros em áudio profissional com Gemini TTS' },
-  { icon: PlayCircle, title: 'Vídeo Automático', description: 'Renderização client-side com legendas' },
-  { icon: ImageIcon, title: 'Imagens', description: 'Geração com 8 aspect ratios e referência' },
-  { icon: AutoAwesome, title: 'Assistente IA', description: 'Chat com memória e integração ao estúdio' },
-];
+const SEO_PROPS = getPageSeo({
+  title: 'Login',
+  description: 'Faça login no Script Master e transforme roteiros em audio, video e imagens com inteligencia artificial.',
+  path: '/login',
+});
 
 export function LoginPage() {
   const { user, login, loginWithEmail, resetPassword, authError, loading, clearAuthError } = useAuth();
@@ -156,37 +155,12 @@ export function LoginPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
-      {/* Skip-to-content link — acessibilidade */}
-      <Typography
-        component="a"
-        href="#main-content"
-        sx={{
-          position: 'absolute',
-          left: '-9999px',
-          top: 0,
-          zIndex: 10000,
-          px: 2,
-          py: 1,
-          bgcolor: 'primary.main',
-          color: 'primary.contrastText',
-          textDecoration: 'none',
-          borderRadius: 1,
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          '&:focus': {
-            left: 8,
-            top: 8,
-          },
-        }}
-      >
-        Pular para o conteúdo
-      </Typography>
+      <Helmet {...SEO_PROPS} />
 
       <PublicHeader />
 
       <Box
         component="main"
-        id="main-content"
         tabIndex={-1}
         sx={{
           flex: 1,
@@ -211,7 +185,7 @@ export function LoginPage() {
                 </Box>
 
                 <Stack spacing={2.5}>
-                  {LOGIN_BENEFITS.map((benefit) => {
+                  {AUTH_BENEFITS.map((benefit) => {
                     const BenefitIcon = benefit.icon;
                     return (
                       <Stack key={benefit.title} direction="row" spacing={2} sx={{ alignItems: 'center' }}>

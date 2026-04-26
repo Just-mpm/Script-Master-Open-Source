@@ -127,14 +127,6 @@ describe('LoginPage', () => {
     expect(screen.getByText('Email ou senha incorretos.')).toBeTruthy();
   });
 
-  it('deve exibir link skip-to-content', () => {
-    renderWithRouter(<LoginPage />);
-    const skipLink = screen.getByText('Pular para o conteúdo');
-    expect(skipLink).toBeDefined();
-    const anchor = skipLink.closest('a');
-    expect(anchor?.getAttribute('href')).toBe('#main-content');
-  });
-
   // ─── Formulário email/senha ────────────────────────────
 
   it('deve renderizar campos email e senha', () => {
