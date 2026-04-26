@@ -23,28 +23,45 @@ export function useBatchDownload() {
     setDownloadingId(item.id);
     const safeName = item.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
-    try {
-      // 1. Download Audio
-      if (item.audioUrl) {
-        await downloadFile(item.audioUrl, `${safeName}-audio.wav`);
-      }
+    const failedItems: string[] = [];
+    const totalSteps = 1 + (item.scenes?.length ?? 0); // audio + scenes
 
-      // 2. Download Images
-      if (item.scenes && item.scenes.length > 0) {
-        for (let i = 0; i < item.scenes.length; i++) {
+    // 1. Download Audio (try/catch individual)
+    if (item.audioUrl) {
+      try {
+        await downloadFile(item.audioUrl, `${safeName}-audio.wav`);
+      } catch (err) {
+        log.error('Falha no download do áudio', { error: err, name: safeName });
+        failedItems.push('áudio');
+      }
+    }
+
+    // 2. Download Images (uma por uma, com try/catch individual)
+    if (item.scenes && item.scenes.length > 0) {
+      for (let i = 0; i < item.scenes.length; i++) {
+        try {
           // Small delay to prevent browser block
-          await new Promise(r => setTimeout(r, 400));
+          await new Promise<void>(r => setTimeout(r, 400));
           const sceneFilename = `${safeName}-cena-${String(i + 1).padStart(2, '0')}.png`;
           await downloadFile(item.scenes[i].imageUrl, sceneFilename);
+        } catch (err) {
+          log.error('Falha no download da cena', { error: err, sceneIndex: i + 1 });
+          failedItems.push(`cena ${i + 1}`);
         }
       }
-    } catch (err) {
-      log.error('Falha no download em sequência', { error: err });
-      setDownloadError('Ocorreu um erro durante o download. Tente novamente.');
-    } finally {
-      downloadingRef.current = false;
-      setDownloadingId(null);
     }
+
+    // Report results
+    if (failedItems.length > 0) {
+      setDownloadError(
+        `${failedItems.length} de ${totalSteps} itens falharam: ${failedItems.join(', ')}. Os demais foram baixados.`
+      );
+    } else {
+      setDownloadError(null);
+    }
+
+    downloadingRef.current = false;
+    setDownloadingId(null);
   }, []);
 
   return {

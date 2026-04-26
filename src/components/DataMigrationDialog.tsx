@@ -44,7 +44,9 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
     try {
       const result = await migrateAnonymousData(userId);
       setMigrationResult(result);
-      markMigrationCompleted(userId);
+      if (result.errors === 0) {
+        markMigrationCompleted(userId);
+      }
     } catch (error: unknown) {
       log.error('Erro na migração', { error });
       setMigrationResult({ migrated: 0, errors: 1, details: 'Erro inesperado durante a migração.' });
@@ -99,10 +101,21 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
             </DialogContentText>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button variant="contained" onClick={onComplete}>
-            Continuar
-          </Button>
+        <DialogActions sx={{ gap: 1 }}>
+          {migrationResult.errors > 0 ? (
+            <>
+              <Button color="inherit" onClick={handleMigrate} disabled={isMigrating}>
+                Tentar novamente
+              </Button>
+              <Button variant="contained" onClick={() => { markMigrationCompleted(userId); onComplete(); }}>
+                Ignorar e continuar
+              </Button>
+            </>
+          ) : (
+            <Button variant="contained" onClick={onComplete}>
+              Continuar
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     );
