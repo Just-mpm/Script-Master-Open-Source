@@ -258,74 +258,90 @@ function ComparisonTable() {
       sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
     >
       <Box
-        role="table"
-        aria-label="Comparação de planos"
         sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 5 }, minWidth: 560 })}
       >
-        {/* Cabecalho da tabela */}
-        <Grid
-          container
-          spacing={2}
-          role="row"
-          sx={{ pb: 2, mb: 1, borderBottom: `1px solid ${APP_BORDER}` }}
+        <Box
+          component="table"
+          aria-label="Comparação de planos"
+          sx={{ width: '100%', borderCollapse: 'collapse' }}
         >
-          <Grid size={5} role="columnheader">
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Funcionalidade
-            </Typography>
-          </Grid>
-          <Grid size={2.33} role="columnheader">
-            <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
-              Gratuito
-            </Typography>
-          </Grid>
-          <Grid size={2.34} role="columnheader">
-            <Typography
-              variant="subtitle2"
-              sx={{ textAlign: 'center', color: BRAND_PRIMARY, fontWeight: 700 }}
+          {/* Cabecalho da tabela */}
+          <Box component="thead">
+            <Box
+              component="tr"
+              sx={{ borderBottom: `1px solid ${APP_BORDER}` }}
             >
-              Pro
-            </Typography>
-          </Grid>
-          <Grid size={2.33} role="columnheader">
-            <Typography variant="subtitle2" sx={{ textAlign: 'center' }}>
-              Equipe
-            </Typography>
-          </Grid>
-        </Grid>
-
-        {/* Linhas de dados */}
-        {COMPARISON_TABLE.map((row, index) => {
-          const isLast = index === COMPARISON_TABLE.length - 1;
-
-          return (
-            <Grid
-              container
-              spacing={2}
-              role="row"
-              key={row.feature}
-              sx={{
-                py: 1.5,
-                borderBottom: isLast ? 'none' : `1px solid ${APP_BORDER}`,
-              }}
-            >
-              <Grid size={5} role="cell">
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {row.feature}
+              <Box
+                component="th"
+                scope="col"
+                sx={{ width: '42%', pb: 1.5, mb: 0.5, textAlign: 'left' }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Funcionalidade
                 </Typography>
-              </Grid>
-              <Grid size={2.33} role="cell">
-                <ComparisonCell value={row.gratuito} isHighlighted={false} />
-              </Grid>
-              <Grid size={2.34} role="cell">
-                <ComparisonCell value={row.pro} isHighlighted={true} />
-              </Grid>
-              <Grid size={2.33} role="cell">
-                <ComparisonCell value={row.equipe} isHighlighted={false} />
-              </Grid>
-            </Grid>
-          );
-        })}
+              </Box>
+              <Box
+                component="th"
+                scope="col"
+                sx={{ width: '19.5%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+              >
+                <Typography variant="subtitle2">
+                  Gratuito
+                </Typography>
+              </Box>
+              <Box
+                component="th"
+                scope="col"
+                sx={{ width: '20%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+              >
+                <Typography variant="subtitle2" sx={{ color: BRAND_PRIMARY, fontWeight: 700 }}>
+                  Pro
+                </Typography>
+              </Box>
+              <Box
+                component="th"
+                scope="col"
+                sx={{ width: '19.5%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+              >
+                <Typography variant="subtitle2">
+                  Equipe
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Linhas de dados */}
+          <Box component="tbody">
+            {COMPARISON_TABLE.map((row, index) => {
+              const isLast = index === COMPARISON_TABLE.length - 1;
+
+              return (
+                <Box
+                  component="tr"
+                  key={row.feature}
+                  sx={{
+                    borderBottom: isLast ? 'none' : `1px solid ${APP_BORDER}`,
+                  }}
+                >
+                  <Box component="td" sx={{ py: 1.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {row.feature}
+                    </Typography>
+                  </Box>
+                  <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
+                    <ComparisonCell value={row.gratuito} isHighlighted={false} />
+                  </Box>
+                  <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
+                    <ComparisonCell value={row.pro} isHighlighted={true} />
+                  </Box>
+                  <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
+                    <ComparisonCell value={row.equipe} isHighlighted={false} />
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

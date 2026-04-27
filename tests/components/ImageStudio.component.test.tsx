@@ -51,6 +51,7 @@ vi.mock('../../src/lib/logger', () => ({
 vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
   insetPanelSx: () => ({}),
+  searchFieldSx: {},
 }));
 
 vi.mock('../../src/theme/tokens', () => ({

@@ -244,7 +244,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
       {/* Dialog de exclusão */}
       <DeleteConfirmationDialog
         open={Boolean(itemToDelete)}
-        itemToDelete={itemToDelete}
+        itemName={itemToDelete?.name ?? null}
         deletingItem={deletingItem}
         deleteError={deleteError}
         onConfirm={confirmDeleteItem}

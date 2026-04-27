@@ -1,6 +1,7 @@
+import type { SxProps } from '@mui/material/styles';
 import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
-import { APP_SURFACE, APP_BORDER, SHADOW_DEEP, WHITE_05, WHITE_015 } from './tokens';
+import { APP_SURFACE, APP_BORDER, SHADOW_DEEP, WHITE_04, WHITE_06, WHITE_08, WHITE_16, WHITE_05, WHITE_015, BRAND_PRIMARY, BRAND_PRIMARY_GLOW_SOFT } from './tokens';
 
 export const glassPanelSx = (theme: Theme): SystemStyleObject<Theme> => ({
   position: 'relative',
@@ -38,3 +39,26 @@ export const glassSurfaceSx = (theme: Theme): SystemStyleObject<Theme> => ({
     backgroundColor: alpha(APP_SURFACE, 0.78),
   }),
 });
+
+/** TextField com fundo semi-transparente, borda sutil e focus state premium — para buscas e campos de texto */
+export const searchFieldSx: SxProps<Theme> = {
+  '& .MuiOutlinedInput-root': {
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+    backgroundColor: WHITE_04,
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: WHITE_08,
+      borderWidth: 1,
+    },
+    '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+      borderColor: WHITE_16,
+    },
+    '&.Mui-focused': {
+      backgroundColor: WHITE_06,
+      '& .MuiOutlinedInput-notchedOutline': {
+        borderColor: BRAND_PRIMARY,
+        borderWidth: 2,
+      },
+      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
+    },
+  },
+};

@@ -7,33 +7,47 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import { RADIUS_SM } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
-import type { VideoLibraryItem } from './types';
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
-  itemToDelete: VideoLibraryItem | null;
+  /** Nome do item exibido no título ("Excluir 'X'?"). Usa fallback "item" se vazio. */
+  itemName: string | null;
   deletingItem: boolean;
   deleteError: string | null;
+  /** Texto descritivo exibido no corpo do dialog */
+  description?: string;
+  /** Rótulo do botão confirmar (padrão: "Excluir") */
+  confirmLabel?: string;
+  /** Rótulo do título quando está deletando (padrão: "Excluindo...") */
+  loadingLabel?: string;
+  /** Rótulo do título quando está ocioso (padrão: "Excluir 'nome'?") */
+  titleIdleLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-/** Dialog de confirmação de exclusão de item da galeria */
+/** Dialog de confirmação de exclusão — reutilizável em toda a aplicação */
 export function DeleteConfirmationDialog({
   open,
-  itemToDelete,
+  itemName,
   deletingItem,
   deleteError,
+  description = 'Esta ação remove permanentemente o item e seus arquivos associados.',
+  confirmLabel = 'Excluir',
+  loadingLabel = 'Excluindo...',
+  titleIdleLabel,
   onConfirm,
   onCancel,
 }: DeleteConfirmationDialogProps) {
+  const displayTitle = titleIdleLabel ?? `Excluir "${itemName ?? 'item'}"?`;
+
   return (
     <Dialog
       open={open}
       onClose={deletingItem ? undefined : onCancel}
       fullWidth
       maxWidth="xs"
-      aria-labelledby="delete-gallery-item-title"
+      aria-labelledby="delete-confirmation-title"
       slotProps={{
         paper: {
           sx: (theme) => ({
@@ -44,12 +58,12 @@ export function DeleteConfirmationDialog({
         },
       }}
     >
-      <DialogTitle id="delete-gallery-item-title">
-        {deletingItem ? 'Excluindo...' : `Excluir "${itemToDelete?.name ?? 'item'}"?`}
+      <DialogTitle id="delete-confirmation-title">
+        {deletingItem ? loadingLabel : displayTitle}
       </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
-          Esta ação remove permanentemente o item e seus arquivos associados.
+          {description}
         </Typography>
         {deleteError && (
           <Alert severity="error" variant="outlined" sx={{ mt: 1.5 }}>
@@ -62,7 +76,7 @@ export function DeleteConfirmationDialog({
           Cancelar
         </Button>
         <Button onClick={() => void onConfirm()} color="error" variant="contained" disabled={deletingItem}>
-          {deletingItem ? 'Excluindo...' : 'Excluir'}
+          {deletingItem ? loadingLabel : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

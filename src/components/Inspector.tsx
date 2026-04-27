@@ -37,6 +37,8 @@ import Warning from '@mui/icons-material/Warning';
 import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
+import { useStudioStore } from '../features/studio/store';
+import { useShallow } from 'zustand/react/shallow';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { createLogger } from '../lib/logger';
@@ -45,36 +47,9 @@ const log = createLogger('Inspector');
 
 const MAX_STYLE_NOTES = 500;
 
+/** Props do Inspector — apenas `isGenerating` vem do pai; o restante é lido do store */
 interface InspectorProps {
-  isMultiSpeaker: boolean;
-  setIsMultiSpeaker: (val: boolean) => void;
-  speakerAName: string;
-  setSpeakerAName: (val: string) => void;
-  selectedVoice: string;
-  setSelectedVoice: (voice: string) => void;
-  speakerBName: string;
-  setSpeakerBName: (val: string) => void;
-  speakerBVoice: string;
-  setSpeakerBVoice: (voice: string) => void;
-  audioProfile: string;
-  setAudioProfile: (profile: string) => void;
-  scene: string;
-  setScene: (scene: string) => void;
-  pace: string;
-  setPace: (pace: string) => void;
-  styleNotes: string;
-  setStyleNotes: (notes: string) => void;
   isGenerating: boolean;
-  generateScenes: boolean;
-  setGenerateScenes: (generate: boolean) => void;
-  sceneDensity: number;
-  setSceneDensity: (density: number) => void;
-  sceneRatio: SceneRatio;
-  setSceneRatio: (ratio: SceneRatio) => void;
-  visualFramework: string;
-  setVisualFramework: (framework: string) => void;
-  referenceImage: string | null;
-  setReferenceImage: (img: string | null) => void;
 }
 
 type VoiceTabValue = 'A' | 'B';
@@ -133,38 +108,69 @@ function VoiceTabPanel({
   );
 }
 
-export const Inspector = React.memo(function Inspector({
-  isMultiSpeaker,
-  setIsMultiSpeaker,
-  speakerAName,
-  setSpeakerAName,
-  selectedVoice,
-  setSelectedVoice,
-  speakerBName,
-  setSpeakerBName,
-  speakerBVoice,
-  setSpeakerBVoice,
-  audioProfile,
-  setAudioProfile,
-  scene,
-  setScene,
-  pace,
-  setPace,
-  styleNotes,
-  setStyleNotes,
-  isGenerating,
-  generateScenes,
-  setGenerateScenes,
-  sceneDensity,
-  setSceneDensity,
-  sceneRatio,
-  setSceneRatio,
-  visualFramework,
-  setVisualFramework,
-  referenceImage,
-  setReferenceImage
-}: InspectorProps) {
+export const Inspector = React.memo(function Inspector({ isGenerating }: InspectorProps) {
   const theme = useTheme();
+
+  // Estado de config do store (Zustand) — useShallow evita re-renders desnecessários
+  const {
+    isMultiSpeaker,
+    setIsMultiSpeaker,
+    speakerAName,
+    setSpeakerAName,
+    selectedVoice,
+    setSelectedVoice,
+    speakerBName,
+    setSpeakerBName,
+    speakerBVoice,
+    setSpeakerBVoice,
+    audioProfile,
+    setAudioProfile,
+    scene,
+    setScene,
+    pace,
+    setPace,
+    styleNotes,
+    setStyleNotes,
+    generateScenes,
+    setGenerateScenes,
+    sceneDensity,
+    setSceneDensity,
+    sceneRatio,
+    setSceneRatio,
+    visualFramework,
+    setVisualFramework,
+    referenceImage,
+    setReferenceImage,
+  } = useStudioStore(useShallow((s) => ({
+    isMultiSpeaker: s.isMultiSpeaker,
+    setIsMultiSpeaker: s.setIsMultiSpeaker,
+    speakerAName: s.speakerAName,
+    setSpeakerAName: s.setSpeakerAName,
+    selectedVoice: s.selectedVoice,
+    setSelectedVoice: s.setSelectedVoice,
+    speakerBName: s.speakerBName,
+    setSpeakerBName: s.setSpeakerBName,
+    speakerBVoice: s.speakerBVoice,
+    setSpeakerBVoice: s.setSpeakerBVoice,
+    audioProfile: s.audioProfile,
+    setAudioProfile: s.setAudioProfile,
+    scene: s.scene,
+    setScene: s.setScene,
+    pace: s.pace,
+    setPace: s.setPace,
+    styleNotes: s.styleNotes,
+    setStyleNotes: s.setStyleNotes,
+    generateScenes: s.generateScenes,
+    setGenerateScenes: s.setGenerateScenes,
+    sceneDensity: s.sceneDensity,
+    setSceneDensity: s.setSceneDensity,
+    sceneRatio: s.sceneRatio,
+    setSceneRatio: s.setSceneRatio,
+    visualFramework: s.visualFramework,
+    setVisualFramework: s.setVisualFramework,
+    referenceImage: s.referenceImage,
+    setReferenceImage: s.setReferenceImage,
+  })));
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
   const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');

@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import { alpha } from '@mui/material/styles';
-import type { Theme } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Typography from '@mui/material/Typography';
 import {
   deleteChatSession,
   deleteMemory,
@@ -33,7 +26,8 @@ import { AssistantSettingsPanel } from './components/AssistantSettingsPanel';
 import type { AssistantSettings, AssistantStudioState } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
-import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
+import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
+import { BRAND_PRIMARY } from '../../theme/tokens';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -443,75 +437,27 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onStopGeneration={stopGeneration}
       />
 
-      <Dialog
+      <DeleteConfirmationDialog
         open={Boolean(memoryToDelete)}
-        onClose={deletingConfirm ? undefined : () => setMemoryToDelete(null)}
-        fullWidth
-        maxWidth="xs"
-        aria-labelledby="delete-memory-title"
-        slotProps={{
-          paper: {
-            sx: (theme: Theme) => ({
-              backgroundColor: alpha(theme.palette.background.paper, 0.96),
-              backdropFilter: 'blur(20px)',
-              borderRadius: 3,
-              border: `1px solid ${APP_BORDER}`,
-            }),
-          },
-        }}
-      >
-        <DialogTitle id="delete-memory-title">
-          {deletingConfirm ? 'Excluindo...' : 'Excluir memória?'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-            Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button onClick={() => setMemoryToDelete(null)} color="inherit" disabled={deletingConfirm}>
-            Cancelar
-          </Button>
-          <Button onClick={() => void confirmDeleteMemory()} color="error" variant="contained" disabled={deletingConfirm}>
-            {deletingConfirm ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        itemName={memoryToDelete ?? null}
+        deletingItem={deletingConfirm}
+        deleteError={null}
+        titleIdleLabel="Excluir memória?"
+        description="Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas."
+        onConfirm={() => void confirmDeleteMemory()}
+        onCancel={() => setMemoryToDelete(null)}
+      />
 
-      <Dialog
+      <DeleteConfirmationDialog
         open={Boolean(chatToDelete)}
-        onClose={deletingConfirm ? undefined : () => setChatToDelete(null)}
-        fullWidth
-        maxWidth="xs"
-        aria-labelledby="delete-chat-title"
-        slotProps={{
-          paper: {
-            sx: (theme: Theme) => ({
-              backgroundColor: alpha(theme.palette.background.paper, 0.96),
-              backdropFilter: 'blur(20px)',
-              borderRadius: 3,
-              border: `1px solid ${APP_BORDER}`,
-            }),
-          },
-        }}
-      >
-        <DialogTitle id="delete-chat-title">
-          {deletingConfirm ? 'Excluindo...' : 'Excluir conversa?'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-            Esta conversa será removida permanentemente do seu histórico.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button onClick={() => setChatToDelete(null)} color="inherit" disabled={deletingConfirm}>
-            Cancelar
-          </Button>
-          <Button onClick={() => void confirmDeleteChat()} color="error" variant="contained" disabled={deletingConfirm}>
-            {deletingConfirm ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        itemName={chatToDelete ?? null}
+        deletingItem={deletingConfirm}
+        deleteError={null}
+        titleIdleLabel="Excluir conversa?"
+        description="Esta conversa será removida permanentemente do seu histórico."
+        onConfirm={() => void confirmDeleteChat()}
+        onCancel={() => setChatToDelete(null)}
+      />
 
       <ErrorToast error={documentError} onDismiss={handleDismissDocumentError} />
       <ErrorToast error={attachmentError} onDismiss={handleDismissAttachmentError} />

@@ -5,10 +5,6 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -47,8 +43,9 @@ import { useAudioIsPlaying, useAudioActiveId, useGlobalAudioActions } from '../c
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
-import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT, BRAND_PRIMARY } from '../theme/tokens';
+import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
+import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
+import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -69,6 +66,7 @@ export function Library() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [projectNameToDelete, setProjectNameToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -76,19 +74,21 @@ export function Library() {
   const [searchQuery, setSearchQuery] = useState('');
   const [audioToDelete, setAudioToDelete] = useState<string | null>(null);
   const [deletingAudio, setDeletingAudio] = useState(false);
+  const [audioDeleteError, setAudioDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   const isPlaying = useAudioIsPlaying();
   const activeId = useAudioActiveId();
   const { play, toggle } = useGlobalAudioActions();
 
   // Rastreia blob URLs criados para limpeza ao desmontar/trocar projeto
-  const blobUrlsRef = useRef<string[]>([]);
+  const blobUrlsRef = useRef<Set<string>>(new Set());
 
   const cleanupBlobUrls = () => {
     for (const url of blobUrlsRef.current) {
       URL.revokeObjectURL(url);
     }
-    blobUrlsRef.current = [];
+    blobUrlsRef.current = new Set();
   };
 
   // Cleanup ao desmontar
@@ -148,7 +148,7 @@ export function Library() {
 
     // Registra blob URL criado para cleanup ao desmontar
     if (!audio.audioUrl && url.startsWith('blob:')) {
-      blobUrlsRef.current.push(url);
+      blobUrlsRef.current.add(url);
     }
 
     if (url) {
@@ -164,7 +164,7 @@ export function Library() {
     }));
   }, [projectData.images]);
 
-  // W8: Registra blob URLs criados pelo useMemo para cleanup, revogando URLs anteriores
+  // Registra blob URLs criados pelo useMemo para cleanup, revogando URLs anteriores
   useEffect(() => {
     const blobUrls = resolvedImageUrls
       .map((img) => img.resolvedUrl)
@@ -176,12 +176,11 @@ export function Library() {
     }
     for (const url of previousUrls) {
       URL.revokeObjectURL(url);
+      blobUrlsRef.current.delete(url);
     }
     // Acumula apenas as novas
     for (const url of blobUrls) {
-      if (!blobUrlsRef.current.includes(url)) {
-        blobUrlsRef.current.push(url);
-      }
+      blobUrlsRef.current.add(url);
     }
   }, [resolvedImageUrls]);
 
@@ -204,8 +203,16 @@ export function Library() {
     try {
       await deleteProject(itemToDelete, user?.uid);
       setItemToDelete(null);
+      setProjectNameToDelete(null);
       cleanupBlobUrls();
-      await loadProjects();
+      // Separar refresh da exclusão — W8: projeto já foi excluído
+      try {
+        await loadProjects();
+      } catch {
+        // Falha no refresh não invalida a exclusão
+        setDeleteSuccess(true);
+        window.setTimeout(() => setDeleteSuccess(false), 5000);
+      }
     } catch (err) {
       log.error('Falha ao excluir projeto', { error: err });
       setDeleteError('Não foi possível excluir o projeto. Tente novamente.');
@@ -234,6 +241,7 @@ export function Library() {
     if (!audioToDelete) return;
 
     setDeletingAudio(true);
+    setAudioDeleteError(null);
     try {
       await deleteGeneration(audioToDelete, user?.uid);
       setAudioToDelete(null);
@@ -244,6 +252,7 @@ export function Library() {
       }));
     } catch (err) {
       log.error('Falha ao excluir áudio', { error: err });
+      setAudioDeleteError('Não foi possível excluir o áudio. Tente novamente.');
     } finally {
       setDeletingAudio(false);
     }
@@ -303,25 +312,7 @@ export function Library() {
               }}
               sx={{
                 minWidth: 220,
-                '& .MuiOutlinedInput-root': {
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(255, 255, 255, 0.08)',
-                    borderWidth: 1,
-                  },
-                  '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(255, 255, 255, 0.16)',
-                  },
-                  '&.Mui-focused': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: BRAND_PRIMARY,
-                      borderWidth: 2,
-                    },
-                    boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
-                  },
-                },
+                ...searchFieldSx,
               }}
             />
           )}
@@ -489,7 +480,7 @@ export function Library() {
                         </Button>
 
                         <Button
-                          onClick={() => setItemToDelete(project.id)}
+                          onClick={() => { setItemToDelete(project.id); setProjectNameToDelete(project.name); }}
                           color="error"
                           variant="outlined"
                             startIcon={<Delete sx={{ fontSize: ICON_SIZE_MD }} />}
@@ -596,9 +587,9 @@ export function Library() {
                                                     onClick={() => {
                                                       const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
                                                       if (url) {
-                                                        if (!audio.audioUrl && url.startsWith('blob:')) {
-                                                          blobUrlsRef.current.push(url);
-                                                        }
+                                                         if (!audio.audioUrl && url.startsWith('blob:')) {
+                                                           blobUrlsRef.current.add(url);
+                                                         }
                                                         void downloadFile(url, `${project.name}-${audio.id}.wav`);
                                                       }
                                                     }}
@@ -728,79 +719,49 @@ export function Library() {
         </Stack>
       )}
 
-      <Dialog
+      {/* Dialog de confirmação de exclusão de projeto */}
+      <DeleteConfirmationDialog
         open={Boolean(itemToDelete)}
-        onClose={deleting ? undefined : () => setItemToDelete(null)}
-        fullWidth
-        maxWidth="xs"
-        aria-labelledby="delete-project-title"
-        aria-describedby="delete-project-description"
-        slotProps={{
-          paper: {
-            sx: (theme) => ({
-              ...glassPanelSx(theme),
-              borderRadius: RADIUS_SM,
-              backgroundImage: 'none',
-            }),
-          },
-        }}
-      >
-        <DialogTitle id="delete-project-title">
-          {deleting ? 'Excluindo projeto...' : 'Excluir projeto?'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography id="delete-project-description" variant="body2" color="text.secondary">
-            Esta ação remove permanentemente o projeto, seus áudios e suas imagens associadas.
-          </Typography>
-          {deleteError && (
-            <Alert variant="outlined" severity="error" sx={{ mt: 2 }}>
-              {deleteError}
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => { setItemToDelete(null); setDeleteError(null); }} color="inherit" disabled={deleting}>
-            Cancelar
-          </Button>
-          <Button onClick={() => void confirmDelete()} color="error" variant="contained" disabled={deleting}>
-            {deleting ? 'Excluindo...' : 'Excluir projeto'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        itemName={projectNameToDelete}
+        deletingItem={deleting}
+        deleteError={deleteError}
+        titleIdleLabel="Excluir projeto?"
+        loadingLabel="Excluindo projeto..."
+        confirmLabel="Excluir projeto"
+        description="Esta ação remove permanentemente o projeto, seus áudios e suas imagens associadas."
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => { setItemToDelete(null); setProjectNameToDelete(null); setDeleteError(null); }}
+      />
 
-      <Dialog
+      {/* Dialog de confirmação de exclusão de áudio */}
+      <DeleteConfirmationDialog
         open={Boolean(audioToDelete)}
-        onClose={deletingAudio ? undefined : () => setAudioToDelete(null)}
-        fullWidth
-        maxWidth="xs"
-        aria-labelledby="delete-audio-title"
-        slotProps={{
-          paper: {
-            sx: (theme) => ({
-              ...glassPanelSx(theme),
-              borderRadius: RADIUS_SM,
-              backgroundImage: 'none',
-            }),
-          },
-        }}
-      >
-        <DialogTitle id="delete-audio-title">
-          {deletingAudio ? 'Excluindo áudio...' : 'Excluir versão de áudio?'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do Storage.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setAudioToDelete(null)} color="inherit" disabled={deletingAudio}>
-            Cancelar
-          </Button>
-          <Button onClick={() => void confirmDeleteAudio()} color="error" variant="contained" disabled={deletingAudio}>
-            {deletingAudio ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        itemName={audioToDelete ?? null}
+        deletingItem={deletingAudio}
+        deleteError={audioDeleteError}
+        titleIdleLabel="Excluir versão de áudio?"
+        loadingLabel="Excluindo áudio..."
+        confirmLabel="Excluir"
+        description="Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do Storage."
+        onConfirm={() => void confirmDeleteAudio()}
+        onCancel={() => { setAudioToDelete(null); setAudioDeleteError(null); }}
+      />
+
+      {/* Snackbar de sucesso quando exclusão OK mas refresh falhou */}
+      {deleteSuccess && (
+        <Alert
+          severity="success"
+          variant="outlined"
+          action={
+            <Button color="inherit" size="small" onClick={() => void loadProjects()}>
+              Atualizar lista
+            </Button>
+          }
+          sx={{ mt: 1 }}
+        >
+          Projeto excluído com sucesso. A lista não foi atualizada automaticamente.
+        </Alert>
+      )}
     </Stack>
   );
 }
