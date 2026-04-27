@@ -202,7 +202,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   // Envio de mensagem com streaming
   // ---------------------------------------------------------------------------
 
-  const sendMessage = async (text: string, attachments?: Attachment[]) => {
+  const sendMessage = useCallback(async (text: string, attachments?: Attachment[]) => {
     if (!text.trim() && (!attachments || attachments.length === 0)) return;
 
     const newUserMsg: ChatMessage = {
@@ -345,7 +345,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       setIsLoading(false);
       setIsStreaming(false);
     }
-  };
+  }, [user, messages, currentState, ai]);
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {

@@ -144,11 +144,11 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/features/video-render/` |
 | **Renderização** | Client-side via WebCodecs. Sem backend |
 | **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
-| **Crossfade** | Overlap de 400ms entre cenas. Fade = 12 frames, spring `{damping:26, stiffness:100, mass:1}` |
+| **Crossfade** | Overlap dinâmico por cena: speed paint usa 1s, cenas estáticas usam 400ms. Fade = 12 frames para cenas estáticas, spring `{damping:26, stiffness:100, mass:1}` |
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
 | **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE`. `SubtitleInlineEditor` editor inline via portal. Subcomponentes em `subtitle-editor/` (EditorToolbar, FontSizeControls, PositionToggle, StyleSlider, ToolbarActions, SubtitlePreview, DragOverlay, EditorButton) |
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
-| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) + `SceneSequence` (fallback). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas (`sketch`/`reveal`/`onSketchChange`/`onRevealChange`). `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase |
+| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas. `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase |
 | **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
 | **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
@@ -289,7 +289,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Manifest** | Ícones 192/512, `theme_color` #0a0a0f, `display: standalone` |
 | **Workbox** | Runtime caching para assets estáticos (1 ano) e Google Fonts (30 dias) |
 | **Registro** | Apenas em produção (`import.meta.env.PROD`), `immediate: true` |
-| **Exceções** | `/login` e `/cadastro` em `navigateFallbackDenylist` (sem COEP, não interceptado pelo SW) |
+| **Exceções** | `/login`, `/cadastro` e `/__/` em `navigateFallbackDenylist` (sem COEP e endpoints Firebase Hosting internos não interceptados pelo SW) |
 
 ### Logger, Error Mapping & Rate Limiter
 
@@ -304,7 +304,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.6`
+- **Current:** `0.24.7`
 - **Last release:** 2026-04-27
 
 ### Últimas mudanças (atualizado por /fast)
@@ -313,8 +313,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.24.7 | `SpeedPaintScene` sistema de 4 zonas (fade in → animação → hold → fade out) com `interpolate` do Remotion; opacidade via CSS para crossfade real; overlap dinâmico por cena (1s speed paint, 400ms estático); `sendMessage` envolvido em `useCallback`; PWA `navigateFallbackDenylist` com `/__/` para endpoints Firebase Hosting |
 | 0.24.6 | Firestore persistence modernizada (`initializeFirestore` + `persistentLocalCache` + `persistentMultipleTabManager`); `optimizeDeps.include` para mediabunny e sub-pacotes; 3 composite indexes `COLLECTION_GROUP` (audios, images, videos) para queries da galeria |
 | 0.24.5 | Dupla instância `useAudioGenerator` corrigida (CRÍTICO — StudioPage desconectado do ActionBar); imagens de cena LGPD com path correto; galeria exibe vídeos exportados; race condition no `useVideoExporter`; `deleteUser` antes do cleanup LGPD; email verification gate no ProtectedRoute; Firestore offline persistence; `Promise.all` no assistente; `retryLastMessage`; `deleteChatSession` dual-delete; `Inspector` 22→1 prop; ActionBar seletores primitivos; `SpeedPaintControls` props primitivas; 3 CTAs para `/cadastro`; link Contato no header; tabela semântica PricingPage; FAQAccordion a11y; `searchFieldSx` extraído; dead code cleanup (11 exports, 1 dep, 4 animations); `limit(100)` em todas as queries; upload resumável >10MB; `transaction.oncomplete` no IndexedDB |
 | 0.24.4 | `react-helmet-async` removido — migrado para SEO nativo do React 19 (`<title>`, `<meta>`, `<link>` com hoisting automático); `DocumentHead` componente em `src/components/DocumentHead.tsx`; interfaces próprias `SeoMeta`/`SeoLink`/`SeoData` em `seo.ts`; `HelmetProvider` removido do `main.tsx`; 14 páginas migradas |
 | 0.24.3 | IndexedDB cleanup LGPD na exclusão de conta; TTS retry 500; chat sessions merge Firestore+IndexedDB; chat save fallback IndexedDB; EmptyChatState funcional (welcome-only detection); botão Parar do composer conectado; migração com retry em erros parciais; batch download com falha individual; upload >10MB com feedback; truncamento de documento com aviso; beforeunload durante geração/exportação; SEO no LoginPage; authBenefits DRY; skip-to-content/id duplicados removidos; Whisper docs tiny; contactPage window.open |
-| 0.24.2 | 3 CRITICAL bugs LGPD corrigidos (vídeo/imagens de cena nunca deletados); stale closure em `useAudioGenerator` (refs espelhadas); race condition no `useVideoExporter`; WaveformOverlay frame absoluto; MediaRecorder e blob URL cleanup; ActionBar throttle corrigido; streaming assistant batched via RAF; SubtitleOverlay memoizado; AnimationPlayer progress throttled; imageProcessing movido para Web Worker; cancelamento de geração de imagem; download IndexedDB; chips clicáveis no empty state; tokens hardcoded migrados (5 locais); authStyles.ts extraído (DRY); bgcolor→background em FeatureShowcase/FeatureCard; classes MUI v9 atualizadas no FaqPage |

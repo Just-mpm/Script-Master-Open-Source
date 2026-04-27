@@ -106,7 +106,8 @@ export default defineConfig(() => {
           // SPA: navegação sempre volta ao index.html
           navigateFallback: '/index.html',
           // Não interceptar rotas de login (Firebase Auth precisa de rede)
-          navigateFallbackDenylist: [/^\/login/, /^\/cadastro/],
+          // e endpoints internos do Firebase Hosting (/__/auth/handler, /__/firebase/init.json)
+          navigateFallbackDenylist: [/^\/login/, /^\/cadastro/, /^\/__/],
         },
       }),
     ],

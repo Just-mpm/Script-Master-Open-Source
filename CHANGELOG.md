@@ -7,6 +7,17 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.7] - 2026-04-27
+
+### Alterado
+
+- **`SpeedPaintScene` — sistema de 4 zonas**: substituído `computeSafeFadeFrames`/`springFadeIn`/`springFadeOut` (transitions helpers) por 4 zonas determinísticas com `interpolate` do Remotion: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade movida de `ctx.globalAlpha` para CSS no `<AbsoluteFill>`, permitindo crossfade real entre cenas via overlap de Sequences
+- **`VideoComposition` — overlap dinâmico por cena**: speed paint usa 1s de overlap (`SPEED_PAINT_OVERLAP_MS`), cenas estáticas mantêm 400ms — overlap calculado por cena ao invés de global
+- **`sendMessage` estabilizado com `useCallback`**: referência do `sendMessage` no `useAssistant` agora é estável com deps `[user, messages, currentState, ai]` — previne re-criações desnecessárias em consumidores
+- **PWA `navigateFallbackDenylist`**: `/__/` adicionado para não interceptar endpoints internos do Firebase Hosting (`/__/auth/handler`, `/__/firebase/init.json`)
+
+---
+
 ## [0.24.6] - 2026-04-27
 
 ### Alterado

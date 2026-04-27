@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { AbsoluteFill, cancelRender, continueRender, delayRender, useCurrentFrame, useVideoConfig } from 'remotion';
+import { interpolate } from 'remotion';
 import type { StrokeAnimation } from '../../speed-paint/types';
 import type { SpeedPaintMultipliers } from '../types';
 import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../lib/speedPaintRenderer';
-import { computeSafeFadeFrames, springFadeIn, springFadeOut } from '../lib/transitions';
+
+// ---------------------------------------------------------------------------
+// Constantes de timing
+// ---------------------------------------------------------------------------
+
+/** Tempo de exposição da pintura completa antes do fade out (em segundos) */
+const SPEED_PAINT_HOLD_SECONDS = 3;
+/** Duração do fade in/out para speed paint no vídeo (em segundos) */
+const SPEED_PAINT_FADE_SECONDS = 1;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -16,8 +25,6 @@ interface SpeedPaintSceneProps {
   imageSource: string;
   /** Duração da cena em frames */
   durationInFrames: number;
-  /** Frames de fade in/out (default: 12) */
-  fadeFrames?: number;
   /** Se é a última cena — remove fade-out */
   isLastScene?: boolean;
   /** Multiplicador de velocidade da animação (default: 1.0) */
@@ -37,17 +44,22 @@ interface SpeedPaintSceneProps {
 /**
  * Componente Remotion que renderiza speed paint em canvas nativo.
  *
+ * Comportamento "hold + crossfade":
+ * 1. Fade in (1s) — opacity 0→1
+ * 2. Animação — progress 0→1 com opacidade total
+ * 3. Hold (3s) — imagem completa visível, progress = 1
+ * 4. Fade out (1s) — opacity 1→0 (exceto última cena)
+ *
+ * A opacidade é aplicada via CSS no `<AbsoluteFill>` (NÃO via ctx.globalAlpha)
+ * para permitir que o crossfade com a cena seguinte funcione corretamente.
+ *
  * Usa useCurrentFrame() como driver de tempo — totalmente determinístico,
  * compatível com scrub, pause e exportação via web-renderer.
- *
- * NÃO usa requestAnimationFrame, Konva ou APIs assíncronas de desenho.
- * Todo o desenho é síncrono dentro do ciclo de render do React.
  */
 export function SpeedPaintScene({
   animation,
   imageSource,
   durationInFrames,
-  fadeFrames: tFrames = 12,
   isLastScene = false,
   speedMultiplier,
   drawSpeed,
@@ -91,7 +103,77 @@ export function SpeedPaintScene({
     };
   }, [imageSource, animation, handle]);
 
-  // Desenha o frame corrente — TUDO síncrono, sem requestAnimationFrame
+  // ── Cálculo das 4 zonas: fade in → animação → hold → fade out ──
+
+  // Frames ideais baseados nas constantes de tempo
+  let fadeFrames = Math.round(fps * SPEED_PAINT_FADE_SECONDS);
+  let holdFrames = Math.round(fps * SPEED_PAINT_HOLD_SECONDS);
+
+  // Cenas muito curtas: reduzir hold proporcionalmente, depois fade
+  const totalOverhead = (isLastScene ? fadeFrames : 2 * fadeFrames) + holdFrames;
+
+  if (totalOverhead > durationInFrames) {
+    // Edge case 1: nem hold + fade cabem — reduzir hold proporcionalmente
+    const availableForAnimation = Math.max(1, durationInFrames * 0.2);
+    const remaining = durationInFrames - availableForAnimation;
+    const fadeTotal = isLastScene ? fadeFrames : 2 * fadeFrames;
+
+    if (fadeTotal >= remaining) {
+      // Edge case 2: nem os fades cabem — comprimir tudo proporcionalmente
+      const scale = remaining / fadeTotal;
+      fadeFrames = Math.max(1, Math.floor(fadeFrames * scale));
+      holdFrames = 0;
+    } else {
+      holdFrames = Math.max(0, remaining - fadeTotal);
+    }
+  }
+
+  const animationFrames = Math.max(1, durationInFrames - (isLastScene ? fadeFrames : 2 * fadeFrames) - holdFrames);
+
+  // Limites das zonas em frames absolutos
+  const fadeOutStart = isLastScene
+    ? durationInFrames // Sem fade out na última cena
+    : durationInFrames - fadeFrames;
+
+  // ── Cálculo de opacidade e progress ──
+
+  let progress: number;
+  let opacity: number;
+
+  if (frame < fadeFrames) {
+    // Zona 1: Fade in — opacity 0→1, progress = 0
+    opacity = interpolate(frame, [0, fadeFrames], [0, 1], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    });
+    progress = 0;
+  } else if (frame < fadeFrames + animationFrames) {
+    // Zona 2: Animação — opacity = 1, progress 0→1
+    opacity = 1;
+    const localFrame = frame - fadeFrames;
+    progress = animationFrames > 1
+      ? localFrame / (animationFrames - 1)
+      : 1;
+  } else if (frame < fadeOutStart) {
+    // Zona 3: Hold — opacity = 1, progress = 1 (imagem completa)
+    opacity = 1;
+    progress = 1;
+  } else {
+    // Zona 4: Fade out — opacity 1→0, progress = 1
+    const localFrame = frame - fadeOutStart;
+    opacity = interpolate(localFrame, [0, fadeFrames], [1, 0], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    });
+    progress = 1;
+  }
+
+  // Clamp final
+  opacity = Math.max(0, Math.min(1, opacity));
+  progress = Math.max(0, Math.min(1, progress));
+
+  // ── Desenho do frame — TUDO síncrono, sem requestAnimationFrame ──
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -100,44 +182,27 @@ export function SpeedPaintScene({
 
     if (!canvas || !ctx || !img || !buffer) return;
 
-    // Calcula progress com fade
-    const rawProgress = frame / durationInFrames;
-    const clampedProgress = Math.max(0, Math.min(1, rawProgress));
-
-    // Calcula opacidade do fade via helpers compartilhados
-    const safeFadeFrames = computeSafeFadeFrames(durationInFrames, tFrames);
-    let opacity = 1;
-
-    if (safeFadeFrames > 0 && durationInFrames >= 2) {
-      if (isLastScene) {
-        opacity = springFadeIn(frame, fps, safeFadeFrames);
-      } else {
-        const fadeIn = springFadeIn(frame, fps, safeFadeFrames);
-        const fadeOut = springFadeOut(frame, fps, durationInFrames - safeFadeFrames, safeFadeFrames);
-        opacity = Math.min(fadeIn, fadeOut);
-      }
-    }
-
     // Determina o multiplicador de velocidade: draw/paint separado > global > default
     const resolvedSpeedMultiplier = (drawSpeed != null && paintSpeed != null)
       ? ({ sketch: drawSpeed, reveal: paintSpeed } satisfies SpeedPaintMultipliers)
       : speedMultiplier;
 
+    // Canvas desenha sempre com opacidade total — o fade é via CSS no AbsoluteFill
     renderSpeedPaintFrame(ctx, buffer, {
       animation,
       imageElement: img,
-      progress: clampedProgress,
-      opacity,
+      progress,
+      opacity: 1,
       speedMultiplier: resolvedSpeedMultiplier,
     });
-  }, [frame, animation, durationInFrames, tFrames, isLastScene, fps, drawSpeed, paintSpeed, speedMultiplier]);
+  }, [frame, animation, progress, drawSpeed, paintSpeed, speedMultiplier]);
 
   // Dimensões do canvas — usa as dimensões da animação para pixel-perfect rendering
   const canvasWidth = animation.canvasWidth;
   const canvasHeight = animation.canvasHeight;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#000' }}>
+    <AbsoluteFill style={{ backgroundColor: '#000', opacity }}>
       <canvas
         ref={canvasRef}
         width={canvasWidth}

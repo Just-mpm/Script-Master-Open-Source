@@ -10,10 +10,12 @@ import { SpeedPaintScene } from './SpeedPaintScene';
 import { SubtitleOverlay } from './SubtitleOverlay';
 import { WaveformOverlay } from './WaveformOverlay';
 
-/** Frames de fade para transição entre cenas */
+/** Frames de fade para transição entre cenas (cenas estáticas) */
 const FADE_FRAMES = 12;
-/** Duração do fade em ms (usado para calcular overlap) */
+/** Duração do fade em ms para cenas estáticas (usado para calcular overlap) */
 const FADE_DURATION_MS = 400;
+/** Overlap para crossfade de speed paint — cobre SPEED_PAINT_FADE_SECONDS do SpeedPaintScene */
+const SPEED_PAINT_OVERLAP_MS = 1000;
 
 /**
  * Composition principal Remotion para o vídeo de roteiro.
@@ -36,9 +38,6 @@ export function VideoComposition({
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
 
-  // Calcula overlap em frames baseado no fade padrão
-  const overlapFrames = msToFrames(FADE_DURATION_MS, fps);
-
   // Pré-computa captions por cena — evita filter+map a cada frame (P1: hotspot em ~300K iterações/s)
   const sceneCaptionsMap = useMemo(() => {
     if (!captions || captions.length === 0) return new Map<number, CaptionWord[]>();
@@ -47,8 +46,16 @@ export function VideoComposition({
     for (let index = 0; index < scenes.length; index++) {
       const scene = scenes[index];
       const startFrame = msToFrames(scene.timestamp * 1000, fps);
-      const adjustedFrom = Math.max(0, startFrame - overlapFrames);
-      const adjustedDuration = scene.durationInFrames + overlapFrames;
+
+      // Overlap por cena: speed paint usa 1s, estático usa 400ms
+      const nextHasSpeedPaint = index < scenes.length - 1 && !!scenes[index + 1].strokeAnimation;
+      const thisHasSpeedPaint = !!scene.strokeAnimation;
+      const sceneOverlap = (thisHasSpeedPaint || nextHasSpeedPaint)
+        ? msToFrames(SPEED_PAINT_OVERLAP_MS, fps)
+        : msToFrames(FADE_DURATION_MS, fps);
+
+      const adjustedFrom = Math.max(0, startFrame - sceneOverlap);
+      const adjustedDuration = scene.durationInFrames + sceneOverlap;
 
       const filtered = captions
         .filter((w) => w.startFrame < adjustedFrom + adjustedDuration && w.endFrame > adjustedFrom)
@@ -63,7 +70,7 @@ export function VideoComposition({
       }
     }
     return map;
-  }, [captions, scenes, fps, overlapFrames]);
+  }, [captions, scenes, fps]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -74,9 +81,16 @@ export function VideoComposition({
       {scenes.map((scene, index) => {
         const startFrame = msToFrames(scene.timestamp * 1000, fps);
 
+        // Overlap por cena: speed paint usa 1s, estático usa 400ms
+        const nextHasSpeedPaint = index < totalScenes - 1 && !!scenes[index + 1].strokeAnimation;
+        const thisHasSpeedPaint = !!scene.strokeAnimation;
+        const sceneOverlapFrames = (thisHasSpeedPaint || nextHasSpeedPaint)
+          ? msToFrames(SPEED_PAINT_OVERLAP_MS, fps)
+          : msToFrames(FADE_DURATION_MS, fps);
+
         // Compensa o from com overlap: cena começa mais cedo durante a anterior
-        const adjustedFrom = Math.max(0, startFrame - overlapFrames);
-        const adjustedDuration = scene.durationInFrames + overlapFrames;
+        const adjustedFrom = Math.max(0, startFrame - sceneOverlapFrames);
+        const adjustedDuration = scene.durationInFrames + sceneOverlapFrames;
 
         // Busca captions pré-computados para esta cena (P1: lookup O(1) no lugar de filter+map)
         const sceneCaptions = sceneCaptionsMap.get(index) ?? [];
@@ -96,7 +110,6 @@ export function VideoComposition({
                 animation={scene.strokeAnimation}
                 imageSource={scene.imageUrl}
                 durationInFrames={adjustedDuration}
-                fadeFrames={FADE_FRAMES}
                 isLastScene={isLastScene}
                 speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier}
                 drawSpeed={speedPaintMultipliers?.sketch}
