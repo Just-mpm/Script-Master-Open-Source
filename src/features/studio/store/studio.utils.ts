@@ -4,7 +4,7 @@
  */
 
 import { VOICES } from '../../../lib/constants';
-import type { SceneRatio } from '../types';
+import type { SceneRatio, StudioDraftState } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -117,6 +117,16 @@ export function getInitialStudioConfig() {
 // ---------------------------------------------------------------------------
 
 /**
+ * Props de configuração que `buildGenerateOptions` aceita do estado do store.
+ * Combina StudioDraftState com campos de speaker que não estão no draft.
+ */
+type GenerateOptionsState = StudioDraftState & {
+  speakerAName: string;
+  speakerBVoice: string;
+  speakerBName: string;
+};
+
+/**
  * Constrói opções de geração de áudio a partir do estado do store.
  * Recebe o estado via parâmetro para evitar import circular com studioStore.
  *
@@ -124,41 +134,11 @@ export function getInitialStudioConfig() {
  */
 export function buildGenerateOptions(
   userId: string | undefined,
-  state: {
-    script: string;
-    selectedVoice: string;
-    audioProfile: string;
-    scene: string;
-    pace: string;
-    styleNotes: string;
-    generateScenes: boolean;
-    isMultiSpeaker: boolean;
-    speakerAName: string;
-    speakerBVoice: string;
-    speakerBName: string;
-    sceneDensity: number;
-    sceneRatio: SceneRatio;
-    visualFramework: string;
-    referenceImage: string | null;
-  },
+  state: GenerateOptionsState,
 ) {
   return {
     userId,
     projectName: `Projeto ${new Date().toLocaleDateString()}`,
-    script: state.script,
-    selectedVoice: state.selectedVoice,
-    audioProfile: state.audioProfile,
-    scene: state.scene,
-    pace: state.pace,
-    styleNotes: state.styleNotes,
-    generateScenes: state.generateScenes,
-    isMultiSpeaker: state.isMultiSpeaker,
-    speakerAName: state.speakerAName,
-    speakerBVoice: state.speakerBVoice,
-    speakerBName: state.speakerBName,
-    sceneDensity: state.sceneDensity,
-    sceneRatio: state.sceneRatio,
-    visualFramework: state.visualFramework,
-    referenceImage: state.referenceImage,
+    ...state,
   };
 }

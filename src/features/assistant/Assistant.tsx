@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import { alpha } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import {
   deleteChatSession,
   deleteMemory,
@@ -42,7 +43,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
-  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, messagesEndRef } = useAssistant(currentState);
+  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -406,6 +407,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             variant="outlined"
             severity="error"
             sx={{ borderRadius: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={retryLastMessage}>
+                Tentar novamente
+              </Button>
+            }
           >
             {error}
           </Alert>

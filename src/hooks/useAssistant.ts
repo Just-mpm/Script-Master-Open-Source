@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
 import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
@@ -353,6 +353,30 @@ export function useAssistant(currentState?: AssistantStudioState) {
     streamActiveRef.current = false;
   };
 
+  /**
+   * Reenvia a última mensagem do usuário quando há erro.
+   * Remove a mensagem de fallback do assistente e reenvia o texto original.
+   */
+  const retryLastMessage = useCallback(() => {
+    // Encontra a última mensagem de erro do modelo (fallback)
+    const lastErrorIdx = messages.findLastIndex(
+      (m) => m.role === 'model' && m.text.includes('Desculpe, ocorreu um erro'),
+    );
+    if (lastErrorIdx === -1) return;
+
+    // Encontra a última mensagem do usuário antes do erro
+    const lastUserMsg = [...messages]
+      .slice(0, lastErrorIdx)
+      .reverse()
+      .find((m) => m.role === 'user');
+
+    if (!lastUserMsg) return;
+
+    // Remove a mensagem de fallback e reenvia
+    setMessages((prev) => prev.filter((_, idx) => idx !== lastErrorIdx));
+    void sendMessage(lastUserMsg.text, lastUserMsg.attachments);
+  }, [messages, sendMessage]);
+
   return {
     messages,
     isLoading,
@@ -362,6 +386,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     startNewChat,
     loadSession,
     stopGeneration,
+    retryLastMessage,
     messagesEndRef,
   };
 }

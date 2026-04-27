@@ -14,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -29,6 +30,7 @@ import Close from '@mui/icons-material/Close';
 import Delete from '@mui/icons-material/Delete';
 import Download from '@mui/icons-material/Download';
 import ImageIcon from '@mui/icons-material/Image';
+import Refresh from '@mui/icons-material/Refresh';
 import Save from '@mui/icons-material/Save';
 import Stop from '@mui/icons-material/Stop';
 import Sparkles from '@mui/icons-material/AutoAwesome';
@@ -597,6 +599,24 @@ export function ImageStudio() {
       description="Esta ação remove permanentemente a imagem da biblioteca. A operação não pode ser desfeita."
       onConfirm={() => void handleDeleteImage()}
       onCancel={() => { setImageToDelete(null); setImageDeleteError(null); }}
+    />
+
+    {/* Snackbar: erro de galeria quando sidebar está colapsado (mobile) */}
+    <Snackbar
+      open={Boolean(imagesError) && isSidebarCollapsed}
+      autoHideDuration={8000}
+      onClose={() => setImagesError(null)}
+      message={imagesError}
+      action={
+        <Button
+          color="inherit"
+          size="small"
+          startIcon={<Refresh sx={{ fontSize: 18 }} />}
+          onClick={() => void loadSavedImages()}
+        >
+          Tentar novamente
+        </Button>
+      }
     />
     </>
   );
