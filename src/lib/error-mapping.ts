@@ -6,11 +6,11 @@
  */
 
 // ---------------------------------------------------------------------------
-// Tipos
+// Tipos (internos)
 // ---------------------------------------------------------------------------
 
 /** Regra individual de mapeamento: predicado + mensagem amigável */
-export interface ErrorMappingRule {
+interface ErrorMappingRule {
   /** Retorna true quando a mensagem (lowercase) corresponde ao erro */
   readonly match: (msg: string) => boolean;
   /** Mensagem exibida ao usuário quando a regra bate */
@@ -18,7 +18,7 @@ export interface ErrorMappingRule {
 }
 
 /** Configuração do mapper por domínio */
-export interface ErrorMapperConfig {
+interface ErrorMapperConfig {
   /** Mensagem quando o valor lançado não é uma instância de Error */
   readonly nonErrorMessage: string;
   /** Mensagem de fallback quando nenhuma regra bate */
@@ -28,7 +28,7 @@ export interface ErrorMapperConfig {
 }
 
 /** Função que mapeia um erro desconhecido para string amigável */
-export type ErrorMapper = (error: unknown) => string;
+type ErrorMapper = (error: unknown) => string;
 
 // ---------------------------------------------------------------------------
 // Factory

@@ -35,13 +35,16 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Audit páginas públicas corrigido (17/23 implementados, 5 não aplicáveis por decisão de produto, 6 P3 pulados por serem nitpicks de baixo impacto)
+Fase: Dead code cleanup (11 exports não usados, 3 barrel re-exports, 1 dep npm morta)
 Última atualização: 26/04/2026
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 7: DEAD CODE — Limpeza de código morto validado
+- Resultado: 11 type/interface exports não usados tornados internos (logger.ts: LogLevel/LogPayload/LoggerInstance; error-mapping.ts: ErrorMappingRule/ErrorMapperConfig/ErrorMapper; rate-limiter.ts: RetryResult; env.ts: FirebaseEnvConfig; db/types.ts: ProjectSettings; db/transcriptions.ts: StoredTranscription). 3 barrel re-exports removidos do studio store (StudioConfigState, STORAGE_KEYS, SCENE_RATIOS — consumidores usam import direto). 1 dep npm morta removida (es-abstract — transitiva de eslint-plugin-react). Lint + typecheck + build + testes (1180) passaram.
+- Pendências: não
 ### Etapa 6: AUDIT — Correção de 23 findings do audit de páginas públicas (docs/audits/6.md)
 - Resultado: 17/23 findings implementados em 10 arquivos. P1 (6/6): FAQAccordion com id/aria-controls (WCAG 4.1.2), CTAs PricingPage+FuncionalidadesPage corrigidos para /cadastro, aria-hidden em 10 ícones decorativos (ContactPage+StatusPage), link "Contato" adicionado ao header. P2 (11/11): aria-current="page" nos links ativos, useCallback desnecessário removido, 4 dead exports removidos de animations.ts, CTASection glow azul→laranja, StepCard com glassPanelSx, prefers-reduced-motion no pulseGlow. P2 não implementados (4): contraste #2E75B6 (análise mais ampla), SocialProofBar texto (decisão de marketing), jargões técnicos (validação product owner), sombras inconsistentes (design review). P3 (6 não implementados): nitpicks de baixo impacto. Lint + typecheck + build passaram.
 - Pendências: não

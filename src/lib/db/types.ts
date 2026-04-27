@@ -15,7 +15,7 @@ export interface SavedAudio {
   scenes?: SavedAudioScene[];
 }
 
-export interface ProjectSettings {
+interface ProjectSettings {
   selectedVoice: string;
   pace: string;
   styleNotes: string;

@@ -19,7 +19,7 @@ const log = createLogger('transcriptions');
  */
 
 /** Estrutura persistida no IndexedDB para a transcrição de um projeto */
-export interface StoredTranscription {
+interface StoredTranscription {
   id: string; // projectId
   result: TranscriptionResult;
   createdAt: number;
