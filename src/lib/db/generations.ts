@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SavedAudio, SavedAudioScene } from './types';
 import {
@@ -79,7 +79,7 @@ export async function saveGeneration(item: SavedAudio, userId?: string): Promise
 export async function getGenerations(userId?: string): Promise<SavedAudio[]> {
   if (userId) {
     try {
-      const snapshot = await getDocs(query(generationsCollection, where('userId', '==', userId)));
+      const snapshot = await getDocs(query(generationsCollection, where('userId', '==', userId), limit(100)));
       return sortGenerations(snapshot.docs.map((generationDocument) => generationDocument.data()));
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.LIST, 'generations');

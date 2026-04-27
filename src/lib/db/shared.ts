@@ -5,7 +5,7 @@ import type {
   SnapshotOptions,
   WithFieldValue,
 } from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { deleteObject, getDownloadURL, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage';
 import { auth, storage } from '../firebase';
 import { createLogger } from '../logger';
 
@@ -72,8 +72,21 @@ interface FirestoreErrorInfo {
 
 function runRequest<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
+    const transaction = request.transaction;
+
+    // IDBOpenDBRequest não tem transação — resolve/rejeita diretamente no request
+    if (!transaction) {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      return;
+    }
+
+    // Resolve na conclusão da transação, não no sucesso individual do request.
+    // Isso evita resolver antes de a transação ser commitada (dados podem ser perdidos se abortada).
     request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => resolve(request.result);
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error ?? new DOMException('Transaction aborted'));
   });
 }
 
@@ -100,7 +113,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
   const errorString = JSON.stringify(errInfo);
   log.error('Firestore Error', { error: errorString });
-  throw new Error(errorString);
+  throw new Error(errorString, { cause: error });
 }
 
 export function removeUndefinedFields<T>(value: T): T {
@@ -260,15 +273,25 @@ export async function updateIndexedDbItem<T>(
   });
 }
 
+/** Threshold para alternar entre upload one-shot e resumável (10MB) */
+const RESUMABLE_UPLOAD_THRESHOLD = 10 * 1024 * 1024;
+
 export async function uploadBlobAndGetUrl(
   storagePath: string,
   blob: Blob,
 ): Promise<string> {
   const storageRef = ref(storage, storagePath);
+  const metadata = { contentType: blob.type || 'application/octet-stream' };
 
-  await uploadBytes(storageRef, blob, {
-    contentType: blob.type || 'application/octet-stream',
-  });
+  if (blob.size > RESUMABLE_UPLOAD_THRESHOLD) {
+    // Upload resumável para arquivos grandes — evita OOM e permite recuperação em caso de falha
+    const task = uploadBytesResumable(storageRef, blob, metadata);
+    const snapshot = await task;
+    return getDownloadURL(snapshot.ref);
+  }
+
+  // Upload one-shot para arquivos pequenos — mais simples e rápido
+  await uploadBytes(storageRef, blob, metadata);
   return getDownloadURL(storageRef);
 }
 

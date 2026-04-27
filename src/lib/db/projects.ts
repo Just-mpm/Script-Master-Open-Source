@@ -1,4 +1,4 @@
-import { collection, collectionGroup, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, collectionGroup, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { AudioSource, Project, ProjectImage, ProjectVideo } from './types';
 import {
@@ -73,7 +73,7 @@ export async function saveProject(project: Project, userId?: string): Promise<vo
 export async function getProjects(userId?: string): Promise<Project[]> {
   if (userId) {
     try {
-      const snapshot = await getDocs(query(projectsCollection, where('userId', '==', userId)));
+      const snapshot = await getDocs(query(projectsCollection, where('userId', '==', userId), limit(100)));
       return sortProjects(snapshot.docs.map((projectDoc) => projectDoc.data()));
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.LIST, 'projects');

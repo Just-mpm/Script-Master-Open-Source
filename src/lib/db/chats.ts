@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { createLogger } from '../logger';
 import type { AttachmentRecord, ChatSession } from './types';
@@ -80,11 +80,12 @@ export async function saveChatSession(session: ChatSession, userId?: string): Pr
 export async function getChatSessions(userId?: string): Promise<ChatSession[]> {
   if (userId) {
     try {
-      const snapshot = await getDocs(query(chatsCollection, where('userId', '==', userId)));
+      const snapshot = await getDocs(query(chatsCollection, where('userId', '==', userId), limit(100)));
       const firestoreSessions = snapshot.docs.map((chatDocument) => chatDocument.data());
 
       try {
-        const indexedDbSessions = await getAllIndexedDbItems<ChatSession>(CHAT_STORE);
+        const indexedDbSessions = (await getAllIndexedDbItems<ChatSession>(CHAT_STORE))
+          .filter((s) => !s.userId || s.userId === userId);
 
         // Merge e deduplica por id, preferindo updatedAt mais recente
         const sessionMap = new Map<string, ChatSession>();
