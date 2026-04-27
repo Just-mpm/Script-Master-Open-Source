@@ -7,6 +7,94 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.5] - 2026-04-27
+
+### Corrigido
+
+**Bugs críticos:**
+- **Dupla instância `useAudioGenerator`** (CRÍTICO): StudioPage criava sua própria instância do hook, desconectando geração do ActionBar (player/download nunca apareciam). Instância removida — StudioPage agora recebe `isGenerating`, `scenes`, `handleGenerate` e `isGenerateDisabled` como props do App.tsx
+- **Imagens de cena nunca deletadas no cleanup LGPD**: `deleteGenerationsAndSceneImages()` usava path errado (`generations_images/{uid}/{id}` em vez de `generations_images/{uid}/{id}_scene_{index}.png`). Agora lê o campo `scenes` de cada documento para construir paths corretos
+- **Galeria não exibia vídeos exportados**: `getProjectDetails` e `getProjectsDetailsMap` ignoravam a subcoleção `videos`. Agora incluem vídeos via `collectionGroup` query (Firestore) e `VIDEOS_STORE` (IndexedDB)
+- **Race condition no `useVideoExporter`**: `catch`/`finally` de renders antigos podiam corromper estado de renders novos. `renderIdRef` com guards adicionados para isolar cada renderização
+
+**Bugs de funcionalidade:**
+- **`useAssistant`**: chamadas Firestore sequenciais (`getMemories` + `getUserSettings`) convertidas para `Promise.all` — elimina 150-600ms de latência no primeiro envio de mensagem
+- **`deleteChatSession`** não deletava do IndexedDB quando `userId` presente — apenas Firestore era deletado. Agora deleta de ambos via `Promise.all`
+- **Exclusão de conta**: `deleteUser()` agora é chamado PRIMEIRO (antes do cleanup LGPD). Se o cleanup falhar, dados residuais são notificados via `window.confirm()` antes do redirect
+- **`ProtectedRoute`**: login por email/senha sem verificação de email agora bloqueia acesso ao app — exibe tela com botão "Reenviar email de verificação" e loading state
+- **`DataMigrationDialog`**: `.catch()` adicionado com fallback seguro para migrações com erro
+- **Blob URL de referência** não era revogado no `useEffect` cleanup do `ImageStudio`
+- **Blob URL de áudio** não era revogado após download na `Library`
+- **`setTimeout` sem cleanup** no `AnimationControls` — auto-start de gravação batch podia disparar após navegação rápida
+- **`reader.onerror`** sem feedback no `Inspector` — upload de referência falhava silenciosamente
+- **`formatTime`** movido de `audioState` para `audioActions` no `ActionBar`
+- **Contagem de testes**: 1185 → 1180 (5 testes SpeedPaint corrigidos após mudança de API de props)
+
+**LGPD / data loss:**
+- **Firestore offline persistence**: `enableIndexedDbPersistence(db)` ativado com fallback silencioso para múltiplas abas
+- **`getChatSessions`**: sessões IndexedDB agora filtradas por `userId` — não mistura dados de usuários diferentes
+- **`handleFirestoreError`**: causa original do erro preservada via `{ cause: error }`
+- **`runRequest` (IndexedDB)**: resolve na conclusão da transação (`transaction.oncomplete`) em vez de no sucesso individual — evita resolver antes de commit
+- **Upload resumável**: `uploadBytesResumable` para blobs >10MB — evita OOM e permite recuperação em falhas
+- **`limit(100)`** adicionado em todas as queries Firestore de listagem (projects, generations, images, memories, chats, videos)
+
+### Alterado
+
+**Estúdio:**
+- **`Inspector`**: 22 props de config removidas — agora lê tudo diretamente do `useStudioStore` com `useShallow`. Recebe apenas `isGenerating` como prop
+- **`StudioPage`**: simplificada de 104→36 linhas — estado de config e geração removidos (vêm do App.tsx via props)
+- **`App.tsx`**: `StudioPage` agora recebe props dinâmicas do hook de geração; `routes` memoizado com deps corretas
+- **`ActionBar`**: seletores primitivos do AudioContext (`useAudioIsPlaying`, `useAudioCurrentTime`, `useAudioDuration`) substituem `useGlobalAudioState` — elimina ~4 re-renders/s durante playback
+- **`applySettings`**: loop genérico sobre `Object.entries(patch)` substitui 14 if/else manuais
+- **`buildGenerateOptions`**: usa spread (`...state`) em vez de 15 atribuições individuais; tipo `GenerateOptionsState` extraído
+
+**Vídeo:**
+- **`SpeedPaintControls`**: props mudaram de objeto `multipliers`/`onMultipliersChange` para primitivas `sketch`/`reveal`/`onSketchChange`/`onRevealChange` — elimina objeto intermediário e estabiliza callbacks
+- **`VideoExportPanel`**: seletor de velocidade `SPEED_OPTIONS` (slow/normal/fast) removido — sliders granulares são suficientes; `speedPaintSpeed` fixo em `'normal'`
+
+**Assistente:**
+- **`retryLastMessage`**: novo método no `useAssistant` — botão "Tentar novamente" no Alert de erro reenvia última mensagem do usuário
+- **Delete dialogs**: Assistant usa `DeleteConfirmationDialog` compartilhado (DRY) em vez de Dialogs duplicados — mesmo componente de Library e ImageStudio
+
+**Páginas públicas:**
+- **3 CTAs corrigidos** de `/login` → `/cadastro` (PricingPage hero, PricingPage final, FuncionalidadesPage final)
+- **Link "Contato"** adicionado ao header público
+- **Tabela de comparação** (PricingPage): `Grid` com roles ARIA substituída por `<table>` semântica nativa (`<thead>`, `<tbody>`, `<th>`, `<td>`)
+- **CTASection**: glow do botão trocado de azul (`BRAND_PRIMARY_GLOW`) para laranja (`BRAND_SECONDARY_GLOW_SOFT`)
+- **StepCard**: `glassPanelSx` aplicado (consistência com outros cards)
+- **`EMAIL_REGEX`** movido para escopo de módulo no ContactPage (evita recriação por render)
+
+**Acessibilidade:**
+- **FAQAccordion**: `id`/`aria-controls`/`role="region"`/`aria-labelledby` adicionados (WCAG 4.1.2)
+- **`aria-hidden="true"`** adicionado em 10 ícones decorativos (ContactPage, StatusPage, ProtectedRoute)
+- **`aria-current="page"`** adicionado nos links ativos do header (desktop e mobile)
+- **`aria-label="Verificando sessão"`** adicionado no spinner do `ProtectedRoute`
+- **`prefers-reduced-motion`**: desabilita animação `pulseGlow` no AboutPage
+- **Duplicate `<main>`**: `component="main"` removido de `PageLayout`, `LoginPage` e `RegisterPage` (App.tsx já fornece o landmark)
+
+**SEO:**
+- **NotFoundPage**: `<meta name="robots" content="noindex, nofollow">` adicionado via React 19 hoisting
+
+**Performance:**
+- **`useCallback` removido** de `getPrice` no PricingPage (cálculo trivial, deps estáveis)
+- **`useShallow` no Inspector** (Zustand) — evita re-renders quando state não mudou
+
+**Dead code cleanup:**
+- **`extractVideoThumbnail.ts`** removido (não referenciado em nenhum lugar)
+- **4 variantes de animação mortas** removidas de `animations.ts` (`slideInLeft`, `slideInRight`, `heroContainer`, `showcaseContainer`)
+- **11 type/interface exports** tornados internos (`LogLevel`, `LogPayload`, `LoggerInstance`, `ErrorMappingRule`, `ErrorMapperConfig`, `ErrorMapper`, `RetryResult`, `FirebaseEnvConfig`, `ProjectSettings`, `StoredTranscription`, `StudioConfigState`)
+- **3 barrel re-exports** removidos de `studio/store/index.ts` (`StudioConfigState`, `STORAGE_KEYS`, `SCENE_RATIOS`)
+- **1 dependência npm removida**: `es-abstract` (transitiva redundante)
+- **`searchFieldSx`** extraído para `surfaces.ts` (DRY entre Library e ImageStudio)
+
+### Testes
+
+- 7 arquivos de teste atualizados para refletir mudanças na API de componentes (Inspector props, SpeedPaintControls props, PageLayout sem `component="main"`, barrel exports)
+- 5 testes corrigidos no `VideoExportPanel` (mock atualizado para props primitivas do SpeedPaintControls)
+- Total: 1180 testes passando
+
+---
+
 ## [0.24.4] - 2026-04-26
 
 ### Alterado

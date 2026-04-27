@@ -1,4 +1,4 @@
-export interface FirebaseEnvConfig {
+interface FirebaseEnvConfig {
   apiKey: string;
   authDomain: string;
   projectId: string;

@@ -129,20 +129,13 @@ export const useStudioStore = create<StudioConfigState>()((set) => ({
   // --- Ações ---
   applySettings: (patch) => set((state) => {
     const updates: Partial<StudioConfigState> = {};
-    if (patch.script !== undefined && patch.script !== state.script) updates.script = patch.script;
-    if (patch.isMultiSpeaker !== undefined && patch.isMultiSpeaker !== state.isMultiSpeaker) updates.isMultiSpeaker = patch.isMultiSpeaker;
-    if (patch.speakerAName !== undefined && patch.speakerAName !== state.speakerAName) updates.speakerAName = patch.speakerAName;
-    if (patch.speakerBVoice !== undefined && patch.speakerBVoice !== state.speakerBVoice) updates.speakerBVoice = patch.speakerBVoice;
-    if (patch.speakerBName !== undefined && patch.speakerBName !== state.speakerBName) updates.speakerBName = patch.speakerBName;
-    if (patch.selectedVoice !== undefined && patch.selectedVoice !== state.selectedVoice) updates.selectedVoice = patch.selectedVoice;
-    if (patch.audioProfile !== undefined && patch.audioProfile !== state.audioProfile) updates.audioProfile = patch.audioProfile;
-    if (patch.scene !== undefined && patch.scene !== state.scene) updates.scene = patch.scene;
-    if (patch.pace !== undefined && patch.pace !== state.pace) updates.pace = patch.pace;
-    if (patch.styleNotes !== undefined && patch.styleNotes !== state.styleNotes) updates.styleNotes = patch.styleNotes;
-    if (patch.generateScenes !== undefined && patch.generateScenes !== state.generateScenes) updates.generateScenes = patch.generateScenes;
-    if (patch.sceneDensity !== undefined && patch.sceneDensity !== state.sceneDensity) updates.sceneDensity = patch.sceneDensity;
-    if (patch.sceneRatio !== undefined && patch.sceneRatio !== state.sceneRatio) updates.sceneRatio = patch.sceneRatio;
-    if (patch.visualFramework !== undefined && patch.visualFramework !== state.visualFramework) updates.visualFramework = patch.visualFramework;
+    // Loop sobre chaves do patch — evita listagem manual de 14 campos
+    const stateRecord = state as unknown as Record<string, unknown>;
+    for (const [key, value] of Object.entries(patch)) {
+      if (value !== undefined && value !== stateRecord[key]) {
+        (updates as unknown as Record<string, unknown>)[key] = value;
+      }
+    }
     return updates;
   }),
 

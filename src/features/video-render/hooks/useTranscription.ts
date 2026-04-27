@@ -264,6 +264,7 @@ export function useTranscription(
 
   const cancelRef = useRef(false);
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   // ─── Persistência com debounce ─────────────────────────────────
 
@@ -397,7 +398,18 @@ export function useTranscription(
 
             if (cancelRef.current) throw new Error('Transcrição cancelada pelo usuário.');
 
-            const audioResponse = await fetch(params.audioUrl);
+            // Cria AbortController para cancelar o download do áudio via fetch
+            const fetchController = new AbortController();
+            fetchAbortRef.current = fetchController;
+
+            if (cancelRef.current) {
+              fetchController.abort();
+              throw new Error('Transcrição cancelada pelo usuário.');
+            }
+
+            const audioResponse = await fetch(params.audioUrl, { signal: fetchController.signal });
+            fetchAbortRef.current = null;
+
             if (!audioResponse.ok) {
               throw new Error(`Falha ao baixar áudio (HTTP ${audioResponse.status})`);
             }
@@ -418,6 +430,8 @@ export function useTranscription(
 
             if (cancelRef.current) throw new Error('Transcrição cancelada pelo usuário.');
 
+            // downloadWhisperModel não aceita AbortSignal — verificamos cancelamento antes de iniciar
+            // Se já cancelado, evita baixar ~39MB desnecessariamente
             await downloadWhisperModel({
               model: WHISPER_MODEL,
               onProgress: (p) => {
@@ -453,6 +467,12 @@ export function useTranscription(
             words = processWhisperAlignedCaptions(result.transcription, params.script, params.fps);
             transcriptionSource = 'whisper-aligned';
           } catch (whisperErr) {
+            // AbortError do fetch (cancelamento via AbortController) → trata como cancelamento
+            if (whisperErr instanceof DOMException && whisperErr.name === 'AbortError') {
+              setTranscriptionStatusText('Transcrição cancelada.');
+              return;
+            }
+
             // Falha no Whisper → fallback proporcional
             if (whisperErr instanceof Error && whisperErr.message.includes('cancelada pelo usuário')) {
               setTranscriptionStatusText('Transcrição cancelada.');
@@ -497,6 +517,12 @@ export function useTranscription(
         const hash = await hashScript(params.script);
         setScriptHash(hash);
       } catch (err) {
+        // AbortError do fetch → trata como cancelamento silencioso
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setTranscriptionStatusText('Transcrição cancelada.');
+          return;
+        }
+
         if (err instanceof Error && err.message.includes('cancelada pelo usuário')) {
           setTranscriptionStatusText('Transcrição cancelada.');
           return;
@@ -514,6 +540,7 @@ export function useTranscription(
           setError('Não foi possível transcrever o áudio. Tente novamente.');
         }
       } finally {
+        fetchAbortRef.current = null;
         setIsTranscribing(false);
       }
     },
@@ -535,6 +562,9 @@ export function useTranscription(
 
   const cancelTranscription = useCallback(() => {
     cancelRef.current = true;
+    // Cancela o download do áudio via fetch imediatamente
+    fetchAbortRef.current?.abort();
+    fetchAbortRef.current = null;
   }, []);
 
   /** Atualiza as legendas manualmente — marca source como 'manual' */

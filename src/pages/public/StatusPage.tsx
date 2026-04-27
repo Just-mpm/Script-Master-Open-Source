@@ -154,7 +154,7 @@ function GlobalStatusBanner() {
             transition: 'box-shadow 0.3s ease',
           }}
         >
-          <VerifiedUserIcon sx={{ fontSize: 28, color: SUCCESS_MAIN }} />
+          <VerifiedUserIcon aria-hidden="true" sx={{ fontSize: 28, color: SUCCESS_MAIN }} />
         </Box>
         <Typography variant="h5" component="p" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
           {GLOBAL_STATUS}
@@ -227,7 +227,7 @@ function IncidentHistory() {
     <Box sx={{ pb: { xs: 8, md: 12 }, mx: { xs: 2, sm: 3 } }}>
       <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 } })}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 3 }}>
-          <Timeline sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
+          <Timeline aria-hidden="true" sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
           <Typography variant="h6" component="h2" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
             Últimos 90 dias
           </Typography>
@@ -315,7 +315,7 @@ export default function StatusPage() {
       {/* Última verificação */}
       <Box sx={{ pb: { xs: 8, md: 12 }, textAlign: 'center' }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center' }}>
-          <AccessTimeIcon sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
+          <AccessTimeIcon aria-hidden="true" sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
           <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
             {LAST_CHECK}
           </Typography>

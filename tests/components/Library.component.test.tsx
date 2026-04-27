@@ -66,6 +66,12 @@ vi.mock('../../src/lib/logger', () => ({
 vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
   insetPanelSx: () => ({}),
+  searchFieldSx: {},
+}));
+
+vi.mock('../../src/components/video-library/DeleteConfirmationDialog', () => ({
+  DeleteConfirmationDialog: ({ open, titleIdleLabel }: { open: boolean; titleIdleLabel?: string }) =>
+    open ? <div role="dialog">{titleIdleLabel ?? 'Excluir?'}</div> : null,
 }));
 
 vi.mock('../../src/theme/tokens', () => ({

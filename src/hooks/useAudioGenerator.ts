@@ -100,6 +100,13 @@ interface GenerateOptions {
 // Hook
 // ---------------------------------------------------------------------------
 
+// TODO(S1): Este hook é instanciado em App.tsx e VideoPage.tsx separadamente,
+// criando estado isolado em cada componente. VideoPage chama loadProjectData()
+// ao montar para recarregar do Firestore, o que mitiga o problema funcional.
+// Para unificar, migrar o estado para uma Zustand store (audioGeneratorStore),
+// mas isso exige refatorar ~15 useState/refs e adaptar todos os consumers —
+// risco alto de regressão em cancelamento, streaming e geração.
+
 export function useAudioGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -206,7 +213,7 @@ export function useAudioGenerator() {
           audio.removeEventListener('error', handleError);
         };
         const handleError = () => {
-          log.warn('Falha ao carregar metadados do áudio pela URL');
+          log.warn('Falha ao carregar metadados do áudio remoto — duração indisponível, a exportação de vídeo pode ser afetada');
           audio.removeEventListener('loadedmetadata', handleLoaded);
           audio.removeEventListener('error', handleError);
         };

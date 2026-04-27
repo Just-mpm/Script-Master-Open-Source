@@ -44,7 +44,7 @@ import {
   WHITE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintMultipliers } from '../types';
 import { DEFAULT_SPEED_PAINT_MULTIPLIERS } from '../types';
 import { SpeedPaintControls } from './SpeedPaintControls';
 
@@ -57,13 +57,6 @@ const QUALITY_OPTIONS: { value: VideoExportQuality; label: string }[] = [
   { value: '1080p', label: '1080p' },
   { value: '1440p', label: '1440p' },
   { value: '4k', label: '4K' },
-];
-
-/** Opções de velocidade da animação speed paint */
-const SPEED_OPTIONS: { value: SpeedPaintSpeed; label: string }[] = [
-  { value: 'slow', label: '0.5x Lento' },
-  { value: 'normal', label: '1x Normal' },
-  { value: 'fast', label: '1.5x Rápido' },
 ];
 
 /** Estilo compartilhado dos ToggleButtonGroups de exportação (fontSize parametrizado) */
@@ -153,7 +146,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
   const [animateScenes, setAnimateScenes] = useState(false);
-  const [speedPaintSpeed, setSpeedPaintSpeed] = useState<SpeedPaintSpeed>('normal');
   const [speedPaintMultipliers, setSpeedPaintMultipliers] = useState<SpeedPaintMultipliers>({ ...DEFAULT_SPEED_PAINT_MULTIPLIERS });
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
@@ -202,7 +194,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
       quality,
       fileName: fileName || undefined,
       animateScenes,
-      speedPaintSpeed,
+      speedPaintSpeed: 'normal',
       speedPaintMultipliers,
     };
     void exporter.startRender(options);
@@ -306,31 +298,13 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               sx={{ mr: 0 }}
             />
 
-            {/* Seletor de velocidade do Speed Paint — visível apenas quando toggle ativo */}
-            {animateScenes && (
-              <ToggleButtonGroup
-                value={speedPaintSpeed}
-                exclusive
-                onChange={(_, value: SpeedPaintSpeed | null) => {
-                  if (value) setSpeedPaintSpeed(value);
-                }}
-                size="small"
-                aria-label="Velocidade da animação speed paint"
-                sx={EXPORT_TOGGLE_GROUP_SX('0.75rem')}
-              >
-                {SPEED_OPTIONS.map((opt) => (
-                  <ToggleButton key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-            )}
-
             {/* Controles avançados de velocidade — visível apenas quando toggle ativo */}
             {animateScenes && (
               <SpeedPaintControls
-                multipliers={speedPaintMultipliers}
-                onMultipliersChange={setSpeedPaintMultipliers}
+                sketch={speedPaintMultipliers.sketch}
+                reveal={speedPaintMultipliers.reveal}
+                onSketchChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, sketch: v }))}
+                onRevealChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, reveal: v }))}
               />
             )}
 

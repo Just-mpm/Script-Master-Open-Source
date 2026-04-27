@@ -16,17 +16,17 @@
  */
 
 // ---------------------------------------------------------------------------
-// Tipos
+// Tipos (internos)
 // ---------------------------------------------------------------------------
 
 /** Níveis de severidade do logger, ordenados do mais para o menos severo. */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /** Dados extras opcionais passados junto à mensagem. */
-export type LogPayload = Record<string, unknown>;
+type LogPayload = Record<string, unknown>;
 
 /** Interface pública do logger. */
-export interface LoggerInstance {
+interface LoggerInstance {
   debug(message: string, payload?: LogPayload): void;
   info(message: string, payload?: LogPayload): void;
   warn(message: string, payload?: LogPayload): void;

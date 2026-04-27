@@ -61,26 +61,6 @@ export const scaleIn: Variants = {
   },
 };
 
-/** Fade in da esquerda — para texto em showcases (position right) */
-export const slideInLeft: Variants = {
-  hidden: { opacity: 0, x: -40 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: SPRING_GENTLE,
-  },
-};
-
-/** Fade in da direita — para texto em showcases (position left) */
-export const slideInRight: Variants = {
-  hidden: { opacity: 0, x: 40 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: SPRING_GENTLE,
-  },
-};
-
 // ── Variantes de container (stagger) ───────────────────────────────────
 
 /**
@@ -101,35 +81,6 @@ export const staggerContainer = (staggerDelay = 0.1): Variants => ({
     },
   },
 });
-
-// ── Variantes para Hero ───────────────────────────────────────────────
-
-/** Container do hero com delays em cascata para titulo, subtitulo e botoes */
-export const heroContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      when: 'beforeChildren',
-      delayChildren: 0.1,
-      staggerChildren: 0.15,
-    },
-  },
-};
-
-// ── Variantes para FeatureShowcase ────────────────────────────────────
-
-/** Container do showcase com delay entre texto e imagem */
-export const showcaseContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      when: 'beforeChildren',
-      delayChildren: 0.1,
-    },
-  },
-};
 
 // ── Variantes para FAQ ────────────────────────────────────────────────
 

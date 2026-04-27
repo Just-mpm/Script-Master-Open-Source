@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Memory } from './types';
 import {
@@ -38,7 +38,7 @@ export async function saveMemory(content: string, userId?: string): Promise<Memo
 export async function getMemories(userId?: string): Promise<Memory[]> {
   if (userId) {
     try {
-      const snapshot = await getDocs(query(memoriesCollection, where('userId', '==', userId)));
+      const snapshot = await getDocs(query(memoriesCollection, where('userId', '==', userId), limit(100)));
       return snapshot.docs.map((memoryDocument) => memoryDocument.data());
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.LIST, 'memories');

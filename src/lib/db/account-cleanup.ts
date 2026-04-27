@@ -2,6 +2,7 @@ import { collection, collectionGroup, deleteDoc, doc, getDocs, query, where } fr
 import { db } from '../firebase';
 import { createLogger } from '../logger';
 import { deleteStorageObjectSafely, clearAllIndexedDbStores } from './shared';
+import type { SavedAudioScene } from './types';
 
 const log = createLogger('account-cleanup');
 
@@ -95,8 +96,10 @@ export async function deleteAllUserData(userId: string): Promise<string[]> {
 // ── Helpers internos ────────────────────────────────────────────
 
 /**
- * C3: Deleta todos os documentos da coleção `generations` do usuário,
+ * C1: Deleta todos os documentos da coleção `generations` do usuário,
  * incluindo imagens de cena do Storage e o áudio WAV.
+ * Lê o campo `scenes` de cada documento para construir os paths corretos
+ * (generations_images/{userId}/{id}_scene_{index}.png).
  */
 async function deleteGenerationsAndSceneImages(userId: string): Promise<void> {
   const snapshot = await getDocs(
@@ -104,21 +107,29 @@ async function deleteGenerationsAndSceneImages(userId: string): Promise<void> {
   );
 
   await Promise.all(
-    snapshot.docs.map((docSnapshot) =>
-      Promise.all([
-        // Deleta imagens de cena do Storage com prefixo generations_images/{userId}/{generationId}
-        deleteStorageObjectSafely(
-          `generations_images/${userId}/${docSnapshot.id}`,
-          'Erro ao deletar imagens de cena do storage durante cleanup:',
-        ),
+    snapshot.docs.map(async (docSnapshot) => {
+      const data = docSnapshot.data();
+      const scenes: SavedAudioScene[] | undefined = data?.scenes;
+
+      // Deleta cada imagem de cena individualmente com o path correto
+      const sceneDeletions = (scenes ?? []).map(
+        (_scene: SavedAudioScene, index: number) =>
+          deleteStorageObjectSafely(
+            `generations_images/${userId}/${docSnapshot.id}_scene_${index}.png`,
+            `Imagem de cena Storage não encontrada durante cleanup: ${docSnapshot.id}_scene_${index}`,
+          ),
+      );
+
+      await Promise.all([
+        ...sceneDeletions,
         // Deleta também o áudio WAV se existir
         deleteStorageObjectSafely(
           `audios/${userId}/${docSnapshot.id}.wav`,
           'Erro ao deletar áudio do storage durante cleanup:',
         ),
         deleteDoc(docSnapshot.ref),
-      ]),
-    ),
+      ]);
+    }),
   );
 }
 

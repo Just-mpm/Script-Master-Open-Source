@@ -70,6 +70,8 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
 
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
+          const headingId = `faq-heading-${index}`;
+          const panelId = `faq-panel-${index}`;
 
           return (
             <Accordion
@@ -103,6 +105,8 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
               }}
             >
               <AccordionSummary
+                id={headingId}
+                aria-controls={panelId}
                 expandIcon={
                   <ExpandMoreIcon
                     sx={{
@@ -150,6 +154,9 @@ export function FAQAccordion({ items, title }: FAQAccordionProps): ReactNode {
               </AccordionSummary>
 
               <AccordionDetails
+                id={panelId}
+                role="region"
+                aria-labelledby={headingId}
                 sx={{
                   px: { xs: 3, md: 5 },
                   pb: { xs: 3, md: 4 },

@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SavedImage } from './types';
 import {
@@ -49,7 +49,7 @@ export async function saveImageGeneration(item: SavedImage, userId?: string): Pr
 export async function getImageGenerations(userId?: string): Promise<SavedImage[]> {
   if (userId) {
     try {
-      const snapshot = await getDocs(query(imageGenerationsCollection, where('userId', '==', userId)));
+      const snapshot = await getDocs(query(imageGenerationsCollection, where('userId', '==', userId), limit(100)));
       return sortImageGenerations(snapshot.docs.map((imageDocument) => imageDocument.data()));
     } catch (error: unknown) {
       handleFirestoreError(error, OperationType.LIST, 'image_generations');

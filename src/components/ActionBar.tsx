@@ -20,7 +20,7 @@ import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
 import VideoFile from '@mui/icons-material/VideoFile';
 import { downloadFile } from '../lib/download';
-import { useGlobalAudioActions, useGlobalAudioState } from '../contexts/AudioContext';
+import { useGlobalAudioActions, useAudioIsPlaying, useAudioCurrentTime, useAudioDuration } from '../contexts/AudioContext';
 import type { VideoPreviewHandle } from './VideoPreview';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP,   BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
@@ -73,8 +73,11 @@ export function ActionBar({
   const location = useLocation();
   const isVideoRoute = location.pathname === '/app/video';
 
-  // Estado do AudioContext (rota /)
-  const audioState = useGlobalAudioState();
+  // Seletores primitivos do AudioContext — evita re-render ~4x/s durante playback
+  // (useGlobalAudioState espalha todo AudioSnapshot incluindo currentTime que muda ~4x/s)
+  const audioIsPlaying = useAudioIsPlaying();
+  const audioCurrentTime = useAudioCurrentTime();
+  const audioDuration = useAudioDuration();
   const audioActions = useGlobalAudioActions();
 
   // Frame e estado de reprodução do Remotion Player via bridge store
@@ -115,22 +118,22 @@ export function ActionBar({
   const isDownloadMenuOpen = Boolean(downloadAnchorEl);
 
   // ---- Estado unificado: Remotion na /video, AudioContext na / ----
-  const displayIsPlaying = isRemotionActive ? bridgeIsPlaying : audioState.isPlaying;
+  const displayIsPlaying = isRemotionActive ? bridgeIsPlaying : audioIsPlaying;
 
   const displayCurrentTime = isRemotionActive && videoFps
     ? displayFrame / videoFps
-    : audioState.currentTime;
+    : audioCurrentTime;
 
   const displayDuration = isRemotionActive && videoFps && videoDurationInFrames
     ? videoDurationInFrames / videoFps
-    : audioState.duration;
+    : audioDuration;
 
   const displayProgress = displayDuration > 0
     ? (displayCurrentTime / displayDuration) * 100
     : 0;
 
   const progressValue = Math.round(displayProgress);
-  const { formatTime } = audioState;
+  const { formatTime } = audioActions;
 
   const closeDownloadMenu = () => setDownloadAnchorEl(null);
 

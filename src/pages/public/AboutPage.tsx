@@ -313,6 +313,9 @@ function RoadmapRow({ item, isLast, index }: { item: RoadmapItem; isLast: boolea
               '0%, 100%': { boxShadow: `0 0 16px ${alpha(WARNING_MAIN, 0.6)}` },
               '50%': { boxShadow: `0 0 24px ${alpha(WARNING_MAIN, 0.9)}` },
             },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none !important',
+            },
             border: '2px solid',
             borderColor: theme.palette.background.default,
           })}

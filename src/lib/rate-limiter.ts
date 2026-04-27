@@ -27,8 +27,8 @@ export interface RateLimiterConfig {
   readonly jitterMs: number;
 }
 
-/** Resultado de uma tentativa com retry */
-export interface RetryResult<T> {
+/** Resultado de uma tentativa com retry (interno) */
+interface RetryResult<T> {
   readonly value: T;
   readonly attempts: number;
 }

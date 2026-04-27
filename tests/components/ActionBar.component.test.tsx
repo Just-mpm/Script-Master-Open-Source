@@ -16,6 +16,13 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('../../src/contexts/AudioContext', () => ({
+  // Seletores primitivos (usados pelo ActionBar após refatoração W7)
+  useAudioIsPlaying: () => false,
+  useAudioCurrentTime: () => 0,
+  useAudioDuration: () => 120,
+  useAudioProgress: () => 0,
+  useAudioActiveId: () => null as unknown as string,
+  // Legacy (ainda exportado pelo AudioContext real)
   useGlobalAudioState: () => ({
     isPlaying: false,
     activeId: null,
@@ -37,6 +44,7 @@ vi.mock('../../src/contexts/AudioContext', () => ({
     audioRef: { current: null },
     getSnapshot: vi.fn(),
     setDurationOverride: vi.fn(),
+    formatTime: (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`,
   }),
 }));
 

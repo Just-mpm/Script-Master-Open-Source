@@ -6,10 +6,6 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -18,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -33,6 +30,7 @@ import Close from '@mui/icons-material/Close';
 import Delete from '@mui/icons-material/Delete';
 import Download from '@mui/icons-material/Download';
 import ImageIcon from '@mui/icons-material/Image';
+import Refresh from '@mui/icons-material/Refresh';
 import Save from '@mui/icons-material/Save';
 import Stop from '@mui/icons-material/Stop';
 import Sparkles from '@mui/icons-material/AutoAwesome';
@@ -41,8 +39,9 @@ import { deleteImageGeneration, getImageGenerations, saveImageGeneration, type S
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
-import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT, BRAND_PRIMARY } from '../theme/tokens';
+import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
+import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
 
 const log = createLogger('ImageStudio');
 
@@ -73,6 +72,7 @@ export function ImageStudio() {
   const [imagesError, setImagesError] = useState<string | null>(null);
   const [imageToDelete, setImageToDelete] = useState<SavedImage | null>(null);
   const [deletingImage, setDeletingImage] = useState(false);
+  const [imageDeleteError, setImageDeleteError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -96,6 +96,13 @@ export function ImageStudio() {
   useEffect(() => {
     void loadSavedImages();
   }, [loadSavedImages]);
+
+  // Cleanup de blob URL ao desmontar (Fix P2-2)
+  useEffect(() => {
+    return () => {
+      if (referencePreview) URL.revokeObjectURL(referencePreview);
+    };
+  }, [referencePreview]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -182,13 +189,14 @@ export function ImageStudio() {
     }
 
     setDeletingImage(true);
+    setImageDeleteError(null);
     try {
       await deleteImageGeneration(imageToDelete.id, user?.uid);
       setImageToDelete(null);
       void loadSavedImages();
-    } catch (deleteError) {
-      log.error('Erro ao excluir imagem', { error: deleteError });
-      setError('Erro ao excluir a imagem.');
+    } catch (deleteErr) {
+      log.error('Erro ao excluir imagem', { error: deleteErr });
+      setImageDeleteError('Erro ao excluir a imagem. Tente novamente.');
     } finally {
       setDeletingImage(false);
     }
@@ -351,26 +359,7 @@ export function ImageStudio() {
                 onChange={(event) => setPrompt(event.target.value)}
                 placeholder="Descreva a composição, o clima, a iluminação, o enquadramento e o estilo visual desejado."
                 disabled={isGenerating}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'rgba(255, 255, 255, 0.08)',
-                    },
-                    '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'rgba(255, 255, 255, 0.16)',
-                    },
-                    '&.Mui-focused': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: BRAND_PRIMARY,
-                        borderWidth: 2,
-                      },
-                      boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
-                    },
-                  },
-                }}
+                sx={searchFieldSx}
               />
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
@@ -606,45 +595,36 @@ export function ImageStudio() {
     </Grid>
 
     {/* Dialog de confirmação de exclusão */}
-    <Dialog
+    <DeleteConfirmationDialog
       open={Boolean(imageToDelete)}
-      onClose={deletingImage ? undefined : () => setImageToDelete(null)}
-      fullWidth
-      maxWidth="xs"
-      aria-labelledby="delete-image-title"
-      aria-describedby="delete-image-description"
-      slotProps={{
-        paper: {
-          sx: (currentTheme) => ({
-            ...glassPanelSx(currentTheme),
-            borderRadius: RADIUS_SM,
-            backgroundImage: 'none',
-          }),
-        },
-      }}
-    >
-      <DialogTitle id="delete-image-title">
-        {deletingImage ? 'Excluindo imagem...' : 'Excluir imagem?'}
-      </DialogTitle>
-      <DialogContent>
-        <Typography id="delete-image-description" variant="body2" color="text.secondary">
-          Esta ação remove permanentemente a imagem da biblioteca. A operação não pode ser desfeita.
-        </Typography>
-        {error && (
-          <Alert variant="outlined" severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={() => setImageToDelete(null)} color="inherit" disabled={deletingImage}>
-          Cancelar
+      itemName={imageToDelete?.name ?? null}
+      deletingItem={deletingImage}
+      deleteError={imageDeleteError}
+      titleIdleLabel="Excluir imagem?"
+      loadingLabel="Excluindo imagem..."
+      confirmLabel="Excluir imagem"
+      description="Esta ação remove permanentemente a imagem da biblioteca. A operação não pode ser desfeita."
+      onConfirm={() => void handleDeleteImage()}
+      onCancel={() => { setImageToDelete(null); setImageDeleteError(null); }}
+    />
+
+    {/* Snackbar: erro de galeria quando sidebar está colapsado (mobile) */}
+    <Snackbar
+      open={Boolean(imagesError) && isSidebarCollapsed}
+      autoHideDuration={8000}
+      onClose={() => setImagesError(null)}
+      message={imagesError}
+      action={
+        <Button
+          color="inherit"
+          size="small"
+          startIcon={<Refresh sx={{ fontSize: 18 }} />}
+          onClick={() => void loadSavedImages()}
+        >
+          Tentar novamente
         </Button>
-        <Button onClick={() => void handleDeleteImage()} color="error" variant="contained" disabled={deletingImage}>
-          {deletingImage ? 'Excluindo...' : 'Excluir imagem'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      }
+    />
     </>
   );
 }

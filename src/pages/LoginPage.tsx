@@ -159,8 +159,8 @@ export function LoginPage() {
 
       <PublicHeader />
 
+      {/* Landmark main fica em App.tsx — este Box é apenas container de conteúdo */}
       <Box
-        component="main"
         tabIndex={-1}
         sx={{
           flex: 1,
@@ -371,16 +371,22 @@ export function LoginPage() {
 
                   {/* Links auxiliares */}
                   <Stack spacing={1} sx={{ width: '100%', alignItems: 'center' }}>
-                    <Typography
-                      variant="body2"
-                      sx={authLinkSx}
+                    <Button
+                      variant="text"
                       onClick={openResetDialog}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') openResetDialog(); }}
+                      sx={{
+                        p: 0,
+                        minWidth: 'auto',
+                        fontWeight: 600,
+                        '&:hover': {
+                          textDecoration: 'underline',
+                          textDecorationColor: 'rgba(46, 117, 182, 0.4)',
+                          textUnderlineOffset: '2px',
+                        },
+                      }}
                     >
                       Esqueceu a senha?
-                    </Typography>
+                    </Button>
                     <Typography variant="body2" color="text.secondary">
                       Não tem conta?{' '}
                       <Typography
@@ -406,6 +412,7 @@ export function LoginPage() {
         onClose={() => setResetOpen(false)}
         maxWidth="xs"
         fullWidth
+        aria-labelledby="reset-password-title"
         slotProps={{
           paper: {
             sx: (theme) => ({
@@ -416,7 +423,7 @@ export function LoginPage() {
           },
         }}
       >
-        <DialogTitle sx={{ pb: 1, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <DialogTitle id="reset-password-title" sx={{ pb: 1, fontWeight: 700, letterSpacing: '-0.01em' }}>
           Redefinir senha
         </DialogTitle>
         <DialogContent sx={{ pb: 1 }}>

@@ -23,6 +23,8 @@ vi.mock('firebase/firestore', () => ({
   where: mockWhere,
   collectionGroup: mockCollectionGroup,
   orderBy: vi.fn(),
+  // Função de limite de query — retorna placeholder encadeável
+  limit: vi.fn().mockReturnValue({}),
 }));
 
 vi.mock('../../src/lib/firebase', () => ({

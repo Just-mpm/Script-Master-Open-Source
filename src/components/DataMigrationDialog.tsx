@@ -28,7 +28,12 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
   const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
 
   useEffect(() => {
-    checkForMigratableData().then(setCheckResult);
+    checkForMigratableData()
+      .then(setCheckResult)
+      .catch((err: Error) => {
+        log.error('Falha ao verificar dados migráveis', { error: err });
+        setCheckResult({ hasData: false, summary: { projects: 0, generations: 0, imageGenerations: 0, memories: 0, chats: 0, settings: false } });
+      });
   }, []);
 
   // Se não há dados para migrar, fecha automaticamente

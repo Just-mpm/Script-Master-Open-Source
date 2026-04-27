@@ -50,7 +50,7 @@ describe('PageLayout', () => {
     expect(screen.getByTestId('public-footer')).toBeDefined();
   });
 
-  it('renderiza os children dentro da main', () => {
+  it('renderiza os children dentro do container de conteúdo', () => {
     render(
       <PageLayout>
         <p>Conteúdo de teste</p>
@@ -58,19 +58,19 @@ describe('PageLayout', () => {
       { wrapper: Wrapper }
     );
     expect(screen.getByText('Conteúdo de teste')).toBeDefined();
-    expect(screen.getByRole('main')).toBeDefined();
+    // Landmark main é responsabilidade do App.tsx — PageLayout não deve duplicar
+    expect(screen.queryByRole('main')).toBeNull();
   });
 
-  it('main não tem id duplicado (id fornecido pelo App.tsx)', () => {
+  it('não duplica landmark main (responsabilidade do App.tsx)', () => {
     render(
       <PageLayout>
         <p>Conteúdo</p>
       </PageLayout>,
       { wrapper: Wrapper }
     );
-    const main = screen.getByRole('main');
-    // id="main-content" agora é responsabilidade do App.tsx (skip-to-content global)
-    expect(main.id).not.toBe('main-content');
+    // PageLayout usa Box sem component="main" — o landmark fica em App.tsx
+    expect(screen.queryByRole('main')).toBeNull();
   });
 
   it('não renderiza link skip-to-content (movido para App.tsx)', () => {

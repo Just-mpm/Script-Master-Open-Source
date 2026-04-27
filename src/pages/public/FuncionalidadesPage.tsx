@@ -216,7 +216,7 @@ export default function FuncionalidadesPage() {
           title="Pronto para criar?"
           subtitle="Comece a usar todas essas features gratuitamente."
           buttonLabel="Começar Grátis"
-          buttonHref="/login"
+          buttonHref="/cadastro"
         />
       </Box>
     </PageLayout>

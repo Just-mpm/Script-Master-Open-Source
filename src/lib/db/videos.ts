@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ProjectVideo } from './types';
 import {
@@ -86,7 +86,7 @@ export async function getProjectVideos(projectId: string, userId?: string): Prom
   if (userId) {
     try {
       const snapshot = await getDocs(
-        query(projectVideosCollection(projectId), orderBy('createdAt', 'desc')),
+        query(projectVideosCollection(projectId), orderBy('createdAt', 'desc'), limit(100)),
       );
 
       return snapshot.docs.map((docSnapshot) => docSnapshot.data());

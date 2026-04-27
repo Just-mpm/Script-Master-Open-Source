@@ -13,16 +13,16 @@ vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
 }));
 
 vi.mock('../../src/features/video-render/components/SpeedPaintControls', () => ({
-  SpeedPaintControls: ({ multipliers, onMultipliersChange }: { multipliers: { sketch: number; reveal: number }; onMultipliersChange: (m: { sketch: number; reveal: number }) => void }) => (
-    <div data-testid="speed-paint-controls" data-sketch={multipliers.sketch} data-reveal={multipliers.reveal}>
+  SpeedPaintControls: ({ sketch, reveal, onSketchChange, onRevealChange }: { sketch: number; reveal: number; onSketchChange: (v: number) => void; onRevealChange: (v: number) => void }) => (
+    <div data-testid="speed-paint-controls" data-sketch={sketch} data-reveal={reveal}>
       <button
         data-testid="sketch-slider"
-        onClick={() => onMultipliersChange({ ...multipliers, sketch: 2.0 })}
+        onClick={() => onSketchChange(2.0)}
         aria-label="Velocidade do desenho (sketch)"
       />
       <button
         data-testid="reveal-slider"
-        onClick={() => onMultipliersChange({ ...multipliers, reveal: 3.0 })}
+        onClick={() => onRevealChange(3.0)}
         aria-label="Velocidade da coloração (reveal)"
       />
     </div>
@@ -167,23 +167,7 @@ describe('VideoExportPanel', () => {
   // --- Speed Paint ---
 
   describe('speed paint', () => {
-    it('não exibe seletor de velocidade quando toggle está desligado', () => {
-      render(<VideoExportPanel {...defaultProps} />);
-      expect(screen.queryByText(/Lento/i)).not.toBeInTheDocument();
-    });
-
-    it('exibe seletor de velocidade quando toggle é ativado', () => {
-      render(<VideoExportPanel {...defaultProps} />);
-      const switchEl = screen.getByRole('switch');
-      act(() => {
-        fireEvent.click(switchEl);
-      });
-      expect(screen.getByText('0.5x Lento')).toBeInTheDocument();
-      expect(screen.getByText('1x Normal')).toBeInTheDocument();
-      expect(screen.getByText('1.5x Rápido')).toBeInTheDocument();
-    });
-
-    it('não renderiza SpeedPaintControls quando toggle está desligado', () => {
+    it('não exibe controles de velocidade quando toggle está desligado', () => {
       render(<VideoExportPanel {...defaultProps} />);
       expect(screen.queryByTestId('speed-paint-controls')).not.toBeInTheDocument();
     });

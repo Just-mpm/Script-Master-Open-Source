@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
 import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
@@ -224,15 +224,18 @@ export function useAssistant(currentState?: AssistantStudioState) {
     const assistantMsgId = (Date.now() + 1).toString();
 
     try {
-      const memories = await getMemories(user?.uid);
+      // Paraleliza chamadas Firestore independentes (Fix P1-2)
+      const [memories, userSettings] = await Promise.all([
+        getMemories(user?.uid),
+        getUserSettings(user?.uid),
+      ]);
+
       const memoriesText = memories.length > 0
         ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map(m => `- ${m.content}`).join('\n')}`
         : '';
 
       const voicesList = VOICES.map(v => `- ${v.name} (${v.style})`).join('\n');
       const paceList = Object.keys(PACE_INSTRUCTIONS).join(', ');
-
-      const userSettings = await getUserSettings(user?.uid);
       const customPromptBlock = userSettings?.customSystemPrompt
         ? `\n\nDIRETRIZES CUSTOMIZADAS DO USUÁRIO:\n${userSettings.customSystemPrompt}`
         : '';
@@ -353,6 +356,30 @@ export function useAssistant(currentState?: AssistantStudioState) {
     streamActiveRef.current = false;
   };
 
+  /**
+   * Reenvia a última mensagem do usuário quando há erro.
+   * Remove a mensagem de fallback do assistente e reenvia o texto original.
+   */
+  const retryLastMessage = useCallback(() => {
+    // Encontra a última mensagem de erro do modelo (fallback)
+    const lastErrorIdx = messages.findLastIndex(
+      (m) => m.role === 'model' && m.text.includes('Desculpe, ocorreu um erro'),
+    );
+    if (lastErrorIdx === -1) return;
+
+    // Encontra a última mensagem do usuário antes do erro
+    const lastUserMsg = [...messages]
+      .slice(0, lastErrorIdx)
+      .reverse()
+      .find((m) => m.role === 'user');
+
+    if (!lastUserMsg) return;
+
+    // Remove a mensagem de fallback e reenvia
+    setMessages((prev) => prev.filter((_, idx) => idx !== lastErrorIdx));
+    void sendMessage(lastUserMsg.text, lastUserMsg.attachments);
+  }, [messages, sendMessage]);
+
   return {
     messages,
     isLoading,
@@ -362,6 +389,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     startNewChat,
     loadSession,
     stopGeneration,
+    retryLastMessage,
     messagesEndRef,
   };
 }
