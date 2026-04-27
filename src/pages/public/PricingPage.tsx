@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -274,7 +274,7 @@ function ComparisonTable() {
               <Box
                 component="th"
                 scope="col"
-                sx={{ width: '42%', pb: 1.5, mb: 0.5, textAlign: 'left' }}
+                sx={{ width: '42%', pb: 1.5, textAlign: 'left' }}
               >
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                   Funcionalidade
@@ -283,7 +283,7 @@ function ComparisonTable() {
               <Box
                 component="th"
                 scope="col"
-                sx={{ width: '19.5%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+                sx={{ width: '19.5%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2">
                   Gratuito
@@ -292,7 +292,7 @@ function ComparisonTable() {
               <Box
                 component="th"
                 scope="col"
-                sx={{ width: '20%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+                sx={{ width: '20%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2" sx={{ color: BRAND_PRIMARY, fontWeight: 700 }}>
                   Pro
@@ -301,7 +301,7 @@ function ComparisonTable() {
               <Box
                 component="th"
                 scope="col"
-                sx={{ width: '19.5%', pb: 1.5, mb: 0.5, textAlign: 'center' }}
+                sx={{ width: '19.5%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2">
                   Equipe
@@ -354,12 +354,12 @@ export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   /** Resolve o preco exibido com base no periodo de cobranca selecionado */
-  const getPrice = useCallback((plan: PlanData): string => {
+  const getPrice = (plan: PlanData): string => {
     if (billingPeriod === 'annual' && plan.priceAnnual) {
       return plan.priceAnnual;
     }
     return plan.priceMonthly;
-  }, [billingPeriod]);
+  };
 
   const seo = getPageSeo({
     title: 'Preços e Planos',
@@ -389,7 +389,7 @@ export default function PricingPage() {
       <HeroSection
         title="Escolha o plano ideal para você"
         subtitle="Comece grátis, sem cartão de crédito. Cancele quando quiser."
-        primaryCta={{ label: 'Começar Grátis', to: '/login' }}
+        primaryCta={{ label: 'Começar Grátis', to: '/cadastro' }}
         secondaryCta={{ label: 'Comparar planos', to: '#comparison' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -420,7 +420,7 @@ export default function PricingPage() {
                 ctaVariant={plan.ctaVariant}
                 ctaDisabled={plan.name !== 'Gratuito'}
                 ctaTooltip="Pagamentos em breve — fique ligado nas novidades!"
-                onCtaClick={plan.name === 'Gratuito' ? () => navigate('/login') : undefined}
+                onCtaClick={plan.name === 'Gratuito' ? () => navigate('/cadastro') : undefined}
                 index={idx}
               />
             </Grid>
@@ -473,7 +473,7 @@ export default function PricingPage() {
         title="Comece grátis, sem cartão de crédito"
         subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão."
         buttonLabel="Entrar com Google"
-        buttonHref="/login"
+        buttonHref="/cadastro"
       />
     </PageLayout>
     </>

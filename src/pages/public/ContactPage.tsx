@@ -69,18 +69,18 @@ interface FormErrors {
 /** Informações de contato exibidas na coluna esquerda */
 const CONTACT_INFO: readonly ContactInfo[] = [
   {
-    icon: <EmailIcon />,
+    icon: <EmailIcon aria-hidden="true" />,
     label: 'Email',
     value: 'contato@scriptmaster.app',
     href: 'mailto:contato@scriptmaster.app',
   },
   {
-    icon: <AccessTimeIcon />,
+    icon: <AccessTimeIcon aria-hidden="true" />,
     label: 'Resposta',
     value: 'Em até 24h úteis',
   },
   {
-    icon: <LanguageIcon />,
+    icon: <LanguageIcon aria-hidden="true" />,
     label: 'Idioma',
     value: 'Português (Brasil)',
   },
@@ -101,17 +101,17 @@ const SOCIAL_LINKS: readonly SocialLink[] = [
   {
     label: 'Instagram',
     href: 'https://instagram.com/scriptmaster',
-    icon: <InstagramIcon />,
+    icon: <InstagramIcon aria-hidden="true" />,
   },
   {
     label: 'YouTube',
     href: 'https://youtube.com/@scriptmaster',
-    icon: <YouTubeIcon />,
+    icon: <YouTubeIcon aria-hidden="true" />,
   },
   {
     label: 'Twitter/X',
     href: 'https://x.com/scriptmaster',
-    icon: <XIcon />,
+    icon: <XIcon aria-hidden="true" />,
   },
 ] as const;
 
@@ -132,6 +132,9 @@ const INITIAL_ERRORS: FormErrors = {
 
 /** Mensagem base do mailto — assunto padrão quando nenhum selecionado */
 const DEFAULT_SUBJECT = 'Contato via Site';
+
+/** Validação regex básica de email (escopo de módulo, evita recriação por render) */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── Subcomponentes ────────────────────────────────────────────────────
 
@@ -269,10 +272,7 @@ function ContactForm() {
     setErrors((prev) => ({ ...prev, [field]: false }));
   };
 
-  /** Validação regex básica de email */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Valida campos obrigatórios e formato de email. Retorna true se tudo válido */
+  /** Valida campos obrigatórios e formato de email. Retorna true se tudo válido */
   const validate = (): boolean => {
     const newErrors: FormErrors = {
       name: form.name.trim().length === 0,
@@ -427,7 +427,7 @@ export default function ContactPage() {
         secondaryCta={{ label: 'Ver preços', to: '/precos' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
-            <EmailIcon sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
+            <EmailIcon aria-hidden="true" sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
           </Box>
         }
         showGlow

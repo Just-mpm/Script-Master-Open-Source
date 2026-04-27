@@ -6,6 +6,7 @@ import { alpha } from '@mui/material/styles';
 import { motion } from 'motion/react';
 import type { ElementType } from 'react';
 import { BRAND_GRADIENT, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, BRAND_SECONDARY } from '../../theme/tokens';
+import { glassPanelSx } from '../../theme/surfaces';
 import { fadeInUp, scaleIn, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
 interface StepCardProps {
@@ -37,10 +38,10 @@ export function StepCard({ number, title, description, icon: Icon, index = 0 }: 
       <Paper
         variant="outlined"
         sx={(theme) => ({
+          ...glassPanelSx(theme),
           p: { xs: 3, md: 4 },
           textAlign: 'center',
           height: '100%',
-          backgroundColor: theme.palette.background.paper,
           transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
           '&:hover': {
             transform: 'translateY(-4px)',

@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { BRAND_GRADIENT, BRAND_PRIMARY_GLOW, TEXT_SECONDARY } from '../../theme/tokens';
+import { BRAND_GRADIENT, BRAND_SECONDARY_GLOW_SOFT, TEXT_SECONDARY } from '../../theme/tokens';
 import { fadeInUp, VIEWPORT_ONCE } from './animations';
 
 interface CTASectionProps {
@@ -87,10 +87,10 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
               px: 5,
               py: 1.5,
               mt: 1,
-              boxShadow: `0 12px 36px ${BRAND_PRIMARY_GLOW}`,
+              boxShadow: `0 12px 36px ${BRAND_SECONDARY_GLOW_SOFT}`,
               transition: 'box-shadow 0.3s ease, transform 0.2s ease',
               '&:hover': {
-                boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
+                boxShadow: `0 18px 48px ${BRAND_SECONDARY_GLOW_SOFT}`,
                 transform: 'translateY(-1px)',
               },
             }}

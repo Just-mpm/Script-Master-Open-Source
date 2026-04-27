@@ -50,6 +50,7 @@ const PUBLIC_NAV_ITEMS: PublicNavItem[] = [
   { to: '/precos', label: 'Preços' },
   { to: '/perguntas-frequentes', label: 'FAQ' },
   { to: '/sobre', label: 'Sobre' },
+  { to: '/contato', label: 'Contato' },
 ];
 
 export function PublicHeader() {
@@ -148,6 +149,7 @@ export function PublicHeader() {
                     key={item.to}
                     component={Link}
                     to={item.to}
+                    aria-current={isActive ? 'page' : undefined}
                     sx={{
                       color: isActive ? 'text.primary' : 'text.secondary',
                       bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -273,6 +275,7 @@ export function PublicHeader() {
                   component={Link}
                   to={item.to}
                   selected={isActive}
+                  aria-current={isActive ? 'page' : undefined}
                   sx={{
                     borderRadius: 2,
                     mb: 0.5,
