@@ -13,16 +13,16 @@ vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
 }));
 
 vi.mock('../../src/features/video-render/components/SpeedPaintControls', () => ({
-  SpeedPaintControls: ({ multipliers, onMultipliersChange }: { multipliers: { sketch: number; reveal: number }; onMultipliersChange: (m: { sketch: number; reveal: number }) => void }) => (
-    <div data-testid="speed-paint-controls" data-sketch={multipliers.sketch} data-reveal={multipliers.reveal}>
+  SpeedPaintControls: ({ sketch, reveal, onSketchChange, onRevealChange }: { sketch: number; reveal: number; onSketchChange: (v: number) => void; onRevealChange: (v: number) => void }) => (
+    <div data-testid="speed-paint-controls" data-sketch={sketch} data-reveal={reveal}>
       <button
         data-testid="sketch-slider"
-        onClick={() => onMultipliersChange({ ...multipliers, sketch: 2.0 })}
+        onClick={() => onSketchChange(2.0)}
         aria-label="Velocidade do desenho (sketch)"
       />
       <button
         data-testid="reveal-slider"
-        onClick={() => onMultipliersChange({ ...multipliers, reveal: 3.0 })}
+        onClick={() => onRevealChange(3.0)}
         aria-label="Velocidade da coloração (reveal)"
       />
     </div>
