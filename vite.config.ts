@@ -123,6 +123,12 @@ export default defineConfig(() => {
     },
     optimizeDeps: {
       exclude: ['@remotion/whisper-web'],
+      include: [
+        'mediabunny',
+        '@mediabunny/aac-encoder',
+        '@mediabunny/flac-encoder',
+        '@mediabunny/mp3-encoder',
+      ],
     },
     server: {
       host: '0.0.0.0',

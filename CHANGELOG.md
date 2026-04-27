@@ -7,6 +7,16 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.24.6] - 2026-04-27
+
+### Alterado
+
+- **Firestore persistence modernizada**: `enableIndexedDbPersistence` (legado/depreciado) substituído por `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` — API recomendada pelo Firebase Web SDK v10+, com suporte nativo a múltiplas abas sem try/catch
+- **`optimizeDeps.include`** adicionado para `mediabunny` e sub-pacotes (`aac-encoder`, `flac-encoder`, `mp3-encoder`) — garante pre-bundling correto pelo Vite e elimina warnings de dependências dinâmicas
+- **Firestore composite indexes**: 3 novos indexes `COLLECTION_GROUP` adicionados para `audios`, `images` e `videos` (campo `userId ASCENDING`) — necessários para as queries `collectionGroup` usadas pela galeria de projetos (introduzidas na 0.24.5)
+
+---
+
 ## [0.24.5] - 2026-04-27
 
 ### Corrigido
