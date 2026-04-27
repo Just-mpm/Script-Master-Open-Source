@@ -16,7 +16,6 @@ import {
   ICON_SIZE_MD,
   BRAND_PRIMARY_GLOW_SOFT,
 } from '../../../theme/tokens';
-import type { SpeedPaintMultipliers } from '../types';
 
 // ─── Constantes ──────────────────────────────────────────────
 
@@ -42,42 +41,48 @@ function formatSpeedLabel(value: number): string {
 // ─── Props ───────────────────────────────────────────────────
 
 interface SpeedPaintControlsProps {
-  /** Multiplicadores atuais de sketch e reveal */
-  multipliers: SpeedPaintMultipliers;
-  /** Callback quando os multiplicadores mudam */
-  onMultipliersChange: (multipliers: SpeedPaintMultipliers) => void;
+  /** Multiplicador atual de velocidade do sketch */
+  sketch: number;
+  /** Multiplicador atual de velocidade do reveal */
+  reveal: number;
+  /** Callback quando o multiplicador do sketch muda */
+  onSketchChange: (value: number) => void;
+  /** Callback quando o multiplicador do reveal muda */
+  onRevealChange: (value: number) => void;
 }
 
 // ─── Componente ──────────────────────────────────────────────
 
 export const SpeedPaintControls = React.memo(function SpeedPaintControls({
-  multipliers,
-  onMultipliersChange,
+  sketch,
+  reveal,
+  onSketchChange,
+  onRevealChange,
 }: SpeedPaintControlsProps) {
   const theme = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const sectionId = useId();
 
   // Labels memoizados para evitar re-cálculo a cada render
-  const sketchLabel = useMemo(() => formatSpeedLabel(multipliers.sketch), [multipliers.sketch]);
-  const revealLabel = useMemo(() => formatSpeedLabel(multipliers.reveal), [multipliers.reveal]);
+  const sketchLabel = useMemo(() => formatSpeedLabel(sketch), [sketch]);
+  const revealLabel = useMemo(() => formatSpeedLabel(reveal), [reveal]);
 
   // Handler de mudança do slider sketch — estável entre renders
   const handleSketchChange = useCallback(
     (_event: Event, value: number | number[]) => {
       if (typeof value !== 'number') return;
-      onMultipliersChange({ ...multipliers, sketch: value });
+      onSketchChange(value);
     },
-    [multipliers, onMultipliersChange],
+    [onSketchChange],
   );
 
   // Handler de mudança do slider reveal — estável entre renders
   const handleRevealChange = useCallback(
     (_event: Event, value: number | number[]) => {
       if (typeof value !== 'number') return;
-      onMultipliersChange({ ...multipliers, reveal: value });
+      onRevealChange(value);
     },
-    [multipliers, onMultipliersChange],
+    [onRevealChange],
   );
 
   return (
@@ -153,7 +158,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   min={SPEED_MIN}
                   max={SPEED_MAX}
                   step={SPEED_STEP}
-                  value={multipliers.sketch}
+                  value={sketch}
                   onChange={handleSketchChange}
                   aria-label="Velocidade do desenho (sketch)"
                   sx={{
@@ -189,7 +194,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   min={SPEED_MIN}
                   max={SPEED_MAX}
                   step={SPEED_STEP}
-                  value={multipliers.reveal}
+                  value={reveal}
                   onChange={handleRevealChange}
                   aria-label="Velocidade da coloração (reveal)"
                   sx={{

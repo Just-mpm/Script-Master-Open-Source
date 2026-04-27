@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -6,9 +7,30 @@ import Typography from '@mui/material/Typography';
 import EmailOutlined from "@mui/icons-material/EmailOutlined";
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sendEmailVerification } from '../lib/firebase';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('ProtectedRoute');
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+
+  const handleResendEmail = useCallback(async () => {
+    if (!user) return;
+    setIsResending(true);
+    setResendMessage(null);
+    try {
+      await sendEmailVerification(user);
+      setResendMessage('Email reenviado com sucesso! Verifique sua caixa de entrada.');
+    } catch (err) {
+      log.warn('Falha ao reenviar email de verificação', { error: err });
+      setResendMessage('Não foi possível reenviar o email. Tente novamente mais tarde.');
+    } finally {
+      setIsResending(false);
+    }
+  }, [user]);
 
   // Aguardando verificação de sessão do Firebase
   if (loading) {
@@ -21,7 +43,7 @@ export function ProtectedRoute() {
         }}
       >
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
-          <CircularProgress size={28} />
+          <CircularProgress size={28} aria-label="Verificando sessão" />
           <Typography variant="body2" color="text.secondary">
             Verificando sessão...
           </Typography>
@@ -45,6 +67,19 @@ export function ProtectedRoute() {
           <Typography variant="body2" color="text.secondary">
             Enviamos um link de verificação para seu email. Verifique sua caixa de entrada e spam.
           </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={isResending}
+            onClick={() => { void handleResendEmail(); }}
+          >
+            {isResending ? 'Enviando...' : 'Reenviar email de verificação'}
+          </Button>
+          {resendMessage && (
+            <Typography variant="caption" color={resendMessage.includes('sucesso') ? 'success.main' : 'error.main'}>
+              {resendMessage}
+            </Typography>
+          )}
           <Button variant="outlined" onClick={() => { window.location.href = '/login'; }}>
             Voltar ao login
           </Button>

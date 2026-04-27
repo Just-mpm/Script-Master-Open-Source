@@ -213,7 +213,7 @@ export function useAudioGenerator() {
           audio.removeEventListener('error', handleError);
         };
         const handleError = () => {
-          log.warn('Falha ao carregar metadados do áudio pela URL');
+          log.warn('Falha ao carregar metadados do áudio remoto — duração indisponível, a exportação de vídeo pode ser afetada');
           audio.removeEventListener('loadedmetadata', handleLoaded);
           audio.removeEventListener('error', handleError);
         };

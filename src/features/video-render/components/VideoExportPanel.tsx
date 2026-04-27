@@ -301,8 +301,10 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             {/* Controles avançados de velocidade — visível apenas quando toggle ativo */}
             {animateScenes && (
               <SpeedPaintControls
-                multipliers={speedPaintMultipliers}
-                onMultipliersChange={setSpeedPaintMultipliers}
+                sketch={speedPaintMultipliers.sketch}
+                reveal={speedPaintMultipliers.reveal}
+                onSketchChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, sketch: v }))}
+                onRevealChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, reveal: v }))}
               />
             )}
 

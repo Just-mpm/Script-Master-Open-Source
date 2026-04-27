@@ -220,6 +220,9 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setReferenceImageWarning('Falha ao ler o arquivo. Tente outra imagem.');
+    };
     reader.onloadend = () => {
       const result = typeof reader.result === 'string' ? reader.result : null;
       setReferenceImage(result);

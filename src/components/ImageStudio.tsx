@@ -97,6 +97,13 @@ export function ImageStudio() {
     void loadSavedImages();
   }, [loadSavedImages]);
 
+  // Cleanup de blob URL ao desmontar (Fix P2-2)
+  useEffect(() => {
+    return () => {
+      if (referencePreview) URL.revokeObjectURL(referencePreview);
+    };
+  }, [referencePreview]);
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 

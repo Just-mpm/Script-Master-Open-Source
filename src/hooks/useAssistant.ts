@@ -224,15 +224,18 @@ export function useAssistant(currentState?: AssistantStudioState) {
     const assistantMsgId = (Date.now() + 1).toString();
 
     try {
-      const memories = await getMemories(user?.uid);
+      // Paraleliza chamadas Firestore independentes (Fix P1-2)
+      const [memories, userSettings] = await Promise.all([
+        getMemories(user?.uid),
+        getUserSettings(user?.uid),
+      ]);
+
       const memoriesText = memories.length > 0
         ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map(m => `- ${m.content}`).join('\n')}`
         : '';
 
       const voicesList = VOICES.map(v => `- ${v.name} (${v.style})`).join('\n');
       const paceList = Object.keys(PACE_INSTRUCTIONS).join(', ');
-
-      const userSettings = await getUserSettings(user?.uid);
       const customPromptBlock = userSettings?.customSystemPrompt
         ? `\n\nDIRETRIZES CUSTOMIZADAS DO USUÁRIO:\n${userSettings.customSystemPrompt}`
         : '';

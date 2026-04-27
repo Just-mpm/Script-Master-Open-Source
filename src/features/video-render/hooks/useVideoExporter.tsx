@@ -150,6 +150,8 @@ function toUserFriendlyError(err: unknown): string {
 export function useVideoExporter() {
   const [state, setState] = useState<VideoExporterState>(INITIAL_STATE);
   const abortControllerRef = useRef<AbortController | null>(null);
+  /** Identifica qual renderização é a atual — evita que catch/finally de renders antigos corrompam estado */
+  const renderIdRef = useRef(0);
   const outputUrlRef = useRef<string | null>(null);
   /** Último percentual reportado — evita re-renders quando o inteiro não mudou */
   const lastReportedPercentRef = useRef(-1);
@@ -301,6 +303,9 @@ export function useVideoExporter() {
       fileName,
       animateScenes = false,
     } = options;
+
+    // Identifica esta renderização — catch/finally antigos serão ignorados
+    const renderId = ++renderIdRef.current;
 
     // Grava o nome do arquivo diretamente na ref (antes de qualquer reset de estado)
     exportFileNameRef.current = fileName || '';
@@ -490,6 +495,8 @@ export function useVideoExporter() {
           },
           userId,
         ).catch(() => {
+          // Ignora se outra renderização já iniciou
+          if (renderIdRef.current !== renderId) return;
           // Informa o usuário que o vídeo foi exportado mas não salvo no projeto
           setState(prev => ({
             ...prev,
@@ -498,6 +505,9 @@ export function useVideoExporter() {
         });
       }
     } catch (err: unknown) {
+      // Ignora erros de renders antigos (outra renderização já iniciou)
+      if (renderIdRef.current !== renderId) return;
+
       const cancelled = isCancellationError(err);
 
       setState(prev => ({
@@ -507,8 +517,11 @@ export function useVideoExporter() {
         renderStatusText: cancelled ? 'Exportação cancelada.' : prev.renderStatusText,
       }));
     } finally {
-      abortControllerRef.current = null;
-      speedPaintPhaseWeightRef.current = 0;
+      // Só limpa refs se esta ainda é a renderização atual
+      if (renderIdRef.current === renderId) {
+        abortControllerRef.current = null;
+        speedPaintPhaseWeightRef.current = 0;
+      }
     }
   }, []);
 

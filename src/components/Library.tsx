@@ -76,6 +76,7 @@ export function Library() {
   const [deletingAudio, setDeletingAudio] = useState(false);
   const [audioDeleteError, setAudioDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   const isPlaying = useAudioIsPlaying();
   const activeId = useAudioActiveId();
@@ -227,13 +228,14 @@ export function Library() {
       return;
     }
 
+    setRenameError(null);
     try {
       await updateProjectName(id, editName.trim(), user?.uid);
       await loadProjects();
       setEditingId(null);
     } catch (err) {
       log.error('Falha ao renomear projeto', { error: err });
-      setError('Não foi possível renomear o projeto. Tente novamente.');
+      setRenameError('Não foi possível renomear o projeto. Tente novamente.');
     }
   };
 
@@ -422,6 +424,8 @@ export function Library() {
                             onChange={(event: ChangeEvent<HTMLInputElement>) => setEditName(event.target.value)}
                             autoFocus
                             size="small"
+                            error={Boolean(renameError)}
+                            helperText={renameError}
                             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
                               if (event.key === 'Enter') {
                                 void saveEdit(project.id);

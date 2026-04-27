@@ -35,13 +35,16 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Dead code cleanup (11 exports não usados, 3 barrel re-exports, 1 dep npm morta)
+Fase: Audit UX — páginas autenticadas (10 findings corrigidos, docs/audits/7.md)
 Última atualização: 26/04/2026
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 8: AUDIT UX — Correção de 10 findings do audit de páginas autenticadas (docs/audits/7.md)
+- Resultado: 10/10 findings corrigidos em 10 arquivos. P1 (3/3): race condition no useVideoExporter (renderIdRef), Firestore sequencial→Promise.all no assistente, botão "Reenviar email" no ProtectedRoute. P2 (6/6): React.memo quebrado no SpeedPaintControls (props primitivas), blob URL cleanup no ImageStudio, renameError separado no Library, aria-label no spinner do ProtectedRoute, .catch() no DataMigrationDialog, log descritivo no useAudioGenerator. P3 (1/1): FileReader.onerror no Inspector. Validação dupla com 4 validators independentes (2 rounds). 36 findings originais → 15 pós-cascata → 10 pós re-validação. Lint + typecheck + build passaram.
+- Pendências: não
 ### Etapa 7: DEAD CODE — Limpeza de código morto validado
 - Resultado: 11 type/interface exports não usados tornados internos (logger.ts: LogLevel/LogPayload/LoggerInstance; error-mapping.ts: ErrorMappingRule/ErrorMapperConfig/ErrorMapper; rate-limiter.ts: RetryResult; env.ts: FirebaseEnvConfig; db/types.ts: ProjectSettings; db/transcriptions.ts: StoredTranscription). 3 barrel re-exports removidos do studio store (StudioConfigState, STORAGE_KEYS, SCENE_RATIOS — consumidores usam import direto). 1 dep npm morta removida (es-abstract — transitiva de eslint-plugin-react). Lint + typecheck + build + testes (1180) passaram.
 - Pendências: não
@@ -56,7 +59,6 @@ Fase: Dead code cleanup (11 exports não usados, 3 barrel re-exports, 1 dep npm 
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Nenhuma pendência — todos os findings de scan (11/11) e audit (22/23) foram corrigidos
-2. S1 (useAudioGenerator 2x) foi pulado com justificativa de alto risco de regressão
-3. Branch pronta para merge
+1. Nenhuma pendência — todos os findings de scan (11/11), audit público (22/23) e audit autenticado (10/10) foram corrigidos
+2. Branch pronta para merge
 <<<FIM_PROXIMOS_PASSOS>>>
