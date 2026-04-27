@@ -35,28 +35,22 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Scan findings corrigidos (11/11)
-Última atualização: 26/04/2026, 21:30
+Fase: Audit findings corrigidos (22/23 — 1 pulado com justificativa)
+Última atualização: 26/04/2026, 22:10
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
-### Etapa 4: RUN/SCAN — Correção dos 11 findings do relatório docs/scan/1.md
-- Resultado: 11/11 findings corrigidos em 3 commits (3 builders). CRÍTICO: dupla instância useAudioGenerator removida (props via App.tsx). ALTO: galeria agora exibe vídeos exportados (getProjectsDetailsMap estendido). MÉDIOS: duplicate main landmarks removidos (3 arquivos), NotFoundPage com noindex, ProtectedRoute verifica emailVerified, Firestore persistence offline ativada, exclusão conta deleta Auth primeiro, deleteChatSession deleta ambos storages. BAIXOS: extractVideoThumbnail morto removido, seletor Speed Paint simples removido (sliders avançados suficientes), dupla geração auto-resolvida pelo CRÍTICO. Lint + typecheck + build + testes (1180) passaram.
-- Pendências: não — todos os findings do scan foram corrigidos
-### Etapa 2: AUDIT — Audit técnico completo do projeto (src/)
-- Resultado: 23 findings validados (1 CRÍTICO, 9 WARNING, 13 SUGGESTION) em 166 arquivos/284K tokens. Relatório em `docs/audits/3.md`. Processo: 6 auditores em paralelo (technical, best-practices, performance, a11y, ux-flow, firebase) → validação cascata (2 batches) → 2 rounds re-validação dupla (22 falsos positivos descartados). Findings principais: C1 (imagens de cena LGPD no cleanup de conta), W6 (exclusão de conta aviso perdido), W8 (Library mensagem enganosa), W9 (ImageStudio erro invisível). Lint/typecheck/build pendente.
-- Pendências: sim — 23 findings para correção via `/run --audit 3.md`
-### Etapa 1: SCAN — Scan completo do projeto (src/)
-- Resultado: 11 findings validados (1 CRÍTICO, 1 ALTO, 6 MÉDIO, 3 BAIXO) em 165 arquivos/284K tokens. Relatório em `docs/scan/1.md`. Processo: 4 scan-gaps → 2 validação cascata → 2 rounds re-validação dupla (zero falsos positivos). Lint/typecheck/build passaram.
-- Pendências: sim — 11 lacunas para correção via `/run --scan`
+### Etapa 5: RUN/AUDIT — Correção dos 23 findings do relatório docs/audits/3.md
+- Resultado: 22/23 findings corrigidos em 4 commits (7 fix-workers). CRÍTICO (C1): imagens de cena agora deletadas com path correto `_scene_{index}.png` no cleanup LGPD. WARNING (9/9): W1 delete dialog DRY em Library/ImageStudio/Assistant, W2 searchFieldSx extraído para tema com tokens, W3 Inspector de 22→1 prop via useStudioStore+useShallow, W4 tabela semântica nativa em PricingPage, W5 Button semântico para forgot-password, W6 window.confirm() antes do redirect em exclusão parcial, W7 seletores primitivos no ActionBar (elimina ~4 re-renders/s), W8 separação exclusão/refresh no Library, W9 Snackbar de erro quando sidebar colapsado. SUGGESTION (12/13): S0 causa preservada em handleFirestoreError, S2 Whisper download cancelável via AbortController, S3 buildGenerateOptions com spread, S4 applySettings com loop genérico, S5 Set para blob URLs, S6 aria-labelledby no dialog de reset, S7 feedback visual em exclusão de áudio, S8 botão retry no assistente, S9 filtro userId no merge IndexedDB, S10 limit(100) em todas as queries Firestore, S11 runRequest resolve em transaction.oncomplete, S12 uploadBytesResumable para blobs >10MB. S1 pulado (useAudioGenerator 2x — refatoração de alto risco, mitigado por loadProjectData). Lint + typecheck + build + testes (1180) passaram.
+- Pendências: não — 1 finding pulado com justificativa (S1)
 <<<FIM_LOG_ATIVIDADES>>>
 
 ---
 
 <<<PROXIMOS_PASSOS>>>
-1. Corrigir C1 (imagens de cena LGPD no cleanup de conta) — prioridade máxima
-2. Corrigir WARNINGs (delete dialog DRY, TextField style, Inspector ISP, a11y tabela/link, exclusão conta aviso, ActionBar re-render, Library mensagem enganosa, ImageStudio erro invisível)
-3. Corrigir SUGGESTIONs (handleFirestoreError cause, useAudioGenerator 3x, Whisper cancel, buildGenerateOptions, applySettings, blob URL Set, aria-labelledby, exclusão áudio feedback, retry assistente, chatSessions userId, Firestore limit, IndexedDB transaction, upload resumável)
+1. Nenhuma pendência — todos os findings de scan (11/11) e audit (22/23) foram corrigidos
+2. S1 (useAudioGenerator 2x) foi pulado com justificativa de alto risco de regressão
+3. Branch pronta para merge
 <<<FIM_PROXIMOS_PASSOS>>>
