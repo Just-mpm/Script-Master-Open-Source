@@ -35,13 +35,16 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Audit Performance — 2 findings validados (docs/audits/8.md)
+Fase: Audit Performance — 2/2 findings corrigidos (docs/audits/8.md)
 Última atualização: 26/04/2026
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 10: RUN/AUDIT PERFORMANCE — Correção dos 2 findings de performance (docs/audits/8.md)
+- Resultado: 2/2 findings corrigidos em 2 arquivos. P1 (1/1): AnimationControls — clearTimeout adicionado no cleanup do useEffect de auto-start de gravação batch (evita gravação inesperada ao desmontar durante o delay de 800ms). P2 (1/1): Library.tsx — blob URL de áudio revogado após downloadFile resolver (evita acúmulo de ~5-10MB por download). Lint + typecheck + build passaram.
+- Pendências: não
 ### Etapa 9: AUDIT PERFORMANCE — Audit de performance com foco em re-renders, lazy loading, memory leaks, bundle size
 - Resultado: 2 findings validados de 8 originais (6 falsos positivos removidos na validação dupla). P1 (1): AnimationControls setTimeout sem cleanup no auto-start de gravação batch (correção: clearTimeout no cleanup do useEffect). P2 (1): Library blob URL de áudio não revogada após download (correção: revokeObjectURL após downloadFile resolver). Base de performance do projeto é sólida — lazy loading total, code splitting, useShallow, React.memo, cleanup adequado em todos os hooks.
 - Pendências: não — apenas relatório gerado, sem correções aplicadas

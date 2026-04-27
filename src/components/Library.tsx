@@ -591,10 +591,13 @@ export function Library() {
                                                     onClick={() => {
                                                       const url = audio.audioUrl || (audio.audioBlob ? URL.createObjectURL(audio.audioBlob) : '');
                                                       if (url) {
-                                                         if (!audio.audioUrl && url.startsWith('blob:')) {
-                                                           blobUrlsRef.current.add(url);
-                                                         }
-                                                        void downloadFile(url, `${project.name}-${audio.id}.wav`);
+                                                         const isBlob = !audio.audioUrl && url.startsWith('blob:');
+                                                         if (isBlob) {
+                                                            blobUrlsRef.current.add(url);
+                                                          }
+                                                         void downloadFile(url, `${project.name}-${audio.id}.wav`).then(() => {
+                                                           if (isBlob) { URL.revokeObjectURL(url); blobUrlsRef.current.delete(url); }
+                                                         });
                                                       }
                                                     }}
                                                     aria-label="Baixar áudio"

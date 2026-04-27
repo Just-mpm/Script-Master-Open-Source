@@ -238,11 +238,12 @@ export function AnimationControls() {
     if (batchMode === 'record' && job.status === 'completed' && progress === 0 && !isRecording && job.id !== handledJobIdForRecordRef.current) {
       handledJobIdForRecordRef.current = job.id;
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (useAnimationStore.getState().batchMode === 'record') {
           handleDownloadVideoRef.current();
         }
       }, 800);
+      return () => clearTimeout(timer);
     }
   }, [batchMode, job.status, progress, isRecording, job.id]);
 
