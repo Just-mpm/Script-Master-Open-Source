@@ -35,13 +35,16 @@ Este arquivo é o diário de bordo do modo autônomo. Siga estas regras ao manus
 ---
 
 <<<ESTADO_ATUAL>>>
-Fase: Audit UX — páginas autenticadas (10 findings corrigidos, docs/audits/7.md)
+Fase: Audit Performance — 2 findings validados (docs/audits/8.md)
 Última atualização: 26/04/2026
 <<<FIM_ESTADO_ATUAL>>>
 
 ---
 
 <<<LOG_ATIVIDADES>>>
+### Etapa 9: AUDIT PERFORMANCE — Audit de performance com foco em re-renders, lazy loading, memory leaks, bundle size
+- Resultado: 2 findings validados de 8 originais (6 falsos positivos removidos na validação dupla). P1 (1): AnimationControls setTimeout sem cleanup no auto-start de gravação batch (correção: clearTimeout no cleanup do useEffect). P2 (1): Library blob URL de áudio não revogada após download (correção: revokeObjectURL após downloadFile resolver). Base de performance do projeto é sólida — lazy loading total, code splitting, useShallow, React.memo, cleanup adequado em todos os hooks.
+- Pendências: não — apenas relatório gerado, sem correções aplicadas
 ### Etapa 8: AUDIT UX — Correção de 10 findings do audit de páginas autenticadas (docs/audits/7.md)
 - Resultado: 10/10 findings corrigidos em 10 arquivos. P1 (3/3): race condition no useVideoExporter (renderIdRef), Firestore sequencial→Promise.all no assistente, botão "Reenviar email" no ProtectedRoute. P2 (6/6): React.memo quebrado no SpeedPaintControls (props primitivas), blob URL cleanup no ImageStudio, renameError separado no Library, aria-label no spinner do ProtectedRoute, .catch() no DataMigrationDialog, log descritivo no useAudioGenerator. P3 (1/1): FileReader.onerror no Inspector. Validação dupla com 4 validators independentes (2 rounds). 36 findings originais → 15 pós-cascata → 10 pós re-validação. Lint + typecheck + build passaram.
 - Pendências: não
