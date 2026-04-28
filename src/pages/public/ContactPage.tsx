@@ -25,6 +25,7 @@ import { CTASection } from '../../components/public/CTASection';
 import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, APP_BORDER, WHITE_04, WHITE_12 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { createLogger } from '../../lib/logger';
+import { useLocale } from '../../features/i18n';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -66,36 +67,6 @@ interface FormErrors {
 
 // ── Constantes de dados ───────────────────────────────────────────────
 
-/** Informações de contato exibidas na coluna esquerda */
-const CONTACT_INFO: readonly ContactInfo[] = [
-  {
-    icon: <EmailIcon aria-hidden="true" />,
-    label: 'Email',
-    value: 'contato@scriptmaster.app',
-    href: 'mailto:contato@scriptmaster.app',
-  },
-  {
-    icon: <AccessTimeIcon aria-hidden="true" />,
-    label: 'Resposta',
-    value: 'Em até 24h úteis',
-  },
-  {
-    icon: <LanguageIcon aria-hidden="true" />,
-    label: 'Idioma',
-    value: 'Português (Brasil)',
-  },
-] as const;
-
-/** Opções do select de assunto */
-const SUBJECT_OPTIONS: readonly SelectOption[] = [
-  { value: 'geral', label: 'Dúvida geral' },
-  { value: 'suporte', label: 'Suporte técnico' },
-  { value: 'bugs', label: 'Reportar um bug' },
-  { value: 'features', label: 'Sugestão de funcionalidade' },
-  { value: 'parceria', label: 'Parceria comercial' },
-  { value: 'outro', label: 'Outro assunto' },
-] as const;
-
 /** Links das redes sociais */
 const SOCIAL_LINKS: readonly SocialLink[] = [
   {
@@ -129,9 +100,6 @@ const INITIAL_ERRORS: FormErrors = {
   email: false,
   message: false,
 };
-
-/** Mensagem base do mailto — assunto padrão quando nenhum selecionado */
-const DEFAULT_SUBJECT = 'Contato via Site';
 
 /** Validação regex básica de email (escopo de módulo, evita recriação por render) */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -201,6 +169,28 @@ function ContactInfoItem({ info }: { info: ContactInfo }) {
 
 /** Painel esquerdo com informações de contato e redes sociais */
 function ContactInfoPanel() {
+  const { t } = useLocale();
+
+  // Informações de contato com labels e valores traduzidos
+  const contactInfo: readonly ContactInfo[] = [
+    {
+      icon: <EmailIcon aria-hidden="true" />,
+      label: t('contact.info.email.label'),
+      value: t('contact.info.email.value'),
+      href: 'mailto:contato@scriptmaster.app',
+    },
+    {
+      icon: <AccessTimeIcon aria-hidden="true" />,
+      label: t('contact.info.response.label'),
+      value: t('contact.info.response.value'),
+    },
+    {
+      icon: <LanguageIcon aria-hidden="true" />,
+      label: t('contact.info.language.label'),
+      value: t('contact.info.language.value'),
+    },
+  ];
+
   return (
     <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 3, md: 4 }, height: '100%' })}>
       <Typography
@@ -208,11 +198,11 @@ function ContactInfoPanel() {
         component="h2"
         sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 3 }}
       >
-        Informações de contato
+        {t('contact.info.title')}
       </Typography>
 
       <Stack spacing={1} sx={{ mb: 4 }}>
-        {CONTACT_INFO.map((info) => (
+        {contactInfo.map((info) => (
           <ContactInfoItem key={info.label} info={info} />
         ))}
       </Stack>
@@ -223,7 +213,7 @@ function ContactInfoPanel() {
           variant="subtitle2"
           sx={{ color: TEXT_SECONDARY, mb: 2, fontWeight: 600 }}
         >
-          Siga nas redes sociais
+          {t('contact.info.socials.title')}
         </Typography>
         <Stack direction="row" spacing={1.5}>
           {SOCIAL_LINKS.map((link) => (
@@ -258,10 +248,24 @@ function ContactInfoPanel() {
 
 /** Formulário de contato com validação inline e fallback mailto */
 function ContactForm() {
+  const { t } = useLocale();
   const log = createLogger('ContactForm');
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>(INITIAL_ERRORS);
   const [mailtoOpened, setMailtoOpened] = useState(false);
+
+  // Opções do select de assunto com labels traduzidos
+  const subjectOptions: readonly SelectOption[] = [
+    { value: 'geral', label: t('contact.subjects.general') },
+    { value: 'suporte', label: t('contact.subjects.support') },
+    { value: 'bugs', label: t('contact.subjects.bugs') },
+    { value: 'features', label: t('contact.subjects.featureRequest') },
+    { value: 'parceria', label: t('contact.subjects.partnership') },
+    { value: 'outro', label: t('contact.subjects.other') },
+  ];
+
+  // Assunto padrão do mailto quando nenhum selecionado
+  const defaultSubject = t('contact.defaultSubject');
 
   /** Atualiza campo individual do formulário */
   const handleChange = (
@@ -285,7 +289,7 @@ function ContactForm() {
 
   /** Monta o body do mailto com dados do formulário */
   const buildMailtoBody = (): string => {
-    const subject = SUBJECT_OPTIONS.find((o) => o.value === form.subject)?.label ?? DEFAULT_SUBJECT;
+    const subject = subjectOptions.find((o) => o.value === form.subject)?.label ?? defaultSubject;
     const body = `Nome: ${form.name}%0AEmail: ${form.email}%0AAssunto: ${subject}%0A%0A${form.message}`;
     return `mailto:contato@scriptmaster.app?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
@@ -311,14 +315,11 @@ function ContactForm() {
         component="h2"
         sx={{ color: TEXT_PRIMARY, fontWeight: 700, mb: 1 }}
       >
-        Envie uma mensagem
+        {t('contact.form.title')}
       </Typography>
 
       <Alert severity="info" variant="outlined" sx={{ mb: 3 }}>
-        Ao enviar, seu cliente de email será aberto com os dados preenchidos. Se preferir, envie diretamente para{' '}
-        <Box component="span" sx={{ fontWeight: 600 }}>
-          contato@scriptmaster.app
-        </Box>.
+        {t('contact.form.alert')}
       </Alert>
 
       <Stack spacing={2.5}>
@@ -326,12 +327,12 @@ function ContactForm() {
         <TextField
           fullWidth
           required
-          label="Seu nome"
-          placeholder="João da Silva"
+          label={t('contact.form.name')}
+          placeholder={t('contact.form.namePlaceholder')}
           value={form.name}
           onChange={(e) => handleChange('name', e)}
           error={errors.name}
-          helperText={errors.name ? 'Nome é obrigatório' : ' '}
+          helperText={errors.name ? t('contact.form.nameRequired') : ' '}
         />
 
         {/* Email */}
@@ -339,24 +340,24 @@ function ContactForm() {
           fullWidth
           required
           type="email"
-          label="Seu email"
-          placeholder="joao@exemplo.com"
+          label={t('contact.form.email')}
+          placeholder={t('contact.form.emailPlaceholder')}
           value={form.email}
           onChange={(e) => handleChange('email', e)}
           error={errors.email}
-          helperText={errors.email ? (form.email.trim().length === 0 ? 'Email é obrigatório' : 'Formato de email inválido') : ' '}
+          helperText={errors.email ? (form.email.trim().length === 0 ? t('contact.form.emailRequired') : t('contact.form.emailInvalid')) : ' '}
         />
 
         {/* Assunto */}
         <TextField
           select
           fullWidth
-          label="Assunto"
+          label={t('contact.form.subject')}
           value={form.subject}
           onChange={(e) => handleChange('subject', e)}
           helperText=" "
         >
-          {SUBJECT_OPTIONS.map((option) => (
+          {subjectOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
               {option.label}
             </MenuItem>
@@ -369,12 +370,12 @@ function ContactForm() {
           required
           multiline
           rows={5}
-          label="Sua mensagem"
-          placeholder="Descreva sua dúvida, sugestão ou problema..."
+          label={t('contact.form.message')}
+          placeholder={t('contact.form.messagePlaceholder')}
           value={form.message}
           onChange={(e) => handleChange('message', e)}
           error={errors.message}
-          helperText={errors.message ? 'Mensagem é obrigatória' : ' '}
+          helperText={errors.message ? t('contact.form.messageRequired') : ' '}
         />
 
         {/* Botão de envio */}
@@ -387,7 +388,7 @@ function ContactForm() {
           endIcon={<SendIcon />}
           sx={{ mt: 1 }}
         >
-          Enviar mensagem
+          {t('contact.form.submit')}
         </Button>
       </Stack>
 
@@ -399,7 +400,7 @@ function ContactForm() {
         sx={{ mb: 4 }}
       >
         <Alert severity="success" variant="filled" onClose={() => setMailtoOpened(false)}>
-          Seu cliente de email deve abrir automaticamente. Verifique se abriu corretamente.
+          {t('contact.form.snackbar')}
         </Alert>
       </Snackbar>
     </Box>
@@ -409,22 +410,24 @@ function ContactForm() {
 // ── Componente principal ──────────────────────────────────────────────
 
 export default function ContactPage() {
+  const { t, locale } = useLocale();
+
   const seo = getPageSeo({
-    title: 'Contato',
-    description: 'Entre em contato com a equipe do Script Master. Estamos aqui para ajudar.',
+    title: t('seo.contact.title'),
+    description: t('seo.contact.description'),
     path: '/contato',
   });
 
   return (
     <>
-      <DocumentHead {...seo} />
+      <DocumentHead {...seo} locale={locale} />
       <PageLayout>
       {/* Hero — H1 + subtítulo + CTAs */}
       <HeroSection
-        title="Fale Conosco"
-        subtitle="Estamos aqui para ajudar. Envie sua dúvida, sugestão ou reporte um problema e responderemos em até 24h úteis."
-        primaryCta={{ label: 'Enviar mensagem', to: '#form' }}
-        secondaryCta={{ label: 'Ver preços', to: '/precos' }}
+        title={t('contact.hero.title')}
+        subtitle={t('contact.hero.subtitle')}
+        primaryCta={{ label: t('contact.hero.cta'), to: '#form' }}
+        secondaryCta={{ label: t('contact.hero.ctaSecondary'), to: '/precos' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <EmailIcon aria-hidden="true" sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
@@ -447,9 +450,9 @@ export default function ContactPage() {
 
       {/* CTA Final */}
       <CTASection
-        title="Pronto para começar?"
-        subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão."
-        buttonLabel="Começar agora"
+        title={t('contact.cta.title')}
+        subtitle={t('contact.cta.subtitle')}
+        buttonLabel={t('contact.cta.button')}
         buttonHref="/cadastro"
       />
     </PageLayout>

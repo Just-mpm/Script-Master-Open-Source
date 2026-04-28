@@ -2,6 +2,8 @@ import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/audio';
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
+import { EMOTION_OPTIONS } from '../features/studio/types';
+import type { EmotionType } from '../features/studio/types';
 import { generateScenePrompts, generateImageFromPrompt, type ScenePromptResult } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
 import type { AudioSegment } from '../lib/db/types';
@@ -94,6 +96,8 @@ interface GenerateOptions {
   sceneRatio?: '16:9' | '9:16' | '1:1';
   visualFramework?: string;
   referenceImage?: string | null;
+  emotion?: EmotionType;
+  emotionIntensity?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +262,8 @@ export function useAudioGenerator() {
       sceneRatio = '16:9',
       visualFramework = 'general',
       referenceImage,
+      emotion = 'neutral',
+      emotionIntensity = 0.5,
     } = options;
 
     if (!script.trim()) {
@@ -301,6 +307,8 @@ export function useAudioGenerator() {
         sceneDensity,
         sceneRatio,
         visualFramework,
+        emotion,
+        emotionIntensity,
       },
     };
 
@@ -387,8 +395,14 @@ export function useAudioGenerator() {
       const generatedSegments: AudioSegment[] = [];
       let totalLength = 0;
 
-      const paceNote = PACE_INSTRUCTIONS[pace];
-      const combinedNotes = [styleNotes, paceNote].filter(Boolean).join('\n* ');
+        const paceNote = PACE_INSTRUCTIONS[pace];
+        const combinedNotes = [styleNotes, paceNote].filter(Boolean).join('\n* ');
+
+        // Instruções de emoção — incluídas apenas quando diferente de neutro
+        const emotionOption = EMOTION_OPTIONS.find((e) => e.value === emotion);
+        const emotionInstruction = emotion && emotion !== 'neutral' && emotionOption
+          ? `### TOM EMOCIONAL\n* ${emotionOption.promptInstruction} Intensidade: ${(emotionIntensity * 100).toFixed(0)}%.`
+          : '';
 
       // --- Geração TTS ---
       for (let i = 0; i < chunks.length; i++) {
@@ -412,6 +426,7 @@ export function useAudioGenerator() {
           multiCtx,
           audioProfile ? `# PERFIL DE ÁUDIO: ${audioProfile}` : '',
           scene ? `## A CENA: ${scene}` : '',
+          emotionInstruction,
           combinedNotes ? `### NOTAS DE DIREÇÃO\n* ${combinedNotes}` : '',
           `#### TRANSCRIÇÃO\n${chunk}`,
         ].filter(Boolean).join('\n\n');

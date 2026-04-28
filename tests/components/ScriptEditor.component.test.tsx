@@ -5,11 +5,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { ScriptEditor } from '../../src/components/ScriptEditor';
 import type { StudioScene } from '../../src/features/studio/types';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 vi.mock('../../src/lib/scene', () => ({
@@ -44,6 +49,7 @@ const defaultProps = {
 
 describe('ScriptEditor', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
   });
 

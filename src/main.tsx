@@ -8,6 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AudioProvider } from './contexts/AudioContext.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { AppThemeProvider } from './theme/AppThemeProvider';
+import { I18nProvider } from './features/i18n';
 import './index.css';
 
 // Registra o service worker apenas em produção
@@ -39,11 +40,13 @@ createRoot(document.getElementById('root')!).render(
       <AppThemeProvider>
         <BrowserRouter>
           <RoutableErrorBoundary>
+            <I18nProvider>
             <AuthProvider>
               <AudioProvider>
                   <App />
                 </AudioProvider>
             </AuthProvider>
+            </I18nProvider>
           </RoutableErrorBoundary>
         </BrowserRouter>
       </AppThemeProvider>

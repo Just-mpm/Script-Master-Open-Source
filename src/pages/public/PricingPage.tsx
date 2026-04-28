@@ -27,7 +27,8 @@ import {
   APP_BORDER,
 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
-import { PRICING_FAQ_ITEMS } from '../../data/pricingFaq';
+import { getLocalizedPricingFaq } from '../../data/pricingFaq';
+import { useLocale } from '../../features/i18n';
 import { staggerContainer, fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
@@ -64,89 +65,6 @@ interface ComparisonRow {
 
 // ── Constantes de dados ───────────────────────────────────────────────
 
-/** Planos disponiveis — OCP: adicionar plano sem alterar componentes */
-const PLANS: readonly PlanData[] = [
-  {
-    name: 'Gratuito',
-    priceMonthly: 'R$ 0',
-    priceSubtitle: 'para sempre',
-    description: 'Perfeito para experimentar e projetos pessoais',
-    features: [
-      { text: '5 roteiros TTS por mês', included: true },
-      { text: '10 gerações de imagens por mês', included: true },
-      { text: 'Renderização em 720p', included: true },
-      { text: 'Vídeos de até 30 segundos', included: true },
-      { text: '20 mensagens/dia no assistente', included: true },
-      { text: '3 pinturas rápidas por mês', included: true },
-      { text: '5 projetos na biblioteca', included: true },
-      { text: 'Exportar áudio WAV', included: true },
-      { text: 'Suporte prioritário', included: false },
-    ],
-    recommended: false,
-    ctaLabel: 'Começar grátis',
-    ctaVariant: 'outlined',
-  },
-  {
-    name: 'Pro',
-    priceMonthly: 'R$ 29',
-    priceAnnual: 'R$ 23',
-    priceSubtitle: '/mês',
-    description: 'Para criadores que produzem conteúdo regularmente',
-    features: [
-      { text: 'Roteiros TTS ilimitados', included: true },
-      { text: '200 gerações de imagens por mês', included: true },
-      { text: 'Renderização em 1080p', included: true },
-      { text: 'Vídeos de até 5 minutos', included: true },
-      { text: 'Assistente IA ilimitado', included: true },
-      { text: '50 pinturas rápidas por mês', included: true },
-      { text: '100 projetos na biblioteca', included: true },
-      { text: 'Exportar áudio WAV', included: true },
-      { text: 'Suporte por email', included: true },
-      { text: 'Suporte prioritário', included: false },
-    ],
-    recommended: true,
-    ctaLabel: 'Assinar Pro',
-    ctaVariant: 'primary',
-  },
-  {
-    name: 'Equipe',
-    priceMonthly: 'Sob demanda',
-    priceSubtitle: '',
-    description: 'Para times e produções em grande escala',
-    features: [
-      { text: 'Roteiros TTS ilimitados', included: true },
-      { text: 'Gerações de imagens ilimitadas', included: true },
-      { text: 'Renderização em 1080p', included: true },
-      { text: 'Vídeos de até 10 minutos', included: true },
-      { text: 'Assistente IA ilimitado', included: true },
-      { text: 'Pinturas rápidas ilimitadas', included: true },
-      { text: 'Projetos ilimitados', included: true },
-      { text: 'Exportar áudio WAV', included: true },
-      { text: 'Suporte por email', included: true },
-      { text: 'Suporte prioritário', included: true },
-    ],
-    recommended: false,
-    ctaLabel: 'Em breve',
-    ctaVariant: 'outlined',
-  },
-];
-
-/** Tabela comparativa de funcionalidades por plano */
-const COMPARISON_TABLE: readonly ComparisonRow[] = [
-  { feature: 'Geração TTS', gratuito: '5/mês', pro: 'Ilimitado', equipe: 'Ilimitado' },
-  { feature: 'Geração de imagens', gratuito: '10/mês', pro: '200/mês', equipe: 'Ilimitado' },
-  { feature: 'Resolução de vídeo', gratuito: '720p', pro: '1080p', equipe: '1080p' },
-  { feature: 'Duração do vídeo', gratuito: '30s', pro: '5 min', equipe: '10 min' },
-  { feature: 'Assistente IA', gratuito: '20 msgs/dia', pro: 'Ilimitado', equipe: 'Ilimitado' },
-  { feature: 'Pintura Rápida', gratuito: '3/mês', pro: '50/mês', equipe: 'Ilimitado' },
-  { feature: 'Biblioteca', gratuito: '5 projetos', pro: '100 projetos', equipe: 'Ilimitado' },
-  { feature: 'Exportar áudio', gratuito: 'WAV', pro: 'WAV', equipe: 'WAV' },
-  { feature: 'Suporte', gratuito: 'Comunidade', pro: 'Email', equipe: 'Prioritário' },
-];
-
-/** Rotulo usado para identificar valores "ilimitados" na tabela */
-const UNLIMITED_LABEL = 'Ilimitado';
-
 // ── Subcomponentes ────────────────────────────────────────────────────
 
 /** Toggle Mensal/Anual com badge de desconto no anual */
@@ -157,6 +75,8 @@ function BillingToggle({
   value: BillingPeriod;
   onChange: (period: BillingPeriod) => void;
 }) {
+  const { t } = useLocale();
+
   return (
     <Box
       component={motion.div}
@@ -172,7 +92,7 @@ function BillingToggle({
         onChange={(_, newValue: BillingPeriod | null) => {
           if (newValue !== null) onChange(newValue);
         }}
-        aria-label="Ciclo de pagamento"
+        aria-label={t('pricing.billing.ariaLabel')}
         sx={(theme) => ({
           bgcolor: alpha(theme.palette.common.white, 0.04),
           borderRadius: 3,
@@ -195,10 +115,10 @@ function BillingToggle({
           },
         })}
       >
-        <ToggleButton value="monthly">Mensal</ToggleButton>
+        <ToggleButton value="monthly">{t('pricing.billing.monthly')}</ToggleButton>
         <ToggleButton value="annual">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            Anual
+            {t('pricing.billing.annual')}
             <Chip
               label="-20%"
               size="small"
@@ -221,11 +141,13 @@ function BillingToggle({
 function ComparisonCell({
   value,
   isHighlighted,
+  unlimitedLabel,
 }: {
   value: string;
   isHighlighted: boolean;
+  unlimitedLabel: string;
 }) {
-  const isUnlimited = value === UNLIMITED_LABEL;
+  const isUnlimited = value === unlimitedLabel;
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
@@ -247,7 +169,10 @@ function ComparisonCell({
 }
 
 /** Tabela comparativa de planos com scroll horizontal em telas pequenas */
-function ComparisonTable() {
+function ComparisonTable({ rows }: { rows: readonly ComparisonRow[] }) {
+  const { t } = useLocale();
+  const unlimitedLabel = t('pricing.unlimited');
+
   return (
     <Box
       component={motion.div}
@@ -262,7 +187,7 @@ function ComparisonTable() {
       >
         <Box
           component="table"
-          aria-label="Comparação de planos"
+          aria-label={t('pricing.comparison.ariaLabel')}
           sx={{ width: '100%', borderCollapse: 'collapse' }}
         >
           {/* Cabecalho da tabela */}
@@ -277,7 +202,7 @@ function ComparisonTable() {
                 sx={{ width: '42%', pb: 1.5, textAlign: 'left' }}
               >
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Funcionalidade
+                  {t('pricing.comparison.feature')}
                 </Typography>
               </Box>
               <Box
@@ -286,7 +211,7 @@ function ComparisonTable() {
                 sx={{ width: '19.5%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2">
-                  Gratuito
+                  {t('pricing.plans.free.name')}
                 </Typography>
               </Box>
               <Box
@@ -295,7 +220,7 @@ function ComparisonTable() {
                 sx={{ width: '20%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2" sx={{ color: BRAND_PRIMARY, fontWeight: 700 }}>
-                  Pro
+                  {t('pricing.plans.pro.name')}
                 </Typography>
               </Box>
               <Box
@@ -304,7 +229,7 @@ function ComparisonTable() {
                 sx={{ width: '19.5%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2">
-                  Equipe
+                  {t('pricing.plans.team.name')}
                 </Typography>
               </Box>
             </Box>
@@ -312,8 +237,8 @@ function ComparisonTable() {
 
           {/* Linhas de dados */}
           <Box component="tbody">
-            {COMPARISON_TABLE.map((row, index) => {
-              const isLast = index === COMPARISON_TABLE.length - 1;
+            {rows.map((row, index) => {
+              const isLast = index === rows.length - 1;
 
               return (
                 <Box
@@ -329,13 +254,13 @@ function ComparisonTable() {
                     </Typography>
                   </Box>
                   <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
-                    <ComparisonCell value={row.gratuito} isHighlighted={false} />
+                    <ComparisonCell value={row.gratuito} isHighlighted={false} unlimitedLabel={unlimitedLabel} />
                   </Box>
                   <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
-                    <ComparisonCell value={row.pro} isHighlighted={true} />
+                    <ComparisonCell value={row.pro} isHighlighted={true} unlimitedLabel={unlimitedLabel} />
                   </Box>
                   <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
-                    <ComparisonCell value={row.equipe} isHighlighted={false} />
+                    <ComparisonCell value={row.equipe} isHighlighted={false} unlimitedLabel={unlimitedLabel} />
                   </Box>
                 </Box>
               );
@@ -351,7 +276,85 @@ function ComparisonTable() {
 
 export default function PricingPage() {
   const navigate = useNavigate();
+  const { t, locale } = useLocale();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+
+  const localizedPricingFaq = getLocalizedPricingFaq(locale);
+
+  // ── Planos localizados via t() — dados numéricos invariantes ──
+  const PLANS: readonly PlanData[] = [
+    {
+      name: t('pricing.plans.free.name'),
+      priceMonthly: t('pricing.plans.free.priceMonthly'),
+      priceSubtitle: t('pricing.plans.free.priceSubtitle'),
+      description: t('pricing.plans.free.description'),
+      features: [
+        { text: '5 roteiros TTS por mês', included: true },
+        { text: '10 gerações de imagens por mês', included: true },
+        { text: 'Renderização em 720p', included: true },
+        { text: 'Vídeos de até 30 segundos', included: true },
+        { text: '20 mensagens/dia no assistente', included: true },
+        { text: '3 pinturas rápidas por mês', included: true },
+        { text: '5 projetos na biblioteca', included: true },
+        { text: 'Exportar áudio WAV', included: true },
+        { text: 'Suporte prioritário', included: false },
+      ],
+      recommended: false,
+      ctaLabel: t('pricing.plans.free.cta'),
+      ctaVariant: 'outlined',
+    },
+    {
+      name: t('pricing.plans.pro.name'),
+      priceMonthly: t('pricing.plans.pro.priceMonthly'),
+      priceAnnual: t('pricing.plans.pro.priceAnnual'),
+      priceSubtitle: t('pricing.plans.pro.priceSubtitle'),
+      description: t('pricing.plans.pro.description'),
+      features: [
+        { text: 'Roteiros TTS ilimitados', included: true },
+        { text: '200 gerações de imagens por mês', included: true },
+        { text: 'Renderização em 1080p', included: true },
+        { text: 'Vídeos de até 5 minutos', included: true },
+        { text: 'Assistente IA ilimitado', included: true },
+        { text: '50 pinturas rápidas por mês', included: true },
+        { text: '100 projetos na biblioteca', included: true },
+        { text: 'Exportar áudio WAV', included: true },
+        { text: 'Suporte por email', included: true },
+        { text: 'Suporte prioritário', included: false },
+      ],
+      recommended: true,
+      ctaLabel: t('pricing.plans.pro.cta'),
+      ctaVariant: 'primary',
+    },
+    {
+      name: t('pricing.plans.team.name'),
+      priceMonthly: t('pricing.plans.team.priceMonthly'),
+      priceSubtitle: t('pricing.plans.team.priceSubtitle'),
+      description: t('pricing.plans.team.description'),
+      features: [
+        { text: 'Roteiros TTS ilimitados', included: true },
+        { text: 'Gerações de imagens ilimitadas', included: true },
+        { text: 'Renderização em 1080p', included: true },
+        { text: 'Vídeos de até 10 minutos', included: true },
+        { text: 'Assistente IA ilimitado', included: true },
+        { text: 'Pinturas rápidas ilimitadas', included: true },
+        { text: 'Projetos ilimitados', included: true },
+        { text: 'Exportar áudio WAV', included: true },
+        { text: 'Suporte por email', included: true },
+        { text: 'Suporte prioritário', included: true },
+      ],
+      recommended: false,
+      ctaLabel: t('pricing.plans.team.cta'),
+      ctaVariant: 'outlined',
+    },
+  ];
+
+  // ── Tabela comparativa localizada via t() ──
+  const COMPARISON_TABLE: readonly ComparisonRow[] = Array.from({ length: 9 }, (_, i) => ({
+    feature: t(`pricingComparison.features.${i}.name`),
+    gratuito: t(`pricingComparison.features.${i}.free`),
+    pro: t(`pricingComparison.features.${i}.pro`),
+    equipe: t(`pricingComparison.features.${i}.business`),
+  }));
 
   /** Resolve o preco exibido com base no periodo de cobranca selecionado */
   const getPrice = (plan: PlanData): string => {
@@ -362,8 +365,8 @@ export default function PricingPage() {
   };
 
   const seo = getPageSeo({
-    title: 'Preços e Planos',
-    description: 'Planos e preços do Script Master. Gratuito, Pro e Equipe. Comece grátis sem cartão de crédito.',
+    title: t('seo.pricing.title'),
+    description: t('seo.pricing.description'),
     path: '/precos',
   });
 
@@ -373,24 +376,24 @@ export default function PricingPage() {
     name: 'Script Master',
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web',
-    description: 'Transforme roteiros em áudio profissional com IA',
+    description: t('seo.pricing.description'),
     offers: [
-      { '@type': 'Offer', name: 'Gratuito', price: '0', priceCurrency: 'BRL' },
-      { '@type': 'Offer', name: 'Pro', price: '29', priceCurrency: 'BRL' },
+      { '@type': 'Offer', name: t('pricing.plans.free.name'), price: '0', priceCurrency: 'BRL' },
+      { '@type': 'Offer', name: t('pricing.plans.pro.name'), price: '29', priceCurrency: 'BRL' },
     ],
   };
 
   return (
     <>
-      <DocumentHead {...seo} />
+      <DocumentHead {...seo} locale={locale} />
       <script type="application/ld+json">{JSON.stringify(pricingJsonLd)}</script>
       <PageLayout>
       {/* Hero — H1 + subtitulo + CTAs */}
       <HeroSection
-        title="Escolha o plano ideal para você"
-        subtitle="Comece grátis, sem cartão de crédito. Cancele quando quiser."
-        primaryCta={{ label: 'Começar Grátis', to: '/cadastro' }}
-        secondaryCta={{ label: 'Comparar planos', to: '#comparison' }}
+        title={t('pricing.hero.title')}
+        subtitle={t('pricing.hero.subtitle')}
+        primaryCta={{ label: t('pricing.hero.cta'), to: '/cadastro' }}
+        secondaryCta={{ label: t('pricing.hero.ctaSecondary'), to: '#comparison' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <SavingsIcon sx={{ fontSize: 80, color: BRAND_SECONDARY, opacity: 0.85 }} />
@@ -418,9 +421,9 @@ export default function PricingPage() {
                 recommended={plan.recommended}
                 ctaLabel={plan.ctaLabel}
                 ctaVariant={plan.ctaVariant}
-                ctaDisabled={plan.name !== 'Gratuito'}
-                ctaTooltip="Pagamentos em breve — fique ligado nas novidades!"
-                onCtaClick={plan.name === 'Gratuito' ? () => navigate('/cadastro') : undefined}
+                ctaDisabled={plan.name !== t('pricing.plans.free.name')}
+                ctaTooltip={t('pricing.tooltip.comingSoon')}
+                onCtaClick={plan.name === t('pricing.plans.free.name') ? () => navigate('/cadastro') : undefined}
                 index={idx}
               />
             </Grid>
@@ -431,7 +434,7 @@ export default function PricingPage() {
       {/* Disclaimer — limites nao aplicados */}
       <Box sx={{ pb: { xs: 6, md: 8 }, mx: { xs: 2, sm: 3 } }}>
         <Alert severity="info" variant="outlined">
-          Os limites por plano ainda não são aplicados automaticamente. Todos os recursos estão disponíveis para uso durante o período de desenvolvimento.
+          {t('pricing.disclaimer')}
         </Alert>
       </Box>
 
@@ -447,7 +450,7 @@ export default function PricingPage() {
         >
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-              Compare os planos em detalhes
+              {t('pricing.comparison.title')}
             </Typography>
           </Box>
           <Box component={motion.div} variants={fadeInUp}>
@@ -455,24 +458,23 @@ export default function PricingPage() {
               variant="body1"
               sx={{ color: 'text.secondary', maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}
             >
-              Veja lado a lado tudo que cada plano oferece para escolher o melhor para suas
-              necessidades.
+              {t('pricing.comparison.subtitle')}
             </Typography>
           </Box>
         </Box>
-        <ComparisonTable />
+        <ComparisonTable rows={COMPARISON_TABLE} />
       </Box>
 
       {/* FAQ — Perguntas frequentes sobre precos */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
-        <FAQAccordion items={[...PRICING_FAQ_ITEMS]} title="Perguntas frequentes sobre preços" />
+        <FAQAccordion items={[...localizedPricingFaq]} title={t('pricing.faq.title')} />
       </Box>
 
       {/* CTA Final */}
       <CTASection
-        title="Comece grátis, sem cartão de crédito"
-        subtitle="Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão."
-        buttonLabel="Entrar com Google"
+        title={t('pricing.cta.title')}
+        subtitle={t('pricing.cta.subtitle')}
+        buttonLabel={t('pricing.cta.button')}
         buttonHref="/cadastro"
       />
     </PageLayout>

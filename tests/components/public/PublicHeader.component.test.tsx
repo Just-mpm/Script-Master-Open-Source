@@ -5,14 +5,17 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { PublicHeader } from '../../../src/components/public/PublicHeader';
+import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
@@ -62,6 +65,7 @@ const anonymousUser = {
 
 describe('PublicHeader', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue(anonymousUser);
   });

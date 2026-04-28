@@ -4,11 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { Header } from '../../src/components/Header';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 const mockUseAuth = vi.fn();
@@ -62,6 +67,7 @@ const loggedInUser = {
 
 describe('Header', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue({
       user: loggedInUser,

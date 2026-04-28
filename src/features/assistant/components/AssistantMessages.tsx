@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
 import Divider from '@mui/material/Divider';
+import { useLocale } from '../../../features/i18n';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -102,6 +103,7 @@ const MessageBubble = React.memo(function MessageBubble({
   onSaveToMemory,
   onStopGeneration,
 }: MessageBubbleProps) {
+  const { t } = useLocale();
   const isModel = message.role === 'model';
   const extracted = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
   const settings: AssistantSettings | null = extracted && !extracted.parseError ? extracted.settings : null;
@@ -148,7 +150,7 @@ const MessageBubble = React.memo(function MessageBubble({
                       <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                     )}
                     <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 160 }} noWrap>
-                      {attachment.name || 'Arquivo'}
+                      {attachment.name || t('assistant.messages.file')}
                     </Typography>
                   </Stack>
                 </Box>
@@ -168,16 +170,16 @@ const MessageBubble = React.memo(function MessageBubble({
                   ? <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                   : <Person sx={{ fontSize: ICON_SIZE_MD }} />}
                 <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? TEXT_SECONDARY : WHITE_82 }}>
-                  {isModel ? 'Assistente' : 'Você'}
+                  {isModel ? t('assistant.messages.assistant') : t('assistant.messages.you')}
                 </Typography>
               </Stack>
 
               {isCurrentlyStreaming ? (
-                <Tooltip title="Parar geração">
+                <Tooltip title={t('assistant.messages.stopGeneration')}>
                   <IconButton
                     onClick={onStopGeneration}
                     size="small"
-                    aria-label="Parar geração de resposta"
+                    aria-label={t('assistant.messages.stopGenerationAria')}
                     sx={{
                       color: 'error.main',
                       '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
@@ -187,11 +189,11 @@ const MessageBubble = React.memo(function MessageBubble({
                   </IconButton>
                 </Tooltip>
               ) : isModel && cleanText ? (
-                <Tooltip title={isCopied ? 'Copiado!' : 'Copiar texto'}>
+                <Tooltip title={isCopied ? t('assistant.messages.copied') : t('assistant.messages.copyText')}>
                   <IconButton
                     onClick={() => void onCopy(cleanText, message.id)}
                     size="small"
-                    aria-label="Copiar texto da mensagem"
+                    aria-label={t('assistant.messages.copyTextAria')}
                     sx={{
                       color: isCopied ? 'success.main' : TEXT_DISABLED,
                       '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT, color: 'text.secondary' },
@@ -227,7 +229,7 @@ const MessageBubble = React.memo(function MessageBubble({
 
               {hasMalformedJson ? (
                 <Typography variant="caption" sx={{ color: TEXT_DISABLED, fontStyle: 'italic', mt: 0.5 }}>
-                  O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.
+                  {t('assistant.messages.malformedJson')}
                 </Typography>
               ) : null}
             </Box>
@@ -245,7 +247,7 @@ const MessageBubble = React.memo(function MessageBubble({
                   size="small"
                   startIcon={isApplied ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
                 >
-                  {isApplied ? 'Aplicado' : 'Aplicar no estúdio'}
+                  {isApplied ? t('assistant.messages.applied') : t('assistant.messages.applyToStudio')}
                 </Button>
               ) : null}
 
@@ -261,7 +263,7 @@ const MessageBubble = React.memo(function MessageBubble({
                     '&:hover': { borderColor: APP_BORDER, backgroundColor: alpha(WHITE_08, 0.3) },
                   }}
                 >
-                  {isSavedToMemory ? 'Salvo na memória' : 'Salvar insight'}
+                  {isSavedToMemory ? t('assistant.messages.savedToMemory') : t('assistant.messages.saveInsight')}
                 </Button>
               ) : null}
             </Stack>
@@ -288,14 +290,9 @@ const MessageBubble = React.memo(function MessageBubble({
 
 // --- Empty State: quando não há mensagens ---
 
-const SUGGESTION_PROMPTS: Record<string, string> = {
-  'Ajustar ritmo': 'Sugira um ritmo de narração mais dinâmico para o meu roteiro, com variações de velocidade para destacar momentos importantes.',
-  'Sugerir cena': 'Crie uma descrição visual detalhada de uma cena cinematográfica que combine com um roteiro de documentário.',
-  'Revisar texto': 'Revise meu roteiro e sugira melhorias de clareza, fluidez e impacto narrativo.',
-  'Analisar áudio': 'Analise as características de áudio do meu roteiro e sugira o perfil de voz ideal para cada parte.',
-};
-
 function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: string) => void }) {
+  const { t } = useLocale();
+
   return (
     <Box sx={assistantEmptyStateSx}>
       <Box
@@ -315,11 +312,11 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
       </Box>
 
       <Typography variant="h6" sx={{ mb: 0.75, letterSpacing: '-0.02em' }}>
-        Como posso ajudar?
+        {t('assistant.messages.emptyTitle')}
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, lineHeight: 1.6 }}>
-        Pergunte sobre ajustes de roteiro, sugestões de voz, ideias de cena, ou envie anexos para análise criativa.
+        {t('assistant.messages.emptyDescription')}
       </Typography>
 
       <Stack
@@ -328,13 +325,13 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         useFlexGap
         sx={{ flexWrap: 'wrap', mt: 3, justifyContent: 'center' }}
       >
-        {['Ajustar ritmo', 'Sugerir cena', 'Revisar texto', 'Analisar áudio'].map((label) => (
+        {(['adjustPace', 'suggestScene', 'reviewText', 'analyzeAudio'] as const).map((key) => (
           <Chip
-            key={label}
-            label={label}
+            key={key}
+            label={t(`assistant.messages.suggestions.${key}`)}
             size="small"
             variant="outlined"
-            onClick={() => onSuggestionClick(SUGGESTION_PROMPTS[label])}
+            onClick={() => onSuggestionClick(t(`assistant.messages.suggestionPrompts.${key}`))}
             sx={{
               cursor: 'pointer',
               borderColor: APP_BORDER,
@@ -380,6 +377,8 @@ export function AssistantMessages({
   onStopGeneration,
   onSuggestionClick,
 }: AssistantMessagesProps) {
+  const { t } = useLocale();
+
   // Última mensagem do modelo — pode estar em streaming (texto progressivo)
   const lastModelMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -459,7 +458,7 @@ export function AssistantMessages({
                 <Stack spacing={GAP_DEFAULT}>
                   <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                     <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: TEXT_SECONDARY }}>Assistente</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: TEXT_SECONDARY }}>{t('assistant.messages.assistant')}</Typography>
                   </Stack>
                   <Skeleton variant="rounded" animation="wave" height={16} width="92%" />
                   <Skeleton variant="rounded" animation="wave" height={16} width="80%" />

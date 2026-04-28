@@ -16,6 +16,8 @@ import Select from '@mui/material/Select';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -39,27 +41,44 @@ import { deleteImageGeneration, getImageGenerations, saveImageGeneration, type S
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocale } from '../features/i18n';
 import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
+import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
+import type { StockImage } from '../lib/stockMedia';
+import { downloadStockImage } from '../lib/stockMedia';
 import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
 
 const log = createLogger('ImageStudio');
 
-const ASPECT_RATIOS = [
-  { id: '1:1', label: 'Quadrado (1:1)' },
-  { id: '16:9', label: 'Paisagem (16:9)' },
-  { id: '9:16', label: 'Retrato (9:16)' },
-  { id: '4:3', label: 'Clássico (4:3)' },
-  { id: '3:4', label: 'Retrato clássico (3:4)' },
-  { id: '3:2', label: 'Foto (3:2)' },
-  { id: '2:3', label: 'Foto retrato (2:3)' },
-  { id: '21:9', label: 'Cinemático (21:9)' },
+/** IDs dos aspect ratios (constante fora do componente para evitar recriação de objetos com useMemo) */
+const ASPECT_RATIO_IDS = [
+  '1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '21:9',
 ] as const;
+
+/** Mapeia ID para chave i18n correspondente */
+const ASPECT_RATIO_KEYS: Record<string, string> = {
+  '1:1': 'imageStudioRatios.square',
+  '16:9': 'imageStudioRatios.landscape',
+  '9:16': 'imageStudioRatios.portrait',
+  '4:3': 'imageStudioRatios.horizontal',
+  '3:4': 'imageStudioRatios.vertical',
+  '3:2': 'imageStudioRatios.wide',
+  '2:3': 'imageStudioRatios.ultraTall',
+  '21:9': 'imageStudioRatios.ultraWide',
+};
 
 export function ImageStudio() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const { user } = useAuth();
+  const { t } = useLocale();
+
+  // Memoiza labels localizados dos aspect ratios
+  const aspectRatios = useMemo(
+    () => ASPECT_RATIO_IDS.map((id) => ({ id, label: t(ASPECT_RATIO_KEYS[id]) })),
+    [t],
+  );
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
@@ -74,6 +93,12 @@ export function ImageStudio() {
   const [deletingImage, setDeletingImage] = useState(false);
   const [imageDeleteError, setImageDeleteError] = useState<string | null>(null);
 
+  // Aba ativa: 'ai' para geração com IA, 'stock' para mídia stock
+  const [activeTab, setActiveTab] = useState<'ai' | 'stock'>('ai');
+
+  // Imagem stock selecionada (blob URL para preview)
+  const [stockImageBlobUrl, setStockImageBlobUrl] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel } = useImageGenerator();
@@ -87,11 +112,11 @@ export function ImageStudio() {
       setSavedImages(images);
     } catch (loadError) {
       log.error('Falha ao carregar imagens salvas', { error: loadError });
-      setImagesError('Não foi possível carregar as imagens salvas. Verifique sua conexão e tente novamente.');
+      setImagesError(t('imageStudio.loadError'));
     } finally {
       setImagesLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     void loadSavedImages();
@@ -101,8 +126,9 @@ export function ImageStudio() {
   useEffect(() => {
     return () => {
       if (referencePreview) URL.revokeObjectURL(referencePreview);
+      if (stockImageBlobUrl) URL.revokeObjectURL(stockImageBlobUrl);
     };
-  }, [referencePreview]);
+  }, [referencePreview, stockImageBlobUrl]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -134,6 +160,23 @@ export function ImageStudio() {
     }
   };
 
+  const handleStockImageSelect = useCallback(async (stockImage: StockImage) => {
+    // Revoga blob URL anterior
+    if (stockImageBlobUrl) {
+      URL.revokeObjectURL(stockImageBlobUrl);
+    }
+
+    try {
+      const blob = await downloadStockImage(stockImage);
+      const blobUrl = URL.createObjectURL(blob);
+      setStockImageBlobUrl(blobUrl);
+      setIsSaved(false);
+      log.info('Imagem stock selecionada', { id: stockImage.id, alt: stockImage.alt });
+    } catch (downloadError) {
+      log.error('Erro ao baixar imagem stock', { error: downloadError });
+    }
+  }, [stockImageBlobUrl]);
+
   const handleGenerate = () => {
     if (!prompt.trim()) {
       return;
@@ -148,12 +191,13 @@ export function ImageStudio() {
   };
 
   const handleDownload = () => {
-    if (!imageUrl) {
+    const downloadUrl = imageUrl || stockImageBlobUrl;
+    if (!downloadUrl) {
       return;
     }
 
     // Reutiliza utilitário centralizado de download (bp #3)
-    downloadFile(imageUrl, `imagem-gerada-${Date.now()}.png`);
+    downloadFile(downloadUrl, `imagem-gerada-${Date.now()}.png`);
   };
 
   const handleSaveToLibrary = async () => {
@@ -173,13 +217,13 @@ export function ImageStudio() {
 
       await saveImageGeneration(newItem, user?.uid);
       setIsSaved(true);
-      setSuccessMsg(user ? 'Imagem salva na nuvem com sucesso.' : 'Imagem salva na biblioteca local.');
+      setSuccessMsg(user ? t('imageStudio.savedCloud') : t('imageStudio.savedLocal'));
       window.setTimeout(() => setSuccessMsg(null), 3000);
       // Atualiza a galeria após salvar
       void loadSavedImages();
     } catch (saveError) {
       log.error('Erro ao salvar na biblioteca', { error: saveError });
-      setError('Erro ao salvar na biblioteca.');
+      setError(t('imageStudio.saveError'));
     }
   };
 
@@ -196,7 +240,7 @@ export function ImageStudio() {
       void loadSavedImages();
     } catch (deleteErr) {
       log.error('Erro ao excluir imagem', { error: deleteErr });
-      setImageDeleteError('Erro ao excluir a imagem. Tente novamente.');
+      setImageDeleteError(t('imageStudio.deleteError'));
     } finally {
       setDeletingImage(false);
     }
@@ -244,11 +288,11 @@ export function ImageStudio() {
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                 <ImageIcon sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                  Estúdio de imagem
+                  {t('imageStudio.sidebarTitle')}
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary">
-                Ajuste formato, referência visual e contexto antes de gerar.
+                {t('imageStudio.sidebarDescription')}
               </Typography>
             </Stack>
           </Button>
@@ -258,15 +302,15 @@ export function ImageStudio() {
                 <Box sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
                 <Stack spacing={2}>
                   <FormControl fullWidth>
-                    <InputLabel id="image-studio-ratio">Proporção</InputLabel>
+                    <InputLabel id="image-studio-ratio">{t('imageStudio.ratioLabel')}</InputLabel>
                     <Select
                       labelId="image-studio-ratio"
                       value={aspectRatio}
-                      label="Proporção"
+                      label={t('imageStudio.ratioLabel')}
                       onChange={(event) => setAspectRatio(event.target.value)}
                       disabled={isGenerating}
                     >
-                      {ASPECT_RATIOS.map((ratio) => (
+                      {aspectRatios.map((ratio) => (
                         <MenuItem key={ratio.id} value={ratio.id}>
                           {ratio.label}
                         </MenuItem>
@@ -276,18 +320,18 @@ export function ImageStudio() {
 
                   <Stack spacing={1}>
                     {/* subtitle2 é adequado aqui: label dentro de subseção Collapse, abaixo do overline do painel. Promover para subtitle1 criaria inconsistência hierárquica. */}
-                    <Typography variant="subtitle2">Imagem de referência</Typography>
+                    <Typography variant="subtitle2">{t('imageStudio.referenceTitle')}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Útil para manter personagens, composição ou estilo visual entre gerações.
+                      {t('imageStudio.referenceDescription')}
                     </Typography>
 
                     {referencePreview ? (
                       <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
-                        <Box component="img" src={referencePreview} alt="Imagem de referência" sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
-                        <Tooltip title="Remover referência">
+                        <Box component="img" src={referencePreview} alt={t('imageStudio.referenceAlt')} sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
+                        <Tooltip title={t('imageStudio.removeReference')}>
                           <IconButton
                             onClick={clearReference}
-                            aria-label="Remover referência"
+                            aria-label={t('imageStudio.removeReferenceAria')}
                           sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'background.default' }}
                           >
                             <Close sx={{ fontSize: ICON_SIZE_MD }} />
@@ -313,7 +357,7 @@ export function ImageStudio() {
                           },
                         }}
                       >
-                        Enviar imagem de referência
+                        {t('imageStudio.uploadReference')}
                       </Button>
                     )}
                   </Stack>
@@ -321,7 +365,7 @@ export function ImageStudio() {
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden />
 
                   <Alert variant="outlined" severity="info">
-                    Quanto mais específico o prompt, melhor a hierarquia visual, a iluminação e a fidelidade do resultado.
+                    {t('imageStudio.promptTip')}
                   </Alert>
                 </Stack>
               </Box>
@@ -340,51 +384,85 @@ export function ImageStudio() {
                 sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}
               >
                 <Stack spacing={0.75}>
-                  <Typography variant="h4">Criação visual com mais clareza</Typography>
+                  <Typography variant="h4">{t('imageStudio.pageTitle')}</Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
-                    Uma superfície mais limpa para escrever prompts, revisar resultados e salvar o que vale reaproveitar.
+                    {t('imageStudio.pageDescription')}
                   </Typography>
                 </Stack>
 
                 <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_MD }} />} label={aspectRatio} color="primary" variant="outlined" />
               </Stack>
 
-              <TextField
-                multiline
-                minRows={5}
-                maxRows={10}
-                fullWidth
-                label="Prompt da imagem"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                placeholder="Descreva a composição, o clima, a iluminação, o enquadramento e o estilo visual desejado."
-                disabled={isGenerating}
-                sx={searchFieldSx}
-              />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
-                {isGenerating ? (
-                  <Button
-                    onClick={handleCancel}
-                    variant="outlined"
-                    color="error"
-                    size="large"
-                    startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />}
-                  >
-                    Parar geração
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={!prompt.trim()}
-                    variant="contained"
-                    size="large"
-                    startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
-                  >
-                    Gerar imagem
-                  </Button>
-                )}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(_event, newValue: 'ai' | 'stock') => setActiveTab(newValue)}
+                  sx={{
+                    minHeight: 36,
+                    '& .MuiTabs-indicator': { borderRadius: '3px 3px 0 0' },
+                  }}
+                >
+                  <Tab
+                    icon={<Sparkles sx={{ fontSize: ICON_SIZE_SM }} />}
+                    iconPosition="start"
+                    label={t('imageStudio.tabAI')}
+                    value="ai"
+                    sx={{ minHeight: 36, textTransform: 'none', fontWeight: 500 }}
+                  />
+                  <Tab
+                    icon={<ImageIcon sx={{ fontSize: ICON_SIZE_SM }} />}
+                    iconPosition="start"
+                    label={t('imageStudio.tabStock')}
+                    value="stock"
+                    sx={{ minHeight: 36, textTransform: 'none', fontWeight: 500 }}
+                  />
+                </Tabs>
               </Stack>
+
+              {activeTab === 'ai' && (
+                <>
+                  <TextField
+                    multiline
+                    minRows={5}
+                    maxRows={10}
+                    fullWidth
+                    label={t('imageStudio.promptLabel')}
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    placeholder={t('imageStudio.promptPlaceholder')}
+                    disabled={isGenerating}
+                    sx={searchFieldSx}
+                  />
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
+                    {isGenerating ? (
+                      <Button
+                        onClick={handleCancel}
+                        variant="outlined"
+                        color="error"
+                        size="large"
+                        startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />}
+                      >
+                        {t('imageStudio.stopGeneration')}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={!prompt.trim()}
+                        variant="contained"
+                        size="large"
+                        startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
+                      >
+                        {t('imageStudio.generateImage')}
+                      </Button>
+                    )}
+                  </Stack>
+                </>
+              )}
+
+              {activeTab === 'stock' && (
+                <StockMediaPicker onSelect={handleStockImageSelect} />
+              )}
 
               <Box
                 sx={(currentTheme) => ({
@@ -403,12 +481,12 @@ export function ImageStudio() {
                     <Skeleton variant="rounded" animation="wave" width="100%" height={320} />
                     <Skeleton variant="text" animation="wave" width="34%" />
                   </Stack>
-                ) : imageUrl ? (
+                ) : (imageUrl || stockImageBlobUrl) ? (
                   <Stack spacing={2} sx={{ width: '100%', height: '100%' }}>
                     <Box
                       component="img"
-                      src={imageUrl}
-                      alt="Imagem gerada"
+                      src={imageUrl || stockImageBlobUrl || ''}
+                      alt={stockImageBlobUrl ? t('imageStudio.stockAlt') : t('imageStudio.generatedAlt')}
                       sx={{
                         width: '100%',
                         maxHeight: { xs: 360, md: 520 },
@@ -424,32 +502,48 @@ export function ImageStudio() {
                       sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}
                     >
                       <Typography variant="body2" color="text.secondary">
-                        Resultado pronto para download ou reaproveitamento na biblioteca.
+                        {stockImageBlobUrl
+                          ? t('imageStudio.stockReady')
+                          : t('imageStudio.resultReady')}
                       </Typography>
 
                       <Stack direction="row" spacing={GAP_MEDIUM} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                        <Button
-                          onClick={() => void handleSaveToLibrary()}
-                          disabled={isSaved}
-                          variant={isSaved ? 'contained' : 'outlined'}
-                          color={isSaved ? 'success' : 'primary'}
-                          startIcon={isSaved ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <Save sx={{ fontSize: ICON_SIZE_MD }} />}
-                        >
-                          {isSaved ? 'Salvo na biblioteca' : 'Salvar na biblioteca'}
-                        </Button>
+                        {stockImageBlobUrl && (
+                          <Button
+                            onClick={handleDownload}
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<Download sx={{ fontSize: ICON_SIZE_MD }} />}
+                          >
+                            {t('imageStudio.downloadImage')}
+                          </Button>
+                        )}
+                        {!stockImageBlobUrl && (
+                          <>
+                            <Button
+                              onClick={() => void handleSaveToLibrary()}
+                              disabled={isSaved}
+                              variant={isSaved ? 'contained' : 'outlined'}
+                              color={isSaved ? 'success' : 'primary'}
+                              startIcon={isSaved ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <Save sx={{ fontSize: ICON_SIZE_MD }} />}
+                            >
+                              {isSaved ? t('imageStudio.savedToLibrary') : t('imageStudio.saveToLibrary')}
+                            </Button>
 
-                        <Button onClick={handleDownload} variant="contained" color="secondary" startIcon={<Download sx={{ fontSize: ICON_SIZE_MD }} />}>
-                          Baixar imagem
-                        </Button>
+                            <Button onClick={handleDownload} variant="contained" color="secondary" startIcon={<Download sx={{ fontSize: ICON_SIZE_MD }} />}>
+                              {t('imageStudio.downloadImage')}
+                            </Button>
+                          </>
+                        )}
                       </Stack>
                     </Stack>
                   </Stack>
                 ) : (
                   <Stack spacing={1} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
                     <ImageIcon sx={{ fontSize: EMPTY_ICON_SIZE, color: theme.palette.text.disabled }} />
-                    <Typography variant="h5">Sua prévia aparece aqui</Typography>
+                    <Typography variant="h5">{t('imageStudio.emptyTitle')}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Escreva um prompt claro e, se quiser, anexe uma referência para orientar estilo, composição e consistência visual.
+                      {t('imageStudio.emptyDescription')}
                     </Typography>
                   </Stack>
                 )}
@@ -467,11 +561,11 @@ export function ImageStudio() {
                 <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                   <ImageIcon sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
                   <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                    Imagens salvas
+                    {t('imageStudio.savedImages')}
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Suas imagens geradas anteriormente. Baixe ou exclua conforme necessário.
+                  {t('imageStudio.savedImagesDescription')}
                 </Typography>
               </Stack>
 
@@ -499,7 +593,7 @@ export function ImageStudio() {
                     <ImageIcon sx={{ fontSize: 22, color: 'common.white' }} />
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    Nenhuma imagem salva ainda. Gere e salve sua primeira imagem acima.
+                    {t('imageStudio.noSavedImages')}
                   </Typography>
                 </Box>
               ) : imagesError ? (
@@ -508,7 +602,7 @@ export function ImageStudio() {
                   severity="error"
                   action={
                     <Button color="inherit" size="small" onClick={() => void loadSavedImages()}>
-                      Tentar novamente
+                      {t('common.tryAgain')}
                     </Button>
                   }
                 >
@@ -566,17 +660,17 @@ export function ImageStudio() {
                                   const url = img.imageUrl || blobUrls.get(img.id);
                                   if (url) downloadFile(url, `${img.name}.png`);
                                 }}
-                                aria-label={`Baixar ${img.name}`}
+                                aria-label={t('imageStudio.downloadAria', { name: img.name })}
                               >
                                 <Download sx={{ fontSize: ICON_SIZE_SM }} />
                               </IconButton>
                             )}
-                            <Tooltip title="Excluir imagem">
+                            <Tooltip title={t('imageStudio.deleteImage')}>
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => setImageToDelete(img)}
-                                aria-label={`Excluir ${img.name}`}
+                                aria-label={t('imageStudio.deleteAria', { name: img.name })}
                               >
                                 <Delete sx={{ fontSize: ICON_SIZE_SM }} />
                               </IconButton>
@@ -600,10 +694,10 @@ export function ImageStudio() {
       itemName={imageToDelete?.name ?? null}
       deletingItem={deletingImage}
       deleteError={imageDeleteError}
-      titleIdleLabel="Excluir imagem?"
-      loadingLabel="Excluindo imagem..."
-      confirmLabel="Excluir imagem"
-      description="Esta ação remove permanentemente a imagem da biblioteca. A operação não pode ser desfeita."
+      titleIdleLabel={t('imageStudio.deleteTitle')}
+      loadingLabel={t('imageStudio.deleteLoading')}
+      confirmLabel={t('imageStudio.deleteConfirm')}
+      description={t('imageStudio.deleteDescription')}
       onConfirm={() => void handleDeleteImage()}
       onCancel={() => { setImageToDelete(null); setImageDeleteError(null); }}
     />
@@ -621,7 +715,7 @@ export function ImageStudio() {
           startIcon={<Refresh sx={{ fontSize: 18 }} />}
           onClick={() => void loadSavedImages()}
         >
-          Tentar novamente
+          {t('common.tryAgain')}
         </Button>
       }
     />

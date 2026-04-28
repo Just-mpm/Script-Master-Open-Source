@@ -14,6 +14,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { useLocale } from '../../../features/i18n';
 import Add from '@mui/icons-material/Add';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import CloudUpload from '@mui/icons-material/CloudUpload';
@@ -66,6 +67,8 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
   isSavingMemory = false,
   isUploadingDocument = false,
 }: AssistantMemoriesPanelProps) {
+  const { t } = useLocale();
+
   return (
     <Drawer
       anchor="right"
@@ -85,16 +88,16 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <Psychology sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>Memórias e documentos</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.memories.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-              Ensine preferências, contexto de marca e anexos que ajudam o assistente a responder melhor.
+              {t('assistant.memories.subtitle')}
             </Typography>
           </Stack>
 
           <IconButton
             onClick={onClose}
-            aria-label="Fechar memórias"
+            aria-label={t('assistant.memories.closeAria')}
             sx={{
               '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT },
             }}
@@ -109,14 +112,14 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
               fullWidth
               value={newMemory}
               onChange={(event) => onNewMemoryChange(event.target.value)}
-              placeholder="Ex.: prefiro aberturas mais curtas e narradores com tom calmo"
-              label="Adicionar memória curta"
+              placeholder={t('assistant.memories.addMemoryPlaceholder')}
+              label={t('assistant.memories.addMemoryLabel')}
               slotProps={{
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
                       <Button type="submit" variant="contained" size="small" startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />} disabled={isSavingMemory}>
-                        {isSavingMemory ? 'Salvando...' : 'Salvar'}
+                        {isSavingMemory ? t('assistant.memories.saving') : t('assistant.memories.save')}
                       </Button>
                     </InputAdornment>
                   ),
@@ -137,11 +140,11 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
             <Stack spacing={GAP_MEDIUM}>
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                 <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_SECONDARY }} />
-                <Typography variant="subtitle2">Base de conhecimento</Typography>
+                <Typography variant="subtitle2">{t('assistant.memories.knowledgeBase')}</Typography>
               </Stack>
 
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                Envie .md, .txt ou .csv com diretrizes, documentação ou repertório que o assistente deve considerar.
+                {t('assistant.memories.knowledgeBaseDescription')}
               </Typography>
 
               <Button
@@ -156,7 +159,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                   },
                 }}
               >
-                {isUploadingDocument ? 'Enviando...' : 'Anexar documento'}
+                {isUploadingDocument ? t('assistant.memories.uploading') : t('assistant.memories.attachDocument')}
               </Button>
             </Stack>
           </Box>
@@ -198,9 +201,9 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
               >
                 <Description sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
               </Box>
-              <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Ainda não há memórias salvas</Typography>
+              <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.memories.noMemories')}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, maxWidth: 320 }}>
-                Salve preferências e referências para tornar as respostas mais consistentes com sua operação.
+                {t('assistant.memories.noMemoriesDescription')}
               </Typography>
             </Stack>
           ) : (
@@ -210,12 +213,12 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                   key={memory.id}
                   disablePadding
                   secondaryAction={
-                    <Tooltip title="Excluir memória">
+                    <Tooltip title={t('assistant.memories.deleteMemory')}>
                       <IconButton
                         edge="end"
                         onClick={() => onDeleteMemory(memory.id)}
                         color="error"
-                        aria-label="Excluir memória"
+                        aria-label={t('assistant.memories.deleteMemoryAria')}
                         sx={{
                           opacity: 0.5,
                           transition: 'opacity 0.15s ease',

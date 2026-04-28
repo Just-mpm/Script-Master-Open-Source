@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { useLocale } from '../../../features/i18n';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
@@ -39,6 +40,8 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
   onChangePrompt,
   onSave,
 }: AssistantSettingsPanelProps) {
+  const { t } = useLocale();
+
   const handlePromptChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChangePrompt(event.target.value);
   };
@@ -62,16 +65,16 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <AutoAwesome sx={{ fontSize: ICON_SIZE_LG, color: BRAND_SECONDARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>Persona da IA</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.settings.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-              Defina princípios permanentes de tom, marca, formato de resposta e guardrails criativos.
+              {t('assistant.settings.subtitle')}
             </Typography>
           </Stack>
 
           <IconButton
             onClick={onClose}
-            aria-label="Fechar persona da IA"
+            aria-label={t('assistant.settings.closeAria')}
             sx={{
               '&:hover': { backgroundColor: BRAND_SECONDARY_GLOW_SOFT },
             }}
@@ -83,9 +86,9 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
         <Stack spacing={2.5} sx={{ flex: 1, p: 2.5 }}>
           <Box sx={(theme) => ({ ...assistantInsetSx(theme), p: 2 })}>
             <Stack spacing={1}>
-              <Typography variant="subtitle2" sx={{ letterSpacing: '-0.01em' }}>O que vale escrever aqui</Typography>
+              <Typography variant="subtitle2" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.settings.whatToWrite')}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                Ex.: tom da marca, ritmo preferido, restrições visuais, tipo de CTA, estilo de abertura, vocabulário e formato das sugestões.
+                {t('assistant.settings.whatToWriteDescription')}
               </Typography>
             </Stack>
           </Box>
@@ -100,7 +103,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
               },
             }}
           >
-            Evite regras conflitantes. Quanto mais claro o direcionamento, mais previsível fica o comportamento do assistente.
+            {t('assistant.settings.guidelinesAlert')}
           </Alert>
 
           <TextField
@@ -108,8 +111,8 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
             minRows={14}
             maxRows={24}
             fullWidth
-            label="Diretrizes permanentes"
-            placeholder="Ex.: responda com foco em retenção para YouTube, proponha roteiros enxutos, preserve linguagem clara e sempre ofereça um bloco JSON quando sugerir ajustes aplicáveis no estúdio."
+            label={t('assistant.settings.guidelinesLabel')}
+            placeholder={t('assistant.settings.guidelinesPlaceholder')}
             value={customSystemPrompt}
             onChange={handlePromptChange}
             sx={{
@@ -131,7 +134,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
             loading={isSavingSettings}
             startIcon={!isSavingSettings ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
           >
-            Aplicar diretrizes
+            {t('assistant.settings.applyGuidelines')}
           </Button>
         </Stack>
       </DialogContent>

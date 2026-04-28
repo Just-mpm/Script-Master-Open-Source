@@ -7,6 +7,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.25.0] - 2026-04-28
+
+### Adicionado
+
+- **i18n — internacionalização completa**: sistema de 3 locales (pt-BR, en, es) propagado para todas as páginas públicas e componentes autenticados via `I18nProvider` + hook `useLocale`; seletor de idioma no header; dados localizados (authBenefits, pricingFaq, metrics, testimonials, useCases); OG locale map para SEO
+- **Onboarding**: tour guiado com WelcomeDialog, TourTooltip, OnboardingManager e store Zustand — integrado no StudioPage
+- **Billing foundation**: tipos (PlanId, Plan, PlanLimits, UsageState), 3 planos (Gratuito, Pro, Business), utilitário `checkEntitlement`, componentes PlanBadge e UsageIndicator — base preparada, aguarda conexão ao app
+- **Templates de roteiro**: galeria de templates categorizados com TemplateSelector, TemplateCard, TemplateGallery e TemplatePreviewDialog — integrado no Inspector e StudioPage (nova aba)
+- **Emoções no TTS**: `EmotionType` com 10 emoções, EmotionSelector com slider de intensidade, validação e persistência no store — integrado no Inspector e pipeline de geração de áudio
+- **Stock Media Picker**: busca de imagens de referência integrada ao ImageStudio (placeholder com 20 imagens, aguarda API real)
+- **Landing Page — novas seções**: UseCasesSection, MetricsSection, ProductDemoSection, TestimonialsSection com dados localizados e animações motion
+
+### Alterado
+
+- **App.tsx refactor**: 511→~160 linhas — rotas lazy-loaded movidas para `src/router/routes.tsx`; AudioGenerationHandler e ToastProvider extraídos como componentes independentes; redirects de compatibilidade em `src/router/Redirects.tsx`
+- **~20 testes existentes** atualizados com `I18nProvider` como wrapper
+
+### Adicionado (testes)
+
+- ~30 novos arquivos de teste cobrindo app-shell, routing, i18n (context, utils, locales, integration), billing (data, usage), onboarding, templates, emoções, dados localizados e features dos componentes
+
+---
+
 ## [0.24.7] - 2026-04-27
 
 ### Alterado

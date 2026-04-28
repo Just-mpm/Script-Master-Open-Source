@@ -151,4 +151,60 @@ describe('useAudioGenerator', () => {
     expect(typeof result.current.loadProjectData).toBe('function');
     expect(typeof result.current.setError).toBe('function');
   });
+
+  it('deve aceitar generateAudio com options de emoção e referência visual', async () => {
+    const { result } = renderHook(() => useAudioGenerator());
+
+    // Valida que generateAudio aceita todas as options sem crash
+    // O hook valida internamente e retorna erro se script vazio
+    await act(async () => {
+      await result.current.generateAudio({
+        script: 'Teste de emoção',
+        selectedVoice: 'Puck',
+        audioProfile: 'Narrador',
+        scene: 'Estúdio',
+        pace: 'normal',
+        styleNotes: '',
+        emotion: 'happy',
+        emotionIntensity: 0.8,
+        generateScenes: true,
+        sceneRatio: '16:9',
+        sceneDensity: 15,
+        visualFramework: 'general',
+        referenceImage: 'data:image/png;base64,test',
+      });
+    });
+
+    // Não deve definir erro de validação (script não vazio e dentro do limite)
+    expect(result.current.error).not.toContain('insira um roteiro');
+    expect(result.current.error).not.toContain('excede o limite');
+  });
+
+  it('deve aceitar generateAudio com multiSpeaker ativo', async () => {
+    const { result } = renderHook(() => useAudioGenerator());
+
+    await act(async () => {
+      await result.current.generateAudio({
+        script: 'Ana: Olá! Beto: Ei!',
+        selectedVoice: 'Puck',
+        audioProfile: '',
+        scene: '',
+        pace: 'normal',
+        styleNotes: '',
+        isMultiSpeaker: true,
+        speakerAName: 'Ana',
+        speakerBVoice: 'Zephyr',
+        speakerBName: 'Beto',
+      });
+    });
+
+    expect(result.current.error).not.toContain('insira um roteiro');
+  });
+
+  it('deve calcular durationInSeconds como 0 quando audioBlob é null', () => {
+    const { result } = renderHook(() => useAudioGenerator());
+    // calculateDurationFromWav mock retorna 120.5, mas audioBlob é null
+    // então durationInSeconds usa audioDuration (default 0)
+    expect(result.current.durationInSeconds).toBe(0);
+  });
 });

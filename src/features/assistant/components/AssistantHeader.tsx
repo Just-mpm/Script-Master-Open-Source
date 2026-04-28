@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { useLocale } from '../../../features/i18n';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import Forum from '@mui/icons-material/Forum';
 import History from '@mui/icons-material/History';
@@ -38,6 +39,8 @@ export const AssistantHeader = React.memo(function AssistantHeader({
   onOpenMemories,
   onOpenSettings,
 }: AssistantHeaderProps) {
+  const { t } = useLocale();
+
   return (
     <Stack
       direction={{ xs: 'column', md: 'row' }}
@@ -71,7 +74,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
             <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
-              Assistente criativo
+              {t('assistant.header.title')}
             </Typography>
             <Chip
               label="Gemini"
@@ -91,7 +94,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
               lineHeight: 1.4,
             }}
           >
-            Um painel de direção criativa para lapidar roteiro, voz, memória de projeto e ajustes de cena.
+            {t('assistant.header.subtitle')}
           </Typography>
         </Stack>
       </Stack>
@@ -114,14 +117,14 @@ export const AssistantHeader = React.memo(function AssistantHeader({
             minWidth: { xs: '100%', sm: 'auto' },
           }}
         >
-          Novo chat
+          {t('assistant.header.newChat')}
         </Button>
 
-        <Tooltip title="Abrir histórico">
+        <Tooltip title={t('assistant.header.openHistory')}>
           <IconButton
             onClick={onOpenHistory}
             color="primary"
-            aria-label="Abrir histórico do assistente"
+            aria-label={t('assistant.header.openHistoryAria')}
             sx={{
               '&:hover': {
                 backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
@@ -132,11 +135,11 @@ export const AssistantHeader = React.memo(function AssistantHeader({
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Memórias e documentos">
+        <Tooltip title={t('assistant.header.openMemories')}>
           <IconButton
             onClick={onOpenMemories}
             color="primary"
-            aria-label="Abrir memórias e documentos"
+            aria-label={t('assistant.header.openMemoriesAria')}
             sx={{
               '&:hover': {
                 backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
@@ -147,11 +150,11 @@ export const AssistantHeader = React.memo(function AssistantHeader({
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Persona e diretrizes">
+        <Tooltip title={t('assistant.header.openSettings')}>
           <IconButton
             onClick={onOpenSettings}
             color="primary"
-            aria-label="Abrir persona e diretrizes"
+            aria-label={t('assistant.header.openSettingsAria')}
             sx={{
               '&:hover': {
                 backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
@@ -164,7 +167,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
 
         <Box sx={{ display: { xs: 'none', lg: 'block' }, ml: 0.5 }}>
           <Chip
-            label="Leitura limpa"
+            label={t('assistant.header.cleanReading')}
             size="small"
             variant="outlined"
             sx={{ fontWeight: 500, fontSize: '0.7rem' }}

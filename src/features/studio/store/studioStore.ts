@@ -15,7 +15,7 @@
 
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { SceneRatio, StudioDraftState, StudioSettingsPatch } from '../types';
+import type { SceneRatio, StudioDraftState, StudioSettingsPatch, EmotionType } from '../types';
 import {
   STORAGE_KEYS,
   safeSetItem,
@@ -44,6 +44,8 @@ export interface StudioConfigState {
   sceneRatio: SceneRatio;
   visualFramework: string;
   referenceImage: string | null;
+  emotion: EmotionType;
+  emotionIntensity: number;
 
   // Setters
   setScript: (value: string) => void;
@@ -61,6 +63,8 @@ export interface StudioConfigState {
   setSceneRatio: (value: SceneRatio) => void;
   setVisualFramework: (value: string) => void;
   setReferenceImage: (value: string | null) => void;
+  setEmotion: (value: EmotionType) => void;
+  setEmotionIntensity: (value: number) => void;
 
   // Ações
   applySettings: (patch: StudioSettingsPatch) => void;
@@ -99,6 +103,8 @@ function toDraftState(state: StudioConfigState): StudioDraftState {
     sceneDensity: state.sceneDensity,
     visualFramework: state.visualFramework,
     referenceImage: state.referenceImage,
+    emotion: state.emotion,
+    emotionIntensity: state.emotionIntensity,
   };
 }
 
@@ -125,6 +131,8 @@ export const useStudioStore = create<StudioConfigState>()((set) => ({
   setSceneRatio: (value) => set({ sceneRatio: value }),
   setVisualFramework: (value) => set({ visualFramework: value }),
   setReferenceImage: (value) => set({ referenceImage: value }),
+  setEmotion: (value) => set({ emotion: value }),
+  setEmotionIntensity: (value) => set({ emotionIntensity: value }),
 
   // --- Ações ---
   applySettings: (patch) => set((state) => {
@@ -161,7 +169,7 @@ const PERSIST_MAP: ReadonlyArray<{
     | 'script' | 'isMultiSpeaker' | 'speakerAName' | 'selectedVoice'
     | 'speakerBName' | 'speakerBVoice' | 'audioProfile' | 'scene'
     | 'styleNotes' | 'pace' | 'generateScenes' | 'sceneDensity'
-    | 'sceneRatio' | 'visualFramework'
+    | 'sceneRatio' | 'visualFramework' | 'emotion' | 'emotionIntensity'
   >;
   storageKey: string;
   serialize: (value: unknown) => string;
@@ -180,6 +188,8 @@ const PERSIST_MAP: ReadonlyArray<{
   { key: 'sceneDensity', storageKey: STORAGE_KEYS.sceneDensity, serialize: String },
   { key: 'sceneRatio', storageKey: STORAGE_KEYS.sceneRatio, serialize: String },
   { key: 'visualFramework', storageKey: STORAGE_KEYS.visualFramework, serialize: String },
+  { key: 'emotion', storageKey: STORAGE_KEYS.emotion, serialize: String },
+  { key: 'emotionIntensity', storageKey: STORAGE_KEYS.emotionIntensity, serialize: String },
 ];
 
 // Listener de subscribe — apenas persiste, nunca chama set() (sem loop)

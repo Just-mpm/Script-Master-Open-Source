@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -38,10 +38,14 @@ import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio } from '../features/studio/types';
 import { useStudioStore } from '../features/studio/store';
+import { TemplateSelector } from '../features/studio/components/TemplateSelector';
+import { EmotionSelector } from '../features/studio/components/EmotionSelector';
+import type { EmotionType } from '../features/studio/types';
 import { useShallow } from 'zustand/react/shallow';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { createLogger } from '../lib/logger';
+import { useLocale } from '../features/i18n';
 
 const log = createLogger('Inspector');
 
@@ -53,32 +57,6 @@ interface InspectorProps {
 }
 
 type VoiceTabValue = 'A' | 'B';
-
-const PACE_OPTIONS = [
-  { value: 'very_slow', label: 'Muito Lento' },
-  { value: 'slow', label: 'Lento' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'fast', label: 'Rápido' },
-  { value: 'very_fast', label: 'Muito Rápido' },
-] as const;
-
-const VISUAL_FRAMEWORK_OPTIONS = [
-  { value: 'general', label: 'Cenário padrão (arte guiada pelo roteiro)' },
-  { value: 'whiteboard', label: 'Whiteboard Master (desenho com legendas)' },
-] as const;
-
-const SCENE_RATIO_OPTIONS: Array<{ value: SceneRatio; label: string }> = [
-  { value: '16:9', label: 'YouTube (16:9 horizontal)' },
-  { value: '9:16', label: 'Shorts/TikTok (9:16 vertical)' },
-  { value: '1:1', label: 'Instagram (1:1 quadrado)' },
-];
-
-const DENSITY_OPTIONS = [
-  { value: 15, label: 'Muito rápido (15s)' },
-  { value: 30, label: 'Dinâmico (30s)' },
-  { value: 60, label: 'Lento (1 min)' },
-  { value: 120, label: 'Muito lento (2 min)' },
-] as const;
 
 function voiceTabProps(tab: VoiceTabValue) {
   return {
@@ -110,6 +88,33 @@ function VoiceTabPanel({
 
 export const Inspector = React.memo(function Inspector({ isGenerating }: InspectorProps) {
   const theme = useTheme();
+  const { t } = useLocale();
+
+  const paceOptions = [
+    { value: 'very_slow', label: t('studio.inspector.paceOptions.very_slow') },
+    { value: 'slow', label: t('studio.inspector.paceOptions.slow') },
+    { value: 'normal', label: t('studio.inspector.paceOptions.normal') },
+    { value: 'fast', label: t('studio.inspector.paceOptions.fast') },
+    { value: 'very_fast', label: t('studio.inspector.paceOptions.very_fast') },
+  ];
+
+  const visualFrameworkOptions = [
+    { value: 'general', label: t('studio.inspector.visualFramework.general') },
+    { value: 'whiteboard', label: t('studio.inspector.visualFramework.whiteboard') },
+  ];
+
+  const sceneRatioOptions: Array<{ value: SceneRatio; label: string }> = [
+    { value: '16:9', label: t('studio.inspector.sceneRatio.16:9') },
+    { value: '9:16', label: t('studio.inspector.sceneRatio.9:16') },
+    { value: '1:1', label: t('studio.inspector.sceneRatio.1:1') },
+  ];
+
+  const densityOptions = [
+    { value: 15, label: t('studio.inspector.sceneDensity.15') },
+    { value: 30, label: t('studio.inspector.sceneDensity.30') },
+    { value: 60, label: t('studio.inspector.sceneDensity.60') },
+    { value: 120, label: t('studio.inspector.sceneDensity.120') },
+  ];
 
   // Estado de config do store (Zustand) — useShallow evita re-renders desnecessários
   const {
@@ -141,6 +146,10 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     setVisualFramework,
     referenceImage,
     setReferenceImage,
+    emotion,
+    setEmotion,
+    emotionIntensity,
+    setEmotionIntensity,
   } = useStudioStore(useShallow((s) => ({
     isMultiSpeaker: s.isMultiSpeaker,
     setIsMultiSpeaker: s.setIsMultiSpeaker,
@@ -170,6 +179,10 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     setVisualFramework: s.setVisualFramework,
     referenceImage: s.referenceImage,
     setReferenceImage: s.setReferenceImage,
+    emotion: s.emotion,
+    setEmotion: s.setEmotion,
+    emotionIntensity: s.emotionIntensity,
+    setEmotionIntensity: s.setEmotionIntensity,
   })));
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
@@ -202,6 +215,14 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
   const isDirectionOpen = !isDirectionCollapsed;
   const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
 
+  const handleEmotionChange = useCallback(
+    (newEmotion: EmotionType, newIntensity: number) => {
+      setEmotion(newEmotion);
+      setEmotionIntensity(newIntensity);
+    },
+    [setEmotion, setEmotionIntensity],
+  );
+
   const MAX_REFERENCE_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
   const handleReferenceImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +234,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
 
     if (file.size > MAX_REFERENCE_IMAGE_SIZE) {
       log.warn('Imagem de referência excede o limite de 10MB', { size: file.size, name: file.name });
-      setReferenceImageWarning('Imagem muito grande. Tamanho máximo: 10MB.');
+      setReferenceImageWarning(t('studio.inspector.referenceImage.tooLarge'));
       window.setTimeout(() => setReferenceImageWarning(null), 5000);
       event.target.value = '';
       return;
@@ -221,7 +242,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
 
     const reader = new FileReader();
     reader.onerror = () => {
-      setReferenceImageWarning('Falha ao ler o arquivo. Tente outra imagem.');
+      setReferenceImageWarning(t('studio.inspector.referenceImage.readError'));
     };
     reader.onloadend = () => {
       const result = typeof reader.result === 'string' ? reader.result : null;
@@ -236,8 +257,11 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
       component="aside"
       spacing={{ xs: 2, lg: 3 }}
       role="complementary"
-      aria-label="Configurações de voz e direção"
+      aria-label={t('studio.inspector.ariaLabel')}
+      id="inspector-panel"
     >
+      <TemplateSelector />
+
       <Paper elevation={0} sx={glassPanelSx}>
         <ButtonBase
           component="button"
@@ -264,16 +288,16 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                 <GraphicEq sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                  Voz do locutor
+                  {t('studio.inspector.voiceSection.title')}
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                Escolha a assinatura vocal e organize vozes para narração ou podcast.
+                {t('studio.inspector.voiceSection.description')}
               </Typography>
             </Stack>
 
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-              <Chip label={`${VOICES.length} opções`} size="small" variant="outlined" />
+              <Chip label={t('studio.inspector.voiceSection.optionsCount', { count: VOICES.length })} size="small" variant="outlined" />
               {!isVoiceOpen ? <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} />}
             </Stack>
           </Stack>
@@ -286,10 +310,10 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                 <Stack spacing={0.5}>
                   <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                     <People sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} />
-                    <Typography variant="subtitle2">Modo Podcast (2 vozes)</Typography>
+                    <Typography variant="subtitle2">{t('studio.inspector.podcast.title')}</Typography>
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    Permite que dois locutores interajam em um único roteiro.
+                    {t('studio.inspector.podcast.description')}
                   </Typography>
                 </Stack>
 
@@ -297,7 +321,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                   checked={isMultiSpeaker}
                   onChange={(event) => setIsMultiSpeaker(event.target.checked)}
                   disabled={isGenerating}
-                  slotProps={{ input: { id: 'podcast-mode-switch', name: 'podcast-mode', 'aria-label': 'Ativar modo podcast com duas vozes' } }}
+                  slotProps={{ input: { id: 'podcast-mode-switch', name: 'podcast-mode', 'aria-label': t('studio.inspector.podcast.ariaLabel') } }}
                 />
               </Stack>
             </Paper>
@@ -307,25 +331,25 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                 <Tabs
                   value={activeVoiceTab}
                   onChange={(_event, value: VoiceTabValue) => setActiveVoiceTab(value)}
-                  aria-label="Abas de seleção de voz por locutor"
+                  aria-label={t('studio.inspector.scenes.voiceTabsAriaLabel')}
                   variant="fullWidth"
                   sx={{ mb: 1.5 }}
                 >
-                  <Tab label="Voz A" value="A" {...voiceTabProps('A')} />
-                  <Tab label="Voz B" value="B" {...voiceTabProps('B')} />
+                  <Tab label={t('studio.inspector.podcast.voiceATab')} value="A" {...voiceTabProps('A')} />
+                  <Tab label={t('studio.inspector.podcast.voiceBTab')} value="B" {...voiceTabProps('B')} />
                 </Tabs>
 
                 <VoiceTabPanel value="A" activeValue={activeVoiceTab}>
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nome no roteiro"
+                    label={t('studio.inspector.podcast.nameLabel')}
                     value={speakerAName}
                     onChange={(event) => setSpeakerAName(event.target.value)}
                     disabled={isGenerating}
-                    placeholder="Ex: Voz A"
+                    placeholder={t('studio.inspector.podcast.namePlaceholder')}
                     error={isMultiSpeaker && speakerAName.trim() === ''}
-                    helperText={isMultiSpeaker && speakerAName.trim() === '' ? 'O nome do Locutor A é obrigatório no modo podcast' : 'Use exatamente o nome que aparece antes da fala no roteiro.'}
+                    helperText={isMultiSpeaker && speakerAName.trim() === '' ? t('studio.inspector.podcast.nameRequired') : t('studio.inspector.podcast.nameHelper')}
                     slotProps={{
                       input: {
                         ...(isMultiSpeaker && speakerAName.trim() === '' ? {
@@ -344,22 +368,22 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nome no roteiro"
+                    label={t('studio.inspector.podcast.nameLabel')}
                     value={speakerBName}
                     onChange={(event) => setSpeakerBName(event.target.value)}
                     disabled={isGenerating}
-                    placeholder="Ex: Voz B"
-                    helperText="Use exatamente o nome que aparece antes da fala no roteiro."
+                    placeholder={t('studio.inspector.podcast.namePlaceholderB')}
+                    helperText={t('studio.inspector.podcast.nameHelper')}
                   />
                 </VoiceTabPanel>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25, px: 0.5 }}>
-                  No editor, escreva “{activeSpeakerName || `Voz ${activeVoiceTab}`}” antes da fala desta pessoa.
+                  <span dangerouslySetInnerHTML={{ __html: t('studio.inspector.podcast.editorHint', { name: activeSpeakerName || `Voz ${activeVoiceTab}` }) }} />
                 </Typography>
               </Paper>
             )}
 
-            <Grid container spacing={1.5} role="listbox" aria-label="Seleção de voz">
+            <Grid container spacing={1.5} role="listbox" aria-label={t('studio.inspector.voiceSelection.ariaLabel')}>
               {VOICES.map((voice) => {
                 const isActiveVoice = activeVoiceTab === 'A' ? selectedVoice === voice.id : speakerBVoice === voice.id;
                 const isPlaying = playingId === voice.id;
@@ -429,7 +453,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                         </Stack>
                       </ButtonBase>
 
-                      <Tooltip title={hasError ? 'Erro ao reproduzir preview' : `Ouvir amostra da voz ${voice.name}`}>
+                      <Tooltip title={hasError ? t('studio.inspector.voiceSelection.previewError') : t('studio.inspector.voiceSelection.previewVoice', { voice: voice.name })}>
                         <span>
                           <IconButton
                             size="small"
@@ -438,7 +462,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                               playPreview(voice.id);
                             }}
                             disabled={isGenerating}
-                            aria-label={hasError ? 'Erro ao reproduzir preview' : `Ouvir amostra da voz ${voice.name}`}
+                            aria-label={hasError ? t('studio.inspector.voiceSelection.previewError') : t('studio.inspector.voiceSelection.previewVoice', { voice: voice.name })}
                             sx={(currentTheme) => ({
                               position: 'absolute',
                               right: 8,
@@ -513,12 +537,12 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
              <Stack spacing={GAP_COMPACT}>
                <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                  <Settings sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />
-                <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                  Direção de arte
-                </Typography>
+                 <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                   {t('studio.inspector.directionSection.title')}
+                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                Defina personagem, atmosfera e regras visuais para guiar a geração.
+                {t('studio.inspector.directionSection.description')}
               </Typography>
             </Stack>
 
@@ -531,12 +555,12 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
           <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
             <TextField
               fullWidth
-              label="Personagem"
+              label={t('studio.inspector.directionFields.characterLabel')}
               value={audioProfile}
               onChange={(event) => setAudioProfile(event.target.value)}
               disabled={isGenerating}
-              placeholder='Ex: "Jaz R., The Morning Hype"'
-              helperText={!audioProfile ? 'Defina o personagem principal do roteiro' : undefined}
+              placeholder={t('studio.inspector.directionFields.characterPlaceholder')}
+              helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined}
             />
 
             <TextField
@@ -544,26 +568,26 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               multiline
               minRows={3}
               maxRows={6}
-              label="Ambiente"
+              label={t('studio.inspector.directionFields.environmentLabel')}
               value={scene}
               onChange={(event) => setScene(event.target.value)}
               disabled={isGenerating}
-              placeholder='Ex: "Estúdio de rádio, 10 PM. Caótico."'
-              helperText={!scene ? 'Descreva o cenário ou ambiente da cena' : undefined}
+              placeholder={t('studio.inspector.directionFields.environmentPlaceholder')}
+              helperText={!scene ? t('studio.inspector.directionFields.environmentHelper') : undefined}
             />
 
             <Grid container spacing={1.5}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControl fullWidth disabled={isGenerating}>
-                  <InputLabel id="pace-select-label">Ritmo</InputLabel>
+                  <InputLabel id="pace-select-label">{t('studio.inspector.directionFields.paceLabel')}</InputLabel>
                   <Select
                     labelId="pace-select-label"
                     id="pace-select"
-                    label="Ritmo"
+                    label={t('studio.inspector.directionFields.paceLabel')}
                     value={pace}
                     onChange={(event) => setPace(event.target.value)}
                   >
-                    {PACE_OPTIONS.map((option) => (
+                    {paceOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
                       </MenuItem>
@@ -575,7 +599,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
-                  label="Sotaque"
+                  label={t('studio.inspector.directionFields.accentLabel')}
                   value={styleNotes}
                   onChange={(event) => {
                     if (event.target.value.length <= MAX_STYLE_NOTES) {
@@ -583,16 +607,23 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                     }
                   }}
                   disabled={isGenerating}
-                  placeholder='Ex: "Paulista"'
+                  placeholder={t('studio.inspector.directionFields.accentPlaceholder')}
                   error={styleNotes.length === MAX_STYLE_NOTES}
                   helperText={styleNotes.length === MAX_STYLE_NOTES
-                    ? `Limite de ${MAX_STYLE_NOTES} caracteres atingido`
+                    ? t('studio.inspector.directionFields.accentLimitReached', { limit: MAX_STYLE_NOTES })
                     : !styleNotes
-                      ? 'Ex: Paulista, Mineiro, Carrioca'
-                      : `${styleNotes.length}/${MAX_STYLE_NOTES}`}
+                      ? t('studio.inspector.directionFields.accentHelper')
+                      : t('studio.inspector.directionFields.accentCounter', { current: styleNotes.length, limit: MAX_STYLE_NOTES })}
                 />
               </Grid>
-            </Grid>
+              </Grid>
+
+              <EmotionSelector
+                value={emotion}
+                intensity={emotionIntensity}
+                onChange={handleEmotionChange}
+                disabled={isGenerating}
+              />
 
             <Paper elevation={0} sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
               <Stack spacing={2}>
@@ -600,10 +631,10 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                   <Stack spacing={0.5}>
                   <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                       <Image sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} />
-                      <Typography variant="subtitle2">Gerar cenas visuais</Typography>
+                      <Typography variant="subtitle2">{t('studio.inspector.scenes.title')}</Typography>
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
-                      Transforma o áudio em uma sequência visual coerente para vídeo.
+                      {t('studio.inspector.scenes.description')}
                     </Typography>
                   </Stack>
 
@@ -611,22 +642,22 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                     checked={generateScenes}
                     onChange={(event) => setGenerateScenes(event.target.checked)}
                     disabled={isGenerating}
-                    slotProps={{ input: { id: 'generate-scenes-switch', name: 'generate-scenes', 'aria-label': 'Ativar geração de cenas visuais' } }}
+                    slotProps={{ input: { id: 'generate-scenes-switch', name: 'generate-scenes', 'aria-label': t('studio.inspector.scenes.ariaLabel') } }}
                   />
                 </Stack>
 
                 <Collapse in={generateScenes} timeout="auto" unmountOnExit>
                   <Stack spacing={1.75}>
                     <FormControl fullWidth disabled={isGenerating}>
-                      <InputLabel id="framework-select-label">Identidade visual do canal</InputLabel>
+                      <InputLabel id="framework-select-label">{t('studio.inspector.sceneFields.visualIdentityLabel')}</InputLabel>
                       <Select
                         labelId="framework-select-label"
                         id="framework-select"
-                        label="Identidade visual do canal"
+                        label={t('studio.inspector.sceneFields.visualIdentityLabel')}
                         value={visualFramework}
                         onChange={(event) => setVisualFramework(event.target.value)}
                       >
-                        {VISUAL_FRAMEWORK_OPTIONS.map((option) => (
+                        {visualFrameworkOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {option.label}
                           </MenuItem>
@@ -637,15 +668,15 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                     <Grid container spacing={1.5}>
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <FormControl fullWidth disabled={isGenerating}>
-                          <InputLabel id="ratio-select-label">Formato</InputLabel>
+                          <InputLabel id="ratio-select-label">{t('studio.inspector.sceneFields.formatLabel')}</InputLabel>
                           <Select
                             labelId="ratio-select-label"
                             id="ratio-select"
-                            label="Formato"
+                            label={t('studio.inspector.sceneFields.formatLabel')}
                             value={sceneRatio}
                             onChange={(event) => handleSceneRatioChange(event.target.value)}
                           >
-                            {SCENE_RATIO_OPTIONS.map((option) => (
+                            {sceneRatioOptions.map((option) => (
                               <MenuItem key={option.value} value={option.value}>
                                 {option.label}
                               </MenuItem>
@@ -656,15 +687,15 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
 
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <FormControl fullWidth disabled={isGenerating}>
-                          <InputLabel id="density-select-label">Frequência</InputLabel>
+                          <InputLabel id="density-select-label">{t('studio.inspector.sceneFields.frequencyLabel')}</InputLabel>
                           <Select
                             labelId="density-select-label"
                             id="density-select"
-                            label="Frequência"
+                            label={t('studio.inspector.sceneFields.frequencyLabel')}
                             value={String(sceneDensity)}
                             onChange={(event) => setSceneDensity(Number(event.target.value))}
                           >
-                            {DENSITY_OPTIONS.map((option) => (
+                            {densityOptions.map((option) => (
                               <MenuItem key={option.value} value={String(option.value)}>
                                 {option.label}
                               </MenuItem>
@@ -697,18 +728,18 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                             justifyContent: 'center',
                           }}
                         >
-                          {referenceImage ? 'Imagem selecionada (trocar)' : 'Anexar imagem de personagem/cenário'}
+                          {referenceImage ? t('studio.inspector.sceneFields.imageSelected') : t('studio.inspector.sceneFields.attachImage')}
                           <input hidden type="file" accept="image/*" onChange={handleReferenceImageUpload} />
                         </Button>
 
                         {referenceImage && (
-                          <Tooltip title="Remover imagem de referência">
+                          <Tooltip title={t('studio.inspector.sceneFields.removeRefTooltip')}>
                             <span>
                               <IconButton
                                 onClick={() => setReferenceImage(null)}
                                 disabled={isGenerating}
                                 color="error"
-                                aria-label="Remover imagem de referência"
+                                aria-label={t('studio.inspector.sceneFields.removeRefAriaLabel')}
                                 sx={{ border: `1px solid ${alpha(theme.palette.error.main, 0.3)}` }}
                               >
                                  <Close sx={{ fontSize: ICON_SIZE_MD }} />
@@ -719,7 +750,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                       </Stack>
 
                       <Typography variant="caption" color="text.secondary">
-                        Isso ajuda a IA a manter personagens ou arte consistentes entre as cenas.
+                        {t('studio.inspector.sceneFields.refHelper')}
                       </Typography>
                     </Stack>
                   </Stack>

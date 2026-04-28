@@ -7,44 +7,38 @@ import type { Attachment, AssistantStudioState, ChatMessage } from '../features/
 import { getGeminiApiKey } from '../lib/env';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
+import { useLocale } from '../features/i18n';
 
 const log = createLogger('useAssistant');
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
 // ---------------------------------------------------------------------------
-// Mapeamento de erros amigáveis
+// Mapeamento de erros amigáveis (strings resolvidas em runtime via t())
 // ---------------------------------------------------------------------------
 
-const toUserFriendlyAssistantError = createErrorMapper({
-  nonErrorMessage: 'Ocorreu um erro inesperado. Tente novamente.',
-  defaultMessage: 'Não foi possível concluir. Tente novamente.',
-  rules: [
-    ...sharedErrorRules,
-    {
-      match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
-      message: 'O servidor demorou demais para responder. Tente novamente em instantes.',
-    },
-    {
-      match: (m) => m.includes('safety') || m.includes('blocked'),
-      message: 'Conteúdo bloqueado por filtros de segurança. Reformule a pergunta.',
-    },
-    {
-      match: (m) => m.includes('abort') || m.includes('cancelled'),
-      message: '',
-    },
-  ],
-});
-
-// ---------------------------------------------------------------------------
-// Constantes
-// ---------------------------------------------------------------------------
-
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'model',
-  text: 'Olá! Sou seu Assistente Criativo. Posso te ajudar a escrever roteiros, escolher a voz ideal ou configurar a cena perfeita. Agora também posso analisar seus arquivos (PDFs, imagens) para te ajudar melhor! Como posso ajudar hoje?'
-};
+/** Cria o mapeador de erros com strings localizadas */
+function buildErrorMapper(t: (key: string) => string) {
+  return createErrorMapper({
+    nonErrorMessage: t('assistantStrings.errors.generic'),
+    defaultMessage: t('assistantStrings.errors.default'),
+    rules: [
+      ...sharedErrorRules,
+      {
+        match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
+        message: t('assistantStrings.errors.stream'),
+      },
+      {
+        match: (m) => m.includes('safety') || m.includes('blocked'),
+        message: t('assistantStrings.errors.stream'),
+      },
+      {
+        match: (m) => m.includes('abort') || m.includes('cancelled'),
+        message: '',
+      },
+    ],
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Hook principal
@@ -52,8 +46,20 @@ const WELCOME_MESSAGE: ChatMessage = {
 
 export function useAssistant(currentState?: AssistantStudioState) {
   const { user } = useAuth();
+  const { t } = useLocale();
+
+  // Mapeador de erros recriado quando locale muda
+  const toUserFriendlyAssistantError = useMemo(() => buildErrorMapper(t), [t]);
+
+  // Marker para detecção de retry (não traduzível)
+  const retryDetectionMarker = t('assistantStrings.retryDetection');
+  // Mensagem de fallback para erros de streaming (inclui marker invisível para retry detection)
+  const streamFallbackText = `${t('assistantStrings.errors.stream')} ${retryDetectionMarker}`;
+
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: 'welcome', role: 'model', text: t('assistantStrings.welcome') },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +164,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     streamActiveRef.current = false;
 
     setCurrentSessionId(crypto.randomUUID());
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([{ id: 'welcome', role: 'model', text: t('assistantStrings.welcome') }]);
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
@@ -327,7 +333,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         const withoutEmpty = prev.filter(m => !(m.id === assistantMsgId && m.text === ''));
         return [
           ...withoutEmpty,
-          { id: assistantMsgId, role: 'model', text: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.' },
+          { id: assistantMsgId, role: 'model', text: streamFallbackText },
         ];
       });
 
@@ -345,7 +351,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       setIsLoading(false);
       setIsStreaming(false);
     }
-  }, [user, messages, currentState, ai]);
+  }, [user, messages, currentState, ai, streamFallbackText, toUserFriendlyAssistantError]);
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {
@@ -363,7 +369,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const retryLastMessage = useCallback(() => {
     // Encontra a última mensagem de erro do modelo (fallback)
     const lastErrorIdx = messages.findLastIndex(
-      (m) => m.role === 'model' && m.text.includes('Desculpe, ocorreu um erro'),
+      (m) => m.role === 'model' && m.text.includes(retryDetectionMarker),
     );
     if (lastErrorIdx === -1) return;
 
@@ -378,7 +384,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     // Remove a mensagem de fallback e reenvia
     setMessages((prev) => prev.filter((_, idx) => idx !== lastErrorIdx));
     void sendMessage(lastUserMsg.text, lastUserMsg.attachments);
-  }, [messages, sendMessage]);
+  }, [messages, sendMessage, retryDetectionMarker]);
 
   return {
     messages,

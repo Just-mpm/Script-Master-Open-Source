@@ -40,6 +40,7 @@ import {
   type ProjectImage,
 } from '../lib/db';
 import { useAudioIsPlaying, useAudioActiveId, useGlobalAudioActions } from '../contexts/AudioContext';
+import { useLocale } from '../features/i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
@@ -57,6 +58,7 @@ const EMPTY_PROJECT_DATA: ProjectDataState = { audios: [], images: [] };
 const log = createLogger('Library');
 
 export function Library() {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
@@ -103,11 +105,11 @@ export function Library() {
       setProjects(data);
     } catch (error) {
       log.error('Falha ao carregar biblioteca', { error });
-      setError('Não foi possível carregar sua biblioteca. Verifique sua conexão e tente novamente.');
+      setError(t('library.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     void loadProjects();
@@ -133,7 +135,7 @@ export function Library() {
       setProjectData({ audios, images });
     } catch (err) {
       log.error('Falha ao carregar detalhes do projeto', { error: err });
-      setDetailError('Não foi possível carregar os detalhes do projeto. Verifique sua conexão e tente novamente.');
+      setDetailError(t('library.detailError'));
     } finally {
       setDetailLoading(false);
     }
@@ -216,7 +218,7 @@ export function Library() {
       }
     } catch (err) {
       log.error('Falha ao excluir projeto', { error: err });
-      setDeleteError('Não foi possível excluir o projeto. Tente novamente.');
+      setDeleteError(t('library.deleteProjectError'));
     } finally {
       setDeleting(false);
     }
@@ -235,7 +237,7 @@ export function Library() {
       setEditingId(null);
     } catch (err) {
       log.error('Falha ao renomear projeto', { error: err });
-      setRenameError('Não foi possível renomear o projeto. Tente novamente.');
+      setRenameError(t('library.renameError'));
     }
   };
 
@@ -254,7 +256,7 @@ export function Library() {
       }));
     } catch (err) {
       log.error('Falha ao excluir áudio', { error: err });
-      setAudioDeleteError('Não foi possível excluir o áudio. Tente novamente.');
+      setAudioDeleteError(t('library.deleteAudioError'));
     } finally {
       setDeletingAudio(false);
     }
@@ -269,24 +271,24 @@ export function Library() {
       >
         <Stack spacing={GAP_COMPACT}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
-            Biblioteca
+            {t('library.title')}
           </Typography>
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
             <Folder sx={{ fontSize: ICON_SIZE_LG, color: 'primary.main' }} />
-            <Typography variant="h4">Projetos salvos</Typography>
+            <Typography variant="h4">{t('library.savedProjects')}</Typography>
           </Stack>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 640 }}>
-            Um painel mais claro para revisar ativos do projeto, renomear versões, retomar áudio e baixar cenas sem excesso de ruído visual.
+            {t('library.description')}
           </Typography>
         </Stack>
 
         <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'flex-end' }}>
-          <Chip label={`${filteredProjects.length} projeto${filteredProjects.length === 1 ? '' : 's'}`} variant="outlined" />
+          <Chip label={t('library.projectCount', { count: filteredProjects.length, plural: filteredProjects.length === 1 ? '' : 's' })} variant="outlined" />
           {projects.length > 0 && (
             <TextField
               type="search"
               size="small"
-              placeholder="Buscar projeto..."
+              placeholder={t('library.searchPlaceholder')}
               value={searchQuery}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setSearchQuery(event.target.value)}
               slotProps={{
@@ -302,7 +304,7 @@ export function Library() {
                         <IconButton
                           size="small"
                           onClick={() => setSearchQuery('')}
-                          aria-label="Limpar busca"
+                          aria-label={t('library.clearSearchAria')}
                           sx={{ mr: -0.5 }}
                         >
                           <Close sx={{ fontSize: ICON_SIZE_SM }} />
@@ -323,7 +325,7 @@ export function Library() {
 
       {!user ? (
         <Alert variant="outlined" severity="info">
-          Sem login, a biblioteca usa armazenamento local deste navegador. Entre com sua conta para sincronizar projetos na nuvem.
+          {t('library.offlineHint')}
         </Alert>
       ) : null}
 
@@ -347,7 +349,7 @@ export function Library() {
           severity="error"
           action={
             <Button color="inherit" size="small" onClick={() => void loadProjects()}>
-              Tentar novamente
+              {t('common.tryAgain')}
             </Button>
           }
         >
@@ -368,9 +370,9 @@ export function Library() {
             }}>
               <Album sx={{ fontSize: 28, color: 'common.white' }} />
             </Box>
-            <Typography variant="h5">Sua biblioteca ainda está vazia</Typography>
+            <Typography variant="h5">{t('library.emptyTitle')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
-              Quando você salvar áudios e cenas do estúdio, os projetos aparecem aqui com acesso rápido a downloads e histórico visual.
+              {t('library.emptyDescription')}
             </Typography>
           </Stack>
         </Card>
@@ -389,9 +391,9 @@ export function Library() {
             }}>
               <Search sx={{ fontSize: 28, color: 'common.white' }} />
             </Box>
-            <Typography variant="h5">Nenhum projeto encontrado</Typography>
+            <Typography variant="h5">{t('library.noResultsTitle')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
-              Nenhum projeto corresponde a &ldquo;{searchQuery}&rdquo;. Tente outro termo de busca.
+              {t('library.noResultsDescription', { query: searchQuery })}
             </Typography>
           </Stack>
         </Card>
@@ -436,10 +438,10 @@ export function Library() {
                                 endAdornment: (
                                   <InputAdornment position="end">
                                     <Stack direction="row" spacing={0.5}>
-                                      <IconButton color="success" onClick={() => void saveEdit(project.id)} aria-label="Salvar nome do projeto">
+                                       <IconButton color="success" onClick={() => void saveEdit(project.id)} aria-label={t('library.saveName')}>
                                         <Check sx={{ fontSize: ICON_SIZE_MD }} />
                                       </IconButton>
-                                      <IconButton onClick={() => setEditingId(null)} aria-label="Cancelar edição do nome">
+                                      <IconButton onClick={() => setEditingId(null)} aria-label={t('library.cancelRename')}>
                                         <Close sx={{ fontSize: ICON_SIZE_MD }} />
                                       </IconButton>
                                     </Stack>
@@ -453,13 +455,13 @@ export function Library() {
                             <Typography variant="h5" sx={{ minWidth: 0 }} noWrap>
                               {project.name}
                             </Typography>
-                            <Tooltip title="Renomear projeto">
+                            <Tooltip title={t('library.renameProject')}>
                               <IconButton
                                 onClick={() => {
                                   setEditingId(project.id);
                                   setEditName(project.name);
                                 }}
-                                aria-label="Renomear projeto"
+                                aria-label={t('library.renameProjectAria')}
                               >
                                 <Edit sx={{ fontSize: ICON_SIZE_MD }} />
                               </IconButton>
@@ -468,8 +470,8 @@ export function Library() {
                         )}
 
                         <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                          <Chip icon={<GraphicEq sx={{ fontSize: ICON_SIZE_SM }} />} label="Áudio" size="small" variant="outlined" />
-                          <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_SM }} />} label="Cenas" size="small" variant="outlined" />
+                          <Chip icon={<GraphicEq sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.audio')} size="small" variant="outlined" />
+                          <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.scenes')} size="small" variant="outlined" />
                           <Chip label={new Date(project.createdAt).toLocaleString()} size="small" />
                         </Stack>
                       </Stack>
@@ -480,7 +482,7 @@ export function Library() {
                           variant={isExpanded ? 'contained' : 'outlined'}
                             startIcon={isExpanded ? <ChevronUp sx={{ fontSize: ICON_SIZE_MD }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_MD }} />}
                         >
-                          {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+                          {isExpanded ? t('library.hideDetails') : t('library.showDetails')}
                         </Button>
 
                         <Button
@@ -489,7 +491,7 @@ export function Library() {
                           variant="outlined"
                             startIcon={<Delete sx={{ fontSize: ICON_SIZE_MD }} />}
                         >
-                          Excluir
+                          {t('library.delete')}
                         </Button>
                       </Stack>
                     </Stack>
@@ -524,7 +526,7 @@ export function Library() {
                             <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
                               <Stack spacing={1.5}>
                                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
-                                  Versões de áudio
+                                  {t('library.audioVersions')}
                                 </Typography>
 
                                 {detailError ? (
@@ -533,7 +535,7 @@ export function Library() {
                                     severity="error"
                                     action={
                                       <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
-                                        Tentar novamente
+                                        {t('common.tryAgain')}
                                       </Button>
                                     }
                                   >
@@ -541,7 +543,7 @@ export function Library() {
                                   </Alert>
                                 ) : projectData.audios.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
-                                    Nenhum áudio encontrado neste projeto.
+                                    {t('library.noAudio')}
                                   </Typography>
                                 ) : (
                                   <Stack spacing={GAP_MEDIUM}>
@@ -566,26 +568,26 @@ export function Library() {
                                         >
                                             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                                              <Typography variant="subtitle2">Versão {new Date(audio.createdAt).toLocaleTimeString()}</Typography>
+                                              <Typography variant="subtitle2">{t('library.version', { time: new Date(audio.createdAt).toLocaleTimeString() })}</Typography>
                                               <Typography variant="caption" color="text.secondary">
                                                 {new Date(audio.createdAt).toLocaleDateString()}
                                               </Typography>
                                             </Stack>
 
                                             <Stack direction="row" spacing={GAP_COMPACT}>
-                                              <Tooltip title={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}>
+                                              <Tooltip title={isPlaying && isCurrent ? t('library.pauseAudio') : t('library.playAudio')}>
                                                 <span>
                                                   <IconButton
                                                     onClick={() => handlePlay(audio)}
                                                     color={isCurrent ? 'secondary' : 'primary'}
-                                                    aria-label={isPlaying && isCurrent ? 'Pausar áudio' : 'Reproduzir áudio'}
+                                                    aria-label={isPlaying && isCurrent ? t('library.pauseAudio') : t('library.playAudio')}
                                                   >
                                                     {isPlaying && isCurrent ? <Pause sx={{ fontSize: ICON_SIZE_LG }} /> : <PlayArrow sx={{ fontSize: ICON_SIZE_LG }} />}
                                                   </IconButton>
                                                 </span>
                                               </Tooltip>
 
-                                              <Tooltip title="Baixar áudio">
+                                              <Tooltip title={t('library.downloadAudio')}>
                                                 <span>
                                                   <IconButton
                                                     onClick={() => {
@@ -600,19 +602,19 @@ export function Library() {
                                                          });
                                                       }
                                                     }}
-                                                    aria-label="Baixar áudio"
+                                                    aria-label={t('library.downloadAudioAria')}
                                                   >
                                                     <Download sx={{ fontSize: ICON_SIZE_MD }} />
                                                   </IconButton>
                                                 </span>
                                               </Tooltip>
 
-                                              <Tooltip title="Excluir áudio">
+                                              <Tooltip title={t('library.deleteAudio')}>
                                                 <span>
                                                   <IconButton
                                                     onClick={() => setAudioToDelete(audio.id)}
                                                     color="error"
-                                                    aria-label="Excluir áudio"
+                                                    aria-label={t('library.deleteAudioAria')}
                                                   >
                                                     <Delete sx={{ fontSize: ICON_SIZE_MD }} />
                                                   </IconButton>
@@ -633,7 +635,7 @@ export function Library() {
                             <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2, height: '100%' })}>
                               <Stack spacing={1.5}>
                                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
-                                  Cenas geradas
+                                  {t('library.generatedScenes')}
                                 </Typography>
 
                                 {detailError ? (
@@ -642,7 +644,7 @@ export function Library() {
                                     severity="error"
                                     action={
                                       <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
-                                        Tentar novamente
+                                        {t('common.tryAgain')}
                                       </Button>
                                     }
                                   >
@@ -650,7 +652,7 @@ export function Library() {
                                   </Alert>
                                 ) : projectData.images.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
-                                    Nenhuma imagem encontrada neste projeto.
+                                    {t('library.noImages')}
                                   </Typography>
                                 ) : (
                                   <Grid container spacing={1.5}>
@@ -674,13 +676,13 @@ export function Library() {
                                             <Box
                                               component="img"
                                               src={img.resolvedUrl}
-                                              alt={`Cena ${index + 1}`}
+                                              alt={t('library.scene', { number: index + 1 })}
                                               loading="lazy"
                                               sx={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
                                             />
                                             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ p: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
                                               <Typography variant="caption" color="text.secondary">
-                                                Cena {index + 1}
+                                                {t('library.scene', { number: index + 1 })}
                                               </Typography>
                                               <IconButton
                                                 onClick={() => {
@@ -688,7 +690,7 @@ export function Library() {
                                                     void downloadFile(img.resolvedUrl, `${project.name}-cena-${index + 1}.png`);
                                                   }
                                                 }}
-                                                aria-label={`Baixar cena ${index + 1}`}
+                                                aria-label={t('library.downloadSceneAria', { number: index + 1 })}
                                               >
                                                 <Download sx={{ fontSize: ICON_SIZE_MD }} />
                                               </IconButton>
@@ -707,7 +709,7 @@ export function Library() {
                         <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2 })}>
                           <Stack spacing={1}>
                             <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.16em' }}>
-                              Roteiro original
+                              {t('library.originalScript')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
                               {project.script}
@@ -732,10 +734,10 @@ export function Library() {
         itemName={projectNameToDelete}
         deletingItem={deleting}
         deleteError={deleteError}
-        titleIdleLabel="Excluir projeto?"
-        loadingLabel="Excluindo projeto..."
-        confirmLabel="Excluir projeto"
-        description="Esta ação remove permanentemente o projeto, seus áudios e suas imagens associadas."
+        titleIdleLabel={t('library.deleteProjectTitle')}
+        loadingLabel={t('library.deleteProjectLoading')}
+        confirmLabel={t('library.deleteProjectConfirm')}
+        description={t('library.deleteProjectDescription')}
         onConfirm={() => void confirmDelete()}
         onCancel={() => { setItemToDelete(null); setProjectNameToDelete(null); setDeleteError(null); }}
       />
@@ -746,10 +748,10 @@ export function Library() {
         itemName={audioToDelete ?? null}
         deletingItem={deletingAudio}
         deleteError={audioDeleteError}
-        titleIdleLabel="Excluir versão de áudio?"
-        loadingLabel="Excluindo áudio..."
-        confirmLabel="Excluir"
-        description="Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do Storage."
+        titleIdleLabel={t('library.deleteAudioTitle')}
+        loadingLabel={t('library.deleteAudioLoading')}
+        confirmLabel={t('library.deleteAudioConfirm')}
+        description={t('library.deleteAudioDescription')}
         onConfirm={() => void confirmDeleteAudio()}
         onCancel={() => { setAudioToDelete(null); setAudioDeleteError(null); }}
       />
@@ -761,12 +763,12 @@ export function Library() {
           variant="outlined"
           action={
             <Button color="inherit" size="small" onClick={() => void loadProjects()}>
-              Atualizar lista
+              {t('library.updateList')}
             </Button>
           }
           sx={{ mt: 1 }}
         >
-          Projeto excluído com sucesso. A lista não foi atualizada automaticamente.
+          {t('library.deleteSuccess')}
         </Alert>
       )}
     </Stack>

@@ -48,6 +48,39 @@ vi.mock('../../../src/lib/seo', () => ({
   getPageSeo: () => ({ title: 'Status dos Serviços' }),
 }));
 
+vi.mock('../../../src/features/i18n', () => ({
+  useLocale: () => ({
+    t: (key: string, params?: Record<string, string | number>) => {
+      const map: Record<string, string> = {
+        'status.hero.title': 'Status dos Serviços',
+        'status.hero.subtitle': 'Status informativo dos serviços do Script Master. Dados atualizados manualmente.',
+        'status.disclaimer': 'Os dados exibidos nesta página são informativos e não representam monitoramento em tempo real. O status real dos serviços depende de terceiros (Google Gemini, Firebase).',
+        'status.globalStatus': 'Todos os sistemas operacionais',
+        'status.lastCheck': `Última atualização: build ${params?.date ?? ''} (dados informativos)`,
+        'status.incidents.title': 'Últimos 90 dias',
+        'status.incidents.resolved': 'Resolvido',
+        'status.incidents.degraded': 'Degradado',
+        'status.services.api.name': 'API Gemini (IA)',
+        'status.services.api.description': 'Geração de áudio, imagens e assistente conversacional',
+        'status.services.auth.name': 'Firebase Auth',
+        'status.services.auth.description': 'Autenticação e gerenciamento de contas',
+        'status.services.firestore.name': 'Firebase Firestore',
+        'status.services.firestore.description': 'Banco de dados e sincronização de projetos',
+        'status.services.storage.name': 'Firebase Storage',
+        'status.services.storage.description': 'Armazenamento de áudios, imagens e vídeos',
+        'status.services.video.name': 'Renderização de Vídeo',
+        'status.services.video.description': 'Processamento client-side via WebCodecs',
+        'status.statusLabels.operational': 'Operacional',
+        'status.statusLabels.degraded': 'Degradado',
+        'status.statusLabels.outage': 'Indisponível',
+        'status.statusLabels.maintenance': 'Manutenção',
+      };
+      return map[key] ?? key;
+    },
+    locale: 'pt-BR',
+  }),
+}));
+
 describe('StatusPage', () => {
   it('renderiza título "Status dos Serviços"', () => {
     render(<StatusPage />, { wrapper: Wrapper });

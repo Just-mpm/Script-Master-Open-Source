@@ -4,11 +4,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode, RefObject } from 'react';
 import { AssistantMessages } from '../../src/features/assistant/components/AssistantMessages';
 import type { ChatMessageRecord } from '../../src/lib/db';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 // Mock dos tokens
@@ -76,6 +81,7 @@ const defaultProps = {
 
 describe('AssistantMessages', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
     // Mock clipboard API
     Object.assign(navigator, {

@@ -4,7 +4,7 @@
  */
 
 import { VOICES } from '../../../lib/constants';
-import type { SceneRatio, StudioDraftState } from '../types';
+import type { SceneRatio, StudioDraftState, EmotionType } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -25,6 +25,8 @@ export const STORAGE_KEYS = {
   sceneDensity: 's2a_scene_density',
   sceneRatio: 's2a_scene_ratio',
   visualFramework: 's2a_visual_framework',
+  emotion: 's2a_emotion',
+  emotionIntensity: 's2a_emotion_intensity',
 } as const;
 
 export const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
@@ -88,6 +90,23 @@ export function getStoredSceneRatio(): SceneRatio {
   }
 }
 
+const VALID_EMOTIONS: ReadonlyArray<EmotionType> = [
+  'neutral', 'happy', 'sad', 'angry', 'calm', 'energetic', 'dramatic', 'friendly',
+];
+
+function isValidEmotion(value: string | null): value is EmotionType {
+  return value !== null && (VALID_EMOTIONS as ReadonlyArray<string>).includes(value);
+}
+
+export function getStoredEmotion(): EmotionType {
+  try {
+    const storedValue = localStorage.getItem(STORAGE_KEYS.emotion);
+    return isValidEmotion(storedValue) ? storedValue : 'neutral';
+  } catch {
+    return 'neutral';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Valores iniciais lidos do localStorage
 // ---------------------------------------------------------------------------
@@ -109,6 +128,8 @@ export function getInitialStudioConfig() {
     sceneRatio: getStoredSceneRatio(),
     visualFramework: getStoredValue(STORAGE_KEYS.visualFramework, 'general'),
     referenceImage: null as string | null,
+    emotion: getStoredEmotion(),
+    emotionIntensity: getStoredNumber(STORAGE_KEYS.emotionIntensity, 0.5),
   };
 }
 

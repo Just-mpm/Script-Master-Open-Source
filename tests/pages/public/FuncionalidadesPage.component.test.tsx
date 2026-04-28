@@ -1,17 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import FuncionalidadesPage from '../../../src/pages/public/FuncionalidadesPage';
+import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
@@ -37,6 +40,10 @@ vi.mock('../../../src/theme/surfaces', () => ({
 }));
 
 describe('FuncionalidadesPage', () => {
+  beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
+  });
+
   it('renderiza sem crash', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
@@ -116,8 +123,8 @@ describe('FuncionalidadesPage', () => {
   it('renderiza features da plataforma', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     expect(screen.getByText('Persistência Dual')).toBeDefined();
-    expect(screen.getByText('Autenticação Google')).toBeDefined();
-    expect(screen.getByText('Transcrição Whisper')).toBeDefined();
+    expect(screen.getByText('Download Fácil')).toBeDefined();
+    expect(screen.getByText('Gestão de Projetos')).toBeDefined();
   });
 
   it('renderiza os feature showcases de deep dive', () => {

@@ -6,9 +6,11 @@ import { BatchOrchestrator } from '../features/speed-paint/components/batch/Batc
 import { QueueStaging } from '../features/speed-paint/components/batch/QueueStaging';
 import { AnimationPlayer } from '../features/speed-paint/components/canvas/AnimationPlayer';
 import { ImageUpload } from '../features/speed-paint/components/upload/ImageUpload';
+import { useLocale } from '../features/i18n';
 import { APP_MAX_WIDTH, BRAND_GRADIENT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_MD } from '../theme/tokens';
 
 export function SpeedPaintPage() {
+  const { t } = useLocale();
   const queueLength = useAnimationStore((s) => s.queue.length);
   const batchMode = useAnimationStore((s) => s.batchMode);
 
@@ -27,7 +29,7 @@ export function SpeedPaintPage() {
                 mb: 1,
               }}
             >
-              Transforme Imagens em{' '}
+              {t('speedPaint.pageTitle')}
               <Box
                 component="span"
                 sx={{
@@ -36,16 +38,15 @@ export function SpeedPaintPage() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                Speed Paints
+                {t('speedPaint.pageHighlight')}
               </Box>
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
-              sx={{ mb: 4, lineHeight: 1.7 }}
+              sx={{ mb: 4, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}
             >
-              Envie qualquer imagem e assista a ela sendo desenhada traço por traço.
-              Nosso motor analisa a imagem e gera uma animação de pintura progressiva.
+              {t('speedPaint.pageDescription')}
             </Typography>
           </Box>
           <ImageUpload />

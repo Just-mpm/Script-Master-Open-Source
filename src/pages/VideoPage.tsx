@@ -19,6 +19,7 @@ import { useAudioGenerator } from '../hooks/useAudioGenerator';
 import { useStudioStore, VIDEO_FPS } from '../features/studio/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocale } from '../features/i18n';
 
 interface VideoPageProps {
   videoPlayerRef: RefObject<VideoPreviewHandle | null>;
@@ -27,6 +28,7 @@ interface VideoPageProps {
 export function VideoPage({
   videoPlayerRef,
 }: VideoPageProps) {
+  const { t } = useLocale();
   const { pause: pauseGlobalAudio } = useGlobalAudioActions();
   const { user } = useAuth();
   const userId = user?.uid;
@@ -236,10 +238,10 @@ export function VideoPage({
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
       <Box>
         <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
-          Montagem visual
+          {t('video.pageTitle')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Revise a cena atual, confira a atmosfera do vídeo e carregue projetos anteriores sem sair do fluxo.
+          {t('video.pageDescription')}
         </Typography>
       </Box>
 

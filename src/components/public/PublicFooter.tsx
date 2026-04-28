@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Mic from '@mui/icons-material/Mic';
 import { Link as RouterLink } from 'react-router-dom';
+import { useLocale } from '../../features/i18n';
 import {
   APP_MAX_WIDTH,
   APP_BORDER,
@@ -16,40 +17,38 @@ import {
   TEXT_SECONDARY,
 } from '../../theme/tokens';
 
-interface FooterLinkGroup {
-  title: string;
-  links: { label: string; href: string }[];
-}
-
-const FOOTER_GROUPS: FooterLinkGroup[] = [
-  {
-    title: 'Produto',
-    links: [
-      { label: 'Funcionalidades', href: '/funcionalidades' },
-      { label: 'Preços', href: '/precos' },
-      { label: 'Perguntas Frequentes', href: '/perguntas-frequentes' },
-      { label: 'Status', href: '/status' },
-    ],
-  },
-  {
-    title: 'Empresa',
-    links: [
-      { label: 'Sobre', href: '/sobre' },
-      { label: 'Contato', href: '/contato' },
-      { label: 'E-mail', href: 'mailto:contato@scriptmaster.app' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Termos de Uso', href: '/termos' },
-      { label: 'Privacidade', href: '/privacidade' },
-      { label: 'Cookies', href: '/cookies' },
-    ],
-  },
-];
-
 export function PublicFooter() {
+  const { t } = useLocale();
+
+  /** Grupos de links com labels traduzidos via i18n */
+  const footerGroups = [
+    {
+      title: t('footer.productGroup'),
+      links: [
+        { label: t('footer.links.features'), href: '/funcionalidades' },
+        { label: t('footer.links.pricing'), href: '/precos' },
+        { label: t('footer.links.faq'), href: '/perguntas-frequentes' },
+        { label: t('footer.links.status'), href: '/status' },
+      ],
+    },
+    {
+      title: t('footer.companyGroup'),
+      links: [
+        { label: t('footer.links.about'), href: '/sobre' },
+        { label: t('footer.links.contact'), href: '/contato' },
+        { label: t('footer.links.email'), href: 'mailto:contato@scriptmaster.app' },
+      ],
+    },
+    {
+      title: t('footer.legalGroup'),
+      links: [
+        { label: t('footer.links.terms'), href: '/termos' },
+        { label: t('footer.links.privacy'), href: '/privacidade' },
+        { label: t('footer.links.cookies'), href: '/cookies' },
+      ],
+    },
+  ];
+
   return (
     <Box
       component="footer"
@@ -103,12 +102,12 @@ export function PublicFooter() {
               </Typography>
             </Stack>
             <Typography variant="body2" sx={{ color: TEXT_SECONDARY, maxWidth: 320, lineHeight: 1.7 }}>
-              Transforme roteiros em arte com IA. Áudio, vídeo e imagens profissionais gerados por Gemini.
+              {t('footer.description')}
             </Typography>
           </Box>
 
           {/* Grupos de links */}
-          {FOOTER_GROUPS.map((group) => (
+          {footerGroups.map((group) => (
             <Box key={group.title} sx={{ flex: 1 }}>
               <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, fontSize: '0.8125rem', letterSpacing: '0.02em' }}>
                 {group.title}
@@ -143,10 +142,10 @@ export function PublicFooter() {
           sx={{ justifyContent: 'space-between', alignItems: 'center' }}
         >
           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
-            &copy; {new Date().getFullYear()} Script Master. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} {t('footer.copyright')}
           </Typography>
           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
-            Feito com IA e Gemini
+            {t('footer.madeWith')}
           </Typography>
         </Stack>
       </Container>

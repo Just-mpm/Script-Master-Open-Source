@@ -4,11 +4,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { AssistantHistoryPanel } from '../../src/features/assistant/components/AssistantHistoryPanel';
 import type { ChatSession } from '../../src/lib/db';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 // Mock dos tokens
@@ -52,6 +57,7 @@ function createSession(overrides: Partial<ChatSession> = {}): ChatSession {
 
 describe('AssistantHistoryPanel', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
   });
 

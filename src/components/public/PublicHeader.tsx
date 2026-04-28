@@ -22,6 +22,7 @@ import Logout from '@mui/icons-material/Logout';
 import Login from '@mui/icons-material/Login';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale, LocaleSelector } from '../../features/i18n';
 import {
   APP_HEADER_HEIGHT,
   APP_MAX_WIDTH,
@@ -39,26 +40,23 @@ import {
 } from '../../theme/tokens';
 import { glassSurfaceSx } from '../../theme/surfaces';
 
-interface PublicNavItem {
-  to: string;
-  label: string;
-}
-
-const PUBLIC_NAV_ITEMS: PublicNavItem[] = [
-  { to: '/', label: 'Home' },
-  { to: '/funcionalidades', label: 'Funcionalidades' },
-  { to: '/precos', label: 'Preços' },
-  { to: '/perguntas-frequentes', label: 'FAQ' },
-  { to: '/sobre', label: 'Sobre' },
-  { to: '/contato', label: 'Contato' },
-];
-
 export function PublicHeader() {
   const { user, loading, logout } = useAuth();
+  const { t } = useLocale();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  /** Itens de navegação com labels traduzidos via i18n */
+  const navItems = [
+    { to: '/', label: t('nav.home') },
+    { to: '/funcionalidades', label: t('nav.features') },
+    { to: '/precos', label: t('nav.pricing') },
+    { to: '/perguntas-frequentes', label: t('nav.faq') },
+    { to: '/sobre', label: t('nav.about') },
+    { to: '/contato', label: t('nav.contact') },
+  ];
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const closeDrawer = () => setDrawerOpen(false);
@@ -129,7 +127,7 @@ export function PublicHeader() {
           {!isMobile && (
             <Box
               component="nav"
-              aria-label="Navegação pública"
+              aria-label={t('nav.ariaNav')}
               sx={(theme) => ({
                 ...glassSurfaceSx(theme),
                 display: 'flex',
@@ -142,7 +140,7 @@ export function PublicHeader() {
                 justifyContent: 'center',
               })}
             >
-              {PUBLIC_NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const isActive = location.pathname === item.to;
                 return (
                   <Button
@@ -173,10 +171,11 @@ export function PublicHeader() {
           {/* CTA / Avatar — mobile: sempre mostrar hamburger + botão */}
           {!loading && (
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
+              <LocaleSelector size="small" />
               {isMobile && (
                 <IconButton
                   color="inherit"
-                  aria-label="Menu"
+                  aria-label={t('nav.ariaMenu')}
                   onClick={toggleDrawer}
                   sx={{
                     color: 'text.secondary',
@@ -201,7 +200,7 @@ export function PublicHeader() {
                     },
                   }}
                 >
-                  Abrir App
+                  {t('nav.openApp')}
                 </Button>
               ) : (
                 <Button
@@ -217,7 +216,7 @@ export function PublicHeader() {
                     },
                   }}
                 >
-                  Entrar
+                  {t('nav.login')}
                 </Button>
               )}
             </Stack>
@@ -233,7 +232,7 @@ export function PublicHeader() {
         onClose={closeDrawer}
         ModalProps={{ keepMounted: true }}
         slotProps={{ paper: { sx: drawerPaperSx } }}
-        aria-label="Menu de navegação"
+        aria-label={t('nav.ariaDrawerMenu')}
         sx={{
           '& .MuiDrawer-paper': {
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -267,7 +266,7 @@ export function PublicHeader() {
 
         <Box onClick={closeDrawer} sx={{ flex: 1 }}>
           <List sx={{ px: 1, py: 1 }}>
-            {PUBLIC_NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = location.pathname === item.to;
               return (
                 <ListItemButton
@@ -311,7 +310,7 @@ export function PublicHeader() {
                 <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
                   <Logout sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
                 </ListItemIcon>
-                <ListItemText primary="Sair" slotProps={{ primary: { variant: 'body2' } }} />
+                <ListItemText primary={t('nav.logout')} slotProps={{ primary: { variant: 'body2' } }} />
               </ListItemButton>
             </Box>
           </>

@@ -16,6 +16,7 @@ import Mic from '@mui/icons-material/Mic';
 import { MAX_CHARS } from '../lib/constants';
 import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
+import { useLocale } from '../features/i18n';
 import { glassPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS } from '../theme/tokens';
 
@@ -38,6 +39,7 @@ export function ScriptEditor({
   scenes = [],
   currentTime = 0
 }: ScriptEditorProps) {
+  const { t } = useLocale();
   const currentScene = useMemo(
     () => resolveActiveScene(scenes, currentTime),
     [scenes, currentTime],
@@ -55,11 +57,11 @@ export function ScriptEditor({
   );
 
   const handleClearScript = useCallback(() => {
-    if (script.length > 500 && !window.confirm('O roteiro será apagado permanentemente. Deseja continuar?')) {
+    if (script.length > 500 && !window.confirm(t('studio.scriptEditor.clearConfirm'))) {
       return;
     }
     setScript('');
-  }, [script, setScript]);
+  }, [script, setScript, t]);
 
   const handleCopyScript = useCallback(async () => {
     if (!script) return;
@@ -93,7 +95,7 @@ export function ScriptEditor({
   }, [isGenerateDisabled, isGenerating, handleGenerate]);
 
   return (
-    <Stack component="section" spacing={2} ref={containerRef}>
+    <Stack component="section" spacing={2} ref={containerRef} id="script-editor">
       <Paper
         elevation={0}
         sx={(theme): SystemStyleObject<Theme> => ({
@@ -101,6 +103,7 @@ export function ScriptEditor({
           display: 'flex',
           flexDirection: 'column',
           minHeight: { xs: '52vh', sm: '60vh', lg: 'calc(100vh - 12rem)' },
+          pb: { xs: 'env(safe-area-inset-bottom, 0px)', sm: 0 },
         })}
       >
         {currentScene && (
@@ -143,11 +146,11 @@ export function ScriptEditor({
         >
           <Stack spacing={GAP_COMPACT}>
             <Typography variant="overline" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-              Script
+              {t('studio.scriptEditor.label')}
             </Typography>
             {currentScene ? (
               <Chip
-                label="Cena visual sincronizada com a escrita"
+                label={t('studio.scriptEditor.syncedSceneChip')}
                 size="small"
                 color="primary"
                 variant="outlined"
@@ -164,11 +167,11 @@ export function ScriptEditor({
           >
             {script.length > 0 && !isGenerating && (
               <Stack direction="row" spacing={GAP_COMPACT}>
-                  <Tooltip title={copiedScript ? 'Copiado!' : 'Copiar roteiro'}>
+                  <Tooltip title={copiedScript ? t('studio.scriptEditor.copiedTooltip') : t('studio.scriptEditor.copyTooltip')}>
                     <IconButton
                     onClick={() => void handleCopyScript()}
                     size="small"
-                    aria-label="Copiar roteiro"
+                    aria-label={t('studio.scriptEditor.copyAriaLabel')}
                     color={copiedScript ? 'success' : 'inherit'}
                     sx={{
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -182,14 +185,14 @@ export function ScriptEditor({
                   variant="text"
                   color="inherit"
                   onClick={handleClearScript}
-                  aria-label="Limpar roteiro"
+                  aria-label={t('studio.scriptEditor.clearAriaLabel')}
                   sx={{
                     minHeight: 40,
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': { color: 'error.main' },
                   }}
                 >
-                  Limpar
+                  {t('studio.scriptEditor.clearButton')}
                 </Button>
               </Stack>
             )}
@@ -203,14 +206,14 @@ export function ScriptEditor({
                 letterSpacing: '0.08em',
                 transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
-              aria-label={`${script.length} de ${MAX_CHARS} caracteres utilizados`}
+              aria-label={t('studio.scriptEditor.charCountAriaLabel', { current: script.length.toLocaleString(), max: MAX_CHARS.toLocaleString() })}
             >
               {script.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
             </Typography>
           </Stack>
         </Stack>
 
-        <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: { xs: 2.5, sm: 3 }, position: 'relative', zIndex: 2, flex: 1, display: 'flex' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 3 }, pb: { xs: 4, sm: 2.5 }, position: 'relative', zIndex: 2, flex: 1, display: 'flex' }}>
           <TextField
             id="script-editor"
             fullWidth
@@ -220,14 +223,14 @@ export function ScriptEditor({
             value={script}
             onChange={handleScriptChange}
             disabled={isGenerating}
-            placeholder="Comece a escrever sua história aqui..."
+            placeholder={t('studio.scriptEditor.placeholder')}
             variant="outlined"
             slotProps={{
               htmlInput: {
                 spellCheck: false,
                 maxLength: MAX_CHARS + 500,
                 'aria-labelledby': 'script-label',
-                'aria-label': 'Editor de roteiro',
+                'aria-label': t('studio.scriptEditor.editorAriaLabel'),
               },
             }}
             sx={{
@@ -268,7 +271,7 @@ export function ScriptEditor({
       </Paper>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
-        <Tooltip title={`Gerar áudio (${navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'} + Enter)`}>
+        <Tooltip title={t('studio.scriptEditor.generateTooltip', { shortcut: navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl' })}>
           <span style={{ display: 'flex', width: '100%' }}>
             <Button
               onClick={handleGenerate}
@@ -299,7 +302,7 @@ export function ScriptEditor({
               })}
             >
               <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
-                <span>Gerar áudio</span>
+                <span>{t('studio.scriptEditor.generateButton')}</span>
                 <Box
                   sx={{
                     display: { xs: 'none', sm: 'inline-flex' },

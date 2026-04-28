@@ -23,76 +23,81 @@ import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY } from '../../theme/tokens';
 import { fadeInUp, VIEWPORT_ONCE } from '../../components/public/animations';
-
-const TTS_FEATURES = [
-  { icon: Mic, title: 'Geração de Áudio TTS', description: 'Transforme roteiros em áudio profissional com Gemini TTS (24kHz mono 16-bit PCM).' },
-  { icon: Speed, title: 'Chunking Inteligente', description: 'Divisão otimizada via LLM + fallback programático. Limite de 500 chars por chunk.' },
-  { icon: Groups, title: 'Multi-speaker', description: 'Suporte a 2 locutores (Speaker A + B) com configuração independente de voz e nome.' },
-  { icon: EditNote, title: 'Controle de Voz', description: 'Seleção de voz, pace, pitch e audio profile (podcast, audiobook, conversa, narração).' },
-];
-
-const VIDEO_FEATURES = [
-  { icon: PlayCircle, title: 'Composição de Vídeo', description: 'Vídeos client-side com Remotion e WebCodecs. Sem backend, sem custo de renderização.' },
-  { icon: Subtitles, title: 'Legendas Automáticas', description: '3 fontes de sincronização: segment-timing > whisper-aligned > proportional.' },
-  { icon: Hd, title: '3 Resoluções', description: '16:9 (1920x1080), 9:16 (1080x1920) e 1:1 (1080x1080).' },
-];
-
-const IMAGE_FEATURES = [
-  { icon: ImageIcon, title: 'Estúdio de Imagem', description: 'Geração de imagens com Gemini a partir de prompts + referência visual opcional.' },
-  { icon: Hd, title: '8 Aspect Ratios', description: '1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9.' },
-  { icon: LocalLibrary, title: 'Galeria Integrada', description: 'Histórico de imagens geradas com visualização, exclusão e persistência dual.' },
-];
-
-const SPEEDPAINT_FEATURES = [
-  { icon: Palette, title: 'Animação de Pintura', description: 'Upload > edge detection > clusterização BFS > vetorização > renderização progressiva.' },
-  { icon: Speed, title: 'Batch Processing', description: 'Fila de imagens com modos watch (auto-avança) e record (grava + avança).' },
-  { icon: Storage, title: 'Exportação Mídia', description: 'Export PNG (2x) e WebM (H.264 > VP9 > padrão, 12Mbps).' },
-];
-
-const ASSISTANT_FEATURES = [
-  { icon: AutoAwesome, title: 'Chat Conversacional', description: 'Streaming com Gemini, memórias, anexos (5 por msg: imagem 10MB, documento 5MB).' },
-  { icon: EditNote, title: 'Integração com Estúdio', description: 'Modelo sugere alterações em bloco JSON, botão "Aplicar no estúdio" para patch parcial.' },
-  { icon: Storage, title: 'Sistema de Memória', description: 'Memórias curtas (texto) + upload de documentos (.md/.txt/.csv até 500KB).' },
-];
-
-const PLATFORM_FEATURES = [
-  { icon: Storage, title: 'Persistência Dual', description: 'Firestore (autenticado) + IndexedDB (local), migração automática ao logar.' },
-  { icon: Groups, title: 'Autenticação Google', description: 'Login via Google popup com contexto de auth e proteção de rotas.' },
-  { icon: Subtitles, title: 'Transcrição Whisper', description: 'Modelo WASM Whisper para legendas automáticas (apenas IndexedDB).' },
-];
+import { useLocale } from '../../features/i18n';
 
 interface FeatureSection {
   id: string;
-  title: string;
-  features: typeof TTS_FEATURES;
+  titleKey: string;
+  features: Array<{ icon: typeof Mic; title: string; description: string }>;
 }
 
-const SECTIONS: FeatureSection[] = [
-  { id: 'tts', title: 'Estúdio de Voz (TTS)', features: TTS_FEATURES },
-  { id: 'video', title: 'Renderização de Vídeo', features: VIDEO_FEATURES },
-  { id: 'images', title: 'Geração de Imagens', features: IMAGE_FEATURES },
-  { id: 'speed-paint', title: 'Speed Paint & Animação', features: SPEEDPAINT_FEATURES },
-  { id: 'assistant', title: 'Assistente IA', features: ASSISTANT_FEATURES },
-  { id: 'platform', title: 'Plataforma', features: PLATFORM_FEATURES },
-];
-
 export default function FuncionalidadesPage() {
+  const { t, locale } = useLocale();
+
+  // ── Features localizadas via t() ──
+  const TTS_FEATURES = [
+    { icon: Mic, title: t('featureItems.audio.0.title'), description: t('featureItems.audio.0.description') },
+    { icon: Speed, title: t('featureItems.audio.1.title'), description: t('featureItems.audio.1.description') },
+    { icon: Groups, title: t('featureItems.audio.2.title'), description: t('featureItems.audio.2.description') },
+    { icon: EditNote, title: t('featureItems.audio.3.title'), description: t('featureItems.audio.3.description') },
+  ];
+
+  const VIDEO_FEATURES = [
+    { icon: PlayCircle, title: t('featureItems.video.0.title'), description: t('featureItems.video.0.description') },
+    { icon: Subtitles, title: t('featureItems.video.1.title'), description: t('featureItems.video.1.description') },
+    { icon: Hd, title: t('featureItems.video.2.title'), description: t('featureItems.video.2.description') },
+  ];
+
+  const IMAGE_FEATURES = [
+    { icon: ImageIcon, title: t('featureItems.image.0.title'), description: t('featureItems.image.0.description') },
+    { icon: Hd, title: t('featureItems.image.1.title'), description: t('featureItems.image.1.description') },
+    { icon: LocalLibrary, title: t('featureItems.image.2.title'), description: t('featureItems.image.2.description') },
+  ];
+
+  const SPEEDPAINT_FEATURES = [
+    { icon: Palette, title: t('featureItems.speedPaint.0.title'), description: t('featureItems.speedPaint.0.description') },
+    { icon: Speed, title: t('featureItems.speedPaint.1.title'), description: t('featureItems.speedPaint.1.description') },
+    { icon: Storage, title: t('featureItems.speedPaint.2.title'), description: t('featureItems.speedPaint.2.description') },
+  ];
+
+  const ASSISTANT_FEATURES = [
+    { icon: AutoAwesome, title: t('featureItems.assistant.0.title'), description: t('featureItems.assistant.0.description') },
+    { icon: EditNote, title: t('featureItems.assistant.1.title'), description: t('featureItems.assistant.1.description') },
+    { icon: Storage, title: t('featureItems.assistant.2.title'), description: t('featureItems.assistant.2.description') },
+  ];
+
+  const PLATFORM_FEATURES = [
+    { icon: Storage, title: t('featureItems.library.0.title'), description: t('featureItems.library.0.description') },
+    { icon: Groups, title: t('featureItems.library.1.title'), description: t('featureItems.library.1.description') },
+    { icon: Subtitles, title: t('featureItems.library.2.title'), description: t('featureItems.library.2.description') },
+  ];
+
+  // Seções com títulos traduzíveis
+  const sections: FeatureSection[] = [
+    { id: 'tts', titleKey: 'features.sections.tts', features: TTS_FEATURES },
+    { id: 'video', titleKey: 'features.sections.video', features: VIDEO_FEATURES },
+    { id: 'images', titleKey: 'features.sections.images', features: IMAGE_FEATURES },
+    { id: 'speed-paint', titleKey: 'features.sections.speedPaint', features: SPEEDPAINT_FEATURES },
+    { id: 'assistant', titleKey: 'features.sections.assistant', features: ASSISTANT_FEATURES },
+    { id: 'platform', titleKey: 'features.sections.platform', features: PLATFORM_FEATURES },
+  ];
+
   const seo = getPageSeo({
-    title: 'Funcionalidades',
-    description: 'Conheça todas as funcionalidades do Script Master: geração de áudio, imagens, vídeos, assistente IA e mais.',
+    title: t('seo.features.title'),
+    description: t('seo.features.description'),
     path: '/funcionalidades',
   });
 
   return (
     <>
-      <DocumentHead {...seo} />
+      <DocumentHead {...seo} locale={locale} />
       <PageLayout>
       {/* Hero */}
       <HeroSection
-        title="Tudo que você precisa para criar"
-        subtitle="Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional."
-        primaryCta={{ label: 'Começar Grátis', to: '/cadastro' }}
-        secondaryCta={{ label: 'Ver preços', to: '/precos' }}
+        title={t('features.hero.title')}
+        subtitle={t('features.hero.subtitle')}
+        primaryCta={{ label: t('features.hero.cta'), to: '/cadastro' }}
+        secondaryCta={{ label: t('features.hero.ctaSecondary'), to: '/precos' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <Mic sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
@@ -102,7 +107,7 @@ export default function FuncionalidadesPage() {
       />
 
       {/* Feature Sections */}
-      {SECTIONS.map((section) => (
+      {sections.map((section) => (
         <Box key={section.id} id={section.id} sx={{ scrollMarginTop: 80 }}>
           <Box
             component={motion.div}
@@ -113,7 +118,7 @@ export default function FuncionalidadesPage() {
             sx={{ mb: { xs: 3, md: 4 } }}
           >
             <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
-              {section.title}
+              {t(section.titleKey)}
             </Typography>
           </Box>
           <Grid container spacing={3} sx={{ mb: { xs: 8, md: 10 } }}>
@@ -129,14 +134,14 @@ export default function FuncionalidadesPage() {
       {/* Deep Dive — TTS */}
       <FeatureShowcase
         icon={Mic}
-        title="Áudio Profissional com Gemini TTS"
-        description="Nosso motor de TTS usa o modelo mais avançado do Gemini para gerar narrações naturais com controle total sobre todos os parâmetros de voz."
+        title={t('features.ttsShowcase.title')}
+        description={t('features.ttsShowcase.description')}
         benefits={[
-          'Suporte a 14+ parâmetros de estúdio no Inspector',
-          'Detecção automática de cenas via análise RMS do áudio gerado',
-          'Calibra automática do threshold de silêncio em até 3 iterações',
-          'Retry inteligente: 3 tentativas com jitter e backoff exponencial',
-          'Voice previews estáticos WAV para playback instantâneo',
+          t('features.ttsShowcase.benefits.0'),
+          t('features.ttsShowcase.benefits.1'),
+          t('features.ttsShowcase.benefits.2'),
+          t('features.ttsShowcase.benefits.3'),
+          t('features.ttsShowcase.benefits.4'),
         ]}
         visual={
           <Box
@@ -157,14 +162,14 @@ export default function FuncionalidadesPage() {
       {/* Deep Dive — Vídeo */}
       <FeatureShowcase
         icon={PlayCircle}
-        title="Vídeo Sem Servidor"
-        description="Toda a renderização acontece no seu navegador. Nenhum upload de vídeo, nenhum custo de processamento. Total privacidade e controle."
+        title={t('features.videoShowcase.title')}
+        description={t('features.videoShowcase.description')}
         benefits={[
-          'Codec fallback: H.264+AAC+MP4 > H.264 > VP8+Opus+WebM',
-          'Transcrição Whisper WASM embutida (sem backend)',
-          'Editor inline de estilo de legendas (fontSize, padding, borderRadius, opacity)',
-          'Waveform overlay que desabilita durante exportação para performance',
-          'Canvas patch para correção de bug font-stretch no Remotion',
+          t('features.videoShowcase.benefits.0'),
+          t('features.videoShowcase.benefits.1'),
+          t('features.videoShowcase.benefits.2'),
+          t('features.videoShowcase.benefits.3'),
+          t('features.videoShowcase.benefits.4'),
         ]}
         position="left"
         visual={
@@ -186,13 +191,13 @@ export default function FuncionalidadesPage() {
       {/* Deep Dive — Imagens */}
       <FeatureShowcase
         icon={ImageIcon}
-        title="Imagens com Referência Visual"
-        description="Gere imagens com Gemini usando prompts textuais e, opcionalmente, uma imagem de referência para guiar o estilo e composição."
+        title={t('features.imagesShowcase.title')}
+        description={t('features.imagesShowcase.description')}
         benefits={[
-          '8 aspect ratios: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9',
-          'Frameworks visuais: cinema/fotografia ou whiteboard',
-          'Geração de cenas automática a partir do roteiro',
-          'Persistência dual: Firestore + IndexedDB',
+          t('features.imagesShowcase.benefits.0'),
+          t('features.imagesShowcase.benefits.1'),
+          t('features.imagesShowcase.benefits.2'),
+          t('features.imagesShowcase.benefits.3'),
         ]}
         visual={
           <Box
@@ -213,9 +218,9 @@ export default function FuncionalidadesPage() {
       {/* CTA Final */}
       <Box sx={{ pt: { xs: 4, md: 8 } }}>
         <CTASection
-          title="Pronto para criar?"
-          subtitle="Comece a usar todas essas features gratuitamente."
-          buttonLabel="Começar Grátis"
+          title={t('features.cta.title')}
+          subtitle={t('features.cta.subtitle')}
+          buttonLabel={t('features.cta.button')}
           buttonHref="/cadastro"
         />
       </Box>

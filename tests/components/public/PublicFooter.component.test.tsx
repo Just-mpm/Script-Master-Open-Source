@@ -1,17 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { PublicFooter } from '../../../src/components/public/PublicFooter';
+import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
@@ -26,6 +29,10 @@ vi.mock('../../../src/theme/tokens', () => ({
 }));
 
 describe('PublicFooter', () => {
+  beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
+  });
+
   it('renderiza como elemento footer', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
     expect(screen.getByRole('contentinfo')).toBeDefined();

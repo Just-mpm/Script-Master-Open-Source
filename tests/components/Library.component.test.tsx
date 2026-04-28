@@ -5,11 +5,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { Library } from '../../src/components/Library';
 import type { Project, AudioSource, ProjectImage } from '../../src/lib/db';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 const mockUser = { uid: 'user-123', displayName: 'Test', photoURL: null };
@@ -93,6 +98,7 @@ vi.mock('../../src/theme/tokens', () => ({
 
 describe('Library', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
   });
 

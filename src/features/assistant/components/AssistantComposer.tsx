@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
+import { useLocale } from '../../../features/i18n';
 import {
   ICON_SIZE_SM,
   ICON_SIZE_MD,
@@ -51,6 +52,8 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   onRemoveFile,
   onStopGeneration,
 }: AssistantComposerProps) {
+  const { t } = useLocale();
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit();
@@ -113,17 +116,17 @@ export const AssistantComposer = React.memo(function AssistantComposer({
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Peça ajustes de roteiro, ideias de voz, ritmo, cena ou análise de anexos…"
+          placeholder={t('assistant.composer.placeholder')}
           fullWidth
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start" sx={{ alignSelf: 'flex-end', mb: 0.25 }}>
-                  <Tooltip title="Anexar arquivo">
+                  <Tooltip title={t('assistant.composer.attachFile')}>
                     <IconButton
                       onClick={() => fileInputRef.current?.click()}
                       edge="start"
-                      aria-label="Anexar arquivo"
+                      aria-label={t('assistant.composer.attachFileAria')}
                       size="small"
                       sx={{
                         color: TEXT_DISABLED,
@@ -138,10 +141,10 @@ export const AssistantComposer = React.memo(function AssistantComposer({
               endAdornment: (
                 <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 0.25, mr: 0.25 }}>
                   {isLoading ? (
-                    <Tooltip title="Parar geração">
+                    <Tooltip title={t('assistant.composer.stopGeneration')}>
                       <IconButton
                         onClick={onStopGeneration || onSubmit}
-                        aria-label="Parar geração"
+                        aria-label={t('assistant.composer.stopGeneration')}
                         size="small"
                         sx={{
                           ...assistantSendButtonSx,
@@ -169,7 +172,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                       endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM, ml: -0.5 }} />}
                       sx={assistantSendButtonSx}
                     >
-                      Enviar
+                      {t('assistant.composer.send')}
                     </Button>
                   )}
                 </InputAdornment>

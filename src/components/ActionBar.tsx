@@ -23,8 +23,10 @@ import { downloadFile } from '../lib/download';
 import { useGlobalAudioActions, useAudioIsPlaying, useAudioCurrentTime, useAudioDuration } from '../contexts/AudioContext';
 import type { VideoPreviewHandle } from './VideoPreview';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
+import { useLocale } from '../features/i18n';
 import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP,   BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
+import { alpha } from '@mui/material/styles';
 
 interface ActionBarProps {
   isGenerating: boolean;
@@ -67,6 +69,7 @@ export function ActionBar({
   isExportingVideo = false,
   videoExportProgress = 0,
 }: ActionBarProps) {
+  const { t } = useLocale();
   const [downloadAnchorEl, setDownloadAnchorEl] = React.useState<HTMLElement | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
@@ -207,10 +210,10 @@ export function ActionBar({
 
   const handleDownloadAllImages = async () => {
     setIsDownloadingAll(true);
-    setDownloadProgress(`Baixando cena 1/${scenes.length}...`);
+    setDownloadProgress(t('studio.actionBar.downloadingScene', { current: 1, total: scenes.length }));
 
     for (const [index, sceneItem] of scenes.entries()) {
-      setDownloadProgress(`Baixando cena ${index + 1}/${scenes.length}...`);
+      setDownloadProgress(t('studio.actionBar.downloadingScene', { current: index + 1, total: scenes.length }));
       await new Promise((resolve) => window.setTimeout(resolve, 400));
       await downloadFile(sceneItem.imageUrl, `cena-${index}.png`);
     }
@@ -222,8 +225,9 @@ export function ActionBar({
 
   return (
     <Box
+      id="action-bar"
       role="region"
-      aria-label="Controles de áudio e geração"
+      aria-label={t('studio.actionBar.ariaLabel')}
       sx={{
         position: 'fixed',
         left: '50%',
@@ -233,6 +237,19 @@ export function ActionBar({
         width: '100%',
         px: { xs: 2, sm: 3 },
         pointerEvents: 'none',
+        pb: 'env(safe-area-inset-bottom, 0px)',
+        // Visual cue — gradiente para indicar conteúdo atrás
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: -32,
+          left: 0,
+          right: 0,
+          height: 32,
+          background: `linear-gradient(to bottom, transparent, ${alpha('#0a0a0f', 0.6)})`,
+          pointerEvents: 'none',
+          zIndex: -1,
+        },
       }}
     >
       <Stack spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
@@ -255,7 +272,7 @@ export function ActionBar({
               <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {statusText || 'Gerando cenas visuais...'}
+                  {statusText || t('studio.actionBar.generatingScenes')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                   {generationProgress}%
@@ -264,7 +281,7 @@ export function ActionBar({
                 <LinearProgress
                 variant="determinate"
                 value={generationProgress}
-                aria-label="Progresso da geração de cenas visuais"
+                aria-label={t('studio.actionBar.sceneProgressLabel')}
                 sx={{
                   mt: 0.5,
                   height: 8,
@@ -279,7 +296,7 @@ export function ActionBar({
               </Stack>
             </Box>
 
-            <Tooltip title="Cancelar geração de imagens">
+            <Tooltip title={t('studio.actionBar.cancelImages')}>
               <IconButton onClick={handleCancel} color="error" sx={{ pointerEvents: 'auto' }}>
                 <Stop sx={{ fontSize: ICON_SIZE_MD }} />
               </IconButton>
@@ -312,7 +329,7 @@ export function ActionBar({
                   <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
                     <CircularProgress size={18} thickness={5} />
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', flex: 1 }} noWrap>
-                      {statusText || 'Sintetizando voz...'}
+                      {statusText || t('studio.actionBar.synthesizingVoice')}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                       {generationProgress}%
@@ -322,7 +339,7 @@ export function ActionBar({
                   <LinearProgress
                     variant="determinate"
                     value={generationProgress}
-                    aria-label="Progresso da geração de áudio"
+                    aria-label={t('studio.actionBar.audioProgressLabel')}
                     sx={{
                       height: 8,
                       borderRadius: RADIUS_CHIP,
@@ -338,7 +355,7 @@ export function ActionBar({
                 <Stack direction="row" spacing={{ xs: 1.25, sm: 2 }} sx={{ alignItems: 'center' }}>
                     <IconButton
                       onClick={handleToggle}
-                    aria-label={displayIsPlaying ? 'Pausar reprodução' : 'Iniciar reprodução'}
+                    aria-label={displayIsPlaying ? t('studio.actionBar.pausePlayback') : t('studio.actionBar.startPlayback')}
                     aria-pressed={displayIsPlaying}
                     color="primary"
                     sx={{
@@ -368,12 +385,12 @@ export function ActionBar({
                       <Box
                         onClick={handleProgressClick}
                         role="slider"
-                        aria-label={isRemotionActive ? 'Progresso do vídeo' : 'Progresso do áudio'}
+                        aria-label={isRemotionActive ? t('studio.actionBar.videoProgress') : t('studio.actionBar.audioProgress')}
                         aria-orientation="horizontal"
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={progressValue}
-                        aria-valuetext={`${formatTime(displayCurrentTime)} de ${formatTime(displayDuration)}`}
+                        aria-valuetext={t('studio.actionBar.progressOf', { current: formatTime(displayCurrentTime), duration: formatTime(displayDuration) })}
                         tabIndex={0}
                         onKeyDown={handleProgressKeyDown}
                         sx={{
@@ -418,12 +435,12 @@ export function ActionBar({
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
                 {/* Botão de exportar vídeo (rota /video) */}
                 {isVideoRoute && showPlayer && onScrollToExport && (scenes?.length ?? 0) > 0 && (
-                  <Tooltip title={isExportingVideo ? `Exportando vídeo... ${videoExportProgress}%` : 'Exportar vídeo MP4'}>
+                  <Tooltip title={isExportingVideo ? t('studio.actionBar.exportingVideoProgress', { progress: videoExportProgress }) : t('studio.actionBar.exportVideoMp4')}>
                     <span>
                       <IconButton
                         onClick={onScrollToExport}
                         disabled={isExportingVideo}
-                        aria-label={isExportingVideo ? 'Exportando vídeo' : 'Exportar vídeo MP4'}
+                        aria-label={isExportingVideo ? t('studio.actionBar.exportingVideo') : t('studio.actionBar.exportVideoMp4')}
                         sx={{
                           bgcolor: isExportingVideo
                             ? BRAND_PRIMARY_GLOW_SOFT
@@ -447,13 +464,13 @@ export function ActionBar({
 
                 {showPlayer && handleSaveToLibrary ? (
                   <>
-                    <Tooltip title={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}>
+                    <Tooltip title={isSaved ? t('studio.actionBar.savedToLibrary') : t('studio.actionBar.saveToLibrary')}>
                       <span>
                         <IconButton
                           onClick={handleSaveToLibrary}
                           disabled={isSaved}
                           color={isSaved ? 'success' : 'default'}
-                          aria-label={isSaved ? 'Áudio salvo na biblioteca' : 'Salvar áudio na biblioteca'}
+                          aria-label={isSaved ? t('studio.actionBar.savedToLibrary') : t('studio.actionBar.saveToLibrary')}
                           sx={{
                             bgcolor: isSaved ? 'success.main' : 'action.hover',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -467,10 +484,10 @@ export function ActionBar({
                       </span>
                     </Tooltip>
 
-                    <Tooltip title="Opções de download">
+                    <Tooltip title={t('studio.actionBar.downloadOptions')}>
                       <IconButton
                         onClick={(event) => setDownloadAnchorEl(event.currentTarget)}
-                        aria-label="Opções de download"
+                        aria-label={t('studio.actionBar.downloadOptions')}
                         sx={{
                           bgcolor: 'action.hover',
                           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -489,8 +506,8 @@ export function ActionBar({
                     '&:hover': {
                       boxShadow: '0 4px 16px rgba(239, 68, 68, 0.2)',
                     },
-                  }}>
-                    Cancelar
+                   }}>
+                    {t('studio.actionBar.cancel')}
                   </Button>
                 ) : null}
               </Stack>
@@ -522,7 +539,7 @@ export function ActionBar({
             closeDownloadMenu();
           }}
         >
-          Download áudio (.wav)
+          {t('studio.actionBar.downloadAudio')}
         </MenuItem>
 
         {scenes.length > 0 ? [
@@ -533,7 +550,7 @@ export function ActionBar({
             sx={{ gap: 2 }}
           >
             <span style={{ flex: 1 }}>
-              {isDownloadingAll ? downloadProgress : 'Download todas as imagens'}
+              {isDownloadingAll ? downloadProgress : t('studio.actionBar.downloadAllImages')}
             </span>
             {isDownloadingAll ? <CircularProgress size={16} thickness={2.5} /> : null}
           </MenuItem>,
@@ -547,7 +564,7 @@ export function ActionBar({
               }}
               sx={{ justifyContent: 'space-between', gap: 2 }}
             >
-              <span>Cena {index + 1}</span>
+              <span>{t('studio.actionBar.scene', { number: index + 1 })}</span>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>
                 {formatTime(sceneItem.timestamp)}
               </Typography>

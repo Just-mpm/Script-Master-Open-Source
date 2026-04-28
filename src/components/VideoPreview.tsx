@@ -14,6 +14,7 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import SubtitlesOutlined from '@mui/icons-material/SubtitlesOutlined';
 import SubtitlesOffOutlined from '@mui/icons-material/SubtitlesOffOutlined';
 import { createLogger } from '../lib/logger';
+import { useLocale } from '../features/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
@@ -66,6 +67,12 @@ export interface VideoPreviewHandle {
 
 interface VideoPlayerErrorBoundaryProps {
   children: ReactNode;
+  /** Strings localizadas para o fallback de erro */
+  readonly errorStrings: {
+    readonly title: string;
+    readonly message: string;
+    readonly retry: string;
+  };
 }
 
 interface VideoPlayerErrorBoundaryState {
@@ -113,16 +120,16 @@ class VideoPlayerErrorBoundary extends Component<
           }}
         >
           <ErrorOutlineOutlined sx={{ fontSize: 40, color: TEXT_SECONDARY }} />
-          <Stack spacing={GAP_COMPACT}>
+            <Stack spacing={GAP_COMPACT}>
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
-              Erro ao renderizar o vídeo
+              {this.props.errorStrings.title}
             </Typography>
             <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-              Ocorreu um problema durante a composição. Tente recarregar.
+              {this.props.errorStrings.message}
             </Typography>
           </Stack>
           <Button variant="outlined" size="small" onClick={this.handleRetry} sx={{ mt: 1 }}>
-            Tentar novamente
+            {this.props.errorStrings.retry}
           </Button>
         </Stack>
       );
@@ -140,6 +147,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
   function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle, showCaptionToggle, onCaptionToggle, captionVisible = true }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
+    const { t } = useLocale();
 
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
@@ -231,9 +239,9 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               <MovieCreation sx={{ fontSize: 24, opacity: 0.35 }} />
             </Box>
             <Stack spacing={GAP_COMPACT}>
-              <Typography variant="h6">Preview de vídeo aguardando cenas</Typography>
+              <Typography variant="h6">{t('video.preview.title')}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.
+                {t('video.preview.description')}
               </Typography>
               <Button
                 variant="outlined"
@@ -241,7 +249,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 onClick={() => navigate('/app/estudio')}
                 sx={{ mt: 0.5, alignSelf: 'center' }}
               >
-                Ir para o Estúdio
+                {t('video.preview.goToStudio')}
               </Button>
             </Stack>
           </Stack>
@@ -261,7 +269,11 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           lineHeight: 0,
         })}
       >
-        <VideoPlayerErrorBoundary>
+        <VideoPlayerErrorBoundary errorStrings={{
+          title: t('errors.video.title'),
+          message: t('errors.video.message'),
+          retry: t('errors.video.retry'),
+        }}>
           <Player
             ref={internalRef}
             component={VideoComposition}
@@ -277,9 +289,9 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
         {/* Botão flutuante para alternar legenda no preview (canto inferior esquerdo) */}
         {showCaptionToggle && captions != null && captions.length > 0 && (
-          <Tooltip title={captionVisible ? 'Legenda visível' : 'Legenda oculta'} placement="right" arrow>
+          <Tooltip title={captionVisible ? t('video.preview.captionVisible') : t('video.preview.captionHidden')} placement="right" arrow>
             <IconButton
-              aria-label={captionVisible ? 'Ocultar legenda' : 'Mostrar legenda'}
+              aria-label={captionVisible ? t('video.preview.hideCaption') : t('video.preview.showCaption')}
               onClick={onCaptionToggle}
               size="small"
               sx={{

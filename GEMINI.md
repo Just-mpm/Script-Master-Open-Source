@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-SPA em React + Vite para transformar roteiros em áudio com Gemini TTS, geração opcional de imagens/cenas, renderização de vídeo com Remotion, biblioteca de projetos e assistente conversacional.
+SPA em React + Vite para transformar roteiros em áudio com Gemini TTS, geração opcional de imagens/cenas, renderização de vídeo com Remotion, biblioteca de projetos, assistente conversacional e internacionalização (3 idiomas).
 
 Firebase Hosting tradicional (frontend estático, sem backend Node).
 
@@ -46,7 +46,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Convenções
 
-- **Idioma:** pt-BR na UI e comentários, inglês nos prompts de imagem
+- **Idioma:** pt-BR (default), en e es na UI via i18n; comentários em pt-BR; inglês nos prompts de imagem
 - **Alias:** `@/` aponta para a raiz do projeto
 - **Sem backend:** não criar `/api/*`, tudo client-side
 - **Rotas:** lazy loading por rota, páginas em `src/pages/`
@@ -91,11 +91,22 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Domínios
 
+### App Shell & Router
+
+| | |
+|---|---|
+| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/toast/ToastProvider.tsx` |
+| **App.tsx** | Shell enxuto (~160 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider`. Não contém lógica de negócio |
+| **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper |
+| **Redirects** | `src/router/Redirects.tsx` — 9 redirects 301 de compatibilidade |
+| **AudioGenerationHandler** | Componente extraído de App.tsx — encapsula `useAudioGenerator` + lógica de geração |
+| **ToastProvider** | Componente extraído de App.tsx — gerencia ErrorToast/SuccessToast/WarningToast |
+
 ### Páginas Públicas
 
 | | |
 |---|---|
-| **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/components/DocumentHead.tsx`, `src/lib/seo.ts` |
+| **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/data/`, `src/components/DocumentHead.tsx`, `src/lib/seo.ts` |
 | **LandingPage** | `/` — hero com CTA, social proof bar, 6 feature cards, 3 feature showcases, seção "como funciona" (3 steps), CTA final |
 | **FuncionalidadesPage** | `/funcionalidades` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
 | **PricingPage** | `/precos` — cards de plano (mensal/anual), tabela de comparação semântica (`<table>` nativa), FAQ de preços, CTA |
@@ -106,9 +117,9 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **PrivacyPage** | `/privacidade` — política de privacidade |
 | **CookiesPage** | `/cookies` — política de cookies |
 | **StatusPage** | `/status` — status dos serviços |
-| **Componentes** | 12 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile, link "Contato"), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell, sem `component="main"` — landmark em App.tsx), HeroSection, FeatureCard, FeatureShowcase, CTASection (glow laranja), StepCard (glassPanelSx), SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion com a11y), barrel `index.ts` |
+| **Componentes** | 17 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile, link "Contato"), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell, sem `component="main"` — landmark em App.tsx), HeroSection, FeatureCard, FeatureShowcase, CTASection (glow laranja), StepCard (glassPanelSx), SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion com a11y), UseCasesSection, MetricsSection, ProductDemoSection, TestimonialsSection, TestimonialCard, barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
+| **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; OG locale map (`og:locale`) por idioma; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -123,12 +134,13 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
 | **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
 | **AudioContext selectors** | `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — hooks seletivos para re-render otimizado |
+| **Emoções** | `emotion` e `emotionIntensity` (0-1) nas options de geração; persistidos nos tipos de db (`db/types.ts`) |
 
 ### Geração de Imagens
 
 | | |
 |---|---|
-| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx` |
+| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts` |
 | **Pipeline** | prompt (opcional + referência) → Gemini via `withRetry` → extrai `inlineData` → base64ToBlob → blob URL |
 | **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
 | **Retry** | `withRetry`: 3 tentativas, 1000ms base, 500ms jitter (mesmo do TTS) |
@@ -136,6 +148,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
 | **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
+| **Stock Media** | `StockMediaPicker` com busca em array fixo (placeholder, aguarda API real Pexels/Unsplash) |
 
 ### Vídeo (Remotion)
 
@@ -202,7 +215,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx` |
+| **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx`, `src/features/studio/components/TemplateSelector.tsx`, `src/features/studio/components/EmotionSelector.tsx`, `src/data/scriptTemplates.ts` |
 | **Estado** | `useStudioStore` (Zustand) com `useShallow` para seletores otimizados; `useCurrentStudioState()` deriva `StudioDraftState`; sem hook `useStudioState` (removido na 0.22.0) |
 | **Store** | `studioStore.ts` (state + setters + actions), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions`), `index.ts` (barrel exports) |
 | **Persistência** | 14 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only |
@@ -213,6 +226,29 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Inspector** | Lê estado diretamente do `useStudioStore` com `useShallow` — recebe apenas `isGenerating` como prop (22→1 prop desde 0.24.5) |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
 | **Keyboard shortcuts** | `useKeyboardShortcuts`: Ctrl+Enter (gerar), Space (play/pause vídeo e toggle áudio), proteção contra inputs/blocos editáveis focados |
+| **Templates** | `TemplateSelector` (collapsible no Inspector), `TemplateGallery`, `TemplateCard`, `TemplatePreviewDialog` — templates categorizados em `src/data/scriptTemplates.ts` com `TemplateCategory`; StudioPage tem aba dedicada para templates |
+| **Emoções** | `EmotionType` (10 emoções), `EmotionSelector` com slider de intensidade, validação `isValidEmotion`, persistência `getStoredEmotion` — integrado no Inspector e pipeline de geração de áudio via `EMOTION_OPTIONS` |
+
+### Onboarding
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/onboarding/` |
+| **Componentes** | `WelcomeDialog` (boas-vindas + skip), `TourTooltip` (tooltip contextual com Popper MUI), `OnboardingManager` (orquestrador de passos) |
+| **Store** | `useOnboardingStore` (Zustand) — estado do tour, passo atual, concluído; persistido em localStorage |
+| **Passos** | `ONBOARDING_STEPS` em `steps.ts` — array tipado com `OnboardingStep` (target, title, content, placement, action) |
+| **Integração** | `OnboardingManager` renderizado no `StudioPage` |
+
+### Billing (Foundation)
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/billing/` |
+| **Tipos** | `PlanId` (`'free' | 'pro' | 'business'`), `Plan`, `PlanLimits`, `UsageRecord`, `UsageState`, `UsageAlert` |
+| **Planos** | Gratuito (limites base), Pro (R$ 49,90/mês), Business (R$ 149,90/mês) — definidos em `plans.ts` |
+| **Utilitários** | `checkEntitlement(state, feature)` verifica se o plano atual permite a feature; `UsageIndicator` component para barra de uso |
+| **Componentes** | `PlanBadge` (chip de plano), `UsageIndicator` (progress bar de uso) |
+| **Status** | Base preparada, aguarda decisão de produto para conectar ao app (passo 11 do plano de transformação) |
 
 ### Biblioteca & Projetos
 
@@ -252,6 +288,19 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
 | **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`, `auth/requires-recent-login`) |
 | **Estilos compartilhados** | `authTextFieldSx` (TextField dark theme) e `authLinkSx` (link inline hover) definidos em `src/theme/authStyles.ts` (importados por LoginPage e RegisterPage) |
+
+### Internacionalização (i18n)
+
+| | |
+|---|---|
+| **Arquivos** | `src/features/i18n/`, `src/data/` (authBenefits, pricingFaq, metrics, testimonials, useCases) |
+| **Locales** | pt-BR (default), en, es — dicionários em `src/features/i18n/locales/` |
+| **Provider** | `I18nProvider` no `main.tsx`; hook `useLocale()` retorna `{ locale, setLocale, t }` |
+| **Selector** | `LocaleSelector` (ícone globe) no PublicHeader e Header |
+| **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys |
+| **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'` |
+| **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
+| **Cobertura** | Todas as páginas públicas + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + AssistantComposer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel |
 
 ### Environment & COEP
 
@@ -304,8 +353,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.24.7`
-- **Last release:** 2026-04-27
+- **Current:** `0.25.0`
+- **Last release:** 2026-04-28
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -313,8 +362,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.25.0 | i18n completo (pt-BR, en, es) propagado para toda a UI; onboarding com tour guiado; billing foundation (tipos, planos, checkEntitlement); templates de roteiro (TemplateSelector, galeria, preview); emoções no TTS (10 tipos + slider de intensidade); stock media picker (placeholder); landing page (UseCases, Metrics, ProductDemo, Testimonials); app shell refactor (router/routes.tsx, AudioGenerationHandler, ToastProvider); ~30 novos testes |
 | 0.24.7 | `SpeedPaintScene` sistema de 4 zonas (fade in → animação → hold → fade out) com `interpolate` do Remotion; opacidade via CSS para crossfade real; overlap dinâmico por cena (1s speed paint, 400ms estático); `sendMessage` envolvido em `useCallback`; PWA `navigateFallbackDenylist` com `/__/` para endpoints Firebase Hosting |
 | 0.24.6 | Firestore persistence modernizada (`initializeFirestore` + `persistentLocalCache` + `persistentMultipleTabManager`); `optimizeDeps.include` para mediabunny e sub-pacotes; 3 composite indexes `COLLECTION_GROUP` (audios, images, videos) para queries da galeria |
 | 0.24.5 | Dupla instância `useAudioGenerator` corrigida (CRÍTICO — StudioPage desconectado do ActionBar); imagens de cena LGPD com path correto; galeria exibe vídeos exportados; race condition no `useVideoExporter`; `deleteUser` antes do cleanup LGPD; email verification gate no ProtectedRoute; Firestore offline persistence; `Promise.all` no assistente; `retryLastMessage`; `deleteChatSession` dual-delete; `Inspector` 22→1 prop; ActionBar seletores primitivos; `SpeedPaintControls` props primitivas; 3 CTAs para `/cadastro`; link Contato no header; tabela semântica PricingPage; FAQAccordion a11y; `searchFieldSx` extraído; dead code cleanup (11 exports, 1 dep, 4 animations); `limit(100)` em todas as queries; upload resumável >10MB; `transaction.oncomplete` no IndexedDB |
 | 0.24.4 | `react-helmet-async` removido — migrado para SEO nativo do React 19 (`<title>`, `<meta>`, `<link>` com hoisting automático); `DocumentHead` componente em `src/components/DocumentHead.tsx`; interfaces próprias `SeoMeta`/`SeoLink`/`SeoData` em `seo.ts`; `HelmetProvider` removido do `main.tsx`; 14 páginas migradas |
-| 0.24.3 | IndexedDB cleanup LGPD na exclusão de conta; TTS retry 500; chat sessions merge Firestore+IndexedDB; chat save fallback IndexedDB; EmptyChatState funcional (welcome-only detection); botão Parar do composer conectado; migração com retry em erros parciais; batch download com falha individual; upload >10MB com feedback; truncamento de documento com aviso; beforeunload durante geração/exportação; SEO no LoginPage; authBenefits DRY; skip-to-content/id duplicados removidos; Whisper docs tiny; contactPage window.open |

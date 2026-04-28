@@ -17,6 +17,7 @@ import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
+import { useLocale } from '../../features/i18n';
 import {
   TEXT_SECONDARY,
   SUCCESS_MAIN,
@@ -49,45 +50,7 @@ interface StatusConfigItem {
   icon: ReactElement;
 }
 
-// ── Constantes de dados ──────────────────────────────────────────────
-
-const SERVICES: readonly ServiceInfo[] = [
-  {
-    name: 'API Gemini (IA)',
-    description: 'Geração de áudio, imagens e assistente conversacional',
-    status: 'operational',
-  },
-  {
-    name: 'Firebase Auth',
-    description: 'Autenticação e gerenciamento de contas',
-    status: 'operational',
-  },
-  {
-    name: 'Firebase Firestore',
-    description: 'Banco de dados e sincronização de projetos',
-    status: 'operational',
-  },
-  {
-    name: 'Firebase Storage',
-    description: 'Armazenamento de áudios, imagens e vídeos',
-    status: 'operational',
-  },
-  {
-    name: 'Renderização de Vídeo',
-    description: 'Processamento client-side via WebCodecs',
-    status: 'operational',
-  },
-] as const;
-
-const STATUS_CONFIG: Record<ServiceStatus, StatusConfigItem> = {
-  operational: { label: 'Operacional', color: 'success', icon: <CheckCircleIcon /> },
-  degraded: { label: 'Degradado', color: 'warning', icon: <WarningIcon /> },
-  outage: { label: 'Indisponível', color: 'error', icon: <ErrorIcon /> },
-  maintenance: { label: 'Manutenção', color: 'info', icon: <BuildIcon /> },
-};
-
-const GLOBAL_STATUS = 'Todos os sistemas operacionais';
-const LAST_CHECK = `Última atualização: build ${new Date().toISOString().split('T')[0]} (dados informativos)`;
+// ── Dados estáticos ──────────────────────────────────────────────────
 
 /** Incidentes recentes (dados estáticos, atualizados manualmente) */
 interface Incident {
@@ -132,6 +95,8 @@ function getStatusColor(status: ServiceStatus): string {
 
 /** Banner com status global de todos os serviços */
 function GlobalStatusBanner() {
+  const { t } = useLocale();
+
   return (
     <Box
       sx={(theme) => ({
@@ -157,7 +122,7 @@ function GlobalStatusBanner() {
           <VerifiedUserIcon aria-hidden="true" sx={{ fontSize: 28, color: SUCCESS_MAIN }} />
         </Box>
         <Typography variant="h5" component="p" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
-          {GLOBAL_STATUS}
+          {t('status.globalStatus')}
         </Typography>
       </Stack>
     </Box>
@@ -165,8 +130,14 @@ function GlobalStatusBanner() {
 }
 
 /** Card individual de um serviço */
-function ServiceCard({ service }: { service: ServiceInfo }) {
-  const { label, color, icon } = STATUS_CONFIG[service.status];
+function ServiceCard({
+  service,
+  statusConfig,
+}: {
+  service: ServiceInfo;
+  statusConfig: Record<ServiceStatus, StatusConfigItem>;
+}) {
+  const { label, color, icon } = statusConfig[service.status];
   const statusColor = getStatusColor(service.status);
 
   return (
@@ -217,10 +188,10 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
   );
 }
 
-// ── Componente principal ─────────────────────────────────────────────
-
 /** Seção de histórico de incidentes com timeline estática */
 function IncidentHistory() {
+  const { t } = useLocale();
+
   if (RECENT_INCIDENTS.length === 0) return null;
 
   return (
@@ -229,7 +200,7 @@ function IncidentHistory() {
         <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 3 }}>
           <Timeline aria-hidden="true" sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
           <Typography variant="h6" component="h2" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
-            Últimos 90 dias
+            {t('status.incidents.title')}
           </Typography>
         </Stack>
 
@@ -249,7 +220,7 @@ function IncidentHistory() {
                   {incident.date}
                 </Typography>
                 <Chip
-                  label={incident.severity === 'resolved' ? 'Resolvido' : 'Degradado'}
+                  label={incident.severity === 'resolved' ? t('status.incidents.resolved') : t('status.incidents.degraded')}
                   color={incident.severity === 'resolved' ? 'success' : 'warning'}
                   size="small"
                   variant="outlined"
@@ -270,28 +241,69 @@ function IncidentHistory() {
   );
 }
 
+// ── Componente principal ─────────────────────────────────────────────
+
 export default function StatusPage() {
+  const { t, locale } = useLocale();
+
   const seo = getPageSeo({
-    title: 'Status dos Serviços',
-    description: 'Status informativo dos serviços do Script Master. Dados atualizados manualmente.',
+    title: t('seo.status.title'),
+    description: t('seo.status.description'),
     path: '/status',
   });
 
+  // ── Serviços monitorados — dentro do componente para acessar t() ──
+  const SERVICES: readonly ServiceInfo[] = [
+    {
+      name: t('status.services.api.name'),
+      description: t('status.services.api.description'),
+      status: 'operational',
+    },
+    {
+      name: t('status.services.auth.name'),
+      description: t('status.services.auth.description'),
+      status: 'operational',
+    },
+    {
+      name: t('status.services.firestore.name'),
+      description: t('status.services.firestore.description'),
+      status: 'operational',
+    },
+    {
+      name: t('status.services.storage.name'),
+      description: t('status.services.storage.description'),
+      status: 'operational',
+    },
+    {
+      name: t('status.services.video.name'),
+      description: t('status.services.video.description'),
+      status: 'operational',
+    },
+  ];
+
+  // ── Configuração visual por status — dentro do componente para acessar t() ──
+  const STATUS_CONFIG: Record<ServiceStatus, StatusConfigItem> = {
+    operational: { label: t('status.statusLabels.operational'), color: 'success', icon: <CheckCircleIcon /> },
+    degraded: { label: t('status.statusLabels.degraded'), color: 'warning', icon: <WarningIcon /> },
+    outage: { label: t('status.statusLabels.outage'), color: 'error', icon: <ErrorIcon /> },
+    maintenance: { label: t('status.statusLabels.maintenance'), color: 'info', icon: <BuildIcon /> },
+  };
+
   return (
     <>
-      <DocumentHead {...seo} />
+      <DocumentHead {...seo} locale={locale} />
       <PageLayout>
       {/* Hero */}
       <HeroSection
-        title="Status dos Serviços"
-        subtitle="Status informativo dos serviços do Script Master. Dados atualizados manualmente."
+        title={t('status.hero.title')}
+        subtitle={t('status.hero.subtitle')}
         showGlow={false}
       />
 
       {/* Disclaimer — dados informativos (antes do banner para evitar falsos positivos) */}
       <Box sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 2, md: 3 }, mx: { xs: 2, sm: 3 } }}>
         <Alert severity="info" variant="outlined" role="status">
-          Os dados exibidos nesta página são informativos e não representam monitoramento em tempo real. O status real dos serviços depende de terceiros (Google Gemini, Firebase).
+          {t('status.disclaimer')}
         </Alert>
       </Box>
 
@@ -304,7 +316,7 @@ export default function StatusPage() {
       <Box sx={{ pb: { xs: 4, md: 6 } }}>
         <Grid container spacing={3}>
           {SERVICES.map((service) => (
-            <ServiceCard key={service.name} service={service} />
+            <ServiceCard key={service.name} service={service} statusConfig={STATUS_CONFIG} />
           ))}
         </Grid>
       </Box>
@@ -317,7 +329,7 @@ export default function StatusPage() {
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center' }}>
           <AccessTimeIcon aria-hidden="true" sx={{ fontSize: ICON_SIZE_LG, color: TEXT_SECONDARY }} />
           <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-            {LAST_CHECK}
+            {t('status.lastCheck', { date: new Date().toISOString().split('T')[0] })}
           </Typography>
         </Stack>
       </Box>

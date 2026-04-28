@@ -14,6 +14,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { useLocale } from '../../../features/i18n';
 import Close from '@mui/icons-material/Close';
 import Delete from '@mui/icons-material/Delete';
 import History from '@mui/icons-material/History';
@@ -48,6 +49,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
   onSelectSession,
   onDeleteHistory,
 }: AssistantHistoryPanelProps) {
+  const { t } = useLocale();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filtra sessões por título com base na busca
@@ -78,16 +80,16 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <History sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>Histórico de chats</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.history.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-              Retome conversas anteriores sem perder o contexto criativo.
+              {t('assistant.history.subtitle')}
             </Typography>
           </Stack>
 
           <IconButton
             onClick={onClose}
-            aria-label="Fechar histórico"
+            aria-label={t('assistant.history.closeAria')}
             sx={{
               '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT },
             }}
@@ -102,7 +104,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
             <TextField
               type="search"
               size="small"
-              placeholder="Buscar no histórico…"
+              placeholder={t('assistant.history.searchPlaceholder')}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               fullWidth
@@ -119,7 +121,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                         <IconButton
                           size="small"
                           onClick={() => setSearchQuery('')}
-                          aria-label="Limpar busca"
+                          aria-label={t('assistant.history.clearSearchAria')}
                           sx={{ mr: -0.5 }}
                         >
                           <Close sx={{ fontSize: ICON_SIZE_SM }} />
@@ -163,9 +165,9 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                 <History sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
               </Box>
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Nenhum chat salvo ainda</Typography>
+                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.history.noChats')}</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                  Quando você conversar com o assistente, as sessões aparecem aqui para reuso rápido.
+                  {t('assistant.history.noChatsDescription')}
                 </Typography>
               </Stack>
             </Stack>
@@ -173,9 +175,9 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
             <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 240, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
               <Search sx={{ fontSize: 44, color: TEXT_DISABLED }} />
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>Nenhum chat encontrado</Typography>
+                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.history.noResults')}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Nenhuma sessão corresponde a &ldquo;{searchQuery}&rdquo;.
+                  {t('assistant.history.noResultsDescription', { query: searchQuery })}
                 </Typography>
               </Stack>
             </Stack>
@@ -204,11 +206,11 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                       }
                     />
 
-                    <Tooltip title="Excluir conversa">
+                    <Tooltip title={t('assistant.history.deleteConversation')}>
                       <IconButton
                         onClick={(event) => onDeleteHistory(event, session.id)}
                         color="error"
-                        aria-label="Excluir conversa"
+                        aria-label={t('assistant.history.deleteConversationAria')}
                         sx={{
                           opacity: 0.5,
                           transition: 'opacity 0.15s ease',

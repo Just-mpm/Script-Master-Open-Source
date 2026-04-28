@@ -1,17 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import LandingPage from '../../../src/pages/public/LandingPage';
+import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
@@ -38,6 +41,10 @@ vi.mock('../../../src/theme/surfaces', () => ({
 }));
 
 describe('LandingPage', () => {
+  beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
+  });
+
   it('renderiza sem crash', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     expect(screen.getByText('Transforme roteiros em arte com IA')).toBeDefined();
@@ -122,5 +129,41 @@ describe('LandingPage', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     const ctaLink = screen.getByRole('link', { name: /Ver Funcionalidades/i });
     expect(ctaLink.getAttribute('href')).toBe('/funcionalidades');
+  });
+
+  // ── Novas seções de marketing ───────────────────────────────
+
+  it('renderiza a seção de Casos de Uso (UseCasesSection)', () => {
+    render(<LandingPage />, { wrapper: Wrapper });
+    expect(screen.getByText('Vídeos para YouTube')).toBeDefined();
+    expect(screen.getByText('Podcasts e áudios')).toBeDefined();
+    expect(screen.getByText('Acessibilidade')).toBeDefined();
+  });
+
+  it('renderiza a seção de Métricas (MetricsSection)', () => {
+    render(<LandingPage />, { wrapper: Wrapper });
+    expect(screen.getByText('Roteiros processados')).toBeDefined();
+    expect(screen.getByText('Minutos de áudio')).toBeDefined();
+    expect(screen.getByText('Criadores ativos')).toBeDefined();
+    expect(screen.getByText('Satisfação')).toBeDefined();
+  });
+
+  it('renderiza a seção de Demo do Produto (ProductDemoSection)', () => {
+    render(<LandingPage />, { wrapper: Wrapper });
+    expect(screen.getByText('Script Master — Estúdio de Produção')).toBeDefined();
+  });
+
+  it('renderiza a seção de Depoimentos (TestimonialsSection)', () => {
+    render(<LandingPage />, { wrapper: Wrapper });
+    expect(screen.getByText('Lucas Andrade')).toBeDefined();
+    expect(screen.getByText('Camila Ferreira')).toBeDefined();
+    expect(screen.getByText('Ricardo Mendes')).toBeDefined();
+  });
+
+  it('o CTA da Demo aponta para /cadastro', () => {
+    render(<LandingPage />, { wrapper: Wrapper });
+    const demoCta = screen.getByRole('link', { name: /Experimente grátis/i });
+    expect(demoCta).toBeDefined();
+    expect(demoCta.getAttribute('href')).toBe('/cadastro');
   });
 });

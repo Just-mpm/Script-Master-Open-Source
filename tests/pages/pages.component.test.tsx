@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { I18nProvider } from '../../src/features/i18n';
 
 // --- Mocks comuns para todas as pages ---
 
@@ -394,7 +395,11 @@ import { RegisterPage } from '../../src/pages/RegisterPage';
 import { StudioPage } from '../../src/pages/StudioPage';
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  return render(
+    <I18nProvider>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </I18nProvider>,
+  );
 }
 
 const defaultAuth = {
@@ -411,6 +416,7 @@ const defaultAuth = {
 
 describe('Pages — Renderização', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue(defaultAuth);
   });

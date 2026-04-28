@@ -34,6 +34,7 @@ import {
   VIEWPORT_ONCE,
   roadmapItem,
 } from '../../components/public/animations';
+import { useLocale } from '../../features/i18n';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -62,28 +63,16 @@ interface RoadmapItem {
   status: RoadmapStatus;
 }
 
-// ── Constantes de dados ──────────────────────────────────────────────
+/** Labels de status traduzidos, passados para RoadmapRow */
+interface StatusLabels {
+  done: string;
+  current: string;
+  planned: string;
+}
 
-const VALUES: readonly ValueCard[] = [
-  {
-    icon: <LightbulbIcon aria-hidden="true" />,
-    title: 'Criatividade',
-    description:
-      'Acreditamos que a tecnologia deve amplificar a criatividade humana, não substituí-la. Por isso, construímos ferramentas que dão poder ao criador.',
-  },
-  {
-    icon: <TouchAppIcon aria-hidden="true" />,
-    title: 'Simplicidade',
-    description:
-      'Transformar roteiros em produções profissionais não deveria ser complicado. Cada funcionalidade é pensada para ser intuitiva e acessível.',
-  },
-  {
-    icon: <RocketLaunchIcon aria-hidden="true" />,
-    title: 'Inovação',
-    description:
-      'Estamos na fronteira da IA generativa aplicada à produção de conteúdo. Nosso compromisso é trazer o que há de mais avançado para seu dia a dia.',
-  },
-];
+type ChipColor = 'success' | 'warning' | 'info';
+
+// ── Constantes de dados (não traduzíveis) ────────────────────────────
 
 const TEAM: readonly TeamMember[] = [
   { name: 'Koda AI Studio', role: 'Criação e Desenvolvimento' },
@@ -134,29 +123,11 @@ const ROADMAP: readonly RoadmapItem[] = [
   },
 ];
 
-const MISSION_TITLE = 'Nossa Missão';
-const MISSION_TEXT =
-  'Democratizar a produção de conteúdo de áudio e vídeo, permitindo que qualquer pessoa transforme suas ideias em produções profissionais com o poder da inteligência artificial.';
-
-const VISION_TITLE = 'Nossa Visão';
-const VISION_TEXT =
-  'Ser a plataforma líder em criação de conteúdo assistida por IA no Brasil, reconhecida pela qualidade, simplicidade e inovação.';
-
-const TEAM_TITLE = 'Quem Somos';
-const TEAM_DESCRIPTION =
-  'Somos uma equipe apaixonada por tecnologia e criação de conteúdo, construindo o futuro da produção audiovisual com inteligência artificial.';
-
-const ROADMAP_TITLE = 'Roadmap Público';
-const ROADMAP_DESCRIPTION =
-  'Conheça os marcos que já alcançamos e o que está por vir.';
-
-type ChipColor = 'success' | 'warning' | 'info';
-
-/** Mapeamento de status para labels e cores */
-const STATUS_CONFIG: Record<RoadmapStatus, { label: string; color: ChipColor }> = {
-  done: { label: 'Concluído', color: 'success' },
-  current: { label: 'Em andamento', color: 'warning' },
-  planned: { label: 'Planejado', color: 'info' },
+/** Mapeamento de status para cores (constante, sem label traduzível) */
+const STATUS_COLORS: Record<RoadmapStatus, ChipColor> = {
+  done: 'success',
+  current: 'warning',
+  planned: 'info',
 };
 
 // ── Helpers de cor por status ────────────────────────────────────────
@@ -272,8 +243,19 @@ function TeamCard({ name, role, avatarUrl }: TeamMember) {
 }
 
 /** Linha do roadmap com dot, badge de versao e descricao */
-function RoadmapRow({ item, isLast, index }: { item: RoadmapItem; isLast: boolean; index: number }) {
-  const { label, color } = STATUS_CONFIG[item.status];
+function RoadmapRow({
+  item,
+  isLast,
+  index,
+  statusLabels,
+}: {
+  item: RoadmapItem;
+  isLast: boolean;
+  index: number;
+  statusLabels: StatusLabels;
+}) {
+  const label = statusLabels[item.status];
+  const color = STATUS_COLORS[item.status];
   const dotColor = getDotColor(item.status);
   const isCurrent = item.status === 'current';
 
@@ -376,27 +358,55 @@ function RoadmapRow({ item, isLast, index }: { item: RoadmapItem; isLast: boolea
 // ── Componente principal ─────────────────────────────────────────────
 
 export default function AboutPage() {
+  const { t, locale } = useLocale();
+
+  // ── Valores traduzidos ────────────────────────────────────────────
+  const values: readonly ValueCard[] = [
+    {
+      icon: <LightbulbIcon aria-hidden="true" />,
+      title: t('about.values.creativity.title'),
+      description: t('about.values.creativity.description'),
+    },
+    {
+      icon: <TouchAppIcon aria-hidden="true" />,
+      title: t('about.values.simplicity.title'),
+      description: t('about.values.simplicity.description'),
+    },
+    {
+      icon: <RocketLaunchIcon aria-hidden="true" />,
+      title: t('about.values.innovation.title'),
+      description: t('about.values.innovation.description'),
+    },
+  ];
+
+  // ── Labels de status traduzidos ──────────────────────────────────
+  const statusLabels: StatusLabels = {
+    done: t('about.roadmap.status.done'),
+    current: t('about.roadmap.status.current'),
+    planned: t('about.roadmap.status.planned'),
+  };
+
   const seo = getPageSeo({
-    title: 'Sobre',
-    description: 'Conheça o Script Master: missão, valores e roadmap de desenvolvimento.',
+    title: t('seo.about.title'),
+    description: t('seo.about.description'),
     path: '/sobre',
   });
 
   return (
     <>
-      <DocumentHead {...seo} />
+      <DocumentHead {...seo} locale={locale} />
       <PageLayout>
       {/* Hero */}
       <HeroSection
-        title="Sobre o Script Master"
-        subtitle="Conheça a história, os valores e o roadmap da plataforma que está transformando a produção de conteúdo com inteligência artificial."
-        primaryCta={{ label: 'Criar conta gratuita', to: '/cadastro' }}
-        secondaryCta={{ label: 'Ver Funcionalidades', to: '/funcionalidades' }}
+        title={t('about.hero.title')}
+        subtitle={t('about.hero.subtitle')}
+        primaryCta={{ label: t('about.hero.cta'), to: '/cadastro' }}
+        secondaryCta={{ label: t('about.hero.ctaSecondary'), to: '/funcionalidades' }}
         visual={
           <Box
             component="img"
             src="/images/public/hero-illustration.webp"
-            alt="Ilustração do Script Master"
+            alt={t('about.hero.alt')}
             sx={{
               maxWidth: { xs: 320, sm: 420, md: 520 },
               width: '100%',
@@ -427,25 +437,25 @@ export default function AboutPage() {
           <Stack spacing={4}>
             <Box>
               <Typography variant="h3" component="h2" sx={{ mb: 2 }}>
-                {MISSION_TITLE}
+                {t('about.mission.title')}
               </Typography>
               <Typography
                 variant="body1"
                 sx={{ color: TEXT_SECONDARY, maxWidth: 640, mx: 'auto', lineHeight: 1.7 }}
               >
-                {MISSION_TEXT}
+                {t('about.mission.text')}
               </Typography>
             </Box>
             <Box sx={{ width: 80, height: 2, mx: 'auto', background: BRAND_GRADIENT, borderRadius: 1 }} />
             <Box>
               <Typography variant="h3" component="h2" sx={{ mb: 2 }}>
-                {VISION_TITLE}
+                {t('about.vision.title')}
               </Typography>
               <Typography
                 variant="body1"
                 sx={{ color: TEXT_SECONDARY, maxWidth: 640, mx: 'auto', lineHeight: 1.7 }}
               >
-                {VISION_TEXT}
+                {t('about.vision.text')}
               </Typography>
             </Box>
           </Stack>
@@ -464,18 +474,18 @@ export default function AboutPage() {
         >
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-              Nossos Valores
+              {t('about.values.title')}
             </Typography>
           </Box>
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
-              Três pilares que guiam cada decisão e funcionalidade da plataforma.
+              {t('about.values.subtitle')}
             </Typography>
           </Box>
         </Box>
 
         <Grid container spacing={3}>
-          {VALUES.map((value) => (
+          {values.map((value) => (
             <Grid size={{ xs: 12, sm: 4 }} key={value.title}>
               <Box
                 component={motion.div}
@@ -504,12 +514,12 @@ export default function AboutPage() {
         >
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-              {TEAM_TITLE}
+              {t('about.team.title')}
             </Typography>
           </Box>
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 560, mx: 'auto', lineHeight: 1.7 }}>
-              {TEAM_DESCRIPTION}
+              {t('about.team.description')}
             </Typography>
           </Box>
         </Box>
@@ -544,12 +554,12 @@ export default function AboutPage() {
         >
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
-              {ROADMAP_TITLE}
+              {t('about.roadmap.title')}
             </Typography>
           </Box>
           <Box component={motion.div} variants={fadeInUp}>
             <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 520, mx: 'auto', lineHeight: 1.7 }}>
-              {ROADMAP_DESCRIPTION}
+              {t('about.roadmap.description')}
             </Typography>
           </Box>
         </Box>
@@ -561,6 +571,7 @@ export default function AboutPage() {
               item={item}
               isLast={index === ROADMAP.length - 1}
               index={index}
+              statusLabels={statusLabels}
             />
           ))}
         </Box>
@@ -569,9 +580,9 @@ export default function AboutPage() {
       {/* CTA Final */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
         <CTASection
-          title="Faça parte dessa história"
-          subtitle="Comece a criar conteúdo profissional com IA. Gratuito, sem cartão de crédito."
-          buttonLabel="Começar agora"
+          title={t('about.cta.title')}
+          subtitle={t('about.cta.subtitle')}
+          buttonLabel={t('about.cta.button')}
           buttonHref="/cadastro"
         />
       </Box>

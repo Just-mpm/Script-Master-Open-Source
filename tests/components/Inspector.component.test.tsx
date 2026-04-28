@@ -5,11 +5,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import type { SceneRatio } from '../../src/features/studio/types';
 import { Inspector } from '../../src/components/Inspector';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 // Estado mock do store — mutável para sobrescrever em testes específicos
@@ -70,6 +75,7 @@ vi.mock('../../src/theme/tokens', () => ({
   RADIUS_SM: 8,
   RADIUS_XS: 4,
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  WHITE_08: 'rgba(255,255,255,0.08)',
 }));
 
 vi.mock('../../src/features/studio/store', () => ({
@@ -78,6 +84,7 @@ vi.mock('../../src/features/studio/store', () => ({
 
 describe('Inspector', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
     // Restaura valores padrão do store mock após testes que os sobrescrevem
     storeMock.isMultiSpeaker = false;

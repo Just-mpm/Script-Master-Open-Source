@@ -28,6 +28,8 @@ interface ProjectSettings {
   sceneDensity: number;
   sceneRatio: string;
   visualFramework?: string;
+  emotion?: string;
+  emotionIntensity?: number;
 }
 
 export interface Project {

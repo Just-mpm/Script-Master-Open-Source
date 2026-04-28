@@ -1,17 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import PricingPage from '../../../src/pages/public/PricingPage';
+import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 
@@ -49,6 +52,10 @@ vi.mock('../../../src/lib/seo', () => ({
 }));
 
 describe('PricingPage', () => {
+  beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
+  });
+
   it('renderiza o título "Escolha o plano ideal para você"', () => {
     render(<PricingPage />, { wrapper: Wrapper });
     expect(screen.getByText('Escolha o plano ideal para você')).toBeDefined();
@@ -76,8 +83,8 @@ describe('PricingPage', () => {
   it('renderiza a tabela comparativa', () => {
     render(<PricingPage />, { wrapper: Wrapper });
     expect(screen.getByText('Compare os planos em detalhes')).toBeDefined();
-    expect(screen.getByText('Geração TTS')).toBeDefined();
-    expect(screen.getByText('Resolução de vídeo')).toBeDefined();
+    expect(screen.getByText('Geração de áudio TTS')).toBeDefined();
+    expect(screen.getByText('Renderização de vídeo')).toBeDefined();
   });
 
   it('alterna entre Mensal e Anual ao clicar no toggle', () => {
