@@ -18,6 +18,8 @@ import { HeroSection } from '../../components/public/HeroSection';
 import { PricingCard } from '../../components/public/PricingCard';
 import { FAQAccordion } from '../../components/public/FAQAccordion';
 import { CTASection } from '../../components/public/CTASection';
+import { PLANS as BILLING_PLANS, formatPrice } from '../../features/billing';
+import type { PlanId } from '../../features/billing';
 import {
   BRAND_PRIMARY,
   BRAND_SECONDARY,
@@ -42,11 +44,12 @@ interface PlanFeature {
   included: boolean;
 }
 
-/** Dados completos de um plano de precos */
+/** Dados completos de um plano de precos (UI + dados do billing) */
 interface PlanData {
   name: string;
-  priceMonthly: string;
-  priceAnnual?: string;
+  planId: PlanId;
+  priceMonthlyCents: number;
+  priceYearlyCents: number;
   priceSubtitle: string;
   description: string;
   features: readonly PlanFeature[];
@@ -60,7 +63,7 @@ interface ComparisonRow {
   feature: string;
   gratuito: string;
   pro: string;
-  equipe: string;
+  business: string;
 }
 
 // ── Constantes de dados ───────────────────────────────────────────────
@@ -229,7 +232,7 @@ function ComparisonTable({ rows }: { rows: readonly ComparisonRow[] }) {
                 sx={{ width: '19.5%', pb: 1.5, textAlign: 'center' }}
               >
                 <Typography variant="subtitle2">
-                  {t('pricing.plans.team.name')}
+                  {t('pricing.plans.business.name')}
                 </Typography>
               </Box>
             </Box>
@@ -260,7 +263,7 @@ function ComparisonTable({ rows }: { rows: readonly ComparisonRow[] }) {
                     <ComparisonCell value={row.pro} isHighlighted={true} unlimitedLabel={unlimitedLabel} />
                   </Box>
                   <Box component="td" sx={{ py: 1.5, textAlign: 'center' }}>
-                    <ComparisonCell value={row.equipe} isHighlighted={false} unlimitedLabel={unlimitedLabel} />
+                    <ComparisonCell value={row.business} isHighlighted={false} unlimitedLabel={unlimitedLabel} />
                   </Box>
                 </Box>
               );
@@ -281,87 +284,52 @@ export default function PricingPage() {
 
   const localizedPricingFaq = getLocalizedPricingFaq(locale);
 
-  // ── Planos localizados via t() — dados numéricos invariantes ──
-  const PLANS: readonly PlanData[] = [
-    {
-      name: t('pricing.plans.free.name'),
-      priceMonthly: t('pricing.plans.free.priceMonthly'),
-      priceSubtitle: t('pricing.plans.free.priceSubtitle'),
-      description: t('pricing.plans.free.description'),
-      features: [
-        { text: '5 roteiros TTS por mês', included: true },
-        { text: '10 gerações de imagens por mês', included: true },
-        { text: 'Renderização em 720p', included: true },
-        { text: 'Vídeos de até 30 segundos', included: true },
-        { text: '20 mensagens/dia no assistente', included: true },
-        { text: '3 pinturas rápidas por mês', included: true },
-        { text: '5 projetos na biblioteca', included: true },
-        { text: 'Exportar áudio WAV', included: true },
-        { text: 'Suporte prioritário', included: false },
-      ],
-      recommended: false,
-      ctaLabel: t('pricing.plans.free.cta'),
-      ctaVariant: 'outlined',
-    },
-    {
-      name: t('pricing.plans.pro.name'),
-      priceMonthly: t('pricing.plans.pro.priceMonthly'),
-      priceAnnual: t('pricing.plans.pro.priceAnnual'),
-      priceSubtitle: t('pricing.plans.pro.priceSubtitle'),
-      description: t('pricing.plans.pro.description'),
-      features: [
-        { text: 'Roteiros TTS ilimitados', included: true },
-        { text: '200 gerações de imagens por mês', included: true },
-        { text: 'Renderização em 1080p', included: true },
-        { text: 'Vídeos de até 5 minutos', included: true },
-        { text: 'Assistente IA ilimitado', included: true },
-        { text: '50 pinturas rápidas por mês', included: true },
-        { text: '100 projetos na biblioteca', included: true },
-        { text: 'Exportar áudio WAV', included: true },
-        { text: 'Suporte por email', included: true },
-        { text: 'Suporte prioritário', included: false },
-      ],
-      recommended: true,
-      ctaLabel: t('pricing.plans.pro.cta'),
-      ctaVariant: 'primary',
-    },
-    {
-      name: t('pricing.plans.team.name'),
-      priceMonthly: t('pricing.plans.team.priceMonthly'),
-      priceSubtitle: t('pricing.plans.team.priceSubtitle'),
-      description: t('pricing.plans.team.description'),
-      features: [
-        { text: 'Roteiros TTS ilimitados', included: true },
-        { text: 'Gerações de imagens ilimitadas', included: true },
-        { text: 'Renderização em 1080p', included: true },
-        { text: 'Vídeos de até 10 minutos', included: true },
-        { text: 'Assistente IA ilimitado', included: true },
-        { text: 'Pinturas rápidas ilimitadas', included: true },
-        { text: 'Projetos ilimitados', included: true },
-        { text: 'Exportar áudio WAV', included: true },
-        { text: 'Suporte por email', included: true },
-        { text: 'Suporte prioritário', included: true },
-      ],
-      recommended: false,
-      ctaLabel: t('pricing.plans.team.cta'),
-      ctaVariant: 'outlined',
-    },
-  ];
+  // ── Metadados de UI por plano (campos que não existem no billing) ──
+  const PLAN_UI_META: Record<PlanId, { recommended: boolean; ctaVariant: 'primary' | 'secondary' | 'outlined' }> = {
+    free: { recommended: false, ctaVariant: 'outlined' },
+    pro: { recommended: true, ctaVariant: 'primary' },
+    business: { recommended: false, ctaVariant: 'outlined' },
+  };
+
+  // ── Planos — fonte de verdade: billing/plans.ts ──
+  const PLAN_ORDER: readonly PlanId[] = ['free', 'pro', 'business'];
+
+  const PLANS: readonly PlanData[] = PLAN_ORDER.map((id) => {
+    const billingPlan = BILLING_PLANS[id];
+    const meta = PLAN_UI_META[id];
+
+    return {
+      name: t(`pricing.plans.${id}.name`),
+      planId: id,
+      priceMonthlyCents: billingPlan.price.monthly,
+      priceYearlyCents: billingPlan.price.yearly,
+      priceSubtitle: t(`pricing.plans.${id}.priceSubtitle`),
+      description: billingPlan.description,
+      features: billingPlan.features.map((_, i) => ({
+        text: t(`pricing.plans.${id}.features.${i}`),
+        included: true,
+      })),
+      recommended: meta.recommended,
+      ctaLabel: t(`pricing.plans.${id}.cta`),
+      ctaVariant: meta.ctaVariant,
+    };
+  });
 
   // ── Tabela comparativa localizada via t() ──
   const COMPARISON_TABLE: readonly ComparisonRow[] = Array.from({ length: 9 }, (_, i) => ({
     feature: t(`pricingComparison.features.${i}.name`),
     gratuito: t(`pricingComparison.features.${i}.free`),
     pro: t(`pricingComparison.features.${i}.pro`),
-    equipe: t(`pricingComparison.features.${i}.business`),
+    business: t(`pricingComparison.features.${i}.business`),
   }));
 
-  /** Resolve o preco exibido com base no periodo de cobranca selecionado */
+  /** Resolve o preco formatado com base no periodo de cobranca selecionado */
   const getPrice = (plan: PlanData): string => {
-    if (billingPeriod === 'annual' && plan.priceAnnual) {
-      return plan.priceAnnual;
+    if (billingPeriod === 'annual') {
+      // Equivalente mensal do preço anual
+      return formatPrice(Math.round(plan.priceYearlyCents / 12));
     }
-    return plan.priceMonthly;
+    return formatPrice(plan.priceMonthlyCents);
   };
 
   const seo = getPageSeo({
@@ -379,7 +347,8 @@ export default function PricingPage() {
     description: t('seo.pricing.description'),
     offers: [
       { '@type': 'Offer', name: t('pricing.plans.free.name'), price: '0', priceCurrency: 'BRL' },
-      { '@type': 'Offer', name: t('pricing.plans.pro.name'), price: '29', priceCurrency: 'BRL' },
+      { '@type': 'Offer', name: t('pricing.plans.pro.name'), price: (BILLING_PLANS.pro.price.monthly / 100).toFixed(2), priceCurrency: 'BRL' },
+      { '@type': 'Offer', name: t('pricing.plans.business.name'), price: (BILLING_PLANS.business.price.monthly / 100).toFixed(2), priceCurrency: 'BRL' },
     ],
   };
 
@@ -421,9 +390,9 @@ export default function PricingPage() {
                 recommended={plan.recommended}
                 ctaLabel={plan.ctaLabel}
                 ctaVariant={plan.ctaVariant}
-                ctaDisabled={plan.name !== t('pricing.plans.free.name')}
+                ctaDisabled={plan.planId !== 'free'}
                 ctaTooltip={t('pricing.tooltip.comingSoon')}
-                onCtaClick={plan.name === t('pricing.plans.free.name') ? () => navigate('/cadastro') : undefined}
+                onCtaClick={plan.planId === 'free' ? () => navigate('/cadastro') : undefined}
                 index={idx}
               />
             </Grid>

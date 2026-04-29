@@ -16,6 +16,7 @@ const mockSignOut = vi.fn();
 
 vi.mock('../../src/lib/firebase', () => ({
   auth: { currentUser: null },
+  db: {},
   googleProvider: {},
   signInWithPopup: (...args: unknown[]) => mockSignInWithPopup(...args),
   signInWithEmailAndPassword: (...args: unknown[]) => mockSignInWithEmailAndPassword(...args),
@@ -47,6 +48,16 @@ vi.mock('../../src/components/DataMigrationDialog', () => ({
 
 vi.mock('../../src/lib/db/migration', () => ({
   isMigrationAlreadyHandled: vi.fn().mockReturnValue(true),
+}));
+
+vi.mock('../../src/features/billing/hooks', () => ({
+  useBillingInit: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn().mockReturnValue({}),
+  getDoc: vi.fn().mockResolvedValue({ exists: () => false }),
+  onSnapshot: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 const mockDeleteAllUserData = vi.fn();

@@ -52,27 +52,15 @@ interface StatusConfigItem {
 
 // ── Dados estáticos ──────────────────────────────────────────────────
 
-/** Incidentes recentes (dados estáticos, atualizados manualmente) */
+/** Incidentes recentes — dados invariantes (datas e severidade) */
 interface Incident {
   date: string;
-  title: string;
-  description: string;
   severity: 'resolved' | 'degraded';
 }
 
 const RECENT_INCIDENTS: readonly Incident[] = [
-  {
-    date: '2026-04-22',
-    title: 'Instabilidade na geração de áudio',
-    description: 'A API Gemini apresentou latência elevada por aproximadamente 2 horas, afetando a geração de áudio TTS. O serviço foi normalizado automaticamente.',
-    severity: 'resolved',
-  },
-  {
-    date: '2026-04-10',
-    title: 'Degradation no Firebase Storage',
-    description: 'Uploads de imagens apresentaram lentidão por 45 minutos. O impacto foi limitado ao estúdio de imagens.',
-    severity: 'resolved',
-  },
+  { date: '2026-04-22', severity: 'resolved' },
+  { date: '2026-04-10', severity: 'resolved' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -205,9 +193,9 @@ function IncidentHistory() {
         </Stack>
 
         <Stack spacing={2}>
-          {RECENT_INCIDENTS.map((incident) => (
+          {RECENT_INCIDENTS.map((incident, index) => (
             <Box
-              key={incident.date + incident.title}
+              key={incident.date}
               sx={{
                 p: 2,
                 borderRadius: 2,
@@ -228,10 +216,10 @@ function IncidentHistory() {
                 />
               </Stack>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.25 }}>
-                {incident.title}
+                {t(`status.incidents.items.${index}.title`)}
               </Typography>
               <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
-                {incident.description}
+                {t(`status.incidents.items.${index}.description`)}
               </Typography>
             </Box>
           ))}

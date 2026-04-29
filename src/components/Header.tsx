@@ -36,6 +36,7 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
+import { PlanBadge, useBillingStore } from '../features/billing';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -75,6 +76,10 @@ export function Header() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Billing — badge do plano no header
+  const billingPlanId = useBillingStore((s) => s.planId);
+  const billingLoading = useBillingStore((s) => s.loading);
 
   const navItems = useMemo<NavItem[]>(() => [
     { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
@@ -294,6 +299,11 @@ export function Header() {
                   </Stack>
                 </Paper>
                 </Tooltip>
+
+                {/* Badge do plano — visível quando não está carregando */}
+                {!billingLoading && user && (
+                  <PlanBadge planId={billingPlanId} />
+                )}
 
                 {!isMobile && (
                   <Tooltip title={t('studio.header.logout.tooltip')}>

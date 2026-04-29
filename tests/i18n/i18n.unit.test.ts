@@ -192,7 +192,7 @@ describe('dicionários', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(getNestedValue(dictionaries[locale], 'pricing.plans.free.name')).toBeDefined();
       expect(getNestedValue(dictionaries[locale], 'pricing.plans.pro.name')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'pricing.plans.team.name')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'pricing.plans.business.name')).toBeDefined();
     }
   });
 

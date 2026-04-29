@@ -7,6 +7,38 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.26.0] - 2026-04-29
+
+### Adicionado
+
+- **Firebase Cloud Functions v2 (backend)**: diretório `functions/` com integração Stripe completa — `stripeWebhook` (Express + onRequest para eventos Stripe), `createCheckoutSession` (cria sessão de assinatura), `createPortalSession` (Customer Portal para gerenciar assinatura); deps: `firebase-admin` ^13.5.0, `firebase-functions` ^7.2.5, `stripe` ^22.1.0; tsconfig próprio com `module: Node16`
+- **Stripe client-side**: `@stripe/stripe-js` ^9.3.0 adicionado; `src/lib/stripe.ts` com `loadStripe` lazy (singleton); `getStripePublishableKey()` em `env.ts`; app funciona normalmente sem a key (plano Free)
+- **Billing conectado ao app**: `useBillingStore` (Zustand) — estado global de plano/uso, carrega do Firestore (`users/{uid}/subscription/current`) via `onSnapshot` em tempo real; `useBillingInit` — hook de inicialização usado no AuthContext; `UpgradeDialog` — dialog com cards de plano e redirect para Stripe Checkout; `PlanBadge` integrado no Header
+- **Pexels API para stock media**: `src/lib/pexelsApi.ts` — cliente HTTP com `withRetry`, tipos tipados (`PexelsPhoto`, `PexelsSearchResponse`); `stockMedia.ts` atualizado para usar Pexels quando `VITE_PEXELS_API_KEY` disponível, fallback para placeholder; `getPexelsApiKey()` em `env.ts`
+- **Firestore indexes**: `stripeCustomerId` index (ASC + DESC) na collection `users` para queries de webhook
+- **Env vars**: `VITE_STRIPE_PUBLISHABLE_KEY` (opcional) e `VITE_PEXELS_API_KEY` (opcional) com tipo `OptionalEnvName`
+
+### Alterado
+
+- **PricingPage refatorada**: dados de planos importados de `billing/plans.ts` (`PLANS`, `formatPrice`) em vez de hardcoded; `PLAN_UI_META` (recommended badge, ctaVariant) e `PLAN_ORDER` controlam renderização; plano "Equipe/Team" renomeado para "Business" em todos os 3 locales
+- **AboutPage**: roadmap refatorado com `ROADMAP_VERSIONS` e `ROADMAP_STATUSES` arrays (dados separados da apresentação)
+- **StatusPage**: incidentes hardcoded removidos, componente simplificado
+- **i18n**: 3 locales atualizados — novas seções `billing` (upgrade, badge, portal, usage, entitlement) e `features.business`; remoção de `pricing.plans.team` (substituído por `business`)
+- **tsconfig.json**: `functions/**` adicionado ao `exclude`
+
+### Removido
+
+- `docs/plan/transformacao-estrutural-script-master.md` (plano concluído)
+- `docs/scan/1.md` (scan resolvido)
+
+### Testes
+
+- `AuthContext.unit.test.tsx`: mock `db: {}` adicionado para billing store
+- `i18n.unit.test.ts` e `locales.completeness.unit.test.ts`: assertions atualizadas de `team` → `business`
+- `PricingPage.component.test.tsx`: assertions atualizadas para plano Business e preço do Pro
+
+---
+
 ## [0.25.0] - 2026-04-28
 
 ### Adicionado

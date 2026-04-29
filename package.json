@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.25.0",
+  "version": "0.26.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -32,6 +32,7 @@
     "@remotion/transitions": "4.0.448",
     "@remotion/web-renderer": "4.0.448",
     "@remotion/whisper-web": "4.0.448",
+    "@stripe/stripe-js": "^9.3.1",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase": "^12.12.0",
     "konva": "^10.2.5",

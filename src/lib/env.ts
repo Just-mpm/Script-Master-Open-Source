@@ -18,6 +18,13 @@ type RequiredEnvName =
   | 'VITE_FIREBASE_MESSAGING_SENDER_ID'
   | 'VITE_FIREBASE_APP_ID';
 
+/** Nomes de env vars opcionais com tipagem */
+type OptionalEnvName =
+  | 'VITE_FIREBASE_MEASUREMENT_ID'
+  | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID'
+  | 'VITE_STRIPE_PUBLISHABLE_KEY'
+  | 'VITE_PEXELS_API_KEY';
+
 function readRequiredEnv(name: RequiredEnvName): string {
   const value = import.meta.env[name];
 
@@ -28,7 +35,7 @@ function readRequiredEnv(name: RequiredEnvName): string {
   return value;
 }
 
-function readOptionalEnv(name: 'VITE_FIREBASE_MEASUREMENT_ID' | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID'): string | undefined {
+function readOptionalEnv(name: OptionalEnvName): string | undefined {
   const value = import.meta.env[name];
 
   return value && value.trim().length > 0 ? value : undefined;
@@ -36,6 +43,16 @@ function readOptionalEnv(name: 'VITE_FIREBASE_MEASUREMENT_ID' | 'VITE_FIREBASE_F
 
 export function getGeminiApiKey(): string {
   return readRequiredEnv('VITE_GEMINI_API_KEY');
+}
+
+/** Chave da API Pexels (opcional — sem ela, stock media usa placeholder local) */
+export function getPexelsApiKey(): string | undefined {
+  return readOptionalEnv('VITE_PEXELS_API_KEY');
+}
+
+/** Chave pública do Stripe (opcional — sem ela, o app funciona no plano Free) */
+export function getStripePublishableKey(): string | undefined {
+  return readOptionalEnv('VITE_STRIPE_PUBLISHABLE_KEY');
 }
 
 export function getFirebaseEnvConfig(): FirebaseEnvConfig {

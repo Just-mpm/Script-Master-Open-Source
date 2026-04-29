@@ -1,4 +1,15 @@
+/**
+ * Stock Media — busca e download de imagens stock.
+ *
+ * Quando VITE_PEXELS_API_KEY está definida, busca na API real do Pexels.
+ * Caso contrário, usa dataset placeholder local (picsum.photos).
+ *
+ * A interface pública (StockImage, StockSearchParams, searchStockImages,
+ * downloadStockImage) permanece a mesma independente da fonte de dados.
+ */
 import { createLogger } from './logger';
+import { searchPexelsPhotos, type PexelsPhoto } from './pexelsApi';
+import { getPexelsApiKey } from './env';
 
 const log = createLogger('stockMedia');
 
@@ -25,7 +36,7 @@ export interface StockSearchParams {
 }
 
 // ---------------------------------------------------------------------------
-// Placeholder — dados estáticos para desenvolvimento
+// Placeholder — fallback quando VITE_PEXELS_API_KEY não está definida
 // ---------------------------------------------------------------------------
 
 const PLACEHOLDER_IMAGES: ReadonlyArray<StockImage> = [
@@ -52,7 +63,7 @@ const PLACEHOLDER_IMAGES: ReadonlyArray<StockImage> = [
 ];
 
 // ---------------------------------------------------------------------------
-// Funções auxiliares
+// Funções auxiliares (apenas para o fallback placeholder)
 // ---------------------------------------------------------------------------
 
 function filterByOrientation(
@@ -105,15 +116,53 @@ function paginate(
 }
 
 // ---------------------------------------------------------------------------
+// Mapeamento Pexels → StockImage
+// ---------------------------------------------------------------------------
+
+/** Converte uma foto da API Pexels para o tipo StockImage do app */
+function mapPexelsPhoto(photo: PexelsPhoto): StockImage {
+  // Extrai palavras-chave do alt text como tags simples
+  const tags = photo.alt
+    .split(/[\s,;.]+/)
+    .filter((word) => word.length > 3)
+    .slice(0, 6);
+
+  return {
+    id: String(photo.id),
+    url: photo.src.large2x,
+    thumbnailUrl: photo.src.small,
+    width: photo.width,
+    height: photo.height,
+    alt: photo.alt,
+    source: 'pexels',
+    tags,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Função de busca placeholder (fallback sem API key)
+// ---------------------------------------------------------------------------
+
+/** Busca no dataset local quando VITE_PEXELS_API_KEY não está disponível */
+function searchPlaceholderImages(params: StockSearchParams): StockImage[] {
+  const { query, orientation, page = 1, perPage = 12 } = params;
+
+  let results = filterByQuery(PLACEHOLDER_IMAGES, query);
+  results = filterByOrientation(results, orientation);
+  results = paginate(results, page, perPage);
+
+  return [...results];
+}
+
+// ---------------------------------------------------------------------------
 // API pública
 // ---------------------------------------------------------------------------
 
 /**
  * Busca imagens stock por termo e orientação.
  *
- * Implementação atual: busca em dataset placeholder (picsum.photos).
- * No futuro, integrar com API real (Pexels, Unsplash, etc.) trocando
- * apenas esta função — a interface pública permanece a mesma.
+ * Com VITE_PEXELS_API_KEY definida: busca na API real do Pexels.
+ * Sem a chave: fallback para dataset placeholder local (20 imagens).
  */
 export async function searchStockImages(
   params: StockSearchParams,
@@ -122,15 +171,19 @@ export async function searchStockImages(
 
   log.info('Buscando imagens stock', { query, orientation, page, perPage });
 
-  // Simula latência de rede (remover ao integrar API real)
-  await new Promise((resolve) => { setTimeout(resolve, 400); });
+  // Tenta API Pexels quando a chave está disponível
+  const apiKey = getPexelsApiKey();
+  if (apiKey) {
+    const response = await searchPexelsPhotos(
+      { query, orientation, page, perPage },
+      apiKey,
+    );
+    return response.photos.map(mapPexelsPhoto);
+  }
 
-  let results = filterByQuery(PLACEHOLDER_IMAGES, query);
-  results = filterByOrientation(results, orientation);
-  results = paginate(results, page, perPage);
-
-  log.info(`Encontradas ${results.length} imagens stock`);
-  return [...results];
+  // Fallback: busca local no placeholder
+  log.info('VITE_PEXELS_API_KEY não definida — usando placeholder');
+  return searchPlaceholderImages(params);
 }
 
 /**

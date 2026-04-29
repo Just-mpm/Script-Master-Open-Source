@@ -4,6 +4,7 @@ import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
 import { deleteAllUserData } from '../lib/db/account-cleanup';
+import { useBillingInit } from '../features/billing/hooks';
 
 const log = createLogger('AuthContext');
 
@@ -58,6 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Flag que indica se o login foi disparado ativamente (via popup).
   // Usada para diferenciar login ativo de restauração de sessão.
   const wasLoginRequested = useRef(false);
+
+  // Inicializa billing quando auth estiver pronto
+  useBillingInit(!loading);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (authUser) => {

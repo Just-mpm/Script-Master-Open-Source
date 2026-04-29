@@ -307,25 +307,45 @@ export const en: TranslationDictionary = {
     plans: {
       free: {
         name: 'Free',
-        priceMonthly: 'R$ 0',
         priceSubtitle: 'forever',
         description: 'Perfect for experimenting and personal projects',
         cta: 'Get started free',
+        features: {
+          0: 'TTS audio generation',
+          1: 'AI image generation',
+          2: 'Video export (up to 720p)',
+          3: 'Project library',
+          4: 'AI assistant',
+          5: '5 projects in total',
+        },
       },
       pro: {
         name: 'Pro',
-        priceMonthly: 'R$ 29',
-        priceAnnual: 'R$ 23',
         priceSubtitle: '/mo',
         description: 'For creators who produce content regularly',
         cta: 'Subscribe to Pro',
+        features: {
+          0: 'Everything in Free plan',
+          1: 'Multi-speaker (2 narrators)',
+          2: 'Unlimited stock media',
+          3: 'Video export up to 4K',
+          4: 'Priority generation queue',
+          5: '100 generations/month per resource',
+          6: '50 projects in total',
+        },
       },
-      team: {
-        name: 'Team',
-        priceMonthly: 'On demand',
-        priceSubtitle: '',
-        description: 'For teams and large-scale productions',
+      business: {
+        name: 'Business',
+        priceSubtitle: '/mo',
+        description: 'For teams and professional production',
         cta: 'Coming soon',
+        features: {
+          0: 'Everything in Pro plan',
+          1: 'Unlimited limits',
+          2: 'Unlimited storage',
+          3: 'Priority support',
+          4: 'Scripts up to 50K characters',
+        },
       },
     },
     tooltip: {
@@ -480,6 +500,36 @@ export const en: TranslationDictionary = {
         current: 'In progress',
         planned: 'Planned',
       },
+      items: {
+        0: {
+          title: 'Authentication & Navigation',
+          description: 'Google and email/password login, registration, protected routes, and SEO with public pages',
+        },
+        1: {
+          title: 'Speed Paint & Advanced Video',
+          description: 'Progressive painting animation, Web Worker for rendering, LRU cache, and WebM export',
+        },
+        2: {
+          title: 'Production Studio',
+          description: 'Complete studio refactoring with Zustand, preference persistence, and granular speed paint control',
+        },
+        3: {
+          title: 'LGPD Account Deletion',
+          description: 'Complete deletion pipeline (Firestore + Storage + IndexedDB), email verification, and centralized assistant UI',
+        },
+        4: {
+          title: 'Video Quality & Export',
+          description: 'Export quality (720p–4k), file size estimation, per-phase speed paint multipliers, and 1185 tests',
+        },
+        5: {
+          title: 'Plans & Payments',
+          description: 'Stripe integration for subscriptions, payments, and plan management',
+        },
+        6: {
+          title: 'Official Launch',
+          description: 'Stable version with all core features and complete documentation',
+        },
+      },
     },
     cta: {
       title: 'Be part of this story',
@@ -503,6 +553,16 @@ export const en: TranslationDictionary = {
       title: 'Last 90 days',
       resolved: 'Resolved',
       degraded: 'Degraded',
+      items: {
+        0: {
+          title: 'Audio generation instability',
+          description: 'The Gemini API experienced high latency for approximately 2 hours, affecting TTS audio generation. The service was automatically normalized.',
+        },
+        1: {
+          title: 'Firebase Storage degradation',
+          description: 'Image uploads experienced slowness for 45 minutes. The impact was limited to the image studio.',
+        },
+      },
     },
     services: {
       api: {
@@ -1143,6 +1203,48 @@ export const en: TranslationDictionary = {
       title: 'Error rendering video',
       message: 'A problem occurred during composition. Try reloading the page.',
       retry: 'Try again',
+    },
+  },
+
+  // ── Billing ──────────────────────────────────────────────────────────
+  billing: {
+    upgrade: {
+      title: 'Choose your plan',
+      monthly: 'Monthly',
+      yearly: 'Yearly',
+      yearlyDiscount: '-20%',
+      month: 'month',
+      year: 'year',
+      currentPlan: 'Current plan',
+      recommended: 'Recommended',
+      notAvailable: 'Payments are not available at the moment.',
+    },
+    badge: {
+      free: 'Free',
+      pro: 'Pro',
+      business: 'Business',
+    },
+    portal: {
+      manageSubscription: 'Manage subscription',
+      openPortal: 'My subscription',
+    },
+    usage: {
+      title: 'Plan usage',
+      audioGenerations: 'Audio generations',
+      imageGenerations: 'Image generations',
+      videoExports: 'Video exports',
+      scriptChars: 'Script characters',
+      storageMb: 'Storage (MB)',
+      unlimited: 'Unlimited',
+      of: 'of',
+    },
+    entitlement: {
+      limitReached: 'Limit reached',
+      upgradeRequired: 'Upgrade to continue',
+      featureLocked: 'Feature available on paid plans only',
+      multiSpeakerLocked: 'Multi-speaker available on Pro plan or higher',
+      emotionalTTSLocked: 'Emotional TTS available on Pro plan or higher',
+      stockMediaLocked: 'Stock media available on Pro plan or higher',
     },
   },
 

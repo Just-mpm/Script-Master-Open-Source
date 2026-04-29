@@ -4,7 +4,7 @@
 
 SPA em React + Vite para transformar roteiros em áudio com Gemini TTS, geração opcional de imagens/cenas, renderização de vídeo com Remotion, biblioteca de projetos, assistente conversacional e internacionalização (3 idiomas).
 
-Firebase Hosting tradicional (frontend estático, sem backend Node).
+Firebase Hosting (frontend) + Firebase Cloud Functions v2 (backend serverless quando necessário).
 
 ## Comandos
 
@@ -30,6 +30,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 - **MUI v9** — tema em `src/theme/*`, sem Tailwind
 - **@google/genai** (cliente direto) — TTS, imagens, prompts de cena
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) | `firebase-tools` ^15.3.0 (deploy)
+- **Firebase Cloud Functions v2** — backend serverless (Stripe webhooks, checkout, portal) em `functions/`
+- **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
@@ -48,13 +50,13 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 - **Idioma:** pt-BR (default), en e es na UI via i18n; comentários em pt-BR; inglês nos prompts de imagem
 - **Alias:** `@/` aponta para a raiz do projeto
-- **Sem backend:** não criar `/api/*`, tudo client-side
+- **Backend:** Firebase Cloud Functions v2 quando necessário; rotas `/api/*` via Cloud Functions callable/HTTP
 - **Rotas:** lazy loading por rota, páginas em `src/pages/`
 - **HMR:** não altere a checagem `DISABLE_HMR` em `vite.config.ts`
 
 ## Anti-patterns
 
-- Não crie rotas `/api/*` — tudo é client-side
+- Não crie rotas `/api/*` no frontend — use Firebase Cloud Functions v2 (callable ou HTTP) quando precisar de backend
 - Não use Tailwind ou CSS modules — MUI v9 é a stack única de UI
 - Não altere `DISABLE_HMR` em `vite.config.ts` — usado por AI Studio
 - Não remova COEP sem motivo — necessário para SharedArrayBuffer (Whisper + Remotion)
@@ -148,7 +150,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
 | **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
-| **Stock Media** | `StockMediaPicker` com busca em array fixo (placeholder, aguarda API real Pexels/Unsplash) |
+| **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels). Retry automático via `withRetry` |
 
 ### Vídeo (Remotion)
 
@@ -239,16 +241,21 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Passos** | `ONBOARDING_STEPS` em `steps.ts` — array tipado com `OnboardingStep` (target, title, content, placement, action) |
 | **Integração** | `OnboardingManager` renderizado no `StudioPage` |
 
-### Billing (Foundation)
+### Billing & Pagamentos
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/billing/` |
+| **Arquivos** | `src/features/billing/` (frontend), `functions/src/index.ts` (backend) |
 | **Tipos** | `PlanId` (`'free' | 'pro' | 'business'`), `Plan`, `PlanLimits`, `UsageRecord`, `UsageState`, `UsageAlert` |
-| **Planos** | Gratuito (limites base), Pro (R$ 49,90/mês), Business (R$ 149,90/mês) — definidos em `plans.ts` |
-| **Utilitários** | `checkEntitlement(state, feature)` verifica se o plano atual permite a feature; `UsageIndicator` component para barra de uso |
-| **Componentes** | `PlanBadge` (chip de plano), `UsageIndicator` (progress bar de uso) |
-| **Status** | Base preparada, aguarda decisão de produto para conectar ao app (passo 11 do plano de transformação) |
+| **Planos** | Gratuito (limites base), Pro (R$ 49,90/mês), Business (R$ 149,90/mês) — definidos em `plans.ts`; `formatPrice()` para exibição |
+| **Store** | `useBillingStore` (Zustand) — plano ativo, uso, status de loading; carrega do Firestore (`users/{uid}/subscription/current`) via `onSnapshot` em tempo real |
+| **Init** | `useBillingInit` — hook de inicialização, usado uma vez no AuthContext; escuta mudanças de auth para ativar/desativar billing listener |
+| **Componentes** | `PlanBadge` (chip de plano no Header), `UsageIndicator` (progress bar de uso), `UpgradeDialog` (dialog com cards de plano e redirect Stripe Checkout) |
+| **Utilitários** | `checkEntitlement(state, feature)` verifica se o plano permite a feature; `useIsFreePlan()`, `useIsStripeAvailable()`, `useHasActiveSubscription()` |
+| **Stripe client** | `src/lib/stripe.ts` — `loadStripe` lazy singleton; funciona sem key (plano Free) |
+| **Cloud Functions** | `functions/src/index.ts` — 3 endpoints: `stripeWebhook` (Express, eventos Stripe), `createCheckoutSession` (assinatura), `createPortalSession` (Customer Portal) |
+| **Firestore indexes** | `stripeCustomerId` (ASC + DESC) na collection `users` |
+| **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions, obrigatórias) |
 
 ### Biblioteca & Projetos
 
@@ -307,8 +314,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | | |
 |---|---|
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
-| **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 2 opcionais |
-| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()` |
+| **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 4 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY` + 2 outras) |
+| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()` |
 | **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login` e `/cadastro`: SEM COEP (popup Firebase) |
 | **Offline** | `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` (API moderna, suporte nativo a múltiplas abas) |
 | **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` e `/cadastro` |
@@ -353,8 +360,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.25.0`
-- **Last release:** 2026-04-28
+- **Current:** `0.26.0`
+- **Last release:** 2026-04-29
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -362,8 +369,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.26.0 | Firebase Cloud Functions v2 (Stripe webhooks, checkout, portal); Stripe client-side (`@stripe/stripe-js`); billing conectado ao app (`useBillingStore` Zustand, `useBillingInit`, `UpgradeDialog`); Pexels API para stock media; PricingPage refatorada com dados de `billing/plans.ts`; plano "Equipe/Team" → "Business" (3 locales); AboutPage roadmap refatorado; StatusPage simplificada; Firestore index `stripeCustomerId`; docs de plano e scan removidos |
 | 0.25.0 | i18n completo (pt-BR, en, es) propagado para toda a UI; onboarding com tour guiado; billing foundation (tipos, planos, checkEntitlement); templates de roteiro (TemplateSelector, galeria, preview); emoções no TTS (10 tipos + slider de intensidade); stock media picker (placeholder); landing page (UseCases, Metrics, ProductDemo, Testimonials); app shell refactor (router/routes.tsx, AudioGenerationHandler, ToastProvider); ~30 novos testes |
 | 0.24.7 | `SpeedPaintScene` sistema de 4 zonas (fade in → animação → hold → fade out) com `interpolate` do Remotion; opacidade via CSS para crossfade real; overlap dinâmico por cena (1s speed paint, 400ms estático); `sendMessage` envolvido em `useCallback`; PWA `navigateFallbackDenylist` com `/__/` para endpoints Firebase Hosting |
 | 0.24.6 | Firestore persistence modernizada (`initializeFirestore` + `persistentLocalCache` + `persistentMultipleTabManager`); `optimizeDeps.include` para mediabunny e sub-pacotes; 3 composite indexes `COLLECTION_GROUP` (audios, images, videos) para queries da galeria |
 | 0.24.5 | Dupla instância `useAudioGenerator` corrigida (CRÍTICO — StudioPage desconectado do ActionBar); imagens de cena LGPD com path correto; galeria exibe vídeos exportados; race condition no `useVideoExporter`; `deleteUser` antes do cleanup LGPD; email verification gate no ProtectedRoute; Firestore offline persistence; `Promise.all` no assistente; `retryLastMessage`; `deleteChatSession` dual-delete; `Inspector` 22→1 prop; ActionBar seletores primitivos; `SpeedPaintControls` props primitivas; 3 CTAs para `/cadastro`; link Contato no header; tabela semântica PricingPage; FAQAccordion a11y; `searchFieldSx` extraído; dead code cleanup (11 exports, 1 dep, 4 animations); `limit(100)` em todas as queries; upload resumável >10MB; `transaction.oncomplete` no IndexedDB |
-| 0.24.4 | `react-helmet-async` removido — migrado para SEO nativo do React 19 (`<title>`, `<meta>`, `<link>` com hoisting automático); `DocumentHead` componente em `src/components/DocumentHead.tsx`; interfaces próprias `SeoMeta`/`SeoLink`/`SeoData` em `seo.ts`; `HelmetProvider` removido do `main.tsx`; 14 páginas migradas |

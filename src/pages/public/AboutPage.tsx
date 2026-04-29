@@ -78,49 +78,14 @@ const TEAM: readonly TeamMember[] = [
   { name: 'Koda AI Studio', role: 'Criação e Desenvolvimento' },
 ];
 
-const ROADMAP: readonly RoadmapItem[] = [
-  {
-    version: '0.17',
-    title: 'Autenticação e Navegação',
-    description: 'Login com Google e email/senha, cadastro, rotas protegidas e SEO com páginas públicas',
-    status: 'done',
-  },
-  {
-    version: '0.20',
-    title: 'Speed Paint e Vídeo Avançado',
-    description: 'Animação de pintura progressiva, Web Worker para renderização, cache LRU e exportação WebM',
-    status: 'done',
-  },
-  {
-    version: '0.22',
-    title: 'Estúdio de Produção',
-    description: 'Refatoração completa do estúdio com Zustand, persistência de preferências e controle granular de speed paint',
-    status: 'done',
-  },
-  {
-    version: '0.23',
-    title: 'Exclusão de Conta LGPD',
-    description: 'Pipeline de exclusão completo (Firestore + Storage + IndexedDB), verificação de email e UI centralizada do assistente',
-    status: 'done',
-  },
-  {
-    version: '0.24',
-    title: 'Qualidade de Vídeo e Exportação',
-    description: 'Export quality (720p–4k), estimativa de tamanho, multiplicadores de speed paint por fase e 1185 testes',
-    status: 'done',
-  },
-  {
-    version: 'next',
-    title: 'Planos e Pagamentos',
-    description: 'Integração com Stripe para assinaturas, pagamentos e gerenciamento de plano',
-    status: 'planned',
-  },
-  {
-    version: '1.0',
-    title: 'Lançamento Oficial',
-    description: 'Versão estável com todas as funcionalidades core e documentação completa',
-    status: 'planned',
-  },
+/** Versões do roadmap (dados invariantes — não traduzíveis) */
+const ROADMAP_VERSIONS: readonly string[] = [
+  '0.17', '0.20', '0.22', '0.23', '0.24', 'next', '1.0',
+];
+
+/** Status de cada item do roadmap (índice corresponde a ROADMAP_VERSIONS) */
+const ROADMAP_STATUSES: readonly RoadmapStatus[] = [
+  'done', 'done', 'done', 'done', 'done', 'planned', 'planned',
 ];
 
 /** Mapeamento de status para cores (constante, sem label traduzível) */
@@ -565,11 +530,16 @@ export default function AboutPage() {
         </Box>
 
         <Box sx={{ mx: { xs: 2, sm: 3 }, maxWidth: 720 }}>
-          {ROADMAP.map((item, index) => (
+          {ROADMAP_VERSIONS.map((version, index) => (
             <RoadmapRow
-              key={item.version}
-              item={item}
-              isLast={index === ROADMAP.length - 1}
+              key={version}
+              item={{
+                version,
+                title: t(`about.roadmap.items.${index}.title`),
+                description: t(`about.roadmap.items.${index}.description`),
+                status: ROADMAP_STATUSES[index],
+              }}
+              isLast={index === ROADMAP_VERSIONS.length - 1}
               index={index}
               statusLabels={statusLabels}
             />

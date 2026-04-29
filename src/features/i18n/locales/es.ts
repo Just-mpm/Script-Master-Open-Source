@@ -307,25 +307,45 @@ export const es: TranslationDictionary = {
     plans: {
       free: {
         name: 'Gratuito',
-        priceMonthly: 'R$ 0',
         priceSubtitle: 'para siempre',
         description: 'Perfecto para experimentar y proyectos personales',
         cta: 'Empezar gratis',
+        features: {
+          0: 'Generación de audio TTS',
+          1: 'Generación de imágenes con IA',
+          2: 'Exportación de video (hasta 720p)',
+          3: 'Biblioteca de proyectos',
+          4: 'Asistente IA',
+          5: '5 proyectos en total',
+        },
       },
       pro: {
         name: 'Pro',
-        priceMonthly: 'R$ 29',
-        priceAnnual: 'R$ 23',
         priceSubtitle: '/mes',
         description: 'Para creadores que producen contenido regularmente',
         cta: 'Suscribirse a Pro',
+        features: {
+          0: 'Todo del plan Gratuito',
+          1: 'Multi-locutor (2 narradores)',
+          2: 'Medios stock ilimitados',
+          3: 'Exportación de video hasta 4K',
+          4: 'Fila prioritaria de generación',
+          5: '100 generaciones/mes por recurso',
+          6: '50 proyectos en total',
+        },
       },
-      team: {
-        name: 'Equipo',
-        priceMonthly: 'Bajo demanda',
-        priceSubtitle: '',
-        description: 'Para equipos y producciones a gran escala',
+      business: {
+        name: 'Business',
+        priceSubtitle: '/mes',
+        description: 'Para equipos y producción profesional',
         cta: 'Próximamente',
+        features: {
+          0: 'Todo del plan Pro',
+          1: 'Límites ilimitados',
+          2: 'Almacenamiento ilimitado',
+          3: 'Soporte prioritario',
+          4: 'Guiones de hasta 50K caracteres',
+        },
       },
     },
     tooltip: {
@@ -480,6 +500,36 @@ export const es: TranslationDictionary = {
         current: 'En progreso',
         planned: 'Planificado',
       },
+      items: {
+        0: {
+          title: 'Autenticación y Navegación',
+          description: 'Login con Google y email/contraseña, registro, rutas protegidas y SEO con páginas públicas',
+        },
+        1: {
+          title: 'Speed Paint y Video Avanzado',
+          description: 'Animación de pintura progresiva, Web Worker para renderización, caché LRU y exportación WebM',
+        },
+        2: {
+          title: 'Estudio de Producción',
+          description: 'Refactorización completa del estudio con Zustand, persistencia de preferencias y control granular de speed paint',
+        },
+        3: {
+          title: 'Eliminación de Cuenta LGPD',
+          description: 'Pipeline de eliminación completo (Firestore + Storage + IndexedDB), verificación de email y UI centralizada del asistente',
+        },
+        4: {
+          title: 'Calidad de Video y Exportación',
+          description: 'Export quality (720p–4k), estimación de tamaño, multiplicadores de speed paint por fase y 1185 tests',
+        },
+        5: {
+          title: 'Planes y Pagos',
+          description: 'Integración con Stripe para suscripciones, pagos y gestión de planes',
+        },
+        6: {
+          title: 'Lanzamiento Oficial',
+          description: 'Versión estable con todas las funcionalidades core y documentación completa',
+        },
+      },
     },
     cta: {
       title: 'Sé parte de esta historia',
@@ -503,6 +553,16 @@ export const es: TranslationDictionary = {
       title: 'Últimos 90 días',
       resolved: 'Resuelto',
       degraded: 'Degradado',
+      items: {
+        0: {
+          title: 'Inestabilidad en la generación de audio',
+          description: 'La API Gemini presentó latencia elevada por aproximadamente 2 horas, afectando la generación de audio TTS. El servicio se normalizó automáticamente.',
+        },
+        1: {
+          title: 'Degradación en Firebase Storage',
+          description: 'Las subidas de imágenes presentaron lentitud por 45 minutos. El impacto se limitó al estudio de imágenes.',
+        },
+      },
     },
     services: {
       api: {
@@ -1143,6 +1203,48 @@ export const es: TranslationDictionary = {
       title: 'Error al renderizar el video',
       message: 'Ocurrió un problema durante la composición. Intenta recargar la página.',
       retry: 'Intentar de nuevo',
+    },
+  },
+
+  // ── Billing ──────────────────────────────────────────────────────────
+  billing: {
+    upgrade: {
+      title: 'Elige tu plan',
+      monthly: 'Mensual',
+      yearly: 'Anual',
+      yearlyDiscount: '-20%',
+      month: 'mes',
+      year: 'año',
+      currentPlan: 'Plan actual',
+      recommended: 'Recomendado',
+      notAvailable: 'Pagos no disponibles en este momento.',
+    },
+    badge: {
+      free: 'Gratuito',
+      pro: 'Pro',
+      business: 'Business',
+    },
+    portal: {
+      manageSubscription: 'Gestionar suscripción',
+      openPortal: 'Mi suscripción',
+    },
+    usage: {
+      title: 'Uso del plan',
+      audioGenerations: 'Generaciones de audio',
+      imageGenerations: 'Generaciones de imagen',
+      videoExports: 'Exportaciones de video',
+      scriptChars: 'Caracteres de guion',
+      storageMb: 'Almacenamiento (MB)',
+      unlimited: 'Ilimitado',
+      of: 'de',
+    },
+    entitlement: {
+      limitReached: 'Límite alcanzado',
+      upgradeRequired: 'Actualiza para continuar',
+      featureLocked: 'Función disponible solo en planes de pago',
+      multiSpeakerLocked: 'Multi-locutor disponible en plan Pro o superior',
+      emotionalTTSLocked: 'TTS emocional disponible en plan Pro o superior',
+      stockMediaLocked: 'Mimedia stock disponible en plan Pro o superior',
     },
   },
 

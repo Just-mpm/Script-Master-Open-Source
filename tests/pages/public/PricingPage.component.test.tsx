@@ -61,12 +61,12 @@ describe('PricingPage', () => {
     expect(screen.getByText('Escolha o plano ideal para você')).toBeDefined();
   });
 
-  it('renderiza os 3 cards de plano (Gratuito, Pro, Equipe)', () => {
+  it('renderiza os 3 cards de plano (Gratuito, Pro, Business)', () => {
     render(<PricingPage />, { wrapper: Wrapper });
     // "Gratuito" e "Pro" aparecem no card + tabela comparativa
     expect(screen.getAllByText('Gratuito').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Pro').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Equipe').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Business').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renderiza badge "Popular" no plano Pro', () => {
@@ -92,7 +92,7 @@ describe('PricingPage', () => {
     // Accessible name inclui o Chip "-20%"
     const anualButton = screen.getByRole('button', { name: 'Anual -20%' });
     fireEvent.click(anualButton);
-    // Após clicar em Anual, o preço do Pro deve mudar para R$ 23
-    expect(screen.getByText('R$ 23')).toBeDefined();
+    // Após clicar em Anual, o preço do Pro deve mudar para o equivalente mensal anual
+    expect(screen.getByText('R$ 41,58')).toBeDefined();
   });
 });

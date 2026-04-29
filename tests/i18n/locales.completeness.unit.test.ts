@@ -182,14 +182,14 @@ describe('dicionários — valores são strings', () => {
     }
   });
 
-  it('priceSubtitle do plano team é vazio em todos os locales (intencional — "Sob demanda")', () => {
-    // O plano "Equipe" não tem preço mensal definido, então priceSubtitle é ''
+  it('priceSubtitle do plano business é preenchido em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const value = getNestedValue(
         dictionaries[locale],
-        'pricing.plans.team.priceSubtitle',
+        'pricing.plans.business.priceSubtitle',
       );
-      expect(value).toBe('');
+      expect(typeof value).toBe('string');
+      expect((value as string).length).toBeGreaterThan(0);
     }
   });
 });

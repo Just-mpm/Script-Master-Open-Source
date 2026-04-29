@@ -314,25 +314,45 @@ export const ptBR: TranslationDictionary = {
     plans: {
       free: {
         name: 'Gratuito',
-        priceMonthly: 'R$ 0',
         priceSubtitle: 'para sempre',
         description: 'Perfeito para experimentar e projetos pessoais',
         cta: 'Começar grátis',
+        features: {
+          0: 'Geração de áudio com TTS',
+          1: 'Geração de imagens com IA',
+          2: 'Exportação de vídeo (até 720p)',
+          3: 'Biblioteca de projetos',
+          4: 'Assistente IA',
+          5: '5 projetos no total',
+        },
       },
       pro: {
         name: 'Pro',
-        priceMonthly: 'R$ 29',
-        priceAnnual: 'R$ 23',
         priceSubtitle: '/mês',
         description: 'Para criadores que produzem conteúdo regularmente',
         cta: 'Assinar Pro',
+        features: {
+          0: 'Tudo do plano Gratuito',
+          1: 'Multi-speaker (2 locutores)',
+          2: 'Mídia stock ilimitada',
+          3: 'Exportação de vídeo até 4K',
+          4: 'Fila prioritária de geração',
+          5: '100 gerações/mês por recurso',
+          6: '50 projetos no total',
+        },
       },
-      team: {
-        name: 'Equipe',
-        priceMonthly: 'Sob demanda',
-        priceSubtitle: '',
-        description: 'Para times e produções em grande escala',
+      business: {
+        name: 'Business',
+        priceSubtitle: '/mês',
+        description: 'Para equipes e produção profissional',
         cta: 'Em breve',
+        features: {
+          0: 'Tudo do plano Pro',
+          1: 'Limites ilimitados',
+          2: 'Armazenamento ilimitado',
+          3: 'Suporte prioritário',
+          4: 'Scripts de até 50K caracteres',
+        },
       },
     },
     tooltip: {
@@ -490,6 +510,36 @@ export const ptBR: TranslationDictionary = {
         current: 'Em andamento',
         planned: 'Planejado',
       },
+      items: {
+        0: {
+          title: 'Autenticação e Navegação',
+          description: 'Login com Google e email/senha, cadastro, rotas protegidas e SEO com páginas públicas',
+        },
+        1: {
+          title: 'Speed Paint e Vídeo Avançado',
+          description: 'Animação de pintura progressiva, Web Worker para renderização, cache LRU e exportação WebM',
+        },
+        2: {
+          title: 'Estúdio de Produção',
+          description: 'Refatoração completa do estúdio com Zustand, persistência de preferências e controle granular de speed paint',
+        },
+        3: {
+          title: 'Exclusão de Conta LGPD',
+          description: 'Pipeline de exclusão completo (Firestore + Storage + IndexedDB), verificação de email e UI centralizada do assistente',
+        },
+        4: {
+          title: 'Qualidade de Vídeo e Exportação',
+          description: 'Export quality (720p–4k), estimativa de tamanho, multiplicadores de speed paint por fase e 1185 testes',
+        },
+        5: {
+          title: 'Planos e Pagamentos',
+          description: 'Integração com Stripe para assinaturas, pagamentos e gerenciamento de plano',
+        },
+        6: {
+          title: 'Lançamento Oficial',
+          description: 'Versão estável com todas as funcionalidades core e documentação completa',
+        },
+      },
     },
     cta: {
       title: 'Faça parte dessa história',
@@ -514,6 +564,16 @@ export const ptBR: TranslationDictionary = {
       title: 'Últimos 90 dias',
       resolved: 'Resolvido',
       degraded: 'Degradado',
+      items: {
+        0: {
+          title: 'Instabilidade na geração de áudio',
+          description: 'A API Gemini apresentou latência elevada por aproximadamente 2 horas, afetando a geração de áudio TTS. O serviço foi normalizado automaticamente.',
+        },
+        1: {
+          title: 'Degradation no Firebase Storage',
+          description: 'Uploads de imagens apresentaram lentidão por 45 minutos. O impacto foi limitado ao estúdio de imagens.',
+        },
+      },
     },
     services: {
       api: {
@@ -1162,6 +1222,48 @@ export const ptBR: TranslationDictionary = {
       title: 'Erro ao renderizar o vídeo',
       message: 'Ocorreu um problema durante a composição. Tente recarregar a página.',
       retry: 'Tentar novamente',
+    },
+  },
+
+  // ── Billing ──────────────────────────────────────────────────────────
+  billing: {
+    upgrade: {
+      title: 'Escolha seu plano',
+      monthly: 'Mensal',
+      yearly: 'Anual',
+      yearlyDiscount: '-20%',
+      month: 'mês',
+      year: 'ano',
+      currentPlan: 'Plano atual',
+      recommended: 'Recomendado',
+      notAvailable: 'Pagamentos não disponíveis no momento.',
+    },
+    badge: {
+      free: 'Gratuito',
+      pro: 'Pro',
+      business: 'Business',
+    },
+    portal: {
+      manageSubscription: 'Gerenciar assinatura',
+      openPortal: 'Minha assinatura',
+    },
+    usage: {
+      title: 'Uso do plano',
+      audioGenerations: 'Gerações de áudio',
+      imageGenerations: 'Gerações de imagem',
+      videoExports: 'Exportações de vídeo',
+      scriptChars: 'Caracteres de roteiro',
+      storageMb: 'Armazenamento (MB)',
+      unlimited: 'Ilimitado',
+      of: 'de',
+    },
+    entitlement: {
+      limitReached: 'Limite atingido',
+      upgradeRequired: 'Faça upgrade para continuar',
+      featureLocked: 'Funcionalidade disponível apenas nos planos pagos',
+      multiSpeakerLocked: 'Multi-speaker disponível no plano Pro ou superior',
+      emotionalTTSLocked: 'TTS emocional disponível no plano Pro ou superior',
+      stockMediaLocked: 'Mídia stock disponível no plano Pro ou superior',
     },
   },
 
