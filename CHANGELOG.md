@@ -7,6 +7,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.26.1] - 2026-04-29
+
+### Corrigido
+
+- **Speed Paint imageProcessing CORS**: `img.crossOrigin = 'anonymous'` adicionado ao `Image` element em `generateStrokesFromImage()` — previne canvas tainted ao carregar imagens cross-origin, alinhando com padrão já usado em `loadImageElement()` no video-render
+
+---
+
 ## [0.26.0] - 2026-04-29
 
 ### Adicionado

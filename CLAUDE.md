@@ -360,7 +360,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.26.0`
+- **Current:** `0.26.1`
 - **Last release:** 2026-04-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -369,8 +369,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.26.1 | Speed Paint imageProcessing CORS fix — `img.crossOrigin = 'anonymous'` em `generateStrokesFromImage()`, previne canvas tainted em imagens cross-origin |
 | 0.26.0 | Firebase Cloud Functions v2 (Stripe webhooks, checkout, portal); Stripe client-side (`@stripe/stripe-js`); billing conectado ao app (`useBillingStore` Zustand, `useBillingInit`, `UpgradeDialog`); Pexels API para stock media; PricingPage refatorada com dados de `billing/plans.ts`; plano "Equipe/Team" → "Business" (3 locales); AboutPage roadmap refatorado; StatusPage simplificada; Firestore index `stripeCustomerId`; docs de plano e scan removidos |
 | 0.25.0 | i18n completo (pt-BR, en, es) propagado para toda a UI; onboarding com tour guiado; billing foundation (tipos, planos, checkEntitlement); templates de roteiro (TemplateSelector, galeria, preview); emoções no TTS (10 tipos + slider de intensidade); stock media picker (placeholder); landing page (UseCases, Metrics, ProductDemo, Testimonials); app shell refactor (router/routes.tsx, AudioGenerationHandler, ToastProvider); ~30 novos testes |
 | 0.24.7 | `SpeedPaintScene` sistema de 4 zonas (fade in → animação → hold → fade out) com `interpolate` do Remotion; opacidade via CSS para crossfade real; overlap dinâmico por cena (1s speed paint, 400ms estático); `sendMessage` envolvido em `useCallback`; PWA `navigateFallbackDenylist` com `/__/` para endpoints Firebase Hosting |
 | 0.24.6 | Firestore persistence modernizada (`initializeFirestore` + `persistentLocalCache` + `persistentMultipleTabManager`); `optimizeDeps.include` para mediabunny e sub-pacotes; 3 composite indexes `COLLECTION_GROUP` (audios, images, videos) para queries da galeria |
-| 0.24.5 | Dupla instância `useAudioGenerator` corrigida (CRÍTICO — StudioPage desconectado do ActionBar); imagens de cena LGPD com path correto; galeria exibe vídeos exportados; race condition no `useVideoExporter`; `deleteUser` antes do cleanup LGPD; email verification gate no ProtectedRoute; Firestore offline persistence; `Promise.all` no assistente; `retryLastMessage`; `deleteChatSession` dual-delete; `Inspector` 22→1 prop; ActionBar seletores primitivos; `SpeedPaintControls` props primitivas; 3 CTAs para `/cadastro`; link Contato no header; tabela semântica PricingPage; FAQAccordion a11y; `searchFieldSx` extraído; dead code cleanup (11 exports, 1 dep, 4 animations); `limit(100)` em todas as queries; upload resumável >10MB; `transaction.oncomplete` no IndexedDB |

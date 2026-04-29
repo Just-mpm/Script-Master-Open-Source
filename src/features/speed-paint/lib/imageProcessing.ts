@@ -282,6 +282,7 @@ function createImageProcessingWorker(): Worker {
 export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: number) => void): Promise<StrokeAnimation> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
