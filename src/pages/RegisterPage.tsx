@@ -9,20 +9,18 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
-import Mic from '@mui/icons-material/Mic';
 import Google from '@mui/icons-material/Google';
 import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
 import { AUTH_BENEFITS } from '../data/authBenefits';
+import logos from '../assets/logos';
 import {
-  BRAND_GRADIENT,
-  BRAND_PRIMARY_GLOW,
   EMPTY_ICON_SIZE,
   ICON_SIZE_LG,
   APP_BACKGROUND_GLOW,
-  BRAND_GLOW,
+  BRAND_PRIMARY_GLOW,
   GAP_RELAXED,
   TEXT_SECONDARY,
 } from '../theme/tokens';
@@ -192,25 +190,17 @@ export function RegisterPage() {
                 <Stack spacing={GAP_RELAXED} sx={{ alignItems: 'center' }}>
                   {/* Brand logo */}
                   <Box
-                    aria-hidden="true"
+                    component="img"
+                    src={logos.mark.round}
+                    alt="Script Master"
                     sx={{
                       width: EMPTY_ICON_SIZE * 2,
                       height: EMPTY_ICON_SIZE * 2,
-                      borderRadius: '50%',
-                      display: 'grid',
-                      placeItems: 'center',
-                      color: 'common.white',
-                      background: BRAND_GRADIENT,
-                      boxShadow: BRAND_GLOW,
-                      transition: 'box-shadow 0.3s ease, transform 0.3s ease',
-                      '&:hover': {
-                        boxShadow: `0 18px 40px ${BRAND_PRIMARY_GLOW}`,
-                        transform: 'scale(1.04)',
-                      },
+                      objectFit: 'contain',
+                      transition: 'transform 0.3s ease',
+                      '&:hover': { transform: 'scale(1.04)' },
                     }}
-                  >
-                    <Mic sx={{ fontSize: EMPTY_ICON_SIZE }} />
-                  </Box>
+                  />
 
                   <Box>
                     <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>

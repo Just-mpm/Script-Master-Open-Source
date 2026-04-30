@@ -4,18 +4,15 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Mic from '@mui/icons-material/Mic';
 import { Link as RouterLink } from 'react-router-dom';
 import { useLocale } from '../../features/i18n';
 import {
   APP_MAX_WIDTH,
   APP_BORDER,
-  BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
-  BRAND_PRIMARY_GLOW_SOFT,
-  ICON_SIZE_MD,
   TEXT_SECONDARY,
 } from '../../theme/tokens';
+import logos from '../../assets/logos';
 
 export function PublicFooter() {
   const { t } = useLocale();
@@ -83,20 +80,12 @@ export function PublicFooter() {
               sx={{ alignItems: 'center', mb: 1.5 }}
             >
               <Box
+                component="img"
+                src={logos.mark.transparent}
+                alt=""
                 aria-hidden="true"
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: 'common.white',
-                  background: BRAND_GRADIENT,
-                  boxShadow: `0 4px 12px ${BRAND_PRIMARY_GLOW_SOFT}`,
-                }}
-              >
-                <Mic sx={{ fontSize: ICON_SIZE_MD }} />
-              </Box>
+                sx={{ width: 32, height: 32, objectFit: 'contain' }}
+              />
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                 Script Master
               </Typography>

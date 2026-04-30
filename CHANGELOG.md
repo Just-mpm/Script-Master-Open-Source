@@ -7,6 +7,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.28.1] - 2026-04-30
+
+### Alterado
+
+- **Logos centralizados**: novo módulo `src/assets/logos.ts` com todas as variantes de logo (`mark.transparent`, `mark.round`, `mark.square`, `full.transparent`, `full.round`, `full.square`, `full.roundedSquare`) e favicon. `LOGO_VERSION` constante para invalidação de cache em lote — basta incrementar para atualizar todas as referências
+- **Referências de logo migradas**: `Header`, `PublicHeader`, `PublicFooter`, `LoginPage`, `RegisterPage` e `seo.ts` (`DEFAULT_IMAGE`) agora importam de `logos` em vez de caminhos hardcoded. `Mic` icon removido de `PublicFooter`, `LoginPage` e `RegisterPage` (não utilizado)
+
+---
+
 ## [0.28.0] - 2026-04-30
 
 ### Adicionado

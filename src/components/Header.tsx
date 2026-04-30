@@ -57,6 +57,7 @@ import {
   WHITE_015,
 } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
+import logos from '../assets/logos';
 
 interface NavItem {
   to: string;
@@ -152,21 +153,12 @@ export function Header() {
             }}
           >
             <Box
+              component="img"
+              src={logos.mark.transparent}
+              alt=""
               aria-hidden="true"
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'common.white',
-                background: BRAND_GRADIENT,
-                boxShadow: `0 4px 16px ${BRAND_PRIMARY_GLOW}`,
-                transition: 'box-shadow 0.3s ease',
-              }}
-            >
-              <Mic sx={{ fontSize: ICON_SIZE_LG }} />
-            </Box>
+              sx={{ width: 36, height: 36, objectFit: 'contain' }}
+            />
 
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
               <Typography

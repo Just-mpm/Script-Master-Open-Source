@@ -121,7 +121,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **CookiesPage** | `/cookies` — política de cookies |
 | **StatusPage** | `/status` — status dos serviços |
 | **Componentes** | 17 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile, link "Contato"), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell, sem `component="main"` — landmark em App.tsx), HeroSection, FeatureCard, FeatureShowcase, CTASection (glow laranja), StepCard (glassPanelSx), SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion com a11y), UseCasesSection, MetricsSection, ProductDemoSection, TestimonialsSection, TestimonialCard, barrel `index.ts` |
-| **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
+| **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini. Logos centralizados em `src/assets/logos.ts` — 7 variantes (`mark.transparent/round/square`, `full.transparent/round/square/roundedSquare`) + favicon, com `LOGO_VERSION` para invalidação de cache |
 | **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; OG locale map (`og:locale`) por idioma; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`, `/onboarding`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
@@ -367,7 +367,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.28.0`
+- **Current:** `0.28.1`
 - **Last release:** 2026-04-30
 
 ### Últimas mudanças (atualizado por /fast)
@@ -376,8 +376,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.28.1 | Logos centralizados em `src/assets/logos.ts` — 7 variantes + favicon com `LOGO_VERSION` para invalidação de cache; referências migradas em Header, PublicHeader, PublicFooter, LoginPage, RegisterPage, `seo.ts`; import `Mic` removido onde não utilizado |
 | 0.28.0 | Onboarding Wizard (`/onboarding`) substitui tour guiado — 4 passos (Welcome, Profile, Goals, Completion), `useWizardStore`, `SelectionCard`, Motion animations; user settings com `name`/`role`/`goals`; redirecionamento pós-login para `/onboarding`; tour antigo removido do StudioPage; i18n 3 locales; 26 testes novos |
 | 0.27.1 | Speed Paint base 4x mais lenta (`DEFAULT_SPEED_PAINT_MULTIPLIERS` { sketch: 0.25, reveal: 0.25 }); `adjustProgress()` com curva de potência para velocidades <1x; `VideoComposition` compensação /4; `tsconfig.json` exclui `docs/**`; docs de plano e referência onboarding; testes atualizados |
 | 0.27.0 | `imageTextLanguage` — seletor de idioma para textos nas imagens/cenas geradas pelo Gemini; `LOCALE_LANGUAGE_MAP` em `gemini.ts` com `geminiPromptName`; `getStoredImageTextLanguage()` helper; propagação Inspector→store→`buildGenerateOptions`→`generateScenePrompts`; i18n 3 locales; 42 testes |
 | 0.26.1 | Speed Paint imageProcessing CORS fix — `img.crossOrigin = 'anonymous'` em `generateStrokesFromImage()`, previne canvas tainted em imagens cross-origin |
-| 0.26.0 | Firebase Cloud Functions v2 (Stripe webhooks, checkout, portal); Stripe client-side (`@stripe/stripe-js`); billing conectado ao app (`useBillingStore` Zustand, `useBillingInit`, `UpgradeDialog`); Pexels API para stock media; PricingPage refatorada com dados de `billing/plans.ts`; plano "Equipe/Team" → "Business" (3 locales); AboutPage roadmap refatorado; StatusPage simplificada; Firestore index `stripeCustomerId`; docs de plano e scan removidos |

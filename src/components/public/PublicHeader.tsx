@@ -39,6 +39,7 @@ import {
   SHADOW_DEEP,
 } from '../../theme/tokens';
 import { glassSurfaceSx } from '../../theme/surfaces';
+import logos from '../../assets/logos';
 
 export function PublicHeader() {
   const { user, loading, logout } = useAuth();
@@ -98,21 +99,12 @@ export function PublicHeader() {
             }}
           >
             <Box
+              component="img"
+              src={logos.mark.transparent}
+              alt=""
               aria-hidden="true"
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'common.white',
-                background: BRAND_GRADIENT,
-                boxShadow: `0 4px 16px ${BRAND_PRIMARY_GLOW}`,
-                transition: 'box-shadow 0.3s ease',
-              }}
-            >
-              <Mic sx={{ fontSize: ICON_SIZE_LG }} />
-            </Box>
+              sx={{ width: 36, height: 36, objectFit: 'contain' }}
+            />
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1, letterSpacing: '0.08em', fontSize: '0.625rem' }}>
                 AI Studio

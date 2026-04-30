@@ -1,8 +1,10 @@
+import logos from '../assets/logos';
+
 const SITE_URL = 'https://scriptmaster.app';
 const SITE_NAME = 'Script Master';
 const DEFAULT_DESCRIPTION =
   'Transforme roteiros em áudio profissional com IA. Geração de voz, imagens e vídeos com inteligência artificial.';
-const DEFAULT_IMAGE = `${SITE_URL}/logo-transparente.webp`;
+const DEFAULT_IMAGE = `${SITE_URL}${logos.full.transparent}`;
 
 interface SeoMeta {
   name?: string;
