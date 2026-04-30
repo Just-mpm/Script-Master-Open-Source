@@ -53,7 +53,6 @@ function renderWithRouter(ui: React.ReactElement) {
 
 const defaultAuth = {
   user: null,
-  loading: false,
   authError: null,
   clearAuthError: mockClearAuthError,
   login: mockLogin,
@@ -142,12 +141,6 @@ describe('RegisterPage', () => {
   it('deve exibir helper text "Pelo menos 6 caracteres" no campo senha', () => {
     renderWithRouter(<RegisterPage />);
     expect(screen.getByText('Pelo menos 6 caracteres')).toBeTruthy();
-  });
-
-  it('deve exibir loading quando auth está carregando', () => {
-    mockUseAuth.mockReturnValue({ ...defaultAuth, loading: true });
-    renderWithRouter(<RegisterPage />);
-    expect(screen.getByText('Verificando sessão...')).toBeTruthy();
   });
 
   // ─── Validação client-side ──────────────────────────────
@@ -260,41 +253,6 @@ describe('RegisterPage', () => {
     mockUseAuth.mockReturnValue({ ...defaultAuth, authError: 'Este email ja esta cadastrado.' });
     renderWithRouter(<RegisterPage />);
     expect(screen.getByText('Este email ja esta cadastrado.')).toBeTruthy();
-  });
-
-  // ─── Redirect de usuário autenticado ────────────────────
-
-  it('deve redirecionar para /app/estudio quando usuário já está autenticado', () => {
-    mockUseAuth.mockReturnValue({
-      ...defaultAuth,
-      user: { uid: 'logged-in', email: 'user@test.com' },
-      loading: false,
-    });
-
-    // delete window.location para recriar com spy acessível
-    const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
-    const locationSetSpy = vi.fn();
-
-    // O useEffect da RegisterPage faz: window.location.href = '/app/estudio'
-    // No jsdom, isso passa pelo setter de window.location.href
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        ...window.location,
-        set href(value: string) {
-          locationSetSpy(value);
-        },
-      },
-    });
-
-    renderWithRouter(<RegisterPage />);
-
-    expect(locationSetSpy).toHaveBeenCalledWith('/app/estudio');
-
-    // Restaura
-    if (locationDescriptor) {
-      Object.defineProperty(window, 'location', locationDescriptor);
-    }
   });
 
 });

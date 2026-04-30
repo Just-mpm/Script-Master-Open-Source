@@ -51,7 +51,6 @@ function renderWithRouter(ui: React.ReactElement) {
 
 const defaultAuth = {
   user: null,
-  loading: false,
   authError: null,
   clearAuthError: mockClearAuthError,
   login: mockLogin,
@@ -113,12 +112,6 @@ describe('LoginPage', () => {
   it('deve exibir "Entre com Google ou email" no card', () => {
     renderWithRouter(<LoginPage />);
     expect(screen.getByText('Entre com Google ou email')).toBeTruthy();
-  });
-
-  it('deve exibir loading quando auth está carregando', () => {
-    mockUseAuth.mockReturnValue({ ...defaultAuth, loading: true });
-    renderWithRouter(<LoginPage />);
-    expect(screen.getByText('Verificando sessão...')).toBeTruthy();
   });
 
   it('deve exibir erro de autenticação quando houver', () => {
@@ -396,37 +389,6 @@ describe('LoginPage', () => {
 
       expect(screen.getByText('Email inválido.')).toBeTruthy();
     });
-  });
-
-  // ─── Redirect de usuário autenticado ────────────────────
-
-  it('deve redirecionar para /app/estudio quando usuário já está autenticado', () => {
-    mockUseAuth.mockReturnValue({
-      ...defaultAuth,
-      user: { uid: 'logged-in', email: 'user@test.com' },
-      loading: false,
-    });
-
-    const locationSetSpy = vi.fn();
-    const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
-
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        ...window.location,
-        set href(value: string) {
-          locationSetSpy(value);
-        },
-      },
-    });
-
-    renderWithRouter(<LoginPage />);
-
-    expect(locationSetSpy).toHaveBeenCalledWith('/app/estudio');
-
-    if (locationDescriptor) {
-      Object.defineProperty(window, 'location', locationDescriptor);
-    }
   });
 });
 

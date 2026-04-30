@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import type { RefObject } from 'react';
 import type { VideoPreviewHandle } from '../components/VideoPreview';
+import { GuestRoute } from '../components/GuestRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { publicCompatRedirects, appCompatRedirects } from './Redirects';
 
@@ -154,8 +155,14 @@ export function AppRoutes({
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        {/* Rotas para visitantes — logados são redirecionados para /app/estudio */}
+        <Route element={<GuestRoute />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/cadastro" element={<RegisterPage />} />
+        </Route>
+
         {/* Rotas públicas */}
-        <Route path="/" element={<LandingPage />} />
         <Route path="/funcionalidades" element={<FuncionalidadesPage />} />
         <Route path="/precos" element={<PricingPage />} />
         <Route path="/perguntas-frequentes" element={<FaqPage />} />
@@ -165,8 +172,6 @@ export function AppRoutes({
         <Route path="/privacidade" element={<PrivacyPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/status" element={<StatusPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
 
         {/* Redirects de compatibilidade (rotas públicas antigas) */}

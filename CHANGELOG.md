@@ -7,6 +7,31 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.28.2] - 2026-04-30
+
+### Adicionado
+
+- **`GuestRoute`** (`src/components/GuestRoute.tsx`): novo componente de rota para visitantes não autenticados — exibe spinner de loading durante verificação de sessão (`role="status"`, `aria-live="polite"`), redireciona para `/app/estudio` se o usuário já estiver logado, renderiza `<Outlet />` para visitantes. Comporta como inverso do `ProtectedRoute`
+
+### Alterado
+
+- **Rotas de login/cadastro**: `LoginPage` e `RegisterPage` movidas para dentro do wrapper `<GuestRoute />` no router — usuários autenticados são redirecionados automaticamente para `/app/estudio` ao acessar `/login` ou `/cadastro`
+- **LandingPage**: movida para dentro do `<GuestRoute />` — visitantes logados na raiz `/` são redirecionados para o app
+- **Loading spinner duplicado removido**: `LoginPage` e `RegisterPage` não mais renderizam spinner de "Verificando sessão..." internamente — responsabilidade centralizada no `GuestRoute`
+- **`ProtectedRoute`**: adicionado `role="status"` e `aria-live="polite"` no container de loading para conformidade WCAG (antes sem atributos ARIA)
+
+### Removido
+
+- **Loading spinner de LoginPage**: bloco `if (loading)` com spinner CircularProgress e texto "Verificando sessão..." removido (22 linhas)
+- **Loading spinner de RegisterPage**: mesmo bloco removido (22 linhas)
+- **Testes de loading duplicados**: 3 testes removidos de `LoginPage.component.test.tsx` (38 linhas), `RegisterPage.component.test.tsx` (42 linhas) e `pages.component.test.tsx` (6 linhas)
+
+### Testes
+
+- `GuestRoute.component.test.tsx`: 4 testes novos cobrindo renderização para visitante, spinner de loading com a11y (`role="status"`, `aria-live="polite"`), e redirecionamento para `/app/estudio` quando autenticado
+
+---
+
 ## [0.28.1] - 2026-04-30
 
 ### Alterado

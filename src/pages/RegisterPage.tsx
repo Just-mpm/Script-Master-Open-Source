@@ -36,7 +36,7 @@ const SEO_PROPS = getPageSeo({
 });
 
 export function RegisterPage() {
-  const { login, signup, authError, loading, clearAuthError } = useAuth();
+  const { login, signup, authError, clearAuthError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,27 +81,6 @@ export function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  // Verificacao de sessao Firebase
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100dvh',
-          display: 'grid',
-          placeItems: 'center',
-          background: APP_BACKGROUND_GLOW,
-        }}
-      >
-        <Stack spacing={2} sx={{ alignItems: 'center' }}>
-          <CircularProgress size={EMPTY_ICON_SIZE} aria-label="Verificando sessao" />
-          <Typography variant="body2" color="text.secondary">
-            Verificando sessão...
-          </Typography>
-        </Stack>
-      </Box>
-    );
   }
 
   return (

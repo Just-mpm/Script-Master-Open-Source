@@ -507,12 +507,6 @@ describe('Pages — Renderização', () => {
       expect(screen.getByText('Entre com Google ou email')).toBeTruthy();
     });
 
-    it('deve exibir loading quando auth está carregando', () => {
-      mockUseAuth.mockReturnValue({ ...defaultAuth, loading: true });
-      renderWithRouter(<LoginPage />);
-      expect(screen.getByText('Verificando sessão...')).toBeTruthy();
-    });
-
     it('deve exibir erro de autenticação quando houver', () => {
       mockUseAuth.mockReturnValue({ ...defaultAuth, authError: 'Erro de popup' });
       renderWithRouter(<LoginPage />);

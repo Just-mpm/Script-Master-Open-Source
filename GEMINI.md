@@ -67,7 +67,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Rota | Componente | Protegida |
 |------|-----------|-----------|
-| `/` | LandingPage | Não |
+| `/` | LandingPage | Convidado |
 | `/funcionalidades` | FuncionalidadesPage | Não |
 | `/precos` | PricingPage | Não |
 | `/perguntas-frequentes` | FaqPage | Não |
@@ -77,8 +77,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | `/privacidade` | PrivacyPage | Não |
 | `/cookies` | CookiesPage | Não |
 | `/status` | StatusPage | Não |
-| `/login` | LoginPage | Não |
-| `/cadastro` | RegisterPage | Não |
+| `/login` | LoginPage | Convidado |
+| `/cadastro` | RegisterPage | Convidado |
 | `/onboarding` | OnboardingPage | Não |
 | `/app/estudio` | StudioPage | Sim |
 | `/app/video` | VideoPage | Sim |
@@ -87,6 +87,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | `/app/assistente` | AssistantPage | Sim |
 | `/app/biblioteca` | LibraryPage | Sim |
 | `/app` | Redirect → `/app/estudio` | — |
+
+**"Convidado"** = `GuestRoute` wrapper — visitantes veem a página, logados são redirecionados para `/app/estudio`
 
 **Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/register` → `/cadastro`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
 
@@ -98,9 +100,10 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/toast/ToastProvider.tsx` |
+| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx` |
 | **App.tsx** | Shell enxuto (~160 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider`. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
-| **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper |
+| **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper para rotas autenticadas, `GuestRoute` wrapper para rotas de convidado (`/`, `/login`, `/cadastro`) |
+| **GuestRoute** | `src/components/GuestRoute.tsx` — inverso do `ProtectedRoute`: exibe spinner durante `loading`, redireciona para `/app/estudio` se `user` existe, renderiza `<Outlet />` para visitantes |
 | **Redirects** | `src/router/Redirects.tsx` — 9 redirects 301 de compatibilidade |
 | **AudioGenerationHandler** | Componente extraído de App.tsx — encapsula `useAudioGenerator` + lógica de geração |
 | **ToastProvider** | Componente extraído de App.tsx — gerencia ErrorToast/SuccessToast/WarningToast |
@@ -292,12 +295,13 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts`, `src/lib/db/account-cleanup.ts` |
-| **Provider** | Google popup + email/senha + reset de senha + exclusão de conta. `AuthContext` + `useAuth()` — 10 componentes consumidores |
+| **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/components/GuestRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts`, `src/lib/db/account-cleanup.ts` |
+| **Provider** | Google popup + email/senha + reset de senha + exclusão de conta. `AuthContext` + `useAuth()` — 11 componentes consumidores |
 | **Métodos** | `login()` (Google), `signup(email, password)` (criação + verificação de email), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `deleteAccount()` (cleanup LGPD + deleteUser), `clearAuthError()` |
 | **Pós-login** | Novos usuários sem onboarding completado são redirecionados para `/onboarding`; usuários com onboarding concluído vão para `/app/estudio` |
 | **Exclusão de conta** | Pipeline LGPD: `deleteUser(currentUser)` PRIMEIRO (antes do cleanup) → `deleteAllUserData(userId)` remove projetos + subcoleções, gerações, chats, memórias, settings, Storage objects e IndexedDB local; retorna `string[]` com categorias que falharam; `AuthContext` notifica o usuário via `window.confirm()` sobre falhas parciais; dialog "EXCLUIR" de confirmação no Header |
 | **Verificação de email** | `sendEmailVerification()` enviada automaticamente pós-cadastro; `ProtectedRoute` bloqueia acesso a usuários email/senha não verificados (tela com botão "Reenviar email"); Google auto-verifica |
+| **GuestRoute** | `GuestRoute` — inverso do `ProtectedRoute`: exibe spinner com `role="status"` e `aria-live="polite"` durante loading, redireciona para `/app/estudio` se autenticado, renderiza `<Outlet />` para visitantes. Envolve `/`, `/login` e `/cadastro` no router |
 | **COEP conflict** | Login/logout/delete fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
 | **Migração** | Ao logar (transição `null→user`), verifica migração pendente IndexedDB→Firestore via `DataMigrationDialog` |
 | **Erros** | Mensagens pt-BR mapeadas por código Firebase (`auth/popup-blocked`, `auth/too-many-requests`, `auth/email-already-in-use`, `auth/user-not-found`, `auth/wrong-password`, `auth/invalid-credential`, `auth/weak-password`, `auth/invalid-email`, `auth/requires-recent-login`) |
@@ -367,7 +371,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.28.1`
+- **Current:** `0.28.2`
 - **Last release:** 2026-04-30
 
 ### Últimas mudanças (atualizado por /fast)
@@ -376,8 +380,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.28.2 | `GuestRoute` — componente inverso do `ProtectedRoute` para rotas de convidado (`/`, `/login`, `/cadastro`); redireciona logados para `/app/estudio`; spinner com a11y (`role="status"`, `aria-live="polite"`); loading spinner duplicado removido de LoginPage e RegisterPage; `ProtectedRoute` com atributos ARIA adicionados; 4 testes novos |
 | 0.28.1 | Logos centralizados em `src/assets/logos.ts` — 7 variantes + favicon com `LOGO_VERSION` para invalidação de cache; referências migradas em Header, PublicHeader, PublicFooter, LoginPage, RegisterPage, `seo.ts`; import `Mic` removido onde não utilizado |
 | 0.28.0 | Onboarding Wizard (`/onboarding`) substitui tour guiado — 4 passos (Welcome, Profile, Goals, Completion), `useWizardStore`, `SelectionCard`, Motion animations; user settings com `name`/`role`/`goals`; redirecionamento pós-login para `/onboarding`; tour antigo removido do StudioPage; i18n 3 locales; 26 testes novos |
 | 0.27.1 | Speed Paint base 4x mais lenta (`DEFAULT_SPEED_PAINT_MULTIPLIERS` { sketch: 0.25, reveal: 0.25 }); `adjustProgress()` com curva de potência para velocidades <1x; `VideoComposition` compensação /4; `tsconfig.json` exclui `docs/**`; docs de plano e referência onboarding; testes atualizados |
 | 0.27.0 | `imageTextLanguage` — seletor de idioma para textos nas imagens/cenas geradas pelo Gemini; `LOCALE_LANGUAGE_MAP` em `gemini.ts` com `geminiPromptName`; `getStoredImageTextLanguage()` helper; propagação Inspector→store→`buildGenerateOptions`→`generateScenePrompts`; i18n 3 locales; 42 testes |
-| 0.26.1 | Speed Paint imageProcessing CORS fix — `img.crossOrigin = 'anonymous'` em `generateStrokesFromImage()`, previne canvas tainted em imagens cross-origin |

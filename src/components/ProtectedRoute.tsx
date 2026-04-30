@@ -42,7 +42,7 @@ export function ProtectedRoute() {
           placeItems: 'center',
         }}
       >
-        <Stack spacing={2} sx={{ alignItems: 'center' }}>
+        <Stack spacing={2} sx={{ alignItems: 'center' }} role="status" aria-live="polite">
           <CircularProgress size={28} aria-label="Verificando sessão" />
           <Typography variant="body2" color="text.secondary">
             Verificando sessão...
