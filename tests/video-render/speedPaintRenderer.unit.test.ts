@@ -258,7 +258,7 @@ describe('speedPaintRenderer', () => {
       }).not.toThrow();
     });
 
-    it('speedMultiplier 0.5 desacelera progress — progress 0.8 * 0.5 = 0.4', () => {
+    it('speedMultiplier 0.5 desacelera progress — progress 0.8 → curva lenta', () => {
       const { ctx } = createMockCtx();
       const buffer = createBufferCanvas(createMinimalAnimation());
       const image = createMockImage();
@@ -270,6 +270,39 @@ describe('speedPaintRenderer', () => {
           progress: 0.8,
           opacity: 1,
           speedMultiplier: 0.5,
+        });
+      }).not.toThrow();
+    });
+
+    it('speedMultiplier 0.25 com progress 1.0 completa todos os strokes (antes: ficava em 25%)', () => {
+      const { ctx } = createMockCtx();
+      const strokes = [];
+      for (let i = 0; i < 10; i++) {
+        strokes.push({
+          id: i,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10 + i, 20, 30 + i, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        });
+      }
+      const animation = createMinimalAnimation({ strokes });
+      const buffer = createBufferCanvas(animation);
+      const image = createMockImage();
+
+      // Bug fix: antes, progress * 0.25 = 0.25 → apenas 2 strokes.
+      // Agora usa Math.pow(progress, 1/0.25) = Math.pow(1, 4) = 1.0 → todos os 10 strokes.
+      expect(() => {
+        renderSpeedPaintFrame(ctx, buffer, {
+          animation,
+          imageElement: image,
+          progress: 1.0,
+          opacity: 1,
+          speedMultiplier: 0.25,
         });
       }).not.toThrow();
     });

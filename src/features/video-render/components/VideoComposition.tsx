@@ -96,7 +96,8 @@ export function VideoComposition({
         const sceneCaptions = sceneCaptionsMap.get(index) ?? [];
 
         const isLastScene = index === totalScenes - 1;
-        const globalSpeedMultiplier = SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal;
+        // Divide por 4 para a nova base de velocidade (reescala: 1x nominal = 0.25x real)
+        const globalSpeedMultiplier = (SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal) / 4;
 
         return (
           <Sequence

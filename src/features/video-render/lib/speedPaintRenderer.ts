@@ -86,27 +86,43 @@ export function renderSpeedPaintFrame(
 
   let visibleCount: number;
 
+  /**
+   * Ajusta o progresso normalizado (0-1) pelo multiplicador de velocidade.
+   *
+   * - Velocidade >= 1x: multiplica e clampa — termina antes, fica em hold
+   * - Velocidade < 1x: curva de potência — garante 100% de completude no final
+   *   (ex: 0.25x → progress²⁰·²⁵, mostra tudo devagar mas completa)
+   */
+  const adjustProgress = (normalized: number, speed: number): number => {
+    const clamped = Math.max(0, Math.min(1, normalized));
+    return speed >= 1
+      ? Math.min(1, clamped * speed)
+      : Math.pow(clamped, 1 / speed);
+  };
+
   if (typeof speedMultiplier === 'number') {
-    // Comportamento original — multiplicador global (backward compat)
-    const adjustedProgress = Math.min(1, Math.max(0, progress) * speedMultiplier);
+    // Multiplicador global (backward compat)
+    const adjustedProgress = adjustProgress(progress, speedMultiplier);
     visibleCount = Math.floor(adjustedProgress * totalStrokes);
   } else if (speedMultiplier && sketchCount > 0 && revealCount > 0) {
     // Multiplicadores separados para sketch e reveal
-    const sketchDuration = revealThreshold; // Proporção do tempo dedicada ao sketch
+    const sketchDuration = revealThreshold;
     const revealDuration = 1 - revealThreshold;
 
     if (progress < sketchDuration) {
-      // Fase sketch: progress 0→revealThreshold mapeia para sketch completo
-      const sketchProgress = Math.min(1, (progress / sketchDuration) * speedMultiplier.sketch);
+      const sketchProgress = adjustProgress(progress / sketchDuration, speedMultiplier.sketch);
       visibleCount = Math.floor(sketchProgress * sketchCount);
     } else {
-      // Fase reveal: todos os sketch já foram desenhados
-      const revealProgress = Math.min(1, ((progress - sketchDuration) / revealDuration) * speedMultiplier.reveal);
+      const revealProgress = adjustProgress(
+        (progress - sketchDuration) / revealDuration,
+        speedMultiplier.reveal,
+      );
       visibleCount = sketchCount + Math.floor(revealProgress * revealCount);
     }
   } else if (speedMultiplier) {
-    // SpeedPaintMultipliers fornecido mas sem divisão clara de strokes
-    const adjustedProgress = Math.min(1, Math.max(0, progress) * ((speedMultiplier.sketch + speedMultiplier.reveal) / 2));
+    // SpeedPaintMultipliers sem divisão clara de strokes — usa média
+    const avg = (speedMultiplier.sketch + speedMultiplier.reveal) / 2;
+    const adjustedProgress = adjustProgress(progress, avg);
     visibleCount = Math.floor(adjustedProgress * totalStrokes);
   } else {
     // Sem multiplicador — progresso normal

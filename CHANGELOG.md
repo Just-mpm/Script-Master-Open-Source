@@ -7,6 +7,28 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.27.1] - 2026-04-30
+
+### Alterado
+
+- **Speed Paint — base de velocidade mais lenta**: `DEFAULT_SPEED_PAINT_MULTIPLIERS` alterado de `{ sketch: 1.0, reveal: 1.0 }` para `{ sketch: 0.25, reveal: 0.25 }` — base 4x mais lenta que a velocidade nominal do slider. Produz animações mais suaves e visíveis por padrão
+- **`adjustProgress()` no renderer**: nova função de curva de potência que garante 100% de completude no final da animação quando velocidade <1x (ex: `0.25x → progress^4`). Velocidades >=1x continuam com multiplicação simples e clamping
+- **`VideoComposition` compensação**: `globalSpeedMultiplier` dividido por 4 para alinhar `SPEED_PAINT_MULTIPLIERS` (slow/normal/fast) com a nova base de velocidade dos sliders granulares
+- **`tsconfig.json`**: `docs/**` adicionado ao `exclude` (documentação de referência e planos)
+
+### Adicionado
+
+- **`docs/onboarding-ux/`**: applet AI Studio com UX de onboarding de referência (React + Tailwind + Motion)
+- **`docs/plan/onboarding-page.md`**: plano detalhado para wizard de onboarding (`/onboarding`) com decisões técnicas
+
+### Testes
+
+- `types.unit.test.ts`: assertions atualizadas de `1.0` → `0.25` para `DEFAULT_SPEED_PAINT_MULTIPLIERS`
+- `speedPaintRenderer.unit.test.ts`: novos casos para `adjustProgress` com velocidades <1x e >=1x
+- `VideoExportPanel.unit.test.tsx`: data-attributes atualizados para refletir novo default
+
+---
+
 ## [0.27.0] - 2026-04-29
 
 ### Adicionado
