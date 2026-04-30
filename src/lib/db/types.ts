@@ -84,6 +84,9 @@ export interface SavedImage {
 export interface UserSetting {
   id: string;
   userId?: string;
+  name?: string;
+  role?: string;
+  goals?: string[];
   customSystemPrompt: string;
   updatedAt: number;
 }

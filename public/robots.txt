@@ -3,4 +3,5 @@ Allow: /
 Disallow: /app/
 Disallow: /login
 Disallow: /cadastro
+Disallow: /onboarding
 Sitemap: https://scriptmaster.app/sitemap.xml

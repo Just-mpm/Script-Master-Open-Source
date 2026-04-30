@@ -67,15 +67,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (authUser) => {
       setUser(authUser);
 
-      // Login ativo recém-concluído: full reload para ativar COEP
-      // (Firebase Auth precisa de cross-origin iframes, que COEP bloqueia)
-      if (authUser && wasLoginRequested.current) {
-        wasLoginRequested.current = false;
-        window.location.href = '/app/estudio';
-        return;
-      }
+      if (authUser) {
+        const onboardingCompleted = localStorage.getItem('s2a_onboarding_completed') === 'true';
 
-      setLoading(false);
+        // Login ativo recém-concluído: full reload para ativar COEP
+        if (wasLoginRequested.current) {
+          wasLoginRequested.current = false;
+          window.location.href = onboardingCompleted ? '/app/estudio' : '/onboarding';
+          return;
+        }
+
+        // Sessão restaurada: se wizard não foi completado, redireciona sem reload
+        // (COEP já está ativo em sessões restauradas)
+        if (!onboardingCompleted && window.location.pathname !== '/onboarding') {
+          window.location.href = '/onboarding';
+          return;
+        }
+
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
 
       // Verifica migração quando o usuário faz login (null → não-null)
       if (authUser && authUser.uid !== lastCheckedUserId.current) {

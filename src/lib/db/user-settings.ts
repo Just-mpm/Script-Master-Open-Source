@@ -15,13 +15,16 @@ const LOCAL_SETTINGS_ID = 'local_settings';
 const userSettingConverter = createFirestoreConverter<UserSetting>();
 const userSettingsCollection = (settingId: string) => doc(db, 'user_settings', settingId).withConverter(userSettingConverter);
 
-export async function saveUserSettings(customSystemPrompt: string, userId?: string): Promise<UserSetting> {
+export async function saveUserSettings(customSystemPrompt: string, userId?: string, profile?: { name?: string; role?: string; goals?: string[] }): Promise<UserSetting> {
   const settingId = userId ?? LOCAL_SETTINGS_ID;
   const setting: UserSetting = {
     id: settingId,
     userId,
     customSystemPrompt,
     updatedAt: Date.now(),
+    ...(profile?.name && { name: profile.name }),
+    ...(profile?.role && { role: profile.role }),
+    ...(profile?.goals?.length && { goals: profile.goals }),
   };
 
   if (userId) {

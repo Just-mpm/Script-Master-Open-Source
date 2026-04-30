@@ -1,4 +1,4 @@
-import { type FormEvent, useState, useEffect } from 'react';
+import { type FormEvent, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -44,7 +44,7 @@ const SEO_PROPS = getPageSeo({
 });
 
 export function LoginPage() {
-  const { user, login, loginWithEmail, resetPassword, authError, loading, clearAuthError } = useAuth();
+  const { login, loginWithEmail, resetPassword, authError, loading, clearAuthError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,13 +57,6 @@ export function LoginPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-
-  // Redireciona usuario ja autenticado para o estudio (full reload para aplicar headers COEP)
-  useEffect(() => {
-    if (user && !loading) {
-      window.location.href = '/app/estudio';
-    }
-  }, [user, loading]);
 
   function validateFields(): boolean {
     const errors: Record<string, string> = {};

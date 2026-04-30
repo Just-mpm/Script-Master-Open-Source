@@ -46,6 +46,7 @@ export default function App() {
 
   // ─── Classificação de rotas ──────────────────────────────
   const isAppRoute = currentPath.startsWith('/app/');
+  const isOnboardingRoute = currentPath === '/onboarding';
   const isAssistantRoute = currentPath === '/app/assistente';
   const isStudioRoute = currentPath === '/app/estudio';
   const isVideoRoute = currentPath === '/app/video';
@@ -77,6 +78,8 @@ export default function App() {
 
   // ─── Renderização ────────────────────────────────────────
   const isPublicOrLogin = !isAppRoute;
+  const showAppLayout = isAppRoute && !isOnboardingRoute;
+  const showContainerLayout = isPublicOrLogin && !isOnboardingRoute;
 
   return (
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
@@ -107,7 +110,7 @@ export default function App() {
       <ScrollToTop />
 
       {/* Header do app — apenas nas rotas /app/* */}
-      {isAppRoute && <Header />}
+      {showAppLayout && <Header />}
 
       <Box
         component="main"
@@ -115,11 +118,11 @@ export default function App() {
         aria-label="Conteúdo principal"
         tabIndex={-1}
         sx={{
-          minHeight: isPublicOrLogin ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`,
+          minHeight: showAppLayout ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`,
           outline: 'none',
         }}
       >
-        {isPublicOrLogin ? (
+        {showContainerLayout ? (
           routesElement
         ) : isAssistantRoute ? (
           <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, overflow: 'hidden' }}>

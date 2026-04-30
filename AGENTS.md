@@ -79,6 +79,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | `/status` | StatusPage | Não |
 | `/login` | LoginPage | Não |
 | `/cadastro` | RegisterPage | Não |
+| `/onboarding` | OnboardingPage | Não |
 | `/app/estudio` | StudioPage | Sim |
 | `/app/video` | VideoPage | Sim |
 | `/app/imagens` | ImageStudio | Sim |
@@ -98,7 +99,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | | |
 |---|---|
 | **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/toast/ToastProvider.tsx` |
-| **App.tsx** | Shell enxuto (~160 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider`. Não contém lógica de negócio |
+| **App.tsx** | Shell enxuto (~160 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider`. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
 | **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper |
 | **Redirects** | `src/router/Redirects.tsx` — 9 redirects 301 de compatibilidade |
 | **AudioGenerationHandler** | Componente extraído de App.tsx — encapsula `useAudioGenerator` + lógica de geração |
@@ -121,7 +122,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **StatusPage** | `/status` — status dos serviços |
 | **Componentes** | 17 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile, link "Contato"), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell, sem `component="main"` — landmark em App.tsx), HeroSection, FeatureCard, FeatureShowcase, CTASection (glow laranja), StepCard (glassPanelSx), SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion com a11y), UseCasesSection, MetricsSection, ProductDemoSection, TestimonialsSection, TestimonialCard, barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini |
-| **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; OG locale map (`og:locale`) por idioma; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
+| **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; OG locale map (`og:locale`) por idioma; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`, `/onboarding`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -232,15 +233,19 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Emoções** | `EmotionType` (10 emoções), `EmotionSelector` com slider de intensidade, validação `isValidEmotion`, persistência `getStoredEmotion` — integrado no Inspector e pipeline de geração de áudio via `EMOTION_OPTIONS` |
 | **Idioma das imagens** | `imageTextLanguage` (tipo `Locale`) — controla o idioma dos textos nas imagens/cenas geradas. Persistido em localStorage via `getStoredImageTextLanguage()`. Propagado até `generateScenePrompts()` via `LOCALE_LANGUAGE_MAP` (em `gemini.ts`). `LOCALE_CONFIGS` estendido com `geminiPromptName` |
 
-### Onboarding
+### Onboarding Wizard
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/onboarding/` |
-| **Componentes** | `WelcomeDialog` (boas-vindas + skip), `TourTooltip` (tooltip contextual com Popper MUI), `OnboardingManager` (orquestrador de passos) |
-| **Store** | `useOnboardingStore` (Zustand) — estado do tour, passo atual, concluído; persistido em localStorage |
-| **Passos** | `ONBOARDING_STEPS` em `steps.ts` — array tipado com `OnboardingStep` (target, title, content, placement, action) |
-| **Integração** | `OnboardingManager` renderizado no `StudioPage` |
+| **Arquivos** | `src/features/onboarding-wizard/`, `src/pages/OnboardingPage.tsx` |
+| **Rota** | `/onboarding` — pública, sem COEP, sem Header |
+| **Componentes** | `WizardContainer` (layout + progress), `WelcomeStep` (boas-vindas), `ProfileStep` (nome + role com `SelectionCard`), `GoalsStep` (goals múltiplos com chips), `CompletionStep` (resumo + redirecionamento), `StepNavigation` (back/next), `SelectionCard` (card animado com toggle) |
+| **Store** | `useWizardStore` (Zustand) — passo atual, dados do wizard (`WizardData`), concluído; persistido em localStorage via `COMPLETED_KEY` e `PROFILE_KEY` |
+| **Tipos** | `WizardData` (name, role, goals), `WizardRole` (6 roles: contentCreator, podcaster, educator, marketer, student, other), `WizardGoal` (8 goals) |
+| **Constants** | `ROLES`, `GOALS`, `STEPS`, `STEP_VARIANTS` em `constants.ts` — roles/goals com ícones MUI e labels i18n; configurações de animação Motion |
+| **Animações** | Motion (`AnimatePresence` + variants) para transições entre passos e entrada de componentes |
+| **Integração Auth** | Novos usuários sem onboarding completado são redirecionados para `/onboarding` após signup/login (AuthContext). Ao completar, salva `name`, `role`, `goals` no `user_settings` e redireciona para `/app/estudio` |
+| **i18n** | Chaves `wizard` e `onboarding` nos 3 locales (pt-BR, en, es) |
 
 ### Billing & Pagamentos
 
@@ -290,6 +295,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/pages/LoginPage.tsx`, `src/pages/RegisterPage.tsx`, `src/lib/firebase.ts`, `src/lib/db/account-cleanup.ts` |
 | **Provider** | Google popup + email/senha + reset de senha + exclusão de conta. `AuthContext` + `useAuth()` — 10 componentes consumidores |
 | **Métodos** | `login()` (Google), `signup(email, password)` (criação + verificação de email), `loginWithEmail(email, password)` (login), `resetPassword(email)` (reset, relança erro), `deleteAccount()` (cleanup LGPD + deleteUser), `clearAuthError()` |
+| **Pós-login** | Novos usuários sem onboarding completado são redirecionados para `/onboarding`; usuários com onboarding concluído vão para `/app/estudio` |
 | **Exclusão de conta** | Pipeline LGPD: `deleteUser(currentUser)` PRIMEIRO (antes do cleanup) → `deleteAllUserData(userId)` remove projetos + subcoleções, gerações, chats, memórias, settings, Storage objects e IndexedDB local; retorna `string[]` com categorias que falharam; `AuthContext` notifica o usuário via `window.confirm()` sobre falhas parciais; dialog "EXCLUIR" de confirmação no Header |
 | **Verificação de email** | `sendEmailVerification()` enviada automaticamente pós-cadastro; `ProtectedRoute` bloqueia acesso a usuários email/senha não verificados (tela com botão "Reenviar email"); Google auto-verifica |
 | **COEP conflict** | Login/logout/delete fazem `window.location.href` (full reload) para alternar COEP — popup Firebase precisa de iframes cross-origin |
@@ -308,7 +314,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
-| **Cobertura** | Todas as páginas públicas + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + AssistantComposer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel |
+| **Cobertura** | Todas as páginas públicas + OnboardingPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + AssistantComposer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel |
 
 ### Environment & COEP
 
@@ -317,9 +323,9 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
 | **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 4 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY` + 2 outras) |
 | **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()` |
-| **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login` e `/cadastro`: SEM COEP (popup Firebase) |
+| **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`, `/cadastro` e `/onboarding`: SEM COEP (popup Firebase) |
 | **Offline** | `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` (API moderna, suporte nativo a múltiplas abas) |
-| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login` e `/cadastro` |
+| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login`, `/cadastro` e `/onboarding` |
 | **Prod** | Headers em `firebase.json` (COEP em `/app/**` + `/404.html`). SPA rewrite: `**` → `/index.html`. `cleanUrls`: true. 8 redirects 301. Cache immutable para assets estáticos. Headers de segurança (`X-Content-Type-Options`, `Referrer-Policy`) |
 | **Razão** | `SharedArrayBuffer` necessário para Whisper WASM e Remotion |
 | **Segurança** | `VITE_GEMINI_API_KEY` exposta no bundle (aceito por contexto privado). Segurança dos dados via Firestore/Storage Rules |
@@ -361,7 +367,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.27.1`
+- **Current:** `0.28.0`
 - **Last release:** 2026-04-30
 
 ### Últimas mudanças (atualizado por /fast)
@@ -370,8 +376,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.28.0 | Onboarding Wizard (`/onboarding`) substitui tour guiado — 4 passos (Welcome, Profile, Goals, Completion), `useWizardStore`, `SelectionCard`, Motion animations; user settings com `name`/`role`/`goals`; redirecionamento pós-login para `/onboarding`; tour antigo removido do StudioPage; i18n 3 locales; 26 testes novos |
 | 0.27.1 | Speed Paint base 4x mais lenta (`DEFAULT_SPEED_PAINT_MULTIPLIERS` { sketch: 0.25, reveal: 0.25 }); `adjustProgress()` com curva de potência para velocidades <1x; `VideoComposition` compensação /4; `tsconfig.json` exclui `docs/**`; docs de plano e referência onboarding; testes atualizados |
 | 0.27.0 | `imageTextLanguage` — seletor de idioma para textos nas imagens/cenas geradas pelo Gemini; `LOCALE_LANGUAGE_MAP` em `gemini.ts` com `geminiPromptName`; `getStoredImageTextLanguage()` helper; propagação Inspector→store→`buildGenerateOptions`→`generateScenePrompts`; i18n 3 locales; 42 testes |
 | 0.26.1 | Speed Paint imageProcessing CORS fix — `img.crossOrigin = 'anonymous'` em `generateStrokesFromImage()`, previne canvas tainted em imagens cross-origin |
 | 0.26.0 | Firebase Cloud Functions v2 (Stripe webhooks, checkout, portal); Stripe client-side (`@stripe/stripe-js`); billing conectado ao app (`useBillingStore` Zustand, `useBillingInit`, `UpgradeDialog`); Pexels API para stock media; PricingPage refatorada com dados de `billing/plans.ts`; plano "Equipe/Team" → "Business" (3 locales); AboutPage roadmap refatorado; StatusPage simplificada; Firestore index `stripeCustomerId`; docs de plano e scan removidos |
-| 0.25.0 | i18n completo (pt-BR, en, es) propagado para toda a UI; onboarding com tour guiado; billing foundation (tipos, planos, checkEntitlement); templates de roteiro (TemplateSelector, galeria, preview); emoções no TTS (10 tipos + slider de intensidade); stock media picker (placeholder); landing page (UseCases, Metrics, ProductDemo, Testimonials); app shell refactor (router/routes.tsx, AudioGenerationHandler, ToastProvider); ~30 novos testes |

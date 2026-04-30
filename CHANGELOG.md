@@ -7,6 +7,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.28.0] - 2026-04-30
+
+### Adicionado
+
+- **Onboarding Wizard** (`/onboarding`): nova página de onboarding com wizard de 3 passos (Perfil → Objetivos → Conclusão) substitui o tour guiado antigo. Usa `useWizardStore` (Zustand) com persistência em localStorage. Componentes: `WizardContainer`, `WelcomeStep`, `ProfileStep`, `GoalsStep`, `CompletionStep`, `StepNavigation`, `SelectionCard`. Animações via Motion. Rota pública (sem COEP)
+- **Campos de perfil no user settings**: `name`, `role` (`WizardRole`) e `goals` (`WizardGoal[]`) adicionados a `UserSettings` e persistidos via `saveUserSettings()`
+- **i18n do wizard**: chaves `wizard` e `onboarding` adicionadas nos 3 locales (pt-BR, en, es) com textos dos 4 passos, roles, goals e navegação
+
+### Alterado
+
+- **Redirecionamento pós-login/cadastro**: novos usuários sem onboarding completado são redirecionados para `/onboarding` em vez de `/app/estudio` (AuthContext)
+- **App.tsx layout**: `isOnboardingRoute` controla ocultação do Header e do app layout na página de onboarding
+- **COEP & Vite**: `/onboarding` adicionada às rotas públicas (sem COEP) em `vite.config.ts` e `public/robots.txt`
+
+### Removido
+
+- **Tour de onboarding antigo**: `src/features/onboarding/` removido por completo — `OnboardingManager`, `TourTooltip`, `WelcomeDialog`, `useOnboardingStore`, `ONBOARDING_STEPS`, `OnboardingStep`, `OnboardingState`, `TooltipPlacement`
+- **Integração no StudioPage**: `OnboardingManager` não é mais renderizado como wrapper no StudioPage
+
+### Testes
+
+- `OnboardingPage.component.test.tsx`: 26 testes novos cobrindo renderização condicional por passo, navegação, seleção de role/goals, persistência no store e redirecionamento ao completar
+- `AuthContext.unit.test.tsx`: assertions atualizadas para redirecionamento `/onboarding` (antes `/app/estudio`)
+- `StudioPage.component.test.tsx`: mock do `OnboardingManager` removido
+- `onboarding.unit.test.ts`: suite removida (feature substituída)
+
+---
+
 ## [0.27.1] - 2026-04-30
 
 ### Alterado

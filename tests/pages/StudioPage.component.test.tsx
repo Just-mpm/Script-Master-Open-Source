@@ -40,10 +40,6 @@ vi.mock('@mui/material/useMediaQuery', () => ({
   useMediaQuery: () => mockIsMobile,
 }));
 
-vi.mock('../../src/features/onboarding', () => ({
-  OnboardingManager: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-
 vi.mock('../../src/components/Inspector', () => ({
   Inspector: ({ isGenerating }: { isGenerating: boolean }) => (
     <div data-testid="inspector" data-generating={String(isGenerating)}>Inspector</div>
@@ -110,10 +106,4 @@ describe('StudioPage', () => {
     expect(settingsTab.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('renderiza OnboardingManager como wrapper', () => {
-    render(<StudioPage {...defaultProps} />, { wrapper: Wrapper });
-    // Se o mock OnboardingManager renderiza children, ambos os componentes aparecem
-    expect(screen.getByTestId('inspector')).toBeDefined();
-    expect(screen.getByTestId('script-editor')).toBeDefined();
-  });
 });

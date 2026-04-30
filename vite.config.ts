@@ -22,7 +22,7 @@ function coepPlugin(): PluginOption {
     const path = req.url?.split('?')[0] ?? '/';
 
     // Rotas públicas (sem COEP) — Firebase Auth precisa de iframes cross-origin
-    const publicRoutes = ['/', '/login', '/cadastro', '/funcionalidades', '/precos', '/perguntas-frequentes', '/sobre',
+    const publicRoutes = ['/', '/login', '/cadastro', '/onboarding', '/funcionalidades', '/precos', '/perguntas-frequentes', '/sobre',
       '/terms', '/privacy', '/cookies', '/status'];
     const isPublic = publicRoutes.some(route => path === route || path.startsWith(route + '/'));
 

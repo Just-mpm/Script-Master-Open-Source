@@ -1,4 +1,4 @@
-import { type FormEvent, useState, useEffect } from 'react';
+import { type FormEvent, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -38,20 +38,13 @@ const SEO_PROPS = getPageSeo({
 });
 
 export function RegisterPage() {
-  const { user, login, signup, authError, loading, clearAuthError } = useAuth();
+  const { login, signup, authError, loading, clearAuthError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Redireciona usuario ja autenticado (full reload para aplicar COEP)
-  useEffect(() => {
-    if (user && !loading) {
-      window.location.href = '/app/estudio';
-    }
-  }, [user, loading]);
 
   function validateFields(): boolean {
     const errors: Record<string, string> = {};

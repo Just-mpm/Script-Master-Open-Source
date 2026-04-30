@@ -278,7 +278,8 @@ describe('AuthContext', () => {
         cb({ uid: 'new-uid', email: 'novo@test.com' });
       });
 
-      expect(locationSetSpy).toHaveBeenCalledWith('/app/estudio');
+      // Novo usuário sem onboarding completado → redireciona para /onboarding
+      expect(locationSetSpy).toHaveBeenCalledWith('/onboarding');
 
       // Restaura
       if (origDescriptor) {
@@ -450,7 +451,8 @@ describe('AuthContext', () => {
         cb({ uid: 'u1', email: 'user@test.com' });
       });
 
-      expect(locationSetSpy).toHaveBeenCalledWith('/app/estudio');
+      // Novo usuário sem onboarding completado → redireciona para /onboarding
+      expect(locationSetSpy).toHaveBeenCalledWith('/onboarding');
 
       if (origDescriptor) {
         Object.defineProperty(window, 'location', origDescriptor);

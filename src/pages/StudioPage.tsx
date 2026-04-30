@@ -10,7 +10,7 @@ import { ScriptEditor } from '../components/ScriptEditor';
 import { useAudioCurrentTime } from '../contexts/AudioContext';
 import { useLocale } from '../features/i18n';
 import { useStudioStore } from '../features/studio/store';
-import { OnboardingManager } from '../features/onboarding';
+
 import { useShallow } from 'zustand/react/shallow';
 
 interface StudioPageProps {
@@ -57,7 +57,6 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
   // Em desktop (lg+): grid 2 colunas (layout original)
   if (isMobile) {
     return (
-      <OnboardingManager>
         <Box sx={{ pb: 10 }}>
           <Tabs
             value={activeTab}
@@ -93,12 +92,10 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
             />
           </TabPanel>
         </Box>
-      </OnboardingManager>
     );
   }
 
   return (
-    <OnboardingManager>
       <Grid container spacing={{ xs: 3, lg: 4 }}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Inspector isGenerating={isGenerating} />
@@ -116,6 +113,5 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
           />
         </Grid>
       </Grid>
-    </OnboardingManager>
   );
 }
