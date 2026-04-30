@@ -735,6 +735,12 @@ export const ptBR: TranslationDictionary = {
         removeRefTooltip: 'Remover imagem de referência',
         removeRefAriaLabel: 'Remover imagem de referência',
         refHelper: 'Isso ajuda a IA a manter personagens ou arte consistentes entre as cenas.',
+        imageTextLanguage: {
+          label: 'Idioma dos textos nas imagens',
+          'pt-BR': 'Português (Brasil)',
+          en: 'Inglês',
+          es: 'Espanhol',
+        },
       },
       visualFramework: {
         general: 'Cenário padrão (arte guiada pelo roteiro)',

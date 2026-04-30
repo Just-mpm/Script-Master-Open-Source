@@ -6,6 +6,7 @@ import { EMOTION_OPTIONS } from '../features/studio/types';
 import type { EmotionType } from '../features/studio/types';
 import { generateScenePrompts, generateImageFromPrompt, type ScenePromptResult } from '../lib/gemini';
 import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSource, ProjectImage } from '../lib/db';
+import type { Locale } from '../features/i18n/types';
 import type { AudioSegment } from '../lib/db/types';
 import { saveAudioSegments } from '../lib/db/audio-segments';
 import { getGeminiApiKey } from '../lib/env';
@@ -98,6 +99,7 @@ interface GenerateOptions {
   referenceImage?: string | null;
   emotion?: EmotionType;
   emotionIntensity?: number;
+  locale?: Locale;
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +266,7 @@ export function useAudioGenerator() {
       referenceImage,
       emotion = 'neutral',
       emotionIntensity = 0.5,
+      locale = 'pt-BR',
     } = options;
 
     if (!script.trim()) {
@@ -558,7 +561,7 @@ export function useAudioGenerator() {
         const durationInSeconds = totalLength / 48000;
         const style = `${scene} ${styleNotes}`.trim();
 
-        const result: ScenePromptResult = await generateScenePrompts(script, durationInSeconds, style, sceneDensity, visualFramework);
+        const result: ScenePromptResult = await generateScenePrompts(script, durationInSeconds, style, sceneDensity, visualFramework, locale);
 
         // Avisa o usuário quando o Gemini falhou e usou fallback genérico
         if (result.isFallback) {

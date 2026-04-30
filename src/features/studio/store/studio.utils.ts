@@ -4,6 +4,8 @@
  */
 
 import { VOICES } from '../../../lib/constants';
+import type { Locale } from '../../i18n/types';
+import { isValidLocale } from '../../i18n/utils';
 import type { SceneRatio, StudioDraftState, EmotionType } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +29,7 @@ export const STORAGE_KEYS = {
   visualFramework: 's2a_visual_framework',
   emotion: 's2a_emotion',
   emotionIntensity: 's2a_emotion_intensity',
+  imageTextLanguage: 's2a_image_text_lang',
 } as const;
 
 export const SCENE_RATIOS: SceneRatio[] = ['16:9', '9:16', '1:1'];
@@ -107,6 +110,15 @@ export function getStoredEmotion(): EmotionType {
   }
 }
 
+export function getStoredImageTextLanguage(): Locale {
+  try {
+    const storedValue = localStorage.getItem(STORAGE_KEYS.imageTextLanguage);
+    return storedValue !== null && isValidLocale(storedValue) ? storedValue : 'pt-BR';
+  } catch {
+    return 'pt-BR';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Valores iniciais lidos do localStorage
 // ---------------------------------------------------------------------------
@@ -130,6 +142,7 @@ export function getInitialStudioConfig() {
     referenceImage: null as string | null,
     emotion: getStoredEmotion(),
     emotionIntensity: getStoredNumber(STORAGE_KEYS.emotionIntensity, 0.5),
+    imageTextLanguage: getStoredImageTextLanguage(),
   };
 }
 
@@ -161,5 +174,6 @@ export function buildGenerateOptions(
     userId,
     projectName: `Projeto ${new Date().toLocaleDateString()}`,
     ...state,
+    locale: state.imageTextLanguage,
   };
 }

@@ -39,10 +39,10 @@ describe('studio.utils — helpers de localStorage', () => {
       }
     });
 
-    it('tem 16 chaves distintas', () => {
+    it('tem 17 chaves distintas', () => {
       const values = Object.values(STORAGE_KEYS);
       const unique = new Set(values);
-      expect(unique.size).toBe(16);
+      expect(unique.size).toBe(17);
     });
 
     it('não inclui referenceImage (session-only)', () => {

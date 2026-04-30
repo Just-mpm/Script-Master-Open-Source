@@ -16,6 +16,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { SceneRatio, StudioDraftState, StudioSettingsPatch, EmotionType } from '../types';
+import type { Locale } from '../../i18n/types';
 import {
   STORAGE_KEYS,
   safeSetItem,
@@ -46,6 +47,7 @@ export interface StudioConfigState {
   referenceImage: string | null;
   emotion: EmotionType;
   emotionIntensity: number;
+  imageTextLanguage: Locale;
 
   // Setters
   setScript: (value: string) => void;
@@ -65,6 +67,7 @@ export interface StudioConfigState {
   setReferenceImage: (value: string | null) => void;
   setEmotion: (value: EmotionType) => void;
   setEmotionIntensity: (value: number) => void;
+  setImageTextLanguage: (value: Locale) => void;
 
   // Ações
   applySettings: (patch: StudioSettingsPatch) => void;
@@ -105,6 +108,7 @@ function toDraftState(state: StudioConfigState): StudioDraftState {
     referenceImage: state.referenceImage,
     emotion: state.emotion,
     emotionIntensity: state.emotionIntensity,
+    imageTextLanguage: state.imageTextLanguage,
   };
 }
 
@@ -133,6 +137,7 @@ export const useStudioStore = create<StudioConfigState>()((set) => ({
   setReferenceImage: (value) => set({ referenceImage: value }),
   setEmotion: (value) => set({ emotion: value }),
   setEmotionIntensity: (value) => set({ emotionIntensity: value }),
+  setImageTextLanguage: (value) => set({ imageTextLanguage: value }),
 
   // --- Ações ---
   applySettings: (patch) => set((state) => {
@@ -170,6 +175,7 @@ const PERSIST_MAP: ReadonlyArray<{
     | 'speakerBName' | 'speakerBVoice' | 'audioProfile' | 'scene'
     | 'styleNotes' | 'pace' | 'generateScenes' | 'sceneDensity'
     | 'sceneRatio' | 'visualFramework' | 'emotion' | 'emotionIntensity'
+    | 'imageTextLanguage'
   >;
   storageKey: string;
   serialize: (value: unknown) => string;
@@ -190,6 +196,7 @@ const PERSIST_MAP: ReadonlyArray<{
   { key: 'visualFramework', storageKey: STORAGE_KEYS.visualFramework, serialize: String },
   { key: 'emotion', storageKey: STORAGE_KEYS.emotion, serialize: String },
   { key: 'emotionIntensity', storageKey: STORAGE_KEYS.emotionIntensity, serialize: String },
+  { key: 'imageTextLanguage', storageKey: STORAGE_KEYS.imageTextLanguage, serialize: String },
 ];
 
 // Listener de subscribe — apenas persiste, nunca chama set() (sem loop)

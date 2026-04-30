@@ -10,6 +10,8 @@ export interface LocaleConfig {
   flag: string;
   /** Direção do texto (futuro RTL para árabe, hebraico, etc.) */
   direction: 'ltr';
+  /** Nome do idioma para instruções ao Gemini (ex: "português brasileiro") */
+  geminiPromptName?: string;
 }
 
 /**

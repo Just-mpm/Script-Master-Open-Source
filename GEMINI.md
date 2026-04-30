@@ -148,7 +148,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Retry** | `withRetry`: 3 tentativas, 1000ms base, 500ms jitter (mesmo do TTS) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
-| **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
+| **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar. Recebe `locale` e injeta instrução crítica de idioma no prompt via `LOCALE_LANGUAGE_MAP` (ex: "português brasileiro", "inglês", "espanhol") |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
 | **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels). Retry automático via `withRetry` |
 
@@ -220,16 +220,17 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx`, `src/features/studio/components/TemplateSelector.tsx`, `src/features/studio/components/EmotionSelector.tsx`, `src/data/scriptTemplates.ts` |
 | **Estado** | `useStudioStore` (Zustand) com `useShallow` para seletores otimizados; `useCurrentStudioState()` deriva `StudioDraftState`; sem hook `useStudioState` (removido na 0.22.0) |
 | **Store** | `studioStore.ts` (state + setters + actions), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions`), `index.ts` (barrel exports) |
-| **Persistência** | 14 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only |
+| **Persistência** | 17 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only |
 | **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
 | **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo. Seletores primitivos do AudioContext (`useAudioIsPlaying`, `useAudioCurrentTime`, `useAudioDuration`) em vez de `useGlobalAudioState` — elimina ~4 re-renders/s |
 | **Geração** | `useAudioGenerator` instanciado apenas no `App.tsx`; StudioPage recebe `isGenerating`, `scenes`, `handleGenerate`, `isGenerateDisabled` como props |
-| **buildGenerateOptions** | Construtor DRY em `store/studio.utils.ts` — recebe `GenerateOptionsState` (combina `StudioDraftState` + campos de speaker) e userId, retorna opções de geração (usado por App.tsx) |
+| **buildGenerateOptions** | Construtor DRY em `store/studio.utils.ts` — recebe `GenerateOptionsState` (combina `StudioDraftState` + campos de speaker) e userId, retorna opções de geração com `locale` mapeado de `imageTextLanguage` (usado por App.tsx) |
 | **Inspector** | Lê estado diretamente do `useStudioStore` com `useShallow` — recebe apenas `isGenerating` como prop (22→1 prop desde 0.24.5) |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
 | **Keyboard shortcuts** | `useKeyboardShortcuts`: Ctrl+Enter (gerar), Space (play/pause vídeo e toggle áudio), proteção contra inputs/blocos editáveis focados |
 | **Templates** | `TemplateSelector` (collapsible no Inspector), `TemplateGallery`, `TemplateCard`, `TemplatePreviewDialog` — templates categorizados em `src/data/scriptTemplates.ts` com `TemplateCategory`; StudioPage tem aba dedicada para templates |
 | **Emoções** | `EmotionType` (10 emoções), `EmotionSelector` com slider de intensidade, validação `isValidEmotion`, persistência `getStoredEmotion` — integrado no Inspector e pipeline de geração de áudio via `EMOTION_OPTIONS` |
+| **Idioma das imagens** | `imageTextLanguage` (tipo `Locale`) — controla o idioma dos textos nas imagens/cenas geradas. Persistido em localStorage via `getStoredImageTextLanguage()`. Propagado até `generateScenePrompts()` via `LOCALE_LANGUAGE_MAP` (em `gemini.ts`). `LOCALE_CONFIGS` estendido com `geminiPromptName` |
 
 ### Onboarding
 
@@ -304,7 +305,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Locales** | pt-BR (default), en, es — dicionários em `src/features/i18n/locales/` |
 | **Provider** | `I18nProvider` no `main.tsx`; hook `useLocale()` retorna `{ locale, setLocale, t }` |
 | **Selector** | `LocaleSelector` (ícone globe) no PublicHeader e Header |
-| **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys |
+| **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
 | **Cobertura** | Todas as páginas públicas + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + AssistantComposer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel |
@@ -360,7 +361,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.26.1`
+- **Current:** `0.27.0`
 - **Last release:** 2026-04-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -369,8 +370,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.27.0 | `imageTextLanguage` — seletor de idioma para textos nas imagens/cenas geradas pelo Gemini; `LOCALE_LANGUAGE_MAP` em `gemini.ts` com `geminiPromptName`; `getStoredImageTextLanguage()` helper; propagação Inspector→store→`buildGenerateOptions`→`generateScenePrompts`; i18n 3 locales; 42 testes |
 | 0.26.1 | Speed Paint imageProcessing CORS fix — `img.crossOrigin = 'anonymous'` em `generateStrokesFromImage()`, previne canvas tainted em imagens cross-origin |
 | 0.26.0 | Firebase Cloud Functions v2 (Stripe webhooks, checkout, portal); Stripe client-side (`@stripe/stripe-js`); billing conectado ao app (`useBillingStore` Zustand, `useBillingInit`, `UpgradeDialog`); Pexels API para stock media; PricingPage refatorada com dados de `billing/plans.ts`; plano "Equipe/Team" → "Business" (3 locales); AboutPage roadmap refatorado; StatusPage simplificada; Firestore index `stripeCustomerId`; docs de plano e scan removidos |
 | 0.25.0 | i18n completo (pt-BR, en, es) propagado para toda a UI; onboarding com tour guiado; billing foundation (tipos, planos, checkEntitlement); templates de roteiro (TemplateSelector, galeria, preview); emoções no TTS (10 tipos + slider de intensidade); stock media picker (placeholder); landing page (UseCases, Metrics, ProductDemo, Testimonials); app shell refactor (router/routes.tsx, AudioGenerationHandler, ToastProvider); ~30 novos testes |
 | 0.24.7 | `SpeedPaintScene` sistema de 4 zonas (fade in → animação → hold → fade out) com `interpolate` do Remotion; opacidade via CSS para crossfade real; overlap dinâmico por cena (1s speed paint, 400ms estático); `sendMessage` envolvido em `useCallback`; PWA `navigateFallbackDenylist` com `/__/` para endpoints Firebase Hosting |
-| 0.24.6 | Firestore persistence modernizada (`initializeFirestore` + `persistentLocalCache` + `persistentMultipleTabManager`); `optimizeDeps.include` para mediabunny e sub-pacotes; 3 composite indexes `COLLECTION_GROUP` (audios, images, videos) para queries da galeria |

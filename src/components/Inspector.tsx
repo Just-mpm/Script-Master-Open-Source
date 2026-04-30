@@ -46,6 +46,7 @@ import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { createLogger } from '../lib/logger';
 import { useLocale } from '../features/i18n';
+import type { Locale } from '../features/i18n/types';
 
 const log = createLogger('Inspector');
 
@@ -116,6 +117,12 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     { value: 120, label: t('studio.inspector.sceneDensity.120') },
   ];
 
+  const imageTextLanguageOptions: Array<{ value: Locale; label: string }> = [
+    { value: 'pt-BR', label: t('studio.inspector.sceneFields.imageTextLanguage.pt-BR') },
+    { value: 'en', label: t('studio.inspector.sceneFields.imageTextLanguage.en') },
+    { value: 'es', label: t('studio.inspector.sceneFields.imageTextLanguage.es') },
+  ];
+
   // Estado de config do store (Zustand) — useShallow evita re-renders desnecessários
   const {
     isMultiSpeaker,
@@ -150,6 +157,8 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     setEmotion,
     emotionIntensity,
     setEmotionIntensity,
+    imageTextLanguage,
+    setImageTextLanguage,
   } = useStudioStore(useShallow((s) => ({
     isMultiSpeaker: s.isMultiSpeaker,
     setIsMultiSpeaker: s.setIsMultiSpeaker,
@@ -183,6 +192,8 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     setEmotion: s.setEmotion,
     emotionIntensity: s.emotionIntensity,
     setEmotionIntensity: s.setEmotionIntensity,
+    imageTextLanguage: s.imageTextLanguage,
+    setImageTextLanguage: s.setImageTextLanguage,
   })));
   const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
   const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
@@ -658,6 +669,23 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                         onChange={(event) => setVisualFramework(event.target.value)}
                       >
                         {visualFrameworkOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth disabled={isGenerating}>
+                      <InputLabel id="image-text-lang-label">{t('studio.inspector.sceneFields.imageTextLanguage.label')}</InputLabel>
+                      <Select
+                        labelId="image-text-lang-label"
+                        id="image-text-lang-select"
+                        label={t('studio.inspector.sceneFields.imageTextLanguage.label')}
+                        value={imageTextLanguage}
+                        onChange={(event) => setImageTextLanguage(event.target.value as Locale)}
+                      >
+                        {imageTextLanguageOptions.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {option.label}
                           </MenuItem>

@@ -1,3 +1,5 @@
+import type { Locale } from '../i18n/types';
+
 export type SceneRatio = '16:9' | '9:16' | '1:1';
 
 /** Emoções suportadas pelo TTS — mapeadas para instruções de prompt */
@@ -37,6 +39,7 @@ export interface StudioDraftState {
   referenceImage: string | null;
   emotion: EmotionType;
   emotionIntensity: number;
+  imageTextLanguage: Locale;
 }
 
 /** Patch parcial para aplicar configurações do estúdio (usado pelo assistente IA).
@@ -58,4 +61,5 @@ export interface StudioSettingsPatch {
   visualFramework?: string;
   emotion?: EmotionType;
   emotionIntensity?: number;
+  imageTextLanguage?: Locale;
 }

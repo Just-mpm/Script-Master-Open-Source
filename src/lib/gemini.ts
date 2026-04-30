@@ -3,9 +3,17 @@ import { getGeminiApiKey } from './env';
 import { withRetry } from './rate-limiter';
 import { createLogger } from './logger';
 
+import type { Locale } from '../features/i18n/types';
+import { LOCALE_CONFIGS } from '../features/i18n/locales';
+
 const log = createLogger('gemini');
 
 const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+
+/** Mapa locale -> nome do idioma para instruções ao Gemini, derivado de LOCALE_CONFIGS */
+const LOCALE_LANGUAGE_MAP: Record<Locale, string> = Object.fromEntries(
+  LOCALE_CONFIGS.map(c => [c.code, c.geminiPromptName ?? c.label])
+) as Record<Locale, string>;
 
 export interface ScenePrompt {
   timestamp: number; // in seconds
@@ -40,7 +48,7 @@ function parseReferenceImage(referenceImage: string): ReferenceImagePayload {
   };
 }
 
-export async function generateScenePrompts(script: string, durationInSeconds: number, style: string, densitySeconds: number = 15, visualFramework: string = 'general'): Promise<ScenePromptResult> {
+export async function generateScenePrompts(script: string, durationInSeconds: number, style: string, densitySeconds: number = 15, visualFramework: string = 'general', locale: Locale = 'pt-BR'): Promise<ScenePromptResult> {
   const imageCount = Math.max(1, Math.ceil(durationInSeconds / densitySeconds));
   
   const frameworkInstructions = visualFramework === 'whiteboard'
@@ -67,7 +75,7 @@ A direção de base e estilo customizado fornecido pelo usuário é: ${style || 
 Retorne um array JSON onde cada objeto tem:
 - "timestamp": o tempo exato em segundos (a primeira DEVE ser 0).
 - "prompt": um prompt EXTREMAMENTE detalhado em INGLÊS para um gerador de imagens avançado.
-  - Para gerar textos corretamente em inglês no prompt, especifique algo como: \`The word "TEXT" written in bold letters\`. Mas use as palavras relativas ao contexto narrado traduzidas ou no idioma correspondente.
+  - [CRÍTICO — IDIOMA DOS TEXTOS NAS IMAGENS]: Sempre que a imagem precisar conter texto escrito (títulos, labels, quadros, anotações, letreiros, etc.), esse texto DEVE estar em ${LOCALE_LANGUAGE_MAP[locale]}. No prompt em inglês, use a instrução de renderização com o texto em ${LOCALE_LANGUAGE_MAP[locale]}. Exemplo: \`The words "TÓPICO EM PORTUGUÊS" written in bold white letters on screen\`. NUNCA traduza esses textos para inglês — o prompt é em inglês, mas o texto renderizado na imagem deve ser em ${LOCALE_LANGUAGE_MAP[locale]}.
 
 Roteiro Narrado:
 ${script}`;

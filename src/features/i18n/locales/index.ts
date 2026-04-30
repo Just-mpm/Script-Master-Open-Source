@@ -18,7 +18,7 @@ export const dictionaries: Record<Locale, TranslationDictionary> = {
 
 /** Configurações visuais de cada locale */
 export const LOCALE_CONFIGS: readonly LocaleConfig[] = [
-  { code: 'pt-BR', label: 'Português', flag: '🇧🇷', direction: 'ltr' },
-  { code: 'en', label: 'English', flag: '🇺🇸', direction: 'ltr' },
-  { code: 'es', label: 'Español', flag: '🇪🇸', direction: 'ltr' },
+  { code: 'pt-BR', label: 'Português', flag: '🇧🇷', direction: 'ltr', geminiPromptName: 'português brasileiro' },
+  { code: 'en', label: 'English', flag: '🇺🇸', direction: 'ltr', geminiPromptName: 'inglês' },
+  { code: 'es', label: 'Español', flag: '🇪🇸', direction: 'ltr', geminiPromptName: 'espanhol' },
 ] as const;

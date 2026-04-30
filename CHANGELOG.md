@@ -7,6 +7,25 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.27.0] - 2026-04-29
+
+### Adicionado
+
+- **imageTextLanguage — idioma do texto nas imagens**: novo campo `imageTextLanguage` no `StudioDraftState` e `StudioSettingsPatch` que permite ao usuário selecionar em qual idioma os textos das imagens/cenas geradas pelo Gemini serão escritos. Persistido no localStorage (`s2a_image_text_lang`), default `pt-BR`. Integrado no Inspector com seletor de locale
+- **LOCALE_LANGUAGE_MAP em gemini.ts**: mapa derivado de `LOCALE_CONFIGS` que traduz locale em nome de idioma para instruções ao Gemini (ex: `pt-BR` → "português brasileiro"). `LOCALE_CONFIGS` estendido com campo `geminiPromptName` para nomes customizados
+- **getStoredImageTextLanguage()** em `studio.utils.ts`: helper de leitura do localStorage com validação via `isValidLocale` e fallback `pt-BR`
+- **Propagação no pipeline**: `buildGenerateOptions` mapeia `imageTextLanguage` → `locale` nas opções de geração; `generateScenePrompts` injeta instrução crítica de idioma no prompt ao Gemini; `useAudioGenerator` recebe e propaga o locale
+- **i18n — 3 locales**: chave `imageTextLanguage` adicionada nos dicionários pt-BR, en e es (label e descrição do seletor)
+- **42 testes**: arquivo `tests/studio/imageTextLanguage.unit.test.ts` cobrindo `generateScenePrompts` (7), `buildGenerateOptions` (5), localStorage helpers (16) e studioStore (14) — zero bugs, zero falsos positivos
+
+### Alterado
+
+- **STORAGE_KEYS**: adicionada chave `imageTextLanguage: 's2a_image_text_lang'` (total: 17 preferências persistidas)
+- **testes existentes**: assertion de 16→17 chaves distintas em `studio.utils.unit.test.ts`
+- **types.ts (i18n)**: adicionado campo `geminiPromptName?: string` no tipo `LocaleConfig`
+
+---
+
 ## [0.26.1] - 2026-04-29
 
 ### Corrigido
