@@ -33,6 +33,7 @@ import Mic from '@mui/icons-material/Mic';
 import Palette from '@mui/icons-material/Palette';
 import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
+import Settings from '@mui/icons-material/Settings';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
@@ -89,6 +90,7 @@ export function Header() {
     { to: '/app/pintura-rapida', label: t('studio.header.nav.speedPaint'), icon: Palette },
     { to: '/app/assistente', label: t('studio.header.nav.ai'), icon: Sparkles, accent: true },
     { to: '/app/biblioteca', label: t('studio.header.nav.library'), icon: LocalLibrary },
+    { to: '/app/configuracoes', label: t('studio.header.nav.settings'), icon: Settings },
   ], [t]);
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);

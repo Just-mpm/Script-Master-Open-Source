@@ -1,37 +1,34 @@
-# Relatório Consolidado de Testes — 2026-04-29
+# Relatório Consolidado de Testes — 2026-04-30
 
-**Escopo:** `--diff` — Feature `imageTextLanguage` (10 arquivos modificados)
+**Escopo:** `--diff` — Speed Paint defaults + PWA orientation + Página de Configurações (15 modificados + 3 novos)
 **Agents:** 2 vitest-specialist (zero Firebase envolvido)
 
 ## Resumo
 
 | Métrica | Valor |
 |---------|-------|
-| Arquivos testados | 10 |
-| Testes criados | 42 (arquivo permanente: `tests/studio/imageTextLanguage.unit.test.ts`) |
+| Arquivos testados | 12 (código) |
+| Testes criados | 66 (35 studio.defaults + 31 video-render-router) |
+| Testes corrigidos | 1 (redirects.unit.test.tsx — lacuna no it.each) |
 | Bugs reais confirmados | 0 |
-| Falsos positivos corrigidos | 9 (mock construtor + locale named exports) |
+| Falsos positivos corrigidos | 4 (2 por área) |
 | Typecheck | Passou |
 | Lint | Passou (0 erros, 0 warnings) |
-| Suite completa | 131 arquivos, 1856 testes, todos passaram |
+| Build | Passou (4.71s) |
+| Suite completa | 136 arquivos, 1951 testes, todos passaram |
 
 ## Resumo por Área
 
-| Área | Agent | Bugs | Status |
-|------|-------|------|--------|
-| studio.utils (isValidLocale, getStoredImageTextLanguage, STORAGE_KEYS) | vitest-specialist | 0 | Sem findings |
-| studioStore (imageTextLanguage field, persist, reset, applySettings) | vitest-specialist | 0 | Sem findings |
-| studio/types (Locale em StudioDraftState, StudioSettingsPatch) | vitest-specialist | 0 | Sem findings |
-| gemini.ts (LOCALE_LANGUAGE_MAP, generateScenePrompts com locale) | vitest-specialist | 0 | Sem findings |
-| useAudioGenerator (propagação locale) | vitest-specialist | 0 | Sem findings |
-| Inspector (seletor de idioma) | vitest-specialist | 0 | Sem findings |
-| Locale files (pt-BR, en, es — chave imageTextLanguage) | vitest-specialist | 0 | Sem findings |
+| Área | Agent | Testes | Bugs | Status |
+|------|-------|--------|------|--------|
+| configuracoes (Configuracoes.tsx, studio.utils.ts) | vitest-specialist | 35 | 0 | Sem findings |
+| video-render-router (SpeedPaintControls, types, routes, redirects) | vitest-specialist | 31 | 0 | Sem findings |
 
 ## Conclusão
 
-Escopo testado extensivamente. Nenhum bug real confirmado. A feature `imageTextLanguage` está implementada corretamente em todas as camadas: tipos, helpers de localStorage, store Zustand, buildGenerateOptions, generateScenePrompts, e locale files (3 idiomas).
+Escopo testado extensivamente. Nenhum bug real confirmado. Todas as mudanças estão corretas: novas funções de persistência (`saveStudioDefaults`, `clearStudioDefaults`), mudança de `DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch` (0.25→1.0), nova função `formatRevealLabel`, nova rota e redirect de configurações, e import do ícone Settings no Header.
 
 ## Relatórios Permanentes
 
-- `docs/test/2026-04-29-studio-core-vitest.md`
-- `docs/test/2026-04-29-studio-integration-vitest.md`
+- `docs/test/2026-04-30-configuracoes-vitest.md`
+- `docs/test/2026-04-30-video-render-router-vitest.md`

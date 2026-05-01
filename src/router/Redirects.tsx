@@ -26,4 +26,5 @@ export const appCompatRedirects = [
   <Route key="r-assistant" path="/app/assistant" element={<Navigate to="/app/assistente" replace />} />,
   <Route key="r-library" path="/app/library" element={<Navigate to="/app/biblioteca" replace />} />,
   <Route key="r-speed-paint" path="/app/speed-paint" element={<Navigate to="/app/pintura-rapida" replace />} />,
+  <Route key="r-settings" path="/app/settings" element={<Navigate to="/app/configuracoes" replace />} />,
 ];

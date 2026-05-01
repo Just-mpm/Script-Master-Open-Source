@@ -98,8 +98,8 @@ describe('video-render types', () => {
   });
 
   describe('DEFAULT_SPEED_PAINT_MULTIPLIERS', () => {
-    it('possui sketch e reveal com valor 0.25 (base 4x mais lenta)', () => {
-      expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch).toBe(0.25);
+    it('possui sketch em 1.0x (velocidade real) e reveal em 0.25x (base 4x mais lento)', () => {
+      expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch).toBe(1.0);
       expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal).toBe(0.25);
     });
 

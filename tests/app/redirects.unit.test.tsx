@@ -60,8 +60,8 @@ describe('publicCompatRedirects', () => {
 // ─── App redirects ────────────────────────────────────────────
 
 describe('appCompatRedirects', () => {
-  it('deve conter exatamente 4 redirects do app', () => {
-    expect(appCompatRedirects).toHaveLength(4);
+  it('deve conter exatamente 5 redirects do app', () => {
+    expect(appCompatRedirects).toHaveLength(5);
   });
 
   it('todos devem usar replace=true', () => {
@@ -82,6 +82,7 @@ describe('appCompatRedirects', () => {
     { key: 'r-assistant', from: '/app/assistant', to: '/app/assistente' },
     { key: 'r-library', from: '/app/library', to: '/app/biblioteca' },
     { key: 'r-speed-paint', from: '/app/speed-paint', to: '/app/pintura-rapida' },
+    { key: 'r-settings', from: '/app/settings', to: '/app/configuracoes' },
   ])('deve redirecionar $from → $to (key=$key)', ({ key, from, to }) => {
     const redirect = appCompatRedirects.find((r) => r.key === key);
     expect(redirect).toBeDefined();

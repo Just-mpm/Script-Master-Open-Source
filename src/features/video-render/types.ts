@@ -22,9 +22,9 @@ export interface SpeedPaintMultipliers {
   reveal: number;
 }
 
-/** Multiplicadores padrão — base 4x mais lento que a velocidade nominal do slider */
+/** Multiplicadores padrão — sketch em velocidade real, reveal base 4x mais lento */
 export const DEFAULT_SPEED_PAINT_MULTIPLIERS: Readonly<SpeedPaintMultipliers> = {
-  sketch: 0.25,
+  sketch: 1.0,
   reveal: 0.25,
 } as const;
 

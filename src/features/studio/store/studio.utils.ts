@@ -177,3 +177,67 @@ export function buildGenerateOptions(
     locale: state.imageTextLanguage,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Persistência de padrões (página de configurações)
+// ---------------------------------------------------------------------------
+
+type StudioSettingsPatch = Partial<{
+  isMultiSpeaker: boolean;
+  speakerAName: string;
+  selectedVoice: string;
+  speakerBName: string;
+  speakerBVoice: string;
+  audioProfile: string;
+  scene: string;
+  styleNotes: string;
+  pace: string;
+  generateScenes: boolean;
+  sceneDensity: number;
+  sceneRatio: SceneRatio;
+  visualFramework: string;
+  emotion: EmotionType;
+  emotionIntensity: number;
+  imageTextLanguage: Locale;
+}>;
+
+/** Chaves s2a_* que a página de configurações gerencia (exclui script e referenceImage) */
+const DEFAULTS_KEYS: ReadonlyArray<keyof typeof STORAGE_KEYS> = [
+  'isMultiSpeaker', 'speakerAName', 'selectedVoice', 'speakerBName', 'speakerBVoice',
+  'audioProfile', 'scene', 'styleNotes', 'pace', 'generateScenes', 'sceneDensity',
+  'sceneRatio', 'visualFramework', 'emotion', 'emotionIntensity', 'imageTextLanguage',
+] as const;
+
+/**
+ * Salva defaults do estúdio nas mesmas chaves s2a_*.
+ * Define o estado inicial do estúdio na próxima sessão.
+ */
+export function saveStudioDefaults(defaults: StudioSettingsPatch): void {
+  if (defaults.isMultiSpeaker !== undefined) safeSetItem(STORAGE_KEYS.isMultiSpeaker, String(defaults.isMultiSpeaker));
+  if (defaults.speakerAName !== undefined) safeSetItem(STORAGE_KEYS.speakerAName, defaults.speakerAName);
+  if (defaults.selectedVoice !== undefined) safeSetItem(STORAGE_KEYS.selectedVoice, defaults.selectedVoice);
+  if (defaults.speakerBName !== undefined) safeSetItem(STORAGE_KEYS.speakerBName, defaults.speakerBName);
+  if (defaults.speakerBVoice !== undefined) safeSetItem(STORAGE_KEYS.speakerBVoice, defaults.speakerBVoice);
+  if (defaults.audioProfile !== undefined) safeSetItem(STORAGE_KEYS.audioProfile, defaults.audioProfile);
+  if (defaults.scene !== undefined) safeSetItem(STORAGE_KEYS.scene, defaults.scene);
+  if (defaults.styleNotes !== undefined) safeSetItem(STORAGE_KEYS.styleNotes, defaults.styleNotes);
+  if (defaults.pace !== undefined) safeSetItem(STORAGE_KEYS.pace, defaults.pace);
+  if (defaults.generateScenes !== undefined) safeSetItem(STORAGE_KEYS.generateScenes, String(defaults.generateScenes));
+  if (defaults.sceneDensity !== undefined) safeSetItem(STORAGE_KEYS.sceneDensity, String(defaults.sceneDensity));
+  if (defaults.sceneRatio !== undefined) safeSetItem(STORAGE_KEYS.sceneRatio, defaults.sceneRatio);
+  if (defaults.visualFramework !== undefined) safeSetItem(STORAGE_KEYS.visualFramework, defaults.visualFramework);
+  if (defaults.emotion !== undefined) safeSetItem(STORAGE_KEYS.emotion, defaults.emotion);
+  if (defaults.emotionIntensity !== undefined) safeSetItem(STORAGE_KEYS.emotionIntensity, String(defaults.emotionIntensity));
+  if (defaults.imageTextLanguage !== undefined) safeSetItem(STORAGE_KEYS.imageTextLanguage, defaults.imageTextLanguage);
+}
+
+/** Remove todas as chaves s2a_* (exceto script) — volta aos hardcodados de getInitialStudioConfig() */
+export function clearStudioDefaults(): void {
+  for (const key of DEFAULTS_KEYS) {
+    try {
+      localStorage.removeItem(STORAGE_KEYS[key]);
+    } catch {
+      // Safari Private Browsing — silencioso
+    }
+  }
+}

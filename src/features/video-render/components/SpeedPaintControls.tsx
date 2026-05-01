@@ -25,7 +25,7 @@ const SPEED_STEP = 0.25;
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-/** Formata o multiplicador de velocidade com label descritivo */
+/** Formata o multiplicador de velocidade com label descritivo (sketch — labels originais) */
 function formatSpeedLabel(value: number): string {
   if (value === 0.25) return '0.25x Muito lento';
   if (value === 0.5) return '0.5x Lento';
@@ -36,6 +36,20 @@ function formatSpeedLabel(value: number): string {
   if (value === 3.0) return '3.0x Muito rápido';
   if (value === 4.0) return '4.0x Máximo';
   return `${value}x`;
+}
+
+/** Formata o multiplicador de reveal com fator ×4 (labels shiftados) */
+function formatRevealLabel(value: number): string {
+  const display = value * 4;
+  if (value === 0.25) return `1.0x Normal`;
+  if (value === 0.5) return `2.0x Rápido`;
+  if (value === 0.75) return `3.0x`;
+  if (value === 1.0) return `4.0x`;
+  if (value === 1.5) return `6.0x`;
+  if (value === 2.0) return `8.0x`;
+  if (value === 3.0) return `12.0x`;
+  if (value === 4.0) return `16.0x Máximo`;
+  return `${display}x`;
 }
 
 // ─── Props ───────────────────────────────────────────────────
@@ -65,7 +79,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
 
   // Labels memoizados para evitar re-cálculo a cada render
   const sketchLabel = useMemo(() => formatSpeedLabel(sketch), [sketch]);
-  const revealLabel = useMemo(() => formatSpeedLabel(reveal), [reveal]);
+  const revealLabel = useMemo(() => formatRevealLabel(reveal), [reveal]);
 
   // Handler de mudança do slider sketch — estável entre renders
   const handleSketchChange = useCallback(

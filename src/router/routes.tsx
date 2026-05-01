@@ -110,6 +110,11 @@ const SpeedPaintPage = lazy(async () => {
   return { default: module.SpeedPaintPage };
 });
 
+const ConfiguracoesPage = lazy(async () => {
+  const module = await import('../pages/ConfiguracoesPage');
+  return { default: module.ConfiguracoesPage };
+});
+
 const NotFoundPage = lazy(async () => {
   const module = await import('../pages/NotFoundPage');
   return { default: module.NotFoundPage };
@@ -206,6 +211,7 @@ export function AppRoutes({
 
           <Route path="/app/biblioteca" element={<LibraryPage />} />
           <Route path="/app/pintura-rapida" element={<SpeedPaintPage />} />
+          <Route path="/app/configuracoes" element={<ConfiguracoesPage />} />
 
           {/* Redirects de compatibilidade (rotas do app) */}
           {appCompatRedirects}

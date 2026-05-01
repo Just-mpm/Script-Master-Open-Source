@@ -7,6 +7,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.29.0] - 2026-04-30
+
+### Adicionado
+
+- **Página de Configurações** (`/app/configuracoes`): nova página protegida com 4 seções colapsáveis (Voz, Persona & Direção, Cenas & Imagens, Multi-locutor) e 15 campos configuráveis — permite definir padrões de produção que são aplicados ao abrir o estúdio. Persistência via `saveStudioDefaults()`/`clearStudioDefaults()` escrevendo nas mesmas chaves `s2a_*` do localStorage. Botão "Restaurar padrões" limpa localStorage + reseta store. Ícone `Settings` no Header (desktop + mobile Drawer)
+- **`VoiceCard`** (`src/components/VoiceCard.tsx`): componente extraído do Inspector para reuso — card de voz com preview de áudio (play/pause), indicador de carregamento (erro/sucesso) e seleção visual. Usado por Inspector e ConfiguracoesPage
+- **`studioOptions.ts`** (`src/data/studioOptions.ts`): módulo DRY com funções factory para opções do estúdio — `createPaceOptions()`, `createVisualFrameworkOptions()`, `createSceneRatioOptions()`, `createDensityOptions()`. Usado por Inspector e ConfiguracoesPage
+- **`formatRevealLabel()`** no `SpeedPaintControls`: função auxiliar para labels shiftados ×4 apenas no slider de reveal (sketch mantém labels normais)
+- **Redirect** `/app/settings` → `/app/configuracoes` (compatibilidade)
+- **i18n**: namespace `configuracoes.*` nos 3 locales (pt-BR, en, es) + chave `studio.header.nav.settings` para ícone do Header
+
+### Alterado
+
+- **`DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch`**: ajustado de 0.25 para 1.0 (velocidade real) — sketch agora desenha em velocidade nominal, apenas reveal mantém base 4x mais lenta. `VideoComposition` removeu compensação /4 para sketch
+- **PWA orientation**: `orientation: 'any'` → `'portrait'` no manifest (lock para retrato)
+- **`Inspector`**: refatorado para usar `VoiceCard` (extraído) e `studioOptions.ts` (DRY) — redução de ~124 linhas, imports simplificados
+
+### Testes
+
+- `studio.defaults.unit.test.ts`: 35 testes novos cobrindo `saveStudioDefaults()`, `clearStudioDefaults()`, `DEFAULTS_KEYS`, localStorage vazio e integração com store
+- `SpeedPaintControls.unit.test.tsx`: 30 testes novos cobrindo `formatRevealLabel()`, `formatSpeedLabel()`, interação dos sliders e labels colapsados
+- `routes-configuracoes.unit.test.tsx`: 1 teste novo validando lazy loading da rota `/app/configuracoes`
+- `ConfiguracoesPage.component.test.tsx`: 22 testes novos cobrindo renderização, seções, grid de vozes, idioma de textos, botões de ação e confirmação de restauração
+- `redirects.unit.test.tsx`: lacuna corrigida — redirect `/app/settings` ausente no `it.each` (4→5 app redirects)
+- `types.unit.test.ts` + `VideoExportPanel.unit.test.tsx`: assertions atualizadas de `sketch: 0.25` → `sketch: 1.0`
+
+---
+
 ## [0.28.2] - 2026-04-30
 
 ### Adicionado
