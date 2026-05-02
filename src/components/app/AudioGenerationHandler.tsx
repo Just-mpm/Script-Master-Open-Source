@@ -6,13 +6,10 @@ import { MAX_CHARS } from '../../lib/constants';
 import { saveGeneration, type SavedAudio } from '../../lib/db';
 import { createLogger } from '../../lib/logger';
 import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from '../../features/studio/store';
+import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
 
 const log = createLogger('AudioGenerationHandler');
-
-// ─── Tipos ─────────────────────────────────────────────────
-
-type SceneItem = { imageUrl: string; timestamp: number };
 
 interface AudioGenerationHandlerReturn {
   // Estado de geração de áudio

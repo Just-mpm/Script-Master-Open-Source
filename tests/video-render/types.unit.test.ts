@@ -98,9 +98,9 @@ describe('video-render types', () => {
   });
 
   describe('DEFAULT_SPEED_PAINT_MULTIPLIERS', () => {
-    it('possui sketch em 1.0x (velocidade real) e reveal em 0.25x (base 4x mais lento)', () => {
+    it('possui sketch em 1.0x (velocidade real) e reveal em 1.0x (com REVEAL_SPEED_SCALE 0.5 interno)', () => {
       expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch).toBe(1.0);
-      expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal).toBe(0.25);
+      expect(DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal).toBe(1.0);
     });
 
     it('é declarado como Readonly no tipo (as const)', () => {

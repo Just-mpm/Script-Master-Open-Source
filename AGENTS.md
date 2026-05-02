@@ -168,9 +168,9 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
 | **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE`. `SubtitleInlineEditor` editor inline via portal. Subcomponentes em `subtitle-editor/` (EditorToolbar, FontSizeControls, PositionToggle, StyleSlider, ToolbarActions, SubtitlePreview, DragOverlay, EditorButton) |
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
-| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas. `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal 4x mais lento (`{ sketch: 1.0, reveal: 0.25 }`) |
+| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas. `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) aplicado no renderer (`{ sketch: 1.0, reveal: 1.0 }`) |
 | **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
-| **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
+| **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `REVEAL_SPEED_SCALE = 0.5` torna reveal 2x mais lento que linear. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
 | **Stroke worker** | `strokeWorker.ts` — `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
@@ -195,7 +195,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Chat fallback** | Se doc >900KB ou erro Firestore, salva no IndexedDB (retorna `true`); `getChatSessions` busca Firestore + IndexedDB e deduplica por `updatedAt`; filtrado por `userId` no merge |
 | **Transcriptions** | Apenas IndexedDB (dados temporários por projeto) |
 | **Audio segments** | Apenas IndexedDB, campo `audioSegments` dentro de `AudioSource` existente |
-| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded |
+| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded. Rules para `/users/{userId}` + subcoleção `/subscription/{docId}`: leitura pelo próprio usuário, escrita apenas por admin |
 | **Admin (Storage)** | Apenas email hardcoded (leitura + deleção, sem escrita) |
 | **Limites Storage** | Áudio 50MB, imagem 10MB, vídeo 200MB. Previews: público (leitura), admin (escrita) |
 | **Converter** | `createFirestoreConverter<T>()` genérico remove `undefined` na serialização |
@@ -224,11 +224,11 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 |---|---|
 | **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx`, `src/components/VoiceCard.tsx`, `src/features/studio/components/TemplateSelector.tsx`, `src/features/studio/components/EmotionSelector.tsx`, `src/data/scriptTemplates.ts`, `src/data/studioOptions.ts` |
 | **Estado** | `useStudioStore` (Zustand) com `useShallow` para seletores otimizados; `useCurrentStudioState()` deriva `StudioDraftState`; sem hook `useStudioState` (removido na 0.22.0) |
-| **Store** | `studioStore.ts` (state + setters + actions), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions` + `saveStudioDefaults`/`clearStudioDefaults`), `index.ts` (barrel exports) |
+| **Store** | `studioStore.ts` (state + setters + actions), `audioGeneratorStore.ts` (estado de geração de áudio: `isGenerating`, `scenes`, `audioSegments`, `projectId`, progress, etc. — tipos `AudioGeneratorState`, `SceneItem`, helper `getAudioDurationSeconds()`), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions` + `saveStudioDefaults`/`clearStudioDefaults`), `index.ts` (barrel exports) |
 | **Persistência** | 17 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only |
 | **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
 | **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo. Seletores primitivos do AudioContext (`useAudioIsPlaying`, `useAudioCurrentTime`, `useAudioDuration`) em vez de `useGlobalAudioState` — elimina ~4 re-renders/s |
-| **Geração** | `useAudioGenerator` instanciado apenas no `App.tsx`; StudioPage recebe `isGenerating`, `scenes`, `handleGenerate`, `isGenerateDisabled` como props |
+| **Geração** | `useAudioGenerator` hook usa `useAudioGeneratorStore` (Zustand) para estado de geração — instanciado no `App.tsx` via `AudioGenerationHandler`; StudioPage recebe `isGenerating`, `scenes`, `handleGenerate`, `isGenerateDisabled` como props |
 | **buildGenerateOptions** | Construtor DRY em `store/studio.utils.ts` — recebe `GenerateOptionsState` (combina `StudioDraftState` + campos de speaker) e userId, retorna opções de geração com `locale` mapeado de `imageTextLanguage` (usado por App.tsx) |
 | **Inspector** | Lê estado diretamente do `useStudioStore` com `useShallow` — recebe apenas `isGenerating` como prop (22→1 prop desde 0.24.5). Usa `VoiceCard` para seleção de voz e `studioOptions.ts` para opções DRY (pace, visual framework, scene ratio, density) |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
@@ -387,8 +387,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.29.0`
-- **Last release:** 2026-04-30
+- **Current:** `0.30.0`
+- **Last release:** 2026-05-02
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -396,8 +396,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
-| 0.29.0 | Página de Configurações (`/app/configuracoes`) — 4 seções colapsáveis (Voz, Persona, Cenas, Multi-locutor), 15 campos configuráveis, `saveStudioDefaults()`/`clearStudioDefaults()` persistem nas chaves `s2a_*`; `VoiceCard` extraído do Inspector para reuso; `studioOptions.ts` (DRY para opções de pace/framework/ratio/density); `DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch` ajustado para 1.0 (velocidade real); PWA `orientation: portrait`; `formatRevealLabel()` no SpeedPaintControls; redirect `/app/settings` → `/app/configuracoes`; ícone Settings no Header; i18n 3 locales; 66 testes novos |
+| 0.30.0 | `audioGeneratorStore` — store Zustand extraído de `useAudioGenerator` centralizando estado de geração (`AudioGeneratorState`, `SceneItem`, `getAudioDurationSeconds()`); `REVEAL_SPEED_SCALE` (0.5) no renderer substitui `DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal` 0.25→1.0; `formatRevealLabel()` removida; Firestore rules para `/users/{userId}` + `/subscription/{docId}` (billing security); VideoPage usa tokens de espaçamento; 89 testes atualizados |
+| 0.29.0 | Página de Configurações (`/app/configuracoes`) — 4 seções colapsáveis (Voz, Persona, Cenas, Multi-locutor), 15 campos configuráveis, `saveStudioDefaults()`/`clearStudioDefaults()` persistem nas chaves `s2a_*`; `VoiceCard` extraído do Inspector para reuso; `studioOptions.ts` (DRY para opções de pace/framework/ratio/density); `DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch` ajustado para 1.0 (velocidade real); PWA `orientation: portrait`; redirect `/app/settings` → `/app/configuracoes`; ícone Settings no Header; i18n 3 locales; 66 testes novos |
 | 0.28.2 | `GuestRoute` — componente inverso do `ProtectedRoute` para rotas de convidado (`/`, `/login`, `/cadastro`); redireciona logados para `/app/estudio`; spinner com a11y (`role="status"`, `aria-live="polite"`); loading spinner duplicado removido de LoginPage e RegisterPage; `ProtectedRoute` com atributos ARIA adicionados; 4 testes novos |
 | 0.28.1 | Logos centralizados em `src/assets/logos.ts` — 7 variantes + favicon com `LOGO_VERSION` para invalidação de cache; referências migradas em Header, PublicHeader, PublicFooter, LoginPage, RegisterPage, `seo.ts`; import `Mic` removido onde não utilizado |
 | 0.28.0 | Onboarding Wizard (`/onboarding`) substitui tour guiado — 4 passos (Welcome, Profile, Goals, Completion), `useWizardStore`, `SelectionCard`, Motion animations; user settings com `name`/`role`/`goals`; redirecionamento pós-login para `/onboarding`; tour antigo removido do StudioPage; i18n 3 locales; 26 testes novos |
-| 0.27.1 | Speed Paint base 4x mais lenta (`DEFAULT_SPEED_PAINT_MULTIPLIERS` { sketch: 0.25, reveal: 0.25 }); `adjustProgress()` com curva de potência para velocidades <1x; `VideoComposition` compensação /4; `tsconfig.json` exclui `docs/**`; docs de plano e referência onboarding; testes atualizados |

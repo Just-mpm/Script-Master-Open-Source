@@ -10,6 +10,13 @@ import {
 import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
+// Constantes
+// ---------------------------------------------------------------------------
+
+/** Fator de lentidão para a fase de reveal — torna o 1x do reveal 2x mais lento que linear */
+const REVEAL_SPEED_SCALE = 0.5;
+
+// ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
 
@@ -108,6 +115,7 @@ export function renderSpeedPaintFrame(
     // Multiplicadores separados para sketch e reveal
     const sketchDuration = revealThreshold;
     const revealDuration = 1 - revealThreshold;
+    const revealSpeed = speedMultiplier.reveal * REVEAL_SPEED_SCALE;
 
     if (progress < sketchDuration) {
       const sketchProgress = adjustProgress(progress / sketchDuration, speedMultiplier.sketch);
@@ -115,13 +123,13 @@ export function renderSpeedPaintFrame(
     } else {
       const revealProgress = adjustProgress(
         (progress - sketchDuration) / revealDuration,
-        speedMultiplier.reveal,
+        revealSpeed,
       );
       visibleCount = sketchCount + Math.floor(revealProgress * revealCount);
     }
   } else if (speedMultiplier) {
-    // SpeedPaintMultipliers sem divisão clara de strokes — usa média
-    const avg = (speedMultiplier.sketch + speedMultiplier.reveal) / 2;
+    // SpeedPaintMultipliers sem divisão clara de strokes — usa média com scale no reveal
+    const avg = (speedMultiplier.sketch + speedMultiplier.reveal * REVEAL_SPEED_SCALE) / 2;
     const adjustedProgress = adjustProgress(progress, avg);
     visibleCount = Math.floor(adjustedProgress * totalStrokes);
   } else {

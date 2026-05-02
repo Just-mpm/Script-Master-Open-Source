@@ -75,10 +75,16 @@ vi.mock('../../src/lib/logger', () => ({
   }),
 }));
 
+vi.mock('../../src/features/studio/store/studioStore', () => ({}));
+vi.mock('../../src/features/studio/store/studio.utils', () => ({}));
+
 import { useAudioGenerator } from '../../src/hooks/useAudioGenerator';
+import { useAudioGeneratorStore } from '../../src/features/studio/store';
 
 describe('useAudioGenerator', () => {
   beforeEach(() => {
+    // Reseta o store Zustand entre testes
+    useAudioGeneratorStore.getState().resetGeneration();
     vi.clearAllMocks();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(
       '00000000-0000-4000-8000-000000000000' as ReturnType<typeof crypto.randomUUID>,
@@ -206,5 +212,39 @@ describe('useAudioGenerator', () => {
     // calculateDurationFromWav mock retorna 120.5, mas audioBlob é null
     // então durationInSeconds usa audioDuration (default 0)
     expect(result.current.durationInSeconds).toBe(0);
+  });
+
+  it('deve compartilhar estado via store Zustand', () => {
+    // Testa que o hook lê do mesmo store que outros componentes podem acessar
+    const { result } = renderHook(() => useAudioGenerator());
+
+    // O hook e o store devem ter os mesmos valores
+    const storeState = useAudioGeneratorStore.getState();
+    expect(result.current.isGenerating).toBe(storeState.isGenerating);
+    expect(result.current.audioUrl).toBe(storeState.audioUrl);
+    expect(result.current.scenes).toEqual(storeState.scenes);
+  });
+
+  it('deve permitir setError via store diretamente', () => {
+    const { result } = renderHook(() => useAudioGenerator());
+
+    act(() => {
+      useAudioGeneratorStore.getState().setError('Erro via store');
+    });
+
+    expect(result.current.error).toBe('Erro via store');
+  });
+
+  it('deve resetar estado via resetGeneration', () => {
+    const { result } = renderHook(() => useAudioGenerator());
+
+    act(() => {
+      useAudioGeneratorStore.getState().setError('Algum erro');
+      useAudioGeneratorStore.getState().resetGeneration();
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.audioUrl).toBeNull();
+    expect(result.current.scenes).toEqual([]);
   });
 });

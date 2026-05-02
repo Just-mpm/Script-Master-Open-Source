@@ -189,9 +189,9 @@ describe('VideoExportPanel', () => {
       });
 
       const controls = screen.getByTestId('speed-paint-controls');
-      // Valores iniciais: sketch=1.0, reveal=0.25 (DEFAULT_SPEED_PAINT_MULTIPLIERS)
+      // Valores iniciais: sketch=1.0, reveal=1.0 (DEFAULT_SPEED_PAINT_MULTIPLIERS)
       expect(controls.getAttribute('data-sketch')).toBe('1');
-      expect(controls.getAttribute('data-reveal')).toBe('0.25');
+      expect(controls.getAttribute('data-reveal')).toBe('1');
     });
 
     it('atualiza multipliers ao interagir com slider de sketch', () => {
@@ -208,7 +208,7 @@ describe('VideoExportPanel', () => {
 
       const controls = screen.getByTestId('speed-paint-controls');
       expect(controls.getAttribute('data-sketch')).toBe('2');
-      expect(controls.getAttribute('data-reveal')).toBe('0.25');
+      expect(controls.getAttribute('data-reveal')).toBe('1');
     });
 
     it('atualiza multipliers ao interagir com slider de reveal', () => {
@@ -253,7 +253,7 @@ describe('VideoExportPanel', () => {
       // Verifica que startRender foi chamado com speedPaintMultipliers atualizados
       expect(exporter.startRender).toHaveBeenCalledTimes(1);
       const callArgs = exporter.startRender.mock.calls[0][0] as Record<string, unknown>;
-      expect(callArgs.speedPaintMultipliers).toEqual({ sketch: 2.0, reveal: 0.25 }); // sketch alterado para 2.0, reveal mantém default 0.25
+      expect(callArgs.speedPaintMultipliers).toEqual({ sketch: 2.0, reveal: 1.0 }); // sketch alterado para 2.0, reveal mantém default 1.0
     });
 
     it('esconde SpeedPaintControls durante renderização', () => {

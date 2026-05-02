@@ -22,10 +22,10 @@ export interface SpeedPaintMultipliers {
   reveal: number;
 }
 
-/** Multiplicadores padrão — sketch em velocidade real, reveal base 4x mais lento */
+/** Multiplicadores padrão — sketch em velocidade real, reveal com REVEAL_SPEED_SCALE (2x mais lento) */
 export const DEFAULT_SPEED_PAINT_MULTIPLIERS: Readonly<SpeedPaintMultipliers> = {
   sketch: 1.0,
-  reveal: 0.25,
+  reveal: 1.0,
 } as const;
 
 /** Cena estendida para vídeo Remotion */

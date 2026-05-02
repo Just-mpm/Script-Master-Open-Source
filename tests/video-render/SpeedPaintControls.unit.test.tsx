@@ -37,7 +37,7 @@ function renderControls(props: {
   return render(
     <SpeedPaintControls
       sketch={props.sketch ?? 1.0}
-      reveal={props.reveal ?? 0.25}
+      reveal={props.reveal ?? 1.0}
       onSketchChange={props.onSketchChange ?? onSketchChange}
       onRevealChange={props.onRevealChange ?? onRevealChange}
     />,
@@ -69,8 +69,8 @@ describe('SpeedPaintControls', () => {
     });
 
     it('renderiza os labels dos sliders colapsados (sketch e reveal)', () => {
-      renderControls({ sketch: 1.0, reveal: 0.25 });
-      // sketch=1.0 -> "1.0x Normal"; reveal=0.25 -> 0.25*4=1.0 -> "1.0x Normal"
+      renderControls({ sketch: 1.0, reveal: 1.0 });
+      // sketch=1.0 -> "1.0x Normal"; reveal=1.0 -> "1.0x Normal"
       // Ambos os labels coincidem, entao usamos getAllByText
       const labels = screen.getAllByText('1.0x Normal');
       expect(labels).toHaveLength(2);
@@ -117,42 +117,41 @@ describe('SpeedPaintControls', () => {
       { value: 3.0, expected: '3.0x Muito rápido' },
       { value: 4.0, expected: '4.0x Máximo' },
     ])('sketch=$value exibe label "$expected"', ({ value, expected }) => {
-      renderControls({ sketch: value, reveal: 0.25 });
+      renderControls({ sketch: value, reveal: 1.0 });
       // O label aparece como texto visivel no cabecalho
       const allLabels = screen.getAllByText(expected);
       expect(allLabels.length).toBeGreaterThanOrEqual(1);
     });
 
     it('valor fora do range exibe label generico (ex: 1.25x)', () => {
-      renderControls({ sketch: 1.25, reveal: 0.25 });
+      renderControls({ sketch: 1.25, reveal: 1.0 });
       // 1.25 nao tem label especifico, cai no fallback `${value}x`
       expect(screen.getAllByText('1.25x').length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  // --- formatRevealLabel (testado via render com diferentes valores de reveal) ---
+  // --- formatSpeedLabel para reveal (mesma função do sketch) ---
 
-  describe('formatRevealLabel (via prop reveal)', () => {
+  describe('formatSpeedLabel para reveal (mesma função do sketch)', () => {
     it.each([
-      { value: 0.25, expected: '1.0x Normal' },   // 0.25 * 4 = 1.0
-      { value: 0.5, expected: '2.0x Rápido' },    // 0.5 * 4 = 2.0
-      { value: 0.75, expected: '3.0x' },           // 0.75 * 4 = 3.0
-      { value: 1.0, expected: '4.0x' },            // 1.0 * 4 = 4.0
-      { value: 1.5, expected: '6.0x' },            // 1.5 * 4 = 6.0
-      { value: 2.0, expected: '8.0x' },            // 2.0 * 4 = 8.0
-      { value: 3.0, expected: '12.0x' },           // 3.0 * 4 = 12.0
-      { value: 4.0, expected: '16.0x Máximo' },    // 4.0 * 4 = 16.0
+      { value: 0.25, expected: '0.25x Muito lento' },
+      { value: 0.5, expected: '0.5x Lento' },
+      { value: 0.75, expected: '0.75x' },
+      { value: 1.0, expected: '1.0x Normal' },
+      { value: 1.5, expected: '1.5x Rápido' },
+      { value: 2.0, expected: '2.0x Rápido' },
+      { value: 3.0, expected: '3.0x Muito rápido' },
+      { value: 4.0, expected: '4.0x Máximo' },
     ])('reveal=$value exibe label "$expected"', ({ value, expected }) => {
       renderControls({ sketch: 1.0, reveal: value });
       const allLabels = screen.getAllByText(expected);
       expect(allLabels.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('valor fora do range usa formula display = value * 4 (ex: reveal=1.25 -> 5x)', () => {
+    it('valor fora do range exibe label generico (ex: 1.25x)', () => {
       renderControls({ sketch: 1.0, reveal: 1.25 });
-      // 1.25 * 4 = 5 (JavaScript remove .0 de inteiros no template literal)
-      // cai no fallback `${display}x` -> "5x"
-      expect(screen.getAllByText('5x').length).toBeGreaterThanOrEqual(1);
+      // 1.25 nao tem label especifico, cai no fallback `${value}x`
+      expect(screen.getAllByText('1.25x').length).toBeGreaterThanOrEqual(1);
     });
   });
 

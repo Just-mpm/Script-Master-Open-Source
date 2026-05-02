@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { GAP_MEDIUM, GAP_RELAXED } from '../theme/tokens';
 import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
@@ -15,8 +17,7 @@ import { useTranscription } from '../features/video-render/hooks/useTranscriptio
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
 import type { SubtitleStyle, SubtitlePosition } from '../features/video-render/types';
-import { useAudioGenerator } from '../hooks/useAudioGenerator';
-import { useStudioStore, VIDEO_FPS } from '../features/studio/store';
+import { useStudioStore, VIDEO_FPS, useAudioGeneratorStore, getAudioDurationSeconds } from '../features/studio/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
@@ -40,15 +41,21 @@ export function VideoPage({
     sceneRatio: s.sceneRatio,
   })));
 
-  // Estado de geração de áudio (hook)
-  const {
-    audioUrl,
-    scenes,
-    audioSegments,
-    projectId: currentProjectId,
-    durationInSeconds: audioDuration,
-    loadProjectData,
-  } = useAudioGenerator();
+  // Estado de geração de áudio — lê do store global (compartilhado com App.tsx)
+  const audioUrl = useAudioGeneratorStore((s) => s.audioUrl);
+  const scenes = useAudioGeneratorStore((s) => s.scenes);
+  const audioSegments = useAudioGeneratorStore((s) => s.audioSegments);
+  const currentProjectId = useAudioGeneratorStore((s) => s.projectId);
+  const loadProjectData = useAudioGeneratorStore((s) => s.loadProjectData);
+
+  // Duração derivada — prioriza blob WAV (tamanho exato), fallback para metadados de URL
+  const { audioBlob, audioDuration: audioDurationRaw } = useAudioGeneratorStore(
+    useShallow((s) => ({ audioBlob: s.audioBlob, audioDuration: s.audioDuration })),
+  );
+  const audioDuration = useMemo(
+    () => getAudioDurationSeconds({ audioBlob, audioDuration: audioDurationRaw }),
+    [audioBlob, audioDurationRaw],
+  );
 
   const videoFps = VIDEO_FPS;
 
@@ -236,6 +243,7 @@ export function VideoPage({
 
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
+      {/* Título + Descrição — largura total */}
       <Box>
         <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
           {t('video.pageTitle')}
@@ -245,66 +253,80 @@ export function VideoPage({
         </Typography>
       </Box>
 
-       <SubtitleInlineEditor
-            hasCaptions={captions.length > 0}
-            subtitleStyle={subtitleStyle}
-            onSubtitleStyleChange={setSubtitleStyle}
-            ratio={sceneRatio}
-            toolbarPortal={toolbarPortalRef}
-            subtitlePosition={subtitlePosition}
-            onSubtitlePositionChange={setSubtitlePosition}
-          >
-           {videoPreviewElement}
-       </SubtitleInlineEditor>
+      {/* Conteúdo principal — 2 colunas no desktop, empilhado no mobile */}
+      <Grid container spacing={{ xs: 3, md: 4 }}>
+        {/* Coluna esquerda — Player + Toolbar */}
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Stack spacing={GAP_RELAXED}>
+            <SubtitleInlineEditor
+              hasCaptions={captions.length > 0}
+              subtitleStyle={subtitleStyle}
+              onSubtitleStyleChange={setSubtitleStyle}
+              ratio={sceneRatio}
+              toolbarPortal={toolbarPortalRef}
+              subtitlePosition={subtitlePosition}
+              onSubtitlePositionChange={setSubtitlePosition}
+            >
+              {videoPreviewElement}
+            </SubtitleInlineEditor>
 
-       {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
-       <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
+            {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
+            <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
+          </Stack>
+        </Grid>
 
-       {/* Painel de legendas */}
-      <TranscriptionPanel
-        audioUrl={audioUrl}
-        script={script}
-        scenes={scenesForTranscription}
-        durationInFrames={durationInFrames}
-        fps={videoFps}
-        transcriptionSource={transcriptionSource}
-        isTranscribing={isTranscribing}
-        transcriptionProgress={transcriptionProgress}
-        transcriptionStatusText={transcriptionStatusText}
-        transcriptionError={transcriptionError}
-        whisperSupported={whisperSupported}
-        captionCount={captions.length}
-        isStale={isStale}
-        onTranscribe={handleTranscribe}
-        onCancel={cancelTranscription}
-        onClear={clearTranscription}
-      />
+        {/* Coluna direita — Controles empilhados */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Stack spacing={GAP_MEDIUM}>
+            {/* Painel de transcrição/legendas */}
+            <TranscriptionPanel
+              audioUrl={audioUrl}
+              script={script}
+              scenes={scenesForTranscription}
+              durationInFrames={durationInFrames}
+              fps={videoFps}
+              transcriptionSource={transcriptionSource}
+              isTranscribing={isTranscribing}
+              transcriptionProgress={transcriptionProgress}
+              transcriptionStatusText={transcriptionStatusText}
+              transcriptionError={transcriptionError}
+              whisperSupported={whisperSupported}
+              captionCount={captions.length}
+              isStale={isStale}
+              onTranscribe={handleTranscribe}
+              onCancel={cancelTranscription}
+              onClear={clearTranscription}
+            />
 
-      {/* Editor de legendas — visível quando há captions */}
-      <CaptionEditorPanel
-        captions={captions}
-        onUpdateCaptions={updateCaptions}
-        fps={videoFps}
-        onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
-      />
+            {/* Editor de legendas — visível quando há captions */}
+            <CaptionEditorPanel
+              captions={captions}
+              onUpdateCaptions={updateCaptions}
+              fps={videoFps}
+              onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
+            />
 
-       {/* Painel de exportação MP4 */}
-         <VideoExportPanel
-           scenes={scenes}
-           audioUrl={audioUrl}
-           fps={videoFps}
-           durationInFrames={durationInFrames}
-           ratio={sceneRatio}
-           projectId={currentProjectId ?? undefined}
-           userId={userId}
-           exporter={videoExporter}
-           captions={captions.length > 0 ? captions : undefined}
-           subtitleStyle={mergedSubtitleStyle}
-           includeSubtitles={includeSubtitles}
-           onIncludeSubtitlesChange={setIncludeSubtitles}
-           durationInSeconds={durationInSeconds}
-           />
+            {/* Painel de exportação MP4 */}
+            <VideoExportPanel
+              scenes={scenes}
+              audioUrl={audioUrl}
+              fps={videoFps}
+              durationInFrames={durationInFrames}
+              ratio={sceneRatio}
+              projectId={currentProjectId ?? undefined}
+              userId={userId}
+              exporter={videoExporter}
+              captions={captions.length > 0 ? captions : undefined}
+              subtitleStyle={mergedSubtitleStyle}
+              includeSubtitles={includeSubtitles}
+              onIncludeSubtitlesChange={setIncludeSubtitles}
+              durationInSeconds={durationInSeconds}
+            />
+          </Stack>
+        </Grid>
+      </Grid>
 
+      {/* Biblioteca — largura total */}
       <VideoLibrary
         activeProjectId={currentProjectId}
         onSelect={handleLibrarySelect}

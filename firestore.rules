@@ -202,5 +202,16 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isOwner(resource.data.userId) && isValidImageGeneration(request.resource.data);
       allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
+
+    // Users — doc raiz + subcoleção de assinatura
+    match /users/{userId} {
+      allow read: if isAuthenticated() && userId == request.auth.uid;
+      allow write: if isAdmin();
+
+      match /subscription/{docId} {
+        allow read: if isAuthenticated() && userId == request.auth.uid;
+        allow write: if isAdmin();
+      }
+    }
   }
 }

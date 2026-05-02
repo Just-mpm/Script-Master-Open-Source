@@ -7,6 +7,36 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.30.0] - 2026-05-02
+
+### Adicionado
+
+- **`audioGeneratorStore`** (`src/features/studio/store/audioGeneratorStore.ts`): store Zustand extraído do hook `useAudioGenerator` — centraliza estado de geração de áudio (`isGenerating`, `scenes`, `audioSegments`, `audioUrl`, `projectId`, progress, etc.). Tipos exportados: `AudioGeneratorState`, `SceneItem`, `getAudioDurationSeconds()`. Re-exportado via `store/index.ts` barrel
+- **`REVEAL_SPEED_SCALE`** constante no `speedPaintRenderer.ts` (`= 0.5`) — fator de lentidão para a fase de reveal, torna o 1x do reveal 2x mais lento que linear
+- **Firestore rules** para `/users/{userId}` e subcoleção `/subscription/{docId}` — leitura pelo próprio usuário autenticado, escrita apenas por admin. Prepara infraestrutura de segurança para billing
+
+### Alterado
+
+- **`DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal`**: `0.25` → `1.0` — reveal agora usa velocidade nominal com `REVEAL_SPEED_SCALE` (0.5) aplicado no renderer em vez de multiplicador hardcoded. Sketch mantém 1.0 (velocidade real)
+- **`useAudioGenerator.ts`**: refatorado para usar `useAudioGeneratorStore` em vez de estado React local (`useState`/`useRef`) — ~80 linhas reduzidas, estado compartilhável entre componentes via Zustand
+- **`VideoPage.tsx`**: importa `useAudioGeneratorStore` do store central em vez do hook `useAudioGenerator`; usa tokens `GAP_MEDIUM`/`GAP_RELAXED` para espaçamento
+- **`AudioGenerationHandler.tsx`**: importa `SceneItem` do store central em vez de definição local
+- **`store/index.ts`**: barrel atualizado com exports de `useAudioGeneratorStore`, `getAudioDurationSeconds` e tipo `SceneItem`
+
+### Removido
+
+- **`formatRevealLabel()`** do `SpeedPaintControls.tsx` — função auxiliar de labels shiftados ×4 não mais necessária com o novo modelo de `REVEAL_SPEED_SCALE`
+
+### Testes
+
+- `useAudioGenerator.unit.test.ts`: 40 testes atualizados para importar `useAudioGeneratorStore` do novo store
+- `VideoPage.component.test.tsx`: 25 testes atualizados com novo estado inicial (`scenes`, `audioSegments`)
+- `SpeedPaintControls.unit.test.tsx`: 18 testes atualizados sem `formatRevealLabel`, com novos valores de reveal (0.25 → 1.0)
+- `VideoExportPanel.unit.test.tsx`: 4 assertions atualizadas de `reveal: 0.25` → `reveal: 1.0`
+- `types.unit.test.ts`: 2 assertions atualizadas para `DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal === 1.0`
+
+---
+
 ## [0.29.0] - 2026-04-30
 
 ### Adicionado

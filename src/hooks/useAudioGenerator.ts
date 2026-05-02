@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/audio';
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
@@ -10,11 +10,12 @@ import type { Locale } from '../features/i18n/types';
 import type { AudioSegment } from '../lib/db/types';
 import { saveAudioSegments } from '../lib/db/audio-segments';
 import { getGeminiApiKey } from '../lib/env';
-import { calculateDurationFromWav } from '../features/video-render/lib/videoUtils';
 import { withRetry } from '../lib/rate-limiter';
 import { detectSceneBoundaries } from '../lib/audio-analysis';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
+import { useAudioGeneratorStore, getAudioDurationSeconds } from '../features/studio/store';
+import type { SceneItem } from '../features/studio/store';
 
 const log = createLogger('useAudioGenerator');
 
@@ -106,60 +107,40 @@ interface GenerateOptions {
 // Hook
 // ---------------------------------------------------------------------------
 
-// TODO(S1): Este hook é instanciado em App.tsx e VideoPage.tsx separadamente,
-// criando estado isolado em cada componente. VideoPage chama loadProjectData()
-// ao montar para recarregar do Firestore, o que mitiga o problema funcional.
-// Para unificar, migrar o estado para uma Zustand store (audioGeneratorStore),
-// mas isso exige refatorar ~15 useState/refs e adaptar todos os consumers —
-// risco alto de regressão em cancelamento, streaming e geração.
-
+/**
+ * Hook de geração de áudio TTS com Gemini.
+ *
+ * O estado é gerenciado pelo `useAudioGeneratorStore` (Zustand global),
+ * permitindo que App.tsx e VideoPage.tsx compartilhem o mesmo áudio/cenas
+ * sem instanciar estados isolados.
+ *
+ * O hook retém apenas:
+ * - Refs de cancelamento e restauração (escopo da geração, não compartilhados)
+ * - Instância memoizada do GoogleGenAI
+ * - Funções de geração (generateAudio, handleCancel)
+ */
 export function useAudioGenerator() {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [statusText, setStatusText] = useState('');
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioDuration, setAudioDuration] = useState<number>(0);
-  const [scenes, setScenes] = useState<{ imageUrl: string; timestamp: number }[]>([]);
-  const [audioSegments, setAudioSegments] = useState<AudioSegment[]>([]);
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [sceneGenerationWarning, setSceneGenerationWarning] = useState<string | null>(null);
+  // Seletores primitivos — cada um re-renderiza apenas quando seu campo muda
+  const isGenerating = useAudioGeneratorStore((s) => s.isGenerating);
+  const statusText = useAudioGeneratorStore((s) => s.statusText);
+  const generationProgress = useAudioGeneratorStore((s) => s.generationProgress);
+  const audioUrl = useAudioGeneratorStore((s) => s.audioUrl);
+  const audioBlob = useAudioGeneratorStore((s) => s.audioBlob);
+  const scenes = useAudioGeneratorStore((s) => s.scenes);
+  const audioSegments = useAudioGeneratorStore((s) => s.audioSegments);
+  const projectId = useAudioGeneratorStore((s) => s.projectId);
+  const error = useAudioGeneratorStore((s) => s.error);
+  const setError = useAudioGeneratorStore((s) => s.setError);
+  const sceneGenerationWarning = useAudioGeneratorStore((s) => s.sceneGenerationWarning);
+  const loadProjectData = useAudioGeneratorStore((s) => s.loadProjectData);
+  const audioDuration = useAudioGeneratorStore((s) => s.audioDuration);
 
+  // Refs para cancelamento e restauração (escopo da geração, não compartilhados)
   const cancelRef = useRef(false);
-
-  // Refs espelhadas para evitar stale closure em generateAudio (deps [])
-  // Mantém valores sempre atualizados independentemente do closure do useCallback
-  const audioUrlRef = useRef<string | null>(null);
-  const audioBlobRef = useRef<Blob | null>(null);
-  const scenesRef = useRef<{ imageUrl: string; timestamp: number }[]>([]);
-  const audioSegmentsRef = useRef<AudioSegment[]>([]);
-
-  // Wrappers que sincronizam ref + state — usados dentro de generateAudio
-  const updateAudioUrl = useCallback((url: string | null) => {
-    audioUrlRef.current = url;
-    setAudioUrl(url);
-  }, []);
-  const updateAudioBlob = useCallback((blob: Blob | null) => {
-    audioBlobRef.current = blob;
-    setAudioBlob(blob);
-  }, []);
-  const updateScenes = useCallback((s: { imageUrl: string; timestamp: number }[]) => {
-    scenesRef.current = s;
-    setScenes(s);
-  }, []);
-  const updateAudioSegments = useCallback((s: AudioSegment[]) => {
-    audioSegmentsRef.current = s;
-    setAudioSegments(s);
-  }, []);
-
-  // Memoiza instância do GoogleGenAI (tech #9 + bp #8 + perf #9)
-  const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
-
   const lastSuccessfulStateRef = useRef<{
     audioUrl: string | null;
     audioBlob: Blob | null;
-    scenes: { imageUrl: string; timestamp: number }[];
+    scenes: SceneItem[];
     audioSegments: AudioSegment[];
   }>({
     audioUrl: null,
@@ -168,84 +149,27 @@ export function useAudioGenerator() {
     audioSegments: [],
   });
 
-  // Cleanup object URL para evitar memory leaks (tech #6 parcial)
-  useEffect(() => {
-    return () => {
-      if (audioUrl && audioUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(audioUrl);
-      }
-    };
-  }, [audioUrl]);
-
-  // loadProjectData usa useCallback com dep em audioUrl — quando audioUrl muda
-  // (nova geração), o callback é recriado para revogar o blob URL antigo corretamente.
-  const loadProjectData = useCallback(async (
-    url: string,
-    scenesData: { imageUrl: string; timestamp: number }[],
-    audioBlobData?: Blob,
-    id?: string,
-  ) => {
-    if (audioUrl && audioUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(audioUrl);
-    }
-    setAudioUrl(url);
-    setScenes(scenesData);
-    if (id) setProjectId(id);
-
-    // Reseta duração via URL ao carregar novo projeto
-    setAudioDuration(0);
-
-    if (audioBlobData) {
-      setAudioBlob(audioBlobData);
-    } else if (url) {
-      if (url.startsWith('blob:')) {
-        // Blob URL: fetch para obter blob (sem problema de CORS)
-        try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          setAudioBlob(blob);
-        } catch (err) {
-          log.warn('Falha ao buscar blob do áudio', { error: err });
-        }
-      } else {
-        // URL externa (ex: Firebase Storage): usa <audio> para obter
-        // a duração via loadedmetadata, sem baixar o arquivo inteiro
-        const audio = new Audio();
-        const handleLoaded = () => {
-          if (Number.isFinite(audio.duration) && audio.duration > 0) {
-            setAudioDuration(audio.duration);
-          }
-          audio.removeEventListener('loadedmetadata', handleLoaded);
-          audio.removeEventListener('error', handleError);
-        };
-        const handleError = () => {
-          log.warn('Falha ao carregar metadados do áudio remoto — duração indisponível, a exportação de vídeo pode ser afetada');
-          audio.removeEventListener('loadedmetadata', handleLoaded);
-          audio.removeEventListener('error', handleError);
-        };
-        audio.addEventListener('loadedmetadata', handleLoaded);
-        audio.addEventListener('error', handleError);
-        audio.preload = 'metadata';
-        audio.src = url;
-      }
-    }
-  }, [audioUrl]);
+  // Memoiza instância do GoogleGenAI (tech #9 + bp #8 + perf #9)
+  const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
 
   const handleCancel = () => {
     cancelRef.current = true;
   };
 
   const restoreLastSuccessfulState = () => {
-    updateAudioUrl(lastSuccessfulStateRef.current.audioUrl);
-    updateAudioBlob(lastSuccessfulStateRef.current.audioBlob);
-    updateScenes(lastSuccessfulStateRef.current.scenes);
-    updateAudioSegments(lastSuccessfulStateRef.current.audioSegments);
+    const prev = lastSuccessfulStateRef.current;
+    useAudioGeneratorStore.getState().setAudioUrl(prev.audioUrl);
+    useAudioGeneratorStore.getState().setAudioBlob(prev.audioBlob);
+    useAudioGeneratorStore.getState().setScenes(prev.scenes);
+    useAudioGeneratorStore.getState().setAudioSegments(prev.audioSegments);
   };
 
-  // generateAudio usa useCallback com deps [] — acessa refs internas (cancelRef,
-  // lastSuccessfulStateRef) e setters (estáveis) diretamente. A instância `ai`
-  // já é useMemo (estável). As opções de config são recebidas por parâmetro.
+  // generateAudio usa useCallback com deps [] — acessa tudo via
+  // useAudioGeneratorStore.getState() (setters estáveis) e refs internas.
+  // A instância `ai` já é useMemo (estável).
+  // As opções de config são recebidas por parâmetro.
   const generateAudio = useCallback(async (options: GenerateOptions, onStart?: () => void) => {
+    const storeApi = useAudioGeneratorStore;
     const {
       userId,
       projectName,
@@ -270,25 +194,25 @@ export function useAudioGenerator() {
     } = options;
 
     if (!script.trim()) {
-      setError('Por favor, insira um roteiro antes de gerar o áudio.');
+      storeApi.getState().setError('Por favor, insira um roteiro antes de gerar o áudio.');
       return;
     }
 
     if (script.length > MAX_CHARS) {
-      setError(`O roteiro excede o limite de ${MAX_CHARS} caracteres. Por favor, divida o texto.`);
+      storeApi.getState().setError(`O roteiro excede o limite de ${MAX_CHARS} caracteres. Por favor, divida o texto.`);
       return;
     }
 
     cancelRef.current = false;
-    setIsGenerating(true);
-    setGenerationProgress(0);
-    setError(null);
-    setSceneGenerationWarning(null);
-    setStatusText('Iniciando...');
+    storeApi.getState().setIsGenerating(true);
+    storeApi.getState().setGenerationProgress(0);
+    storeApi.getState().setError(null);
+    storeApi.getState().setSceneGenerationWarning(null);
+    storeApi.getState().setStatusText('Iniciando...');
 
     // Cria Project ID antecipadamente
     const currentProjectId = crypto.randomUUID();
-    setProjectId(currentProjectId);
+    storeApi.getState().setProjectId(currentProjectId);
 
     // Inicializa projeto no DB
     const projectMetadata: Project = {
@@ -319,19 +243,15 @@ export function useAudioGenerator() {
 
     if (onStart) onStart();
 
-    // Captura estado anterior via refs (evita stale closure — generateAudio usa deps [])
-    const previousState = {
-      audioUrl: audioUrlRef.current,
-      audioBlob: audioBlobRef.current,
-      scenes: scenesRef.current,
-      audioSegments: audioSegmentsRef.current,
-    };
+    // Captura estado anterior via store (evita stale closure)
+    const { audioUrl: prevAudioUrl, audioBlob: prevAudioBlob, scenes: prevScenes, audioSegments: prevSegments } = storeApi.getState();
+    const previousState = { audioUrl: prevAudioUrl, audioBlob: prevAudioBlob, scenes: prevScenes, audioSegments: prevSegments };
     lastSuccessfulStateRef.current = previousState;
-    updateAudioUrl(null);
-    updateAudioBlob(null);
-    setAudioDuration(0);
-    updateScenes([]);
-    updateAudioSegments([]);
+    storeApi.getState().setAudioUrl(null);
+    storeApi.getState().setAudioBlob(null);
+    storeApi.getState().setAudioDuration(0);
+    storeApi.getState().setScenes([]);
+    storeApi.getState().setAudioSegments([]);
 
     let generatedAudioUrl: string | null = null;
 
@@ -342,7 +262,7 @@ export function useAudioGenerator() {
       if (script.length <= CHUNK_LIMIT) {
         chunks = [script];
       } else {
-        setStatusText('Analisando e dividindo o roteiro longo...');
+        storeApi.getState().setStatusText('Analisando e dividindo o roteiro longo...');
         try {
           const chunkingResponse = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite-preview',
@@ -391,7 +311,7 @@ export function useAudioGenerator() {
       const updateProgress = (stepIncrement = 1) => {
         currentStep += stepIncrement;
         const percent = Math.min(Math.round((currentStep / totalSteps) * 100), 99);
-        setGenerationProgress(percent);
+        storeApi.getState().setGenerationProgress(percent);
       };
 
       const pcmChunks: Uint8Array[] = [];
@@ -410,7 +330,7 @@ export function useAudioGenerator() {
       // --- Geração TTS ---
       for (let i = 0; i < chunks.length; i++) {
         if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
-        setStatusText(`Gerando áudio (parte ${i + 1} de ${chunks.length})...`);
+        storeApi.getState().setStatusText(`Gerando áudio (parte ${i + 1} de ${chunks.length})...`);
         updateProgress(0.2);
 
         const chunk = chunks[i];
@@ -512,7 +432,7 @@ export function useAudioGenerator() {
       }
 
       // --- Montagem WAV ---
-      setStatusText('Montando áudio final...');
+      storeApi.getState().setStatusText('Montando áudio final...');
       updateProgress(0.5);
 
       const combinedPcm = new Uint8Array(totalLength);
@@ -525,14 +445,14 @@ export function useAudioGenerator() {
       const wavBlob = createWavBlob(combinedPcm, 24000);
       const url = URL.createObjectURL(wavBlob);
       generatedAudioUrl = url;
-      updateAudioBlob(wavBlob);
-      updateAudioUrl(url);
-      updateAudioSegments(generatedSegments);
+      storeApi.getState().setAudioBlob(wavBlob);
+      storeApi.getState().setAudioUrl(url);
+      storeApi.getState().setAudioSegments(generatedSegments);
 
       // --- Auto-save áudio (UX-5: feedback em caso de falha) ---
       let savedAudioId: string | null = null;
       try {
-        setStatusText('Salvando áudio na nuvem...');
+        storeApi.getState().setStatusText('Salvando áudio na nuvem...');
         const audioSource: AudioSource = {
           id: crypto.randomUUID(),
           projectId: currentProjectId,
@@ -550,14 +470,14 @@ export function useAudioGenerator() {
         });
       } catch (saveError) {
         log.warn('Erro no auto-save do áudio', { error: saveError });
-        setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
-        setTimeout(() => setError(''), 8000);
+        storeApi.getState().setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
+        setTimeout(() => storeApi.getState().setError(''), 8000);
       }
 
       // --- Geração de cenas visuais ---
       if (generateScenes) {
-        setStatusText('Criando roteiro visual...');
-        setGenerationProgress(75);
+        storeApi.getState().setStatusText('Criando roteiro visual...');
+        storeApi.getState().setGenerationProgress(75);
         const durationInSeconds = totalLength / 48000;
         const style = `${scene} ${styleNotes}`.trim();
 
@@ -565,20 +485,20 @@ export function useAudioGenerator() {
 
         // Avisa o usuário quando o Gemini falhou e usou fallback genérico
         if (result.isFallback) {
-          setSceneGenerationWarning('Não foi possível gerar o roteiro visual automaticamente. As cenas usarão prompts genéricos — a qualidade visual será reduzida.');
+          storeApi.getState().setSceneGenerationWarning('Não foi possível gerar o roteiro visual automaticamente. As cenas usarão prompts genéricos — a qualidade visual será reduzida.');
         }
 
         const prompts = result.prompts;
         updateProgress(0.5);
 
-        const generatedScenes: { imageUrl: string; timestamp: number }[] = [];
+        const generatedScenes: SceneItem[] = [];
         const scenesToGenerate = prompts.length;
         const stepPerScene = 4 / scenesToGenerate;
         let failedSceneCount = 0;
 
         for (let i = 0; i < prompts.length; i++) {
           if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
-          setStatusText(`Pintando cena ${i + 1} de ${prompts.length}...`);
+          storeApi.getState().setStatusText(`Pintando cena ${i + 1} de ${prompts.length}...`);
           updateProgress(stepPerScene * 0.2);
 
           const imageUrl = await generateImageFromPrompt(prompts[i].prompt, sceneRatio, referenceImage || undefined);
@@ -611,13 +531,13 @@ export function useAudioGenerator() {
           updateProgress(stepPerScene * 0.8);
         }
 
-        // Notifica o usuário se houve falhas na geracao de cenas
+        // Notifica o usuário se houve falhas na geração de cenas
         if (failedSceneCount > 0 && failedSceneCount < scenesToGenerate) {
           const warning = `${generatedScenes.length} de ${scenesToGenerate} cenas geradas com sucesso. ${failedSceneCount} cena(s) falharam apos tentativas de retry.`;
-          setSceneGenerationWarning(warning);
+          storeApi.getState().setSceneGenerationWarning(warning);
         } else if (failedSceneCount === scenesToGenerate) {
           const warning = 'Nenhuma cena foi gerada. Todas falharam apos tentativas de retry. Verifique sua conexao ou tente novamente.';
-          setSceneGenerationWarning(warning);
+          storeApi.getState().setSceneGenerationWarning(warning);
         }
 
         // --- Refinamento de timestamps via detecção de silêncio ---
@@ -637,7 +557,7 @@ export function useAudioGenerator() {
           }
         }
 
-        updateScenes(generatedScenes);
+        storeApi.getState().setScenes(generatedScenes);
         lastSuccessfulStateRef.current = {
           audioUrl: url,
           audioBlob: wavBlob,
@@ -657,7 +577,7 @@ export function useAudioGenerator() {
         URL.revokeObjectURL(previousState.audioUrl);
       }
 
-      setGenerationProgress(100);
+      storeApi.getState().setGenerationProgress(100);
     } catch (err: unknown) {
       const errorMessageText = err instanceof Error ? err.message : '';
 
@@ -666,8 +586,8 @@ export function useAudioGenerator() {
           URL.revokeObjectURL(generatedAudioUrl);
         }
         restoreLastSuccessfulState();
-        setIsGenerating(false);
-        setStatusText('');
+        storeApi.getState().setIsGenerating(false);
+        storeApi.getState().setStatusText('');
         return;
       }
 
@@ -678,23 +598,22 @@ export function useAudioGenerator() {
         URL.revokeObjectURL(generatedAudioUrl);
       }
       restoreLastSuccessfulState();
-      setError(errorMessage);
-      setTimeout(() => setError(''), 8000);
+      storeApi.getState().setError(errorMessage);
+      setTimeout(() => storeApi.getState().setError(''), 8000);
     } finally {
-      setIsGenerating(false);
-      setStatusText('');
+      storeApi.getState().setIsGenerating(false);
+      storeApi.getState().setStatusText('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Duração do áudio em segundos: prioriza blob WAV (tamanho exato),
-  // fallback para duração via metadados de URL (carregamento da galeria)
-  const durationInSeconds = useMemo(() => {
-    if (audioBlob && audioBlob.size > 44) {
-      return calculateDurationFromWav(audioBlob.size, 24000);
-    }
-    return audioDuration;
-  }, [audioBlob, audioDuration]);
+  // Duração do áudio em segundos: derivada do store via helper.
+  // audioBlob e audioDuration são usados indirectamente via getAudioDurationSeconds,
+  // mas precisam estar nas deps para re-computar quando mudam.
+  const durationInSeconds = useMemo(
+    () => getAudioDurationSeconds({ audioBlob, audioDuration }),
+    [audioBlob, audioDuration],
+  );
 
   return {
     isGenerating,

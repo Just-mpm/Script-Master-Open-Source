@@ -52,6 +52,16 @@ vi.mock('../../src/hooks/useAudioGenerator', () => ({
   }),
 }));
 
+const audioGenStoreState = {
+  audioUrl: null as string | null,
+  audioBlob: null as Blob | null,
+  scenes: [] as { imageUrl: string; timestamp: number }[],
+  audioSegments: [] as unknown[],
+  projectId: null as string | null,
+  audioDuration: 0,
+  loadProjectData: vi.fn(),
+};
+
 vi.mock('../../src/features/video-render/hooks/useVideoExporter', () => ({
   useVideoExporter: () => ({
     isRendering: false,
@@ -127,15 +137,27 @@ vi.mock('../../src/features/video-render/components/SubtitleInlineEditor', () =>
 }));
 
 vi.mock('../../src/features/studio/store', () => {
-  const state = {
+  const studioState = {
     script: '',
     setScript: vi.fn(),
     sceneRatio: '16:9',
   };
+  const audioGenState = {
+    audioUrl: null as string | null,
+    audioBlob: null as Blob | null,
+    scenes: [] as { imageUrl: string; timestamp: number }[],
+    audioSegments: [] as unknown[],
+    projectId: null as string | null,
+    audioDuration: 0,
+    loadProjectData: vi.fn(),
+  };
   return {
-    useStudioStore: (selector?: (s: typeof state) => unknown) =>
-      selector ? selector(state) : state,
+    useStudioStore: (selector?: (s: typeof studioState) => unknown) =>
+      selector ? selector(studioState) : studioState,
     VIDEO_FPS: 30,
+    useAudioGeneratorStore: (selector?: (s: typeof audioGenState) => unknown) =>
+      selector ? selector(audioGenState) : audioGenState,
+    getAudioDurationSeconds: () => 0,
   };
 });
 
