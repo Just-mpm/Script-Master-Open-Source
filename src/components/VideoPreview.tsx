@@ -217,7 +217,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           elevation={0}
           sx={(theme): SystemStyleObject<Theme> => ({
             ...glassPanelSx(theme),
-            aspectRatio: ratio === '9:16' ? '9 / 16' : ratio === '1:1' ? '1 / 1' : '16 / 9',
+            aspectRatio: '16 / 9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
