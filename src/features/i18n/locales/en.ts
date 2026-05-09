@@ -751,6 +751,15 @@ export const en: TranslationDictionary = {
       },
     },
     scriptEditor: {
+      inlineAI: {
+        buttonLabel: 'Ask AI',
+        inputPlaceholder: 'What should the AI do here?',
+        keepButton: 'Keep',
+        revertButton: 'Revert',
+        processing: 'AI is rewriting...',
+        errorGeneric: 'Could not process. Try again.',
+        selectionTooShort: 'Select at least 3 characters.',
+      },
       label: 'Script',
       syncedSceneChip: 'Visual scene synced with writing',
       copyTooltip: 'Copy script',
@@ -821,6 +830,11 @@ export const en: TranslationDictionary = {
   video: {
     pageTitle: 'Visual composition',
     pageDescription: 'Review the current scene, check the video atmosphere, and load previous projects without leaving the flow.',
+    controlsEmpty: {
+      eyebrow: 'Side panel',
+      title: 'Controls waiting for content',
+      description: 'Generate audio and scenes in the studio to unlock captions, fine adjustments, and export here.',
+    },
     preview: {
       title: 'Video preview waiting for scenes',
       description: 'Generate audio and scenes in the studio to visualize the composition here.',

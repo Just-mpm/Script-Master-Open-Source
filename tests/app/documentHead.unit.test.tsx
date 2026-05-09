@@ -61,13 +61,13 @@ describe('DocumentHead', () => {
 
   it('deve renderizar link tags (canonical, etc.)', () => {
     const link = [
-      { rel: 'canonical', href: 'https://scriptmaster.app/' },
+      { rel: 'canonical', href: 'https://script-master.pro/' },
     ];
     render(<DocumentHead title="Teste" meta={[]} link={link} locale="" />);
 
     const canonical = document.querySelector('link[rel="canonical"]');
     expect(canonical).toBeTruthy();
-    expect(canonical?.getAttribute('href')).toBe('https://scriptmaster.app/');
+    expect(canonical?.getAttribute('href')).toBe('https://script-master.pro/');
   });
 
   it('deve funcionar com meta e link vazios (defaults)', () => {

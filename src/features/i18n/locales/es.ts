@@ -751,6 +751,15 @@ export const es: TranslationDictionary = {
       },
     },
     scriptEditor: {
+      inlineAI: {
+        buttonLabel: 'Preguntar a la IA',
+        inputPlaceholder: '¿Qué debería hacer la IA aquí?',
+        keepButton: 'Mantener',
+        revertButton: 'Revertir',
+        processing: 'La IA está reescribiendo...',
+        errorGeneric: 'No se pudo procesar. Intenta nuevamente.',
+        selectionTooShort: 'Selecciona al menos 3 caracteres.',
+      },
       label: 'Script',
       syncedSceneChip: 'Escena visual sincronizada con la escritura',
       copyTooltip: 'Copiar guion',
@@ -821,6 +830,11 @@ export const es: TranslationDictionary = {
   video: {
     pageTitle: 'Composición visual',
     pageDescription: 'Revisa la escena actual, consulta la atmósfera del video y carga proyectos anteriores sin salir del flujo.',
+    controlsEmpty: {
+      eyebrow: 'Panel lateral',
+      title: 'Controles esperando contenido',
+      description: 'Genera audio y escenas en el estudio para habilitar subtítulos, ajustes finos y exportación aquí.',
+    },
     preview: {
       title: 'Vista previa del video esperando escenas',
       description: 'Genera el audio y las escenas en el estudio para visualizar la composición aquí.',

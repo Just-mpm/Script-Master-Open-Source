@@ -1,6 +1,6 @@
 import logos from '../assets/logos';
 
-const SITE_URL = 'https://scriptmaster.app';
+const SITE_URL = 'https://script-master.pro';
 const SITE_NAME = 'Script Master';
 const DEFAULT_DESCRIPTION =
   'Transforme roteiros em áudio profissional com IA. Geração de voz, imagens e vídeos com inteligência artificial.';

@@ -179,6 +179,12 @@ describe('VideoPage', () => {
     expect(screen.getByTestId('video-preview')).toBeDefined();
   });
 
+  it('renderiza o empty state dos controles quando não há conteúdo', () => {
+    render(<VideoPage videoPlayerRef={videoPlayerRef} />, { wrapper: Wrapper });
+    expect(screen.getByText('Controles aguardando conteúdo')).toBeDefined();
+    expect(screen.getByText('Gere áudio e cenas no estúdio para liberar legendas, ajustes finos e exportação aqui.')).toBeDefined();
+  });
+
   it('renderiza o TranscriptionPanel', () => {
     render(<VideoPage videoPlayerRef={videoPlayerRef} />, { wrapper: Wrapper });
     expect(screen.getByTestId('transcription-panel')).toBeDefined();

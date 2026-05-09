@@ -325,7 +325,7 @@ async function handleCreateCheckout(req: express.Request, res: express.Response)
     // Se não conseguir buscar, continua sem email
   }
 
-  const origin = req.headers.origin ?? 'https://script-master-7ac07.web.app';
+  const origin = req.headers.origin ?? 'https://script-master.pro';
 
   try {
     const session = await stripeClient.checkout.sessions.create({
@@ -384,7 +384,7 @@ async function handleCreatePortal(req: express.Request, res: express.Response): 
 
   const stripeClient = getStripeClient();
 
-  const origin = req.headers.origin ?? 'https://script-master-7ac07.web.app';
+  const origin = req.headers.origin ?? 'https://script-master.pro';
 
   try {
     const portalSession = await stripeClient.billingPortal.sessions.create({

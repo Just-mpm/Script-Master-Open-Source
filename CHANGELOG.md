@@ -7,6 +7,25 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.31.0] - 2026-05-09
+
+### Adicionado
+
+- **Inline AI Assistant** (`src/features/studio/components/InlineAIWidget.tsx`): Novo widget de IA integrado diretamente ao Script Editor. Permite refatorar, expandir ou resumir partes selecionadas do roteiro com um clique.
+- **`useInlineAssistant`** (`src/hooks/useInlineAssistant.ts`): Hook especializado para o assistente inline, incluindo controle de streaming, rate limiting e tratamento de erros.
+- **`systemPrompt.ts`** (`src/features/assistant/systemPrompt.ts`): Extração da lógica de `buildSystemInstruction` do assistente para um módulo independente, facilitando reuso entre o chat principal e o widget inline.
+- **Empty State em VideoPage**: Novo feedback visual amigável quando o usuário acessa a página de vídeo sem ter gerado áudio ou cenas previamente.
+- **Internacionalização**: Adicionadas traduções para o namespace `inlineAI` e componentes de empty state nos idiomas Português, Inglês e Espanhol.
+
+### Alterado
+
+- **Migração de Domínio**: Domínio oficial de produção migrado para `https://script-master.pro`. Atualização realizada em `index.html`, `sitemap.xml`, `robots.txt`, `cors.json`, metatags de SEO e configurações do Firebase.
+- **`useAssistant.ts`**: Refatorado para consumir a lógica centralizada de system instructions.
+- **`VideoPreview.tsx`**: Otimização na sincronização de frames e estado de reprodução (`isPlaying`) com o bridge do Remotion.
+- **Testes Unitários**: Atualizados mocks de SEO e assertions de URL para o novo domínio oficial.
+
+---
+
 ## [0.30.0] - 2026-05-02
 
 ### Adicionado

@@ -152,31 +152,47 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const resolution = useMemo(() => getResolutionFromRatio(ratio), [ratio]);
 
     // Polling de frame: sincroniza o frame atual e estado de reprodução
-    // com o bridge store (consumido por CaptionEditorPanel e outros)
+    // com o bridge store (consumido por CaptionEditorPanel e ActionBar).
+    // O loop nunca morre — quando pausado usa polling leve (500ms) para
+    // detectar quando o vídeo volta a tocar via play() externo (ActionBar).
     const rafRef = useRef<number | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
+      let active = true;
+
       const tick = () => {
+        if (!active) return;
         const playerRef = internalRef.current;
-        if (playerRef && playerRef.isPlaying()) {
+
+        if (playerRef) {
+          const playing = playerRef.isPlaying();
           useVideoRenderBridge.getState().syncCurrentFrame(playerRef.getCurrentFrame());
-          useVideoRenderBridge.getState().syncIsPlaying(true);
-          rafRef.current = requestAnimationFrame(tick);
-        } else {
-          // Pausado: emite frame atual e estado uma vez e para
-          if (playerRef) {
-            useVideoRenderBridge.getState().syncCurrentFrame(playerRef.getCurrentFrame());
+          useVideoRenderBridge.getState().syncIsPlaying(playing);
+
+          if (playing) {
+            // Tocando: alta frequência via RAF (~60fps)
+            rafRef.current = requestAnimationFrame(tick);
+          } else {
+            // Pausado: polling leve para detectar retomada externa
+            timeoutRef.current = setTimeout(tick, 500);
           }
-          useVideoRenderBridge.getState().syncIsPlaying(false);
-          rafRef.current = null;
+        } else {
+          // Player ainda não montou — tenta novamente em 100ms
+          timeoutRef.current = setTimeout(tick, 100);
         }
       };
 
       rafRef.current = requestAnimationFrame(tick);
 
       return () => {
+        active = false;
         if (rafRef.current !== null) {
           cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
+        }
+        if (timeoutRef.current !== null) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
         }
       };
     }, []);

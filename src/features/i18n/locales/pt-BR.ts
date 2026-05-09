@@ -764,6 +764,15 @@ export const ptBR: TranslationDictionary = {
       },
     },
     scriptEditor: {
+      inlineAI: {
+        buttonLabel: 'Perguntar à IA',
+        inputPlaceholder: 'O que a IA deve fazer aqui?',
+        keepButton: 'Manter',
+        revertButton: 'Reverter',
+        processing: 'A IA está reescrevendo...',
+        errorGeneric: 'Não foi possível processar. Tente novamente.',
+        selectionTooShort: 'Selecione ao menos 3 caracteres.',
+      },
       label: 'Script',
       syncedSceneChip: 'Cena visual sincronizada com a escrita',
       copyTooltip: 'Copiar roteiro',
@@ -835,6 +844,11 @@ export const ptBR: TranslationDictionary = {
   video: {
     pageTitle: 'Montagem visual',
     pageDescription: 'Revise a cena atual, confira a atmosfera do vídeo e carregue projetos anteriores sem sair do fluxo.',
+    controlsEmpty: {
+      eyebrow: 'Painel lateral',
+      title: 'Controles aguardando conteúdo',
+      description: 'Gere áudio e cenas no estúdio para liberar legendas, ajustes finos e exportação aqui.',
+    },
     preview: {
       title: 'Preview de vídeo aguardando cenas',
       description: 'Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.',

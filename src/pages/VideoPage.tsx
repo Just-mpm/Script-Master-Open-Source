@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { GAP_MEDIUM, GAP_RELAXED } from '../theme/tokens';
+import TuneOutlined from '@mui/icons-material/TuneOutlined';
+import { useNavigate } from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
+import { glassSurfaceSx } from '../theme/surfaces';
+import { EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_MD, EMPTY_WRAPPER_PADDING_XS, GAP_COMPACT, GAP_MEDIUM, GAP_RELAXED } from '../theme/tokens';
 import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
@@ -30,6 +36,7 @@ export function VideoPage({
   videoPlayerRef,
 }: VideoPageProps) {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const { pause: pauseGlobalAudio } = useGlobalAudioActions();
   const { user } = useAuth();
   const userId = user?.uid;
@@ -146,6 +153,8 @@ export function VideoPage({
     () => durationInFrames / videoFps,
     [durationInFrames, videoFps],
   );
+
+  const hasControlPanelContent = Boolean((audioUrl && scenes.length > 0) || captions.length > 0);
 
   // Ref para portal da toolbar de legenda — renderizada fora do preview
   const toolbarPortalRef = useRef<HTMLDivElement>(null);
@@ -278,6 +287,59 @@ export function VideoPage({
         {/* Coluna direita — Controles empilhados */}
         <Grid size={{ xs: 12, md: 5 }}>
           <Stack spacing={GAP_MEDIUM}>
+            {!hasControlPanelContent && (
+              <Paper
+                elevation={0}
+                sx={(theme) => ({
+                  ...glassSurfaceSx(theme),
+                  p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD },
+                  minHeight: { xs: 240, md: 320 },
+                  borderRadius: { xs: 3, md: 4 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Stack spacing={GAP_MEDIUM} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
+                  <Box
+                    sx={(theme) => ({
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      display: 'grid',
+                      placeItems: 'center',
+                      backgroundColor: alpha(theme.palette.common.white, 0.06),
+                      border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+                      boxShadow: `0 12px 32px ${alpha(theme.palette.common.black, 0.18)}`,
+                    })}
+                  >
+                    <TuneOutlined sx={{ fontSize: 26, opacity: 0.6 }} />
+                  </Box>
+
+                  <Stack spacing={GAP_COMPACT}>
+                    <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.14em' }}>
+                      {t('video.controlsEmpty.eyebrow')}
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                      {t('video.controlsEmpty.title')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('video.controlsEmpty.description')}
+                    </Typography>
+                  </Stack>
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => navigate('/app/estudio')}
+                    sx={{ mt: 0.5 }}
+                  >
+                    {t('video.preview.goToStudio')}
+                  </Button>
+                </Stack>
+              </Paper>
+            )}
+
             {/* Painel de transcrição/legendas */}
             <TranscriptionPanel
               audioUrl={audioUrl}

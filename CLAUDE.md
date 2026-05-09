@@ -6,6 +6,8 @@ SPA em React + Vite para transformar roteiros em áudio com Gemini TTS, geraçã
 
 Firebase Hosting (frontend) + Firebase Cloud Functions v2 (backend serverless quando necessário).
 
+**Domínio oficial de produção:** `https://script-master.pro`
+
 ## Comandos
 
 ```bash
@@ -127,6 +129,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Componentes** | 17 componentes em `src/components/public/`: PublicHeader (AppBar responsivo com drawer mobile, link "Contato"), PublicFooter (3 grupos: Produto, Empresa, Legal), PageLayout (shell, sem `component="main"` — landmark em App.tsx), HeroSection, FeatureCard, FeatureShowcase, CTASection (glow laranja), StepCard (glassPanelSx), SocialProofBar, PricingCard (card de plano), FAQAccordion (accordion com a11y), UseCasesSection, MetricsSection, ProductDemoSection, TestimonialsSection, TestimonialCard, barrel `index.ts` |
 | **Assets** | 8 imagens em `public/images/public/` (hero, features, CTA) geradas via Gemini. Logos centralizados em `src/assets/logos.ts` — 7 variantes (`mark.transparent/round/square`, `full.transparent/round/square/roundedSquare`) + favicon, com `LOGO_VERSION` para invalidação de cache |
 | **SEO** | React 19 nativo (`<title>`, `<meta>`, `<link>` com hoisting automático). `getPageSeo()` em `src/lib/seo.ts` retorna `SeoData` (tipos próprios). `DocumentHead` em `src/components/DocumentHead.tsx` renderiza tags no `<head>`. Meta tags OG, Twitter Cards, canonical URL, `article:published_time` por página; OG locale map (`og:locale`) por idioma; `robots.txt` bloqueia `/app/`, `/login`, `/cadastro`, `/onboarding`; `sitemap.xml` com 9 URLs públicas priorizadas; NotFoundPage com `noindex, nofollow` |
+| **Domínio prod** | URLs públicas absolutas, canonical, Open Graph, `robots.txt`, `sitemap.xml` e fallbacks de checkout/portal devem priorizar `https://script-master.pro`. Subdomínios `*.web.app` e `*.firebaseapp.com` podem continuar ativos como secundários |
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
@@ -168,7 +171,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
 | **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE`. `SubtitleInlineEditor` editor inline via portal. Subcomponentes em `subtitle-editor/` (EditorToolbar, FontSizeControls, PositionToggle, StyleSlider, ToolbarActions, SubtitlePreview, DragOverlay, EditorButton) |
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
-| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas. `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) aplicado no renderer (`{ sketch: 1.0, reveal: 1.0 }`) |
+| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s). Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Toggle no `VideoExportPanel` + `SpeedPaintControls` com sliders independentes sketch/reveal (0.25x–4.0x) via props primitivas. `SpeedPaintSpeed` type (`slow` | `normal` | `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) applied no renderer (`{ sketch: 1.0, reveal: 1.0 }`) |
 | **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
 | **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `REVEAL_SPEED_SCALE = 0.5` torna reveal 2x mais lento que linear. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
@@ -204,12 +207,13 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/hooks/useAssistant.ts` |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/systemPrompt.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts` |
+| **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming direto do Gemini e `VirtualElement` para posicionamento contextual (Popover) |
 | **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via `generateContentStream`) |
 | **UI centralizada** | `assistantUi.ts` — 13 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button); componentes internos importam de `assistantUi` em vez de `tokens.ts` |
 | **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
 | **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini. Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
-| **System prompt** | Montado dinamicamente: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
+| **System prompt** | Montado dinamicamente via `buildSystemInstruction` (em `systemPrompt.ts`): identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings. Compartilhado entre chat principal e widget inline |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
 | **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
@@ -387,8 +391,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.30.0`
-- **Last release:** 2026-05-02
+- **Current:** `0.31.0`
+- **Last release:** 2026-05-09
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -396,8 +400,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.31.0 | **Inline AI Assistant** (`InlineAIWidget.tsx`) — assistente contextual integrado ao Script Editor para refatoração e auxílio na escrita; `useInlineAssistant` para streaming do Gemini; `systemPrompt.ts` extraído como módulo centralizado de instruções; **Migração de Domínio** — URLs absolutas, SEO e Firebase atualizados para `https://script-master.pro`; Empty State em VideoPage; traduções `inlineAI` nos 3 locales; mocks de teste atualizados |
 | 0.30.0 | `audioGeneratorStore` — store Zustand extraído de `useAudioGenerator` centralizando estado de geração (`AudioGeneratorState`, `SceneItem`, `getAudioDurationSeconds()`); `REVEAL_SPEED_SCALE` (0.5) no renderer substitui `DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal` 0.25→1.0; `formatRevealLabel()` removida; Firestore rules para `/users/{userId}` + `/subscription/{docId}` (billing security); VideoPage usa tokens de espaçamento; 89 testes atualizados |
 | 0.29.0 | Página de Configurações (`/app/configuracoes`) — 4 seções colapsáveis (Voz, Persona, Cenas, Multi-locutor), 15 campos configuráveis, `saveStudioDefaults()`/`clearStudioDefaults()` persistem nas chaves `s2a_*`; `VoiceCard` extraído do Inspector para reuso; `studioOptions.ts` (DRY para opções de pace/framework/ratio/density); `DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch` ajustado para 1.0 (velocidade real); PWA `orientation: portrait`; redirect `/app/settings` → `/app/configuracoes`; ícone Settings no Header; i18n 3 locales; 66 testes novos |
 | 0.28.2 | `GuestRoute` — componente inverso do `ProtectedRoute` para rotas de convidado (`/`, `/login`, `/cadastro`); redireciona logados para `/app/estudio`; spinner com a11y (`role="status"`, `aria-live="polite"`); loading spinner duplicado removido de LoginPage e RegisterPage; `ProtectedRoute` com atributos ARIA adicionados; 4 testes novos |
 | 0.28.1 | Logos centralizados em `src/assets/logos.ts` — 7 variantes + favicon com `LOGO_VERSION` para invalidação de cache; referências migradas em Header, PublicHeader, PublicFooter, LoginPage, RegisterPage, `seo.ts`; import `Mic` removido onde não utilizado |
-| 0.28.0 | Onboarding Wizard (`/onboarding`) substitui tour guiado — 4 passos (Welcome, Profile, Goals, Completion), `useWizardStore`, `SelectionCard`, Motion animations; user settings com `name`/`role`/`goals`; redirecionamento pós-login para `/onboarding`; tour antigo removido do StudioPage; i18n 3 locales; 26 testes novos |

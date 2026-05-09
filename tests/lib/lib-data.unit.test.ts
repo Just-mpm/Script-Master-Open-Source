@@ -162,7 +162,7 @@ describe('getPageSeo — estrutura', () => {
     });
 
     const ogUrl = seo.meta.find((m) => m.property === 'og:url');
-    expect(ogUrl!.content).toBe('https://scriptmaster.app/funcionalidades');
+    expect(ogUrl!.content).toBe('https://script-master.pro/funcionalidades');
   });
 
   it('contém og:image', () => {
@@ -198,7 +198,7 @@ describe('getPageSeo — estrutura', () => {
 
     expect(seo.link).toHaveLength(1);
     expect(seo.link[0].rel).toBe('canonical');
-    expect(seo.link[0].href).toBe('https://scriptmaster.app/precos');
+    expect(seo.link[0].href).toBe('https://script-master.pro/precos');
   });
 
   it('contém article:published_time quando type=article', () => {

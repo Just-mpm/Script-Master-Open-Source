@@ -19,6 +19,7 @@ import type { StudioScene } from '../features/studio/types';
 import { useLocale } from '../features/i18n';
 import { glassPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS } from '../theme/tokens';
+import { InlineAIWidget } from '../features/studio/components/InlineAIWidget';
 
 export interface ScriptEditorProps {
   script: string;
@@ -47,6 +48,7 @@ export function ScriptEditor({
 
   const isOverLimit = script.length > MAX_CHARS;
   const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [copiedScript, setCopiedScript] = useState(false);
 
   // Callbacks estáveis — evita nova referência a cada render,
@@ -225,6 +227,7 @@ export function ScriptEditor({
             disabled={isGenerating}
             placeholder={t('studio.scriptEditor.placeholder')}
             variant="outlined"
+            inputRef={textareaRef}
             slotProps={{
               htmlInput: {
                 spellCheck: false,
@@ -248,7 +251,8 @@ export function ScriptEditor({
                   borderColor: 'transparent',
                 },
                 '&:hover fieldset, &.Mui-focused fieldset': {
-                  borderColor: 'transparent',
+                  borderColor: BRAND_GLOW_FOCUS,
+                  boxShadow: `0 0 0 1px ${BRAND_GLOW_FOCUS} inset`,
                 },
                 '&.Mui-focused': {
                   boxShadow: 'inset 0 -1px 0 rgba(46, 117, 182, 0.2)',
@@ -267,6 +271,7 @@ export function ScriptEditor({
               },
             }}
           />
+          <InlineAIWidget script={script} setScript={setScript} textareaRef={textareaRef} disabled={isGenerating} />
         </Box>
       </Paper>
 

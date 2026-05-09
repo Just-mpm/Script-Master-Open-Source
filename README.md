@@ -52,6 +52,8 @@ O app roda em:
 
 - `http://localhost:3000`
 
+Em produção, o domínio oficial é `https://script-master.pro`. Se você quiser alinhar o Firebase Auth ao domínio customizado, use `VITE_FIREBASE_AUTH_DOMAIN="script-master.pro"` e mantenha esse domínio em `Authorized domains` no Firebase Console.
+
 ## Scripts disponíveis
 
 ```bash

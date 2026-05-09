@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:3000", "https://script-master-7ac07.web.app", "https://script-master-7ac07.firebaseapp.com"],
+    "origin": ["http://localhost:3000", "https://script-master.pro", "https://script-master-7ac07.web.app", "https://script-master-7ac07.firebaseapp.com"],
     "method": ["GET", "HEAD"],
     "responseHeader": ["Content-Type", "Content-Length", "Content-Range", "Range", "Accept-Ranges"],
     "maxAgeSeconds": 3600
