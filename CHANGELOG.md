@@ -7,6 +7,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.31.2] - 2026-05-12
+
+### Corrigido
+
+- **Fluxo de onboarding pós-login com fallback no Firestore** (`AuthContext.tsx`): Ao fazer login ou restaurar sessão, o `AuthContext` agora consulta `getUserSettings(authUser.uid)` no Firestore antes de decidir redirecionar para `/onboarding`. Se o Firestore confirmar que o onboarding foi concluído (usuário possui `name` ou `goals`), mesmo que o localStorage tenha sido limpo entre sessões, o redirecionamento correto é para `/app/estudio`. Adicionado `import { getUserSettings } from '../lib/db/user-settings'`.
+- **Estado de onboarding com fallback no localStorage** (`OnboardingPage.tsx`): renomeada variável `isCompleted` para `isStoreCompleted` e adicionado fallback `localStorage.getItem('s2a_onboarding_completed') === 'true'` como segunda fonte de verdade — evita que a página de onboarding apareça indevidamente quando a store Zustand perde o estado mas o localStorage ainda tem a marcação.
+
+---
+
 ## [0.31.1] - 2026-05-12
 
 ### Alterado

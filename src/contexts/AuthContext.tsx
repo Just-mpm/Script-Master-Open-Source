@@ -4,6 +4,7 @@ import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
 import { deleteAllUserData } from '../lib/db/account-cleanup';
+import { getUserSettings } from '../lib/db/user-settings';
 import { useBillingInit } from '../features/billing/hooks';
 
 const log = createLogger('AuthContext');
@@ -73,14 +74,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Login ativo recém-concluído: full reload para ativar COEP
         if (wasLoginRequested.current) {
           wasLoginRequested.current = false;
-          window.location.href = onboardingCompleted ? '/app/estudio' : '/onboarding';
+          if (onboardingCompleted) {
+            window.location.href = '/app/estudio';
+          } else {
+            // Verifica Firestore antes de redirecionar (localStorage pode ter sido limpo entre sessões)
+            getUserSettings(authUser.uid).then((settings) => {
+              const actuallyCompleted = settings && (settings.name || settings.goals?.length);
+              if (actuallyCompleted) {
+                localStorage.setItem('s2a_onboarding_completed', 'true');
+                window.location.href = '/app/estudio';
+              } else {
+                window.location.href = '/onboarding';
+              }
+            }).catch(() => {
+              window.location.href = '/onboarding';
+            });
+          }
           return;
         }
 
-        // Sessão restaurada: se wizard não foi completado, redireciona sem reload
-        // (COEP já está ativo em sessões restauradas)
-        if (!onboardingCompleted && window.location.pathname !== '/onboarding') {
-          window.location.href = '/onboarding';
+        // Sessão restaurada: verifica localStorage + Firestore antes de decidir
+        if (!onboardingCompleted) {
+          getUserSettings(authUser.uid).then((settings) => {
+            const actuallyCompleted = settings && (settings.name || settings.goals?.length);
+            if (actuallyCompleted) {
+              // Firestore confirma que onboarding foi concluído — localStorage foi limpo
+              localStorage.setItem('s2a_onboarding_completed', 'true');
+              setLoading(false);
+            } else if (window.location.pathname !== '/onboarding') {
+              window.location.href = '/onboarding';
+            } else {
+              // Já está no /onboarding e Firestore confirma que não completou → deixa a página decidir
+              setLoading(false);
+            }
+          }).catch(() => {
+            if (window.location.pathname !== '/onboarding') {
+              window.location.href = '/onboarding';
+            } else {
+              setLoading(false);
+            }
+          });
           return;
         }
 

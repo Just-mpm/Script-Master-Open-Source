@@ -9,7 +9,8 @@ export function OnboardingPage() {
   const { user, loading } = useAuth();
   const { t, locale } = useLocale();
   const currentStep = useWizardStore((s) => s.currentStep);
-  const isCompleted = useWizardStore((s) => s.isCompleted);
+  const isStoreCompleted = useWizardStore((s) => s.isCompleted);
+  const isCompleted = isStoreCompleted || localStorage.getItem('s2a_onboarding_completed') === 'true';
 
   if (loading) return null;
 
