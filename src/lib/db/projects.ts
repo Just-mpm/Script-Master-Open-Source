@@ -1,5 +1,6 @@
 import { collection, collectionGroup, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { createLogger } from '../logger';
 import type { AudioSource, Project, ProjectImage, ProjectVideo } from './types';
 import {
   AUDIOS_STORE,
@@ -18,6 +19,8 @@ import {
 } from './shared';
 import { deleteTranscription } from './transcriptions';
 import { deleteVideoFromProject, getProjectVideos } from './videos';
+
+const log = createLogger('projects');
 
 type FirestoreAudioSource = Omit<AudioSource, 'audioBlob'>;
 type FirestoreProjectImage = Omit<ProjectImage, 'imageBlob'>;
@@ -102,7 +105,7 @@ export async function saveAudioToProject(audio: AudioSource, userId?: string): P
       await setDoc(doc(projectAudiosCollection(audio.projectId), audio.id), firestoreItem);
       return audioUrl;
     } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.WRITE, `projects/${audio.projectId}/audios/${audio.id}`);
+      log.warn('Falha ao salvar áudio no Firebase, salvando localmente', { error });
     }
   }
 
@@ -129,7 +132,7 @@ export async function saveImageToProject(image: ProjectImage, userId?: string): 
       await setDoc(doc(projectImagesCollection(image.projectId), image.id), firestoreItem);
       return imageUrl;
     } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.WRITE, `projects/${image.projectId}/images/${image.id}`);
+      log.warn('Falha ao salvar imagem no Firebase, salvando localmente', { error });
     }
   }
 

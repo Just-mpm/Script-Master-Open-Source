@@ -7,6 +7,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.31.1] - 2026-05-12
+
+### Alterado
+
+- **Logger substitui `handleFirestoreError` em `projects.ts`**: `saveAudioToProject` e `saveImageToProject` agora usam `log.warn` com `createLogger('projects')` em vez de `handleFirestoreError` para falhas de salvamento no Firebase — fallback para IndexedDB é um caminho esperado, não um erro a ser tratado. Adicionado `import { createLogger } from '../logger'` e instância dedicada do logger
+- **Limite de upload de áudio em projetos aumentado**: de 50MB para 150MB nas regras do Firebase Storage (`storage.rules`, linha 72) — acomode projetos com múltiplas cenas e áudios de longa duração
+
+---
+
 ## [0.31.0] - 2026-05-09
 
 ### Adicionado
