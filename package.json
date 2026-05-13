@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.31.2",
+  "version": "0.32.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -17,6 +17,8 @@
     "deploy:preview": "bun run build && firebase hosting:channel:deploy preview"
   },
   "dependencies": {
+    "@dnd-kit/helpers": "^0.4.0",
+    "@dnd-kit/react": "^0.4.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@google/genai": "^1.50.1",
@@ -35,12 +37,10 @@
     "@stripe/stripe-js": "^9.3.1",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase": "^12.12.0",
-    "konva": "^10.2.5",
     "motion": "^12.38.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-dropzone": "^15.0.0",
-    "react-konva": "^19.2.3",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.1",
     "remotion": "4.0.448",

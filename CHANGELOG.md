@@ -7,6 +7,46 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.32.0] - 2026-05-12
+
+### Adicionado
+
+- **Speed Paint migrado para Remotion** (`/app/pintura-rapida`): página completamente reescrita — substitui canvas Konva por player Remotion nativo. Remove dependências `konva`/`react-konva`; adiciona `@dnd-kit/react` e `@dnd-kit/helpers` para reordenação drag-and-drop da fila de imagens
+- **`SpeedPaintComposition`** (`src/features/speed-paint/components/SpeedPaintComposition.tsx`): nova composição Remotion para renderização de speed paint, integrando `SpeedPaintScene` do video-render
+- **`SpeedPaintPlayer`** (`src/features/speed-paint/components/SpeedPaintPlayer.tsx`): wrapper `@remotion/player` para preview de speed paint com composição dinâmica
+- **`SpeedPaintPlayerControls`** (`src/features/speed-paint/components/SpeedPaintPlayerControls.tsx`): controles completos de reprodução — play/pause, seek slider, screenshot, exportação, indicadores de fase
+- **`SpeedPaintExportPanel`** (`src/features/speed-paint/components/SpeedPaintExportPanel.tsx`): painel de exportação de speed paint com seletor de qualidade e download via `useSpeedPaintExporter`
+- **`useSpeedPaintExporter`** (`src/features/speed-paint/hooks/useSpeedPaintExporter.tsx`): hook de exportação via Remotion WebCodecs com fallback de codec (H.264 > VP9 > WebM)
+- **`useCodecSupport`** (`src/features/video-render/hooks/useCodecSupport.ts`): hook genérico de detecção de codecs suportados pelo navegador, extraído do `useVideoExporter`
+- **Componentes de exportação extraídos**: `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions` em `src/features/video-render/components/export/` — modularizam o `VideoExportPanel` (~130 linhas a menos)
+- **`exportUtils.ts`** (`src/features/video-render/lib/exportUtils.ts`): utilitários de exportação (`isCancellationError`, `toUserFriendlyError`) extraídos do `useVideoExporter`
+- **Reordenação drag-and-drop na fila**: `QueueStaging` refatorado com `@dnd-kit/react` para reordenação por arrasto (`DragDropProvider`, `useSortable`, `DragOverlay`); `animationStore` usa `arrayMove` do `@dnd-kit/helpers`
+- **i18n para fases do speed paint**: chaves `speedPaint.phaseReady`, `speedPaint.phaseSketching`, `speedPaint.phaseRevealing`, `speedPaint.phaseCompleted`, `speedPaint.controlsPause` adicionadas nos 3 locales (pt-BR, en, es)
+
+### Alterado
+
+- **`SpeedPaintScene`** (`SpeedPaintScene.tsx`): consumido diretamente pelas composições speed-paint — suporta `DrawToolType`, `drawTool()` nativo e `Stroke` type do speed-paint
+- **`VideoExportPanel`**: componentes de exportação extraídos em módulos dedicados — `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions`
+- **`useVideoExporter`**: lógica de detecção de codecs e utilitários extraída para `useCodecSupport` e `exportUtils.ts`
+- **`animationStore`**: fila de imagens com suporte a `arrayMove` para reordenação; estado inicial simplificado
+- **`BatchOrchestrator`**: limpeza de dead code — referências removidas a `setIsPlaying`, `setProgress` (gerenciados pelo player Remotion)
+
+### Removido
+
+- **`konva` e `react-konva`**: dependências removidas do `package.json` — speed paint não usa mais canvas Konva
+- **Componentes Konva antigos**: `AnimationControls.tsx`, `AnimationPlayer.tsx`, `StrokeRenderer.tsx`, `stageRef.ts`, `SpeedSelector.tsx` — substituídos por player Remotion
+- **`AnimationControls.component.test.tsx`**, **`AnimationPlayer.component.test.tsx`**, **`SpeedSelector.component.test.tsx`**, **`stageRef.unit.test.ts`** — testes removidos junto com os componentes
+
+### Testes
+
+- `SpeedPaintPage.component.test.tsx`: 127 linhas novas — cobertura de player Remotion, exportação, abas e conexão com store
+- `QueueStaging.component.test.tsx`: 79 linhas novas — testes de drag-and-drop com `@dnd-kit/react`
+- `animationStore.unit.test.ts`: 66 linhas adicionadas — operações de fila com `arrayMove` e estados de job
+- `pages.component.test.tsx`: mocks de `job` e `animation` adicionados para nova estrutura da store
+- `ScriptEditor.component.test.tsx`: mock do `InlineAIWidget` adicionado (evita dependência de `useAuth()`)
+
+---
+
 ## [0.31.2] - 2026-05-12
 
 ### Corrigido

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { renderMediaOnWeb, canRenderMediaOnWeb } from '@remotion/web-renderer';
+import { renderMediaOnWeb } from '@remotion/web-renderer';
 import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
 import { VideoComposition } from '../components/VideoComposition';
@@ -11,6 +11,8 @@ import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALIT
 import { generateScenesWithSpeedPaint } from '../lib/speedPaintRenderer';
 import { clearStrokeCache } from '../lib/strokeCache';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
+import { isCancellationError, toUserFriendlyError } from '../lib/exportUtils';
+import { useCodecSupport } from '../hooks/useCodecSupport';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
 import { createLogger } from '../../../lib/logger';
@@ -112,37 +114,6 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
 
 const log = createLogger('useVideoExporter');
 
-/**
- * Verifica se o erro representa um cancelamento intencional do usuário.
- * O Remotion lança Error com "was cancelled" ao invés de DOMException AbortError.
- */
-function isCancellationError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === 'AbortError') return true;
-  if (err instanceof Error && err.message.toLowerCase().includes('cancelled')) return true;
-  return false;
-}
-
-/**
- * Mapeia erros de renderização para mensagens amigáveis em pt-BR.
- * Não deve ser chamada para erros de cancelamento (usar isCancellationError antes).
- */
-function toUserFriendlyError(err: unknown): string {
-  if (!(err instanceof Error)) {
-    return 'Erro ao exportar vídeo. Tente novamente.';
-  }
-
-  const msg = err.message.toLowerCase();
-
-  // Loga o erro real para diagnóstico
-  log.error('Erro original na exportação', { error: err.message });
-
-  if (msg.includes('webcodecs') || msg.includes('videoencoder') || msg.includes('not supported')) {
-    return `Navegador não suporta exportação de vídeo: ${err.message}`;
-  }
-
-  return 'Erro ao exportar vídeo. Tente novamente.';
-}
-
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -155,9 +126,9 @@ export function useVideoExporter() {
   const outputUrlRef = useRef<string | null>(null);
   /** Último percentual reportado — evita re-renders quando o inteiro não mudou */
   const lastReportedPercentRef = useRef(-1);
-  /** Codec de áudio resolvido por checkSupport — 'aac' ou null (muted) */
+  /** Codec de áudio resolvido — lido de codecSupport via ref */
   const resolvedAudioCodecRef = useRef<string | null>('aac');
-  /** Codec de vídeo e container resolvidos por checkSupport */
+  /** Codec de vídeo e container resolvidos — lidos de codecSupport via refs sincronizadas */
   const resolvedVideoCodecRef = useRef<string>('h264');
   const resolvedContainerRef = useRef<string>('mp4');
   /** Nome do arquivo para download */
@@ -165,10 +136,30 @@ export function useVideoExporter() {
   /** Peso acumulado da fase de speed paint no progresso total (0 se não houve speed paint) */
   const speedPaintPhaseWeightRef = useRef(0);
 
+  // Detecção de codecs via hook unificado (com áudio)
+  const codecSupport = useCodecSupport({ muted: false });
+
+  // Sincroniza canRender, codec e warnings do hook para o estado do exporter
+  useEffect(() => {
+    setState(prev => ({
+      ...prev,
+      canRender: codecSupport.canRender,
+      resolvedVideoCodec: codecSupport.resolvedVideoCodec,
+      resolvedContainer: codecSupport.resolvedContainer,
+      // Mapeia supportError para error (só quando não está renderizando)
+      error: prev.isRendering ? prev.error : (codecSupport.supportError ?? prev.error),
+      // Mapeia codecWarning para saveWarning
+      saveWarning: prev.saveWarning ?? codecSupport.codecWarning,
+    }));
+  }, [codecSupport.canRender, codecSupport.resolvedVideoCodec, codecSupport.resolvedContainer, codecSupport.supportError, codecSupport.codecWarning]);
+
   // Mantém refs sincronizadas para uso em callbacks sem depender do estado
   useEffect(() => {
     outputUrlRef.current = state.outputUrl;
-  }, [state.outputUrl]);
+    resolvedVideoCodecRef.current = state.resolvedVideoCodec;
+    resolvedContainerRef.current = state.resolvedContainer;
+    resolvedAudioCodecRef.current = codecSupport.resolvedAudioCodec;
+  }, [state.outputUrl, state.resolvedVideoCodec, state.resolvedContainer, codecSupport.resolvedAudioCodec]);
 
   // Cleanup de blob URL ao desmontar e aborta renderização em andamento
   useEffect(() => {
@@ -182,108 +173,19 @@ export function useVideoExporter() {
   }, []);
 
   // -------------------------------------------------------------------------
-  // Verifica suporte do browser (WebCodecs + codec)
+  // Verifica suporte do browser (delegado ao hook useCodecSupport)
   // -------------------------------------------------------------------------
+  // Ref estável para checkSupport — evita re-criação do callback
+  const checkSupportRef = useRef(codecSupport.checkSupport);
+  useEffect(() => {
+    checkSupportRef.current = codecSupport.checkSupport;
+  }, [codecSupport.checkSupport]);
+
   const checkSupport = useCallback(async (width: number, height: number) => {
-    // Checagem rápida síncrona
-    if (typeof VideoEncoder === 'undefined') {
-      setState(prev => ({ ...prev, canRender: false, error: 'WebCodecs não disponível neste navegador.' }));
-      return;
-    }
-
-    try {
-      const result = await canRenderMediaOnWeb({
-        width,
-        height,
-        videoCodec: 'h264',
-        audioCodec: 'aac',
-        container: 'mp4',
-      });
-
-      if (result.canRender) {
-        resolvedAudioCodecRef.current = result.resolvedAudioCodec;
-        setState(prev => ({ ...prev, canRender: true, error: null, resolvedVideoCodec: 'h264', resolvedContainer: 'mp4' }));
-        return;
-      }
-
-      // Loga issues para diagnóstico
-      for (const issue of result.issues) {
-        log.warn('Problema de suporte detectado', { type: issue.type, message: issue.message, severity: issue.severity });
-      }
-
-      // Tenta fallback sem áudio se o problema for codec de áudio
-      const hasAudioIssue = result.issues.some(
-        (i) => i.type === 'audio-codec-unsupported' || i.type === 'container-codec-mismatch',
-      );
-
-      if (hasAudioIssue) {
-        const fallbackResult = await canRenderMediaOnWeb({
-          width,
-          height,
-          videoCodec: 'h264',
-          audioCodec: null,
-          container: 'mp4',
-        });
-
-        if (fallbackResult.canRender) {
-          resolvedAudioCodecRef.current = fallbackResult.resolvedAudioCodec;
-          resolvedVideoCodecRef.current = fallbackResult.resolvedVideoCodec ?? 'h264';
-          resolvedContainerRef.current = 'mp4';
-          setState(prev => ({
-            ...prev,
-            canRender: true,
-            error: null,
-            resolvedVideoCodec: fallbackResult.resolvedVideoCodec ?? 'h264',
-            resolvedContainer: 'mp4',
-          }));
-          return;
-        }
-
-        for (const issue of fallbackResult.issues) {
-          log.warn('Problema no fallback sem áudio', { type: issue.type, message: issue.message });
-        }
-      }
-
-      // Terceiro fallback: VP8 + WebM (suportado pela maioria dos navegadores)
-      const vp8Result = await canRenderMediaOnWeb({
-        width,
-        height,
-        videoCodec: 'vp8',
-        audioCodec: 'opus',
-        container: 'webm',
-      });
-
-      if (vp8Result.canRender) {
-        resolvedAudioCodecRef.current = vp8Result.resolvedAudioCodec;
-        resolvedVideoCodecRef.current = vp8Result.resolvedVideoCodec ?? 'vp8';
-        resolvedContainerRef.current = 'webm';
-        setState(prev => ({
-          ...prev,
-          canRender: true,
-          error: null,
-          resolvedVideoCodec: vp8Result.resolvedVideoCodec ?? 'vp8',
-          resolvedContainer: 'webm',
-          saveWarning: prev.saveWarning || 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
-        }));
-        return;
-      }
-
-      for (const issue of vp8Result.issues) {
-        log.warn('Problema no fallback VP8', { type: issue.type, message: issue.message });
-      }
-
-      // Nenhum fallback funcionou — exibe mensagem com a primeira issue real
-      const mainIssue = result.issues.find((i) => i.severity === 'error');
-      setState(prev => ({
-        ...prev,
-        canRender: false,
-        error: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
-      }));
-    } catch (err) {
-      log.warn('Exceção inesperada no checkSupport', { error: err });
-      setState(prev => ({ ...prev, canRender: false }));
-    }
-  }, []);
+    await checkSupportRef.current(width, height);
+    // Sincroniza codec de áudio após checkSupport (ref — sem stale closure)
+    resolvedAudioCodecRef.current = codecSupport.resolvedAudioCodec;
+  }, [codecSupport.resolvedAudioCodec]);
 
   // -------------------------------------------------------------------------
   // Inicia renderização via WebCodecs
@@ -513,7 +415,7 @@ export function useVideoExporter() {
       setState(prev => ({
         ...prev,
         isRendering: false,
-        error: cancelled ? null : toUserFriendlyError(err),
+        error: cancelled ? null : toUserFriendlyError(err, log),
         renderStatusText: cancelled ? 'Exportação cancelada.' : prev.renderStatusText,
       }));
     } finally {

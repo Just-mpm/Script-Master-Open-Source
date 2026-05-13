@@ -16,7 +16,8 @@ const log = createLogger('BatchOrchestrator');
 
 /**
  * Orquestrador invisível que processa imagens da fila automaticamente.
- * Gerencia o pipeline: imagem pendente -> geração de strokes -> reprodução.
+ * Gerencia o pipeline: imagem pendente -> geração de strokes.
+ * A reprodução é controlada pelo Remotion Player (auto-play ao detectar job completed).
  */
 export function BatchOrchestrator() {
   const job = useAnimationStore((s) => s.job);
@@ -26,26 +27,24 @@ export function BatchOrchestrator() {
   const setJob = useAnimationStore((s) => s.setJob);
   const setCurrentIndex = useAnimationStore((s) => s.setCurrentIndex);
   const setBatchMode = useAnimationStore((s) => s.setBatchMode);
-  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying);
-  const setProgress = useAnimationStore((s) => s.setProgress);
 
   const currentImageIdRef = useRef<string | null>(null);
   // W5: ref para detectar quando a fila foi limpa durante processamento
   const processingIdRef = useRef<string | null>(null);
 
-  // Handle automatic generation of strokes for the current queued image
+  // Pipeline de processamento: detecta nova imagem na fila e gera strokes
   useEffect(() => {
     if (batchMode === 'idle' || queue.length === 0) return;
 
     const currentImg = queue[currentIndex];
 
-    // If we've reached the end
+    // Fim da fila — volta ao estado idle
     if (!currentImg) {
       setBatchMode('idle');
       return;
     }
 
-    // Only process if it's a new image
+    // Processa apenas imagens novas (evita re-processar a mesma)
     if (currentImageIdRef.current !== currentImg.id) {
       currentImageIdRef.current = currentImg.id;
 
@@ -53,7 +52,6 @@ export function BatchOrchestrator() {
       const processId = currentImg.id;
       processingIdRef.current = processId;
 
-      // Update UI state
       setJob({ inputImage: currentImg.dataUrl, status: 'processing', progress: 0 });
 
       generateStrokesFromImage(currentImg.dataUrl, (p) => {
@@ -61,30 +59,21 @@ export function BatchOrchestrator() {
       }).then((animation) => {
         // Se a fila foi limpa durante o processamento, ignora o resultado
         if (processingIdRef.current !== processId) return;
+        // Marca job como concluído — o SpeedPaintPlayer detecta e auto-play
         setJob({ status: 'completed', animation, progress: 0 });
-        // Autoplay once ready (will be hijacked by recorder if in record mode)
-        setProgress(0);
-
-        // Give the UI a tiny moment to render the canvas before triggering play
-        if (batchMode !== 'record') {
-          setTimeout(() => {
-            setIsPlaying(true);
-          }, 100);
-        }
       }).catch((err) => {
         // Se a fila foi limpa durante o processamento, ignora o erro
         if (processingIdRef.current !== processId) return;
         log.error('Falha ao processar imagem em lote', { error: err });
         setJob({ status: 'failed' });
 
-        // Auto-skip failed image after 2 seconds
-        // Usa getState() para evitar closure stale do currentIndex
+        // Auto-skip após 2 segundos — usa getState() para evitar closure stale
         setTimeout(() => {
           setCurrentIndex(useAnimationStore.getState().currentIndex + 1);
         }, 2000);
       });
     }
-  }, [batchMode, currentIndex, queue, setJob, setIsPlaying, setProgress, setCurrentIndex, setBatchMode]);
+  }, [batchMode, currentIndex, queue, setJob, setCurrentIndex, setBatchMode]);
 
   if (job.status === 'failed' && batchMode !== 'idle') {
     const nextInQueue = currentIndex + 1 < queue.length;

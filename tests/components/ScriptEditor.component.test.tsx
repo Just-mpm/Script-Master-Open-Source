@@ -21,6 +21,11 @@ vi.mock('../../src/lib/scene', () => ({
   resolveActiveScene: vi.fn(),
 }));
 
+// InlineAIWidget usa useAuth() internamente — mock para evitar AuthProvider
+vi.mock('../../src/features/studio/components/InlineAIWidget', () => ({
+  InlineAIWidget: () => null,
+}));
+
 vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));

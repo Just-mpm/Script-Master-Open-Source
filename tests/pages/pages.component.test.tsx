@@ -50,12 +50,19 @@ vi.mock('../../src/contexts/AuthContext', () => ({
 
 vi.mock('../../src/features/speed-paint/store/animationStore', () => {
   const state = {
+    job: { id: '', inputImage: '', status: 'idle', progress: 0, animation: undefined },
     queue: [] as unknown[],
     batchMode: 'idle' as string,
+    speed: 1,
+    paintSpeed: 1,
+    animationDuration: 15,
+    showDrawTool: true,
+    canvasColor: 'white',
   };
   return {
     useAnimationStore: (selector?: (s: typeof state) => unknown) =>
       selector ? selector(state) : state,
+    useShallow: (fn: (s: typeof state) => unknown) => fn,
   };
 });
 
@@ -125,10 +132,6 @@ vi.mock('../../src/features/speed-paint/components/batch/BatchOrchestrator', () 
 
 vi.mock('../../src/features/speed-paint/components/batch/QueueStaging', () => ({
   QueueStaging: () => <div data-testid="queue-staging">QueueStaging</div>,
-}));
-
-vi.mock('../../src/features/speed-paint/components/canvas/AnimationPlayer', () => ({
-  AnimationPlayer: () => <div data-testid="animation-player">AnimationPlayer</div>,
 }));
 
 vi.mock('../../src/features/speed-paint/components/upload/ImageUpload', () => ({
@@ -204,6 +207,8 @@ vi.mock('../../src/theme/tokens', () => ({
   WHITE: '#ffffff',
   BLACK: '#000000',
   SUCCESS_MAIN: '#10b981',
+  SUCCESS_GLOW: '0 0 12px rgba(16, 185, 129, 0.25)',
+  SUCCESS_BG_SUBTLE: 'rgba(16, 185, 129, 0.08)',
   ERROR_MAIN: '#ef4444',
   WARNING_MAIN: '#f59e0b',
   ERROR_BG_SUBTLE: 'rgba(239, 68, 68, 0.08)',

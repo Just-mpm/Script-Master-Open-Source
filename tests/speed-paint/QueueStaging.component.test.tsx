@@ -7,6 +7,53 @@ import type { ReactNode } from 'react';
 import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
 import type { QueuedImage } from '../../src/features/speed-paint/types';
 
+// ---------------------------------------------------------------------------
+// Mocks do @dnd-kit — capturamos onDragEnd para simular reordenação
+// ---------------------------------------------------------------------------
+// NOTA: Os hooks useSortable, DragDropProvider e DragOverlay são totalmente
+// mockados. Os testes validam a integração entre o nosso componente e a
+// callback onDragEnd, mas não testam o comportamento real de drag-and-drop
+// do @dnd-kit (renderização visual, animações, a11y). Para testar o
+// comportamento real, seria necessário um teste de integração com
+// @testing-library/user-event simulando mouse events.
+
+// Formato do evento onDragEnd do @dnd-kit/react v0.4.0
+interface DndDragEndEvent {
+  canceled: boolean;
+  operation: {
+    source: {
+      id: string;
+      initialIndex: number;
+      index: number;
+    };
+    target?: { id: string };
+  };
+}
+
+let capturedOnDragEnd: ((event: DndDragEndEvent) => void) | undefined;
+
+vi.mock('@dnd-kit/react', () => ({
+  DragDropProvider: ({ children, onDragEnd }: { children: ReactNode; onDragEnd?: (event: DndDragEndEvent) => void }) => {
+    capturedOnDragEnd = onDragEnd;
+    return <>{children}</>;
+  },
+  DragOverlay: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('@dnd-kit/react/sortable', () => ({
+  useSortable: ({ id }: { id: string }) => ({
+    ref: () => {},
+    handleRef: () => {},
+    isDragging: false,
+    isDropTarget: false,
+  }),
+  isSortable: (source: unknown) => Boolean(source && typeof source === 'object' && 'initialIndex' in source),
+}));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const darkTheme = createTheme({
   palette: { mode: 'dark' },
 });
@@ -21,12 +68,17 @@ const sampleQueue: QueuedImage[] = [
   { id: '3', dataUrl: 'data:image/png;base64,ghi', filename: 'foto3.webp', status: 'pending' },
 ];
 
+// ---------------------------------------------------------------------------
+// Testes
+// ---------------------------------------------------------------------------
+
 describe('QueueStaging', () => {
   beforeEach(() => {
     useAnimationStore.getState().clearQueue();
+    capturedOnDragEnd = undefined;
   });
 
-  it('retorna null quando queue está vazia', () => {
+  it('retorna null quando queue está vazio', () => {
     const { container } = render(<QueueStaging />, { wrapper: Wrapper });
     expect(container.innerHTML).toBe('');
   });
@@ -42,8 +94,6 @@ describe('QueueStaging', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    // MUI Typography renderiza o texto inteiro, mas getByText com string exata
-    // pode falhar se houver quebra de nó. Usamos getByText com função matcher.
     const body2 = screen.getByText((text) =>
       text.includes('3') && text.includes('imagem(ns) na fila'),
     );
@@ -127,7 +177,6 @@ describe('QueueStaging', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    // Usa aria-label com a função matcher para encontrar o botão correto
     const removeBtn = screen.getByLabelText('Remover foto1.png');
     fireEvent.click(removeBtn);
 
@@ -136,5 +185,31 @@ describe('QueueStaging', () => {
     expect(queue.find((q) => q.id === '1')).toBeUndefined();
     expect(queue[0].id).toBe('2');
     expect(queue[1].id).toBe('3');
+  });
+
+  it('chama reorderQueue ao finalizar drag com índices corretos', () => {
+    useAnimationStore.getState().setQueue(sampleQueue);
+    const reorderSpy = vi.spyOn(useAnimationStore.getState(), 'reorderQueue');
+    render(<QueueStaging />, { wrapper: Wrapper });
+
+    expect(capturedOnDragEnd).toBeDefined();
+
+    // Simula arrastar o primeiro item (índice 0) para a posição do terceiro (índice 2)
+    // Formato do evento @dnd-kit/react v0.4.0
+    capturedOnDragEnd!({
+      canceled: false,
+      operation: {
+        source: {
+          id: '1',
+          initialIndex: 0,
+          index: 2,
+        },
+        target: { id: '3' },
+      },
+    });
+
+    expect(reorderSpy).toHaveBeenCalledTimes(1);
+    expect(reorderSpy).toHaveBeenCalledWith(0, 2);
+    reorderSpy.mockRestore();
   });
 });

@@ -35,7 +35,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 - **Firebase Cloud Functions v2** — backend serverless (Stripe webhooks, checkout, portal) em `functions/`
 - **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions)
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
-- **Zustand** (estado) | **Konva** (canvas) | **react-dropzone** (upload)
+- **Zustand** (estado) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
@@ -304,12 +304,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | | |
 |---|---|
 | **Arquivos** | `src/features/speed-paint/` |
-| **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva no canvas Konva. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
-| **Fases** | Sketch (bordas, `layer:0`) → Reveal (coloração com destination-out, `layer:1`) |
-| **Canvas** | Offscreen buffer simula "lousa branca". Reveal apaga lousa revelando imagem original |
-| **Controles** | Play/pause, seek, velocidade dupla (draw + paint), export PNG (2x) e WebM (H.264 > VP9 > padrão, 12Mbps) |
-| **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança 2s) e `record` (grava + avança) |
-| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed |
+| **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva via player Remotion nativo. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
+| **Fases** | Sketch (bordas) → Reveal (coloração), renderizadas via `SpeedPaintScene` do video-render com suporte a multi-velocidade granular (`SpeedPaintMultipliers`) |
+| **Player** | `SpeedPaintPlayer` (wrapper `@remotion/player`) + `SpeedPaintPlayerControls` (play/pause, seek slider, screenshot, snapshot PNG, indicadores de fase) |
+| **Exportação** | `SpeedPaintExportPanel` com seletor de qualidade e download; `useSpeedPaintExporter` via Remotion WebCodecs com fallback de codec (H.264+AAC > H.264 s/ áudio > VP8+Opus+WebM) |
+| **Composição** | `SpeedPaintComposition` — composição Remotion que integra `SpeedPaintScene` com fases de sketch (desenho de bordas) e reveal (coloração) |
+| **Drag-and-drop** | `QueueStaging` refatorado com `@dnd-kit/react` (`DragDropProvider`, `useSortable`, `DragOverlay`) para reordenação da fila; `arrayMove` do `@dnd-kit/helpers` no animationStore |
+| **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança) e `record` (grava + exporta) |
+| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed; reordenação via `reorderQueue(oldIndex, newIndex)` |
 
 ### Autenticação
 
@@ -391,7 +393,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.31.2`
+- **Current:** `0.32.0`
 - **Last release:** 2026-05-12
 
 ### Últimas mudanças (atualizado por /fast)
@@ -400,8 +402,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.32.0 | **Speed Paint migrado para Remotion** — página `/app/pintura-rapida` reescrita com player Remotion nativo (`SpeedPaintPlayer`, `SpeedPaintPlayerControls`); exportação via `useSpeedPaintExporter`; `@dnd-kit/react` para reordenação drag-and-drop da fila; `konva`/`react-konva` removidos; `VideoExportPanel` modularizado em `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions`; `useCodecSupport` extraído; i18n speed paint phases |
 | 0.31.2 | **Onboarding com fallback no Firestore** — `AuthContext` agora consulta `getUserSettings` no Firestore antes de redirecionar para `/onboarding`: se Firestore confirmar conclusão (name/goals presentes), redireciona para `/app/estudio` mesmo que localStorage tenha sido limpo entre sessões; `OnboardingPage` adiciona `localStorage.getItem('s2a_onboarding_completed')` como fallback secundário para estado de conclusão |
 | 0.31.1 | **Logger em projects.ts** — `saveAudioToProject` e `saveImageToProject` substituem `handleFirestoreError` por `log.warn` via `createLogger('projects')` (fallback IndexedDB não é erro); **Limite de upload de áudio**: 50MB → 150MB em `storage.rules` |
 | 0.31.0 | **Inline AI Assistant** (`InlineAIWidget.tsx`) — assistente contextual integrado ao Script Editor para refatoração e auxílio na escrita; `useInlineAssistant` para streaming do Gemini; `systemPrompt.ts` extraído como módulo centralizado de instruções; **Migração de Domínio** — URLs absolutas, SEO e Firebase atualizados para `https://script-master.pro`; Empty State em VideoPage; traduções `inlineAI` nos 3 locales; mocks de teste atualizados |
 | 0.30.0 | `audioGeneratorStore` — store Zustand extraído de `useAudioGenerator` centralizando estado de geração (`AudioGeneratorState`, `SceneItem`, `getAudioDurationSeconds()`); `REVEAL_SPEED_SCALE` (0.5) no renderer substitui `DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal` 0.25→1.0; `formatRevealLabel()` removida; Firestore rules para `/users/{userId}` + `/subscription/{docId}` (billing security); VideoPage usa tokens de espaçamento; 89 testes atualizados |
-| 0.29.0 | Página de Configurações (`/app/configuracoes`) — 4 seções colapsáveis (Voz, Persona, Cenas, Multi-locutor), 15 campos configuráveis, `saveStudioDefaults()`/`clearStudioDefaults()` persistem nas chaves `s2a_*`; `VoiceCard` extraído do Inspector para reuso; `studioOptions.ts` (DRY para opções de pace/framework/ratio/density); `DEFAULT_SPEED_PAINT_MULTIPLIERS.sketch` ajustado para 1.0 (velocidade real); PWA `orientation: portrait`; redirect `/app/settings` → `/app/configuracoes`; ícone Settings no Header; i18n 3 locales; 66 testes novos |
