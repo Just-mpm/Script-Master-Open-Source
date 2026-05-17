@@ -25,6 +25,7 @@ export function useBillingInit(userAuthReady: boolean): void {
   const subscribeToSubscription = useBillingStore((s) => s.subscribeToSubscription);
   const reset = useBillingStore((s) => s.reset);
   const lastUserId = useRef<string | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!userAuthReady) {
@@ -52,11 +53,15 @@ export function useBillingInit(userAuthReady: boolean): void {
 
     // Carrega dados iniciais + escuta mudanças em tempo real
     loadSubscription().then(() => {
-      const unsubscribe = subscribeToSubscription();
-
-      return () => {
-        unsubscribe();
-      };
+      unsubscribeRef.current = subscribeToSubscription();
     });
+
+    // Cleanup: cancela o listener quando o usuário muda ou o componente desmonta
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
   }, [userAuthReady, loadSubscription, subscribeToSubscription, reset]);
 }

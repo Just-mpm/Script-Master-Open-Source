@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -105,6 +105,7 @@ export function Configuracoes() {
   const theme = useTheme();
   const { t } = useLocale();
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const {
@@ -168,8 +169,22 @@ export function Configuracoes() {
       isMultiSpeaker,
     });
     setToast(t('configuracoes.saved'));
-    window.setTimeout(() => setToast(null), 3000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 3000);
   }, [voice, speakerAName, speakerBName, speakerBVoice, audioProfile, scene, styleNotes, pace, generateScenes, sceneDensity, sceneRatio, visualFramework, emotion, emotionIntensity, imageTextLanguage, isMultiSpeaker, t]);
+
+  // Limpa timer de toast ao desmontar
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleReset = useCallback(() => {
     clearStudioDefaults();

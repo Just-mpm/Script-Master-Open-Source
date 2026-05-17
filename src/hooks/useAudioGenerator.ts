@@ -1,4 +1,4 @@
-import { useCallback, useRef, useMemo } from 'react';
+import { useCallback, useRef, useMemo, useEffect } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import { createWavBlob, base64ToUint8Array, extractPcmFromData } from '../lib/audio';
 import { CHUNK_LIMIT, MAX_CHARS, PACE_INSTRUCTIONS } from '../lib/constants';
@@ -137,6 +137,7 @@ export function useAudioGenerator() {
 
   // Refs para cancelamento e restauração (escopo da geração, não compartilhados)
   const cancelRef = useRef(false);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSuccessfulStateRef = useRef<{
     audioUrl: string | null;
     audioBlob: Blob | null;
@@ -151,6 +152,16 @@ export function useAudioGenerator() {
 
   // Memoiza instância do GoogleGenAI (tech #9 + bp #8 + perf #9)
   const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
+
+  // Limpa timer de auto-dismiss do erro quando o hook desmonta
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCancel = () => {
     cancelRef.current = true;
@@ -471,7 +482,11 @@ export function useAudioGenerator() {
       } catch (saveError) {
         log.warn('Erro no auto-save do áudio', { error: saveError });
         storeApi.getState().setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
-        setTimeout(() => storeApi.getState().setError(''), 8000);
+        if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = setTimeout(() => {
+          storeApi.getState().setError('');
+          errorTimerRef.current = null;
+        }, 8000);
       }
 
       // --- Geração de cenas visuais ---
@@ -599,7 +614,11 @@ export function useAudioGenerator() {
       }
       restoreLastSuccessfulState();
       storeApi.getState().setError(errorMessage);
-      setTimeout(() => storeApi.getState().setError(''), 8000);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
+        storeApi.getState().setError('');
+        errorTimerRef.current = null;
+      }, 8000);
     } finally {
       storeApi.getState().setIsGenerating(false);
       storeApi.getState().setStatusText('');

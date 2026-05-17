@@ -78,6 +78,7 @@ export function Library() {
   const [deletingAudio, setDeletingAudio] = useState(false);
   const [audioDeleteError, setAudioDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const deleteSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
 
   const isPlaying = useAudioIsPlaying();
@@ -95,7 +96,16 @@ export function Library() {
   };
 
   // Cleanup ao desmontar
-  useEffect(() => cleanupBlobUrls, []);
+  useEffect(() => {
+    return () => {
+      cleanupBlobUrls();
+      // Limpa timer de deleteSuccess ao desmontar
+      if (deleteSuccessTimerRef.current) {
+        clearTimeout(deleteSuccessTimerRef.current);
+        deleteSuccessTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -214,7 +224,11 @@ export function Library() {
       } catch {
         // Falha no refresh não invalida a exclusão
         setDeleteSuccess(true);
-        window.setTimeout(() => setDeleteSuccess(false), 5000);
+        if (deleteSuccessTimerRef.current) clearTimeout(deleteSuccessTimerRef.current);
+        deleteSuccessTimerRef.current = setTimeout(() => {
+          setDeleteSuccess(false);
+          deleteSuccessTimerRef.current = null;
+        }, 5000);
       }
     } catch (err) {
       log.error('Falha ao excluir projeto', { error: err });

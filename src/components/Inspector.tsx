@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -178,6 +178,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
   const voiceSectionId = 'inspector-voice-section';
   const directionSectionId = 'inspector-direction-section';
   const [referenceImageWarning, setReferenceImageWarning] = useState<string | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSceneRatioChange = (value: string) => {
     if (value === '16:9' || value === '9:16' || value === '1:1') {
@@ -198,6 +199,16 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     const timer = window.setTimeout(clearError, 3000);
     return () => window.clearTimeout(timer);
   }, [errorId, clearError]);
+
+  // Limpa timer de warning de imagem ao desmontar
+  useEffect(() => {
+    return () => {
+      if (warningTimerRef.current) {
+        clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const isVoiceOpen = !isVoiceCollapsed;
   const isDirectionOpen = !isDirectionCollapsed;
@@ -223,7 +234,11 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     if (file.size > MAX_REFERENCE_IMAGE_SIZE) {
       log.warn('Imagem de referência excede o limite de 10MB', { size: file.size, name: file.name });
       setReferenceImageWarning(t('studio.inspector.referenceImage.tooLarge'));
-      window.setTimeout(() => setReferenceImageWarning(null), 5000);
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+      warningTimerRef.current = setTimeout(() => {
+        setReferenceImageWarning(null);
+        warningTimerRef.current = null;
+      }, 5000);
       event.target.value = '';
       return;
     }

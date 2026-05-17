@@ -22,9 +22,9 @@ service firebase.storage {
       // Apenas o dono pode ler, escrever ou deletar seus áudios
       allow read, delete: if isOwner(userId) || isAdmin();
       
-      // Validação: arquivos de áudio até 50MB
+      // Validação: arquivos de áudio até 150MB
       allow create, update: if isOwner(userId) 
-                    && request.resource.size < 50 * 1024 * 1024
+                    && request.resource.size < 150 * 1024 * 1024
                     && request.resource.contentType.matches('audio/.*');
     }
 

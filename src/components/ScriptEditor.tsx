@@ -50,6 +50,7 @@ export function ScriptEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [copiedScript, setCopiedScript] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Callbacks estáveis — evita nova referência a cada render,
   // prevenindo dessincronia interna no TextareaAutosize do MUI v9
@@ -70,11 +71,25 @@ export function ScriptEditor({
     try {
       await navigator.clipboard.writeText(script);
       setCopiedScript(true);
-      window.setTimeout(() => setCopiedScript(false), 2000);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => {
+        setCopiedScript(false);
+        copiedTimerRef.current = null;
+      }, 2000);
     } catch {
       // Clipboard API pode falhar em contextos restritos — falha silenciosa
     }
   }, [script]);
+
+  // Limpa timer de "copiado" quando o componente desmonta
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) {
+        clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Atalho Ctrl+Enter (ou Cmd+Enter no Mac) para gerar áudio.
   // Não dispara quando o foco está no textarea de edição — lá Enter

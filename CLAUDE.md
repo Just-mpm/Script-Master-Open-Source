@@ -393,8 +393,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.32.0`
-- **Last release:** 2026-05-12
+- **Current:** `0.32.1`
+- **Last release:** 2026-05-17
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -402,8 +402,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.32.1 | **Memory leaks corrigidos** — `setTimeout` com `useRef` cleanup em 5 componentes (ImageStudio, Library, ScriptEditor, useImageGenerator, useAudioGenerator); subscription Firestore cancelada no `useBillingInit` via `unsubscribeRef`; `deleteDocument` em `account-cleanup.ts` refatorado; limite de upload de áudio 50MB → 150MB em `storage.rules`; `express` adicionado a `functions/package.json` |
 | 0.32.0 | **Speed Paint migrado para Remotion** — página `/app/pintura-rapida` reescrita com player Remotion nativo (`SpeedPaintPlayer`, `SpeedPaintPlayerControls`); exportação via `useSpeedPaintExporter`; `@dnd-kit/react` para reordenação drag-and-drop da fila; `konva`/`react-konva` removidos; `VideoExportPanel` modularizado em `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions`; `useCodecSupport` extraído; i18n speed paint phases |
 | 0.31.2 | **Onboarding com fallback no Firestore** — `AuthContext` agora consulta `getUserSettings` no Firestore antes de redirecionar para `/onboarding`: se Firestore confirmar conclusão (name/goals presentes), redireciona para `/app/estudio` mesmo que localStorage tenha sido limpo entre sessões; `OnboardingPage` adiciona `localStorage.getItem('s2a_onboarding_completed')` como fallback secundário para estado de conclusão |
 | 0.31.1 | **Logger em projects.ts** — `saveAudioToProject` e `saveImageToProject` substituem `handleFirestoreError` por `log.warn` via `createLogger('projects')` (fallback IndexedDB não é erro); **Limite de upload de áudio**: 50MB → 150MB em `storage.rules` |
 | 0.31.0 | **Inline AI Assistant** (`InlineAIWidget.tsx`) — assistente contextual integrado ao Script Editor para refatoração e auxílio na escrita; `useInlineAssistant` para streaming do Gemini; `systemPrompt.ts` extraído como módulo centralizado de instruções; **Migração de Domínio** — URLs absolutas, SEO e Firebase atualizados para `https://script-master.pro`; Empty State em VideoPage; traduções `inlineAI` nos 3 locales; mocks de teste atualizados |
-| 0.30.0 | `audioGeneratorStore` — store Zustand extraído de `useAudioGenerator` centralizando estado de geração (`AudioGeneratorState`, `SceneItem`, `getAudioDurationSeconds()`); `REVEAL_SPEED_SCALE` (0.5) no renderer substitui `DEFAULT_SPEED_PAINT_MULTIPLIERS.reveal` 0.25→1.0; `formatRevealLabel()` removida; Firestore rules para `/users/{userId}` + `/subscription/{docId}` (billing security); VideoPage usa tokens de espaçamento; 89 testes atualizados |

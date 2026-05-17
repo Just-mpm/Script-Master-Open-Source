@@ -85,6 +85,7 @@ export function ImageStudio() {
   const [referencePreview, setReferencePreview] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
@@ -218,7 +219,11 @@ export function ImageStudio() {
       await saveImageGeneration(newItem, user?.uid);
       setIsSaved(true);
       setSuccessMsg(user ? t('imageStudio.savedCloud') : t('imageStudio.savedLocal'));
-      window.setTimeout(() => setSuccessMsg(null), 3000);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
+        setSuccessMsg(null);
+        successTimerRef.current = null;
+      }, 3000);
       // Atualiza a galeria após salvar
       void loadSavedImages();
     } catch (saveError) {
@@ -264,6 +269,11 @@ export function ImageStudio() {
     return () => {
       for (const url of blobUrls.values()) {
         URL.revokeObjectURL(url);
+      }
+      // Limpa timer de successMsg ao desmontar
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = null;
       }
     };
   }, [blobUrls]);

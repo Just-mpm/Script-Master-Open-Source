@@ -59,12 +59,20 @@ export function useImageGenerator() {
   // Permite cancelar geração em andamento
   const cancelRef = useRef(false);
 
+  // Timer para auto-dismiss do erro
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Revoga blob URL anterior quando a imagem muda ou componente desmonta
   useEffect(() => {
     return () => {
       if (imageUrlRef.current) {
         URL.revokeObjectURL(imageUrlRef.current);
         imageUrlRef.current = null;
+      }
+      // Limpa timer de auto-dismiss do erro
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
       }
     };
   }, []);
@@ -157,7 +165,11 @@ export function useImageGenerator() {
       const friendlyMessage = toUserFriendlyImageError(err);
       setError(friendlyMessage);
       // Auto-dismiss após 8 segundos (UX-3)
-      setTimeout(() => setError(''), 8000);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
+        setError('');
+        errorTimerRef.current = null;
+      }, 8000);
     } finally {
       setIsGenerating(false);
     }

@@ -7,6 +7,25 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.32.1] - 2026-05-17
+
+### Corrigido
+
+- **Memory leaks: setTimeout sem cleanup em 5 componentes/hooks**: substitui `window.setTimeout`/`setTimeout` por `useRef<ReturnType<typeof setTimeout>>` com cleanup no unmount — `ImageStudio.tsx`, `Library.tsx`, `ScriptEditor.tsx`, `useImageGenerator.ts`. Previne `setState` em componente desmontado e vazamento de timers
+- **Memory leak: subscription Firestore nunca cancelada no `useBillingInit`**: o hook criava um `onSnapshot` via `subscribeToSubscription()` mas o `unsubscribe` retornado pelo `.then()` era ignorado — nunca chamado no cleanup do `useEffect`. Corrigido com `unsubscribeRef` armazenado em `useRef` e chamado no cleanup
+- **`deleteDocument` em `account-cleanup.ts`**: implementação da função alterada para maior resiliência durante exclusão de conta
+
+### Alterado
+
+- **Limite de upload de áudio**: 50MB → 150MB em `storage.rules` (já refletido no AGENTS.md desde 0.31.1, agora sincronizado nas regras)
+- **`express` adicionado** como dependência explícita em `functions/package.json` (já usado pelo `stripeWebhook` desde 0.26.0, agora declarado formalmente)
+
+### Documentação
+
+- **Relatórios de auditoria e gap analysis**: `docs/audits/auditoria-geral-2026-05-17.md` e `docs/scan/gap-analysis-0.32.0.md` — análises estáticas de engenharia, riscos, padrões e lacunas
+
+---
+
 ## [0.32.0] - 2026-05-12
 
 ### Adicionado
