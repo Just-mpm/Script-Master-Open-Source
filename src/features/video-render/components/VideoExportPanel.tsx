@@ -103,6 +103,8 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
+  const isDurationReady = durationInFrames > 0;
+  const durationPendingMessage = 'Aguardando a duração do áudio para liberar a exportação do vídeo.';
 
   // Estimativa de tamanho do arquivo
   const estimatedSizeBytes = useMemo(() => {
@@ -129,10 +131,12 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
 
   // Se não há conteúdo, não renderiza nada
   const hasContent = Boolean(audioUrl && scenes.length > 0);
-  const isExportable = hasContent && exporter.canRender === true;
+  const isExportable = hasContent && isDurationReady && exporter.canRender === true;
   const hasCaptions = captions != null && captions.length > 0;
 
   const handleStartExport = () => {
+    if (!isDurationReady) return;
+
     const options: VideoExportOptions = {
       scenes,
       audioUrl: audioUrl!,
@@ -197,6 +201,15 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             sx={{ mb: 2, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
           >
             {exporter.error}
+          </Alert>
+        )}
+
+        {hasContent && !isDurationReady && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2, borderRadius: 2 }}
+          >
+            {durationPendingMessage}
           </Alert>
         )}
 

@@ -217,6 +217,16 @@ export function useVideoExporter() {
     exportFileNameRef.current = fileName || '';
 
     if (!audioUrl || scenes.length === 0) return;
+    if (durationInFrames <= 0) {
+      setState(prev => ({
+        ...prev,
+        error: 'A duração do áudio ainda não foi carregada. Aguarde alguns instantes e tente exportar novamente.',
+        isRendering: false,
+        renderProgress: 0,
+        renderStatusText: '',
+      }));
+      return;
+    }
 
     // Previne dupla renderização — aborta a anterior se existir
     if (abortControllerRef.current) {

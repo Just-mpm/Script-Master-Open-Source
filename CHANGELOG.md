@@ -7,6 +7,20 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.37.1] - 2026-05-18
+
+### Corrigido
+
+- **Guard de duração no `VideoExportPanel`**: adicionado `isDurationReady` (`durationInFrames > 0`) que desabilita o botão de exportar enquanto o áudio não foi carregado — exibe mensagem "Aguardando a duração do áudio para liberar exportação" para feedback visual ao usuário
+- **Guard de duração no `useVideoExporter`**: verificação `if (durationInFrames <= 0)` no início da renderização previne execução sem duração carregada — retorna erro "A duração do áudio ainda não foi carregada. Aguarde alguns instantes."
+
+### Adicionado
+
+- **Teste de regressão para guard de duração** (`tests/video-render/VideoExportPanel.unit.test.tsx`): novo teste `'desabilita o botão quando a duração do áudio ainda está em 0'` — valida que o botão fica desabilitado e a mensagem de espera é exibida enquanto `durationInFrames={0}`
+- **Testes de cena do speed paint para `useVideoExporter`** (`tests/video-render/useVideoExporter-speedpaint.unit.test.tsx`): novo arquivo de teste (+21 linhas) com cena mínima para validar o fluxo de speed paint no exporter
+
+---
+
 ## [0.37.0] - 2026-05-18
 
 ### Adicionado

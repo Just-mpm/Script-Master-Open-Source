@@ -396,7 +396,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.37.0`
+- **Current:** `0.37.1`
 - **Last release:** 2026-05-18
 
 ### Últimas mudanças (atualizado por /fast)
@@ -405,8 +405,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.37.1 | **Guard de duração na exportação de vídeo** — `VideoExportPanel` agora desabilita o botão de exportar enquanto `durationInFrames <= 0`; `useVideoExporter` previne renderização sem duração carregada com erro; teste de regressão para o guard; novo arquivo de teste `useVideoExporter-speedpaint.unit.test.tsx` para cenas de speed paint no exporter |
 | 0.37.0 | **Timings centralizados do Speed Paint** — novo módulo `speedPaintTimings.ts` consolida constantes, tipos (`SpeedPaintTimingMode`, `SpeedPaintSequenceTiming`) e funções (`getSpeedPaintTimingConfig`, `getSpeedPaintOverlapFrames`, `getSpeedPaintSequenceTiming`); constantes hardcoded removidas de `SpeedPaintScene` e `VideoComposition`; prop `timingMode` adicionada em `SpeedPaintScene`; `sequenced-batch` e `duration-based` como modos de temporização; testes unitários do novo módulo; auditoria de timing |
 | 0.36.0 | **Integração Biblioteca → Speed Paint** — novo adaptador `projectQueueAdapter.ts` prepara imagens do projeto para a fila do Speed Paint; botão "Levar cenas ao Speed Paint" em cada projeto na Library; revogação automática de blob URLs (`revokeQueuedImageUrl`, `revokeQueueUrls`); rastreamento de origem da fila (`queueSource`, `queueSourceProjectName`, `queueSourceNotice`); 15 novas chaves i18n para o fluxo; testes do adaptador e da Library |
 | 0.35.0 | **Lápis animado do Speed Paint visível em preview e exportação** — `showDrawTool` propagado por todo o pipeline de vídeo (`types.ts` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`); `animateScenes` default `false→true` no `VideoExportPanel`; `VideoPreview` com suporte a `showDrawTool`; `SpeedPaintPage` reestruturada (layout flex responsivo); testes de regressão para lápis animado e header duplicado em lote |
-| 0.34.0 | **Seletor de duração substitui sliders granulares de Speed Paint** — `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) removido e substituído por `AnimationDurationSelector` com opções de duração predefinidas; props `drawSpeed`/`paintSpeed` removidas de `SpeedPaintComposition` e `useSpeedPaintExporter`; `DURATION_BASED_SKETCH_RATIO=0.8` adicionado em `SpeedPaintScene` para transição sketch→reveal automática baseada na duração total |
-| 0.33.1 | **Correções de hooks e dead code no Speed Paint** — dependências do `useEffect` em `BatchOrchestrator` simplificadas (`currentImg?.id, currentImg?.dataUrl` → `currentImg`); ordem de hooks corrigida em `useSpeedPaintExporter` (violação das Rules of Hooks); imports não utilizados removidos de `QueueStaging.tsx` (`BRAND_GRADIENT`, `BRAND_GRADIENT_HOVER`, `BRAND_GLOW`) |
+| 0.34.0 | **Seletor de duração substitui sliders granulares de Speed Paint** — `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) removido e substituído por `AnimationDurationSelector` com opções de duração predefinidas; props `drawSpeed`/`paintSpeed` removidas de `SpeedPaintComposition` e `useSpeedPaintExporter`; `DURATION_BASED_SKETCH_RATIO=0.8` adicionado em `SpeedPaintScene` para transição sketch→reveal automática baseada na duração total | |

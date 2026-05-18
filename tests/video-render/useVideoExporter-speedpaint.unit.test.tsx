@@ -104,6 +104,27 @@ describe('useVideoExporter — integração Speed Paint', () => {
     vi.clearAllMocks();
   });
 
+  it('bloqueia a exportação quando durationInFrames é 0 e não chama o Remotion', async () => {
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 0,
+        ratio: '16:9',
+      });
+    });
+
+    expect(mockRenderMediaOnWeb).not.toHaveBeenCalled();
+    expect(result.current.isRendering).toBe(false);
+    expect(result.current.error).toBe(
+      'A duração do áudio ainda não foi carregada. Aguarde alguns instantes e tente exportar novamente.',
+    );
+  });
+
   it('não chama generateScenesWithSpeedPaint quando animateScenes é false (default)', async () => {
     const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
     const { result } = renderHook(() => useVideoExporter());

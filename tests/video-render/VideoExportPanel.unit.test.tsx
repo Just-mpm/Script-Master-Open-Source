@@ -215,6 +215,13 @@ describe('VideoExportPanel', () => {
       expect(btn).toBeDisabled();
     });
 
+    it('desabilita o botão quando a duração do áudio ainda está em 0', () => {
+      render(<VideoExportPanel {...defaultProps} durationInFrames={0} durationInSeconds={0} />);
+      const btn = screen.getByText(/Exportar MP4/i);
+      expect(btn).toBeDisabled();
+      expect(screen.getByText(/Aguardando a duração do áudio/i)).toBeInTheDocument();
+    });
+
     it('chama startRender ao clicar em exportar', () => {
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
