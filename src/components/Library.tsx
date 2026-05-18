@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -29,6 +29,8 @@ import ImageIcon from '@mui/icons-material/Image';
 import Pause from '@mui/icons-material/Pause';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Search from '@mui/icons-material/Search';
+import Brush from '@mui/icons-material/Brush';
+import { useNavigate } from 'react-router-dom';
 import {
   getProjects,
   deleteProject,
@@ -47,6 +49,8 @@ import { createLogger } from '../lib/logger';
 import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
 import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
+import { prepareProjectImagesForSpeedPaint } from '../features/speed-paint/lib/projectQueueAdapter';
+import { useAnimationStore } from '../features/speed-paint/store/animationStore';
 
 interface ProjectDataState {
   audios: AudioSource[];
@@ -60,6 +64,7 @@ const log = createLogger('Library');
 export function Library() {
   const { t } = useLocale();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<ProjectDataState>(EMPTY_PROJECT_DATA);
@@ -80,6 +85,9 @@ export function Library() {
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const deleteSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [speedPaintError, setSpeedPaintError] = useState<string | null>(null);
+  const [speedPaintInfo, setSpeedPaintInfo] = useState<string | null>(null);
+  const [preparingSpeedPaintProjectId, setPreparingSpeedPaintProjectId] = useState<string | null>(null);
 
   const isPlaying = useAudioIsPlaying();
   const activeId = useAudioActiveId();
@@ -205,6 +213,63 @@ export function Library() {
     }
     return projects.filter((project) => project.name.toLowerCase().includes(query));
   }, [projects, searchQuery]);
+
+  const loadLibraryQueue = useAnimationStore((state) => state.loadLibraryQueue);
+  const isPreparingAnySpeedPaint = preparingSpeedPaintProjectId != null;
+
+  const shouldRefetchExpandedProject = useCallback((projectId: string): boolean => {
+    if (expandedProjectId !== projectId) {
+      return true;
+    }
+
+    return detailError != null || projectData.images.length === 0;
+  }, [detailError, expandedProjectId, projectData.images.length]);
+
+  const handleOpenInSpeedPaint = useCallback(async (project: Project) => {
+    if (preparingSpeedPaintProjectId) {
+      return;
+    }
+
+    setSpeedPaintError(null);
+    setSpeedPaintInfo(null);
+    setPreparingSpeedPaintProjectId(project.id);
+
+    try {
+      const images = shouldRefetchExpandedProject(project.id)
+        ? (await getProjectDetails(project.id, user?.uid)).images
+        : projectData.images;
+
+      if (images.length === 0) {
+        setSpeedPaintError(t('library.speedPaintNoImages'));
+        return;
+      }
+
+      const { queue, failedCount } = await prepareProjectImagesForSpeedPaint(project.name, images);
+
+      if (queue.length === 0) {
+        setSpeedPaintError(t('library.speedPaintPrepareError'));
+        return;
+      }
+
+      const speedPaintNotice = failedCount > 0
+        ? t('library.speedPaintPartialWarning', {
+          ready: queue.length,
+          failed: failedCount,
+        })
+        : null;
+
+      loadLibraryQueue(queue, project.name, speedPaintNotice);
+
+      startTransition(() => {
+        navigate('/app/pintura-rapida');
+      });
+    } catch (error) {
+      log.error('Falha ao preparar projeto para Speed Paint', { error });
+      setSpeedPaintError(t('library.speedPaintPrepareError'));
+    } finally {
+      setPreparingSpeedPaintProjectId(null);
+    }
+  }, [loadLibraryQueue, navigate, preparingSpeedPaintProjectId, projectData.images, shouldRefetchExpandedProject, t, user]);
 
   const confirmDelete = async () => {
     if (!itemToDelete) {
@@ -343,6 +408,18 @@ export function Library() {
         </Alert>
       ) : null}
 
+      {speedPaintError ? (
+        <Alert variant="outlined" severity="error" onClose={() => setSpeedPaintError(null)}>
+          {speedPaintError}
+        </Alert>
+      ) : null}
+
+      {speedPaintInfo ? (
+        <Alert variant="outlined" severity="warning" onClose={() => setSpeedPaintInfo(null)}>
+          {speedPaintInfo}
+        </Alert>
+      ) : null}
+
       {loading ? (
         <Grid container spacing={2}>
           {Array.from({ length: 3 }).map((_, index) => (
@@ -415,6 +492,7 @@ export function Library() {
         <Stack spacing={2}>
           {filteredProjects.map((project: Project) => {
             const isExpanded = expandedProjectId === project.id;
+            const isPreparingSpeedPaint = preparingSpeedPaintProjectId === project.id;
 
             return (
               <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({
@@ -490,23 +568,47 @@ export function Library() {
                         </Stack>
                       </Stack>
 
-                      <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                        <Button
-                          onClick={() => void handleExpandProject(project.id)}
-                          variant={isExpanded ? 'contained' : 'outlined'}
+                      <Stack spacing={0.75} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: { xs: 'stretch', md: 'flex-end' } }}>
+                        <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { md: 'flex-end' } }}>
+                          <Button
+                            onClick={() => void handleExpandProject(project.id)}
+                            variant={isExpanded ? 'contained' : 'outlined'}
                             startIcon={isExpanded ? <ChevronUp sx={{ fontSize: ICON_SIZE_MD }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_MD }} />}
-                        >
-                          {isExpanded ? t('library.hideDetails') : t('library.showDetails')}
-                        </Button>
+                          >
+                            {isExpanded ? t('library.hideDetails') : t('library.showDetails')}
+                          </Button>
 
-                        <Button
-                          onClick={() => { setItemToDelete(project.id); setProjectNameToDelete(project.name); }}
-                          color="error"
-                          variant="outlined"
+                          <Button
+                            onClick={() => void handleOpenInSpeedPaint(project)}
+                            variant="contained"
+                            color="secondary"
+                            disabled={isPreparingAnySpeedPaint || detailLoading}
+                            loading={isPreparingSpeedPaint}
+                            loadingPosition="start"
+                            startIcon={!isPreparingSpeedPaint ? <Brush sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                          >
+                            {isPreparingSpeedPaint
+                              ? t('library.speedPaintPreparing')
+                              : t('library.openInSpeedPaint')}
+                          </Button>
+
+                          <Button
+                            onClick={() => { setItemToDelete(project.id); setProjectNameToDelete(project.name); }}
+                            color="error"
+                            variant="outlined"
                             startIcon={<Delete sx={{ fontSize: ICON_SIZE_MD }} />}
+                          >
+                            {t('library.delete')}
+                          </Button>
+                        </Stack>
+
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ maxWidth: 320, textAlign: { xs: 'left', md: 'right' }, lineHeight: 1.5 }}
                         >
-                          {t('library.delete')}
-                        </Button>
+                          {t('library.speedPaintHint')}
+                        </Typography>
                       </Stack>
                     </Stack>
 

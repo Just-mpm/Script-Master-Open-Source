@@ -15,6 +15,18 @@ const DEFAULT_ANIMATION_DURATION = 15;
 const DEFAULT_SHOW_DRAW_TOOL = true;
 const DEFAULT_CANVAS_COLOR = 'white' as const;
 
+function revokeQueuedImageUrl(item: QueuedImage): void {
+  if (item.shouldRevokeObjectUrl && item.dataUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(item.dataUrl);
+  }
+}
+
+function revokeQueueUrls(queue: QueuedImage[]): void {
+  for (const item of queue) {
+    revokeQueuedImageUrl(item);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Interface do estado
 // ---------------------------------------------------------------------------
@@ -28,12 +40,16 @@ interface AnimationState {
   queue: QueuedImage[];
   currentIndex: number;
   batchMode: 'idle' | 'watch' | 'record';
+  queueSource: 'upload' | 'library' | null;
+  queueSourceProjectName: string | null;
+  queueSourceNotice: string | null;
   setQueue: (queue: QueuedImage[] | ((prev: QueuedImage[]) => QueuedImage[])) => void;
   setCurrentIndex: (index: number) => void;
   setBatchMode: (mode: 'idle' | 'watch' | 'record') => void;
   clearQueue: () => void;
   reorderQueue: (oldIndex: number, newIndex: number) => void;
   removeFromQueue: (id: string) => void;
+  loadLibraryQueue: (queue: QueuedImage[], projectName: string, notice?: string | null) => void;
 
   // Velocidade da animação (derivada do PlayerRef, não do RAF)
   speed: number;
@@ -78,19 +94,28 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
   queue: [],
   currentIndex: 0,
   batchMode: 'idle',
+  queueSource: null,
+  queueSourceProjectName: null,
+  queueSourceNotice: null,
   setQueue: (queueUpdate) => set((state) => ({
     queue: typeof queueUpdate === 'function' ? queueUpdate(state.queue) : queueUpdate,
   })),
   setCurrentIndex: (index) => set({ currentIndex: index }),
   setBatchMode: (mode) => set({ batchMode: mode }),
-  clearQueue: () => set({
-    queue: [],
-    currentIndex: 0,
-    batchMode: 'idle',
-    job: initialJob,
-    animationDuration: DEFAULT_ANIMATION_DURATION,
-    showDrawTool: DEFAULT_SHOW_DRAW_TOOL,
-    canvasColor: DEFAULT_CANVAS_COLOR,
+  clearQueue: () => set((state) => {
+    revokeQueueUrls(state.queue);
+    return {
+      queue: [],
+      currentIndex: 0,
+      batchMode: 'idle',
+      queueSource: null,
+      queueSourceProjectName: null,
+      queueSourceNotice: null,
+      job: initialJob,
+      animationDuration: DEFAULT_ANIMATION_DURATION,
+      showDrawTool: DEFAULT_SHOW_DRAW_TOOL,
+      canvasColor: DEFAULT_CANVAS_COLOR,
+    };
   }),
   reorderQueue: (oldIndex, newIndex) =>
     set((state) => {
@@ -103,6 +128,7 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
     set((state) => {
       const index = state.queue.findIndex((img) => img.id === id);
       if (index === -1) return state;
+      revokeQueuedImageUrl(state.queue[index]);
       const newQueue = state.queue.filter((img) => img.id !== id);
       const newCurrentIndex =
         state.currentIndex >= newQueue.length
@@ -110,8 +136,26 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
           : index < state.currentIndex
             ? state.currentIndex - 1
             : state.currentIndex;
-      return { queue: newQueue, currentIndex: newCurrentIndex };
+      return {
+        queue: newQueue,
+        currentIndex: newCurrentIndex,
+        queueSource: newQueue.length > 0 ? state.queueSource : null,
+        queueSourceProjectName: newQueue.length > 0 ? state.queueSourceProjectName : null,
+        queueSourceNotice: newQueue.length > 0 ? state.queueSourceNotice : null,
+      };
     }),
+  loadLibraryQueue: (queue, projectName, notice = null) => set((state) => {
+    revokeQueueUrls(state.queue);
+    return {
+      queue,
+      currentIndex: 0,
+      batchMode: 'idle',
+      queueSource: 'library',
+      queueSourceProjectName: projectName,
+      queueSourceNotice: notice,
+      job: initialJob,
+    };
+  }),
 
   speed: 1,
   paintSpeed: 1,

@@ -291,8 +291,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/components/Library.tsx`, `src/components/video-library/`, `src/lib/db/projects.ts`, `src/lib/db/generations.ts` |
-| **Library** | `/biblioteca` — lista projetos expansível com áudios, cenas, roteiro e vídeos |
+| **Arquivos** | `src/components/Library.tsx`, `src/components/video-library/`, `src/lib/db/projects.ts`, `src/lib/db/generations.ts`, `src/features/speed-paint/lib/projectQueueAdapter.ts` |
+| **Library** | `/biblioteca` — lista projetos expansível com áudios, cenas, roteiro e vídeos. Cada projeto com imagens exibe botão "Levar cenas ao Speed Paint" que navega para `/app/pintura-rapida` com a fila pré-preenchida via `prepareProjectImagesForSpeedPaint()` |
 | **VideoLibrary** | `/video` (abaixo do player) — galeria horizontal com busca, ordenação, seleção rápida + batch download. Modularizada em `video-library/` (GalleryCard, DeleteConfirmationDialog, MetadataPill, useProjectGallery, useBatchDownload, types) |
 | **Projetos** | Firestore usa subcoleções: `projects/{id}/audios`, `projects/{id}/images`, `projects/{id}/videos` |
 | **Gerações** | Coleção flat `generations`. Storage: `audios/{userId}/{id}.wav`, cenas em `generations_images/{userId}/{id}_scene_{index}.png` |
@@ -313,7 +313,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Composição** | `SpeedPaintComposition` — composição Remotion que integra `SpeedPaintScene` com fases de sketch (desenho de bordas) e reveal (coloração). Props `drawSpeed`/`paintSpeed` removidas (substituídas pelo modelo de duração total) |
 | **Drag-and-drop** | `QueueStaging` refatorado com `@dnd-kit/react` (`DragDropProvider`, `useSortable`, `DragOverlay`) para reordenação da fila; `arrayMove` do `@dnd-kit/helpers` no animationStore. A UI da fila agora informa quantos itens entram no vídeo final e quantos serão ignorados por falha anterior |
 | **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança preview) e `record` (gera vídeo final único). O preview em lote usa `BatchOrchestrator` com `AbortController` por item; o vídeo final ignora itens marcados como `failed` |
-| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed; reordenação via `reorderQueue(oldIndex, newIndex)`. `QueuedImage.status` (`pending` \| `processing` \| `completed` \| `failed`) passou a ser usado no fluxo real do lote para transparência e filtro de exportação |
+| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed, queueSource, queueSourceProjectName, queueSourceNotice; reordenação via `reorderQueue(oldIndex, newIndex)`. `QueuedImage.status` (`pending` \| `processing` \| `completed` \| `failed`) passou a ser usado no fluxo real do lote para transparência e filtro de exportação. Funções `revokeQueuedImageUrl(item)` e `revokeQueueUrls(queue)` previnem vazamento de blob URLs. Tipo `QueuedImage` suporta `shouldRevokeObjectUrl?: boolean` para revogação seletiva |
 
 ### Autenticação
 
@@ -395,7 +395,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.35.0`
+- **Current:** `0.36.0`
 - **Last release:** 2026-05-18
 
 ### Últimas mudanças (atualizado por /fast)
@@ -404,8 +404,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.36.0 | **Integração Biblioteca → Speed Paint** — novo adaptador `projectQueueAdapter.ts` prepara imagens do projeto para a fila do Speed Paint; botão "Levar cenas ao Speed Paint" em cada projeto na Library; revogação automática de blob URLs (`revokeQueuedImageUrl`, `revokeQueueUrls`); rastreamento de origem da fila (`queueSource`, `queueSourceProjectName`, `queueSourceNotice`); 15 novas chaves i18n para o fluxo; testes do adaptador e da Library |
 | 0.35.0 | **Lápis animado do Speed Paint visível em preview e exportação** — `showDrawTool` propagado por todo o pipeline de vídeo (`types.ts` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`); `animateScenes` default `false→true` no `VideoExportPanel`; `VideoPreview` com suporte a `showDrawTool`; `SpeedPaintPage` reestruturada (layout flex responsivo); testes de regressão para lápis animado e header duplicado em lote |
 | 0.34.0 | **Seletor de duração substitui sliders granulares de Speed Paint** — `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) removido e substituído por `AnimationDurationSelector` com opções de duração predefinidas; props `drawSpeed`/`paintSpeed` removidas de `SpeedPaintComposition` e `useSpeedPaintExporter`; `DURATION_BASED_SKETCH_RATIO=0.8` adicionado em `SpeedPaintScene` para transição sketch→reveal automática baseada na duração total |
 | 0.33.1 | **Correções de hooks e dead code no Speed Paint** — dependências do `useEffect` em `BatchOrchestrator` simplificadas (`currentImg?.id, currentImg?.dataUrl` → `currentImg`); ordem de hooks corrigida em `useSpeedPaintExporter` (violação das Rules of Hooks); imports não utilizados removidos de `QueueStaging.tsx` (`BRAND_GRADIENT`, `BRAND_GRADIENT_HOVER`, `BRAND_GLOW`) |
 | 0.32.1 | **Memory leaks corrigidos** — `setTimeout` com `useRef` cleanup em 5 componentes (ImageStudio, Library, ScriptEditor, useImageGenerator, useAudioGenerator); subscription Firestore cancelada no `useBillingInit` via `unsubscribeRef`; `deleteDocument` em `account-cleanup.ts` refatorado; limite de upload de áudio 50MB → 150MB em `storage.rules`; `express` adicionado a `functions/package.json` |
-| 0.32.0 | **Speed Paint migrado para Remotion** — página `/app/pintura-rapida` reescrita com player Remotion nativo (`SpeedPaintPlayer`, `SpeedPaintPlayerControls`); exportação via `useSpeedPaintExporter`; `@dnd-kit/react` para reordenação drag-and-drop da fila; `konva`/`react-konva` removidos; `VideoExportPanel` modularizado em `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions`; `useCodecSupport` extraído; i18n speed paint phases |

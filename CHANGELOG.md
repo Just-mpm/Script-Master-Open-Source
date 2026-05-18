@@ -7,6 +7,30 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.36.0] - 2026-05-18
+
+### Adicionado
+
+- **Adaptador Biblioteca → Speed Paint** (`src/features/speed-paint/lib/projectQueueAdapter.ts`): novo módulo com `ProjectQueuePreparationResult`, `buildLibraryFileName()` e `fetchProjectImageBlob()` — prepara imagens de um projeto da biblioteca para a fila do Speed Paint, garantindo compatibilidade de tipos e carregamento via blob URLs
+- **Botão "Levar cenas ao Speed Paint"** (`src/components/Library.tsx`): cada projeto com imagens agora exibe um botão que navega para `/app/pintura-rapida` com a fila pré-preenchida. Importa `Brush` icon, `useNavigate`, `prepareProjectImagesForSpeedPaint` do adaptador e `useAnimationStore` para popular a fila
+- **Revogação automática de blob URLs** (`src/features/speed-paint/store/animationStore.ts`): novas funções `revokeQueuedImageUrl(item)` e `revokeQueueUrls(queue)` previnem vazamento de memória ao limpar/trocar a fila
+- **`shouldRevokeObjectUrl`** (`src/features/speed-paint/types.ts`): campo opcional no tipo `QueuedImage` para habilitar revogação seletiva de blob URLs quando o item sai da fila
+- **Rastreamento de origem da fila** (`src/pages/SpeedPaintPage.tsx`): novos campos `queueSource`, `queueSourceProjectName` e `queueSourceNotice` no estado para identificar de qual projeto a fila foi carregada e exibir notificação visual ao usuário
+- **15 novas chaves i18n** (`src/features/i18n/locales/{en,es,pt-BR}.ts`): 5 chaves por idioma — `openInSpeedPaint`, `speedPaintPreparing`, `speedPaintNoImages`, `speedPaintPrepareError`, `speedPaintPartialWarning` — UI do fluxo Biblioteca→Speed Paint completamente traduzida
+
+### Testes
+
+- **`Library.component.test.tsx`** (novo, +234 linhas): cobertura do botão "Levar cenas ao Speed Paint" com mocks de audios, imagens, vídeos e fila — valida fluxo completo de preparação e navegação
+- **`projectQueueAdapter.unit.test.ts`** (novo, +89 linhas): testes unitários do adaptador — `buildLibraryFileName`, `fetchProjectImageBlob` e `prepareProjectImagesForSpeedPaint` com cenários de sucesso, falha e imagens insuficientes
+- **`SpeedPaintPage.component.test.tsx`** (+27 linhas): novos mocks de `queueSource`, `queueSourceProjectName` e `queueSourceNotice` nos estados da animationStore
+- **`animationStore.unit.test.ts`** (+85 linhas): cobertura de `revokeQueuedImageUrl` e `revokeQueueUrls` — valida que blob URLs são revogados corretamente ao limpar fila
+
+### Documentação
+
+- **Auditoria do fluxo Biblioteca→Speed Paint**: `docs/audits/audit-speedpaint-library-flow-2026-05-18.md` — revisão estática identificando 2 warnings (projeto expandido entra em estado falso de "sem imagens" em erro transitório; aviso de preparação parcial se perde na troca imediata de rota) e sugestão de cleanup em `prepareProjectImagesForSpeedPaint`
+
+---
+
 ## [0.35.0] - 2026-05-18
 
 ### Adicionado

@@ -21,6 +21,9 @@ const { animState } = vi.hoisted(() => ({
     job: { id: '', inputImage: '', status: 'idle' as string, progress: 0, animation: null as unknown },
     queue: [] as unknown[],
     batchMode: 'idle' as string,
+    queueSource: null as string | null,
+    queueSourceProjectName: null as string | null,
+    queueSourceNotice: null as string | null,
     animationDuration: 15,
     showDrawTool: true,
     canvasColor: 'white' as string,
@@ -132,6 +135,9 @@ describe('SpeedPaintPage', () => {
     animState.job = { id: '', inputImage: '', status: 'idle', progress: 0, animation: null };
     animState.queue = [];
     animState.batchMode = 'idle';
+    animState.queueSource = null;
+    animState.queueSourceProjectName = null;
+    animState.queueSourceNotice = null;
     animState.animationDuration = 15;
     animState.showDrawTool = true;
     animState.canvasColor = 'white';
@@ -179,6 +185,27 @@ describe('SpeedPaintPage', () => {
     render(<SpeedPaintPage />, { wrapper: Wrapper });
     expect(screen.getByTestId('queue-staging')).toBeDefined();
     expect(screen.queryByTestId('image-upload')).toBeNull();
+  });
+
+  it('mostra contexto quando a fila veio da biblioteca', () => {
+    animState.queue = [{ id: '1' }];
+    animState.queueSource = 'library';
+    animState.queueSourceProjectName = 'Projeto Biblioteca';
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(screen.getByText(/Projeto Biblioteca/)).toBeDefined();
+  });
+
+  it('mostra o aviso parcial quando a biblioteca descartou algumas imagens', () => {
+    animState.queue = [{ id: '1' }];
+    animState.queueSource = 'library';
+    animState.queueSourceProjectName = 'Projeto Biblioteca';
+    animState.queueSourceNotice = '1 imagem foi descartada por falha no carregamento.';
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(screen.getByText('1 imagem foi descartada por falha no carregamento.')).toBeDefined();
   });
 
   it('renderiza SpeedPaintPlayer quando job está completado', () => {

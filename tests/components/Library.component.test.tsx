@@ -8,6 +8,8 @@ import type { Project, AudioSource, ProjectImage } from '../../src/lib/db';
 import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
+const mockNavigate = vi.fn();
+const mockLoadLibraryQueue = vi.fn();
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
@@ -21,6 +23,10 @@ const mockUser = { uid: 'user-123', displayName: 'Test', photoURL: null };
 
 vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({ user: mockUser, loading: false, authError: null, clearAuthError: vi.fn(), login: vi.fn(), signup: vi.fn(), loginWithEmail: vi.fn(), resetPassword: vi.fn(), logout: vi.fn() }),
+}));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('../../src/contexts/AudioContext', () => ({
@@ -53,6 +59,17 @@ vi.mock('../../src/lib/db', () => ({
   updateProjectName: vi.fn().mockResolvedValue(undefined),
   getProjectDetails: vi.fn().mockResolvedValue({ audios: [], images: [] }),
   deleteGeneration: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../src/features/speed-paint/store/animationStore', () => ({
+  useAnimationStore: (selector?: (state: { loadLibraryQueue: typeof mockLoadLibraryQueue }) => unknown) => {
+    const state = { loadLibraryQueue: mockLoadLibraryQueue };
+    return selector ? selector(state) : state;
+  },
+}));
+
+vi.mock('../../src/features/speed-paint/lib/projectQueueAdapter', () => ({
+  prepareProjectImagesForSpeedPaint: vi.fn(),
 }));
 
 vi.mock('../../src/lib/download', () => ({
@@ -100,6 +117,8 @@ describe('Library', () => {
   beforeEach(() => {
     localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
+    mockNavigate.mockReset();
+    mockLoadLibraryQueue.mockReset();
   });
 
   it('renderiza o título Biblioteca', () => {
@@ -258,5 +277,220 @@ describe('Library', () => {
 
     // Restaura o mock original
     vi.restoreAllMocks();
+  });
+
+  it('envia imagens do projeto para o Speed Paint e navega para a rota correta', async () => {
+    const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+    const { prepareProjectImagesForSpeedPaint } = await import('../../src/features/speed-paint/lib/projectQueueAdapter');
+
+    vi.mocked(getProjects).mockResolvedValue([
+      { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+    ]);
+
+    vi.mocked(getProjectDetails).mockResolvedValue({
+      audios: [] as AudioSource[],
+      images: [
+        {
+          id: 'img-1',
+          projectId: 'p1',
+          userId: 'u1',
+          imageUrl: 'https://cdn.example.com/1.png',
+          prompt: 'Cena 1',
+          timestamp: 10,
+          createdAt: Date.now(),
+        } as ProjectImage,
+      ],
+      videos: [],
+    });
+
+    vi.mocked(prepareProjectImagesForSpeedPaint).mockResolvedValue({
+      queue: [
+        {
+          id: 'img-1',
+          dataUrl: 'blob:scene-1',
+          filename: 'projeto-x-cena-1.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ],
+      failedCount: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<Library />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Projeto X')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+
+    await waitFor(() => {
+      expect(prepareProjectImagesForSpeedPaint).toHaveBeenCalled();
+      expect(mockLoadLibraryQueue).toHaveBeenCalledWith(expect.any(Array), 'Projeto X', null);
+      expect(mockNavigate).toHaveBeenCalledWith('/app/pintura-rapida');
+    });
+  });
+
+  it('mostra erro ao tentar enviar para o Speed Paint sem imagens válidas', async () => {
+    const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+    const { prepareProjectImagesForSpeedPaint } = await import('../../src/features/speed-paint/lib/projectQueueAdapter');
+
+    vi.mocked(getProjects).mockResolvedValue([
+      { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+    ]);
+
+    vi.mocked(getProjectDetails).mockResolvedValue({
+      audios: [] as AudioSource[],
+      images: [
+        {
+          id: 'img-1',
+          projectId: 'p1',
+          userId: 'u1',
+          imageUrl: '',
+          prompt: 'Cena 1',
+          timestamp: 10,
+          createdAt: Date.now(),
+        } as ProjectImage,
+      ],
+      videos: [],
+    });
+
+    vi.mocked(prepareProjectImagesForSpeedPaint).mockResolvedValue({
+      queue: [],
+      failedCount: 1,
+    });
+
+    const user = userEvent.setup();
+    render(<Library />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Projeto X')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Não foi possível preparar as imagens para o Speed Paint/i)).toBeDefined();
+    });
+
+    expect(mockLoadLibraryQueue).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('refaz o fetch dos detalhes ao enviar para Speed Paint depois de um erro ao expandir', async () => {
+    const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+    const { prepareProjectImagesForSpeedPaint } = await import('../../src/features/speed-paint/lib/projectQueueAdapter');
+
+    vi.mocked(getProjects).mockResolvedValue([
+      { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+    ]);
+
+    vi.mocked(getProjectDetails)
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce({
+        audios: [] as AudioSource[],
+        images: [
+          {
+            id: 'img-1',
+            projectId: 'p1',
+            userId: 'u1',
+            imageUrl: 'https://cdn.example.com/1.png',
+            prompt: 'Cena 1',
+            timestamp: 10,
+            createdAt: Date.now(),
+          } as ProjectImage,
+        ],
+        videos: [],
+      });
+
+    vi.mocked(prepareProjectImagesForSpeedPaint).mockResolvedValue({
+      queue: [
+        {
+          id: 'img-1',
+          dataUrl: 'blob:scene-1',
+          filename: 'projeto-x-cena-1.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ],
+      failedCount: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<Library />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Projeto X')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Ver detalhes/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Não foi possível carregar os detalhes do projeto/i).length).toBeGreaterThan(0);
+    });
+
+    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+
+    await waitFor(() => {
+      expect(getProjectDetails).toHaveBeenCalledTimes(2);
+      expect(mockLoadLibraryQueue).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/app/pintura-rapida');
+    });
+  });
+
+  it('repasse o aviso parcial para a store antes da navegação', async () => {
+    const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+    const { prepareProjectImagesForSpeedPaint } = await import('../../src/features/speed-paint/lib/projectQueueAdapter');
+
+    vi.mocked(getProjects).mockResolvedValue([
+      { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+    ]);
+
+    vi.mocked(getProjectDetails).mockResolvedValue({
+      audios: [] as AudioSource[],
+      images: [
+        {
+          id: 'img-1',
+          projectId: 'p1',
+          userId: 'u1',
+          imageUrl: 'https://cdn.example.com/1.png',
+          prompt: 'Cena 1',
+          timestamp: 10,
+          createdAt: Date.now(),
+        } as ProjectImage,
+      ],
+      videos: [],
+    });
+
+    vi.mocked(prepareProjectImagesForSpeedPaint).mockResolvedValue({
+      queue: [
+        {
+          id: 'img-1',
+          dataUrl: 'blob:scene-1',
+          filename: 'projeto-x-cena-1.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ],
+      failedCount: 2,
+    });
+
+    const user = userEvent.setup();
+    render(<Library />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Projeto X')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+
+    await waitFor(() => {
+      expect(mockLoadLibraryQueue).toHaveBeenCalledWith(
+        expect.any(Array),
+        'Projeto X',
+        expect.stringContaining('2 imagem(ns) ficaram de fora'),
+      );
+    });
   });
 });

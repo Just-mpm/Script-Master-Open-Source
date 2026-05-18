@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
 import type { PaintingJob, QueuedImage } from '../../src/features/speed-paint/types';
 
@@ -34,6 +34,12 @@ describe('animationStore', () => {
     it('tem batchMode idle', () => {
       const { batchMode } = useAnimationStore.getState();
       expect(batchMode).toBe('idle');
+    });
+
+    it('não tem origem de fila inicialmente', () => {
+      const { queueSource, queueSourceProjectName } = useAnimationStore.getState();
+      expect(queueSource).toBeNull();
+      expect(queueSourceProjectName).toBeNull();
     });
 
     it('tem speed e paintSpeed padrão 1', () => {
@@ -222,6 +228,70 @@ describe('animationStore', () => {
       expect(state.showDrawTool).toBe(true);
       expect(state.canvasColor).toBe('white');
     });
+
+    it('revoga blob URLs temporárias ao limpar a fila', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+      useAnimationStore.getState().setQueue([
+        {
+          id: '1',
+          dataUrl: 'blob:temp-url',
+          filename: 'img1.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ]);
+
+      useAnimationStore.getState().clearQueue();
+
+      expect(revokeSpy).toHaveBeenCalledWith('blob:temp-url');
+      revokeSpy.mockRestore();
+    });
+  });
+
+  describe('loadLibraryQueue', () => {
+    it('carrega fila pronta com metadados de origem', () => {
+      const queue: QueuedImage[] = [
+        { id: '1', dataUrl: 'blob:item-1', filename: 'img1.png', status: 'pending', shouldRevokeObjectUrl: true },
+      ];
+
+      useAnimationStore.getState().loadLibraryQueue(queue, 'Projeto Biblioteca', 'Aviso parcial');
+
+      const state = useAnimationStore.getState();
+      expect(state.queue).toEqual(queue);
+      expect(state.currentIndex).toBe(0);
+      expect(state.batchMode).toBe('idle');
+      expect(state.queueSource).toBe('library');
+      expect(state.queueSourceProjectName).toBe('Projeto Biblioteca');
+      expect(state.queueSourceNotice).toBe('Aviso parcial');
+    });
+
+    it('revoga blob URLs antigos ao substituir a fila por outra da biblioteca', () => {
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+      useAnimationStore.getState().setQueue([
+        {
+          id: 'old-1',
+          dataUrl: 'blob:old-item',
+          filename: 'old.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ]);
+
+      useAnimationStore.getState().loadLibraryQueue([
+        {
+          id: 'new-1',
+          dataUrl: 'blob:new-item',
+          filename: 'new.png',
+          status: 'pending',
+          shouldRevokeObjectUrl: true,
+        },
+      ], 'Novo Projeto');
+
+      expect(revokeSpy).toHaveBeenCalledWith('blob:old-item');
+      revokeSpy.mockRestore();
+    });
   });
 
   describe('config da composição Remotion', () => {
@@ -322,6 +392,19 @@ it('não altera fila quando oldIndex === newIndex', () => {
        ]);
        useAnimationStore.getState().removeFromQueue('inexistente');
        expect(useAnimationStore.getState().queue).toHaveLength(1);
+     });
+
+     it('revoga blob URL ao remover item temporário da fila', () => {
+       const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+       useAnimationStore.getState().setQueue([
+         { id: 'temp', dataUrl: 'blob:temp-item', filename: '1.png', status: 'pending', shouldRevokeObjectUrl: true },
+       ]);
+
+       useAnimationStore.getState().removeFromQueue('temp');
+
+       expect(revokeSpy).toHaveBeenCalledWith('blob:temp-item');
+       revokeSpy.mockRestore();
      });
    });
 });

@@ -69,12 +69,15 @@ export function SpeedPaintPage() {
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
-  const { job, queue, batchMode, animationDuration, showDrawTool, canvasColor } =
+  const { job, queue, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor } =
     useAnimationStore(
       useShallow((s) => ({
         job: s.job,
         queue: s.queue,
         batchMode: s.batchMode,
+        queueSource: s.queueSource,
+        queueSourceProjectName: s.queueSourceProjectName,
+        queueSourceNotice: s.queueSourceNotice,
         animationDuration: s.animationDuration,
         showDrawTool: s.showDrawTool,
         canvasColor: s.canvasColor,
@@ -227,6 +230,7 @@ export function SpeedPaintPage() {
         : speedPaintExporter.outputUrl
           ? speedPaintExporter.renderStatusText
           : t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length });
+  const queueProjectName = queueSourceProjectName ?? t('library.title');
 
   const handleBatchExportReset = () => {
     speedPaintExporter.reset();
@@ -294,7 +298,59 @@ export function SpeedPaintPage() {
       )}
 
       {/* QueueStaging — fila pronta para iniciar */}
-      {queueLength > 0 && batchMode === 'idle' && !showBatchExportPanel && <QueueStaging />}
+      {queueLength > 0 && batchMode === 'idle' && !showBatchExportPanel && (
+        <Stack spacing={GAP_MEDIUM}>
+          {queueSource === 'library' ? (
+            <Stack spacing={GAP_DEFAULT}>
+              <Alert
+                variant="outlined"
+                severity="info"
+                role="status"
+                action={(
+                  <Button color="inherit" size="small" onClick={clearQueue}>
+                    {t('speedPaint.libraryQueueClearAction')}
+                  </Button>
+                )}
+                sx={{
+                  '& .MuiAlert-message': {
+                    width: '100%',
+                  },
+                }}
+              >
+                <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    useFlexGap
+                    sx={{ alignItems: { xs: 'flex-start', sm: 'center' }, flexWrap: 'wrap' }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {t('speedPaint.libraryQueueBannerTitle')}
+                    </Typography>
+                    <Chip size="small" label={t('speedPaint.libraryQueueSourceChip')} variant="outlined" />
+                    <Chip size="small" label={t('speedPaint.libraryQueueModeChip')} color="secondary" />
+                    <Chip size="small" label={t('speedPaint.libraryQueueItemsChip', { count: queueLength })} variant="outlined" />
+                  </Stack>
+
+                  <Typography variant="body2" sx={{ lineHeight: 1.65 }}>
+                    {t('speedPaint.libraryQueueReady', { project: queueProjectName })}
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    {t('speedPaint.libraryQueueAudioHint')}
+                  </Typography>
+                </Stack>
+              </Alert>
+              {queueSourceNotice ? (
+                <Alert variant="outlined" severity="warning" role="status">
+                  {queueSourceNotice}
+                </Alert>
+              ) : null}
+            </Stack>
+          ) : null}
+          <QueueStaging />
+        </Stack>
+      )}
 
       {/* Processando — indicador de progresso */}
       {job.status === 'processing' && (
@@ -477,7 +533,7 @@ export function SpeedPaintPage() {
 
             {speedPaintExporter.error && !speedPaintExporter.outputUrl && (
               <Stack spacing={1}>
-                <Alert severity="error">
+                <Alert severity="error" variant="filled">
                   <strong>{speedPaintExporter.error}</strong>{' '}
                   {t('speedPaint.batchExportErrorDescription')}
                 </Alert>
@@ -497,7 +553,7 @@ export function SpeedPaintPage() {
 
             {speedPaintExporter.wasCancelled && !speedPaintExporter.isRendering && !speedPaintExporter.outputUrl && !speedPaintExporter.error && (
               <Stack spacing={1}>
-                <Alert severity="info">
+                <Alert severity="info" variant="outlined" role="status">
                   <strong>{t('speedPaint.batchExportCancelledTitle')}</strong>{' '}
                   {t('speedPaint.batchExportCancelledDescription')}
                 </Alert>

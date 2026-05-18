@@ -28,6 +28,8 @@ export interface QueuedImage {
   dataUrl: string;
   filename: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  /** Revoga blob URLs temporárias quando o item sai da fila. */
+  shouldRevokeObjectUrl?: boolean;
 }
 
 export interface PaintingJob {
