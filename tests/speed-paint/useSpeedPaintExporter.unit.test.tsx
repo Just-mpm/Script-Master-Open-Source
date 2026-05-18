@@ -163,11 +163,13 @@ describe('useSpeedPaintExporter', () => {
     expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
     const renderCall = mockRenderMediaOnWeb.mock.calls[0]?.[0] as {
       composition: { durationInFrames: number };
-      inputProps: { sceneDurationInFrames: number };
+      inputProps: { sceneDurationInFrames: number; sceneStepFrames: number; timingMode: string };
     };
 
     expect(renderCall.inputProps.sceneDurationInFrames).toBe(900);
-    expect(renderCall.composition.durationInFrames).toBe(1800);
+    expect(renderCall.inputProps.sceneStepFrames).toBe(870);
+    expect(renderCall.inputProps.timingMode).toBe('sequenced-batch');
+    expect(renderCall.composition.durationInFrames).toBe(1770);
   });
 
   it('interrompe o lote antes de gerar animações quando o navegador não suporta exportação', async () => {

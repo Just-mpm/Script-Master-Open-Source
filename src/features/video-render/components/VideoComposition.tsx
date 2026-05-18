@@ -4,6 +4,7 @@ import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps } from '../types';
 import { SPEED_PAINT_MULTIPLIERS } from '../types';
 import type { SpeedPaintSpeed } from '../types';
+import { getSpeedPaintOverlapFrames } from '../lib/speedPaintTimings';
 import { msToFrames } from '../lib/videoUtils';
 import { SceneSequence } from './SceneSequence';
 import { SpeedPaintScene } from './SpeedPaintScene';
@@ -14,8 +15,6 @@ import { WaveformOverlay } from './WaveformOverlay';
 const FADE_FRAMES = 12;
 /** Duração do fade em ms para cenas estáticas (usado para calcular overlap) */
 const FADE_DURATION_MS = 400;
-/** Overlap para crossfade de speed paint — cobre SPEED_PAINT_FADE_SECONDS do SpeedPaintScene */
-const SPEED_PAINT_OVERLAP_MS = 1000;
 
 /**
  * Composition principal Remotion para o vídeo de roteiro.
@@ -38,6 +37,7 @@ export function VideoComposition({
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
+  const speedPaintOverlapFrames = useMemo(() => getSpeedPaintOverlapFrames('default', fps), [fps]);
 
   // Pré-computa captions por cena — evita filter+map a cada frame (P1: hotspot em ~300K iterações/s)
   const sceneCaptionsMap = useMemo(() => {
@@ -52,7 +52,7 @@ export function VideoComposition({
       const nextHasSpeedPaint = index < scenes.length - 1 && !!scenes[index + 1].strokeAnimation;
       const thisHasSpeedPaint = !!scene.strokeAnimation;
       const sceneOverlap = (thisHasSpeedPaint || nextHasSpeedPaint)
-        ? msToFrames(SPEED_PAINT_OVERLAP_MS, fps)
+        ? speedPaintOverlapFrames
         : msToFrames(FADE_DURATION_MS, fps);
 
       const adjustedFrom = Math.max(0, startFrame - sceneOverlap);
@@ -71,7 +71,7 @@ export function VideoComposition({
       }
     }
     return map;
-  }, [captions, scenes, fps]);
+  }, [captions, scenes, fps, speedPaintOverlapFrames]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -86,7 +86,7 @@ export function VideoComposition({
         const nextHasSpeedPaint = index < totalScenes - 1 && !!scenes[index + 1].strokeAnimation;
         const thisHasSpeedPaint = !!scene.strokeAnimation;
         const sceneOverlapFrames = (thisHasSpeedPaint || nextHasSpeedPaint)
-          ? msToFrames(SPEED_PAINT_OVERLAP_MS, fps)
+          ? speedPaintOverlapFrames
           : msToFrames(FADE_DURATION_MS, fps);
 
         // Compensa o from com overlap: cena começa mais cedo durante a anterior

@@ -7,6 +7,38 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.37.0] - 2026-05-18
+
+### Adicionado
+
+- **Módulo centralizado de timings do Speed Paint** (`src/features/video-render/lib/speedPaintTimings.ts`): novo arquivo que consolida constantes, tipos e funções de temporização do speed paint — `SpeedPaintTimingMode` (`'default' | 'duration-based' | 'sequenced-batch'`), `DEFAULT_SPEED_PAINT_HOLD_SECONDS`, `DEFAULT_SPEED_PAINT_FADE_SECONDS`, `DURATION_BASED_SKETCH_RATIO`, `SpeedPaintSequenceTiming` (overlapFrames, sceneStepFrames, totalDurationInFrames), `getSpeedPaintTimingConfig()`, `getSpeedPaintOverlapFrames()` e `getSpeedPaintSequenceTiming()`
+- **Prop `timingMode` em SpeedPaintScene**: aceita `SpeedPaintTimingMode` — `'default'` (com fade/hold zones) ou `'duration-based'` (animação pura baseada na duração total, sem overhead de fade/hold)
+- **`SpeedPaintTimingMode` propagado**: `SpeedPaintComposition`, `SpeedPaintPlayer`, `SpeedPaintPage` e `useSpeedPaintExporter` agora importam e usam o tipo centralizado — `SpeedPaintPage` seleciona `sequenced-batch` para preview em lote e `duration-based` para preview normal
+- **`getSpeedPaintOverlapFrames()` em VideoComposition**: overlap dinâmico calculado pelo módulo central em vez da constante hardcoded `SPEED_PAINT_OVERLAP_MS`
+
+### Removido
+
+- **Constantes hardcoded removidas**: `SPEED_PAINT_HOLD_SECONDS`, `SPEED_PAINT_FADE_SECONDS` e `DURATION_BASED_SKETCH_RATIO` de `SpeedPaintScene.tsx` (movidas para `speedPaintTimings.ts`)
+- **`SPEED_PAINT_OVERLAP_MS`** de `VideoComposition.tsx` — substituído por `getSpeedPaintOverlapFrames()` do módulo central
+
+### Alterado
+
+- **`useSpeedPaintExporter`**: agora usa `getSpeedPaintSequenceTiming()` para calcular `sceneStepFrames` e `totalDurationInFrames` com base no `SpeedPaintTimingMode`, eliminando lógica duplicada de cálculo de duração
+- **`VideoComposition`**: importa `getSpeedPaintOverlapFrames` do módulo central em vez de constante local; `getSpeedPaintOverlapFrames` foi internalizada no módulo
+
+### Testes
+
+- **`tests/video-render/speedPaintTimings.unit.test.ts`** (novo, +35 linhas): testes unitários para as funções exportadas do módulo de timings — `getSpeedPaintTimingConfig`, `getSpeedPaintOverlapFrames`, `getSpeedPaintSequenceTiming`
+- **`tests/video-render/videoComposition.component.test.tsx`** (+48 linhas): cobertura de `getSpeedPaintOverlapFrames` via import do módulo; novos mocks de `strokeAnimation` e `strokes: []`
+- **`tests/pages/SpeedPaintPage.component.test.tsx`** (+52 linhas): novos mocks de `animation.strokes` no estado da animationStore
+- **`tests/speed-paint/useSpeedPaintExporter.unit.test.tsx`** (+4 linhas): `inputProps` atualizados para incluir `timingMode`
+
+### Documentação
+
+- **Auditoria de timing do Speed Paint**: `docs/audits/speed-paint-timing-audit-2026-05-18.md` (+95 linhas) — revisão estática identificando que o fluxo de lote usa `sequenced-batch` com timing menor que o `/video`, indicando unificação incompleta entre os dois fluxos
+
+---
+
 ## [0.36.0] - 2026-05-18
 
 ### Adicionado

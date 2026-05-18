@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { VideoScene } from '../../src/features/video-render/types';
+import { getSpeedPaintOverlapFrames } from '../../src/features/video-render/lib/speedPaintTimings';
 
 // ---------------------------------------------------------------------------
 // Mocks — Remotion
@@ -234,6 +235,53 @@ describe('VideoComposition', () => {
     // A última cena (index 1) tem strokeAnimation → SpeedPaintScene
     const spScenes = screen.getAllByTestId('speed-paint-scene');
     expect(spScenes).toHaveLength(1);
+  });
+
+  it('usa o mesmo overlap compartilhado para cenas speed paint no /video', async () => {
+    const scenes: VideoScene[] = [
+      {
+        imageUrl: 'scene1.png',
+        prompt: 'prompt1',
+        timestamp: 0,
+        durationInFrames: 90,
+        strokeAnimation: {
+          id: 'anim-1',
+          canvasWidth: 1920,
+          canvasHeight: 1080,
+          canvasColor: 'white',
+          totalFrames: 60,
+          fps: 30,
+          totalDurationMs: 2000,
+          strokes: [],
+        },
+      },
+      {
+        imageUrl: 'scene2.png',
+        prompt: 'prompt2',
+        timestamp: 3,
+        durationInFrames: 90,
+        strokeAnimation: {
+          id: 'anim-2',
+          canvasWidth: 1920,
+          canvasHeight: 1080,
+          canvasColor: 'white',
+          totalFrames: 60,
+          fps: 30,
+          totalDurationMs: 2000,
+          strokes: [],
+        },
+      },
+    ];
+
+    await mountComposition(scenes);
+
+    const sequences = screen.getAllByTestId('sequence');
+    const expectedOverlap = getSpeedPaintOverlapFrames('default', 30);
+
+    expect(sequences[0]?.getAttribute('data-from')).toBe('0');
+    expect(sequences[0]?.getAttribute('data-duration')).toBe(String(90 + expectedOverlap));
+    expect(sequences[1]?.getAttribute('data-from')).toBe(String(90 - expectedOverlap));
+    expect(sequences[1]?.getAttribute('data-duration')).toBe(String(90 + expectedOverlap));
   });
 
   describe('speedPaintMultipliers — propagação para SpeedPaintScene', () => {

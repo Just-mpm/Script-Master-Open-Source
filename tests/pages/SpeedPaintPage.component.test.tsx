@@ -20,6 +20,7 @@ const { animState } = vi.hoisted(() => ({
   animState: {
     job: { id: '', inputImage: '', status: 'idle' as string, progress: 0, animation: null as unknown },
     queue: [] as unknown[],
+    currentIndex: 0,
     batchMode: 'idle' as string,
     queueSource: null as string | null,
     queueSourceProjectName: null as string | null,
@@ -71,7 +72,21 @@ vi.mock('../../src/features/speed-paint/components/batch/QueueStaging', () => ({
 }));
 
 vi.mock('../../src/features/speed-paint/components/SpeedPaintPlayer', () => ({
-  SpeedPaintPlayer: () => <div data-testid="speed-paint-player">SpeedPaintPlayer</div>,
+  SpeedPaintPlayer: ({
+    timingMode,
+    isLastScene,
+  }: {
+    timingMode?: string;
+    isLastScene?: boolean;
+  }) => (
+    <div
+      data-testid="speed-paint-player"
+      data-timing-mode={timingMode ?? ''}
+      data-is-last-scene={isLastScene ? 'true' : 'false'}
+    >
+      SpeedPaintPlayer
+    </div>
+  ),
 }));
 
 vi.mock('../../src/features/speed-paint/components/SpeedPaintPlayerControls', () => ({
@@ -134,6 +149,7 @@ describe('SpeedPaintPage', () => {
     // Restaura estado padrão
     animState.job = { id: '', inputImage: '', status: 'idle', progress: 0, animation: null };
     animState.queue = [];
+    animState.currentIndex = 0;
     animState.batchMode = 'idle';
     animState.queueSource = null;
     animState.queueSourceProjectName = null;
@@ -227,10 +243,44 @@ describe('SpeedPaintPage', () => {
     };
 
     render(<SpeedPaintPage />, { wrapper: Wrapper });
-    expect(screen.getByTestId('speed-paint-player')).toBeDefined();
+    const player = screen.getByTestId('speed-paint-player');
+    expect(player).toBeDefined();
+    expect(player.getAttribute('data-timing-mode')).toBe('duration-based');
+    expect(player.getAttribute('data-is-last-scene')).toBe('true');
     expect(screen.getByTestId('speed-paint-player-controls')).toBeDefined();
     // ExportPanel está na aba "Exportar" — não visível por padrão (aba "Reprodução")
     expect(screen.queryByTestId('speed-paint-export-panel')).toBeNull();
+  });
+
+  it('usa timing sequencial no preview do lote enquanto batchMode é watch', () => {
+    animState.batchMode = 'watch';
+    animState.currentIndex = 0;
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'pending' },
+    ];
+    animState.job = {
+      id: 'job-1',
+      inputImage: 'data:image/png;base64,abc',
+      status: 'completed',
+      progress: 0,
+      animation: {
+        id: 'anim-1',
+        canvasWidth: 100,
+        canvasHeight: 100,
+        canvasColor: 'white',
+        totalFrames: 450,
+        fps: 30,
+        totalDurationMs: 15000,
+        strokes: [],
+      },
+    };
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    const player = screen.getByTestId('speed-paint-player');
+    expect(player.getAttribute('data-timing-mode')).toBe('sequenced-batch');
+    expect(player.getAttribute('data-is-last-scene')).toBe('false');
   });
 
   it('renderiza ExportPanel quando a aba Exportar está ativa', () => {

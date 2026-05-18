@@ -5,17 +5,11 @@ import type { Stroke } from '../../speed-paint/types';
 import type { StrokeAnimation } from '../../speed-paint/types';
 import type { SpeedPaintMultipliers } from '../types';
 import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../lib/speedPaintRenderer';
-
-// ---------------------------------------------------------------------------
-// Constantes de timing
-// ---------------------------------------------------------------------------
-
-/** Tempo de exposição da pintura completa antes do fade out (em segundos) */
-const SPEED_PAINT_HOLD_SECONDS = 3;
-/** Duração do fade in/out para speed paint no vídeo (em segundos) */
-const SPEED_PAINT_FADE_SECONDS = 1;
-/** Divisão padrão do modo standalone: 80% desenho e 20% pintura */
-const DURATION_BASED_SKETCH_RATIO = 0.8;
+import {
+  DURATION_BASED_SKETCH_RATIO,
+  getSpeedPaintTimingConfig,
+  type SpeedPaintTimingMode,
+} from '../lib/speedPaintTimings';
 
 // ---------------------------------------------------------------------------
 // Draw Tool — lápis/pincel animado que segue o último stroke visível
@@ -143,7 +137,7 @@ interface SpeedPaintSceneProps {
   /** Modo de ajuste do canvas na composição */
   fitMode?: 'fill' | 'contain';
   /** Estratégia de tempo da animação */
-  timingMode?: 'default' | 'duration-based';
+  timingMode?: SpeedPaintTimingMode;
 }
 
 // ---------------------------------------------------------------------------
@@ -232,8 +226,9 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
       };
     }
 
-    let f = Math.round(fps * SPEED_PAINT_FADE_SECONDS);
-    let h = Math.round(fps * SPEED_PAINT_HOLD_SECONDS);
+    const { fadeSeconds, holdSeconds } = getSpeedPaintTimingConfig(timingMode);
+    let f = Math.round(fps * fadeSeconds);
+    let h = Math.round(fps * holdSeconds);
     const totalOverhead = (isLastScene ? f : 2 * f) + h;
 
     if (totalOverhead > durationInFrames) {

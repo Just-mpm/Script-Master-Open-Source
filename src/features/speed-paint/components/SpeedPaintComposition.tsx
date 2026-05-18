@@ -7,6 +7,7 @@
 import React from 'react';
 import { AbsoluteFill, useVideoConfig } from 'remotion';
 import { SpeedPaintScene } from '../../video-render/components/SpeedPaintScene';
+import type { SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import type { StrokeAnimation } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,10 @@ export interface SpeedPaintCompositionProps {
   imageSource: string;
   /** Exibir lápis/pincel animado seguindo o stroke */
   showDrawTool?: boolean;
+  /** Estratégia de tempo usada pela composição */
+  timingMode?: SpeedPaintTimingMode;
+  /** Indica se a cena deve encerrar sem fade-out */
+  isLastScene?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -37,6 +42,8 @@ export const SpeedPaintComposition = React.memo(function SpeedPaintComposition({
   animation,
   imageSource,
   showDrawTool,
+  timingMode = 'duration-based',
+  isLastScene = true,
 }: SpeedPaintCompositionProps) {
   const { durationInFrames } = useVideoConfig();
 
@@ -46,9 +53,9 @@ export const SpeedPaintComposition = React.memo(function SpeedPaintComposition({
         animation={animation}
         imageSource={imageSource}
         durationInFrames={durationInFrames}
-        isLastScene
+        isLastScene={isLastScene}
         showDrawTool={showDrawTool}
-        timingMode="duration-based"
+        timingMode={timingMode}
       />
     </AbsoluteFill>
   );

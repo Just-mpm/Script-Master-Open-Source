@@ -29,6 +29,7 @@ import { ExportProgressBar } from '../features/video-render/components/export/Ex
 import { ExportResultActions } from '../features/video-render/components/export/ExportResultActions';
 import { ImageUpload } from '../features/speed-paint/components/upload/ImageUpload';
 import { useLocale } from '../features/i18n';
+import type { SpeedPaintTimingMode } from '../features/video-render/lib/speedPaintTimings';
 import {
   BRAND_GRADIENT,
   BRAND_PRIMARY,
@@ -69,11 +70,12 @@ export function SpeedPaintPage() {
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
-  const { job, queue, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor } =
+  const { job, queue, currentIndex, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor } =
     useAnimationStore(
       useShallow((s) => ({
         job: s.job,
         queue: s.queue,
+        currentIndex: s.currentIndex,
         batchMode: s.batchMode,
         queueSource: s.queueSource,
         queueSourceProjectName: s.queueSourceProjectName,
@@ -102,6 +104,9 @@ export function SpeedPaintPage() {
   );
   const failedBatchCount = queueLength - eligibleBatchQueue.length;
   const isCompleted = job.status === 'completed' && Boolean(job.animation);
+  const isBatchWatchPreview = batchMode === 'watch' && queueLength > 0;
+  const previewTimingMode: SpeedPaintTimingMode = isBatchWatchPreview ? 'sequenced-batch' : 'duration-based';
+  const isLastBatchPreviewScene = currentIndex >= Math.max(0, queueLength - 1);
 
   // Duração fixa — unificada com a velocidade (sliders controlam o ritmo, não o container)
   const durationInFrames = useMemo(() => Math.round(animationDuration * FPS), [animationDuration]);
@@ -637,6 +642,8 @@ export function SpeedPaintPage() {
               animationDuration={animationDuration}
               fps={FPS}
               jobStatus={job.status}
+              timingMode={previewTimingMode}
+              isLastScene={!isBatchWatchPreview || isLastBatchPreviewScene}
             />
           </Grid>
 

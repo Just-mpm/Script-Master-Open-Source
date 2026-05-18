@@ -11,6 +11,7 @@ import { alpha, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { SpeedPaintComposition } from './SpeedPaintComposition';
 import type { StrokeAnimation } from '../types';
+import type { SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import { glassPanelSx } from '../../../theme/surfaces';
 import { createLogger } from '../../../lib/logger';
 
@@ -33,6 +34,10 @@ export interface SpeedPaintPlayerProps {
   fps?: number;
   /** Status do job — usado para auto-play quando completa */
   jobStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  /** Estratégia de tempo da cena exibida */
+  timingMode?: SpeedPaintTimingMode;
+  /** Indica se a cena é a última da sequência */
+  isLastScene?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +81,8 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
       animationDuration,
       fps = DEFAULT_FPS,
       jobStatus,
+      timingMode = 'duration-based',
+      isLastScene = true,
     },
     ref,
   ) {
@@ -87,8 +94,10 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
         animation,
         imageSource,
         showDrawTool,
+        timingMode,
+        isLastScene,
       }),
-      [animation, imageSource, showDrawTool],
+      [animation, imageSource, showDrawTool, timingMode, isLastScene],
     );
 
     // Auto-play quando o job completa

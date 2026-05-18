@@ -10,6 +10,7 @@ import { renderMediaOnWeb } from '@remotion/web-renderer';
 import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
 import { SpeedPaintScene } from '../../video-render/components/SpeedPaintScene';
+import { getSpeedPaintSequenceTiming, type SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import type { StrokeAnimation } from '../types';
 import type { VideoExportQuality } from '../../video-render/types';
 import { patchCanvasFontStretch } from '../../video-render/lib/canvasFontStretchPatch';
@@ -161,6 +162,8 @@ interface BatchSpeedPaintCompositionProps {
   items: BatchSpeedPaintCompositionItem[];
   showDrawTool: boolean;
   sceneDurationInFrames: number;
+  sceneStepFrames: number;
+  timingMode: SpeedPaintTimingMode;
 }
 
 /**
@@ -192,14 +195,14 @@ function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): Reac
 type ExportableBatchSpeedPaintProps = BatchSpeedPaintCompositionProps & { [key: string]: unknown };
 
 function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintProps): React.ReactNode {
-  const { items, showDrawTool, sceneDurationInFrames } = props;
+  const { items, showDrawTool, sceneDurationInFrames, sceneStepFrames, timingMode } = props;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
       {items.map((item, index) => (
         <Sequence
           key={`${item.animation.id}-${index}`}
-          from={index * sceneDurationInFrames}
+          from={index * sceneStepFrames}
           durationInFrames={sceneDurationInFrames}
         >
           <SpeedPaintScene
@@ -210,7 +213,7 @@ function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintPr
             isLastScene={index === items.length - 1}
             isExporting
             fitMode="contain"
-            timingMode="duration-based"
+            timingMode={timingMode}
           />
         </Sequence>
       ))}
@@ -534,12 +537,21 @@ export function useSpeedPaintExporter() {
       lastReportedPercentRef.current = -1;
 
       const sceneDurationInFrames = Math.max(1, Math.round(sceneDurationSeconds * fps));
-      const durationInFrames = sceneDurationInFrames * batchAnimations.length;
+      const timingMode: SpeedPaintTimingMode = 'sequenced-batch';
+      const { sceneStepFrames, totalDurationInFrames } = getSpeedPaintSequenceTiming(
+        sceneDurationInFrames,
+        batchAnimations.length,
+        fps,
+        timingMode,
+      );
+      const durationInFrames = totalDurationInFrames;
       const resolution = getSpeedPaintResolution(firstAnimation.canvasWidth, firstAnimation.canvasHeight, quality);
       const exportableInputProps: ExportableBatchSpeedPaintProps = {
         items: batchAnimations,
         showDrawTool,
         sceneDurationInFrames,
+        sceneStepFrames,
+        timingMode,
       };
 
       const composition: {
