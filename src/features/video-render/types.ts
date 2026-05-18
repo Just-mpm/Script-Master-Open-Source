@@ -56,6 +56,8 @@ export interface VideoCompositionProps {
   speedPaintSpeed?: SpeedPaintSpeed;
   /** Multiplicadores de velocidade separados para sketch/reveal — se fornecido, sobrepõe speedPaintSpeed */
   speedPaintMultipliers?: SpeedPaintMultipliers;
+  /** Exibe o lápis/pincel animado seguindo o traço do speed paint */
+  showDrawTool?: boolean;
 }
 
 /** Configuração de renderização (Fase 3) */

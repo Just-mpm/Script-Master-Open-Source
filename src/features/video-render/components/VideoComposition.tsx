@@ -34,6 +34,7 @@ export function VideoComposition({
   isExporting,
   speedPaintSpeed = 'normal',
   speedPaintMultipliers,
+  showDrawTool = true,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
   const frame = useCurrentFrame();
@@ -116,6 +117,7 @@ export function VideoComposition({
                 drawSpeed={speedPaintMultipliers?.sketch}
                 paintSpeed={speedPaintMultipliers?.reveal}
                 isExporting={isExporting}
+                showDrawTool={showDrawTool}
               />
             ) : (
               <SceneSequence

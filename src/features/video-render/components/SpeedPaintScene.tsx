@@ -136,9 +136,9 @@ interface SpeedPaintSceneProps {
   drawSpeed?: number;
   /** Multiplicador de velocidade para a fase de coloração (reveal) — se fornecido junto com drawSpeed, sobrepõe speedMultiplier */
   paintSpeed?: number;
-  /** Se está em modo exportação — esconde o badge de fase e NÃO desenha a ferramenta */
+  /** Se está em modo exportação — esconde o badge de fase */
   isExporting?: boolean;
-  /** Se deve exibir o lápis/pincel animado seguindo o último stroke visível — apenas no preview */
+  /** Se deve exibir o lápis/pincel animado seguindo o último stroke visível */
   showDrawTool?: boolean;
   /** Modo de ajuste do canvas na composição */
   fitMode?: 'fill' | 'contain';
@@ -174,7 +174,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   drawSpeed,
   paintSpeed,
   isExporting,
-  showDrawTool = false,
+  showDrawTool = true,
   fitMode = 'fill',
   timingMode = 'default',
 }: SpeedPaintSceneProps) {
@@ -343,10 +343,10 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
       speedMultiplier: resolvedSpeedMultiplier,
     });
 
-    // Desenha a ferramenta (lápis/pincel) na ponta do último stroke visível
-    // Apenas no preview — nunca durante exportação e nunca quando a animação
-    // está completa (progress = 0 ou 1)
-    if (showDrawTool && !isExporting && progress > 0 && progress < 1) {
+    // Desenha a ferramenta (lápis/pincel) na ponta do último stroke visível.
+    // O badge continua exclusivo do preview, mas a ferramenta pode aparecer
+    // também na exportação final quando esse for o comportamento padrão.
+    if (showDrawTool && progress > 0 && progress < 1) {
       const totalStrokes = animation.strokes.length;
       const visibleCount = Math.floor(progress * totalStrokes);
 

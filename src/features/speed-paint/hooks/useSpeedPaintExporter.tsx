@@ -308,7 +308,7 @@ export function useSpeedPaintExporter() {
       fps,
       durationInFrames,
       quality,
-      showDrawTool = false,
+      showDrawTool = true,
       fileName,
       autoDownload = false,
     } = options;
@@ -453,7 +453,7 @@ export function useSpeedPaintExporter() {
       items,
       fps,
       quality,
-      showDrawTool = false,
+      showDrawTool = true,
       fileName,
       sceneDurationSeconds = 15,
     } = options;

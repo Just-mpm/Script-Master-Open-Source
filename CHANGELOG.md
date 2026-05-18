@@ -7,6 +7,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.35.0] - 2026-05-18
+
+### Adicionado
+
+- **`showDrawTool` — lápis animado do Speed Paint visível durante preview e exportação**: nova prop `showDrawTool?: boolean` no tipo de `CompositionInputProps` (`src/features/video-render/types.ts`) que controla a exibição do lápis/pincel animado seguindo o último traço visível do stroke. Propagado por todo o pipeline: `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`. Default `true` em todos os pontos de entrada (`VideoPage`, `VideoExportPanel`, `SpeedPaintPage`, `useSpeedPaintExporter`)
+- **`VideoPreview`**: suporte ao `showDrawTool` — 66 linhas adicionadas, 6 removidas, integrando o lápis animado no preview de vídeo do App Shell
+- **Auditoria de mudanças locais**: `docs/audits/audit-speedpaint-page-local-changes-2026-05-18.md` — revisão estática do fluxo de Speed Paint, identificando 1 warning e 1 suggestion sobre feedback de falhas durante renderização em lote
+
+### Alterado
+
+- **`animateScenes` default**: alterado de `false` para `true` no `VideoExportPanel` — animações de speed paint/cenas agora são ativadas por padrão na exportação de vídeo
+- **`VideoPage`**: adicionado `animateScenes={true}` e `showDrawTool={true}` nas props de composição
+- **`SpeedPaintPage`**: reestruturação de layout — 84 linhas adicionadas, 56 removidas; `Stack` substituído por layout flex responsivo, metadados visuais refinados com `Chip`
+- **`SpeedPaintScene`**: comentários de restrição de exportação removidos; `showDrawTool` passa a ser `true` por padrão (antes `false`)
+- **`VideoExportPanel.unit.test.tsx`**: simplificado — remoção do `fireEvent.click(switchEl)` que ativava speed paint manualmente (agora já vem ativo por padrão)
+
+### Testes
+
+- **`VideoPreview.component.test.tsx`**: novo teste `'ativa o lápis animado por padrão no preview'` validando `data-show-draw-tool={String(inputProps.showDrawTool)}`
+- **`SpeedPaintPage.component.test.tsx`**: novo teste `'não duplica o cabeçalho enquanto o vídeo final do lote está renderizando'` — valida que durante renderização em lote o título não aparece duplicado
+
+---
+
 ## [0.34.0] - 2026-05-18
 
 ### Adicionado

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { forwardRef, useImperativeHandle, useMemo, useRef, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -18,8 +18,8 @@ import { useLocale } from '../features/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
 import { VideoComposition } from '../features/video-render';
-import type { CaptionWord, SubtitleStyle } from '../features/video-render';
-import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
+import type { CaptionWord, SubtitleStyle, VideoScene } from '../features/video-render';
+import { mapScenesToVideoScenes, getResolutionFromRatio, generateScenesWithSpeedPaint } from '../features/video-render';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
@@ -50,6 +50,10 @@ interface VideoPreviewProps {
   onCaptionToggle?: () => void;
   /** Legenda está visível no preview? (default: true) */
   captionVisible?: boolean;
+  /** Ativa speed paint automaticamente no preview do vídeo */
+  animateScenes?: boolean;
+  /** Exibe o lápis/pincel animado durante o speed paint */
+  showDrawTool?: boolean;
 }
 
 /** Handle imperativo exposto ao pai para controlar o Remotion Player */
@@ -144,7 +148,20 @@ class VideoPlayerErrorBoundary extends Component<
 // ---------------------------------------------------------------------------
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
-  function VideoPreview({ scenes, audioUrl, fps, durationInFrames, ratio, captions, subtitleStyle, showCaptionToggle, onCaptionToggle, captionVisible = true }, ref) {
+  function VideoPreview({
+    scenes,
+    audioUrl,
+    fps,
+    durationInFrames,
+    ratio,
+    captions,
+    subtitleStyle,
+    showCaptionToggle,
+    onCaptionToggle,
+    captionVisible = true,
+    animateScenes = true,
+    showDrawTool = true,
+  }, ref) {
     const internalRef = useRef<PlayerRef>(null);
     const navigate = useNavigate();
     const { t } = useLocale();
@@ -201,6 +218,48 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       () => mapScenesToVideoScenes(scenes, durationInFrames, fps),
       [scenes, durationInFrames, fps],
     );
+    const [previewScenes, setPreviewScenes] = useState<VideoScene[]>(mappedScenes);
+
+    useEffect(() => {
+      let cancelled = false;
+
+      setPreviewScenes(mappedScenes);
+
+      if (!animateScenes || mappedScenes.length === 0) {
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      const enhanceScenesWithSpeedPaint = async () => {
+        try {
+          const results = await generateScenesWithSpeedPaint(
+            mappedScenes.map((scene) => ({ imageUrl: scene.imageUrl })),
+            undefined,
+            { useWorker: true },
+          );
+
+          if (cancelled) return;
+
+          setPreviewScenes(
+            mappedScenes.map((scene, index) => ({
+              ...scene,
+              strokeAnimation: results[index]?.animation,
+            })),
+          );
+        } catch {
+          if (!cancelled) {
+            setPreviewScenes(mappedScenes);
+          }
+        }
+      };
+
+      void enhanceScenesWithSpeedPaint();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [animateScenes, mappedScenes]);
 
     // Expose handle imperativo para o pai controlar play/pause/seek
     useImperativeHandle(ref, () => ({
@@ -219,12 +278,13 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
     // Memoiza inputProps — o Player usa igualdade referencial para detectar mudanças
     const inputProps = useMemo(() => ({
-      scenes: mappedScenes,
+      scenes: previewScenes,
       audioUrl: audioUrl ?? '',
       fps,
       captions: captionVisible ? (captions ?? undefined) : undefined,
       subtitleStyle,
-    }), [mappedScenes, audioUrl, fps, captions, subtitleStyle, captionVisible]);
+      showDrawTool,
+    }), [previewScenes, audioUrl, fps, captions, subtitleStyle, captionVisible, showDrawTool]);
 
     // Estado vazio: sem áudio e sem cenas
     if (!audioUrl && scenes.length === 0) {

@@ -245,6 +245,8 @@ export function VideoPage({
         showCaptionToggle={true}
         captionVisible={captionVisible}
         onCaptionToggle={handleCaptionToggle}
+        animateScenes={true}
+        showDrawTool={true}
       />
     ),
     [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, captionVisible, handleCaptionToggle, videoPlayerRef],

@@ -38,6 +38,8 @@ export interface VideoExportOptions {
   fileName?: string;
   /** Animar cenas com Speed Paint (default: false) */
   animateScenes?: boolean;
+  /** Exibe o lápis/pincel animado durante o speed paint */
+  showDrawTool?: boolean;
   /** Velocidade da animação speed paint (default: 'normal') */
   speedPaintSpeed?: SpeedPaintSpeed;
   /** Multiplicadores de velocidade separados para sketch/reveal — se fornecido, sobrepõe speedPaintSpeed */
@@ -93,7 +95,7 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed, speedPaintMultipliers } = props;
+  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed, speedPaintMultipliers, showDrawTool } = props;
   return (
     <VideoComposition
       scenes={scenes}
@@ -104,6 +106,7 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
       isExporting={true}
       speedPaintSpeed={speedPaintSpeed}
       speedPaintMultipliers={speedPaintMultipliers}
+      showDrawTool={showDrawTool}
     />
   );
 }
@@ -204,6 +207,7 @@ export function useVideoExporter() {
       quality,
       fileName,
       animateScenes = false,
+      showDrawTool = true,
     } = options;
 
     // Identifica esta renderização — catch/finally antigos serão ignorados
@@ -295,6 +299,7 @@ export function useVideoExporter() {
       subtitleStyle,
       speedPaintSpeed,
       speedPaintMultipliers: options.speedPaintMultipliers,
+      showDrawTool,
     };
 
     // Revoga URL anterior

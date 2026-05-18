@@ -36,12 +36,14 @@ vi.mock('@remotion/player', () => ({
       data-fps={fps}
       data-width={compositionWidth}
       data-height={compositionHeight}
+      data-show-draw-tool={String(inputProps.showDrawTool)}
     />
   ),
 }));
 
 vi.mock('../../src/features/video-render', () => ({
   VideoComposition: () => <div data-testid="video-composition" />,
+  generateScenesWithSpeedPaint: vi.fn().mockResolvedValue([]),
   mapScenesToVideoScenes: () => [],
   getResolutionFromRatio: (ratio: string) => {
     switch (ratio) {
@@ -143,6 +145,21 @@ describe('VideoPreview', () => {
     );
 
     expect(screen.getByTestId('remotion-player')).toBeDefined();
+  });
+
+  it('ativa o lápis animado por padrão no preview', () => {
+    render(
+      <VideoPreview
+        scenes={[]}
+        audioUrl="blob:audio"
+        fps={30}
+        durationInFrames={300}
+        ratio="16:9"
+      />,
+      { wrapper: Wrapper },
+    );
+
+    expect(screen.getByTestId('remotion-player').getAttribute('data-show-draw-tool')).toBe('true');
   });
 
   it('passa resolução correta para o player com ratio 16:9', () => {

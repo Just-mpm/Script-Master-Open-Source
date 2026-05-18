@@ -159,12 +159,6 @@ describe('VideoExportPanel', () => {
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
 
-      // Ativa speed paint
-      const switchEl = screen.getByRole('switch');
-      act(() => {
-        fireEvent.click(switchEl);
-      });
-
       // Clica exportar
       const exportBtn = screen.getByText(/Exportar MP4/i);
       act(() => {
@@ -174,6 +168,7 @@ describe('VideoExportPanel', () => {
       expect(exporter.startRender).toHaveBeenCalledTimes(1);
       const callArgs = exporter.startRender.mock.calls[0][0] as Record<string, unknown>;
       expect(callArgs.animateScenes).toBe(true);
+      expect(callArgs.showDrawTool).toBe(true);
       expect(callArgs.speedPaintMultipliers).toBeUndefined();
       expect(callArgs.speedPaintSpeed).toBeUndefined();
     });

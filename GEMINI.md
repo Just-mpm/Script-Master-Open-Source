@@ -183,6 +183,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Suporta canvas regular e OffscreenCanvas via `patchPrototype()`. Usa `createLogger` |
 | **Resoluções** | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
 | **Exportação** | `isExporting` em CompositionConfig desabilita overlays pesados (WaveformOverlay) durante renderização |
+| **Lápis animado** | `showDrawTool` prop controla exibição do lápis/pincel seguindo o último stroke visível durante preview e exportação. Default `true`. Propagado via `CompositionInputProps` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`. `VideoPreview` também suporta a prop |
 
 ### Persistência (Dual Storage)
 
@@ -306,8 +307,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/features/speed-paint/` |
 | **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva via player Remotion nativo. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
 | **Fases** | Sketch (bordas) → Reveal (coloração), renderizadas via `SpeedPaintScene` do video-render com suporte a multi-velocidade granular (`SpeedPaintMultipliers`) |
-| **Player** | `SpeedPaintPlayer` (wrapper `@remotion/player`) + `SpeedPaintPlayerControls` (play/pause, seek slider, screenshot, snapshot PNG, indicadores de fase) |
-| **Exportação** | `SpeedPaintExportPanel` com seletor de qualidade e download individual; `useSpeedPaintExporter` via Remotion WebCodecs com fallback de codec (H.264+AAC > H.264 s/ áudio > VP8+Opus+WebM). No lote, o modo `record` gera um único vídeo final da fila com painel próprio de progresso/erro/sucesso/cancelamento em `SpeedPaintPage` |
+| **Player** | `SpeedPaintPlayer` (wrapper `@remotion/player`) + `SpeedPaintPlayerControls` (play/pause, seek slider, screenshot, snapshot PNG, indicadores de fase). `showDrawTool` default `true` — lápis animado visível durante preview e exportação |
+| **Exportação** | `SpeedPaintExportPanel` com seletor de qualidade e download individual; `useSpeedPaintExporter` via Remotion WebCodecs com fallback de codec (H.264+AAC > H.264 s/ áudio > VP8+Opus+WebM). No lote, o modo `record` gera um único vídeo final da fila com painel próprio de progresso/erro/sucesso/cancelamento em `SpeedPaintPage`. `showDrawTool` default `true` — lápis animado visível durante preview e exportação |
 | **Duração da animação** | `AnimationDurationSelector` substitui os sliders granulares `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) por opções de duração predefinidas. `DURATION_BASED_SKETCH_RATIO=0.8` em `SpeedPaintScene` determina a proporção sketch/reveal automaticamente. Integrado em `SpeedPaintExportPanel`, `SpeedPaintPlayerControls` e `QueueStaging` |
 | **Composição** | `SpeedPaintComposition` — composição Remotion que integra `SpeedPaintScene` com fases de sketch (desenho de bordas) e reveal (coloração). Props `drawSpeed`/`paintSpeed` removidas (substituídas pelo modelo de duração total) |
 | **Drag-and-drop** | `QueueStaging` refatorado com `@dnd-kit/react` (`DragDropProvider`, `useSortable`, `DragOverlay`) para reordenação da fila; `arrayMove` do `@dnd-kit/helpers` no animationStore. A UI da fila agora informa quantos itens entram no vídeo final e quantos serão ignorados por falha anterior |
@@ -394,7 +395,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.34.0`
+- **Current:** `0.35.0`
 - **Last release:** 2026-05-18
 
 ### Últimas mudanças (atualizado por /fast)
@@ -403,8 +404,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.35.0 | **Lápis animado do Speed Paint visível em preview e exportação** — `showDrawTool` propagado por todo o pipeline de vídeo (`types.ts` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`); `animateScenes` default `false→true` no `VideoExportPanel`; `VideoPreview` com suporte a `showDrawTool`; `SpeedPaintPage` reestruturada (layout flex responsivo); testes de regressão para lápis animado e header duplicado em lote |
 | 0.34.0 | **Seletor de duração substitui sliders granulares de Speed Paint** — `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) removido e substituído por `AnimationDurationSelector` com opções de duração predefinidas; props `drawSpeed`/`paintSpeed` removidas de `SpeedPaintComposition` e `useSpeedPaintExporter`; `DURATION_BASED_SKETCH_RATIO=0.8` adicionado em `SpeedPaintScene` para transição sketch→reveal automática baseada na duração total |
 | 0.33.1 | **Correções de hooks e dead code no Speed Paint** — dependências do `useEffect` em `BatchOrchestrator` simplificadas (`currentImg?.id, currentImg?.dataUrl` → `currentImg`); ordem de hooks corrigida em `useSpeedPaintExporter` (violação das Rules of Hooks); imports não utilizados removidos de `QueueStaging.tsx` (`BRAND_GRADIENT`, `BRAND_GRADIENT_HOVER`, `BRAND_GLOW`) |
 | 0.32.1 | **Memory leaks corrigidos** — `setTimeout` com `useRef` cleanup em 5 componentes (ImageStudio, Library, ScriptEditor, useImageGenerator, useAudioGenerator); subscription Firestore cancelada no `useBillingInit` via `unsubscribeRef`; `deleteDocument` em `account-cleanup.ts` refatorado; limite de upload de áudio 50MB → 150MB em `storage.rules`; `express` adicionado a `functions/package.json` |
 | 0.32.0 | **Speed Paint migrado para Remotion** — página `/app/pintura-rapida` reescrita com player Remotion nativo (`SpeedPaintPlayer`, `SpeedPaintPlayerControls`); exportação via `useSpeedPaintExporter`; `@dnd-kit/react` para reordenação drag-and-drop da fila; `konva`/`react-konva` removidos; `VideoExportPanel` modularizado em `ExportQualitySelector`, `ExportProgressBar`, `ExportResultActions`; `useCodecSupport` extraído; i18n speed paint phases |
-| 0.31.2 | **Onboarding com fallback no Firestore** — `AuthContext` agora consulta `getUserSettings` no Firestore antes de redirecionar para `/onboarding`: se Firestore confirmar conclusão (name/goals presentes), redireciona para `/app/estudio` mesmo que localStorage tenha sido limpo entre sessões; `OnboardingPage` adiciona `localStorage.getItem('s2a_onboarding_completed')` como fallback secundário para estado de conclusão |

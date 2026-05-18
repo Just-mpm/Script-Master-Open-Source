@@ -99,7 +99,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   // --- State local de opções de exportação (elimina re-renders em cascata no pai) ---
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
-  const [animateScenes, setAnimateScenes] = useState(false);
+  const [animateScenes, setAnimateScenes] = useState(true);
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -146,6 +146,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
       quality,
       fileName: fileName || undefined,
       animateScenes,
+      showDrawTool: true,
     };
     void exporter.startRender(options);
   };

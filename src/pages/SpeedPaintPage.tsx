@@ -213,7 +213,11 @@ export function SpeedPaintPage() {
     || speedPaintExporter.outputUrl != null
     || speedPaintExporter.error != null
     || speedPaintExporter.wasCancelled;
+  const isBatchRendering = speedPaintExporter.isRendering;
   const batchProgressValue = `${Math.round(speedPaintExporter.renderProgress)}%`;
+  const batchProgressHelperText = failedBatchCount > 0
+    ? `${t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })} ${t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}`
+    : t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length });
   const batchSummaryText = speedPaintExporter.isRendering
     ? speedPaintExporter.renderStatusText
     : speedPaintExporter.error
@@ -371,20 +375,92 @@ export function SpeedPaintPage() {
           })}
         >
           <Stack spacing={2.5}>
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              spacing={{ xs: 2, md: 2.5 }}
-              useFlexGap
-              sx={{ alignItems: { xs: 'flex-start', md: 'stretch' }, justifyContent: 'space-between' }}
-            >
-              <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+            {!isBatchRendering ? (
+              <Stack
+                direction={{ xs: 'column', lg: 'row' }}
+                spacing={{ xs: 2, md: 2.5 }}
+                useFlexGap
+                sx={{ alignItems: { xs: 'flex-start', lg: 'stretch' }, justifyContent: 'space-between' }}
+              >
+                <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+                  <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                      {t('speedPaint.batchExportTitle')}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={`${eligibleBatchQueue.length}/${queueLength}`}
+                      sx={{
+                        fontWeight: 700,
+                        borderRadius: 999,
+                        bgcolor: WHITE_08,
+                        border: `1px solid ${WHITE_14}`,
+                        '& .MuiChip-label': {
+                          px: 1.25,
+                        },
+                      }}
+                    />
+                  </Stack>
+
+                  <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+                    {batchSummaryText}
+                  </Typography>
+                </Stack>
+
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1}
+                  useFlexGap
+                  sx={{ width: '100%', minWidth: 0, maxWidth: { lg: 420 } }}
+                >
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      p: 1.5,
+                      borderRadius: 2.5,
+                      bgcolor: WHITE_08,
+                      border: `1px solid ${WHITE_14}`,
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
+                      {t('speedPaint.queueDescription', { count: queueLength })}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                      {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
+                    </Typography>
+                  </Box>
+
+                  {failedBatchCount > 0 ? (
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        p: 1.5,
+                        borderRadius: 2.5,
+                        bgcolor: WHITE_08,
+                        border: `1px solid ${WHITE_14}`,
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
+                        {t('speedPaint.batchExportTitle')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                        {t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}
+                      </Typography>
+                    </Box>
+                  ) : null}
+                </Stack>
+              </Stack>
+            ) : (
+              <Stack sx={{ minWidth: 0 }}>
                 <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                     {t('speedPaint.batchExportTitle')}
                   </Typography>
                   <Chip
                     size="small"
-                    label={speedPaintExporter.isRendering ? batchProgressValue : `${eligibleBatchQueue.length}/${queueLength}`}
+                    label={batchProgressValue}
                     sx={{
                       fontWeight: 700,
                       borderRadius: 999,
@@ -396,55 +472,8 @@ export function SpeedPaintPage() {
                     }}
                   />
                 </Stack>
-
-                <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
-                  {batchSummaryText}
-                </Typography>
               </Stack>
-
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1}
-                useFlexGap
-                sx={{ width: { xs: '100%', md: 'auto' }, minWidth: { md: 300 } }}
-              >
-                <Box
-                  sx={{
-                    flex: 1,
-                    p: 1.5,
-                    borderRadius: 2.5,
-                    bgcolor: WHITE_08,
-                    border: `1px solid ${WHITE_14}`,
-                  }}
-                >
-                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
-                    {t('speedPaint.queueDescription', { count: queueLength })}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-                    {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
-                  </Typography>
-                </Box>
-
-                {failedBatchCount > 0 ? (
-                  <Box
-                    sx={{
-                      flex: 1,
-                      p: 1.5,
-                      borderRadius: 2.5,
-                      bgcolor: WHITE_08,
-                      border: `1px solid ${WHITE_14}`,
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
-                      {t('speedPaint.batchExportTitle')}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-                      {t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}
-                    </Typography>
-                  </Box>
-                ) : null}
-              </Stack>
-            </Stack>
+            )}
 
             {speedPaintExporter.error && !speedPaintExporter.outputUrl && (
               <Stack spacing={1}>
@@ -496,10 +525,9 @@ export function SpeedPaintPage() {
                 }}
               >
                 <ExportProgressBar
-                  title={t('speedPaint.batchExportTitle')}
                   progress={speedPaintExporter.renderProgress}
                   statusText={speedPaintExporter.renderStatusText}
-                  helperText={t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
+                  helperText={batchProgressHelperText}
                   isRendering={speedPaintExporter.isRendering}
                   onCancel={speedPaintExporter.handleCancel}
                   cancelLabel={t('speedPaint.exportCancel')}

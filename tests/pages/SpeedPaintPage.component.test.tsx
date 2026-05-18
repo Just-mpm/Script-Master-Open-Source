@@ -305,4 +305,37 @@ describe('SpeedPaintPage', () => {
     expect(screen.getByText('Voltar para a fila')).toBeDefined();
     expect(screen.getByText('Limpar fila')).toBeDefined();
   });
+
+  it('não duplica o cabeçalho enquanto o vídeo final do lote está renderizando', () => {
+    animState.batchMode = 'record';
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'completed' },
+    ];
+    exporterState.isRendering = true;
+    exporterState.renderProgress = 51;
+    exporterState.renderStatusText = 'Renderizando vídeo final... 51%';
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(screen.getAllByText('Vídeo Final da Fila')).toHaveLength(1);
+    expect(screen.getByText('Renderizando vídeo final... 51%')).toBeDefined();
+    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final.')).toBeDefined();
+  });
+
+  it('mantém o resumo de itens ignorados durante a renderização do vídeo final do lote', () => {
+    animState.batchMode = 'record';
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'failed' },
+      { id: '3', dataUrl: 'data:image/png;base64,ccc', status: 'completed' },
+    ];
+    exporterState.isRendering = true;
+    exporterState.renderProgress = 51;
+    exporterState.renderStatusText = 'Renderizando vídeo final... 51%';
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final. 1 imagem(ns) serão ignoradas por falha anterior no preview.')).toBeDefined();
+  });
 });
