@@ -1,7 +1,6 @@
 /**
  * Painel de exportação dedicado para speed paint.
  * Sem áudio, sem legenda, sem toggle de animação — sempre anima.
- * Usa SpeedPaintControls para sliders sketch/reveal reutilizáveis.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -20,12 +19,12 @@ import type { SystemStyleObject } from '@mui/system';
 import type { StrokeAnimation } from '../types';
 import type { VideoExportQuality } from '../../video-render/types';
 import { estimateFileSize, DEFAULT_EXPORT_QUALITY } from '../../video-render/lib/videoUtils';
-import { SpeedPaintControls } from '../../video-render/components/SpeedPaintControls';
 import { ExportQualitySelector } from '../../video-render/components/export/ExportQualitySelector';
 import { ExportProgressBar } from '../../video-render/components/export/ExportProgressBar';
 import { ExportResultActions } from '../../video-render/components/export/ExportResultActions';
 import type { SpeedPaintExporter, SpeedPaintExportOptions } from '../hooks/useSpeedPaintExporter';
 import { getSpeedPaintResolution } from '../hooks/useSpeedPaintExporter';
+import { AnimationDurationSelector } from './AnimationDurationSelector';
 import { useLocale } from '../../i18n';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
@@ -62,18 +61,12 @@ interface SpeedPaintExportPanelProps {
   animation: StrokeAnimation;
   /** URL da imagem de origem */
   imageSource: string;
-  /** Velocidade do sketch (0.25–4.0) — compartilhada com o preview */
-  drawSpeed: number;
-  /** Velocidade do reveal (0.25–4.0) — compartilhada com o preview */
-  paintSpeed: number;
-  /** Callback quando drawSpeed muda (deve atualizar o store global) */
-  onDrawSpeedChange: (speed: number) => void;
-  /** Callback quando paintSpeed muda (deve atualizar o store global) */
-  onPaintSpeedChange: (speed: number) => void;
+  /** Duração escolhida para a animação (em segundos) */
+  animationDuration: number;
+  /** Callback quando a duração muda */
+  onAnimationDurationChange: (duration: 10 | 15 | 30 | 60) => void;
   /** Se deve exibir o lápis/pincel animado */
   showDrawTool: boolean;
-  /** Duração total em segundos (para estimativa de tamanho) */
-  animationDuration: number;
   /** FPS da animação (default: animation.fps) */
   fps?: number;
   /** Hook do exportador de speed paint (elevado do componente pai) */
@@ -87,12 +80,9 @@ interface SpeedPaintExportPanelProps {
 export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
   animation,
   imageSource,
-  drawSpeed,
-  paintSpeed,
-  onDrawSpeedChange,
-  onPaintSpeedChange,
-  showDrawTool,
   animationDuration,
+  onAnimationDurationChange,
+  showDrawTool,
   fps: fpsProp,
   exporter,
 }: SpeedPaintExportPanelProps) {
@@ -143,8 +133,6 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
       fps: resolvedFps,
       durationInFrames: exportDurationInFrames,
       quality,
-      drawSpeed,
-      paintSpeed,
       showDrawTool,
       fileName: fileName || undefined,
     };
@@ -207,12 +195,10 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
             Resolução: {resolution.width}x{resolution.height} | FPS: {resolvedFps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}
           </Typography>
 
-          {/* Controles de velocidade sketch/reveal — compartilhados com o preview */}
-          <SpeedPaintControls
-            sketch={drawSpeed}
-            reveal={paintSpeed}
-            onSketchChange={onDrawSpeedChange}
-            onRevealChange={onPaintSpeedChange}
+          <AnimationDurationSelector
+            duration={animationDuration}
+            onDurationChange={onAnimationDurationChange}
+            helperText="A duração escolhida também será usada no vídeo exportado."
           />
 
           {/* Seletor de qualidade (sem 4K) */}

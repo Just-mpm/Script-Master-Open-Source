@@ -35,9 +35,7 @@ import {
   ERROR_BG_SUBTLE,
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
-import type { CaptionWord, SubtitleStyle, VideoExportQuality, SpeedPaintMultipliers } from '../types';
-import { DEFAULT_SPEED_PAINT_MULTIPLIERS } from '../types';
-import { SpeedPaintControls } from './SpeedPaintControls';
+import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -102,7 +100,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
   const [animateScenes, setAnimateScenes] = useState(false);
-  const [speedPaintMultipliers, setSpeedPaintMultipliers] = useState<SpeedPaintMultipliers>({ ...DEFAULT_SPEED_PAINT_MULTIPLIERS });
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
@@ -149,8 +146,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
       quality,
       fileName: fileName || undefined,
       animateScenes,
-      speedPaintSpeed: 'normal',
-      speedPaintMultipliers,
     };
     void exporter.startRender(options);
   };
@@ -252,16 +247,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               }
               sx={{ mr: 0 }}
             />
-
-            {/* Controles avançados de velocidade — visível apenas quando toggle ativo */}
-            {animateScenes && (
-              <SpeedPaintControls
-                sketch={speedPaintMultipliers.sketch}
-                reveal={speedPaintMultipliers.reveal}
-                onSketchChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, sketch: v }))}
-                onRevealChange={(v) => setSpeedPaintMultipliers(prev => ({ ...prev, reveal: v }))}
-              />
-            )}
 
             {/* Seletor de qualidade */}
             <ExportQualitySelector

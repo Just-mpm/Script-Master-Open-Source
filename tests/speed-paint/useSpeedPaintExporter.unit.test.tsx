@@ -112,8 +112,6 @@ describe('useSpeedPaintExporter', () => {
         fps: 30,
         durationInFrames: 120,
         quality: '1080p',
-        drawSpeed: 1,
-        paintSpeed: 1,
         fileName: 'lote-01',
         autoDownload: true,
       });
@@ -135,8 +133,6 @@ describe('useSpeedPaintExporter', () => {
         ],
         fps: 30,
         quality: '1080p',
-        drawSpeed: 1,
-        paintSpeed: 1,
         fileName: 'fila-completa',
       });
     });
@@ -145,6 +141,33 @@ describe('useSpeedPaintExporter', () => {
     expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
     expect(mockDownloadFile).toHaveBeenCalledWith(expect.stringMatching(/^blob:/), 'fila-completa.mp4');
     expect(result.current.renderStatusText).toBe('Vídeo final do lote concluído!');
+  });
+
+  it('mantém a duração escolhida por cena no lote', async () => {
+    const { useSpeedPaintExporter } = await import('../../src/features/speed-paint/hooks/useSpeedPaintExporter');
+    const { result } = renderHook(() => useSpeedPaintExporter(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.startBatchRender({
+        items: [
+          { imageSource: 'data:image/png;base64,aaa' },
+          { imageSource: 'data:image/png;base64,bbb' },
+        ],
+        fps: 30,
+        quality: '1080p',
+        fileName: 'fila-lenta',
+        sceneDurationSeconds: 30,
+      });
+    });
+
+    expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
+    const renderCall = mockRenderMediaOnWeb.mock.calls[0]?.[0] as {
+      composition: { durationInFrames: number };
+      inputProps: { sceneDurationInFrames: number };
+    };
+
+    expect(renderCall.inputProps.sceneDurationInFrames).toBe(900);
+    expect(renderCall.composition.durationInFrames).toBe(1800);
   });
 
   it('interrompe o lote antes de gerar animações quando o navegador não suporta exportação', async () => {
@@ -158,8 +181,6 @@ describe('useSpeedPaintExporter', () => {
         items: [{ imageSource: 'data:image/png;base64,aaa' }],
         fps: 30,
         quality: '1080p',
-        drawSpeed: 1,
-        paintSpeed: 1,
         fileName: 'sem-suporte',
       });
     });
@@ -185,8 +206,6 @@ describe('useSpeedPaintExporter', () => {
         items: [{ imageSource: 'data:image/png;base64,aaa' }],
         fps: 30,
         quality: '1080p',
-        drawSpeed: 1,
-        paintSpeed: 1,
         fileName: 'cancelado-geracao',
       });
 
@@ -215,8 +234,6 @@ describe('useSpeedPaintExporter', () => {
         items: [{ imageSource: 'data:image/png;base64,aaa' }],
         fps: 30,
         quality: '1080p',
-        drawSpeed: 1,
-        paintSpeed: 1,
         fileName: 'cancelado-render',
       });
 

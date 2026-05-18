@@ -26,7 +26,7 @@ import {
   WHITE_06,
 } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
-import { SpeedPaintControls } from '../../../video-render/components/SpeedPaintControls';
+import { AnimationDurationSelector } from '../AnimationDurationSelector';
 
 interface SortableQueueImageProps {
   img: QueuedImage;
@@ -180,12 +180,10 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
 export function QueueStaging() {
   const { t } = useLocale();
   const queue = useAnimationStore((s) => s.queue);
-  const speed = useAnimationStore((s) => s.speed);
-  const paintSpeed = useAnimationStore((s) => s.paintSpeed);
+  const animationDuration = useAnimationStore((s) => s.animationDuration);
   const setBatchMode = useAnimationStore((s) => s.setBatchMode);
   const clearQueue = useAnimationStore((s) => s.clearQueue);
-  const setSpeed = useAnimationStore((s) => s.setSpeed);
-  const setPaintSpeed = useAnimationStore((s) => s.setPaintSpeed);
+  const setAnimationDuration = useAnimationStore((s) => s.setAnimationDuration);
   const reorderQueue = useAnimationStore((s) => s.reorderQueue);
   const failedCount = queue.filter((item) => item.status === 'failed').length;
   const eligibleCount = queue.length - failedCount;
@@ -256,7 +254,11 @@ export function QueueStaging() {
               border: `1px solid ${WHITE_06}`,
             })}
           >
-            <SpeedPaintControls sketch={speed} reveal={paintSpeed} onSketchChange={setSpeed} onRevealChange={setPaintSpeed} />
+            <AnimationDurationSelector
+              duration={animationDuration}
+              onDurationChange={setAnimationDuration}
+              helperText="A duração vale para cada imagem do lote."
+            />
           </Box>
         </Stack>
 

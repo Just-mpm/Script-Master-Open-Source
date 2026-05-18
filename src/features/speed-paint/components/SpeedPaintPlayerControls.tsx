@@ -30,7 +30,7 @@ import {
   GAP_COMPACT,
   GAP_DEFAULT,
 } from '../../../theme/tokens';
-import { SpeedPaintControls } from '../../video-render/components/SpeedPaintControls';
+import { AnimationDurationSelector } from './AnimationDurationSelector';
 import { useLocale } from '../../i18n';
 
 // ─── Logger ──────────────────────────────────────────────────
@@ -42,14 +42,10 @@ const log = createLogger('SpeedPaintPlayerControls');
 interface SpeedPaintPlayerControlsProps {
   /** Ref do Remotion Player para controle imperativo */
   playerRef: React.RefObject<PlayerRef | null>;
-  /** Velocidade sketch atual (do store) */
-  drawSpeed: number;
-  /** Velocidade reveal atual (do store) */
-  paintSpeed: number;
-  /** Callback quando drawSpeed muda */
-  onDrawSpeedChange: (speed: number) => void;
-  /** Callback quando paintSpeed muda */
-  onPaintSpeedChange: (speed: number) => void;
+  /** Duração atual da animação (em segundos) */
+  animationDuration: number;
+  /** Callback quando a duração muda */
+  onAnimationDurationChange: (duration: 10 | 15 | 30 | 60) => void;
   /** Callback para resetar o job (nova imagem) */
   onResetJob: () => void;
   /** Callback para limpar a fila */
@@ -382,10 +378,8 @@ const ActionButtons = React.memo(function ActionButtons({
 
 export const SpeedPaintPlayerControls = React.memo(function SpeedPaintPlayerControls({
   playerRef,
-  drawSpeed,
-  paintSpeed,
-  onDrawSpeedChange,
-  onPaintSpeedChange,
+  animationDuration,
+  onAnimationDurationChange,
   onResetJob,
   onClearQueue,
   batchMode,
@@ -606,11 +600,10 @@ export const SpeedPaintPlayerControls = React.memo(function SpeedPaintPlayerCont
             restartAria={t('speedPaint.controlsRestartAria')}
           />
 
-          <SpeedPaintControls
-            sketch={drawSpeed}
-            reveal={paintSpeed}
-            onSketchChange={onDrawSpeedChange}
-            onRevealChange={onPaintSpeedChange}
+          <AnimationDurationSelector
+            duration={animationDuration}
+            onDurationChange={onAnimationDurationChange}
+            helperText="A animação usa 80% do tempo para desenhar e 20% para pintar."
           />
 
           <ActionButtons

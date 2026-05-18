@@ -21,8 +21,6 @@ const { animState } = vi.hoisted(() => ({
     job: { id: '', inputImage: '', status: 'idle' as string, progress: 0, animation: null as unknown },
     queue: [] as unknown[],
     batchMode: 'idle' as string,
-    speed: 1,
-    paintSpeed: 1,
     animationDuration: 15,
     showDrawTool: true,
     canvasColor: 'white' as string,
@@ -134,8 +132,6 @@ describe('SpeedPaintPage', () => {
     animState.job = { id: '', inputImage: '', status: 'idle', progress: 0, animation: null };
     animState.queue = [];
     animState.batchMode = 'idle';
-    animState.speed = 1;
-    animState.paintSpeed = 1;
     animState.animationDuration = 15;
     animState.showDrawTool = true;
     animState.canvasColor = 'white';
@@ -261,6 +257,21 @@ describe('SpeedPaintPage', () => {
 
     rerender(<SpeedPaintPage />);
     expect(exporterState.startBatchRender).toHaveBeenCalledTimes(1);
+  });
+
+  it('repassa a duração atual do store para a exportação em lote', () => {
+    animState.batchMode = 'record';
+    animState.animationDuration = 30;
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'completed' },
+    ];
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(exporterState.startBatchRender).toHaveBeenCalledWith(expect.objectContaining({
+      sceneDurationSeconds: 30,
+    }));
   });
 
   it('não reenfileira no vídeo final itens que já falharam no preview', () => {

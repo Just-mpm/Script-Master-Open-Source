@@ -32,8 +32,6 @@ export interface SpeedPaintExportOptions {
   /** Duração total em frames */
   durationInFrames: number;
   quality: VideoExportQuality;
-  drawSpeed: number;
-  paintSpeed: number;
   showDrawTool?: boolean;
   fileName?: string;
   /** Dispara o download automaticamente ao concluir a exportação */
@@ -49,8 +47,6 @@ export interface SpeedPaintBatchExportOptions {
   items: SpeedPaintBatchExportItem[];
   fps: number;
   quality: VideoExportQuality;
-  drawSpeed: number;
-  paintSpeed: number;
   showDrawTool?: boolean;
   fileName?: string;
   sceneDurationSeconds?: number;
@@ -153,8 +149,6 @@ async function loadImageDimensions(imageSource: string): Promise<{ width: number
 interface SpeedPaintCompositionProps {
   animation: StrokeAnimation;
   imageSource: string;
-  drawSpeed: number;
-  paintSpeed: number;
   showDrawTool: boolean;
 }
 
@@ -165,8 +159,6 @@ interface BatchSpeedPaintCompositionItem {
 
 interface BatchSpeedPaintCompositionProps {
   items: BatchSpeedPaintCompositionItem[];
-  drawSpeed: number;
-  paintSpeed: number;
   showDrawTool: boolean;
   sceneDurationInFrames: number;
 }
@@ -179,7 +171,7 @@ interface BatchSpeedPaintCompositionProps {
 type ExportableSpeedPaintProps = SpeedPaintCompositionProps & { [key: string]: unknown };
 
 function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): React.ReactNode {
-  const { animation, imageSource, drawSpeed, paintSpeed, showDrawTool } = props;
+  const { animation, imageSource, showDrawTool } = props;
   const { durationInFrames } = useVideoConfig();
 
   return (
@@ -188,11 +180,10 @@ function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): Reac
         animation={animation}
         imageSource={imageSource}
         durationInFrames={durationInFrames}
-        drawSpeed={drawSpeed}
-        paintSpeed={paintSpeed}
         showDrawTool={showDrawTool}
         isLastScene
         isExporting
+        timingMode="duration-based"
       />
     </AbsoluteFill>
   );
@@ -201,7 +192,7 @@ function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): Reac
 type ExportableBatchSpeedPaintProps = BatchSpeedPaintCompositionProps & { [key: string]: unknown };
 
 function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintProps): React.ReactNode {
-  const { items, drawSpeed, paintSpeed, showDrawTool, sceneDurationInFrames } = props;
+  const { items, showDrawTool, sceneDurationInFrames } = props;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -215,12 +206,11 @@ function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintPr
             animation={item.animation}
             imageSource={item.imageSource}
             durationInFrames={sceneDurationInFrames}
-            drawSpeed={drawSpeed}
-            paintSpeed={paintSpeed}
             showDrawTool={showDrawTool}
             isLastScene={index === items.length - 1}
             isExporting
             fitMode="contain"
+            timingMode="duration-based"
           />
         </Sequence>
       ))}
@@ -318,8 +308,6 @@ export function useSpeedPaintExporter() {
       fps,
       durationInFrames,
       quality,
-      drawSpeed,
-      paintSpeed,
       showDrawTool = false,
       fileName,
       autoDownload = false,
@@ -358,8 +346,6 @@ export function useSpeedPaintExporter() {
     const exportableInputProps: ExportableSpeedPaintProps = {
       animation,
       imageSource,
-      drawSpeed,
-      paintSpeed,
       showDrawTool,
     };
 
@@ -467,8 +453,6 @@ export function useSpeedPaintExporter() {
       items,
       fps,
       quality,
-      drawSpeed,
-      paintSpeed,
       showDrawTool = false,
       fileName,
       sceneDurationSeconds = 15,
@@ -554,8 +538,6 @@ export function useSpeedPaintExporter() {
       const resolution = getSpeedPaintResolution(firstAnimation.canvasWidth, firstAnimation.canvasHeight, quality);
       const exportableInputProps: ExportableBatchSpeedPaintProps = {
         items: batchAnimations,
-        drawSpeed,
-        paintSpeed,
         showDrawTool,
         sceneDurationInFrames,
       };

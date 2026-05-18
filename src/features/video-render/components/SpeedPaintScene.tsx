@@ -14,6 +14,8 @@ import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../
 const SPEED_PAINT_HOLD_SECONDS = 3;
 /** Duração do fade in/out para speed paint no vídeo (em segundos) */
 const SPEED_PAINT_FADE_SECONDS = 1;
+/** Divisão padrão do modo standalone: 80% desenho e 20% pintura */
+const DURATION_BASED_SKETCH_RATIO = 0.8;
 
 // ---------------------------------------------------------------------------
 // Draw Tool — lápis/pincel animado que segue o último stroke visível
@@ -140,6 +142,8 @@ interface SpeedPaintSceneProps {
   showDrawTool?: boolean;
   /** Modo de ajuste do canvas na composição */
   fitMode?: 'fill' | 'contain';
+  /** Estratégia de tempo da animação */
+  timingMode?: 'default' | 'duration-based';
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +176,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   isExporting,
   showDrawTool = false,
   fitMode = 'fill',
+  timingMode = 'default',
 }: SpeedPaintSceneProps) {
   const frame = useCurrentFrame();
   const { fps, width: compositionWidth, height: compositionHeight } = useVideoConfig();
@@ -219,6 +224,14 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
   // Memoiza os cálculos de timing para evitar recomputação a cada frame
   const { fadeFrames, animationFrames, fadeOutStart } = useMemo(() => {
+    if (timingMode === 'duration-based') {
+      return {
+        fadeFrames: 0,
+        animationFrames: Math.max(1, durationInFrames),
+        fadeOutStart: durationInFrames,
+      };
+    }
+
     let f = Math.round(fps * SPEED_PAINT_FADE_SECONDS);
     let h = Math.round(fps * SPEED_PAINT_HOLD_SECONDS);
     const totalOverhead = (isLastScene ? f : 2 * f) + h;
@@ -241,11 +254,33 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     const fos = isLastScene ? durationInFrames : durationInFrames - f;
 
     return { fadeFrames: f, animationFrames: a, fadeOutStart: fos };
-  }, [fps, durationInFrames, isLastScene]);
+  }, [fps, durationInFrames, isLastScene, timingMode]);
 
   // ── Cálculo de opacidade e progress (memoizado por frame) ──
 
   const { progress, opacity } = useMemo(() => {
+    if (timingMode === 'duration-based') {
+      const normalizedTime = durationInFrames > 1 ? frame / (durationInFrames - 1) : 1;
+      const revealThreshold = animation.revealThreshold ?? DURATION_BASED_SKETCH_RATIO;
+
+      if (normalizedTime <= DURATION_BASED_SKETCH_RATIO) {
+        const sketchPhaseProgress = normalizedTime / DURATION_BASED_SKETCH_RATIO;
+        return {
+          progress: Math.max(0, Math.min(1, sketchPhaseProgress * revealThreshold)),
+          opacity: 1,
+        };
+      }
+
+      const revealPhaseProgress = (normalizedTime - DURATION_BASED_SKETCH_RATIO) / (1 - DURATION_BASED_SKETCH_RATIO);
+      return {
+        progress: Math.max(
+          0,
+          Math.min(1, revealThreshold + (revealPhaseProgress * (1 - revealThreshold))),
+        ),
+        opacity: 1,
+      };
+    }
+
     let p: number;
     let o: number;
 
@@ -272,7 +307,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     }
 
     return { progress: Math.max(0, Math.min(1, p)), opacity: Math.max(0, Math.min(1, o)) };
-  }, [frame, fadeFrames, animationFrames, fadeOutStart]);
+  }, [animation.revealThreshold, animationFrames, durationInFrames, fadeFrames, fadeOutStart, frame, timingMode]);
 
   // ── Desenho do frame — TUDO síncrono, sem requestAnimationFrame ──
 

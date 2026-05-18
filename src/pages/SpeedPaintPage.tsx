@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -47,7 +48,6 @@ import { glassSurfaceSx } from '../theme/surfaces';
 // Constantes
 // ---------------------------------------------------------------------------
 
-const DEFAULT_ANIMATION_DURATION = 15;
 const FPS = 30;
 
 function getCombinedBatchExportFileName(queueLength: number): string {
@@ -69,24 +69,22 @@ export function SpeedPaintPage() {
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
-  const { job, queue, batchMode, speed, paintSpeed, showDrawTool, canvasColor } =
+  const { job, queue, batchMode, animationDuration, showDrawTool, canvasColor } =
     useAnimationStore(
       useShallow((s) => ({
         job: s.job,
         queue: s.queue,
         batchMode: s.batchMode,
-        speed: s.speed,
-        paintSpeed: s.paintSpeed,
+        animationDuration: s.animationDuration,
         showDrawTool: s.showDrawTool,
         canvasColor: s.canvasColor,
       })),
     );
 
-  const { setSpeed, setPaintSpeed, setShowDrawTool, setCanvasColor, resetJob, clearQueue } =
+  const { setAnimationDuration, setShowDrawTool, setCanvasColor, resetJob, clearQueue } =
     useAnimationStore(
       useShallow((s) => ({
-        setSpeed: s.setSpeed,
-        setPaintSpeed: s.setPaintSpeed,
+        setAnimationDuration: s.setAnimationDuration,
         setShowDrawTool: s.setShowDrawTool,
         setCanvasColor: s.setCanvasColor,
         resetJob: s.resetJob,
@@ -99,10 +97,11 @@ export function SpeedPaintPage() {
     () => queue.filter((item) => item.status !== 'failed'),
     [queue],
   );
+  const failedBatchCount = queueLength - eligibleBatchQueue.length;
   const isCompleted = job.status === 'completed' && Boolean(job.animation);
 
   // Duração fixa — unificada com a velocidade (sliders controlam o ritmo, não o container)
-  const durationInFrames = useMemo(() => Math.round(DEFAULT_ANIMATION_DURATION * FPS), []);
+  const durationInFrames = useMemo(() => Math.round(animationDuration * FPS), [animationDuration]);
   const revealThreshold = job.animation?.revealThreshold;
 
   // -------------------------------------------------------------------------
@@ -174,12 +173,11 @@ export function SpeedPaintPage() {
       })),
       fps: FPS,
       quality: '1080p',
-      drawSpeed: speed,
-      paintSpeed: paintSpeed,
       showDrawTool,
       fileName: getCombinedBatchExportFileName(eligibleBatchQueue.length),
+      sceneDurationSeconds: animationDuration,
     });
-  }, [batchMode, eligibleBatchQueue, speed, paintSpeed, showDrawTool, speedPaintExporter]);
+  }, [animationDuration, batchMode, eligibleBatchQueue, showDrawTool, speedPaintExporter]);
 
   // -------------------------------------------------------------------------
   // Batch record — fechamento do fluxo
@@ -215,6 +213,16 @@ export function SpeedPaintPage() {
     || speedPaintExporter.outputUrl != null
     || speedPaintExporter.error != null
     || speedPaintExporter.wasCancelled;
+  const batchProgressValue = `${Math.round(speedPaintExporter.renderProgress)}%`;
+  const batchSummaryText = speedPaintExporter.isRendering
+    ? speedPaintExporter.renderStatusText
+    : speedPaintExporter.error
+      ? t('speedPaint.batchExportErrorDescription')
+      : speedPaintExporter.wasCancelled
+        ? t('speedPaint.batchExportCancelledTitle')
+        : speedPaintExporter.outputUrl
+          ? speedPaintExporter.renderStatusText
+          : t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length });
 
   const handleBatchExportReset = () => {
     speedPaintExporter.reset();
@@ -362,10 +370,81 @@ export function SpeedPaintPage() {
             width: '100%',
           })}
         >
-          <Stack spacing={2}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-              {t('speedPaint.batchExportTitle')}
-            </Typography>
+          <Stack spacing={2.5}>
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={{ xs: 2, md: 2.5 }}
+              useFlexGap
+              sx={{ alignItems: { xs: 'flex-start', md: 'stretch' }, justifyContent: 'space-between' }}
+            >
+              <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+                <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                    {t('speedPaint.batchExportTitle')}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={speedPaintExporter.isRendering ? batchProgressValue : `${eligibleBatchQueue.length}/${queueLength}`}
+                    sx={{
+                      fontWeight: 700,
+                      borderRadius: 999,
+                      bgcolor: WHITE_08,
+                      border: `1px solid ${WHITE_14}`,
+                      '& .MuiChip-label': {
+                        px: 1.25,
+                      },
+                    }}
+                  />
+                </Stack>
+
+                <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+                  {batchSummaryText}
+                </Typography>
+              </Stack>
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1}
+                useFlexGap
+                sx={{ width: { xs: '100%', md: 'auto' }, minWidth: { md: 300 } }}
+              >
+                <Box
+                  sx={{
+                    flex: 1,
+                    p: 1.5,
+                    borderRadius: 2.5,
+                    bgcolor: WHITE_08,
+                    border: `1px solid ${WHITE_14}`,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
+                    {t('speedPaint.queueDescription', { count: queueLength })}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                    {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
+                  </Typography>
+                </Box>
+
+                {failedBatchCount > 0 ? (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      p: 1.5,
+                      borderRadius: 2.5,
+                      bgcolor: WHITE_08,
+                      border: `1px solid ${WHITE_14}`,
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
+                      {t('speedPaint.batchExportTitle')}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                      {t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}
+                    </Typography>
+                  </Box>
+                ) : null}
+              </Stack>
+            </Stack>
 
             {speedPaintExporter.error && !speedPaintExporter.outputUrl && (
               <Stack spacing={1}>
@@ -408,14 +487,26 @@ export function SpeedPaintPage() {
             )}
 
             {speedPaintExporter.isRendering && (
-              <ExportProgressBar
-                progress={speedPaintExporter.renderProgress}
-                statusText={speedPaintExporter.renderStatusText}
-                isRendering={speedPaintExporter.isRendering}
-                onCancel={speedPaintExporter.handleCancel}
-                cancelLabel={t('speedPaint.exportCancel')}
-                progressAriaLabel={t('speedPaint.batchExportProgressAria')}
-              />
+              <Box
+                sx={{
+                  p: { xs: 1.75, md: 2 },
+                  borderRadius: 3,
+                  bgcolor: WHITE_08,
+                  border: `1px solid ${WHITE_14}`,
+                }}
+              >
+                <ExportProgressBar
+                  title={t('speedPaint.batchExportTitle')}
+                  progress={speedPaintExporter.renderProgress}
+                  statusText={speedPaintExporter.renderStatusText}
+                  helperText={t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
+                  isRendering={speedPaintExporter.isRendering}
+                  onCancel={speedPaintExporter.handleCancel}
+                  cancelLabel={t('speedPaint.exportCancel')}
+                  progressAriaLabel={t('speedPaint.batchExportProgressAria')}
+                  progressValueText={batchProgressValue}
+                />
+              </Box>
             )}
 
             {!speedPaintExporter.isRendering && speedPaintExporter.outputUrl && (
@@ -458,10 +549,8 @@ export function SpeedPaintPage() {
               ref={playerRef}
               animation={job.animation!}
               imageSource={job.animation!.resizedImage || job.inputImage}
-              drawSpeed={speed}
-              paintSpeed={paintSpeed}
               showDrawTool={showDrawTool}
-              animationDuration={DEFAULT_ANIMATION_DURATION}
+              animationDuration={animationDuration}
               fps={FPS}
               jobStatus={job.status}
             />
@@ -494,10 +583,8 @@ export function SpeedPaintPage() {
               {activeTab === 'controls' && (
                 <SpeedPaintPlayerControls
                   playerRef={playerRef}
-                  drawSpeed={speed}
-                  paintSpeed={paintSpeed}
-                  onDrawSpeedChange={setSpeed}
-                  onPaintSpeedChange={setPaintSpeed}
+                  animationDuration={animationDuration}
+                  onAnimationDurationChange={setAnimationDuration}
                   onResetJob={resetJob}
                   onClearQueue={clearQueue}
                   batchMode={batchMode}
@@ -510,12 +597,9 @@ export function SpeedPaintPage() {
                 <SpeedPaintExportPanel
                   animation={job.animation!}
                   imageSource={job.animation!.resizedImage || job.inputImage}
-                  drawSpeed={speed}
-                  paintSpeed={paintSpeed}
-                  onDrawSpeedChange={setSpeed}
-                  onPaintSpeedChange={setPaintSpeed}
+                  animationDuration={animationDuration}
+                  onAnimationDurationChange={setAnimationDuration}
                   showDrawTool={showDrawTool}
-                  animationDuration={DEFAULT_ANIMATION_DURATION}
                   exporter={speedPaintExporter}
                 />
               )}

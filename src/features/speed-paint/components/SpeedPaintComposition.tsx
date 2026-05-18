@@ -18,10 +18,6 @@ export interface SpeedPaintCompositionProps {
   animation: StrokeAnimation;
   /** URL da imagem de origem */
   imageSource: string;
-  /** Multiplicador de velocidade para sketch (0.25-4.0) */
-  drawSpeed: number;
-  /** Multiplicador de velocidade para reveal (0.25-4.0) */
-  paintSpeed: number;
   /** Exibir lápis/pincel animado seguindo o stroke */
   showDrawTool?: boolean;
 }
@@ -40,8 +36,6 @@ export interface SpeedPaintCompositionProps {
 export const SpeedPaintComposition = React.memo(function SpeedPaintComposition({
   animation,
   imageSource,
-  drawSpeed,
-  paintSpeed,
   showDrawTool,
 }: SpeedPaintCompositionProps) {
   const { durationInFrames } = useVideoConfig();
@@ -53,9 +47,8 @@ export const SpeedPaintComposition = React.memo(function SpeedPaintComposition({
         imageSource={imageSource}
         durationInFrames={durationInFrames}
         isLastScene
-        drawSpeed={drawSpeed}
-        paintSpeed={paintSpeed}
         showDrawTool={showDrawTool}
+        timingMode="duration-based"
       />
     </AbsoluteFill>
   );

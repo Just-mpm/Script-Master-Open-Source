@@ -7,6 +7,33 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.34.0] - 2026-05-18
+
+### Adicionado
+
+- **`AnimationDurationSelector`** (`src/features/speed-paint/components/AnimationDurationSelector.tsx`): novo componente que substitui os sliders granulares de sketch/reveal por um seletor de duração total da animação com opções predefinidas (`SPEED_PAINT_DURATION_OPTIONS`). Integrado em `SpeedPaintExportPanel`, `SpeedPaintPlayerControls` e `QueueStaging`
+- **`DURATION_BASED_SKETCH_RATIO`** (`SpeedPaintScene.tsx`): constante `0.8` que define a proporção da duração total dedicada à fase de sketch (80%), com os 20% restantes para reveal — calcula automaticamente a transição entre fases baseada na duração total em vez de multiplicadores independentes
+
+### Removido
+
+- **`SpeedPaintControls`**: componente de sliders independentes sketch/reveal (0.25x–4.0x) removido — substituído pelo seletor de duração `AnimationDurationSelector` em todos os consumidores (`SpeedPaintExportPanel`, `SpeedPaintPlayerControls`, `QueueStaging`, `VideoExportPanel`)
+- **Props `drawSpeed` e `paintSpeed`**: removidas de `SpeedPaintComposition` (prop `drawSpeed?: number; paintSpeed?: number`) e de `useSpeedPaintExporter` — a velocidade agora é determinada pela duração total com proporção fixa sketch/reveal
+- **`DEFAULT_ANIMATION_DURATION`**: constante removida de `SpeedPaintPlayer` e `SpeedPaintPage` — substituída pelas opções do `AnimationDurationSelector`
+
+### Alterado
+
+- **`SpeedPaintScene`**: recebe `DURATION_BASED_SKETCH_RATIO` como referência interna para calcular o ponto de transição sketch→reveal, em vez de depender de `drawSpeed`/`paintSpeed` externos
+- **`ExportProgressBar`**: adicionado `Stack` do MUI para layout mais robusto durante renderização de exportação
+- **`SpeedPaintPage`**: padding responsivo refinado (`p: { xs: 1.75, md: 2 }`) e `Chip` adicionado para metadados visuais
+
+### Testes
+
+- **`SpeedPaintPage.component.test.tsx`**: assertion atualizada para refletir remoção de `speed`/`paintSpeed` do store; novo teste validando passagem de duração para exportação em lote
+- **`useSpeedPaintExporter.unit.test.tsx`**: novos campos `composition` e `inputProps` nos mocks para validar duração em frames
+- **`VideoExportPanel.unit.test.tsx`**: mocks de `SpeedPaintControls` removidos (componente não existe mais); configuração de teste simplificada
+
+---
+
 ## [0.33.0] - 2026-05-18
 
 ### Adicionado

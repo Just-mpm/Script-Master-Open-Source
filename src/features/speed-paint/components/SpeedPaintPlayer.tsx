@@ -25,14 +25,10 @@ export interface SpeedPaintPlayerProps {
   animation: StrokeAnimation;
   /** URL da imagem de origem */
   imageSource: string;
-  /** Multiplicador de velocidade para sketch (0.25-4.0) */
-  drawSpeed: number;
-  /** Multiplicador de velocidade para reveal (0.25-4.0) */
-  paintSpeed: number;
   /** Exibir lápis/pincel animado seguindo o stroke */
   showDrawTool?: boolean;
-  /** Duração da animação em segundos (default: 15) */
-  animationDuration?: number;
+  /** Duração da animação em segundos */
+  animationDuration: number;
   /** FPS do vídeo (default: 30) */
   fps?: number;
   /** Status do job — usado para auto-play quando completa */
@@ -43,7 +39,6 @@ export interface SpeedPaintPlayerProps {
 // Constantes
 // ---------------------------------------------------------------------------
 
-const DEFAULT_ANIMATION_DURATION = 15;
 const DEFAULT_FPS = 30;
 
 // ---------------------------------------------------------------------------
@@ -77,10 +72,8 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
     {
       animation,
       imageSource,
-      drawSpeed,
-      paintSpeed,
       showDrawTool,
-      animationDuration = DEFAULT_ANIMATION_DURATION,
+      animationDuration,
       fps = DEFAULT_FPS,
       jobStatus,
     },
@@ -93,11 +86,9 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
       () => ({
         animation,
         imageSource,
-        drawSpeed,
-        paintSpeed,
         showDrawTool,
       }),
-      [animation, imageSource, drawSpeed, paintSpeed, showDrawTool],
+      [animation, imageSource, showDrawTool],
     );
 
     // Auto-play quando o job completa
