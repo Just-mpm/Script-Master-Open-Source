@@ -318,6 +318,22 @@ describe('generateStrokesFromImage', () => {
     }
   });
 
+  it('rejeita com AbortError quando o signal é abortado antes do processamento terminar', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { triggerLoad } = createImageMock(50, 50);
+    const controller = new AbortController();
+
+    const promise = generateStrokesFromImage('data:image/png;base64,test', vi.fn(), {
+      signal: controller.signal,
+    });
+
+    triggerLoad();
+    controller.abort();
+
+    await expect(promise).rejects.toThrow(/aborted/i);
+    vi.useRealTimers();
+  });
+
   it('strokes têm 4 ou 6 pontos (lineTo ou quadraticCurveTo)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { triggerLoad } = createImageMock(50, 50);

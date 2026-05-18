@@ -1,17 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { BatchOrchestrator } from '../../src/features/speed-paint/components/batch/BatchOrchestrator';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
+import { I18nProvider } from '../../src/features/i18n';
+
+const mockGenerateStrokesFromImage = vi.fn();
+
+vi.mock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+  generateStrokesFromImage: (...args: unknown[]) => mockGenerateStrokesFromImage(...args),
+}));
 
 const darkTheme = createTheme({
   palette: { mode: 'dark' },
 });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 // Mock do logger
@@ -37,7 +48,10 @@ vi.mock('../../src/theme/surfaces', () => ({
 
 describe('BatchOrchestrator', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockGenerateStrokesFromImage.mockReset();
+    mockGenerateStrokesFromImage.mockImplementation(() => new Promise(() => {}));
     useAnimationStore.getState().clearQueue();
     useAnimationStore.getState().resetJob();
   });
@@ -93,7 +107,9 @@ describe('BatchOrchestrator', () => {
       await vi.advanceTimersByTimeAsync(10);
     });
 
+    expect(useAnimationStore.getState().job.id).toBe('1');
     expect(useAnimationStore.getState().job.status).toBe('processing');
+    expect(useAnimationStore.getState().queue[0]?.status).toBe('processing');
   });
 
   it('retorna null (não mostra erro) durante processing', async () => {
@@ -207,5 +223,152 @@ describe('BatchOrchestrator', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toBeDefined();
+  });
+
+  it('ignora resultado atrasado quando a fila é limpa durante o processamento', async () => {
+    let resolveGeneration: ((value: {
+      id: string;
+      canvasWidth: number;
+      canvasHeight: number;
+      canvasColor: 'white';
+      totalFrames: number;
+      fps: number;
+      totalDurationMs: number;
+      strokes: never[];
+    }) => void) | null = null;
+
+    mockGenerateStrokesFromImage.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveGeneration = resolve;
+    }));
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    useAnimationStore.getState().clearQueue();
+
+    await act(async () => {
+      resolveGeneration?.({
+        id: 'anim-1',
+        canvasWidth: 100,
+        canvasHeight: 100,
+        canvasColor: 'white',
+        totalFrames: 10,
+        fps: 30,
+        totalDurationMs: 1000,
+        strokes: [],
+      });
+      await Promise.resolve();
+    });
+
+    expect(useAnimationStore.getState().queue).toEqual([]);
+    expect(useAnimationStore.getState().job.status).toBe('idle');
+  });
+
+  it('avança automaticamente para o próximo item após falha real', async () => {
+    mockGenerateStrokesFromImage
+      .mockImplementationOnce(() => new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('boom')), 0);
+      }))
+      .mockImplementationOnce(() => new Promise(() => {}));
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
+      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'test2.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+
+    expect(useAnimationStore.getState().job.status).toBe('failed');
+    expect(useAnimationStore.getState().queue[0]?.status).toBe('failed');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(useAnimationStore.getState().currentIndex).toBe(1);
+  });
+
+  it('limpar a fila neutraliza o auto-skip pendente após falha', async () => {
+    mockGenerateStrokesFromImage.mockRejectedValueOnce(new Error('boom'));
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
+      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'test2.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    useAnimationStore.getState().clearQueue();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    expect(useAnimationStore.getState().queue).toEqual([]);
+    expect(useAnimationStore.getState().currentIndex).toBe(0);
+    expect(useAnimationStore.getState().job.status).toBe('idle');
+  });
+
+  it('marca item como completed quando o processamento termina com sucesso', async () => {
+    let resolveGeneration: ((value: {
+      id: string;
+      canvasWidth: number;
+      canvasHeight: number;
+      canvasColor: 'white';
+      totalFrames: number;
+      fps: number;
+      totalDurationMs: number;
+      strokes: never[];
+    }) => void) | null = null;
+
+    mockGenerateStrokesFromImage.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveGeneration = resolve;
+    }));
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      resolveGeneration?.({
+        id: 'anim-1',
+        canvasWidth: 100,
+        canvasHeight: 100,
+        canvasColor: 'white',
+        totalFrames: 10,
+        fps: 30,
+        totalDurationMs: 1000,
+        strokes: [],
+      });
+      await Promise.resolve();
+    });
+
+    expect(useAnimationStore.getState().job.status).toBe('completed');
+    expect(useAnimationStore.getState().queue[0]?.status).toBe('completed');
   });
 });

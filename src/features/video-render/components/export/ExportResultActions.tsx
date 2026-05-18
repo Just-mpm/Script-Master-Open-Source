@@ -10,9 +10,11 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
+import type { ReactNode } from 'react';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import Replay from '@mui/icons-material/Replay';
 import Download from '@mui/icons-material/Download';
+import DeleteSweep from '@mui/icons-material/DeleteSweep';
 import {
   BRAND_GRADIENT,
   BRAND_GRADIENT_HOVER,
@@ -37,12 +39,16 @@ export interface ExportResultActionsProps {
   onDownload: () => void;
   /** Callback de reset (nova exportação) */
   onReset: () => void;
+  /** Callback secundário de limpeza/descartar. Se omitido, reutiliza onReset */
+  onClear?: () => void;
   /** Texto de status (ex: "Exportação concluída!") */
   statusText: string;
   /** Tamanho do blob em bytes (para exibição) */
   blobSizeBytes?: number;
   /** Label do botão "Exportar novamente" */
   labelRetry?: string;
+  /** Ícone do botão secundário principal */
+  retryIcon?: ReactNode;
   /** Label do botão "Limpar" */
   labelClear?: string;
   /** Label do botão "Baixar MP4/WebM" — o container é anexado automaticamente */
@@ -68,14 +74,18 @@ export const ExportResultActions = React.memo(function ExportResultActions({
   container,
   onDownload,
   onReset,
+  onClear,
   statusText,
   blobSizeBytes,
   labelRetry = 'Exportar novamente',
+  retryIcon,
   labelClear = 'Limpar',
   labelDownload = 'Baixar',
   sx,
 }: ExportResultActionsProps) {
   if (!hasOutput) return null;
+
+  const handleClear = onClear ?? onReset;
 
   return (
     <Stack
@@ -100,15 +110,15 @@ export const ExportResultActions = React.memo(function ExportResultActions({
           variant="outlined"
           size="small"
           onClick={onReset}
-          startIcon={<Replay sx={{ fontSize: ICON_SIZE_MD }} />}
+          startIcon={retryIcon ?? <Replay sx={{ fontSize: ICON_SIZE_MD }} />}
         >
           {labelRetry}
         </Button>
         <Button
           variant="text"
           size="small"
-          onClick={onReset}
-          startIcon={<Download sx={{ fontSize: ICON_SIZE_MD }} />}
+          onClick={handleClear}
+          startIcon={<DeleteSweep sx={{ fontSize: ICON_SIZE_MD }} />}
         >
           {labelClear}
         </Button>

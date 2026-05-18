@@ -138,6 +138,8 @@ interface SpeedPaintSceneProps {
   isExporting?: boolean;
   /** Se deve exibir o lápis/pincel animado seguindo o último stroke visível — apenas no preview */
   showDrawTool?: boolean;
+  /** Modo de ajuste do canvas na composição */
+  fitMode?: 'fill' | 'contain';
 }
 
 // ---------------------------------------------------------------------------
@@ -169,9 +171,10 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   paintSpeed,
   isExporting,
   showDrawTool = false,
+  fitMode = 'fill',
 }: SpeedPaintSceneProps) {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width: compositionWidth, height: compositionHeight } = useVideoConfig();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const bufferRef = useRef<HTMLCanvasElement | null>(null);
@@ -325,19 +328,36 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   // Dimensões do canvas — usa as dimensões da animação para pixel-perfect rendering
   const canvasWidth = animation.canvasWidth;
   const canvasHeight = animation.canvasHeight;
+  const canvasAspectRatio = canvasWidth / canvasHeight;
+  const compositionAspectRatio = compositionWidth / compositionHeight;
+  const shouldContain = fitMode === 'contain';
+  const renderedWidth = shouldContain
+    ? (canvasAspectRatio >= compositionAspectRatio ? '100%' : 'auto')
+    : '100%';
+  const renderedHeight = shouldContain
+    ? (canvasAspectRatio >= compositionAspectRatio ? 'auto' : '100%')
+    : '100%';
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#000', opacity }}>
+    <AbsoluteFill
+      style={{
+        backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000',
+        opacity,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <canvas
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
         aria-label={`Animação speed paint: ${animation.strokes.length} traços`}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
+          width: renderedWidth,
+          height: renderedHeight,
+          display: 'block',
+          maxWidth: '100%',
+          maxHeight: '100%',
         }}
       />
       {/* Badge de fase — apenas no preview (não durante exportação) */}

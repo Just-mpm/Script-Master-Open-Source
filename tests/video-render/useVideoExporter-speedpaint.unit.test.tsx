@@ -237,6 +237,29 @@ describe('useVideoExporter — integração Speed Paint', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('preserva speedPaintWarnings após exportação concluída com falhas parciais', async () => {
+    mockGenerateScenesWithSpeedPaint.mockResolvedValue([
+      { animation: undefined, sceneIndex: 0, error: 'formato não suportado' },
+    ]);
+
+    const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
+    const { result } = renderHook(() => useVideoExporter());
+
+    await act(async () => {
+      await result.current.startRender({
+        scenes: [createMinimalStudioScene()],
+        audioUrl: 'audio.mp3',
+        fps: 30,
+        durationInFrames: 90,
+        ratio: '16:9',
+        animateScenes: true,
+      });
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.speedPaintWarnings).toEqual(['Cena 1: formato não suportado']);
+  });
+
   it('reset limpa speedPaintWarnings para array vazio', async () => {
     const { useVideoExporter } = await import('../../src/features/video-render/hooks/useVideoExporter');
     const { result } = renderHook(() => useVideoExporter());

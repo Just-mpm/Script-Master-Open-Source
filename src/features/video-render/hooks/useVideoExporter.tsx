@@ -376,6 +376,7 @@ export function useVideoExporter() {
         outputUrl: url,
         renderProgress: 100,
         renderStatusText: 'Exportação concluída!',
+        speedPaintWarnings: collectedWarnings,
       });
 
       // Salva no projeto de forma não-bloqueante

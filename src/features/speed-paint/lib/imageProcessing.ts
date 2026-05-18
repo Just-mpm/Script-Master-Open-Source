@@ -279,11 +279,66 @@ function createImageProcessingWorker(): Worker {
 // API pública
 // ---------------------------------------------------------------------------
 
-export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: number) => void): Promise<StrokeAnimation> {
+export interface GenerateStrokesOptions {
+  signal?: AbortSignal;
+}
+
+function createAbortError(): DOMException {
+  return new DOMException('Speed paint generation aborted', 'AbortError');
+}
+
+export async function generateStrokesFromImage(
+  dataUrl: string,
+  onProgress: (p: number) => void,
+  options: GenerateStrokesOptions = {},
+): Promise<StrokeAnimation> {
+  const { signal } = options;
+
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(createAbortError());
+      return;
+    }
+
+    let settled = false;
+    let worker: Worker | null = null;
+
+    const cleanupAbortListener = () => {
+      if (signal) {
+        signal.removeEventListener('abort', handleAbort);
+      }
+    };
+
+    const rejectOnce = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanupAbortListener();
+      reject(error);
+    };
+
+    const resolveOnce = (value: StrokeAnimation) => {
+      if (settled) return;
+      settled = true;
+      cleanupAbortListener();
+      resolve(value);
+    };
+
+    const handleAbort = () => {
+      worker?.terminate();
+      worker = null;
+      rejectOnce(createAbortError());
+    };
+
+    signal?.addEventListener('abort', handleAbort, { once: true });
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      if (signal?.aborted) {
+        rejectOnce(createAbortError());
+        return;
+      }
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
 
@@ -317,24 +372,30 @@ export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: 
       onProgress(0.3);
 
       // Cria Worker e delega o processamento pesado
-      let worker: Worker | null = null;
-
       try {
         worker = createImageProcessingWorker();
       } catch (workerError: unknown) {
         log.warn('Worker indisponível, usando fallback na main thread', { error: workerError });
         // Fallback: processa na main thread (comportamento original)
-        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolve);
+        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolveOnce, rejectOnce, signal);
         return;
       }
 
       const handler = (e: MessageEvent<WorkerResult>) => {
+        if (signal?.aborted) {
+          worker?.removeEventListener('message', handler);
+          worker?.terminate();
+          worker = null;
+          rejectOnce(createAbortError());
+          return;
+        }
+
         worker!.removeEventListener('message', handler);
 
         const result = e.data;
         onProgress(1.0);
 
-        resolve({
+        resolveOnce({
           id: Math.random().toString(36).substring(7),
           canvasWidth: width,
           canvasHeight: height,
@@ -360,10 +421,10 @@ export async function generateStrokesFromImage(dataUrl: string, onProgress: (p: 
         worker!.terminate();
         worker = null;
         log.error('Erro no Worker de image processing, usando fallback', { error: err.message });
-        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolve);
+        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolveOnce, rejectOnce, signal);
       };
     };
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = () => rejectOnce(new Error('Failed to load image'));
     img.src = dataUrl;
   });
 }
@@ -379,21 +440,35 @@ function processOnMainThread(
   resizedImage: string,
   onProgress: (p: number) => void,
   resolve: (value: StrokeAnimation) => void,
+  reject: (error: Error) => void,
+  signal?: AbortSignal,
 ): void {
   const data = imageData.data;
   const strokes: Stroke[] = [];
   let strokeId = 0;
+  let sketchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let revealTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const abortIfNeeded = (): boolean => {
+    if (!signal?.aborted) return false;
+    reject(createAbortError());
+    return true;
+  };
 
   // Let UI update before heavy processing
-  setTimeout(() => {
+  sketchTimeoutId = setTimeout(() => {
+    if (abortIfNeeded()) return;
+
     // --- PHASE 1: SKETCH (Edge Detection) ---
     const grayscale = new Uint8Array(width * height);
     for (let i = 0; i < data.length; i += 4) {
+      if ((i & 4095) === 0 && abortIfNeeded()) return;
       grayscale[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
     }
 
     const edges = new Uint8Array(width * height);
     for (let y = 0; y < height - 1; y++) {
+      if ((y & 15) === 0 && abortIfNeeded()) return;
       for (let x = 0; x < width - 1; x++) {
         const curr = grayscale[y * width + x];
         const right = grayscale[y * width + x + 1];
@@ -409,6 +484,7 @@ function processOnMainThread(
     const clusters: Array<{ pixels: number[], minX: number, minY: number, maxX: number, maxY: number }> = [];
 
     for (let y = 0; y < height; y++) {
+      if ((y & 15) === 0 && abortIfNeeded()) return;
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
         if (edges[idx] && !visitedEdges[idx]) {
@@ -552,12 +628,15 @@ function processOnMainThread(
     }
 
     for (const seg of sketchSegments) strokes.push(seg);
+    if (abortIfNeeded()) return;
 
     const sketchCount = strokes.length;
     onProgress(0.5);
 
     // --- PHASE 2: REVEAL (Coloring) ---
-    setTimeout(() => {
+    revealTimeoutId = setTimeout(() => {
+      if (abortIfNeeded()) return;
+
       const revealSegments: Stroke[] = [];
       const brushSize = 45;
 
@@ -577,6 +656,7 @@ function processOnMainThread(
       });
 
       for (const dab of dabs) {
+        if (revealSegments.length % 20 === 0 && abortIfNeeded()) return;
         const angle = (Math.random() - 0.5) * Math.PI / 3;
         const len = brushSize * (1 + Math.random() * 0.5);
         const dx = Math.cos(angle) * len;
@@ -596,6 +676,7 @@ function processOnMainThread(
       }
 
       for (const seg of revealSegments) strokes.push(seg);
+      if (abortIfNeeded()) return;
       onProgress(1.0);
 
       const revealThreshold = sketchCount / strokes.length;
@@ -614,4 +695,15 @@ function processOnMainThread(
       });
     }, 50);
   }, 50);
+
+  signal?.addEventListener('abort', () => {
+    if (sketchTimeoutId) {
+      clearTimeout(sketchTimeoutId);
+      sketchTimeoutId = null;
+    }
+    if (revealTimeoutId) {
+      clearTimeout(revealTimeoutId);
+      revealTimeoutId = null;
+    }
+  }, { once: true });
 }

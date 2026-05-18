@@ -29,9 +29,35 @@ const { animState } = vi.hoisted(() => ({
   },
 }));
 
+const { exporterState } = vi.hoisted(() => ({
+  exporterState: {
+    isRendering: false,
+    renderProgress: 0,
+    renderStatusText: '',
+    outputBlob: null as Blob | null,
+    outputUrl: null as string | null,
+    error: null as string | null,
+    wasCancelled: false,
+    canRender: null as boolean | null,
+    resolvedVideoCodec: 'h264',
+    resolvedContainer: 'mp4',
+    checkSupport: vi.fn(),
+    startRender: vi.fn(),
+    startBatchRender: vi.fn(),
+    handleCancel: vi.fn(),
+    handleDownload: vi.fn(),
+    reset: vi.fn(),
+  },
+}));
+
 vi.mock('../../src/features/speed-paint/store/animationStore', () => ({
-  useAnimationStore: (selector?: (s: typeof animState) => unknown) =>
-    selector ? selector(animState) : animState,
+  useAnimationStore: Object.assign(
+    (selector?: (s: typeof animState & Record<string, unknown>) => unknown) =>
+      selector ? selector(animState as typeof animState & Record<string, unknown>) : animState,
+    {
+      getState: () => animState,
+    },
+  ),
   useShallow: (fn: (s: typeof animState) => unknown) => fn,
 }));
 
@@ -56,22 +82,7 @@ vi.mock('../../src/features/speed-paint/components/SpeedPaintExportPanel', () =>
 }));
 
 vi.mock('../../src/features/speed-paint/hooks/useSpeedPaintExporter', () => ({
-  useSpeedPaintExporter: () => ({
-    isRendering: false,
-    renderProgress: 0,
-    renderStatusText: '',
-    outputBlob: null,
-    outputUrl: null,
-    error: null,
-    canRender: null,
-    resolvedVideoCodec: 'h264',
-    resolvedContainer: 'mp4',
-    checkSupport: vi.fn(),
-    startRender: vi.fn(),
-    handleCancel: vi.fn(),
-    handleDownload: vi.fn(),
-    reset: vi.fn(),
-  }),
+  useSpeedPaintExporter: () => ({ ...exporterState }),
 }));
 
 vi.mock('../../src/features/speed-paint/components/upload/ImageUpload', () => ({
@@ -128,6 +139,27 @@ describe('SpeedPaintPage', () => {
     animState.animationDuration = 15;
     animState.showDrawTool = true;
     animState.canvasColor = 'white';
+    (animState as Record<string, unknown>).setBatchMode = vi.fn((mode: string) => {
+      animState.batchMode = mode;
+    });
+    (animState as Record<string, unknown>).clearQueue = vi.fn(() => {
+      animState.queue = [];
+      animState.batchMode = 'idle';
+    });
+    (animState as Record<string, unknown>).resetJob = vi.fn(() => {
+      animState.job = { id: '', inputImage: '', status: 'idle', progress: 0, animation: null };
+    });
+    (animState as Record<string, unknown>).setCurrentIndex = vi.fn();
+    exporterState.isRendering = false;
+    exporterState.renderProgress = 0;
+    exporterState.renderStatusText = '';
+    exporterState.outputBlob = null;
+    exporterState.outputUrl = null;
+    exporterState.error = null;
+    exporterState.wasCancelled = false;
+    exporterState.canRender = null;
+    exporterState.resolvedVideoCodec = 'h264';
+    exporterState.resolvedContainer = 'mp4';
   });
 
   it('renderiza o título da página', () => {
@@ -208,5 +240,58 @@ describe('SpeedPaintPage', () => {
 
     render(<SpeedPaintPage />, { wrapper: Wrapper });
     expect(screen.getByText(/Gerando Animação/)).toBeDefined();
+  });
+
+  it('inicia a exportação final do lote uma única vez quando batchMode é record', () => {
+    animState.batchMode = 'record';
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'pending' },
+    ];
+
+    const { rerender } = render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(exporterState.startBatchRender).toHaveBeenCalledTimes(1);
+    expect(exporterState.startBatchRender).toHaveBeenCalledWith(expect.objectContaining({
+      items: [
+        { imageSource: 'data:image/png;base64,aaa' },
+        { imageSource: 'data:image/png;base64,bbb' },
+      ],
+    }));
+
+    rerender(<SpeedPaintPage />);
+    expect(exporterState.startBatchRender).toHaveBeenCalledTimes(1);
+  });
+
+  it('não reenfileira no vídeo final itens que já falharam no preview', () => {
+    animState.batchMode = 'record';
+    animState.queue = [
+      { id: '1', dataUrl: 'data:image/png;base64,aaa', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,bbb', status: 'failed' },
+      { id: '3', dataUrl: 'data:image/png;base64,ccc', status: 'pending' },
+    ];
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(exporterState.startBatchRender).toHaveBeenCalledWith(expect.objectContaining({
+      items: [
+        { imageSource: 'data:image/png;base64,aaa' },
+        { imageSource: 'data:image/png;base64,ccc' },
+      ],
+      fileName: expect.stringContaining('2itens'),
+    }));
+  });
+
+  it('mantém um estado claro quando a exportação do lote é cancelada', () => {
+    animState.batchMode = 'idle';
+    animState.queue = [{ id: '1', dataUrl: 'data:image/png;base64,aaa' }];
+    exporterState.wasCancelled = true;
+    exporterState.renderStatusText = 'Exportação cancelada.';
+
+    render(<SpeedPaintPage />, { wrapper: Wrapper });
+
+    expect(screen.getByText(/Nada foi perdido/)).toBeDefined();
+    expect(screen.getByText('Voltar para a fila')).toBeDefined();
+    expect(screen.getByText('Limpar fila')).toBeDefined();
   });
 });

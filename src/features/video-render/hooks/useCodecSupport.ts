@@ -34,7 +34,7 @@ export interface CodecSupportResult {
   /** Mensagem de erro quando nenhum codec funciona */
   supportError: string | null;
   /** Verifica suporte do browser para a resolução dada */
-  checkSupport: (width: number, height: number) => Promise<void>;
+  checkSupport: (width: number, height: number) => Promise<boolean>;
   /** Reseta estado de suporte */
   resetSupport: () => void;
 }
@@ -90,7 +90,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
         canRender: false,
         supportError: 'WebCodecs não disponível neste navegador.',
       }));
-      return;
+      return false;
     }
 
     try {
@@ -119,7 +119,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             codecWarning: null,
             supportError: null,
           }));
-          return;
+          return true;
         }
 
         // Loga issues para diagnóstico
@@ -151,7 +151,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             codecWarning: 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
             supportError: null,
           }));
-          return;
+          return true;
         }
 
         for (const issue of vp8Result.issues) {
@@ -165,6 +165,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
           canRender: false,
           supportError: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
         }));
+        return false;
       } else {
         // Vídeo com áudio — tenta H.264 + AAC + MP4 primeiro
         const result = await canRenderMediaOnWeb({
@@ -188,7 +189,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             codecWarning: null,
             supportError: null,
           }));
-          return;
+          return true;
         }
 
         // Loga issues para diagnóstico
@@ -224,7 +225,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
               codecWarning: null,
               supportError: null,
             }));
-            return;
+            return true;
           }
 
           for (const issue of fallbackResult.issues) {
@@ -255,7 +256,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             codecWarning: 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
             supportError: null,
           }));
-          return;
+          return true;
         }
 
         for (const issue of vp8Result.issues) {
@@ -269,10 +270,12 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
           canRender: false,
           supportError: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
         }));
+        return false;
       }
     } catch (err) {
       log.warn('Exceção inesperada no checkSupport', { error: err });
       setState(prev => ({ ...prev, canRender: false }));
+      return false;
     }
   }, [muted]);
 

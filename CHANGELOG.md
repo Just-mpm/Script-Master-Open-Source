@@ -7,6 +7,39 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.33.0] - 2026-05-18
+
+### Adicionado
+
+- **Vídeo final único para o lote de Speed Paint** (`/app/pintura-rapida`): o modo `record` da fila agora gera um único MP4/WebM com toda a sequência, em vez de disparar downloads separados por imagem. O fluxo ganhou painel próprio de progresso, sucesso, erro e cancelamento dentro da página
+- **Transparência da fila para exportação final**: `QueueStaging` agora mostra quantas imagens entram no vídeo final, quantas serão ignoradas por falha anterior no preview e desabilita `Gerar 1 vídeo final` quando não há itens válidos
+- **`generateStrokesFromImage(..., { signal })`**: pipeline de processamento de strokes passou a aceitar `AbortSignal`, abortando worker e fallback em main thread com `AbortError` quando o usuário cancela
+
+### Corrigido
+
+- **Cancelamento real do preview em lote**: `BatchOrchestrator` agora aborta o processamento pesado ao limpar/trocar fila ou sair de `watch`, em vez de apenas ignorar o resultado antigo no fim
+- **Ressurreição de job após limpar fila**: o preview em lote não pode mais reidratar `job` como `completed`/`failed` depois que a fila já foi cancelada
+- **Reset incompleto do exporter**: `useSpeedPaintExporter.reset()` agora limpa também o estado de compatibilidade de codecs via `useCodecSupport.resetSupport()`, evitando reaparecimento automático do erro de navegador incompatível
+- **Reexportação silenciosa de falhas no lote final**: o modo `record` passou a excluir itens marcados como `failed` na fila, então imagens que quebraram no preview não entram de novo no vídeo final sem aviso
+- **Semântica dos CTAs finais**: sucesso, erro e cancelamento do lote receberam ações separadas para `Tentar novamente`, `Voltar para a fila`, `Limpar fila` e `Baixar`, eliminando ambiguidade entre “repetir” e “voltar”
+- **i18n/a11y do lote**: novos estados, labels e `aria-label`s da fila e do painel de exportação foram internacionalizados em pt-BR, en e es
+
+### Alterado
+
+- **`QueueStaging`**: o botão destrutivo foi renomeado de `Cancelar fila` para `Limpar fila`, a ação de prévia ficou visualmente secundária e o microcopy passou a explicar melhor o que cada caminho faz
+- **`ExportResultActions`**: componente compartilhado passou a aceitar `onClear` e `retryIcon`, permitindo usar ações finais com semântica correta no fluxo de Speed Paint sem quebrar o uso na exportação de vídeo
+- **`useCodecSupport.checkSupport()`**: assinatura padronizada para retornar `Promise<boolean>`, simplificando preflight de compatibilidade no exporter de Speed Paint
+
+### Testes
+
+- **Cobertura ampliada do fluxo de lote**: novos testes para cancelamento durante geração e render, abort do `imageProcessing`, invalidação de resultado velho após limpar fila, status por item (`processing/completed/failed`), filtro de itens falhos no `record` e locale alternativo na fila
+
+### Documentação
+
+- **Auditorias do fluxo de lote**: adicionados os relatórios `docs/audits/audit-speedpaint-video-batch-2026-05-17.md` e `docs/audits/audit-speedpaint-batch-flow-2026-05-18.md` com revisão estática de bugs, corridas assíncronas, cancelamento e UX
+
+---
+
 ## [0.32.1] - 2026-05-17
 
 ### Corrigido

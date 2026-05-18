@@ -307,11 +307,11 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva via player Remotion nativo. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
 | **Fases** | Sketch (bordas) → Reveal (coloração), renderizadas via `SpeedPaintScene` do video-render com suporte a multi-velocidade granular (`SpeedPaintMultipliers`) |
 | **Player** | `SpeedPaintPlayer` (wrapper `@remotion/player`) + `SpeedPaintPlayerControls` (play/pause, seek slider, screenshot, snapshot PNG, indicadores de fase) |
-| **Exportação** | `SpeedPaintExportPanel` com seletor de qualidade e download; `useSpeedPaintExporter` via Remotion WebCodecs com fallback de codec (H.264+AAC > H.264 s/ áudio > VP8+Opus+WebM) |
+| **Exportação** | `SpeedPaintExportPanel` com seletor de qualidade e download individual; `useSpeedPaintExporter` via Remotion WebCodecs com fallback de codec (H.264+AAC > H.264 s/ áudio > VP8+Opus+WebM). No lote, o modo `record` gera um único vídeo final da fila com painel próprio de progresso/erro/sucesso/cancelamento em `SpeedPaintPage` |
 | **Composição** | `SpeedPaintComposition` — composição Remotion que integra `SpeedPaintScene` com fases de sketch (desenho de bordas) e reveal (coloração) |
-| **Drag-and-drop** | `QueueStaging` refatorado com `@dnd-kit/react` (`DragDropProvider`, `useSortable`, `DragOverlay`) para reordenação da fila; `arrayMove` do `@dnd-kit/helpers` no animationStore |
-| **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança) e `record` (grava + exporta) |
-| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed; reordenação via `reorderQueue(oldIndex, newIndex)` |
+| **Drag-and-drop** | `QueueStaging` refatorado com `@dnd-kit/react` (`DragDropProvider`, `useSortable`, `DragOverlay`) para reordenação da fila; `arrayMove` do `@dnd-kit/helpers` no animationStore. A UI da fila agora informa quantos itens entram no vídeo final e quantos serão ignorados por falha anterior |
+| **Batch** | Fila de imagens processada sequencialmente. Modos: `watch` (auto-avança preview) e `record` (gera vídeo final único). O preview em lote usa `BatchOrchestrator` com `AbortController` por item; o vídeo final ignora itens marcados como `failed` |
+| **Store** | `useAnimationStore` (Zustand): job, queue, batchMode, progress, speed, paintSpeed; reordenação via `reorderQueue(oldIndex, newIndex)`. `QueuedImage.status` (`pending` \| `processing` \| `completed` \| `failed`) passou a ser usado no fluxo real do lote para transparência e filtro de exportação |
 
 ### Autenticação
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -12,7 +13,9 @@ import Switch from '@mui/material/Switch';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import { useShallow } from 'zustand/react/shallow';
 import { useAnimationStore } from '../features/speed-paint/store/animationStore';
 import { BatchOrchestrator } from '../features/speed-paint/components/batch/BatchOrchestrator';
@@ -21,6 +24,8 @@ import { SpeedPaintPlayer } from '../features/speed-paint/components/SpeedPaintP
 import { SpeedPaintPlayerControls } from '../features/speed-paint/components/SpeedPaintPlayerControls';
 import { SpeedPaintExportPanel } from '../features/speed-paint/components/SpeedPaintExportPanel';
 import { useSpeedPaintExporter } from '../features/speed-paint/hooks/useSpeedPaintExporter';
+import { ExportProgressBar } from '../features/video-render/components/export/ExportProgressBar';
+import { ExportResultActions } from '../features/video-render/components/export/ExportResultActions';
 import { ImageUpload } from '../features/speed-paint/components/upload/ImageUpload';
 import { useLocale } from '../features/i18n';
 import {
@@ -45,6 +50,11 @@ import { glassSurfaceSx } from '../theme/surfaces';
 const DEFAULT_ANIMATION_DURATION = 15;
 const FPS = 30;
 
+function getCombinedBatchExportFileName(queueLength: number): string {
+  const timestamp = new Date().toISOString().slice(0, 10);
+  return `speed-paint-lote-${queueLength}itens-${timestamp}`;
+}
+
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
@@ -54,7 +64,7 @@ export function SpeedPaintPage() {
   const playerRef = useRef<PlayerRef>(null);
   const speedPaintExporter = useSpeedPaintExporter();
   const [isBatchRecording, setIsBatchRecording] = useState(false);
-  const handledJobIdRef = useRef<string | null>(null);
+  const batchRenderStartedRef = useRef(false);
   const [configOpen, setConfigOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
@@ -85,6 +95,10 @@ export function SpeedPaintPage() {
     );
 
   const queueLength = queue.length;
+  const eligibleBatchQueue = useMemo(
+    () => queue.filter((item) => item.status !== 'failed'),
+    [queue],
+  );
   const isCompleted = job.status === 'completed' && Boolean(job.animation);
 
   // Duração fixa — unificada com a velocidade (sliders controlam o ritmo, não o container)
@@ -100,6 +114,12 @@ export function SpeedPaintPage() {
       setActiveTab('export');
     }
   }, [speedPaintExporter.isRendering]);
+
+  useEffect(() => {
+    if (batchMode === 'idle') {
+      batchRenderStartedRef.current = false;
+    }
+  }, [batchMode]);
 
   // -------------------------------------------------------------------------
   // Batch auto-advance (modo watch)
@@ -140,69 +160,82 @@ export function SpeedPaintPage() {
   }, [batchMode, durationInFrames]);
 
   // -------------------------------------------------------------------------
-  // Batch record — detecta completion e dispara exportação
+  // Batch record — inicia exportação única da fila
   // -------------------------------------------------------------------------
 
   useEffect(() => {
-    if (batchMode !== 'record' || !job.animation || job.id === handledJobIdRef.current) return;
-    if (!isCompleted) return;
+    if (batchMode !== 'record' || eligibleBatchQueue.length === 0 || batchRenderStartedRef.current) return;
 
-    let rafId: number;
-    const checkAndExport = () => {
-      const player = playerRef.current;
-      if (!player) {
-        rafId = requestAnimationFrame(checkAndExport);
-        return;
-      }
-
-      const currentFrame = player.getCurrentFrame();
-
-      if (currentFrame >= durationInFrames - 1) {
-        // Animação completou — disparar export
-        handledJobIdRef.current = job.id;
-        setIsBatchRecording(true);
-        const imageSource = job.animation?.resizedImage || job.inputImage;
-        speedPaintExporter.startRender({
-          animation: job.animation!,
-          imageSource,
-          fps: FPS,
-          durationInFrames,
-          quality: '1080p',
-          drawSpeed: speed,
-          paintSpeed: paintSpeed,
-          showDrawTool,
-        });
-        return;
-      }
-
-      rafId = requestAnimationFrame(checkAndExport);
-    };
-
-    rafId = requestAnimationFrame(checkAndExport);
-    return () => cancelAnimationFrame(rafId);
-  }, [batchMode, job.animation, job.id, job.inputImage, isCompleted, durationInFrames, speed, paintSpeed, showDrawTool, speedPaintExporter]);
+    batchRenderStartedRef.current = true;
+    setIsBatchRecording(true);
+    void speedPaintExporter.startBatchRender({
+      items: eligibleBatchQueue.map((item) => ({
+        imageSource: item.dataUrl,
+      })),
+      fps: FPS,
+      quality: '1080p',
+      drawSpeed: speed,
+      paintSpeed: paintSpeed,
+      showDrawTool,
+      fileName: getCombinedBatchExportFileName(eligibleBatchQueue.length),
+    });
+  }, [batchMode, eligibleBatchQueue, speed, paintSpeed, showDrawTool, speedPaintExporter]);
 
   // -------------------------------------------------------------------------
-  // Batch record — auto-advance após exportação completar
+  // Batch record — fechamento do fluxo
   // -------------------------------------------------------------------------
 
   useEffect(() => {
     if (!isBatchRecording || speedPaintExporter.isRendering) return;
 
-    if (speedPaintExporter.outputUrl || speedPaintExporter.error) {
-      const { currentIndex, queue: currentQueue, setCurrentIndex, setBatchMode, clearQueue: doClear } =
-        useAnimationStore.getState();
-      if (currentIndex + 1 < currentQueue.length) {
-        setCurrentIndex(currentIndex + 1);
-        speedPaintExporter.reset();
-      } else {
-        setBatchMode('idle');
-        doClear();
-        setIsBatchRecording(false);
-        speedPaintExporter.reset();
-      }
+    if (speedPaintExporter.error) {
+      useAnimationStore.getState().setBatchMode('idle');
+      setIsBatchRecording(false);
+      batchRenderStartedRef.current = false;
+      return;
+    }
+
+    if (speedPaintExporter.wasCancelled) {
+      useAnimationStore.getState().setBatchMode('idle');
+      setIsBatchRecording(false);
+      batchRenderStartedRef.current = false;
+      return;
+    }
+
+    if (speedPaintExporter.outputUrl) {
+      const { setBatchMode } = useAnimationStore.getState();
+      setBatchMode('idle');
+      setIsBatchRecording(false);
+      batchRenderStartedRef.current = false;
     }
   }, [isBatchRecording, speedPaintExporter]);
+
+  const showBatchExportPanel = batchMode === 'record'
+    || speedPaintExporter.isRendering
+    || speedPaintExporter.outputUrl != null
+    || speedPaintExporter.error != null
+    || speedPaintExporter.wasCancelled;
+
+  const handleBatchExportReset = () => {
+    speedPaintExporter.reset();
+    clearQueue();
+    resetJob();
+    setIsBatchRecording(false);
+    batchRenderStartedRef.current = false;
+  };
+
+  const handleBatchExportBackToQueue = () => {
+    speedPaintExporter.reset();
+    setIsBatchRecording(false);
+    batchRenderStartedRef.current = false;
+  };
+
+  const handleBatchExportRetry = () => {
+    speedPaintExporter.reset();
+    setIsBatchRecording(false);
+    batchRenderStartedRef.current = false;
+    useAnimationStore.getState().setBatchMode('record');
+  };
 
   // -------------------------------------------------------------------------
   // Render
@@ -249,7 +282,7 @@ export function SpeedPaintPage() {
       )}
 
       {/* QueueStaging — fila pronta para iniciar */}
-      {queueLength > 0 && batchMode === 'idle' && <QueueStaging />}
+      {queueLength > 0 && batchMode === 'idle' && !showBatchExportPanel && <QueueStaging />}
 
       {/* Processando — indicador de progresso */}
       {job.status === 'processing' && (
@@ -315,6 +348,105 @@ export function SpeedPaintPage() {
             />
           </Box>
         </Box>
+      )}
+
+      {showBatchExportPanel && !isCompleted && (
+        <Paper
+          elevation={0}
+          sx={(theme) => ({
+            ...glassSurfaceSx(theme),
+            p: { xs: 2.5, md: 3 },
+            borderRadius: { xs: 3, md: 4 },
+            maxWidth: 720,
+            mx: 'auto',
+            width: '100%',
+          })}
+        >
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+              {t('speedPaint.batchExportTitle')}
+            </Typography>
+
+            {speedPaintExporter.error && !speedPaintExporter.outputUrl && (
+              <Stack spacing={1}>
+                <Alert severity="error">
+                  <strong>{speedPaintExporter.error}</strong>{' '}
+                  {t('speedPaint.batchExportErrorDescription')}
+                </Alert>
+                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <Button variant="contained" onClick={handleBatchExportRetry}>
+                    {t('speedPaint.batchExportRetry')}
+                  </Button>
+                  <Button variant="outlined" onClick={handleBatchExportBackToQueue}>
+                    {t('speedPaint.batchExportBackToQueue')}
+                  </Button>
+                  <Button variant="text" onClick={handleBatchExportReset}>
+                    {t('speedPaint.batchExportClearQueue')}
+                  </Button>
+                </Stack>
+              </Stack>
+            )}
+
+            {speedPaintExporter.wasCancelled && !speedPaintExporter.isRendering && !speedPaintExporter.outputUrl && !speedPaintExporter.error && (
+              <Stack spacing={1}>
+                <Alert severity="info">
+                  <strong>{t('speedPaint.batchExportCancelledTitle')}</strong>{' '}
+                  {t('speedPaint.batchExportCancelledDescription')}
+                </Alert>
+                <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <Button variant="contained" onClick={handleBatchExportRetry}>
+                    {t('speedPaint.batchExportRetry')}
+                  </Button>
+                  <Button variant="outlined" onClick={handleBatchExportBackToQueue}>
+                    {t('speedPaint.batchExportBackToQueue')}
+                  </Button>
+                  <Button variant="text" onClick={handleBatchExportReset}>
+                    {t('speedPaint.batchExportClearQueue')}
+                  </Button>
+                </Stack>
+              </Stack>
+            )}
+
+            {speedPaintExporter.isRendering && (
+              <ExportProgressBar
+                progress={speedPaintExporter.renderProgress}
+                statusText={speedPaintExporter.renderStatusText}
+                isRendering={speedPaintExporter.isRendering}
+                onCancel={speedPaintExporter.handleCancel}
+                cancelLabel={t('speedPaint.exportCancel')}
+                progressAriaLabel={t('speedPaint.batchExportProgressAria')}
+              />
+            )}
+
+            {!speedPaintExporter.isRendering && speedPaintExporter.outputUrl && (
+              <ExportResultActions
+                hasOutput={true}
+                container={speedPaintExporter.resolvedContainer}
+                onDownload={speedPaintExporter.handleDownload}
+                onReset={handleBatchExportBackToQueue}
+                onClear={handleBatchExportReset}
+                statusText={speedPaintExporter.renderStatusText}
+                blobSizeBytes={speedPaintExporter.outputBlob?.size}
+                labelRetry={t('speedPaint.batchExportBackToQueue')}
+                retryIcon={<ArrowBack sx={{ fontSize: 16 }} />}
+                labelClear={t('speedPaint.batchExportClearQueue')}
+                labelDownload={t('speedPaint.exportDownload')}
+              />
+            )}
+
+            {!speedPaintExporter.isRendering
+              && !speedPaintExporter.outputUrl
+              && !speedPaintExporter.error
+              && !speedPaintExporter.wasCancelled
+              && batchMode === 'idle' && (
+              <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+                <Button variant="outlined" onClick={handleBatchExportReset}>
+                  {t('speedPaint.batchExportClearQueue')}
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+        </Paper>
       )}
 
       {/* Animação completada — Layout 2 colunas (tipo YouTube) */}

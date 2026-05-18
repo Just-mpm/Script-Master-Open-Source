@@ -6,6 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
 import type { QueuedImage } from '../../src/features/speed-paint/types';
+import { I18nProvider } from '../../src/features/i18n';
 
 // ---------------------------------------------------------------------------
 // Mocks do @dnd-kit — capturamos onDragEnd para simular reordenação
@@ -59,7 +60,11 @@ const darkTheme = createTheme({
 });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 const sampleQueue: QueuedImage[] = [
@@ -74,6 +79,7 @@ const sampleQueue: QueuedImage[] = [
 
 describe('QueueStaging', () => {
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     useAnimationStore.getState().clearQueue();
     capturedOnDragEnd = undefined;
   });
@@ -83,11 +89,11 @@ describe('QueueStaging', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('renderiza "Fila de Produção" quando há itens', () => {
+  it('renderiza o título da fila quando há itens', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Fila de Produção')).toBeDefined();
+    expect(screen.getByText('Fila pronta para animar')).toBeDefined();
   });
 
   it('mostra contagem de itens na fila', () => {
@@ -95,9 +101,16 @@ describe('QueueStaging', () => {
     render(<QueueStaging />, { wrapper: Wrapper });
 
     const body2 = screen.getByText((text) =>
-      text.includes('3') && text.includes('imagem(ns) na fila'),
+      text.includes('3') && text.includes('pronta(s)'),
     );
     expect(body2).toBeDefined();
+  });
+
+  it('mostra quantas imagens entram no vídeo final', () => {
+    useAnimationStore.getState().setQueue(sampleQueue);
+    render(<QueueStaging />, { wrapper: Wrapper });
+
+    expect(screen.getByText('3 imagem(ns) entrarão no vídeo final.')).toBeDefined();
   });
 
   it('renderiza cada imagem da fila', () => {
@@ -126,49 +139,49 @@ describe('QueueStaging', () => {
     expect(screen.getByText('foto2.jpg')).toBeDefined();
   });
 
-  it('tem botão "Apenas Assistir"', () => {
+  it('tem botão de pré-visualização do lote', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Apenas Assistir')).toBeDefined();
+    expect(screen.getByText('Só pré-visualizar')).toBeDefined();
   });
 
-  it('tem botão "Gravar Tudo Automático"', () => {
+  it('tem botão de gerar vídeo final único', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Gravar Tudo Automático')).toBeDefined();
+    expect(screen.getByText('Gerar 1 vídeo final')).toBeDefined();
   });
 
-  it('tem botão "Cancelar Fila"', () => {
+  it('tem botão de limpar fila', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Cancelar Fila')).toBeDefined();
+    expect(screen.getByText('Limpar fila')).toBeDefined();
   });
 
-  it('"Apenas Assistir" muda batchMode para watch', () => {
+  it('botão de pré-visualização muda batchMode para watch', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    fireEvent.click(screen.getByText('Apenas Assistir'));
+    fireEvent.click(screen.getByText('Só pré-visualizar'));
     expect(useAnimationStore.getState().batchMode).toBe('watch');
   });
 
-  it('"Gravar Tudo Automático" muda batchMode para record', () => {
+  it('botão de gerar vídeo final muda batchMode para record', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    fireEvent.click(screen.getByText('Gravar Tudo Automático'));
+    fireEvent.click(screen.getByText('Gerar 1 vídeo final'));
     expect(useAnimationStore.getState().batchMode).toBe('record');
   });
 
-  it('"Cancelar Fila" limpa queue e reseta estado', () => {
+  it('botão de limpar fila limpa queue e reseta estado', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     useAnimationStore.getState().setBatchMode('watch');
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    fireEvent.click(screen.getByText('Cancelar Fila'));
+    fireEvent.click(screen.getByText('Limpar fila'));
     expect(useAnimationStore.getState().queue).toEqual([]);
     expect(useAnimationStore.getState().batchMode).toBe('idle');
   });
@@ -185,6 +198,42 @@ describe('QueueStaging', () => {
     expect(queue.find((q) => q.id === '1')).toBeUndefined();
     expect(queue[0].id).toBe('2');
     expect(queue[1].id).toBe('3');
+  });
+
+  it('traduz os novos textos do lote em locale inglês', () => {
+    localStorage.setItem('s2a_locale', 'en');
+    useAnimationStore.getState().setQueue(sampleQueue);
+    render(<QueueStaging />, { wrapper: Wrapper });
+
+    expect(screen.getByText('Queue ready to animate')).toBeDefined();
+    expect(screen.getByText('Preview only')).toBeDefined();
+    expect(screen.getByText('3 image(s) will be included in the final video.')).toBeDefined();
+    expect(screen.getByLabelText('Remove foto1.png')).toBeDefined();
+    expect(screen.getByLabelText('Reorder foto1.png')).toBeDefined();
+  });
+
+  it('avisa quando há itens com falha anterior e informa quantos serão ignorados', () => {
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'foto1.png', status: 'completed' },
+      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'foto2.jpg', status: 'failed' },
+      { id: '3', dataUrl: 'data:image/png;base64,ghi', filename: 'foto3.webp', status: 'pending' },
+    ]);
+    render(<QueueStaging />, { wrapper: Wrapper });
+
+    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final.')).toBeDefined();
+    expect(screen.getByText('1 imagem(ns) serão ignoradas por falha anterior no preview.')).toBeDefined();
+  });
+
+  it('desabilita gerar vídeo final quando todas as imagens falharam', () => {
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'foto1.png', status: 'failed' },
+      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'foto2.jpg', status: 'failed' },
+    ]);
+    render(<QueueStaging />, { wrapper: Wrapper });
+
+    const button = screen.getByRole('button', { name: 'Gerar 1 vídeo final' });
+    expect(button).toBeDisabled();
+    expect(screen.getByText('Nenhuma imagem válida para o vídeo final. Remova ou substitua os itens com falha para continuar.')).toBeDefined();
   });
 
   it('chama reorderQueue ao finalizar drag com índices corretos', () => {

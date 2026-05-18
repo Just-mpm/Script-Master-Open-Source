@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import Alert from '@mui/material/Alert';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -15,6 +16,7 @@ import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
 import { useAnimationStore } from '../../store/animationStore';
 import type { QueuedImage } from '../../types';
+import { useLocale } from '../../../i18n';
 import {
   ERROR_MAIN,
   BRAND_GRADIENT,
@@ -35,6 +37,7 @@ interface SortableQueueImageProps {
 }
 
 function SortableQueueImage({ img, index }: SortableQueueImageProps) {
+  const { t } = useLocale();
   const removeFromQueue = useAnimationStore((s) => s.removeFromQueue);
   const { ref, handleRef, isDragging, isDropTarget } = useSortable({
     id: img.id,
@@ -71,7 +74,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
       <IconButton
         ref={handleRef}
         size="small"
-        aria-label={`Reordenar ${img.filename}`}
+        aria-label={t('speedPaint.queueReorderImageAria', { filename: img.filename })}
         aria-roledescription="sortable"
         sx={(theme) => ({
           position: 'absolute',
@@ -121,7 +124,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
         sx={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
       />
 
-      <Tooltip title="Remover Imagem">
+      <Tooltip title={t('speedPaint.queueRemoveImage')}>
         <span>
           <IconButton
             onClick={(e) => {
@@ -129,7 +132,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
               removeFromQueue(img.id);
             }}
             size="small"
-            aria-label={`Remover ${img.filename}`}
+            aria-label={t('speedPaint.queueRemoveImageAria', { filename: img.filename })}
             sx={{
               position: 'absolute',
               top: 6,
@@ -178,6 +181,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
 }
 
 export function QueueStaging() {
+  const { t } = useLocale();
   const queue = useAnimationStore((s) => s.queue);
   const speed = useAnimationStore((s) => s.speed);
   const paintSpeed = useAnimationStore((s) => s.paintSpeed);
@@ -186,6 +190,8 @@ export function QueueStaging() {
   const setSpeed = useAnimationStore((s) => s.setSpeed);
   const setPaintSpeed = useAnimationStore((s) => s.setPaintSpeed);
   const reorderQueue = useAnimationStore((s) => s.reorderQueue);
+  const failedCount = queue.filter((item) => item.status === 'failed').length;
+  const eligibleCount = queue.length - failedCount;
 
   const startWatching = () => setBatchMode('watch');
   const startRecording = () => setBatchMode('record');
@@ -227,11 +233,21 @@ export function QueueStaging() {
         >
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.03em', mb: 0.5 }}>
-              Fila de Produção
+              {t('speedPaint.queueTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {queue.length} imagem(ns) na fila. Configure a velocidade padrão abaixo.
+              {t('speedPaint.queueDescription', { count: queue.length })}
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
+              {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleCount })}
+            </Typography>
+            {failedCount > 0 && (
+              <Alert severity={eligibleCount > 0 ? 'warning' : 'error'} sx={{ mt: 1.5, borderRadius: 2 }}>
+                {eligibleCount > 0
+                  ? t('speedPaint.queueFailedSummary', { failed: failedCount })
+                  : t('speedPaint.queueNoEligibleSummary')}
+              </Alert>
+            )}
           </Box>
 
           <Box
@@ -350,29 +366,31 @@ export function QueueStaging() {
               },
             }}
           >
-            Cancelar Fila
+            {t('speedPaint.queueCancel')}
           </Button>
           <Button
             onClick={startWatching}
-            variant="contained"
-            color="primary"
+            variant="outlined"
+            color="inherit"
             startIcon={<PlayArrowIcon sx={{ fontSize: 18 }} />}
             sx={{
-              background: BRAND_GRADIENT,
-              boxShadow: BRAND_GLOW,
               fontWeight: 600,
               letterSpacing: '-0.01em',
+              borderColor: alpha(BRAND_PRIMARY, 0.35),
+              color: 'text.primary',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                background: BRAND_GRADIENT_HOVER,
+                borderColor: BRAND_PRIMARY,
+                bgcolor: alpha(BRAND_PRIMARY, 0.08),
               },
             }}
           >
-            Apenas Assistir
+            {t('speedPaint.queuePreview')}
           </Button>
           <Button
             onClick={startRecording}
             variant="contained"
+            disabled={eligibleCount === 0}
             startIcon={<VideocamIcon sx={{ fontSize: 18 }} />}
             sx={{
               background: `linear-gradient(135deg, ${BRAND_SECONDARY} 0%, ${BRAND_SECONDARY_LIGHT} 100%)`,
@@ -385,7 +403,7 @@ export function QueueStaging() {
               },
             }}
           >
-            Gravar Tudo Automático
+            {t('speedPaint.queueExportSingleVideo')}
           </Button>
         </Stack>
       </Paper>
