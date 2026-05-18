@@ -40,6 +40,19 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.33.1] - 2026-05-18
+
+### Corrigido
+
+- **Dependências do `useEffect` em `BatchOrchestrator`**: substituídas as propriedades individuais `currentImg?.id, currentImg?.dataUrl` pelo objeto `currentImg` — simplifica a lógica e evita re-renders desnecessários quando apenas propriedades internas do objeto mudam sem alteração de referência
+- **Ordem de hooks em `useSpeedPaintExporter`**: `useCallback` com dependência `[t]` e outro com `[]` estavam em ordem trocada, violando as Rules of Hooks do React. Corrigido para ordem consistente de declaração
+
+### Removido
+
+- **Dead code em `QueueStaging`**: imports não utilizados `BRAND_GRADIENT`, `BRAND_GRADIENT_HOVER` e `BRAND_GLOW` removidos do arquivo
+
+---
+
 ## [0.32.1] - 2026-05-17
 
 ### Corrigido

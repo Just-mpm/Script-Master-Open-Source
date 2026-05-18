@@ -129,7 +129,7 @@ export function BatchOrchestrator() {
         skipTimeoutRef.current = null;
       }
     };
-  }, [batchMode, currentIndex, currentImg?.id, currentImg?.dataUrl, queue.length, setJob, setCurrentIndex, setBatchMode, setQueue]);
+  }, [batchMode, currentIndex, currentImg, queue.length, setJob, setCurrentIndex, setBatchMode, setQueue]);
 
   if (job.status === 'failed' && batchMode !== 'idle') {
     const nextInQueue = currentIndex + 1 < queue.length;

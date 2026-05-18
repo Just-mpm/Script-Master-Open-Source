@@ -460,7 +460,7 @@ export function useSpeedPaintExporter() {
         abortControllerRef.current = null;
       }
     }
-  }, []);
+  }, [t]);
 
   const startBatchRender = useCallback(async (options: SpeedPaintBatchExportOptions) => {
     const {
@@ -638,7 +638,7 @@ export function useSpeedPaintExporter() {
   // -------------------------------------------------------------------------
   const handleCancel = useCallback(() => {
     abortControllerRef.current?.abort();
-  }, [t]);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Baixa o vídeo exportado

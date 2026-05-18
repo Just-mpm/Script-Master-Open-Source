@@ -19,9 +19,6 @@ import type { QueuedImage } from '../../types';
 import { useLocale } from '../../../i18n';
 import {
   ERROR_MAIN,
-  BRAND_GRADIENT,
-  BRAND_GRADIENT_HOVER,
-  BRAND_GLOW,
   BRAND_PRIMARY,
   BRAND_SECONDARY,
   BRAND_SECONDARY_LIGHT,
