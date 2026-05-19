@@ -1,18 +1,52 @@
 // ---------------------------------------------------------------------------
-// Cloud Functions — Stripe Webhook + Checkout + Portal
+// Cloud Functions — Stripe Webhook + Checkout + Portal + Genkit Flows
 // ---------------------------------------------------------------------------
 //
 // Funções Firebase v2 para integração Stripe:
 //   - stripeWebhook: recebe eventos do Stripe (onRequest + Express)
 //   - createCheckoutSession: cria sessão de checkout para assinatura
 //   - createPortalSession: cria sessão do Customer Portal
+//
+// Flows Genkit (IA):
+//   - ping: flow de teste — valida auth + App Check + Genkit
 // ---------------------------------------------------------------------------
 
+import { initializeApp } from 'firebase-admin/app';
 import { onRequest } from 'firebase-functions/v2/https';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import express from 'express';
 import Stripe from 'stripe';
+
+// Inicialização explícita do Firebase Admin SDK (necessário para Genkit flows)
+initializeApp();
+
+// ---------------------------------------------------------------------------
+// Verificação de startup — App Check em produção
+// ---------------------------------------------------------------------------
+//
+// Os flows de IA usam enforceAppCheck: true. Em produção, isso exige que
+// o frontend tenha VITE_RECAPTCHA_SITE_KEY configurada e que o App Check
+// esteja habilitado no Console do Firebase (seção App Check).
+//
+// Esta verificação NÃO bloqueia o deploy — apenas loga para alertar o
+// operador durante o deploy e em cold starts.
+// ---------------------------------------------------------------------------
+
+if (process.env.FUNCTIONS_EMULATOR !== 'true') {
+  console.log(
+    '[index] 🛡️  Ambiente de produção detectado. Verifique:',
+  );
+  console.log(
+    '[index]    → App Check habilitado no Console do Firebase?',
+  );
+  console.log(
+    '[index]    → VITE_RECAPTCHA_SITE_KEY configurada no frontend?',
+  );
+  console.log(
+    '[index]    → Sem App Check, todos os flows (audio, images, assistant, etc.) serão rejeitados.',
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Variáveis de ambiente (.env)
@@ -20,6 +54,27 @@ import Stripe from 'stripe';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
+/**
+ * Flag que controla o acesso aos flows de IA durante o beta aberto.
+ *
+ * Quando 'true' (default atual): os flows de IA aceitam chamadas normalmente.
+ * Quando !== 'true': o middleware openBetaGuard (genkit.ts) bloqueia as
+ *   chamadas com erro 503, permitindo desligar os flows sem redeploy.
+ *
+ * Esta flag é preparatória para a Fase 5 (cobrança por créditos). Durante
+ * o beta, permanece 'true' para acesso gratuito. Após o lançamento, será
+ * desabilitada e substituída pela verificação de saldo de créditos.
+ *
+ * @see genkit.ts — middleware openBetaGuard
+ */
+const OPEN_BETA_ENABLED = process.env.OPEN_BETA_ENABLED === 'true';
+
+if (!OPEN_BETA_ENABLED) {
+  console.warn(
+    '[index] OPEN_BETA_ENABLED !== "true" — os flows de IA devem ser protegidos pelo middleware openBetaGuard',
+  );
+}
 
 function getStripeClient(): Stripe {
   if (!STRIPE_SECRET_KEY) {
@@ -53,10 +108,12 @@ interface SubscriptionData {
  * Os price IDs devem ser configurados no Stripe Dashboard para cada plano.
  */
 function planIdFromPriceId(priceId: string): 'free' | 'pro' | 'business' {
-  // Mapeamento dinâmico via metadata ou lookup table.
-  // O priceId contém o identificador — extraímos o plano dele.
-  if (priceId.includes('business')) return 'business';
-  if (priceId.includes('pro')) return 'pro';
+  // Extrai o plano via regex com word boundary: evita falsos positivos
+  // quando o priceId contém "business" ou "pro" como substring acidental.
+  const match = priceId.match(/\b(business|pro)\b/);
+  if (match) {
+    return match[1] as 'business' | 'pro';
+  }
   return 'free';
 }
 
@@ -403,6 +460,15 @@ async function handleCreatePortal(req: express.Request, res: express.Response): 
 // Rotas Express
 // ---------------------------------------------------------------------------
 
+// Middleware de guard: bloqueia todas as rotas quando billing está desabilitado
+app.use((req, res, next) => {
+  if (process.env.BILLING_ENABLED !== 'true') {
+    res.status(503).json({ error: 'Billing is currently disabled' });
+    return;
+  }
+  next();
+});
+
 app.post('/webhook', handleWebhook);
 app.post('/checkout', handleCreateCheckout);
 app.post('/portal', handleCreatePortal);
@@ -418,3 +484,16 @@ export const stripeApi = onRequest(
   },
   app,
 );
+
+// ---------------------------------------------------------------------------
+// Genkit Flows
+// ---------------------------------------------------------------------------
+
+export { ping } from './flows/ping.js';
+export { assistant } from './flows/assistant.js';
+export { inlineAssistant } from './flows/inline-assistant.js';
+export { audio } from './flows/audio.js';
+export { images } from './flows/images.js';
+export { scenePrompts } from './flows/scene-prompts.js';
+export { chunking } from './flows/chunking.js';
+export { feedback } from './flows/feedback.js';

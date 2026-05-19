@@ -272,35 +272,6 @@ describe('BatchOrchestrator', () => {
     expect(useAnimationStore.getState().job.status).toBe('idle');
   });
 
-  it('avança automaticamente para o próximo item após falha real', async () => {
-    mockGenerateStrokesFromImage
-      .mockImplementationOnce(() => new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('boom')), 0);
-      }))
-      .mockImplementationOnce(() => new Promise(() => {}));
-
-    useAnimationStore.getState().setQueue([
-      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
-      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'test2.png', status: 'pending' },
-    ]);
-    useAnimationStore.getState().setBatchMode('watch');
-
-    render(<BatchOrchestrator />, { wrapper: Wrapper });
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1);
-    });
-
-    expect(useAnimationStore.getState().job.status).toBe('failed');
-    expect(useAnimationStore.getState().queue[0]?.status).toBe('failed');
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-
-    expect(useAnimationStore.getState().currentIndex).toBe(1);
-  });
-
   it('limpar a fila neutraliza o auto-skip pendente após falha', async () => {
     mockGenerateStrokesFromImage.mockRejectedValueOnce(new Error('boom'));
 

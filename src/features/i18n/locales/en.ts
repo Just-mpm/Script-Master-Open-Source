@@ -26,7 +26,7 @@ export const en: TranslationDictionary = {
   nav: {
     home: 'Home',
     features: 'Features',
-    pricing: 'Pricing',
+    pricing: 'Beta',
     faq: 'FAQ',
     about: 'About',
     contact: 'Contact',
@@ -49,7 +49,7 @@ export const en: TranslationDictionary = {
     legalGroup: 'Legal',
     links: {
       features: 'Features',
-      pricing: 'Pricing',
+      pricing: 'Beta',
       faq: 'FAQ',
       status: 'Status',
       about: 'About',
@@ -240,7 +240,7 @@ export const en: TranslationDictionary = {
       subtitle:
         'Explore all the integrated tools of Script Master to transform your scripts into professional content.',
       cta: 'Get Started Free',
-      ctaSecondary: 'View pricing',
+      ctaSecondary: 'View beta',
     },
     sections: {
       tts: 'Voice Studio (TTS)',
@@ -292,81 +292,44 @@ export const en: TranslationDictionary = {
     },
   },
 
+  // ── Open Beta ─────────────────────────────────────────────────────────
   pricing: {
     hero: {
-      title: 'Choose the right plan for you',
-      subtitle: 'Start for free, no credit card. Cancel anytime.',
-      cta: 'Get Started Free',
-      ctaSecondary: 'Compare plans',
+      title: 'Open Beta',
+      subtitle: 'Script Master is in open beta. AI usage requires login.',
+      cta: 'Create free account',
+      ctaSecondary: 'How it works',
     },
-    billing: {
-      monthly: 'Monthly',
-      annual: 'Annual',
-      ariaLabel: 'Billing cycle',
+    credits: {
+      title: 'Credits',
+      subtitle: 'Credits are the beta currency. Each action consumes credits, renewed every month.',
+      monthly: '1,000 free monthly credits',
+      monthlyDesc: 'Credits automatically renewed at the beginning of each month.',
+      bonus: '+250 credits for sending feedback',
+      bonusDesc: 'Send constructive feedback and earn a credit bonus.',
+      noPayment: 'No payment',
+      noPaymentDesc: 'No credit card needed. The beta is 100% free.',
     },
-    plans: {
-      free: {
-        name: 'Free',
-        priceSubtitle: 'forever',
-        description: 'Perfect for experimenting and personal projects',
-        cta: 'Get started free',
-        features: {
-          0: 'TTS audio generation',
-          1: 'AI image generation',
-          2: 'Video export (up to 720p)',
-          3: 'Project library',
-          4: 'AI assistant',
-          5: '5 projects in total',
-        },
-      },
-      pro: {
-        name: 'Pro',
-        priceSubtitle: '/mo',
-        description: 'For creators who produce content regularly',
-        cta: 'Subscribe to Pro',
-        features: {
-          0: 'Everything in Free plan',
-          1: 'Multi-speaker (2 narrators)',
-          2: 'Unlimited stock media',
-          3: 'Video export up to 4K',
-          4: 'Priority generation queue',
-          5: '100 generations/month per resource',
-          6: '50 projects in total',
-        },
-      },
-      business: {
-        name: 'Business',
-        priceSubtitle: '/mo',
-        description: 'For teams and professional production',
-        cta: 'Coming soon',
-        features: {
-          0: 'Everything in Pro plan',
-          1: 'Unlimited limits',
-          2: 'Unlimited storage',
-          3: 'Priority support',
-          4: 'Scripts up to 50K characters',
-        },
-      },
+    howItWorks: {
+      title: 'How it works',
+      subtitle: 'It\'s simple to start creating with Script Master.',
+      step1Title: 'Sign in',
+      step1Desc: 'Sign in with your Google account or email to access all tools.',
+      step2Title: 'Create content',
+      step2Desc: 'Each audio, image, or chat generation consumes credits from your monthly balance.',
+      step3Title: 'Track your balance',
+      step3Desc: 'Your available credits appear in the header after login.',
     },
-    tooltip: {
-      comingSoon: 'Payments coming soon — stay tuned for news!',
+    notice: {
+      title: 'Payments and subscriptions are temporarily paused.',
+      description: 'We are focused on improving the product with real feedback. Paid plans will return in the future, but for now you have full access at no cost.',
     },
-    disclaimer:
-      'Plan limits are not yet automatically enforced. All resources are available for use during the development period.',
-    comparison: {
-      title: 'Compare plans in detail',
-      subtitle:
-        'See side by side everything each plan offers to choose the best for your needs.',
-      ariaLabel: 'Plan comparison',
-      feature: 'Feature',
-    },
-    unlimited: 'Unlimited',
     faq: {
-      title: 'Frequently asked questions about pricing',
+      title: 'Frequently asked questions about the beta',
     },
     cta: {
-      title: 'Start for free, no credit card',
-      subtitle: 'Create your first narration for free. No commitment, no card.',
+      title: 'Ready to get started?',
+      subtitle: 'Create your first narration for free. Monthly credits renewed every month.',
       button: 'Sign in with Google',
     },
   },
@@ -377,12 +340,12 @@ export const en: TranslationDictionary = {
       subtitle:
         'Find quick answers to the most common questions about Script Master.',
       cta: 'Create free account',
-      ctaSecondary: 'View plans',
+      ctaSecondary: 'View credits',
     },
     categories: {
       ariaLabel: 'FAQ categories',
       general: 'General',
-      pricing: 'Pricing',
+      pricing: 'Credits',
       technical: 'Technical',
       account: 'Account',
     },
@@ -392,10 +355,31 @@ export const en: TranslationDictionary = {
       button: 'Contact us',
     },
     cta: {
-      title: 'Ready to get started?',
+      title: 'Ready to create?',
       subtitle:
-        'Create your first narration for free. No commitment, no credit card.',
-      button: 'Get started',
+        'Start using Script Master and discover the power of AI to transform your scripts.',
+      button: 'Get Started Free',
+    },
+    feedback: {
+      title: 'Send feedback and earn 250 credits',
+      description: 'Your opinion helps improve Script Master. Constructive feedback earns bonus credits.',
+      button: 'Send feedback',
+      loginPrompt: 'Sign in to send feedback and earn credits',
+      categoryLabel: 'Category',
+      categoryGeneral: 'General',
+      categoryBugs: 'Bugs / Issues',
+      categoryFeatures: 'Feature Suggestions',
+      categoryUX: 'User Experience',
+      categoryPerformance: 'Performance',
+      categoryOther: 'Other',
+      textLabel: 'Your feedback',
+      textPlaceholder: 'Describe your experience, suggestions, or issues (minimum 10 characters)...',
+      screenContextLabel: 'Current screen (optional)',
+      sending: 'Sending...',
+      successWithBonus: 'Feedback sent! You earned 250 credits.',
+      successNoBonus: 'Feedback sent! Thank you.',
+      error: 'Error sending feedback. Please try again.',
+      tooShort: 'Minimum of 10 characters.',
     },
   },
 
@@ -405,7 +389,7 @@ export const en: TranslationDictionary = {
       subtitle:
         'We are here to help. Send your question, suggestion, or report an issue and we will respond within 24 business hours.',
       cta: 'Send message',
-      ctaSecondary: 'View pricing',
+      ctaSecondary: 'View beta',
     },
     info: {
       title: 'Contact information',
@@ -633,6 +617,12 @@ export const en: TranslationDictionary = {
         dialogDeleting: 'Deleting...',
       },
       login: 'Login',
+      credits: {
+        loading: 'Loading credits...',
+        error: 'Error loading credits',
+        ariaLabel: 'Credit balance: {credits}',
+        breakdown: 'Base: {base} | Bonus: {bonus} | Used: {used}',
+      },
     },
     actionBar: {
       ariaLabel: 'Audio and generation controls',
@@ -1211,8 +1201,8 @@ export const en: TranslationDictionary = {
       description: 'Discover all Script Master features: audio generation, images, videos, AI assistant, and more.',
     },
     pricing: {
-      title: 'Pricing | Script Master',
-      description: 'Choose the right plan for you. Start for free, no credit card required.',
+      title: 'Open Beta | Script Master',
+      description: 'Script Master is in open beta. Access for free with 1,000 monthly credits.',
     },
     status: {
       title: 'Service Status | Script Master',
@@ -1287,21 +1277,6 @@ export const en: TranslationDictionary = {
         question: 'How do I delete my account?',
         answer: 'You can delete your account directly from the app: click your avatar in the top right corner and select "Delete account". All your data (projects, audios, chats, memories, and settings) are permanently removed in compliance with LGPD. You can also request deletion via the contact form.',
       },
-    },
-  },
-
-  // ── Pricing (comparação de planos) ──────────────────────────────────
-  pricingComparison: {
-    features: {
-      0: { name: 'TTS audio generation', free: 'Up to 10 scripts/month', pro: 'Unlimited', business: 'Unlimited' },
-      1: { name: 'Image generation', free: 'Up to 20/month', pro: 'Unlimited', business: 'Unlimited' },
-      2: { name: 'Video rendering', free: 'Up to 3/month', pro: 'Unlimited', business: 'Unlimited' },
-      3: { name: 'AI assistant', free: 'Up to 50 messages/month', pro: 'Unlimited', business: 'Unlimited' },
-      4: { name: 'Multi-speaker', free: '2 voices', pro: '2 voices', business: '2 voices' },
-      5: { name: 'Speed Paint', free: 'Up to 5/month', pro: 'Unlimited', business: 'Unlimited' },
-      6: { name: 'Library', free: 'Local (IndexedDB)', pro: 'Cloud + local', business: 'Cloud + local' },
-      7: { name: 'Automatic subtitles', free: 'Whisper tiny', pro: 'Full Whisper', business: 'Full Whisper' },
-      8: { name: 'Support', free: 'Community', pro: 'Priority', business: 'Dedicated' },
     },
   },
 
@@ -1395,6 +1370,15 @@ export const en: TranslationDictionary = {
       multiSpeakerLocked: 'Multi-speaker available on Pro plan or higher',
       emotionalTTSLocked: 'Emotional TTS available on Pro plan or higher',
       stockMediaLocked: 'Stock media available on Pro plan or higher',
+    },
+  },
+
+  // ── Blocked credits ─────────────────────────────────────────────────
+  credits: {
+    blocked: {
+      title: 'Credits exhausted',
+      description: 'You have reached the credit limit for this month. Your balance will be automatically renewed at the beginning of the next month.',
+      cta: 'Send feedback and earn +250 credits',
     },
   },
 

@@ -51,7 +51,7 @@ const TERMS_SECTIONS: readonly LegalSection[] = [
     id: 'propriedade',
     title: '7. Propriedade Intelectual',
     content:
-      'Todo o conteúdo do Serviço, incluindo mas não limitado a software, design, logotipos, ícones, textos e gráficos, é propriedade da Empresa ou de seus licenciadores e é protegido pelas leis de propriedade intelectual. O conteúdo gerado por IA através do Serviço é de propriedade do Usuário, sujeito aos limites do plano escolhido.',
+      'Todo o conteúdo do Serviço, incluindo mas não limitado a software, design, logotipos, ícones, textos e gráficos, é propriedade da Empresa ou de seus licenciadores e é protegido pelas leis de propriedade intelectual. O conteúdo gerado por IA através do Serviço é de propriedade do Usuário, sujeito aos limites do beta.',
   },
   {
     id: 'modificacoes',

@@ -11,6 +11,7 @@ import { useEffect, useRef } from 'react';
 import { auth } from '../../../lib/firebase';
 import { useBillingStore } from '../store/useBillingStore';
 import { createLogger } from '../../../lib/logger';
+import { isBillingEnabled } from '../../../lib/env';
 
 const log = createLogger('useBillingInit');
 
@@ -26,8 +27,12 @@ export function useBillingInit(userAuthReady: boolean): void {
   const reset = useBillingStore((s) => s.reset);
   const lastUserId = useRef<string | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const billingEnabled = isBillingEnabled();
 
   useEffect(() => {
+    // Se billing desabilitado, não faz nada — evita chamadas Firestore
+    if (!billingEnabled) return;
+
     if (!userAuthReady) {
       return;
     }
@@ -63,5 +68,5 @@ export function useBillingInit(userAuthReady: boolean): void {
         unsubscribeRef.current = null;
       }
     };
-  }, [userAuthReady, loadSubscription, subscribeToSubscription, reset]);
+  }, [billingEnabled, userAuthReady, loadSubscription, subscribeToSubscription, reset]);
 }

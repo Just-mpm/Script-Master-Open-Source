@@ -49,6 +49,16 @@ const log = createLogger('Inspector');
 
 const MAX_STYLE_NOTES = 500;
 
+/** Escapa caracteres especiais HTML para evitar Self-XSS via dangerouslySetInnerHTML */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 /** Props do Inspector — apenas `isGenerating` vem do pai; o restante é lido do store */
 interface InspectorProps {
   isGenerating: boolean;
@@ -381,7 +391,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                 </VoiceTabPanel>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25, px: 0.5 }}>
-                  <span dangerouslySetInnerHTML={{ __html: t('studio.inspector.podcast.editorHint', { name: activeSpeakerName || `Voz ${activeVoiceTab}` }) }} />
+                  <span dangerouslySetInnerHTML={{ __html: t('studio.inspector.podcast.editorHint', { name: escapeHtml(activeSpeakerName) || `Voz ${activeVoiceTab}` }) }} />
                 </Typography>
               </Paper>
             )}

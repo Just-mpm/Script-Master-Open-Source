@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { ToastManager } from './components/toast/ToastProvider';
+import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
@@ -42,6 +43,7 @@ export default function App() {
     videoExportProgress,
     toggleAudioPlayer,
     isSaved,
+    creditsExhausted,
   } = useAudioGenerationHandler();
 
   // ─── Classificação de rotas ──────────────────────────────
@@ -122,6 +124,19 @@ export default function App() {
           outline: 'none',
         }}
       >
+        {/* Créditos esgotados — exibido no estúdio e página de vídeo */}
+        {showAppLayout && !isAssistantRoute && (
+          <Container
+            maxWidth={false}
+            sx={{
+              maxWidth: APP_MAX_WIDTH,
+              px: { xs: 2, sm: 3, lg: 4 },
+            }}
+          >
+            <CreditBlockedMessage show={creditsExhausted} />
+          </Container>
+        )}
+
         {showContainerLayout ? (
           routesElement
         ) : isAssistantRoute ? (

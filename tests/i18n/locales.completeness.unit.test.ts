@@ -84,7 +84,6 @@ describe('dicionários — chaves obrigatórias por seção', () => {
     'onboarding',
     'seo',
     'faqItems',
-    'pricingComparison',
     'featureItems',
     'landingShowcases',
     'errors',
@@ -182,11 +181,11 @@ describe('dicionários — valores são strings', () => {
     }
   });
 
-  it('priceSubtitle do plano business é preenchido em todos os locales', () => {
+  it('pricing.credits.monthly é preenchido em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const value = getNestedValue(
         dictionaries[locale],
-        'pricing.plans.business.priceSubtitle',
+        'pricing.credits.monthly',
       );
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
@@ -234,13 +233,17 @@ describe('dicionários — chaves numéricas (FAQ items, feature items, etc.)', 
     }
   });
 
-  it('pricingComparison.features possui 9 items numerados em todos os locales', () => {
+  it('pricing.credits possui as 3 chaves nos locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
-      for (let i = 0; i <= 8; i++) {
-        expect(
-          getNestedValue(dictionaries[locale], `pricingComparison.features.${i}.name`),
-        ).toBeDefined();
-      }
+      expect(
+        getNestedValue(dictionaries[locale], 'pricing.credits.monthly'),
+      ).toBeDefined();
+      expect(
+        getNestedValue(dictionaries[locale], 'pricing.credits.bonus'),
+      ).toBeDefined();
+      expect(
+        getNestedValue(dictionaries[locale], 'pricing.credits.noPayment'),
+      ).toBeDefined();
     }
   });
 

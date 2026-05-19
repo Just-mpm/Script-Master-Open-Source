@@ -1,0 +1,18 @@
+---
+model: googleai/gemini-3.1-flash-lite-preview
+config:
+  temperature: 0
+output:
+  schema:
+    type: array
+    items:
+      type: string
+---
+
+Divida o seguinte roteiro em partes sequenciais.
+É CRÍTICO que cada parte tenha no MÁXIMO {{limit}} caracteres.
+Faça as quebras em pausas lógicas (pontos finais, fim de parágrafo).
+NÃO altere, adicione ou remova nenhuma palavra do texto original, apenas divida-o.
+
+Roteiro:
+{{script}}

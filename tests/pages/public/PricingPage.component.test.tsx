@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
@@ -29,6 +29,7 @@ vi.mock('../../../src/theme/tokens', () => ({
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46, 117, 182, 0.12)',
   BRAND_SECONDARY: '#F7941E',
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   GAP_DEFAULT: 1,
@@ -48,7 +49,7 @@ vi.mock('../../../src/theme/surfaces', () => ({
 }));
 
 vi.mock('../../../src/lib/seo', () => ({
-  getPageSeo: () => ({ title: 'Preços e Planos' }),
+  getPageSeo: () => ({ title: 'Beta Aberto' }),
 }));
 
 describe('PricingPage', () => {
@@ -56,43 +57,47 @@ describe('PricingPage', () => {
     localStorage.setItem('s2a_locale', 'pt-BR');
   });
 
-  it('renderiza o título "Escolha o plano ideal para você"', () => {
+  it('renderiza o título "Beta Aberto"', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Escolha o plano ideal para você')).toBeDefined();
+    expect(screen.getByText('Beta Aberto')).toBeDefined();
   });
 
-  it('renderiza os 3 cards de plano (Gratuito, Pro, Business)', () => {
+  it('renderiza o subtítulo sobre o beta', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    // "Gratuito" e "Pro" aparecem no card + tabela comparativa
-    expect(screen.getAllByText('Gratuito').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Pro').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Business').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('O Script Master está em beta aberto. Uso de IA exige login.')).toBeDefined();
   });
 
-  it('renderiza badge "Popular" no plano Pro', () => {
+  it('renderiza a seção de créditos com 3 cards', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Popular')).toBeDefined();
+    expect(screen.getByText('1.000 créditos mensais gratuitos')).toBeDefined();
+    expect(screen.getByText('+250 créditos ao enviar feedback')).toBeDefined();
+    expect(screen.getByText('Sem pagamento')).toBeDefined();
   });
 
-  it('renderiza a seção de FAQ', () => {
+  it('renderiza a seção "Como funciona" com 3 passos', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Perguntas frequentes sobre preços')).toBeDefined();
-    expect(screen.getByText('É realmente grátis?')).toBeDefined();
+    // "Como funciona" aparece como heading h2 — usamos getByRole para evitar ambiguidade com outros textos
+    expect(screen.getByRole('heading', { name: 'Como funciona' })).toBeDefined();
+    expect(screen.getByText('Faça login')).toBeDefined();
+    expect(screen.getByText('Crie conteúdo')).toBeDefined();
+    expect(screen.getByText('Acompanhe seu saldo')).toBeDefined();
   });
 
-  it('renderiza a tabela comparativa', () => {
+  it('renderiza o aviso de pagamentos pausados', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Compare os planos em detalhes')).toBeDefined();
-    expect(screen.getByText('Geração de áudio TTS')).toBeDefined();
-    expect(screen.getByText('Renderização de vídeo')).toBeDefined();
+    expect(screen.getByText('Pagamentos e assinaturas estão temporariamente pausados.')).toBeDefined();
   });
 
-  it('alterna entre Mensal e Anual ao clicar no toggle', () => {
+  it('renderiza a seção de FAQ do beta', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    // Accessible name inclui o Chip "-20%"
-    const anualButton = screen.getByRole('button', { name: 'Anual -20%' });
-    fireEvent.click(anualButton);
-    // Após clicar em Anual, o preço do Pro deve mudar para o equivalente mensal anual
-    expect(screen.getByText('R$ 41,58')).toBeDefined();
+    expect(screen.getByText('Perguntas frequentes sobre o beta')).toBeDefined();
+  });
+
+  it('renderiza a CTA final com link para cadastro', () => {
+    render(<PricingPage />, { wrapper: Wrapper });
+    expect(screen.getByText('Pronto para começar?')).toBeDefined();
+    // CTA aponta para /cadastro
+    const ctaLink = screen.getByRole('link', { name: /Entrar com Google/i });
+    expect(ctaLink.getAttribute('href')).toBe('/cadastro');
   });
 });

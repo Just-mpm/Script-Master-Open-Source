@@ -29,7 +29,7 @@ export const ptBR: TranslationDictionary = {
   nav: {
     home: 'Home',
     features: 'Funcionalidades',
-    pricing: 'Preços',
+    pricing: 'Beta',
     faq: 'FAQ',
     about: 'Sobre',
     contact: 'Contato',
@@ -53,7 +53,7 @@ export const ptBR: TranslationDictionary = {
     legalGroup: 'Legal',
     links: {
       features: 'Funcionalidades',
-      pricing: 'Preços',
+      pricing: 'Beta',
       faq: 'Perguntas Frequentes',
       status: 'Status',
       about: 'Sobre',
@@ -246,7 +246,7 @@ export const ptBR: TranslationDictionary = {
       subtitle:
         'Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional.',
       cta: 'Começar Grátis',
-      ctaSecondary: 'Ver preços',
+      ctaSecondary: 'Ver beta',
     },
     sections: {
       tts: 'Estúdio de Voz (TTS)',
@@ -298,82 +298,44 @@ export const ptBR: TranslationDictionary = {
     },
   },
 
-  // ── Preços ─────────────────────────────────────────────────────────────
+  // ── Beta Aberto ────────────────────────────────────────────────────────
   pricing: {
     hero: {
-      title: 'Escolha o plano ideal para você',
-      subtitle: 'Comece grátis, sem cartão de crédito. Cancele quando quiser.',
-      cta: 'Começar Grátis',
-      ctaSecondary: 'Comparar planos',
+      title: 'Beta Aberto',
+      subtitle: 'O Script Master está em beta aberto. Uso de IA exige login.',
+      cta: 'Criar conta gratuita',
+      ctaSecondary: 'Como funciona',
     },
-    billing: {
-      monthly: 'Mensal',
-      annual: 'Anual',
-      ariaLabel: 'Ciclo de pagamento',
+    credits: {
+      title: 'Créditos',
+      subtitle: 'Créditos são a moeda do beta. Cada ação consome créditos, renovados todo mês.',
+      monthly: '1.000 créditos mensais gratuitos',
+      monthlyDesc: 'Créditos renovados automaticamente todo início de mês.',
+      bonus: '+250 créditos ao enviar feedback',
+      bonusDesc: 'Envie feedback construtivo e ganhe um bônus de créditos.',
+      noPayment: 'Sem pagamento',
+      noPaymentDesc: 'Nada de cartão de crédito. O beta é 100% gratuito.',
     },
-    plans: {
-      free: {
-        name: 'Gratuito',
-        priceSubtitle: 'para sempre',
-        description: 'Perfeito para experimentar e projetos pessoais',
-        cta: 'Começar grátis',
-        features: {
-          0: 'Geração de áudio com TTS',
-          1: 'Geração de imagens com IA',
-          2: 'Exportação de vídeo (até 720p)',
-          3: 'Biblioteca de projetos',
-          4: 'Assistente IA',
-          5: '5 projetos no total',
-        },
-      },
-      pro: {
-        name: 'Pro',
-        priceSubtitle: '/mês',
-        description: 'Para criadores que produzem conteúdo regularmente',
-        cta: 'Assinar Pro',
-        features: {
-          0: 'Tudo do plano Gratuito',
-          1: 'Multi-speaker (2 locutores)',
-          2: 'Mídia stock ilimitada',
-          3: 'Exportação de vídeo até 4K',
-          4: 'Fila prioritária de geração',
-          5: '100 gerações/mês por recurso',
-          6: '50 projetos no total',
-        },
-      },
-      business: {
-        name: 'Business',
-        priceSubtitle: '/mês',
-        description: 'Para equipes e produção profissional',
-        cta: 'Em breve',
-        features: {
-          0: 'Tudo do plano Pro',
-          1: 'Limites ilimitados',
-          2: 'Armazenamento ilimitado',
-          3: 'Suporte prioritário',
-          4: 'Scripts de até 50K caracteres',
-        },
-      },
+    howItWorks: {
+      title: 'Como funciona',
+      subtitle: 'É simples começar a criar com o Script Master.',
+      step1Title: 'Faça login',
+      step1Desc: 'Entre com sua conta Google ou email para acessar todas as ferramentas.',
+      step2Title: 'Crie conteúdo',
+      step2Desc: 'Cada geração de áudio, imagem ou chat consome créditos do seu saldo mensal.',
+      step3Title: 'Acompanhe seu saldo',
+      step3Desc: 'Seus créditos disponíveis aparecem no header após o login.',
     },
-    tooltip: {
-      comingSoon: 'Pagamentos em breve — fique ligado nas novidades!',
+    notice: {
+      title: 'Pagamentos e assinaturas estão temporariamente pausados.',
+      description: 'Estamos focados em melhorar o produto com feedback real. Planos pagos voltarão no futuro, mas por enquanto você tem acesso completo sem custo.',
     },
-    disclaimer:
-      'Os limites por plano ainda não são aplicados automaticamente. Todos os recursos estão disponíveis para uso durante o período de desenvolvimento.',
-    comparison: {
-      title: 'Compare os planos em detalhes',
-      subtitle:
-        'Veja lado a lado tudo que cada plano oferece para escolher o melhor para suas necessidades.',
-      ariaLabel: 'Comparação de planos',
-      feature: 'Funcionalidade',
-    },
-    unlimited: 'Ilimitado',
     faq: {
-      title: 'Perguntas frequentes sobre preços',
+      title: 'Perguntas frequentes sobre o beta',
     },
     cta: {
-      title: 'Comece grátis, sem cartão de crédito',
-      subtitle: 'Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão.',
+      title: 'Pronto para começar?',
+      subtitle: 'Crie sua primeira narração gratuitamente. Créditos mensais renovados todo mês.',
       button: 'Entrar com Google',
     },
   },
@@ -385,12 +347,12 @@ export const ptBR: TranslationDictionary = {
       subtitle:
         'Encontre respostas rápidas para as dúvidas mais comuns sobre o Script Master.',
       cta: 'Criar conta gratuita',
-      ctaSecondary: 'Ver planos',
+      ctaSecondary: 'Ver créditos',
     },
     categories: {
       ariaLabel: 'Categorias de perguntas frequentes',
       general: 'Geral',
-      pricing: 'Preços',
+      pricing: 'Créditos',
       technical: 'Técnico',
       account: 'Conta',
     },
@@ -400,10 +362,31 @@ export const ptBR: TranslationDictionary = {
       button: 'Fale conosco',
     },
     cta: {
-      title: 'Pronto para começar?',
+      title: 'Pronto para criar?',
       subtitle:
-        'Crie sua primeira narração gratuitamente. Sem compromisso, sem cartão de crédito.',
-      button: 'Começar agora',
+        'Comece a usar o Script Master e descubra o poder da IA para transformar seus roteiros.',
+      button: 'Começar Grátis',
+    },
+    feedback: {
+      title: 'Envie feedback e ganhe 250 créditos',
+      description: 'Sua opinião ajuda a melhorar o Script Master. Feedback construtivo vale créditos bônus.',
+      button: 'Enviar feedback',
+      loginPrompt: 'Faça login para enviar feedback e ganhar créditos',
+      categoryLabel: 'Categoria',
+      categoryGeneral: 'Geral',
+      categoryBugs: 'Bugs / Problemas',
+      categoryFeatures: 'Sugestões de funcionalidades',
+      categoryUX: 'Experiência do usuário',
+      categoryPerformance: 'Desempenho',
+      categoryOther: 'Outro',
+      textLabel: 'Seu feedback',
+      textPlaceholder: 'Descreva sua experiência, sugestões ou problemas (mínimo 10 caracteres)...',
+      screenContextLabel: 'Tela atual (opcional)',
+      sending: 'Enviando...',
+      successWithBonus: 'Feedback enviado! Você ganhou 250 créditos.',
+      successNoBonus: 'Feedback enviado! Obrigado.',
+      error: 'Erro ao enviar feedback. Tente novamente.',
+      tooShort: 'Mínimo de 10 caracteres.',
     },
   },
 
@@ -414,7 +397,7 @@ export const ptBR: TranslationDictionary = {
       subtitle:
         'Estamos aqui para ajudar. Envie sua dúvida, sugestão ou reporte um problema e responderemos em até 24h úteis.',
       cta: 'Enviar mensagem',
-      ctaSecondary: 'Ver preços',
+      ctaSecondary: 'Ver beta',
     },
     info: {
       title: 'Informações de contato',
@@ -646,6 +629,12 @@ export const ptBR: TranslationDictionary = {
         dialogDeleting: 'Excluindo...',
       },
       login: 'Login',
+      credits: {
+        loading: 'Carregando créditos...',
+        error: 'Erro ao carregar créditos',
+        ariaLabel: 'Saldo de créditos: {credits}',
+        breakdown: 'Base: {base} | Bônus: {bonus} | Usados: {used}',
+      },
     },
     actionBar: {
       ariaLabel: 'Controles de áudio e geração',
@@ -1230,8 +1219,8 @@ export const ptBR: TranslationDictionary = {
       description: 'Conheça todas as funcionalidades do Script Master: geração de áudio, imagens, vídeos, assistente IA e mais.',
     },
     pricing: {
-      title: 'Preços | Script Master',
-      description: 'Escolha o plano ideal para você. Comece grátis, sem cartão de crédito.',
+      title: 'Beta Aberto | Script Master',
+      description: 'O Script Master está em beta aberto. Acesse gratuitamente com 1.000 créditos mensais.',
     },
     status: {
       title: 'Status dos Serviços | Script Master',
@@ -1306,21 +1295,6 @@ export const ptBR: TranslationDictionary = {
         question: 'Como excluo minha conta?',
         answer: 'Você pode excluir sua conta diretamente pelo app: clique no seu avatar no canto superior direito e selecione "Excluir conta". Todos os seus dados (projetos, áudios, chats, memórias e configurações) são removidos permanentemente em conformidade com a LGPD. Também é possível solicitar a exclusão pelo formulário de contato.',
       },
-    },
-  },
-
-  // ── Pricing (comparação de planos) ──────────────────────────────────
-  pricingComparison: {
-    features: {
-      0: { name: 'Geração de áudio TTS', free: 'Até 10 roteiros/mês', pro: 'Ilimitado', business: 'Ilimitado' },
-      1: { name: 'Geração de imagens', free: 'Até 20/mês', pro: 'Ilimitado', business: 'Ilimitado' },
-      2: { name: 'Renderização de vídeo', free: 'Até 3/mês', pro: 'Ilimitado', business: 'Ilimitado' },
-      3: { name: 'Assistente IA', free: 'Até 50 mensagens/mês', pro: 'Ilimitado', business: 'Ilimitado' },
-      4: { name: 'Multi-speaker', free: '2 vozes', pro: '2 vozes', business: '2 vozes' },
-      5: { name: 'Speed Paint', free: 'Até 5/mês', pro: 'Ilimitado', business: 'Ilimitado' },
-      6: { name: 'Biblioteca', free: 'Local (IndexedDB)', pro: 'Nuvem + local', business: 'Nuvem + local' },
-      7: { name: 'Legendas automáticas', free: 'Whisper tiny', pro: 'Whisper completo', business: 'Whisper completo' },
-      8: { name: 'Suporte', free: 'Comunidade', pro: 'Prioritário', business: 'Dedicado' },
     },
   },
 
@@ -1414,6 +1388,15 @@ export const ptBR: TranslationDictionary = {
       multiSpeakerLocked: 'Multi-speaker disponível no plano Pro ou superior',
       emotionalTTSLocked: 'TTS emocional disponível no plano Pro ou superior',
       stockMediaLocked: 'Mídia stock disponível no plano Pro ou superior',
+    },
+  },
+
+  // ── Créditos bloqueados ─────────────────────────────────────────────
+  credits: {
+    blocked: {
+      title: 'Créditos esgotados',
+      description: 'Você atingiu o limite de créditos deste mês. Seu saldo será renovado automaticamente no início do próximo mês.',
+      cta: 'Enviar feedback e ganhar +250 créditos',
     },
   },
 

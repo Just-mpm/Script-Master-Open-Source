@@ -104,9 +104,9 @@ describe('LoginPage', () => {
     expect(screen.getByText('Chat com memória e integração ao estúdio')).toBeTruthy();
   });
 
-  it('deve exibir o título "Crie com IA, sem limites"', () => {
+  it('deve exibir o título "Crie com IA no beta aberto"', () => {
     renderWithRouter(<LoginPage />);
-    expect(screen.getByText('Crie com IA, sem limites')).toBeTruthy();
+    expect(screen.getByText('Crie com IA no beta aberto')).toBeTruthy();
   });
 
   it('deve exibir "Entre com Google ou email" no card', () => {

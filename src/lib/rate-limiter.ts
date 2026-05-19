@@ -1,14 +1,11 @@
 /**
- * Rate limiter com exponential backoff para chamadas client-side ao Gemini.
+ * Retry genérico com exponential backoff para APIs externas.
  *
- * Detecta erros 429 (RESOURCE_EXHAUSTED) e 503 (UNAVAILABLE) e aumenta
- * o delay automaticamente entre tentativas. Segue o padrão recomendado
- * pela documentação oficial da Gemini API.
+ * Detecta erros transitórios (429, 500, 503, 504) e mensagens de quota
+ * ou resource_exhausted, aumentando o delay automaticamente entre tentativas.
  *
- * Referência: Gemini API docs — "implement your own client-side retry
- * logic using exponential backoff".
+ * Usado atualmente por pexelsApi.ts para busca de stock media.
  */
-import { ApiError } from '@google/genai';
 import { createLogger } from './logger';
 
 const log = createLogger('rate-limiter');
@@ -52,12 +49,9 @@ const DEFAULT_CONFIG: RateLimiterConfig = {
 
 /** Verifica se um erro é transitório e justifica retry */
 function isRetryableError(error: unknown): boolean {
-  if (error instanceof ApiError) {
-    return RETRYABLE_STATUS_CODES.has(error.status);
-  }
-
-  // Fallback para erros que não são ApiError mas contêm status/message
   const errorLike = error as Record<string, unknown>;
+
+  // Verifica status code (HTTP) ou code interno
   const status = typeof errorLike.status === 'number'
     ? errorLike.status
     : typeof errorLike.code === 'number'
@@ -121,11 +115,14 @@ export async function withRetry<T>(
       }
 
       const delay = calculateDelay(attempt, mergedConfig);
-      const errorInfo = error instanceof ApiError
-        ? `status ${error.status}`
-        : 'desconhecido';
+      const errorLike = error as Record<string, unknown>;
+      const status = typeof errorLike.status === 'number'
+        ? String(errorLike.status)
+        : typeof errorLike.code === 'number'
+          ? String(errorLike.code)
+          : 'desconhecido';
       log.warn(
-        `Erro transitório (${errorInfo}), tentativa ${attempt + 1}/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
+        `Erro transitório (status ${status}), tentativa ${attempt + 1}/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
       );
 
       await sleep(delay);

@@ -42,6 +42,8 @@ interface AudioGenerationHandlerReturn {
   toggleAudioPlayer: (source: 'studio') => void;
   // Estado de salvamento
   isSaved: boolean;
+  // Créditos esgotados
+  creditsExhausted: boolean;
 }
 
 // ─── Hook ──────────────────────────────────────────────────
@@ -76,6 +78,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     generateAudio,
     handleCancel,
     durationInSeconds,
+    creditsExhausted,
   } = useAudioGenerator();
 
   // ─── Estado de config do store (Zustand) ──────────────────
@@ -215,5 +218,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     videoExportProgress,
     toggleAudioPlayer: toggle,
     isSaved,
+    creditsExhausted,
   };
 }

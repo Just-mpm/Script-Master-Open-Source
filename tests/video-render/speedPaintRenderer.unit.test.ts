@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../../src/features/video-render/lib/speedPaintRenderer';
+import {
+  renderSpeedPaintFrame,
+  createBufferCanvas,
+  getVisibleStrokeCount,
+  loadImageElement,
+} from '../../src/features/video-render/lib/speedPaintRenderer';
 import type { StrokeAnimation } from '../../src/features/speed-paint/types';
 
 // ---------------------------------------------------------------------------
@@ -71,6 +76,80 @@ function createMinimalAnimation(overrides?: Partial<StrokeAnimation>): StrokeAni
 // ---------------------------------------------------------------------------
 
 describe('speedPaintRenderer', () => {
+  describe('getVisibleStrokeCount', () => {
+    it('usa a mesma contagem ajustada para multiplicador global lento', () => {
+      const animation = createMinimalAnimation({
+        strokes: Array.from({ length: 8 }, (_, index) => ({
+          id: index + 1,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10 + index, 20, 30 + index, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        })),
+      });
+
+      expect(getVisibleStrokeCount(animation, 0.5, 0.5)).toBe(2);
+    });
+
+    it('aplica os multiplicadores separados de sketch e reveal na mesma conta do renderer', () => {
+      const strokes = [
+        {
+          id: 1,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [10, 20, 30, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        },
+        {
+          id: 2,
+          layer: 0,
+          type: 'sketch' as const,
+          points: [15, 20, 35, 40],
+          lineWidth: 2,
+          r: 40,
+          g: 40,
+          b: 40,
+          alpha: 0.9,
+        },
+        {
+          id: 3,
+          layer: 1,
+          type: 'reveal' as const,
+          points: [50, 60, 70, 80],
+          lineWidth: 10,
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 1,
+        },
+        {
+          id: 4,
+          layer: 1,
+          type: 'reveal' as const,
+          points: [55, 60, 75, 80],
+          lineWidth: 10,
+          r: 0,
+          g: 0,
+          b: 0,
+          alpha: 1,
+        },
+      ];
+
+      const animation = createMinimalAnimation({ strokes, revealThreshold: 0.5 });
+
+      expect(getVisibleStrokeCount(animation, 0.25, { sketch: 2.0, reveal: 1.0 })).toBe(2);
+      expect(getVisibleStrokeCount(animation, 0.75, { sketch: 1.0, reveal: 2.0 })).toBe(3);
+    });
+  });
+
   describe('renderSpeedPaintFrame', () => {
     it('não crasha com progress 0 (nenhum stroke visível)', () => {
       const { ctx } = createMockCtx();

@@ -44,6 +44,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
 import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
+import { CreditBlockedMessage } from './CreditBlockedMessage';
 import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
@@ -102,7 +103,7 @@ export function ImageStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel } = useImageGenerator();
+  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel, creditsExhausted } = useImageGenerator();
 
   // Carrega imagens salvas na biblioteca
   const loadSavedImages = useCallback(async () => {
@@ -559,7 +560,8 @@ export function ImageStudio() {
                 )}
               </Box>
 
-              {error ? <Alert variant="outlined" severity="error">{error}</Alert> : null}
+              {creditsExhausted ? <CreditBlockedMessage show={true} /> : null}
+              {error && !creditsExhausted ? <Alert variant="outlined" severity="error">{error}</Alert> : null}
               {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null}
             </Stack>
           </Paper>

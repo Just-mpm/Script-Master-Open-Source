@@ -39,6 +39,9 @@ vi.mock('../../src/lib/env', () => ({
   readRequiredEnv: (key: string) => `mock-${key}`,
   readOptionalEnv: () => undefined,
   getGeminiApiKey: () => 'mock-api-key',
+  getRecaptchaSiteKey: () => undefined,
+  isBillingEnabled: () => false,
+  isOpenBetaEnabled: () => true,
   getFirebaseEnvConfig: () => ({
     apiKey: 'mock',
     authDomain: 'mock',
@@ -147,12 +150,6 @@ vi.mock('../../src/components/VideoPreview', () => ({
 
 vi.mock('../../src/components/public/ScrollToTop', () => ({
   ScrollToTop: () => null,
-}));
-
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn(),
-  Modality: { AUDIO: 'AUDIO', IMAGE: 'IMAGE', TEXT: 'TEXT' },
-  Type: { OBJECT: 'OBJECT' },
 }));
 
 // ---------------------------------------------------------------------------

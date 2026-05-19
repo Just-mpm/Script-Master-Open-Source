@@ -2,7 +2,7 @@ import type { Locale } from '../features/i18n/types';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
-/** Item individual de FAQ de preços */
+/** Item individual de FAQ do beta */
 export interface PricingFaqItem {
   readonly question: string;
   readonly answer: string;
@@ -10,67 +10,67 @@ export interface PricingFaqItem {
 
 // ── Strings localizadas ───────────────────────────────────────────────
 
-/** Strings do FAQ de preços por idioma */
+/** Strings do FAQ do beta por idioma */
 const pricingFaqStrings = {
   'pt-BR': {
-    faq0Question: 'É realmente grátis?',
+    faq0Question: 'Como funcionam os créditos?',
     faq0Answer:
-      'Sim! O plano Gratuito não exige cartão de crédito e não possui data de expiração. Você pode usar todas as funcionalidades principais — geração de áudio, imagens, vídeos e assistente IA — dentro dos limites do plano, sem custo algum.',
-    faq1Question: 'Posso cancelar a qualquer momento?',
+      'Cada geração de áudio, imagem ou interação com o assistente IA consome uma quantidade de créditos do seu saldo. Você recebe 1.000 créditos gratuitos todo início de mês. O saldo é exibido no header após o login.',
+    faq1Question: 'O que acontece quando meus créditos acabam?',
     faq1Answer:
-      'Com certeza. Assim que nossos planos pagos estiverem disponíveis, o cancelamento será instantâneo e sem multa. Você continuará tendo acesso ao plano até o fim do ciclo já pago.',
-    faq2Question: 'Quais as formas de pagamento?',
+      'Quando seus créditos chegarem a zero, você não conseguirá gerar novos conteúdos até a renovação mensal. Mas não se preocupe — seus projetos, áudios e imagens anteriores continuam acessíveis na biblioteca.',
+    faq2Question: 'Posso comprar mais créditos?',
     faq2Answer:
-      'Estamos preparando a integração com Stripe para aceitar cartão de crédito (Visa, Mastercard, Elo, Amex), PIX e boleto bancário. Toda a transação será processada com criptografia de ponta a ponta.',
-    faq3Question: 'O que acontece se exceder os limites do plano?',
+      'Ainda não. Os pagamentos e assinaturas estão temporariamente pausados enquanto focamos em melhorar o produto com feedback real. Planos pagos e compra de créditos voltarão no futuro.',
+    faq3Question: 'O beta é realmente gratuito?',
     faq3Answer:
-      'Quando você estiver próximo do limite, exibiremos um aviso no painel. Após atingir o limite, poderá continuar usando no plano Gratuito — suas gerações anteriores permanecem acessíveis na biblioteca.',
-    faq4Question: 'Existe desconto para pagamento anual?',
+      'Sim! O beta aberto é 100% gratuito. Você recebe 1.000 créditos por mês sem precisar de cartão de crédito. Nenhuma cobrança será feita durante o período de beta.',
+    faq4Question: 'Como ganhar créditos bônus?',
     faq4Answer:
-      'Sim! Planejamos oferecer planos anuais com aproximadamente 20% de desconto em relação ao plano mensal. Fique de olho nas novidades — avisaremos quando estiver disponível.',
-    faq5Question: 'Posso trocar de plano?',
+      'Você pode ganhar 250 créditos extras ao enviar feedback construtivo pelo formulário de contato (área logada). O bônus é concedido automaticamente ao enviar o feedback. Fique de olho em outras formas de ganhar créditos no futuro.',
+    faq5Question: 'Os créditos acumulam?',
     faq5Answer:
-      'Sim, você poderá fazer upgrade ou downgrade a qualquer momento pelo painel de configurações da conta. Ao fazer upgrade, o valor será prorrateado. Ao fazer downgrade, o novo plano entra em vigor no próximo ciclo.',
+      'Não. Os créditos são renovados para 1.000 todo início de mês. Créditos não utilizados no mês anterior não acumulam para o mês seguinte. Aproveite seus créditos mensais!',
   },
   en: {
-    faq0Question: 'Is it really free?',
+    faq0Question: 'How do credits work?',
     faq0Answer:
-      'Yes! The Free plan requires no credit card and has no expiration date. You can use all main features — audio generation, images, videos, and AI assistant — within plan limits, at no cost.',
-    faq1Question: 'Can I cancel at any time?',
+      'Each audio generation, image generation, or AI assistant interaction consumes credits from your balance. You receive 1,000 free credits at the beginning of each month. Your balance is displayed in the header after login.',
+    faq1Question: 'What happens when I run out of credits?',
     faq1Answer:
-      'Absolutely. Once our paid plans are available, cancellation will be instant with no penalty. You\'ll continue to have access to the plan until the end of the paid cycle.',
-    faq2Question: 'What payment methods are available?',
+      'When your credits reach zero, you won\'t be able to generate new content until the monthly renewal. But don\'t worry — your previous projects, audios, and images remain accessible in the library.',
+    faq2Question: 'Can I buy more credits?',
     faq2Answer:
-      'We\'re preparing Stripe integration to accept credit cards (Visa, Mastercard, Elo, Amex), PIX, and bank slip. All transactions will be processed with end-to-end encryption.',
-    faq3Question: 'What happens if I exceed plan limits?',
+      'Not yet. Payments and subscriptions are temporarily paused while we focus on improving the product with real feedback. Paid plans and credit purchases will return in the future.',
+    faq3Question: 'Is the beta really free?',
     faq3Answer:
-      'When you\'re close to the limit, we\'ll display a warning on the dashboard. After reaching the limit, you can continue using the Free plan — your previous generations remain accessible in the library.',
-    faq4Question: 'Is there a discount for annual payment?',
+      'Yes! The open beta is 100% free. You get 1,000 credits per month with no credit card required. No charges will be made during the beta period.',
+    faq4Question: 'How do I earn bonus credits?',
     faq4Answer:
-      'Yes! We plan to offer annual plans with approximately 20% discount compared to the monthly plan. Stay tuned for news — we\'ll notify you when it\'s available.',
-    faq5Question: 'Can I switch plans?',
+      'You can earn 250 extra credits by sending constructive feedback through the contact form (logged-in area). The bonus is granted automatically upon submitting your feedback. Stay tuned for more ways to earn credits in the future.',
+    faq5Question: 'Do credits accumulate?',
     faq5Answer:
-      'Yes, you can upgrade or downgrade at any time from your account settings. When upgrading, the amount will be prorated. When downgrading, the new plan takes effect on the next cycle.',
+      'No. Credits reset to 1,000 at the beginning of each month. Unused credits from the previous month do not carry over to the next month. Make the most of your monthly credits!',
   },
   es: {
-    faq0Question: '¿Es realmente gratis?',
+    faq0Question: '¿Cómo funcionan los créditos?',
     faq0Answer:
-      '¡Sí! El plan Gratuito no requiere tarjeta de crédito y no tiene fecha de expiración. Puedes usar todas las funcionalidades principales — generación de audio, imágenes, videos y asistente IA — dentro de los límites del plan, sin costo alguno.',
-    faq1Question: '¿Puedo cancelar en cualquier momento?',
+      'Cada generación de audio, imagen o interacción con el asistente IA consume créditos de tu saldo. Recibes 1.000 créditos gratuitos al inicio de cada mes. El saldo se muestra en el encabezado después de iniciar sesión.',
+    faq1Question: '¿Qué pasa cuando se acaban mis créditos?',
     faq1Answer:
-      '¡Por supuesto! Una vez que nuestros planes de pago estén disponibles, la cancelación será instantánea y sin multa. Seguirás teniendo acceso al plan hasta el final del ciclo ya pagado.',
-    faq2Question: '¿Cuáles son los métodos de pago?',
+      'Cuando tus créditos lleguen a cero, no podrás generar nuevo contenido hasta la renovación mensual. Pero no te preocupes — tus proyectos, audios e imágenes anteriores permanecen accesibles en la biblioteca.',
+    faq2Question: '¿Puedo comprar más créditos?',
     faq2Answer:
-      'Estamos preparando la integración con Stripe para aceptar tarjetas de crédito (Visa, Mastercard, Elo, Amex), PIX y boleto bancario. Toda la transacción será procesada con cifrado de extremo a extremo.',
-    faq3Question: '¿Qué pasa si excedo los límites del plan?',
+      'Todavía no. Los pagos y suscripciones están temporalmente pausados mientras nos enfocamos en mejorar el producto con feedback real. Los planes de pago y la compra de créditos volverán en el futuro.',
+    faq3Question: '¿El beta es realmente gratuito?',
     faq3Answer:
-      'Cuando estés cerca del límite, mostraremos una advertencia en el panel. Al alcanzar el límite, podrás continuar usando el plan Gratuito — tus generaciones anteriores permanecen accesibles en la biblioteca.',
-    faq4Question: '¿Hay descuento para pago anual?',
+      '¡Sí! El beta abierto es 100% gratuito. Recibes 1.000 créditos por mes sin necesidad de tarjeta de crédito. No se realizará ningún cobro durante el período beta.',
+    faq4Question: '¿Cómo ganar créditos extra?',
     faq4Answer:
-      '¡Sí! Planeamos ofrecer planes anuales con aproximadamente 20% de descuento respecto al plan mensual. Estate atento a las novedades — te avisaremos cuando esté disponible.',
-    faq5Question: '¿Puedo cambiar de plan?',
+      'Puedes ganar 250 créditos adicionales enviando feedback constructivo a través del formulario de contacto (área de usuarios registrados). El bono se concede automáticamente al enviar el feedback. Estate atento a más formas de ganar créditos en el futuro.',
+    faq5Question: '¿Los créditos se acumulan?',
     faq5Answer:
-      'Sí, podrás hacer upgrade o downgrade en cualquier momento desde la configuración de tu cuenta. Al hacer upgrade, el valor será prorrateado. Al hacer downgrade, el nuevo plan entra en vigor en el próximo ciclo.',
+      'No. Los créditos se renuevan a 1.000 al inicio de cada mes. Los créditos no utilizados del mes anterior no se acumulan para el siguiente. ¡Aprovecha tus créditos mensuales!',
   },
 } as const;
 
@@ -93,7 +93,7 @@ function buildPricingFaq(strings: PricingFaqStrings): PricingFaqItem[] {
 // ── Função locale-aware ───────────────────────────────────────────────
 
 /**
- * Retorna as perguntas frequentes de preços no idioma solicitado.
+ * Retorna as perguntas frequentes do beta no idioma solicitado.
  * Fallback para pt-BR se o locale não for reconhecido.
  */
 export function getLocalizedPricingFaq(locale: Locale): PricingFaqItem[] {
@@ -104,7 +104,7 @@ export function getLocalizedPricingFaq(locale: Locale): PricingFaqItem[] {
 // ── Dados (backward compat) ──────────────────────────────────────────
 
 /**
- * Perguntas frequentes sobre preços — fonte única (usado em PricingPage e FaqPage).
+ * Perguntas frequentes sobre o beta — fonte única (usado em PricingPage e FaqPage).
  * Manter aqui evita duplicação e garante consistência entre as duas páginas.
  */
 export const PRICING_FAQ_ITEMS: readonly PricingFaqItem[] = getLocalizedPricingFaq('pt-BR');

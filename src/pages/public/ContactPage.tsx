@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
+import CircularProgress from '@mui/material/CircularProgress';
 import EmailIcon from '@mui/icons-material/Email';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -15,17 +16,22 @@ import SendIcon from '@mui/icons-material/Send';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import XIcon from '@mui/icons-material/X';
+import LoginIcon from '@mui/icons-material/Login';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import type { ReactNode } from 'react';
+import { httpsCallable } from 'firebase/functions';
 import { DocumentHead } from '../../components/DocumentHead';
 import { alpha } from '@mui/material/styles';
 import { getPageSeo } from '../../lib/seo';
+import { functions } from '../../lib/firebase';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
-import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, APP_BORDER, WHITE_04, WHITE_12 } from '../../theme/tokens';
+import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, BRAND_SECONDARY, APP_BORDER, WHITE_04, WHITE_12 } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { createLogger } from '../../lib/logger';
 import { useLocale } from '../../features/i18n';
+import { useAuth } from '../../contexts/AuthContext';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -246,6 +252,168 @@ function ContactInfoPanel() {
   );
 }
 
+/** Formulário de feedback inline que chama o flow feedback (Cloud Function).
+ * Substitui o antigo mailto: — agora concede 250 créditos automaticamente. */
+function FeedbackForm() {
+  const { t } = useLocale();
+  const log = createLogger('FeedbackForm');
+
+  const [category, setCategory] = useState('');
+  const [text, setText] = useState('');
+  const [screenContext, setScreenContext] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [bonusMessage, setBonusMessage] = useState<string | null>(null);
+
+  // Opções de categoria com labels traduzidos
+  const categoryOptions: readonly SelectOption[] = [
+    { value: 'general', label: t('contact.feedback.categoryGeneral') },
+    { value: 'bugs', label: t('contact.feedback.categoryBugs') },
+    { value: 'features', label: t('contact.feedback.categoryFeatures') },
+    { value: 'ux', label: t('contact.feedback.categoryUX') },
+    { value: 'performance', label: t('contact.feedback.categoryPerformance') },
+    { value: 'other', label: t('contact.feedback.categoryOther') },
+  ];
+
+  const isTooShort = text.length > 0 && text.trim().length < 10;
+  const canSubmit = category.trim().length > 0 && text.trim().length >= 10 && !isSending;
+
+  const handleSubmit = useCallback(async () => {
+    setIsSending(true);
+    setFeedbackError(null);
+    setBonusMessage(null);
+
+    try {
+      const feedbackCall = httpsCallable<{
+        category: string;
+        text: string;
+        screenContext?: string;
+        requestId: string;
+      }, {
+        success: boolean;
+        bonusGranted: boolean;
+        availableCredits?: number;
+      }>(functions, 'feedback');
+
+      const result = await feedbackCall({
+        category,
+        text: text.trim(),
+        screenContext: screenContext.trim() || undefined,
+        requestId: crypto.randomUUID(),
+      });
+
+      const data = result.data;
+      setFeedbackSent(true);
+
+      if (data.bonusGranted) {
+        setBonusMessage(t('contact.feedback.successWithBonus'));
+      } else {
+        setBonusMessage(t('contact.feedback.successNoBonus'));
+      }
+
+      log.info('feedback enviado', { category, bonusGranted: data.bonusGranted });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.warn('erro ao enviar feedback', { error: message });
+      setFeedbackError(t('contact.feedback.error'));
+    } finally {
+      setIsSending(false);
+    }
+  }, [category, text, screenContext, t, log]);
+
+  // Após envio bem-sucedido, mostra mensagem de confirmação
+  if (feedbackSent && bonusMessage) {
+    return (
+      <Stack spacing={2} sx={{ alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 56,
+            height: 56,
+            borderRadius: '16px',
+            backgroundColor: alpha(BRAND_SECONDARY, 0.12),
+            color: BRAND_SECONDARY,
+          }}
+        >
+          <RateReviewIcon sx={{ fontSize: 28 }} />
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          {t('contact.feedback.title')}
+        </Typography>
+        <Alert severity="success" variant="outlined" sx={{ maxWidth: 480 }}>
+          {bonusMessage}
+        </Alert>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack spacing={2.5} sx={{ width: '100%', maxWidth: 480 }}>
+      {/* Categoria */}
+      <TextField
+        select
+        label={t('contact.feedback.categoryLabel')}
+        value={category}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setCategory(e.target.value)}
+        size="small"
+        fullWidth
+      >
+        {categoryOptions.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      {/* Texto do feedback */}
+      <TextField
+        label={t('contact.feedback.textLabel')}
+        placeholder={t('contact.feedback.textPlaceholder')}
+        value={text}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setText(e.target.value)}
+        multiline
+        minRows={3}
+        maxRows={6}
+        fullWidth
+        error={isTooShort}
+        helperText={isTooShort ? t('contact.feedback.tooShort') : undefined}
+      />
+
+      {/* Contexto da tela (opcional) */}
+      <TextField
+        label={t('contact.feedback.screenContextLabel')}
+        value={screenContext}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setScreenContext(e.target.value)}
+        size="small"
+        fullWidth
+      />
+
+      {/* Erro */}
+      {feedbackError && (
+        <Alert severity="error" variant="outlined" onClose={() => setFeedbackError(null)}>
+          {feedbackError}
+        </Alert>
+      )}
+
+      {/* Botão de envio */}
+      <Button
+        variant="contained"
+        color="secondary"
+        size="large"
+        onClick={handleSubmit}
+        disabled={!canSubmit}
+        endIcon={isSending ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+        sx={{ mt: 1 }}
+      >
+        {isSending ? t('contact.feedback.sending') : t('contact.feedback.button')}
+      </Button>
+    </Stack>
+  );
+}
+
 /** Formulário de contato com validação inline e fallback mailto */
 function ContactForm() {
   const { t } = useLocale();
@@ -411,6 +579,7 @@ function ContactForm() {
 
 export default function ContactPage() {
   const { t, locale } = useLocale();
+  const { user } = useAuth();
 
   const seo = getPageSeo({
     title: t('seo.contact.title'),
@@ -437,7 +606,7 @@ export default function ContactPage() {
       />
 
       {/* Grid 2 colunas: Informações + Formulário */}
-      <Box sx={{ pt: { xs: 8, md: 10 }, pb: { xs: 8, md: 12 } }} id="form">
+      <Box sx={{ pt: { xs: 8, md: 10 }, pb: { xs: 4, md: 6 } }} id="form">
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, lg: 5 }}>
             <ContactInfoPanel />
@@ -446,6 +615,75 @@ export default function ContactPage() {
             <ContactForm />
           </Grid>
         </Grid>
+      </Box>
+
+      {/* ── Seção de Feedback (créditos bônus) ── */}
+      <Box sx={{ pb: { xs: 8, md: 12 } }}>
+        <Box
+          sx={(theme) => ({
+            ...glassPanelSx(theme),
+            p: { xs: 3, md: 5 },
+            textAlign: 'center',
+            maxWidth: 640,
+            mx: 'auto',
+          })}
+        >
+          {user ? (
+            <Stack spacing={2} sx={{ alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 56,
+                  height: 56,
+                  borderRadius: '16px',
+                  backgroundColor: alpha(BRAND_SECONDARY, 0.12),
+                  color: BRAND_SECONDARY,
+                }}
+              >
+                <RateReviewIcon sx={{ fontSize: 28 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {t('contact.feedback.title')}
+              </Typography>
+              <Typography variant="body2" sx={{ color: TEXT_SECONDARY, maxWidth: 480, lineHeight: 1.7 }}>
+                {t('contact.feedback.description')}
+              </Typography>
+              <FeedbackForm />
+            </Stack>
+          ) : (
+            <Stack spacing={2} sx={{ alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 56,
+                  height: 56,
+                  borderRadius: '16px',
+                  backgroundColor: alpha(BRAND_PRIMARY, 0.12),
+                  color: BRAND_PRIMARY,
+                }}
+              >
+                <LoginIcon sx={{ fontSize: 28 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {t('contact.feedback.loginPrompt')}
+              </Typography>
+              <Button
+                component="a"
+                href="/login"
+                variant="outlined"
+                size="large"
+                endIcon={<LoginIcon />}
+                sx={{ mt: 1 }}
+              >
+                {t('nav.login')}
+              </Button>
+            </Stack>
+          )}
+        </Box>
       </Box>
 
       {/* CTA Final */}

@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useInlineAssistant } from '../../../hooks/useInlineAssistant';
 import { useLocale } from '../../i18n';
+import { CreditBlockedMessage } from '../../../components/CreditBlockedMessage';
 import { BRAND_PRIMARY_GLOW } from '../../../theme/tokens';
 import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -35,7 +36,7 @@ interface InlineAIWidgetProps {
 
 export function InlineAIWidget({ script, setScript, textareaRef, disabled }: InlineAIWidgetProps) {
   const { t } = useLocale();
-  const { isProcessing, rewrite } = useInlineAssistant();
+  const { isProcessing, rewrite, creditsExhausted } = useInlineAssistant();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -230,6 +231,8 @@ export function InlineAIWidget({ script, setScript, textareaRef, disabled }: Inl
 
   return (
     <>
+      <CreditBlockedMessage show={creditsExhausted} />
+
       {/* Popover de Input da IA — ancorado via Virtual Element nas coordenadas do mouse */}
       <Popover
         open={isPopoverOpen}

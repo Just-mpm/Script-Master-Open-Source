@@ -30,10 +30,10 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 - **React 19** + **Vite 8** + **react-router-dom v7** (lazy loading por rota)
 - **MUI v9** — tema em `src/theme/*`, sem Tailwind
-- **@google/genai** (cliente direto) — TTS, imagens, prompts de cena
-- **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) | `firebase-tools` ^15.3.0 (deploy)
-- **Firebase Cloud Functions v2** — backend serverless (Stripe webhooks, checkout, portal) em `functions/`
-- **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions)
+- **Genkit** (backend via Cloud Functions) — TTS, imagens, prompts de cena, assistente, chunking
+- **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) + App Check (reCAPTCHA v3) | `firebase-tools` ^15.3.0 (deploy)
+- **Firebase Cloud Functions v2** — backend serverless com Genkit (8 flows de IA: audio, images, assistant, inline-assistant, scene-prompts, chunking, feedback, ping) + Stripe em `functions/`
+- **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions); desconectado por flag `VITE_BILLING_ENABLED` durante beta aberto
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
@@ -64,6 +64,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 - Não remova COEP sem motivo — necessário para SharedArrayBuffer (Whisper + Remotion)
 - Não use `process.env` — leia env vars via `import.meta.env` ou `src/lib/env.ts`
 - Não use `console.log/warn/error` — importe `createLogger` ou `logger` de `src/lib/logger.ts` (uso: `import { createLogger } from '../../../lib/logger'` — sempre import relativo, nunca `@/`)
+- Não chame o Gemini diretamente do frontend — todas as chamadas de IA passam por Cloud Functions via Genkit (`httpsCallable`)
 
 ## Rotas
 
@@ -118,7 +119,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Arquivos** | `src/pages/public/`, `src/components/public/`, `src/data/`, `src/components/DocumentHead.tsx`, `src/lib/seo.ts` |
 | **LandingPage** | `/` — hero com CTA, social proof bar, 6 feature cards, 3 feature showcases, seção "como funciona" (3 steps), CTA final |
 | **FuncionalidadesPage** | `/funcionalidades` — 6 seções categorizadas (Áudio, Vídeo, Imagem, Assistente, Biblioteca, Speed Paint) com deep dives |
-| **PricingPage** | `/precos` — cards de plano (mensal/anual), tabela de comparação semântica (`<table>` nativa), FAQ de preços, CTA |
+| **PricingPage** | `/precos` — página de beta aberto: `CreditInfoCard` com cards animados (Motion), `BetaNotice`, seção "Como funciona" com `StepCard`; sem toggle mensal/anual, sem tabela de comparação |
 | **FaqPage** | `/perguntas-frequentes` — FAQ por categorias via tabs, accordion expansível com `id`/`aria-controls` (WCAG 4.1.2) |
 | **ContactPage** | `/contato` — formulário de contato, links sociais, informações de suporte |
 | **AboutPage** | `/sobre` — missão, valores, diferenciais do produto |
@@ -133,10 +134,15 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Páginas autenticadas** | Prefixo `/app/` em todas as rotas protegidas (`/app/estudio`, `/app/video`, etc.) |
 
 ### Áudio & TTS
-| **Chunking** | Se >500 chars, `gemini-lite` divide via JSON output. Fallback: `splitTextProgrammatically` por sentenças |
+
+| | |
+|---|---|
+| **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/features/studio/store/audioGeneratorStore.ts`, `src/components/app/AudioGenerationHandler.tsx`, `src/lib/audio.ts`, `functions/src/flows/audio.ts`, `functions/src/flows/chunking.ts` |
+| **Frontend** | `useAudioGenerator` chama Cloud Function `audio` via `httpsCallable` (Genkit). Tipos `AudioFlowInput`/`AudioFlowOutput`. Sem chamada direta ao Gemini |
+| **Backend (Genkit)** | Flow `audio.ts` — recebe script, voz, locale, emotion; faz chunking interno (se >500 chars via `chunking.ts`); chama Gemini TTS; retorna chunks de áudio base64. Middleware `credit-metering.ts` estima/reserva/confirma créditos |
+| **Chunking** | Se >500 chars, Cloud Function `chunking` divide via Dotprompt JSON output. Fallback: `splitTextProgrammatically` por sentenças (em `functions/src/genkit/utils/chunking.ts`) |
 | **Continuidade** | A partir do chunk 2, injeta "TAKES CONTÍNUOS" no prompt para manter tom/energia consistentes |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
-| **Retry** | `withRetry`: 3 tentativas, 1500ms base, 500ms jitter. 429/503/504 retryam; 400/403/404 falham imediato |
 | **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
 | **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS) |
 | **Segmentos** | `AudioSegment` persiste chunk→timestamp no IndexedDB (fire-and-forget). Duração: `pcm.length / 48000` |
@@ -145,20 +151,21 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
 | **AudioContext selectors** | `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — hooks seletivos para re-render otimizado |
 | **Emoções** | `emotion` e `emotionIntensity` (0-1) nas options de geração; persistidos nos tipos de db (`db/types.ts`) |
+| **Créditos** | `creditsExhausted` prop no `AudioGenerationHandler` — bloqueia geração quando créditos acabam |
 
 ### Geração de Imagens
 
 | | |
 |---|---|
-| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts` |
-| **Pipeline** | prompt (opcional + referência) → Gemini via `withRetry` → extrai `inlineData` → base64ToBlob → blob URL |
+| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts`, `functions/src/flows/images.ts` |
+| **Pipeline** | prompt (opcional + referência) → Cloud Function `images` via `httpsCallable` (Genkit) → retorna base64 → blob URL |
 | **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
-| **Retry** | `withRetry`: 3 tentativas, 1000ms base, 500ms jitter (mesmo do TTS) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
-| **Prompts de cena** | `generateScenePrompts()` usa `gemini-lite` para gerar descrições textuais (JSON), não imagens. Fallback genérico se API falhar. Recebe `locale` e injeta instrução crítica de idioma no prompt via `LOCALE_LANGUAGE_MAP` (ex: "português brasileiro", "inglês", "espanhol") |
+| **Prompts de cena** | `generateScenePrompts()` chama Cloud Function `scene-prompts` via `httpsCallable` (Genkit com Dotprompt). Gera descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
-| **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels). Retry automático via `withRetry` |
+| **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels) |
+| **Créditos** | `CreditBlockedMessage` exibido no ImageStudio quando créditos estão esgotados |
 
 ### Vídeo (Remotion)
 
@@ -200,7 +207,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Chat fallback** | Se doc >900KB ou erro Firestore, salva no IndexedDB (retorna `true`); `getChatSessions` busca Firestore + IndexedDB e deduplica por `updatedAt`; filtrado por `userId` no merge |
 | **Transcriptions** | Apenas IndexedDB (dados temporários por projeto) |
 | **Audio segments** | Apenas IndexedDB, campo `audioSegments` dentro de `AudioSource` existente |
-| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded. Rules para `/users/{userId}` + subcoleção `/subscription/{docId}`: leitura pelo próprio usuário, escrita apenas por admin |
+| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded. Rules para `/users/{userId}` + subcoleções `/subscription/{docId}`, `/beta_access/{docId}`, `/credit_months/{docId}`, `/credit_events/{docId}`, `/feedback_rewards/{docId}`: leitura pelo próprio usuário, escrita apenas por admin |
 | **Admin (Storage)** | Apenas email hardcoded (leitura + deleção, sem escrita) |
 | **Limites Storage** | Áudio 150MB, imagem 10MB, vídeo 200MB. Previews: público (leitura), admin (escrita) |
 | **Converter** | `createFirestoreConverter<T>()` genérico remove `undefined` na serialização |
@@ -209,13 +216,14 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/systemPrompt.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts` |
-| **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming direto do Gemini e `VirtualElement` para posicionamento contextual (Popover) |
-| **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via `generateContentStream`) |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/systemPrompt.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts` |
+| **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming via Cloud Function `inline-assistant` (Genkit) e `VirtualElement` para posicionamento contextual (Popover) |
+| **Backend (Genkit)** | Chat principal usa Cloud Function `assistant` via `httpsCallable`. Inline assistant usa `inline-assistant`. Ambos com Dotprompts em `functions/prompts/` |
+| **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via Genkit no backend) |
 | **UI centralizada** | `assistantUi.ts` — 13 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button); componentes internos importam de `assistantUi` em vez de `tokens.ts` |
 | **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
-| **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini. Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
-| **System prompt** | Montado dinamicamente via `buildSystemInstruction` (em `systemPrompt.ts`): identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings. Compartilhado entre chat principal e widget inline |
+| **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini (via backend). Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
+| **System prompt** | Montado dinamicamente via Dotprompt no backend: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
 | **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
@@ -223,6 +231,7 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Abort** | Novo envio aborta chamada anterior. Desmontagem aborta em andamento |
 | **Retry** | `retryLastMessage()` reenvia última mensagem do usuário ao falhar; botão "Tentar novamente" no Alert de erro |
 | **Streaming batch** | Chunks acumulados via `requestAnimationFrame` — flush uma vez por frame de display (reduz re-renders durante streaming) |
+| **Créditos** | `CreditBlockedMessage` exibido no Assistant quando créditos estão esgotados |
 
 ### Estúdio de Produção
 
@@ -272,21 +281,23 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | **Integração Auth** | Novos usuários sem onboarding completado são redirecionados para `/onboarding` após signup/login (AuthContext). Ao completar, salva `name`, `role`, `goals` no `user_settings` e redireciona para `/app/estudio` |
 | **i18n** | Chaves `wizard` e `onboarding` nos 3 locales (pt-BR, en, es) |
 
-### Billing & Pagamentos
+### Billing & Créditos
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/billing/` (frontend), `functions/src/index.ts` (backend) |
+| **Arquivos** | `src/features/billing/` (frontend), `src/components/CreditBlockedMessage.tsx`, `src/components/CreditIndicator.tsx`, `src/hooks/useCredits.ts`, `functions/src/usage/` (backend), `functions/src/genkit/middlewares/credit-metering.ts` |
+| **Modo atual** | Beta aberto (`OPEN_BETA_ENABLED=true`) — acesso gratuito com créditos mensais; Stripe/billing preservados mas desconectados por flag `VITE_BILLING_ENABLED=false` |
 | **Tipos** | `PlanId` (`'free' | 'pro' | 'business'`), `Plan`, `PlanLimits`, `UsageRecord`, `UsageState`, `UsageAlert` |
 | **Planos** | Gratuito (limites base), Pro (R$ 49,90/mês), Business (R$ 149,90/mês) — definidos em `plans.ts`; `formatPrice()` para exibição |
-| **Store** | `useBillingStore` (Zustand) — plano ativo, uso, status de loading; carrega do Firestore (`users/{uid}/subscription/current`) via `onSnapshot` em tempo real |
+| **Store** | `useBillingStore` (Zustand) — plano ativo, uso, status de loading; carrega do Firestore (`users/{uid}/subscription/current`) via `onSnapshot` em tempo real; desabilitado quando `isBillingEnabled() === false` |
 | **Init** | `useBillingInit` — hook de inicialização, usado uma vez no AuthContext; escuta mudanças de auth para ativar/desativar billing listener |
-| **Componentes** | `PlanBadge` (chip de plano no Header), `UsageIndicator` (progress bar de uso), `UpgradeDialog` (dialog com cards de plano e redirect Stripe Checkout) |
+| **Componentes** | `PlanBadge` (chip de plano no Header), `UsageIndicator` (progress bar de uso), `UpgradeDialog` (dialog com cards de plano e redirect Stripe Checkout), `CreditBlockedMessage` (alerta de créditos esgotados), `CreditIndicator` (chip de créditos no Header) |
 | **Utilitários** | `checkEntitlement(state, feature)` verifica se o plano permite a feature; `useIsFreePlan()`, `useIsStripeAvailable()`, `useHasActiveSubscription()` |
-| **Stripe client** | `src/lib/stripe.ts` — `loadStripe` lazy singleton; funciona sem key (plano Free) |
-| **Cloud Functions** | `functions/src/index.ts` — 3 endpoints: `stripeWebhook` (Express, eventos Stripe), `createCheckoutSession` (assinatura), `createPortalSession` (Customer Portal) |
-| **Firestore indexes** | `stripeCustomerId` (ASC + DESC) na collection `users` |
-| **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions, obrigatórias) |
+| **Stripe client** | `src/lib/stripe.ts` — `loadStripe` lazy singleton; funciona sem key (plano Free); desabilitado quando `isBillingEnabled() === false` |
+| **Cloud Functions** | `functions/src/index.ts` — 3 endpoints Stripe: `stripeWebhook` (Express, eventos Stripe), `createCheckoutSession` (assinatura), `createPortalSession` (Customer Portal); endpoints retornam 503 quando `BILLING_ENABLED !== 'true'` |
+| **Credit system** | `functions/src/usage/` — `credit-service.ts` (estimar/reservar/confirmar/reverter), `credit-metering.ts` (middleware Genkit), `credit-estimator.ts`, `credit-policy.ts` (MONTHLY_BASE_CREDITS, FEEDBACK_BONUS_CREDITS), `credit-events.ts`, `period.ts`, `idempotency.ts` |
+| **Firestore indexes** | `stripeCustomerId` (ASC + DESC) na collection `users`; `credit_events` (status+createdAt, requestId, createdAt DESC) |
+| **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions), `VITE_BILLING_ENABLED=false`, `VITE_OPEN_BETA_ENABLED=true` |
 
 ### Biblioteca & Projetos
 
@@ -350,14 +361,15 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 | | |
 |---|---|
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
-| **Env vars** | `VITE_GEMINI_API_KEY` (required) + 7 `VITE_FIREBASE_*` (required) + 4 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY` + 2 outras) |
-| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getGeminiApiKey()`, `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()` |
+| **Env vars** | 7 `VITE_FIREBASE_*` (required) + 5 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `VITE_BILLING_ENABLED`, `VITE_OPEN_BETA_ENABLED`). `VITE_GEMINI_API_KEY` removido do frontend (uso apenas no backend via `GOOGLE_GENAI_API_KEY` nas Functions) |
+| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()`, `getRecaptchaSiteKey()`, `isBillingEnabled()`, `isOpenBetaEnabled()` |
 | **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`, `/cadastro` e `/onboarding`: SEM COEP (popup Firebase) |
 | **Offline** | `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` (API moderna, suporte nativo a múltiplas abas) |
-| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login`, `/cadastro` e `/onboarding` |
+| **Dev** | `coepPlugin()` via middleware Vite — exceção `/login`, `/cadastro`, `/onboarding` e todas as rotas públicas (`/funcionalidades`, `/precos`, `/perguntas-frequentes`, `/sobre`, `/termos`, `/privacidade`, `/contato`) |
 | **Prod** | Headers em `firebase.json` (COEP em `/app/**` + `/404.html`). SPA rewrite: `**` → `/index.html`. `cleanUrls`: true. 8 redirects 301. Cache immutable para assets estáticos. Headers de segurança (`X-Content-Type-Options`, `Referrer-Policy`) |
 | **Razão** | `SharedArrayBuffer` necessário para Whisper WASM e Remotion |
-| **Segurança** | `VITE_GEMINI_API_KEY` exposta no bundle (aceito por contexto privado). Segurança dos dados via Firestore/Storage Rules |
+| **App Check** | `initializeAppCheck` com `ReCaptchaV3Provider` em `firebase.ts`. `VITE_RECAPTCHA_SITE_KEY` obrigatória em produção (sem ela, todas as chamadas `httpsCallable` falham). Token de debug para desenvolvimento local |
+| **Segurança** | API key do Gemini fica apenas no backend (Cloud Functions). Frontend não tem acesso direto ao Gemini. Segurança dos dados via Firestore/Storage Rules + App Check |
 
 ### UI & Theme
 
@@ -396,8 +408,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 ## Version
 
-- **Current:** `0.37.1`
-- **Last release:** 2026-05-18
+- **Current:** `0.38.0`
+- **Last release:** 2026-05-19
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -405,8 +417,8 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 
 | Versão | Resumo |
 |--------|--------|
+| 0.38.0 | **Migração de IA para Cloud Functions com Genkit + sistema de créditos** — `@google/genai` removido do frontend; 8 flows de IA no backend (audio, images, assistant, inline-assistant, scene-prompts, chunking, feedback, ping) com Genkit e Dotprompts; sistema de créditos com middleware `credit-metering.ts`, `credit-service.ts`, `credit-policy.ts`; App Check com reCAPTCHA v3; modo Open Beta (`OPEN_BETA_ENABLED`); `CreditIndicator` e `CreditBlockedMessage` no frontend; PricingPage convertida para beta aberto; Firestore rules para `beta_access`, `credit_months`, `credit_events`, `feedback_rewards`; `VITE_GEMINI_API_KEY` removido do frontend |
 | 0.37.1 | **Guard de duração na exportação de vídeo** — `VideoExportPanel` agora desabilita o botão de exportar enquanto `durationInFrames <= 0`; `useVideoExporter` previne renderização sem duração carregada com erro; teste de regressão para o guard; novo arquivo de teste `useVideoExporter-speedpaint.unit.test.tsx` para cenas de speed paint no exporter |
 | 0.37.0 | **Timings centralizados do Speed Paint** — novo módulo `speedPaintTimings.ts` consolida constantes, tipos (`SpeedPaintTimingMode`, `SpeedPaintSequenceTiming`) e funções (`getSpeedPaintTimingConfig`, `getSpeedPaintOverlapFrames`, `getSpeedPaintSequenceTiming`); constantes hardcoded removidas de `SpeedPaintScene` e `VideoComposition`; prop `timingMode` adicionada em `SpeedPaintScene`; `sequenced-batch` e `duration-based` como modos de temporização; testes unitários do novo módulo; auditoria de timing |
 | 0.36.0 | **Integração Biblioteca → Speed Paint** — novo adaptador `projectQueueAdapter.ts` prepara imagens do projeto para a fila do Speed Paint; botão "Levar cenas ao Speed Paint" em cada projeto na Library; revogação automática de blob URLs (`revokeQueuedImageUrl`, `revokeQueueUrls`); rastreamento de origem da fila (`queueSource`, `queueSourceProjectName`, `queueSourceNotice`); 15 novas chaves i18n para o fluxo; testes do adaptador e da Library |
 | 0.35.0 | **Lápis animado do Speed Paint visível em preview e exportação** — `showDrawTool` propagado por todo o pipeline de vídeo (`types.ts` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`); `animateScenes` default `false→true` no `VideoExportPanel`; `VideoPreview` com suporte a `showDrawTool`; `SpeedPaintPage` reestruturada (layout flex responsivo); testes de regressão para lápis animado e header duplicado em lote |
-| 0.34.0 | **Seletor de duração substitui sliders granulares de Speed Paint** — `SpeedPaintControls` (sketch/reveal 0.25x–4.0x) removido e substituído por `AnimationDurationSelector` com opções de duração predefinidas; props `drawSpeed`/`paintSpeed` removidas de `SpeedPaintComposition` e `useSpeedPaintExporter`; `DURATION_BASED_SKETCH_RATIO=0.8` adicionado em `SpeedPaintScene` para transição sketch→reveal automática baseada na duração total | |

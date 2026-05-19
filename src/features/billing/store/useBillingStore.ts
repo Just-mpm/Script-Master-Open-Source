@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../../../lib/firebase';
 import { createLogger } from '../../../lib/logger';
+import { isBillingEnabled } from '../../../lib/env';
 import type { PlanId, UsageResource, UsageRecord, UsageState } from '../types';
 
 const log = createLogger('useBillingStore');
@@ -45,6 +46,8 @@ interface BillingState {
   error: string | null;
   /** Stripe está disponível (chave configurada) */
   stripeAvailable: boolean;
+  /** Billing está desabilitado por flag de modo de operação */
+  disabled: boolean;
 }
 
 interface BillingActions {
@@ -79,6 +82,7 @@ const initialState: BillingState = {
   loading: true,
   error: null,
   stripeAvailable: Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY),
+  disabled: !isBillingEnabled(),
 };
 
 // ---------------------------------------------------------------------------
@@ -89,6 +93,9 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   ...initialState,
 
   loadSubscription: async () => {
+    // Se billing desabilitado, mantém estado Free sem chamar Firestore
+    if (get().disabled) return;
+
     const user = auth.currentUser;
     if (!user) {
       set({ ...initialState, loading: false });
@@ -144,6 +151,9 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   },
 
   subscribeToSubscription: () => {
+    // Se billing desabilitado, não escuta mudanças no Firestore
+    if (get().disabled) return () => {};
+
     const user = auth.currentUser;
     if (!user) {
       set({ ...initialState, loading: false });

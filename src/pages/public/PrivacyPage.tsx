@@ -21,7 +21,7 @@ const PRIVACY_SECTIONS: readonly LegalSection[] = [
     id: 'dados-coletamos',
     title: '2. Dados que Coletamos',
     content:
-      'Dados fornecidos por você: nome e email associados à sua conta Google. Dados gerados pelo uso: roteiros, áudios, imagens, vídeos e conversas criados no Serviço. Dados técnicos: endereço IP, tipo de navegador, sistema operacional, páginas visitadas e tempo de uso. Dados de preferências: configurações do estúdio, vozes favoritas e preferências de interface. Não coletamos dados financeiros diretamente — o processamento de pagamentos é feito por provedores terceirizados certificados PCI-DSS.',
+      'Dados fornecidos por você: nome e email associados à sua conta Google. Dados gerados pelo uso: roteiros, áudios, imagens, vídeos e conversas criados no Serviço. Dados técnicos: endereço IP, tipo de navegador, sistema operacional, páginas visitadas e tempo de uso. Dados de preferências: configurações do estúdio, vozes favoritas e preferências de interface. Não coletamos dados financeiros — o Serviço opera atualmente em beta aberto, sem processamento de pagamentos.',
   },
   {
     id: 'como-usamos',
@@ -33,7 +33,7 @@ const PRIVACY_SECTIONS: readonly LegalSection[] = [
     id: 'compartilhamento',
     title: '4. Compartilhamento de Dados',
     content:
-      'Seus dados pessoais não são vendidos a terceiros. Podemos compartilhar dados com: Google Cloud (Firebase): para autenticação, armazenamento de dados e infraestrutura. Provedores de IA (Google Gemini): para processar solicitações de geração de conteúdo. Provedores de pagamento: para processar transações financeiras, quando aplicável. Autoridades legais: quando exigido por lei ou para proteger nossos direitos. Em todos os casos, os provedores estão sujeitos a acordos de confidencialidade e proteção de dados.',
+      'Seus dados pessoais não são vendidos a terceiros. Podemos compartilhar dados com: Google Cloud (Firebase): para autenticação, armazenamento de dados e infraestrutura. Provedores de IA (Google Gemini): para processar solicitações de geração de conteúdo. Autoridades legais: quando exigido por lei ou para proteger nossos direitos. Em todos os casos, os provedores estão sujeitos a acordos de confidencialidade e proteção de dados.',
   },
   {
     id: 'cookies',

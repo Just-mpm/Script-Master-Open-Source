@@ -6,6 +6,7 @@ import { isMigrationAlreadyHandled } from '../lib/db/migration';
 import { deleteAllUserData } from '../lib/db/account-cleanup';
 import { getUserSettings } from '../lib/db/user-settings';
 import { useBillingInit } from '../features/billing/hooks';
+import { isBillingEnabled } from '../lib/env';
 
 const log = createLogger('AuthContext');
 
@@ -61,8 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Usada para diferenciar login ativo de restauração de sessão.
   const wasLoginRequested = useRef(false);
 
-  // Inicializa billing quando auth estiver pronto
-  useBillingInit(!loading);
+  // Inicializa billing quando auth estiver pronto (apenas se billing habilitado)
+  const billingEnabled = isBillingEnabled();
+  useBillingInit(billingEnabled ? !loading : false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (authUser) => {
@@ -211,11 +213,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Remove autenticação PRIMEIRO — se falhar, dados ficam intactos
-      await deleteUser(currentUser);
+      // Captura o userId antes do cleanup — deleteUser invalida auth.currentUser
+      const userId = currentUser.uid;
 
-      // Pipeline de limpeza LGPD — remove dados do Firestore e Storage
-      const cleanupErrors = await deleteAllUserData(currentUser.uid);
+      // Pipeline de limpeza LGPD — remove dados do Firestore e Storage PRIMEIRO
+      // (se deletar o usuário antes, auth.currentUser vira null e o Firestore
+      //  rejeita as operações de deleção, deixando dados órfãos sem owner ativo)
+      const cleanupErrors = await deleteAllUserData(userId);
+
+      // Remove autenticação APÓS o cleanup — se falhar, dados já foram limpos e
+      // o usuário pode tentar novamente (se deleteUser falhar, a conta continua ativa)
+      await deleteUser(currentUser);
 
       if (cleanupErrors.length > 0) {
         log.warn('Alguns dados não puderam ser removidos completamente após exclusão', {

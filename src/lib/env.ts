@@ -10,7 +10,6 @@ interface FirebaseEnvConfig {
 }
 
 type RequiredEnvName =
-  | 'VITE_GEMINI_API_KEY'
   | 'VITE_FIREBASE_API_KEY'
   | 'VITE_FIREBASE_AUTH_DOMAIN'
   | 'VITE_FIREBASE_PROJECT_ID'
@@ -20,10 +19,13 @@ type RequiredEnvName =
 
 /** Nomes de env vars opcionais com tipagem */
 type OptionalEnvName =
+  | 'VITE_RECAPTCHA_SITE_KEY'
   | 'VITE_FIREBASE_MEASUREMENT_ID'
   | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID'
   | 'VITE_STRIPE_PUBLISHABLE_KEY'
-  | 'VITE_PEXELS_API_KEY';
+  | 'VITE_PEXELS_API_KEY'
+  | 'VITE_BILLING_ENABLED'
+  | 'VITE_OPEN_BETA_ENABLED';
 
 function readRequiredEnv(name: RequiredEnvName): string {
   const value = import.meta.env[name];
@@ -41,8 +43,9 @@ function readOptionalEnv(name: OptionalEnvName): string | undefined {
   return value && value.trim().length > 0 ? value : undefined;
 }
 
-export function getGeminiApiKey(): string {
-  return readRequiredEnv('VITE_GEMINI_API_KEY');
+/** Chave do site reCAPTCHA v3 para App Check (obrigatória em produção — sem ela, App Check não inicializa e chamadas httpsCallable falham) */
+export function getRecaptchaSiteKey(): string | undefined {
+  return readOptionalEnv('VITE_RECAPTCHA_SITE_KEY');
 }
 
 /** Chave da API Pexels (opcional — sem ela, stock media usa placeholder local) */
@@ -53,6 +56,17 @@ export function getPexelsApiKey(): string | undefined {
 /** Chave pública do Stripe (opcional — sem ela, o app funciona no plano Free) */
 export function getStripePublishableKey(): string | undefined {
   return readOptionalEnv('VITE_STRIPE_PUBLISHABLE_KEY');
+}
+
+/** Modo de operação: billing habilitado (processamento Stripe ativo) */
+export function isBillingEnabled(): boolean {
+  return import.meta.env.VITE_BILLING_ENABLED === 'true';
+}
+
+/** Modo de operação: beta aberto com acesso gratuito */
+export function isOpenBetaEnabled(): boolean {
+  // Se não definida, default true (beta aberto)
+  return (import.meta.env.VITE_OPEN_BETA_ENABLED as string) !== 'false';
 }
 
 export function getFirebaseEnvConfig(): FirebaseEnvConfig {

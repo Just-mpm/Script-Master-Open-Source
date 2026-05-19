@@ -190,9 +190,9 @@ describe('dicionários', () => {
 
   it('possui chaves de pricing em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
-      expect(getNestedValue(dictionaries[locale], 'pricing.plans.free.name')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'pricing.plans.pro.name')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'pricing.plans.business.name')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'pricing.hero.title')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'pricing.credits.monthly')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'pricing.howItWorks.step1Title')).toBeDefined();
     }
   });
 

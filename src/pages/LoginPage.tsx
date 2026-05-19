@@ -147,10 +147,10 @@ export function LoginPage() {
               <Stack spacing={3}>
                 <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                   <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-                    Crie com IA, sem limites
+                    Crie com IA no beta aberto
                   </Typography>
                   <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
-                    Transforme roteiros em áudio, vídeo e imagens profissionais. Grátis para começar.
+                    Transforme roteiros em áudio, vídeo e imagens profissionais. Créditos mensais gratuitos inclusos.
                   </Typography>
                 </Box>
 

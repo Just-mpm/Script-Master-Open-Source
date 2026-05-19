@@ -3,19 +3,6 @@ import { renderHook, act } from '@testing-library/react';
 
 // --- Mocks de todas as dependências externas ---
 
-vi.mock('@google/genai', () => {
-  class MockGoogleGenAI {
-    models = {
-      generateContent: vi.fn(),
-    };
-  }
-  return {
-    GoogleGenAI: MockGoogleGenAI,
-    Modality: { AUDIO: 'AUDIO' },
-    Type: { STRING: 'string', ARRAY: 'array' },
-  };
-});
-
 vi.mock('../../src/lib/audio', () => ({
   createWavBlob: vi.fn().mockReturnValue(new Blob(['wav'], { type: 'audio/wav' })),
   base64ToUint8Array: vi.fn().mockResolvedValue(new Uint8Array([0])),
@@ -52,6 +39,19 @@ vi.mock('../../src/lib/db/audio-segments', () => ({
 
 vi.mock('../../src/lib/env', () => ({
   getGeminiApiKey: vi.fn().mockReturnValue('test-api-key'),
+  getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
+  isBillingEnabled: vi.fn().mockReturnValue(false),
+  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
+  getFirebaseEnvConfig: vi.fn().mockReturnValue({
+    apiKey: 'mock-api-key',
+    authDomain: 'mock.firebaseapp.com',
+    projectId: 'mock-project',
+    storageBucket: 'mock.appspot.com',
+    messagingSenderId: '123',
+    appId: '1:123:web:abc',
+  }),
+  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
+  getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
 vi.mock('../../src/features/video-render/lib/videoUtils', () => ({

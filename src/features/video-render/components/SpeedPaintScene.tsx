@@ -4,7 +4,12 @@ import { interpolate } from 'remotion';
 import type { Stroke } from '../../speed-paint/types';
 import type { StrokeAnimation } from '../../speed-paint/types';
 import type { SpeedPaintMultipliers } from '../types';
-import { renderSpeedPaintFrame, createBufferCanvas, loadImageElement } from '../lib/speedPaintRenderer';
+import {
+  renderSpeedPaintFrame,
+  createBufferCanvas,
+  loadImageElement,
+  getVisibleStrokeCount,
+} from '../lib/speedPaintRenderer';
 import {
   DURATION_BASED_SKETCH_RATIO,
   getSpeedPaintTimingConfig,
@@ -342,8 +347,8 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     // O badge continua exclusivo do preview, mas a ferramenta pode aparecer
     // também na exportação final quando esse for o comportamento padrão.
     if (showDrawTool && progress > 0 && progress < 1) {
+      const visibleCount = getVisibleStrokeCount(animation, progress, resolvedSpeedMultiplier);
       const totalStrokes = animation.strokes.length;
-      const visibleCount = Math.floor(progress * totalStrokes);
 
       if (visibleCount > 0 && visibleCount < totalStrokes) {
         const lastStroke = animation.strokes[visibleCount - 1];

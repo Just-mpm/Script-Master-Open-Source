@@ -28,6 +28,7 @@ import type { AssistantSettings, AssistantStudioState } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
+import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { BRAND_PRIMARY } from '../../theme/tokens';
 
 interface AssistantProps {
@@ -43,7 +44,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
-  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef } = useAssistant(currentState);
+  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef, creditsExhausted } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -401,7 +402,13 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null}
 
-      {error ? (
+      {creditsExhausted ? (
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
+          <CreditBlockedMessage show={true} />
+        </Box>
+      ) : null}
+
+      {error && !creditsExhausted ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
           <Alert
             variant="outlined"

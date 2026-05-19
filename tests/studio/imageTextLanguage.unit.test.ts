@@ -10,136 +10,129 @@ import type { Locale } from '../../src/features/i18n/types';
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// 1. generateScenePrompts — propagacao do locale no prompt enviado ao Gemini
+// 1. generateScenePrompts — propagacao do locale via Cloud Function
+//    Apos a migracao open-beta, generateScenePrompts usa httpsCallable
+//    em vez de Gemini direto.
 // ---------------------------------------------------------------------------
 
 describe('imageTextLanguage — generateScenePrompts propaga locale', () => {
-  let mockGenerateContent: ReturnType<typeof vi.fn>;
+  let mockCallable: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockGenerateContent = vi.fn();
+    mockCallable = vi.fn();
     vi.resetModules();
 
-    vi.doMock('../../src/lib/env', () => ({
-      getGeminiApiKey: vi.fn(() => 'test-api-key'),
-    }));
     vi.doMock('../../src/lib/logger', () => ({
       createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
     }));
-    // GoogleGenAI precisa ser uma classe construtivel (usada com `new`)
-    vi.doMock('@google/genai', () => {
-      return {
-        GoogleGenAI: class {
-          models = { generateContent: mockGenerateContent };
-        },
-        Type: { ARRAY: 'ARRAY', OBJECT: 'OBJECT', STRING: 'STRING', NUMBER: 'NUMBER' },
-      };
+    vi.doMock('../../src/lib/firebase', () => ({
+      functions: { /* stub */ },
+    }));
+    vi.doMock('firebase/functions', () => ({
+      httpsCallable: vi.fn(() => mockCallable),
+    }));
+    vi.stubGlobal('crypto', {
+      randomUUID: () => '550e8400-e29b-41d4-a716-446655440000',
     });
   });
 
   afterEach(() => {
-    vi.doUnmock('../../src/lib/env');
     vi.doUnmock('../../src/lib/logger');
-    vi.doUnmock('@google/genai');
+    vi.doUnmock('../../src/lib/firebase');
+    vi.doUnmock('firebase/functions');
+    vi.unstubAllGlobals();
     vi.resetModules();
   });
 
-  it('usa "portugues brasileiro" quando locale e pt-BR', async () => {
+  it('passa locale pt-BR para a cloud function', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
     await generateScenePrompts('roteiro de teste', 30, 'cinematic', 15, 'general', 'pt-BR');
 
-    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    expect(systemPrompt).toContain('português brasileiro');
+    expect(mockCallable).toHaveBeenCalledTimes(1);
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('pt-BR');
+    expect(callData.script).toBe('roteiro de teste');
   });
 
-  it('usa "ingles" quando locale e en', async () => {
+  it('passa locale en para a cloud function', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
     await generateScenePrompts('test script', 30, 'cinematic', 15, 'general', 'en');
 
-    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    expect(systemPrompt).toContain('inglês');
+    expect(mockCallable).toHaveBeenCalledTimes(1);
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('en');
   });
 
-  it('usa "espanhol" quando locale e es', async () => {
+  it('passa locale es para a cloud function', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
     await generateScenePrompts('guion de prueba', 30, 'cinematic', 15, 'general', 'es');
 
-    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    expect(systemPrompt).toContain('espanhol');
+    expect(mockCallable).toHaveBeenCalledTimes(1);
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('es');
   });
 
   it('default e pt-BR quando locale nao informado', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
     // Nao passa locale — usa default 'pt-BR'
     await generateScenePrompts('roteiro', 30, 'cinematic');
 
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    expect(systemPrompt).toContain('português brasileiro');
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('pt-BR');
   });
 
-  it('o prompt contem instrucao CRITICA sobre idioma dos textos nas imagens', async () => {
+  it('o visualFramework e propagado para a cloud function', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
-    await generateScenePrompts('roteiro', 30, 'cinematic', 15, 'general', 'en');
+    await generateScenePrompts('roteiro', 30, 'cinematic', 15, 'whiteboard', 'en');
 
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    // Deve conter a instrucao critica sobre idioma dos textos nas imagens
-    expect(systemPrompt).toContain('IDIOMA DOS TEXTOS NAS IMAGENS');
-    expect(systemPrompt).toContain('inglês');
-    expect(systemPrompt).toContain('NUNCA traduza esses textos para inglês');
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('en');
+    expect(callData.visualFramework).toBe('whiteboard');
   });
 
-  it('o prompt com locale es instrui a manter texto em espanhol', async () => {
+  it('o densitySeconds e propagado para a cloud function', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockResolvedValue({
-      text: JSON.stringify([{ timestamp: 0, prompt: 'test prompt' }]),
+    mockCallable.mockResolvedValue({
+      data: { prompts: [{ timestamp: 0, prompt: 'test prompt' }], isFallback: false },
     });
 
-    await generateScenePrompts('guion', 30, 'cinematic', 15, 'general', 'es');
+    await generateScenePrompts('guion', 30, 'cinematic', 60, 'general', 'es');
 
-    const callArgs = mockGenerateContent.mock.calls[0][0];
-    const systemPrompt = callArgs.contents[0].parts[0].text;
-    expect(systemPrompt).toContain('espanhol');
-    expect(systemPrompt).toContain('NUNCA traduza esses textos para inglês');
+    const callData = mockCallable.mock.calls[0][0];
+    expect(callData.locale).toBe('es');
+    expect(callData.densitySeconds).toBe(60);
   });
 
   it('retorna fallback com isFallback=true quando API falha', async () => {
     const { generateScenePrompts } = await import('../../src/lib/gemini');
 
-    mockGenerateContent.mockRejectedValue(new Error('API error'));
+    mockCallable.mockRejectedValue(new Error('API error'));
 
     const result = await generateScenePrompts('roteiro', 30, 'cinematic', 15, 'general', 'en');
 

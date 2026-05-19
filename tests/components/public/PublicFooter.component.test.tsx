@@ -58,7 +58,7 @@ describe('PublicFooter', () => {
   it('renderiza links do grupo Produto', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
     expect(screen.getByText('Funcionalidades')).toBeDefined();
-    expect(screen.getByText('Preços')).toBeDefined();
+    expect(screen.getByText('Beta')).toBeDefined();
     expect(screen.getByText('Perguntas Frequentes')).toBeDefined();
     expect(screen.getByText('Status')).toBeDefined();
   });

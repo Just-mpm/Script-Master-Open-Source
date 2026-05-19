@@ -1,8 +1,7 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
-import { getGeminiApiKey } from '../lib/env';
+import { useState, useRef, useEffect } from 'react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../lib/firebase';
 import { base64ToBlobSync } from '../lib/audio';
-import { withRetry } from '../lib/rate-limiter';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 
@@ -18,12 +17,20 @@ const toUserFriendlyImageError = createErrorMapper({
   rules: [
     ...sharedErrorRules,
     {
+      match: (m) => m.includes('app-check') || m.includes('AppCheck') || m.includes('permission-denied'),
+      message: 'Erro de segurança da sessão. Recarregue a página e tente novamente.',
+    },
+    {
       match: (m) => m.includes('deadline') || m.includes('504') || m.includes('timeout'),
       message: 'O servidor demorou demais para responder. Tente novamente.',
     },
     {
       match: (m) => m.includes('safety') || m.includes('blocked'),
       message: 'Conteúdo bloqueado por filtros de segurança. Altere o prompt e tente novamente.',
+    },
+    {
+      match: (m) => m.includes('saldo') || m.includes('crédito'),
+      message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
     },
   ],
 });
@@ -38,6 +45,19 @@ export interface ImageGenerationOptions {
   referenceImage?: File;
 }
 
+/** Input para o flow images no backend */
+interface ImagesFlowInput {
+  prompt: string;
+  aspectRatio: string;
+  referenceImage?: string;
+  requestId: string;
+}
+
+interface ImagesFlowOutput {
+  imageBase64: string;
+  mimeType: string;
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -49,9 +69,7 @@ export function useImageGenerator() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Memoiza instância do GoogleGenAI (tech #9 + bp #8 + perf #9)
-  const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
+  const [creditsExhausted, setCreditsExhausted] = useState(false);
 
   // Referência para revogar blob URL anterior (tech #6)
   const imageUrlRef = useRef<string | null>(null);
@@ -81,6 +99,7 @@ export function useImageGenerator() {
     cancelRef.current = false;
     setIsGenerating(true);
     setError(null);
+    setCreditsExhausted(false);
 
     // Revoga blob URL anterior antes de gerar nova imagem
     if (imageUrlRef.current) {
@@ -91,68 +110,44 @@ export function useImageGenerator() {
     setImageBlob(null);
 
     try {
-      const contents: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
-
+      // Converte imagem de referência (File) para base64 data URL
+      let referenceBase64: string | undefined;
       if (options.referenceImage) {
-        const base64Data = await new Promise<string>((resolve, reject) => {
+        referenceBase64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
             const result = reader.result as string;
-            resolve(result.split(',')[1]);
+            // Passa o data URL completo para o backend
+            resolve(result);
           };
           reader.onerror = reject;
           reader.readAsDataURL(options.referenceImage!);
         });
-
-        contents.push({
-          inlineData: {
-            mimeType: options.referenceImage.type,
-            data: base64Data,
-          },
-        });
       }
 
-      contents.push({ text: options.prompt });
+      if (cancelRef.current) throw new Error(CANCEL_ERROR_MESSAGE);
 
-      const { value: response } = await withRetry(
-        () => {
-          if (cancelRef.current) throw new Error(CANCEL_ERROR_MESSAGE);
-          return ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
-            contents,
-            config: {
-              imageConfig: {
-                aspectRatio: options.aspectRatio,
-              },
-            },
-          });
-        },
-        { maxRetries: 3, baseDelayMs: 1000, jitterMs: 500 },
-      );
+      const callable = httpsCallable<ImagesFlowInput, ImagesFlowOutput>(functions, 'images');
 
-      let foundImage = false;
-      for (const part of response.candidates?.[0]?.content?.parts ?? []) {
-        if (!part.inlineData?.data) {
-          continue;
-        }
+      const result = await callable({
+        prompt: options.prompt,
+        aspectRatio: options.aspectRatio,
+        referenceImage: referenceBase64,
+        requestId: crypto.randomUUID(),
+      });
 
-        const imageData = part.inlineData.data;
-        const mimeType = part.inlineData.mimeType || 'image/png';
+      const { imageBase64, mimeType } = result.data;
 
-        // Reutiliza conversão base64 -> Blob do audio.ts (bp #7)
-        const blob = base64ToBlobSync(imageData, mimeType);
-        const blobUrl = URL.createObjectURL(blob);
-
-        setImageBlob(blob);
-        setImageUrl(blobUrl);
-        imageUrlRef.current = blobUrl;
-        foundImage = true;
-        break;
+      if (!imageBase64) {
+        throw new Error('Nenhuma imagem foi retornada.');
       }
 
-      if (!foundImage) {
-        throw new Error('Nenhuma imagem foi retornada pelo modelo.');
-      }
+      const blob = base64ToBlobSync(imageBase64, mimeType);
+      const blobUrl = URL.createObjectURL(blob);
+
+      setImageBlob(blob);
+      setImageUrl(blobUrl);
+      imageUrlRef.current = blobUrl;
     } catch (err: unknown) {
       // Cancelamento silencioso — sem erro para o usuário
       const errorMessageText = err instanceof Error ? err.message : '';
@@ -163,6 +158,9 @@ export function useImageGenerator() {
 
       log.error('Erro ao gerar imagem', { error: err });
       const friendlyMessage = toUserFriendlyImageError(err);
+      if (friendlyMessage.includes('crédito') || friendlyMessage.includes('saldo')) {
+        setCreditsExhausted(true);
+      }
       setError(friendlyMessage);
       // Auto-dismiss após 8 segundos (UX-3)
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -198,5 +196,6 @@ export function useImageGenerator() {
     generateImage,
     handleCancel,
     clearImage,
+    creditsExhausted,
   };
 }

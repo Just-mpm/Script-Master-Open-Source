@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
-import { VOICES, PACE_INSTRUCTIONS } from '../lib/constants';
-import { getMemories, saveChatSession, getUserSettings, type ChatSession } from '../lib/db';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../lib/firebase';
+import { saveChatSession, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
-import { getGeminiApiKey } from '../lib/env';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
-import { buildSystemInstruction } from '../features/assistant/systemPrompt';
 
 const log = createLogger('useAssistant');
 
@@ -26,6 +24,10 @@ function buildErrorMapper(t: (key: string) => string) {
     rules: [
       ...sharedErrorRules,
       {
+        match: (m) => m.includes('app-check') || m.includes('AppCheck') || m.includes('permission-denied'),
+        message: 'Erro de segurança da sessão. Recarregue a página e tente novamente.',
+      },
+      {
         match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
         message: t('assistantStrings.errors.stream'),
       },
@@ -37,8 +39,29 @@ function buildErrorMapper(t: (key: string) => string) {
         match: (m) => m.includes('abort') || m.includes('cancelled'),
         message: '',
       },
+      {
+        match: (m) => m.includes('saldo') || m.includes('crédito'),
+        message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
+      },
     ],
   });
+}
+
+// ---------------------------------------------------------------------------
+// Tipos internos para tipagem das chamadas httpsCallable
+// ---------------------------------------------------------------------------
+
+interface AssistantFlowInput {
+  message: string;
+  history?: Array<{ role: 'user' | 'model'; text: string }>;
+  attachments?: Array<{ mimeType: string; data: string; name?: string }>;
+  studioState?: Record<string, unknown>;
+  requestId: string;
+}
+
+interface AssistantFlowOutput {
+  text: string;
+  jsonSettings?: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +87,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [jsonSettings, setJsonSettings] = useState<Record<string, unknown> | null>(null);
+  const [creditsExhausted, setCreditsExhausted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamActiveRef = useRef(false);
@@ -71,7 +96,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const rafRef = useRef<number>(0);
   const streamingTargetRef = useRef<string>('');
 
-  const ai = useMemo(() => new GoogleGenAI({ apiKey: getGeminiApiKey() }), []);
+  // Callable estável (a instância do SDK é memoizada)
+  const assistantCallable = useMemo(
+    () => httpsCallable<AssistantFlowInput, AssistantFlowOutput>(functions, 'assistant'),
+    [],
+  );
 
   // ---------------------------------------------------------------------------
   // Scroll automático
@@ -184,29 +213,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   };
 
   // ---------------------------------------------------------------------------
-  // Montagem de anexos
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Monta o array de parts de um anexo para envio ao Gemini.
-   * Usa `inlineData` quando os dados estão disponíveis (base64 ou resolvidos do Storage).
-   * Anexos sem dados (storagePath sem resolução) são ignorados no envio ao modelo.
-   */
-  const buildAttachmentParts = (attachments?: Attachment[]) => {
-    if (!attachments || attachments.length === 0) return [];
-
-    return attachments
-      .filter((att: Attachment) => !!att.data)
-      .map((att: Attachment) => ({
-        inlineData: {
-          mimeType: att.mimeType,
-          data: att.data,
-        },
-      }));
-  };
-
-  // ---------------------------------------------------------------------------
-  // Envio de mensagem com streaming
+  // Envio de mensagem com streaming (backend Genkit)
   // ---------------------------------------------------------------------------
 
   const sendMessage = useCallback(async (text: string, attachments?: Attachment[]) => {
@@ -221,6 +228,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setMessages(prev => [...prev, newUserMsg]);
     setIsLoading(true);
     setError(null);
+    setCreditsExhausted(false);
+    setJsonSettings(null);
 
     // Cria AbortController para esta chamada
     const abortController = new AbortController();
@@ -231,43 +240,24 @@ export function useAssistant(currentState?: AssistantStudioState) {
     const assistantMsgId = (Date.now() + 1).toString();
 
     try {
-      // Paraleliza chamadas Firestore independentes (Fix P1-2)
-      const [memories, userSettings] = await Promise.all([
-        getMemories(user?.uid),
-        getUserSettings(user?.uid),
-      ]);
-
-      const memoriesText = memories.length > 0
-        ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map(m => `- ${m.content}`).join('\n')}`
-        : '';
-
-      const voicesList = VOICES.map(v => `- ${v.name} (${v.style})`).join('\n');
-      const paceList = Object.keys(PACE_INSTRUCTIONS).join(', ');
-      const customPromptBlock = userSettings?.customSystemPrompt
-        ? `\n\nDIRETRIZES CUSTOMIZADAS DO USUÁRIO:\n${userSettings.customSystemPrompt}`
-        : '';
-
-      const systemInstruction = buildSystemInstruction(
-        memoriesText, voicesList, paceList, customPromptBlock, currentState,
-      );
-
-      // Converte histórico para formato Gemini
-      const contents = messages.slice(1).map(msg => ({
-        role: msg.role,
-        parts: [
-          { text: msg.text },
-          ...buildAttachmentParts(msg.attachments),
-        ],
-      }));
-
-      // Adiciona mensagem atual
-      contents.push({
-        role: 'user',
-        parts: [
-          { text },
-          ...buildAttachmentParts(attachments),
-        ],
-      });
+      // Constrói input para o flow assistant
+      // O backend gerencia memórias, vozes, ritmos e system prompt sozinho
+      const input: AssistantFlowInput = {
+        message: text,
+        history: messages.slice(1).map((msg) => ({
+          role: msg.role,
+          text: msg.text,
+        })),
+        attachments: attachments
+          ?.filter((att) => !!att.data)
+          .map((att) => ({
+            mimeType: att.mimeType,
+            data: att.data!,
+            name: att.name,
+          })),
+        studioState: currentState as Record<string, unknown> | undefined,
+        requestId: crypto.randomUUID(),
+      };
 
       // Adiciona mensagem vazia do assistente (texto progressivo)
       setMessages(prev => [
@@ -276,15 +266,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
       ]);
       setIsStreaming(true);
 
-      const stream = await ai.models.generateContentStream({
-        model: 'gemini-3.1-flash-lite',
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-          abortSignal: abortController.signal,
-        },
-      });
+      // Streaming via Genkit flow — chunks são strings (streamSchema = z.string())
+      const { stream, data: finalData } = await assistantCallable.stream(input);
 
       // Salva target ID no ref para o flush acessar sem closure stale
       streamingTargetRef.current = assistantMsgId;
@@ -293,7 +276,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       for await (const chunk of stream) {
         if (abortController.signal.aborted || !streamActiveRef.current) break;
 
-        const chunkText = chunk.text;
+        const chunkText = typeof chunk === 'string' ? chunk : '';
         if (!chunkText) continue;
 
         chunkBufferRef.current += chunkText;
@@ -311,6 +294,16 @@ export function useAssistant(currentState?: AssistantStudioState) {
       }
       flushChunkBuffer();
 
+      // Aguarda o resultado final do flow (contém jsonSettings extraído pelo backend)
+      try {
+        const output = await finalData;
+        if (output.jsonSettings) {
+          setJsonSettings(output.jsonSettings);
+        }
+      } catch {
+        // jsonSettings é opcional — falha ao obter não deve quebrar o chat
+      }
+
     } catch (err: unknown) {
       // Flush final em caso de erro para não perder chunks acumulados
       if (rafRef.current) {
@@ -324,6 +317,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
       log.error('Erro no assistente', { error: err });
       const errorMessage = toUserFriendlyAssistantError(err);
+
+      if (errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
+        setCreditsExhausted(true);
+      }
 
       if (errorMessage) {
         setError(errorMessage);
@@ -352,7 +349,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       setIsLoading(false);
       setIsStreaming(false);
     }
-  }, [user, messages, currentState, ai, streamFallbackText, toUserFriendlyAssistantError]);
+  }, [messages, currentState, assistantCallable, streamFallbackText, toUserFriendlyAssistantError]);
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {
@@ -392,12 +389,14 @@ export function useAssistant(currentState?: AssistantStudioState) {
     isLoading,
     isStreaming,
     error,
+    jsonSettings,
     sendMessage,
     startNewChat,
     loadSession,
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
+    creditsExhausted,
   };
 }
 

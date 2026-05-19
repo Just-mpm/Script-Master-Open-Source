@@ -50,6 +50,17 @@ vi.mock('../../../src/lib/seo', () => ({
   getPageSeo: () => ({ title: 'Contato' }),
 }));
 
+vi.mock('../../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    loading: false,
+    authError: null,
+    clearAuthError: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 describe('ContactPage', () => {
   beforeEach(() => {
     localStorage.setItem('s2a_locale', 'pt-BR');

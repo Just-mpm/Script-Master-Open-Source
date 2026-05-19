@@ -323,7 +323,7 @@ describe('Library', () => {
       expect(screen.getByText('Projeto X')).toBeDefined();
     });
 
-    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+    await user.click(screen.getByRole('button', { name: /Levar cenas ao Speed Paint/i }));
 
     await waitFor(() => {
       expect(prepareProjectImagesForSpeedPaint).toHaveBeenCalled();
@@ -368,7 +368,7 @@ describe('Library', () => {
       expect(screen.getByText('Projeto X')).toBeDefined();
     });
 
-    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+    await user.click(screen.getByRole('button', { name: /Levar cenas ao Speed Paint/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Não foi possível preparar as imagens para o Speed Paint/i)).toBeDefined();
@@ -430,7 +430,7 @@ describe('Library', () => {
       expect(screen.getAllByText(/Não foi possível carregar os detalhes do projeto/i).length).toBeGreaterThan(0);
     });
 
-    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+    await user.click(screen.getByRole('button', { name: /Levar cenas ao Speed Paint/i }));
 
     await waitFor(() => {
       expect(getProjectDetails).toHaveBeenCalledTimes(2);
@@ -483,7 +483,7 @@ describe('Library', () => {
       expect(screen.getByText('Projeto X')).toBeDefined();
     });
 
-    await user.click(screen.getByRole('button', { name: /Usar no Speed Paint/i }));
+    await user.click(screen.getByRole('button', { name: /Levar cenas ao Speed Paint/i }));
 
     await waitFor(() => {
       expect(mockLoadLibraryQueue).toHaveBeenCalledWith(

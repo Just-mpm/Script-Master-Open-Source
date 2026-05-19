@@ -3,28 +3,21 @@ import { renderHook, act } from '@testing-library/react';
 
 // --- Mocks ---
 
-vi.mock('@google/genai', () => {
-  class MockGoogleGenAI {
-    models = {
-      generateContent: vi.fn().mockResolvedValue({
-        candidates: [{
-          content: {
-            parts: [{
-              inlineData: {
-                mimeType: 'image/png',
-                data: 'iVBORw0KGgoAAAANSUhEUg==',
-              },
-            }],
-          },
-        }],
-      }),
-    };
-  }
-  return { GoogleGenAI: MockGoogleGenAI };
-});
-
 vi.mock('../../src/lib/env', () => ({
   getGeminiApiKey: vi.fn().mockReturnValue('test-key'),
+  getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
+  isBillingEnabled: vi.fn().mockReturnValue(false),
+  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
+  getFirebaseEnvConfig: vi.fn().mockReturnValue({
+    apiKey: 'mock-api-key',
+    authDomain: 'mock.firebaseapp.com',
+    projectId: 'mock-project',
+    storageBucket: 'mock.appspot.com',
+    messagingSenderId: '123',
+    appId: '1:123:web:abc',
+  }),
+  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
+  getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
 vi.mock('../../src/lib/audio', () => ({

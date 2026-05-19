@@ -37,7 +37,8 @@ import Settings from '@mui/icons-material/Settings';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
-import { PlanBadge, useBillingStore } from '../features/billing';
+import { isOpenBetaEnabled } from '../lib/env';
+import { CreditIndicator } from './CreditIndicator';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -80,8 +81,6 @@ export function Header() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Billing — badge do plano no header
-  const billingPlanId = useBillingStore((s) => s.planId);
-  const billingLoading = useBillingStore((s) => s.loading);
 
   const navItems = useMemo<NavItem[]>(() => [
     { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
@@ -294,10 +293,8 @@ export function Header() {
                 </Paper>
                 </Tooltip>
 
-                {/* Badge do plano — visível quando não está carregando */}
-                {!billingLoading && user && (
-                  <PlanBadge planId={billingPlanId} />
-                )}
+                {/* Indicador de créditos — visível apenas no beta aberto */}
+                {isOpenBetaEnabled() && <CreditIndicator />}
 
                 {!isMobile && (
                   <Tooltip title={t('studio.header.logout.tooltip')}>

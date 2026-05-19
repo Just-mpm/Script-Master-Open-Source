@@ -12,6 +12,7 @@
 
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { createLogger } from './logger';
+import { isBillingEnabled } from './env';
 
 const log = createLogger('stripe');
 
@@ -24,6 +25,11 @@ let stripePromise: Promise<Stripe | null>;
  * continua funcionando no modo gratuito.
  */
 export function getStripe(): Promise<Stripe | null> {
+  // Se billing desabilitado, retorna null — sem inicializar Stripe.js
+  if (!isBillingEnabled()) {
+    return Promise.resolve(null);
+  }
+
   if (!stripePromise) {
     const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 

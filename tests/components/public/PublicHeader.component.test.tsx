@@ -95,7 +95,7 @@ describe('PublicHeader', () => {
     render(<PublicHeader />, { wrapper: Wrapper });
     expect(screen.getAllByText('Home').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Funcionalidades').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Preços').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Beta').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('FAQ').length).toBeGreaterThanOrEqual(1);
   });
 
