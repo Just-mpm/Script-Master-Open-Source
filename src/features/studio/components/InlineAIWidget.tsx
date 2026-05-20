@@ -324,7 +324,7 @@ export function InlineAIWidget({ script, setScript, textareaRef, disabled }: Inl
                   '&:hover': { bgcolor: 'action.hover' }
                 }}
               >
-                {isProcessing ? 'Parar' : 'Cancelar'}
+                {isProcessing ? t('common.stop') : t('common.cancelEsc').replace(' (Esc)', '')}
               </Button>
               <Button
                 size="small"

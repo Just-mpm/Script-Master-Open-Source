@@ -4,9 +4,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocale } from '../features/i18n';
 
 export function GuestRoute() {
   const { user, loading } = useAuth();
+  const { t } = useLocale();
 
   if (loading) {
     return (
@@ -18,9 +20,9 @@ export function GuestRoute() {
         }}
       >
         <Stack spacing={2} sx={{ alignItems: 'center' }} role="status" aria-live="polite">
-          <CircularProgress size={28} aria-label="Verificando sessão" />
+          <CircularProgress size={28} aria-label={t('auth.verification.verifyingSession')} />
           <Typography variant="body2" color="text.secondary">
-            Verificando sessão...
+            {t('auth.verification.verifyingSession')}
           </Typography>
         </Stack>
       </Box>

@@ -14,8 +14,10 @@ import {
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_GRADIENT,
 } from '../../../../theme/tokens';
+import { useLocale } from '../../../../features/i18n';
 
 export function ImageUpload() {
+  const { t } = useLocale();
   const setQueue = useAnimationStore((s) => s.setQueue);
   const setCurrentIndex = useAnimationStore((s) => s.setCurrentIndex);
   const setBatchMode = useAnimationStore((s) => s.setBatchMode);
@@ -107,7 +109,7 @@ export function ImageUpload() {
         <CloudUploadIcon sx={{ fontSize: 28, color: BRAND_PRIMARY_LIGHT }} aria-hidden="true" />
       </Box>
       <Typography variant="h6" sx={{ mb: 0.75, fontWeight: 700, letterSpacing: '-0.02em' }}>
-        {isDragActive ? 'Solte as imagens aqui' : 'Envie uma ou mais imagens'}
+        {isDragActive ? t('speedPaint.uploadDragActive') : t('speedPaint.uploadPrompt')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420, lineHeight: 1.7 }}>
         Arraste e solte suas imagens aqui, ou use o botão abaixo.

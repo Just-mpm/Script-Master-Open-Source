@@ -17,6 +17,7 @@ import {
   BRAND_GLOW,
   WHITE,
 } from '../../../../theme/tokens';
+import { useLocale } from '../../../../features/i18n';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -88,9 +89,11 @@ export const ExportQualitySelector = React.memo(function ExportQualitySelector({
   onQualityChange,
   qualities,
   estimatedSizeBytes,
-  ariaLabel = 'Qualidade de exportação',
+  ariaLabel: _ariaLabel,
   sx,
 }: ExportQualitySelectorProps) {
+  const { t } = useLocale();
+  const ariaLabel = _ariaLabel ?? t('video.exportQuality');
   const sizeLabel = formatFileSize(estimatedSizeBytes);
 
   return (

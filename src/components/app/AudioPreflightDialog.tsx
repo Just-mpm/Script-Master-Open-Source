@@ -10,6 +10,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useLocale } from '../../features/i18n';
 
 export interface AudioPreflightStep {
   type: 'audio' | 'chunking' | 'scene_prompts' | 'image';
@@ -47,18 +48,6 @@ interface AudioPreflightDialogProps {
   onConfirm: () => void;
 }
 
-function formatCredits(value: number, unlimited: boolean): string {
-  if (unlimited || !Number.isFinite(value)) {
-    return 'Ilimitado';
-  }
-
-  return `${value} créditos`;
-}
-
-function formatStepCredits(value: number): string {
-  return value <= 0 ? 'Sem custo adicional' : `${value} créditos`;
-}
-
 function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -78,7 +67,20 @@ export function AudioPreflightDialog({
   onClose,
   onConfirm,
 }: AudioPreflightDialogProps) {
+  const { t } = useLocale();
   const isUnavailable = !loading && !preflight;
+
+  function formatCredits(value: number, unlimited: boolean): string {
+    if (unlimited || !Number.isFinite(value)) {
+      return t('audioPreflight.unlimited');
+    }
+
+    return t('audioPreflight.creditsSuffix', { value });
+  }
+
+  function formatStepCredits(value: number): string {
+    return value <= 0 ? t('audioPreflight.noCost') : t('audioPreflight.creditsSuffix', { value });
+  }
 
   return (
     <Dialog
@@ -89,10 +91,10 @@ export function AudioPreflightDialog({
     >
       <DialogTitle>
         {loading
-          ? 'Analisando a geração'
+          ? t('audioPreflight.loadingTitle')
           : preflight
-            ? 'Resumo da geração'
-            : 'Prévia indisponível'}
+            ? t('audioPreflight.summaryTitle')
+            : t('audioPreflight.unavailableTitle')}
       </DialogTitle>
 
       <DialogContent dividers>
@@ -100,14 +102,14 @@ export function AudioPreflightDialog({
           <Stack spacing={2} sx={{ alignItems: 'center', py: 3 }}>
             <CircularProgress size={28} />
             <Typography variant="body2" color="text.secondary">
-              Verificando etapas, estimativa de créditos e saldo disponível...
+              {t('audioPreflight.loadingText')}
             </Typography>
           </Stack>
         ) : null}
 
         {isUnavailable ? (
           <Alert severity="warning" variant="outlined">
-            {error ?? 'Não foi possível montar a prévia agora. Tente novamente em instantes.'}
+            {error ?? t('audioPreflight.unavailableText')}
           </Alert>
         ) : null}
 
@@ -119,16 +121,16 @@ export function AudioPreflightDialog({
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
                 {preflight.canProceed
-                  ? 'Tudo pronto para confirmar a geração.'
+                  ? t('audioPreflight.confirmReady')
                   : preflight.blockingMessage}
               </Typography>
             </Alert>
 
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-              <Chip label={`Duração estimada: ${formatDuration(preflight.estimatedDurationSeconds)}`} />
-              <Chip label={`Chunks: ${preflight.estimatedChunkCount}`} />
-              <Chip label={`Cenas previstas: ${preflight.estimatedSceneCount}`} />
-              <Chip label={`Confiança: ${preflight.confidence === 'high' ? 'Alta' : 'Muito próxima'}`} color="primary" variant="outlined" />
+              <Chip label={`${t('audioPreflight.durationLabel')}: ${formatDuration(preflight.estimatedDurationSeconds)}`} />
+              <Chip label={`${t('audioPreflight.chunksLabel')}: ${preflight.estimatedChunkCount}`} />
+              <Chip label={`${t('audioPreflight.scenesLabel')}: ${preflight.estimatedSceneCount}`} />
+              <Chip label={`${t('audioPreflight.confidenceLabel')}: ${preflight.confidence === 'high' ? t('audioPreflight.confidenceHigh') : t('audioPreflight.confidenceMedium')}`} color="primary" variant="outlined" />
             </Stack>
 
             <Stack spacing={1.5}>
@@ -149,7 +151,7 @@ export function AudioPreflightDialog({
                         {step.label}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {step.plannedCount} etapa(s) previstas
+                        {step.plannedCount} {t('audioPreflight.stepsLabel')}
                       </Typography>
                     </Box>
                     <Chip label={formatStepCredits(step.credits)} color="primary" />
@@ -170,25 +172,25 @@ export function AudioPreflightDialog({
 
             <Stack spacing={1}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Créditos
+                {t('audioPreflight.creditsSectionTitle')}
               </Typography>
 
               <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">Saldo atual</Typography>
+                <Typography variant="body2" color="text.secondary">{t('audioPreflight.currentBalance')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
                   {formatCredits(preflight.credits.available, preflight.credits.unlimited)}
                 </Typography>
               </Stack>
 
               <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">Custo previsto</Typography>
+                <Typography variant="body2" color="text.secondary">{t('audioPreflight.predictedCost')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
                   {formatCredits(preflight.credits.totalPlanned, false)}
                 </Typography>
               </Stack>
 
               <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">Saldo após concluir</Typography>
+                <Typography variant="body2" color="text.secondary">{t('audioPreflight.balanceAfter')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
                   {formatCredits(preflight.credits.remainingAfter, preflight.credits.unlimited)}
                 </Typography>
@@ -208,14 +210,14 @@ export function AudioPreflightDialog({
 
       <DialogActions>
         <Button onClick={onClose}>
-          Fechar
+          {t('audioPreflight.closeBtn')}
         </Button>
         <Button
           onClick={onConfirm}
           variant="contained"
           disabled={loading || !preflight || !preflight.canProceed}
         >
-          Confirmar geração
+          {t('audioPreflight.confirmBtn')}
         </Button>
       </DialogActions>
     </Dialog>

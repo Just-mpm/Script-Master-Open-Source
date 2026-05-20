@@ -7,7 +7,7 @@ import { createLogger } from '../../lib/logger';
 const log = createLogger('i18n');
 
 /** Contexto de internacionalização — null fora do Provider */
-const I18nContext = createContext<I18nContextValue | null>(null);
+export const I18nContext = createContext<I18nContextValue | null>(null);
 
 /**
  * Recupera o locale salvo no localStorage.
@@ -82,4 +82,25 @@ export function useLocale(): I18nContextValue {
     throw new Error('useLocale deve ser usado dentro de <I18nProvider>');
   }
   return ctx;
+}
+
+/** Hook robusto para acessar o i18n, retornando fallback seguro se estiver fora do I18nProvider */
+export function useLocaleSafe(): {
+  locale: Locale;
+  t: (key: string, params?: Record<string, string | number>) => string;
+  setLocale?: (newLocale: Locale) => void;
+} {
+  const ctx = useContext(I18nContext);
+  if (ctx) return ctx;
+
+  return {
+    locale: DEFAULT_LOCALE,
+    t: (key: string, params?: Record<string, string | number>): string => {
+      let value = getNestedValue(dictionaries[DEFAULT_LOCALE], key);
+      if (value === undefined) {
+        value = key;
+      }
+      return interpolate(value, params);
+    },
+  };
 }

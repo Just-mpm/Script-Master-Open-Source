@@ -28,6 +28,7 @@ import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDial
 import { useProjectGallery } from './video-library/useProjectGallery';
 import { useBatchDownload } from './video-library/useBatchDownload';
 import type { VideoLibraryProps } from './video-library/types';
+import { useLocale } from '../features/i18n';
 
 // Re-export para compatibilidade com consumidores existentes
 export type { VideoLibraryItem, VideoLibraryProps, SortOrder } from './video-library/types';
@@ -37,6 +38,7 @@ export type { VideoLibraryItem, VideoLibraryProps, SortOrder } from './video-lib
  * Orquestra busca, filtro, seleção, download em lote e exclusão.
  */
 export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
+  const { t } = useLocale();
   const navigate = useNavigate();
 
   const {
@@ -112,7 +114,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             <FolderOpen sx={{ fontSize: 24, color: 'common.white' }} />
           </Box>
           <Stack spacing={GAP_COMPACT}>
-            <Typography variant="h6">Sua galeria ainda está vazia</Typography>
+            <Typography variant="h6">{t('library.emptyGallery')}</Typography>
             <Typography variant="body2" color="text.secondary">
               Assim que você gerar projetos com áudio e cenas, eles aparecerão aqui para revisão e download.
             </Typography>
@@ -211,7 +213,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             }}
           />
 
-          <Tooltip title={sortOrder === 'recent' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}>
+          <Tooltip title={sortOrder === 'recent' ? t('library.sortOldestFirst') : t('library.sortNewestFirst')}>
             <IconButton size="small" aria-label="Ordenar" onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}>
               {sortOrder === 'recent'
                 ? <ArrowDownward sx={{ fontSize: ICON_SIZE_MD }} />
@@ -266,7 +268,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           variant="filled"
           onClose={() => setDownloadError(null)}
           action={
-            <IconButton color="inherit" size="small" aria-label="Fechar mensagem de erro" onClick={() => setDownloadError(null)}>
+            <IconButton color="inherit" size="small" aria-label={t('common.closeError')} onClick={() => setDownloadError(null)}>
               <Close sx={{ fontSize: ICON_SIZE_SM }} />
             </IconButton>
           }

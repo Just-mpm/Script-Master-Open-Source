@@ -31,6 +31,7 @@ import { DeleteConfirmationDialog } from '../../components/video-library/DeleteC
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { BRAND_PRIMARY } from '../../theme/tokens';
 import { useCredits } from '../../hooks/useCredits';
+import { useLocale } from '../../features/i18n';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -44,6 +45,7 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef, creditsExhausted } = useAssistant(currentState);
   const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
@@ -459,7 +461,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         itemName={memoryToDelete ?? null}
         deletingItem={deletingConfirm}
         deleteError={null}
-        titleIdleLabel="Excluir memória?"
+        titleIdleLabel={t('assistant.deleteMemoryConfirm')}
         description="Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas."
         onConfirm={() => void confirmDeleteMemory()}
         onCancel={() => setMemoryToDelete(null)}

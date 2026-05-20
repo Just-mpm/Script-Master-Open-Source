@@ -11,6 +11,7 @@ import { glassPanelSx } from '../theme/surfaces';
 import { ERROR_GLOW } from '../theme/tokens';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
+import { useLocaleSafe } from '../features/i18n';
 
 const log = createLogger('ErrorBoundary');
 
@@ -66,72 +67,82 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return this.props.fallback;
     }
 
-    return (
-      <Box
-        sx={{
-          display: 'grid',
-          placeItems: 'center',
-          minHeight: '60dvh',
-          p: 3,
-        }}
-      >
-        <Paper
-          sx={(theme) => ({
-            ...glassPanelSx(theme),
-            position: 'static',
-            overflow: 'visible',
-            maxWidth: 440,
-            p: { xs: 4, sm: 5 },
-            textAlign: 'center',
-          })}
-        >
-          <Stack spacing={2.5} sx={{ alignItems: 'center' }}>
-            <Box
-              sx={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                bgcolor: alpha(ERROR_GLOW, 0.3),
-                boxShadow: `0 8px 32px ${ERROR_GLOW}`,
-              }}
-            >
-              <ErrorOutlineOutlined
-                sx={{ fontSize: 36, color: 'error.main' }}
-                aria-hidden="true"
-              />
-            </Box>
-
-            <Typography variant="h5" component="h1" sx={{ letterSpacing: '-0.025em' }}>
-              Algo deu errado
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-              Ocorreu um erro inesperado ao renderizar esta página.
-              Tente recarregar para continuar.
-            </Typography>
-
-            <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={this.handleRetry}
-                startIcon={<Refresh />}
-                sx={{ transition: 'background-color 0.2s ease, color 0.2s ease' }}
-              >
-                Tentar novamente
-              </Button>
-              <Button
-                variant="contained"
-                onClick={this.handleReload}
-                sx={{ transition: 'box-shadow 0.2s ease' }}
-              >
-                Recarregar página
-              </Button>
-            </Stack>
-          </Stack>
-        </Paper>
-      </Box>
-    );
+    return <ErrorBoundaryFallback onRetry={this.handleRetry} onReload={this.handleReload} />;
   }
+}
+
+interface ErrorBoundaryFallbackProps {
+  onRetry: () => void;
+  onReload: () => void;
+}
+
+export function ErrorBoundaryFallback({ onRetry, onReload }: ErrorBoundaryFallbackProps) {
+  const { t } = useLocaleSafe();
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        placeItems: 'center',
+        minHeight: '60dvh',
+        p: 3,
+      }}
+    >
+      <Paper
+        sx={(theme) => ({
+          ...glassPanelSx(theme),
+          position: 'static',
+          overflow: 'visible',
+          maxWidth: 440,
+          p: { xs: 4, sm: 5 },
+          textAlign: 'center',
+        })}
+      >
+        <Stack spacing={2.5} sx={{ alignItems: 'center' }}>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              bgcolor: alpha(ERROR_GLOW, 0.3),
+              boxShadow: `0 8px 32px ${ERROR_GLOW}`,
+            }}
+          >
+            <ErrorOutlineOutlined
+              sx={{ fontSize: 36, color: 'error.main' }}
+              aria-hidden="true"
+            />
+          </Box>
+
+          <Typography variant="h5" component="h1" sx={{ letterSpacing: '-0.025em' }}>
+            {t('errorBoundary.title')}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+            {t('errorBoundary.description')}
+          </Typography>
+
+          <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={onRetry}
+              startIcon={<Refresh />}
+              sx={{ transition: 'background-color 0.2s ease, color 0.2s ease' }}
+            >
+              {t('errorBoundary.retryBtn')}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={onReload}
+              sx={{ transition: 'box-shadow 0.2s ease' }}
+            >
+              {t('errorBoundary.reloadBtn')}
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+    </Box>
+  );
 }

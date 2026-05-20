@@ -38,6 +38,7 @@ import {
   ERROR_MAIN,
   APP_SURFACE_ELEVATED,
 } from '../../../theme/tokens';
+import { useLocale } from '../../../features/i18n';
 import { wordsToPhrases, phrasesToWords, parseBoldMarkdown } from '../lib/subtitleUtils';
 import type { CaptionWord, CaptionPhrase } from '../types';
 import { formatTimestamp, frameToSeconds, secondsToFrame } from '../lib/formatTimestamp';
@@ -177,6 +178,7 @@ const PhraseCard = React.memo(function PhraseCard({
   onTimingBlur,
   onDelete,
 }: PhraseCardProps) {
+  const { t } = useLocale();
   const wordCount = phrase.words.length;
   const hasTimingError = startFrameEdit >= endFrameEdit;
 
@@ -245,7 +247,7 @@ const PhraseCard = React.memo(function PhraseCard({
         <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
           {isEditing ? (
             <>
-              <Tooltip title="Confirmar (Enter)">
+              <Tooltip title={t('common.confirmEnter')}>
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onConfirmEdit(editValue); }}
@@ -261,7 +263,7 @@ const PhraseCard = React.memo(function PhraseCard({
                   <CheckOutlined sx={{ fontSize: ICON_SIZE_LG }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Cancelar (Esc)">
+              <Tooltip title={t('common.cancelEsc')}>
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onCancelEdit(); }}
@@ -469,7 +471,7 @@ const PhraseCard = React.memo(function PhraseCard({
               aria-labelledby={`timing-end-${phrase.id}`}
               slotProps={{ htmlInput: { min: 0, step: 0.01, style: { fontSize: '0.75rem' } } }}
               error={hasTimingError}
-              helperText={hasTimingError ? 'Início deve ser menor que fim' : undefined}
+              helperText={hasTimingError ? t('video.timingError') : undefined}
               sx={{
                 flex: 1,
                 '& .MuiOutlinedInput-root': {
@@ -587,6 +589,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
   fps,
   onSeekToFrame,
 }: CaptionEditorPanelProps) {
+  const { t } = useLocale();
   // ─── Estado local ────────────────────────────────────────
 
   const [phrases, setPhrases] = useState<CaptionPhrase[]>(() => wordsToPhrases(captions));
@@ -892,7 +895,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
         action={
           <IconButton
             size="small"
-            aria-label="Desfazer exclusão"
+            aria-label={t('video.undoDelete')}
             onClick={handleUndoDelete}
             sx={{ color: BRAND_PRIMARY }}
           >

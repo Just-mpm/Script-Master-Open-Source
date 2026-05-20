@@ -16,6 +16,7 @@ import {
   ICON_SIZE_MD,
   BRAND_PRIMARY_GLOW_SOFT,
 } from '../../../theme/tokens';
+import { useLocaleSafe } from '../../../features/i18n';
 
 // ─── Constantes ──────────────────────────────────────────────
 
@@ -26,15 +27,15 @@ const SPEED_STEP = 0.25;
 // ─── Helpers ─────────────────────────────────────────────────
 
 /** Formata o multiplicador de velocidade com label descritivo (sketch — labels originais) */
-function formatSpeedLabel(value: number): string {
-  if (value === 0.25) return '0.25x Muito lento';
-  if (value === 0.5) return '0.5x Lento';
+function formatSpeedLabel(value: number, t: (k: string) => string): string {
+  if (value === 0.25) return `0.25x ${t('speedPaint.speedLabels.verySlow')}`;
+  if (value === 0.5) return `0.5x ${t('speedPaint.speedLabels.slow')}`;
   if (value === 0.75) return '0.75x';
-  if (value === 1.0) return '1.0x Normal';
-  if (value === 1.5) return '1.5x Rápido';
-  if (value === 2.0) return '2.0x Rápido';
-  if (value === 3.0) return '3.0x Muito rápido';
-  if (value === 4.0) return '4.0x Máximo';
+  if (value === 1.0) return `1.0x ${t('speedPaint.speedLabels.normal')}`;
+  if (value === 1.5) return `1.5x ${t('speedPaint.speedLabels.fast')}`;
+  if (value === 2.0) return `2.0x ${t('speedPaint.speedLabels.fast')}`;
+  if (value === 3.0) return `3.0x ${t('speedPaint.speedLabels.veryFast')}`;
+  if (value === 4.0) return `4.0x ${t('speedPaint.speedLabels.maximum')}`;
   return `${value}x`;
 }
 
@@ -63,9 +64,10 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
   const [isExpanded, setIsExpanded] = useState(false);
   const sectionId = useId();
 
+  const { t } = useLocaleSafe();
   // Labels memoizados para evitar re-cálculo a cada render
-  const sketchLabel = useMemo(() => formatSpeedLabel(sketch), [sketch]);
-  const revealLabel = useMemo(() => formatSpeedLabel(reveal), [reveal]);
+  const sketchLabel = useMemo(() => formatSpeedLabel(sketch, t), [sketch, t]);
+  const revealLabel = useMemo(() => formatSpeedLabel(reveal, t), [reveal, t]);
 
   // Handler de mudança do slider sketch — estável entre renders
   const handleSketchChange = useCallback(
@@ -196,7 +198,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   step={SPEED_STEP}
                   value={reveal}
                   onChange={handleRevealChange}
-                  aria-label="Velocidade da coloração (reveal)"
+                  aria-label={t('speedPaint.revealSpeed')}
                   sx={{
                     color: 'primary.main',
                     '& .MuiSlider-thumb': {

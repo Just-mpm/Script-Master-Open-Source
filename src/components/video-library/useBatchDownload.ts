@@ -3,11 +3,13 @@ import type React from 'react';
 import { downloadFile } from '../../lib/download';
 import { createLogger } from '../../lib/logger';
 import type { VideoLibraryItem } from './types';
+import { useLocale } from '../../features/i18n';
 
 const log = createLogger('VideoLibrary:download');
 
 /** Hook dedicado à lógica de download em sequência com progresso */
 export function useBatchDownload() {
+  const { t } = useLocale();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const downloadingRef = useRef(false);
@@ -32,7 +34,7 @@ export function useBatchDownload() {
         await downloadFile(item.audioUrl, `${safeName}-audio.wav`);
       } catch (err) {
         log.error('Falha no download do áudio', { error: err, name: safeName });
-        failedItems.push('áudio');
+        failedItems.push(t('library.audio', { defaultValue: 'áudio' }));
       }
     }
 

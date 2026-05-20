@@ -354,14 +354,15 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/i18n/`, `src/data/` (authBenefits, pricingFaq, metrics, testimonials, useCases) |
-| **Locales** | pt-BR (default), en, es — dicionários em `src/features/i18n/locales/` |
-| **Provider** | `I18nProvider` no `main.tsx`; hook `useLocale()` retorna `{ locale, setLocale, t }` |
+| **Arquivos** | `src/features/i18n/`, `src/data/` (authBenefits, pricingFaq, metrics, testimonials, useCases), `src/pages/public/legalData.ts` |
+| **Locales** | pt-BR (default), en, es — dicionários em `src/features/i18n/locales/` com 20+ namespaces |
+| **Provider** | `I18nProvider` no `main.tsx`; hooks: `useLocale()` retorna `{ locale, setLocale, t }` e `useLocaleSafe()` para contextos sem provider (ErrorBoundary, SceneSequence) |
 | **Selector** | `LocaleSelector` (ícone globe) no PublicHeader e Header |
 | **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
-| **Cobertura** | Todas as páginas públicas + OnboardingPage + ConfiguracoesPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + AssistantComposer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel |
+| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight` |
+| **Cobertura** | Todas as páginas públicas + OnboardingPage + ConfiguracoesPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + Assistant (Composer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel) + App.tsx + ToastProvider + AudioGenerationHandler + AudioPreflightDialog + GuestRoute + ProtectedRoute + ErrorBoundary + ErrorToast/SuccessToast/WarningToast + LoginPage + RegisterPage + NotFoundPage + GalleryCard + UpgradeDialog + UsageIndicator + AnimationDurationSelector + ImageUpload + InlineAIWidget + CaptionEditorPanel + SceneSequence + SpeedPaintControls + ExportProgressBar + ExportQualitySelector |
 
 ### Environment & COEP
 
@@ -416,7 +417,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.39.0`
+- **Current:** `0.40.0`
 - **Last release:** 2026-05-20
 
 ### Últimas mudanças (atualizado por /fast)
@@ -425,8 +426,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| 0.40.0 | **Internacionalização massiva + centralização de dados legais** — `useLocale()` integrado em ~30 componentes com textos hardcoded; `useLocaleSafe()` para contextos sem provider; 12 novos namespaces i18n (`metrics`, `auth`, `notFound`, `audioPreflight`, `legal`, `errorBoundary`, etc.); `legalData.ts` centraliza dados de páginas legais; constantes de reconciliação em `useCredits` (MAX_RECONCILE_ATTEMPTS); `credit-snapshot` com try/catch; `credit-service` com etapas isoladas |
 | 0.39.0 | **Robustez IA: Callable errors, Audio Preflight, Cancel AI Request, Credit Snapshot, CORS config** — `callable-errors.ts` centraliza parsing de erros `httpsCallable`; `AudioPreflightDialog` exibe prévia de custo antes da geração; `cancel-ai-request` flow para cancelamento cooperativo; `credit-snapshot` flow com detecção de créditos ilimitados; `cors.ts` configuração centralizada de CORS; `assistant-context.ts` extraído; `ai-requests.ts` rastreamento de requisições; `VITE_APP_CHECK_DEBUG_TOKEN` para debug local; emuladores Firebase configurados; deploy granular por serviço; Dotprompts migrados para `functions/src/prompts/`; `VITE_USE_EMULATORS` para desenvolvimento local |
 | 0.38.0 | **Migração de IA para Cloud Functions com Genkit + sistema de créditos** — `@google/genai` removido do frontend; 8 flows de IA no backend (audio, images, assistant, inline-assistant, scene-prompts, chunking, feedback, ping) com Genkit e Dotprompts; sistema de créditos com middleware `credit-metering.ts`, `credit-service.ts`, `credit-policy.ts`; App Check com reCAPTCHA v3; modo Open Beta (`OPEN_BETA_ENABLED`); `CreditIndicator` e `CreditBlockedMessage` no frontend; PricingPage convertida para beta aberto; Firestore rules para `beta_access`, `credit_months`, `credit_events`, `feedback_rewards`; `VITE_GEMINI_API_KEY` removido do frontend |
 | 0.37.1 | **Guard de duração na exportação de vídeo** — `VideoExportPanel` agora desabilita o botão de exportar enquanto `durationInFrames <= 0`; `useVideoExporter` previne renderização sem duração carregada com erro; teste de regressão para o guard; novo arquivo de teste `useVideoExporter-speedpaint.unit.test.tsx` para cenas de speed paint no exporter |
 | 0.37.0 | **Timings centralizados do Speed Paint** — novo módulo `speedPaintTimings.ts` consolida constantes, tipos (`SpeedPaintTimingMode`, `SpeedPaintSequenceTiming`) e funções (`getSpeedPaintTimingConfig`, `getSpeedPaintOverlapFrames`, `getSpeedPaintSequenceTiming`); constantes hardcoded removidas de `SpeedPaintScene` e `VideoComposition`; prop `timingMode` adicionada em `SpeedPaintScene`; `sequenced-batch` e `duration-based` como modos de temporização; testes unitários do novo módulo; auditoria de timing |
-| 0.36.0 | **Integração Biblioteca → Speed Paint** — novo adaptador `projectQueueAdapter.ts` prepara imagens do projeto para a fila do Speed Paint; botão "Levar cenas ao Speed Paint" em cada projeto na Library; revogação automática de blob URLs (`revokeQueuedImageUrl`, `revokeQueueUrls`); rastreamento de origem da fila (`queueSource`, `queueSourceProjectName`, `queueSourceNotice`); 15 novas chaves i18n para o fluxo; testes do adaptador e da Library |

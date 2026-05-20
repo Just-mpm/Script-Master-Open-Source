@@ -74,6 +74,14 @@ export function useCredits(): CreditState {
   const bootstrapCompletedRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const lastBlockedReconcileKeyRef = useRef<string | null>(null);
+  // Backoff exponencial para evitar loop de chamadas quando creditSnapshot falha.
+  // Cada tentativa dobra o delay (1s → 2s → 4s → 8s → 16s → 30s máx).
+  // Após 5 tentativas consecutivas, para de tentar até o próximo ciclo.
+  const reconcileAttemptRef = useRef(0);
+  const reconcileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const MAX_RECONCILE_ATTEMPTS = 5;
+  const BASE_RECONCILE_DELAY_MS = 1000;
+  const MAX_RECONCILE_DELAY_MS = 30_000;
   const creditSnapshotCallable = useMemo(
     () => httpsCallable<Record<string, never>, CreditSnapshotCallableOutput>(functions, 'creditSnapshot'),
     [],
@@ -200,24 +208,62 @@ export function useCredits(): CreditState {
   }, [refreshCredits, user]);
 
   useEffect(() => {
+    // Limpa timer e reseta contador quando o usuário muda ou desloga
     if (!user || state.loading || state.unlimitedCredits) {
       lastBlockedReconcileKeyRef.current = null;
+      reconcileAttemptRef.current = 0;
+      if (reconcileTimerRef.current !== null) {
+        clearTimeout(reconcileTimerRef.current);
+        reconcileTimerRef.current = null;
+      }
       return;
     }
 
     const isPotentiallyStaleBlockedState = state.availableCredits <= 0 && state.reservedCredits > 0;
     if (!isPotentiallyStaleBlockedState) {
       lastBlockedReconcileKeyRef.current = null;
+      reconcileAttemptRef.current = 0;
+      if (reconcileTimerRef.current !== null) {
+        clearTimeout(reconcileTimerRef.current);
+        reconcileTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Limite de tentativas consecutivas — evita loop infinito quando
+    // creditSnapshot está consistentemente retornando 500.
+    if (reconcileAttemptRef.current >= MAX_RECONCILE_ATTEMPTS) {
       return;
     }
 
     const reconcileKey = `${user.uid}:${state.availableCredits}:${state.reservedCredits}`;
-    if (lastBlockedReconcileKeyRef.current === reconcileKey) {
+    // Só tenta de novo se a chave mudou (ex: reservedCredits aumentou)
+    // OU se o timer expirou (retry após falha)
+    if (lastBlockedReconcileKeyRef.current === reconcileKey && reconcileTimerRef.current !== null) {
       return;
     }
 
     lastBlockedReconcileKeyRef.current = reconcileKey;
-    void refreshCredits(false);
+
+    // Backoff exponencial: 1s, 2s, 4s, 8s, 16s, 30s (máx)
+    const delayMs = Math.min(
+      BASE_RECONCILE_DELAY_MS * Math.pow(2, reconcileAttemptRef.current),
+      MAX_RECONCILE_DELAY_MS,
+    );
+
+    reconcileAttemptRef.current += 1;
+
+    reconcileTimerRef.current = setTimeout(() => {
+      reconcileTimerRef.current = null;
+      void refreshCredits(false);
+    }, delayMs);
+
+    return () => {
+      if (reconcileTimerRef.current !== null) {
+        clearTimeout(reconcileTimerRef.current);
+        reconcileTimerRef.current = null;
+      }
+    };
   }, [
     refreshCredits,
     state.availableCredits,

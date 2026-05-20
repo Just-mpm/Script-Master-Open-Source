@@ -2,7 +2,7 @@
 export type { Locale, LocaleConfig, TranslationDictionary, I18nContextValue } from './types';
 
 // ── Context & Hook ─────────────────────────────────────────────────────
-export { I18nProvider, useLocale } from './context';
+export { I18nProvider, useLocale, useLocaleSafe, I18nContext } from './context';
 
 // ── Utilitários ────────────────────────────────────────────────────────
 export {

@@ -85,7 +85,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
       const priceIds = STRIPE_PRICE_IDS[selectedPlanId];
 
       if (!priceIds) {
-        setError('Preço não configurado para este plano');
+        setError(t('billing.priceNotConfigured'));
         return;
       }
 

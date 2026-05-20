@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { useLocale } from './features/i18n';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -17,6 +18,7 @@ import { VIDEO_FPS } from './features/studio/store';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
 
 export default function App() {
+  const { t } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -124,7 +126,7 @@ export default function App() {
       <Box
         component="main"
         id="main-content"
-        aria-label="Conteúdo principal"
+        aria-label={t('common.mainContent')}
         tabIndex={-1}
         sx={{
           minHeight: showAppLayout ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`,

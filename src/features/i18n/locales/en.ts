@@ -5,6 +5,12 @@ import type { TranslationDictionary } from '../types';
  */
 export const en: TranslationDictionary = {
   common: {
+    mainContent: 'Main content',
+    confirmEnter: 'Confirm (Enter)',
+    cancelEsc: 'Cancel (Esc)',
+    stop: 'Stop',
+    closeError: 'Close error message',
+    closeWarning: 'Close warning',
     skipToContent: 'Skip to content',
     loading: 'Loading...',
     error: 'Error',
@@ -86,6 +92,10 @@ export const en: TranslationDictionary = {
           'Transform scripts into professional audio with Gemini TTS. Voice control, pace, and multi-speaker.',
       },
       video: {
+    exportProgress: 'Export progress',
+    exportQuality: 'Export quality',
+    timingError: 'Start must be before end',
+    undoDelete: 'Undo deletion',
         title: 'Automatic Video',
         description:
           'Create client-side videos with subtitles, transitions, and waveform. No backend needed.',
@@ -96,16 +106,25 @@ export const en: TranslationDictionary = {
           '8 aspect ratios, visual reference, and full gallery with cloud persistence.',
       },
       speedPaint: {
+    durationLabel: 'Speed paint duration',
+    uploadDragActive: 'Drop images here',
+    uploadPrompt: 'Upload one or more images',
         title: 'Speed Paint',
         description:
           'Progressive painting animation with edge detection, batch processing, and export.',
       },
       assistant: {
+    deleteMemoryConfirm: 'Delete memory?',
         title: 'AI Assistant',
         description:
           'Chat with streaming, memories, attachments, and direct integration with the production studio.',
       },
       library: {
+    emptyGallery: 'Your gallery is empty',
+    sortOldestFirst: 'Oldest first',
+    sortNewestFirst: 'Newest first',
+    generation: 'Generation',
+    project: 'Project',
         title: 'Library',
         description:
           'Complete project management with audios, scenes, videos, and dual persistence.',
@@ -639,6 +658,7 @@ export const en: TranslationDictionary = {
       exportVideoMp4: 'Export MP4 video',
       exportingVideo: 'Exporting video',
       exportingVideoProgress: 'Exporting video... {progress}%',
+      viewVideo: 'View video',
       savedToLibrary: 'Audio saved to library',
       saveToLibrary: 'Save audio to library',
       downloadOptions: 'Download options',
@@ -918,6 +938,7 @@ export const en: TranslationDictionary = {
       deleteMemoryAria: 'Delete memory',
     },
     settings: {
+    customSettings: 'Custom settings',
       title: 'AI Persona',
       subtitle: 'Define permanent principles of tone, brand, response format, and creative guardrails.',
       closeAria: 'Close AI persona',
@@ -1333,6 +1354,13 @@ export const en: TranslationDictionary = {
 
   // ── Billing ──────────────────────────────────────────────────────────
   billing: {
+    priceNotConfigured: 'Price not configured for this plan',
+    metrics: {
+      audioGenerations: 'Audio generations',
+      imageGenerations: 'Image generations',
+      videoExports: 'Video exports',
+      scriptChars: 'Script characters',
+    },
     upgrade: {
       title: 'Choose your plan',
       monthly: 'Monthly',
@@ -1435,4 +1463,136 @@ export const en: TranslationDictionary = {
     speakerBNameLabel: 'Speaker B name',
     speakerBVoiceLabel: 'Speaker B voice',
   },
+
+  // ── Authentication (Login & Register) ──────────────────────────────
+  auth: {
+    login: {
+      seoTitle: 'Login',
+      seoDesc: 'Log in to Script Master and transform scripts into audio, video, and images with artificial intelligence.',
+      benefitsTitle: 'Create with AI in open beta',
+      benefitsDesc: 'Transform scripts into professional audio, video, and images. Free monthly credits included.',
+      title: 'Script Master',
+      subtitle: 'Log in with Google or email',
+      googleBtn: 'Log in with Google',
+      orSeparator: 'or',
+      emailLabel: 'Email',
+      passwordLabel: 'Password',
+      submitBtn: 'Log In',
+      submitingBtn: 'Logging in...',
+      forgotPasswordLink: 'Forgot password?',
+      noAccount: 'Don\'t have an account?',
+      signUpLink: 'Sign Up',
+      validation: {
+        emailRequired: 'Email is required.',
+        emailInvalid: 'Invalid email.',
+        passwordRequired: 'Password is required.',
+      },
+      resetDialog: {
+        title: 'Reset password',
+        desc: 'Enter your email and we will send you a password reset link.',
+        emailLabel: 'Email',
+        submitBtn: 'Send link',
+        submittingBtn: 'Sending...',
+        cancelBtn: 'Cancel',
+        successTitle: 'Email sent!',
+        successDesc: 'Check your inbox and follow the instructions to reset your password.',
+        closeBtn: 'Got it',
+        errors: {
+          userNotFound: 'No user found with this email.',
+          tooManyRequests: 'Too many attempts. Try again later.',
+          generic: 'Error sending reset email.',
+        }
+      }
+    },
+    register: {
+      seoTitle: 'Register',
+      seoDesc: 'Create your Script Master account and start transforming scripts into audio, video, and images with artificial intelligence.',
+      title: 'Create account',
+      subtitle: 'Start creating with AI',
+      googleBtn: 'Sign up with Google',
+      orSeparator: 'or',
+      emailLabel: 'Email',
+      passwordLabel: 'Password',
+      confirmPasswordLabel: 'Confirm password',
+      passwordHelpText: 'At least 6 characters',
+      submitBtn: 'Create account',
+      submittingBtn: 'Creating account...',
+      hasAccount: 'Already have an account?',
+      loginLink: 'Log in',
+      validation: {
+        emailRequired: 'Email is required.',
+        emailInvalid: 'Invalid email.',
+        passwordRequired: 'Password is required.',
+        passwordMinLength: 'Password must be at least 6 characters.',
+        confirmPasswordRequired: 'Confirm your password.',
+        passwordsMismatch: 'Passwords do not match.',
+      }
+    },
+    verification: {
+      verifyingSession: 'Verifying session...',
+      verifyEmailTitle: 'Verify your email',
+      verifyEmailDesc: 'We have sent a verification link to your email. Please check your inbox and spam folder.',
+      resendBtn: 'Resend verification email',
+      resending: 'Sending...',
+      resendSuccess: 'Email resent successfully! Check your inbox.',
+      resendError: 'Could not resend email. Please try again later.',
+      backToLogin: 'Back to login',
+    }
+  },
+
+  // ── Page Not Found (404) ──────────────────────────
+  notFound: {
+    seoTitle: 'Page not found',
+    title: 'Page not found',
+    desc: 'The URL you accessed does not exist or has been removed.',
+    homeBtn: 'Go to home',
+  },
+
+  // ── Cost Preview (AudioPreflightDialog) ───────────────
+  audioPreflight: {
+    loadingTitle: 'Analyzing generation',
+    summaryTitle: 'Generation summary',
+    unavailableTitle: 'Preview unavailable',
+    loadingText: 'Checking steps, credit estimation and available balance...',
+    unavailableText: 'Could not create preview right now. Try again in a moment.',
+    confirmReady: 'All set to confirm generation.',
+    durationLabel: 'Estimated duration',
+    chunksLabel: 'Chunks',
+    scenesLabel: 'Planned scenes',
+    confidenceLabel: 'Confidence',
+    confidenceHigh: 'High',
+    confidenceMedium: 'Very close',
+    stepsLabel: 'planned step(s)',
+    creditsSectionTitle: 'Credits',
+    currentBalance: 'Current balance',
+    predictedCost: 'Predicted cost',
+    balanceAfter: 'Balance after completion',
+    closeBtn: 'Close',
+    confirmBtn: 'Confirm generation',
+    unlimited: 'Unlimited',
+    creditsSuffix: '{value} credits',
+    noCost: 'No additional cost',
+    scriptNamePrefix: 'Script',
+    saveCloudSuccess: 'Audio successfully saved to the cloud!',
+    saveLocalSuccess: 'Audio successfully saved to the local library!',
+    saveError: 'Error saving to library.',
+    insufficientCreditsError: 'Your current balance does not cover all planned steps of this generation.',
+  },
+
+  // ── Legal & Footer ──────────────────────────────────────
+  legal: {
+    tocTitle: 'Summary',
+    lastUpdated: 'Last updated: {date}',
+    copyright: '© {year} Koda AI Studio. All rights reserved.',
+    tocAriaLabelTerms: 'Summary of terms',
+    tocAriaLabelPrivacy: 'Summary of privacy policy',
+    tocAriaLabelCookies: 'Summary of cookies policy',
+  },
+
+  errorBoundary: {
+    title: 'Something went wrong',
+    description: 'An unexpected error occurred while rendering this page. Please try reloading to continue.',
+    retryBtn: 'Try again',
+    reloadBtn: 'Reload page',
+  }
 };

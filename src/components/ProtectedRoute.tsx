@@ -9,28 +9,34 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendEmailVerification } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
+import { useLocale } from '../features/i18n';
 
 const log = createLogger('ProtectedRoute');
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
+  const { t } = useLocale();
   const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'success' | 'error' | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const handleResendEmail = useCallback(async () => {
     if (!user) return;
     setIsResending(true);
+    setResendStatus(null);
     setResendMessage(null);
     try {
       await sendEmailVerification(user);
-      setResendMessage('Email reenviado com sucesso! Verifique sua caixa de entrada.');
+      setResendStatus('success');
+      setResendMessage(t('auth.verification.resendSuccess'));
     } catch (err) {
       log.warn('Falha ao reenviar email de verificação', { error: err });
-      setResendMessage('Não foi possível reenviar o email. Tente novamente mais tarde.');
+      setResendStatus('error');
+      setResendMessage(t('auth.verification.resendError'));
     } finally {
       setIsResending(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   // Aguardando verificação de sessão do Firebase
   if (loading) {
@@ -43,9 +49,9 @@ export function ProtectedRoute() {
         }}
       >
         <Stack spacing={2} sx={{ alignItems: 'center' }} role="status" aria-live="polite">
-          <CircularProgress size={28} aria-label="Verificando sessão" />
+          <CircularProgress size={28} aria-label={t('auth.verification.verifyingSession')} />
           <Typography variant="body2" color="text.secondary">
-            Verificando sessão...
+            {t('auth.verification.verifyingSession')}
           </Typography>
         </Stack>
       </Box>
@@ -63,9 +69,9 @@ export function ProtectedRoute() {
       <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 3 }}>
         <Stack spacing={3} sx={{ alignItems: 'center', maxWidth: 400, textAlign: 'center' }}>
           <EmailOutlined sx={{ fontSize: 48, color: 'primary.main' }} aria-hidden="true" />
-          <Typography variant="h6">Verifique seu email</Typography>
+          <Typography variant="h6">{t('auth.verification.verifyEmailTitle')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Enviamos um link de verificação para seu email. Verifique sua caixa de entrada e spam.
+            {t('auth.verification.verifyEmailDesc')}
           </Typography>
           <Button
             variant="outlined"
@@ -73,15 +79,15 @@ export function ProtectedRoute() {
             disabled={isResending}
             onClick={() => { void handleResendEmail(); }}
           >
-            {isResending ? 'Enviando...' : 'Reenviar email de verificação'}
+            {isResending ? t('auth.verification.resending') : t('auth.verification.resendBtn')}
           </Button>
           {resendMessage && (
-            <Typography variant="caption" color={resendMessage.includes('sucesso') ? 'success.main' : 'error.main'}>
+            <Typography variant="caption" color={resendStatus === 'success' ? 'success.main' : 'error.main'}>
               {resendMessage}
             </Typography>
           )}
           <Button variant="outlined" onClick={() => { window.location.href = '/login'; }}>
-            Voltar ao login
+            {t('auth.verification.backToLogin')}
           </Button>
         </Stack>
       </Box>

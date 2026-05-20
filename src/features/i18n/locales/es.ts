@@ -5,6 +5,12 @@ import type { TranslationDictionary } from '../types';
  */
 export const es: TranslationDictionary = {
   common: {
+    mainContent: 'Contenido principal',
+    confirmEnter: 'Confirmar (Enter)',
+    cancelEsc: 'Cancelar (Esc)',
+    stop: 'Detener',
+    closeError: 'Cerrar mensaje de error',
+    closeWarning: 'Cerrar advertencia',
     skipToContent: 'Saltar al contenido',
     loading: 'Cargando...',
     error: 'Error',
@@ -86,6 +92,10 @@ export const es: TranslationDictionary = {
           'Transforma guiones en audio profesional con Gemini TTS. Control de voz, ritmo y multi-locutor.',
       },
       video: {
+    exportProgress: 'Progreso de exportación',
+    exportQuality: 'Calidad de exportación',
+    timingError: 'El inicio debe ser anterior al final',
+    undoDelete: 'Deshacer eliminación',
         title: 'Video Automático',
         description:
           'Crea videos del lado del cliente con subtítulos, transiciones y waveform. Sin backend.',
@@ -96,16 +106,25 @@ export const es: TranslationDictionary = {
           '8 aspect ratios, referencia visual y galería completa con persistencia en la nube.',
       },
       speedPaint: {
+    durationLabel: 'Duración del speed paint',
+    uploadDragActive: 'Suelta las imágenes aquí',
+    uploadPrompt: 'Sube una o más imágenes',
         title: 'Speed Paint',
         description:
           'Animación de pintura progresiva con detección de bordes, procesamiento por lotes y exportación.',
       },
       assistant: {
+    deleteMemoryConfirm: '¿Eliminar memoria?',
         title: 'Asistente IA',
         description:
           'Chat con streaming, memorias, archivos adjuntos e integración directa con el estudio de producción.',
       },
       library: {
+    emptyGallery: 'Tu galería está vacía',
+    sortOldestFirst: 'Más antiguos primero',
+    sortNewestFirst: 'Más recientes primero',
+    generation: 'Generación',
+    project: 'Proyecto',
         title: 'Biblioteca',
         description:
           'Gestión completa de proyectos con audios, escenas, videos y persistencia dual.',
@@ -639,6 +658,7 @@ export const es: TranslationDictionary = {
       exportVideoMp4: 'Exportar video MP4',
       exportingVideo: 'Exportando video',
       exportingVideoProgress: 'Exportando video... {progress}%',
+      viewVideo: 'Ver video',
       savedToLibrary: 'Audio guardado en la biblioteca',
       saveToLibrary: 'Guardar audio en la biblioteca',
       downloadOptions: 'Opciones de descarga',
@@ -918,6 +938,7 @@ export const es: TranslationDictionary = {
       deleteMemoryAria: 'Eliminar memoria',
     },
     settings: {
+    customSettings: 'Configuración personalizada',
       title: 'Persona de la IA',
       subtitle: 'Define principios permanentes de tono, marca, formato de respuesta y guardrails creativos.',
       closeAria: 'Cerrar persona de la IA',
@@ -1333,6 +1354,13 @@ export const es: TranslationDictionary = {
 
   // ── Billing ──────────────────────────────────────────────────────────
   billing: {
+    priceNotConfigured: 'Precio no configurado para este plan',
+    metrics: {
+      audioGenerations: 'Generaciones de audio',
+      imageGenerations: 'Generaciones de imagen',
+      videoExports: 'Exportaciones de video',
+      scriptChars: 'Caracteres de guion',
+    },
     upgrade: {
       title: 'Elige tu plan',
       monthly: 'Mensual',
@@ -1435,4 +1463,136 @@ export const es: TranslationDictionary = {
     speakerBNameLabel: 'Nombre del locutor B',
     speakerBVoiceLabel: 'Voz del locutor B',
   },
+
+  // ── Autenticación (Login y Registro) ──────────────────────────────
+  auth: {
+    login: {
+      seoTitle: 'Iniciar sesión',
+      seoDesc: 'Inicie sesión en Script Master y transforme guiones en audio, video e imágenes con inteligencia artificial.',
+      benefitsTitle: 'Cree con IA en beta abierta',
+      benefitsDesc: 'Transforme guiones en audio, video e imágenes profesionales. Créditos mensuales gratuitos incluidos.',
+      title: 'Script Master',
+      subtitle: 'Inicie sesión con Google o correo electrónico',
+      googleBtn: 'Iniciar sesión con Google',
+      orSeparator: 'o',
+      emailLabel: 'Correo electrónico',
+      passwordLabel: 'Contraseña',
+      submitBtn: 'Iniciar sesión',
+      submitingBtn: 'Iniciando sesión...',
+      forgotPasswordLink: '¿Olvidó su contraseña?',
+      noAccount: '¿No tiene una cuenta?',
+      signUpLink: 'Regístrese',
+      validation: {
+        emailRequired: 'El correo electrónico es obligatorio.',
+        emailInvalid: 'Correo electrónico inválido.',
+        passwordRequired: 'La contraseña es obligatoria.',
+      },
+      resetDialog: {
+        title: 'Restablecer contraseña',
+        desc: 'Ingrese su correo electrónico y le enviaremos un enlace para restablecer su contraseña.',
+        emailLabel: 'Correo electrónico',
+        submitBtn: 'Enviar enlace',
+        submittingBtn: 'Enviando...',
+        cancelBtn: 'Cancelar',
+        successTitle: '¡Correo enviado!',
+        successDesc: 'Verifique su bandeja de entrada y siga las instrucciones para restablecer su contraseña.',
+        closeBtn: 'Entendido',
+        errors: {
+          userNotFound: 'Ningún usuario encontrado con este correo electrónico.',
+          tooManyRequests: 'Demasiados intentos. Intente más tarde.',
+          generic: 'Error al enviar el correo electrónico de restablecimiento.',
+        }
+      }
+    },
+    register: {
+      seoTitle: 'Registro',
+      seoDesc: 'Cree su cuenta en Script Master y comience a transformar guiones en audio, video e imágenes con inteligencia artificial.',
+      title: 'Crear cuenta',
+      subtitle: 'Comience a crear con IA',
+      googleBtn: 'Registrarse con Google',
+      orSeparator: 'o',
+      emailLabel: 'Correo electrónico',
+      passwordLabel: 'Contraseña',
+      confirmPasswordLabel: 'Confirmar contraseña',
+      passwordHelpText: 'Al menos 6 caracteres',
+      submitBtn: 'Crear cuenta',
+      submittingBtn: 'Creando cuenta...',
+      hasAccount: '¿Ya tiene una cuenta?',
+      loginLink: 'Inicie sesión',
+      validation: {
+        emailRequired: 'El correo electrónico es obligatorio.',
+        emailInvalid: 'Correo electrónico inválido.',
+        passwordRequired: 'La contraseña es obligatoria.',
+        passwordMinLength: 'La contraseña debe tener al menos 6 caracteres.',
+        confirmPasswordRequired: 'Confirme su contraseña.',
+        passwordsMismatch: 'Las contraseñas no coinciden.',
+      }
+    },
+    verification: {
+      verifyingSession: 'Verificando sesión...',
+      verifyEmailTitle: 'Verifique su correo electrónico',
+      verifyEmailDesc: 'Hemos enviado un enlace de verificación a su correo electrónico. Verifique su bandeja de entrada y correo no deseado (spam).',
+      resendBtn: 'Reenviar correo de verificación',
+      resending: 'Enviando...',
+      resendSuccess: '¡Correo reenviado con éxito! Verifique su bandeja de entrada.',
+      resendError: 'No se pudo reenviar el correo. Intente más tarde.',
+      backToLogin: 'Volver al inicio de sesión',
+    }
+  },
+
+  // ── Página no encontrada (404) ──────────────────────────
+  notFound: {
+    seoTitle: 'Página no encontrada',
+    title: 'Página no encontrada',
+    desc: 'La URL a la que accedió no existe o fue eliminada.',
+    homeBtn: 'Volver al inicio',
+  },
+
+  // ── Vista previa de costos (AudioPreflightDialog) ───────────────
+  audioPreflight: {
+    loadingTitle: 'Analizando la generación',
+    summaryTitle: 'Resumen de la generación',
+    unavailableTitle: 'Vista previa no disponible',
+    loadingText: 'Verificando etapas, estimación de créditos y saldo disponible...',
+    unavailableText: 'No se pudo crear la vista previa ahora. Intente de nuevo en unos momentos.',
+    confirmReady: 'Todo listo para confirmar la generación.',
+    durationLabel: 'Duración estimada',
+    chunksLabel: 'Chunks',
+    scenesLabel: 'Escenas previstas',
+    confidenceLabel: 'Confianza',
+    confidenceHigh: 'Alta',
+    confidenceMedium: 'Muy cercana',
+    stepsLabel: 'etapa(s) previstas',
+    creditsSectionTitle: 'Créditos',
+    currentBalance: 'Saldo actual',
+    predictedCost: 'Costo previsto',
+    balanceAfter: 'Saldo después de completar',
+    closeBtn: 'Cerrar',
+    confirmBtn: 'Confirmar generación',
+    unlimited: 'Ilimitado',
+    creditsSuffix: '{value} créditos',
+    noCost: 'Sin costo adicional',
+    scriptNamePrefix: 'Guion',
+    saveCloudSuccess: '¡Audio guardado en la nube con éxito!',
+    saveLocalSuccess: '¡Audio guardado en la biblioteca local!',
+    saveError: 'Error al guardar en la biblioteca.',
+    insufficientCreditsError: 'Su saldo actual no cubre todas las etapas previstas de esta generación.',
+  },
+
+  // ── Legales y pie de página ──────────────────────────────────────
+  legal: {
+    tocTitle: 'Índice',
+    lastUpdated: 'Última actualización: {date}',
+    copyright: '© {year} Koda AI Studio. Todos los derechos reservados.',
+    tocAriaLabelTerms: 'Índice de los términos',
+    tocAriaLabelPrivacy: 'Índice de la política de privacidad',
+    tocAriaLabelCookies: 'Índice de la política de cookies',
+  },
+
+  errorBoundary: {
+    title: 'Algo salió mal',
+    description: 'Ocurrió un error inesperado al renderizar esta página. Intente recargar para continuar.',
+    retryBtn: 'Intentar de nuevo',
+    reloadBtn: 'Recargar página',
+  }
 };

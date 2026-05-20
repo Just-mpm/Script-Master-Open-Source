@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { createLogger } from '../lib/logger';
 import type { MigrationCheckResult, MigrationResult } from '../lib/db/migration';
 import { checkForMigratableData, markMigrationCompleted, migrateAnonymousData } from '../lib/db/migration';
+import { useLocale } from '../features/i18n';
 
 const log = createLogger('DataMigrationDialog');
 
@@ -23,6 +24,7 @@ interface DataMigrationDialogProps {
 }
 
 export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogProps) {
+  const { t } = useLocale();
   const [checkResult, setCheckResult] = useState<MigrationCheckResult | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
@@ -158,7 +160,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
             {summary.imageGenerations > 0 && <Typography component="li" variant="body2">{summary.imageGenerations} gerações de imagem</Typography>}
             {summary.memories > 0 && <Typography component="li" variant="body2">{summary.memories} memórias da IA</Typography>}
             {summary.chats > 0 && <Typography component="li" variant="body2">{summary.chats} conversas</Typography>}
-            {summary.settings && <Typography component="li" variant="body2">Configurações personalizadas</Typography>}
+            {summary.settings && <Typography component="li" variant="body2">{t('settings.customSettings')}</Typography>}
           </Box>
 
           <DialogContentText variant="caption" color="text.disabled">

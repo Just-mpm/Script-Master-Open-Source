@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { ErrorToast } from '../ErrorToast';
 import { SuccessToast } from '../SuccessToast';
 import { WarningToast } from '../WarningToast';
+import { useLocale } from '../../features/i18n';
 
 interface ToastManagerProps {
   activeError: string | null;
@@ -40,6 +41,7 @@ export function ToastManager({
   isVideoRoute,
 }: ToastManagerProps) {
   const navigate = useNavigate();
+  const { t } = useLocale();
 
   return (
     <>
@@ -61,7 +63,7 @@ export function ToastManager({
             aria-valuenow={videoExportProgress}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={`Exportando vídeo: ${videoExportProgress}%`}
+            aria-label={t('studio.actionBar.exportingVideoProgress', { progress: String(videoExportProgress) })}
             icon={<CircularProgress size={20} color="inherit" />}
             action={
               <Button
@@ -70,7 +72,7 @@ export function ToastManager({
                 onClick={() => navigate('/app/video')}
                 sx={{ fontWeight: 600 }}
               >
-                Ver vídeo
+                {t('studio.actionBar.viewVideo')}
               </Button>
             }
             sx={{
@@ -81,7 +83,7 @@ export function ToastManager({
           >
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Exportando vídeo...
+                {t('studio.actionBar.exportingVideo')}...
               </Typography>
               <Typography variant="body2" sx={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {videoExportProgress}%

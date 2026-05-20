@@ -5,6 +5,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Close from '@mui/icons-material/Close';
 import { createLogger } from '../lib/logger';
 import { ICON_SIZE_MD } from '../theme/tokens';
+import { useLocale } from '../features/i18n';
 
 const log = createLogger('AudioContext');
 
@@ -32,6 +33,7 @@ interface AudioContextType {
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export function AudioProvider({ children }: { children: ReactNode }) {
+  const { t } = useLocale();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentUrlRef = useRef<string | null>(null);
   const durationOverrideRef = useRef<number | null>(null);
@@ -229,7 +231,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           variant="filled"
           onClose={dismissPlaybackError}
           action={
-            <IconButton color="inherit" size="small" aria-label="Fechar aviso" onClick={dismissPlaybackError}>
+            <IconButton color="inherit" size="small" aria-label={t('common.closeWarning')} onClick={dismissPlaybackError}>
               <Close sx={{ fontSize: ICON_SIZE_MD }} />
             </IconButton>
           }

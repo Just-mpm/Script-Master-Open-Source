@@ -9,6 +9,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { computeSafeFadeFrames, springFadeIn, springFadeOut } from '../lib/transitions';
+import { useLocaleSafe } from '../../../features/i18n';
 
 // ─── Props ─────────────────────────────────────────────────
 
@@ -39,8 +40,9 @@ export function SceneSequence({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
+  const { t } = useLocaleSafe();
   // Bloqueia a renderização até que a imagem carregue; cancela em caso de falha
-  const [handle] = useState(() => delayRender('Carregando imagem da cena'));
+  const [handle] = useState(() => delayRender(t('video.loadingSceneImage')));
 
   // Garante que o inputRange seja estritamente crescente (precisa 2*t < dur)
   const safeFadeFrames = computeSafeFadeFrames(durationInFrames, tFrames);
@@ -53,7 +55,7 @@ export function SceneSequence({
           src={imageUrl}
           alt=""
           onLoad={() => continueRender(handle)}
-          onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
+          onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
           style={{
             width: '100%',
             height: '100%',
@@ -76,7 +78,7 @@ export function SceneSequence({
           src={imageUrl}
           alt=""
           onLoad={() => continueRender(handle)}
-          onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
+          onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
           style={{
             width: '100%',
             height: '100%',
@@ -99,7 +101,7 @@ export function SceneSequence({
         src={imageUrl}
         alt=""
         onLoad={() => continueRender(handle)}
-        onError={() => cancelRender(new Error(`Falha ao carregar imagem: ${imageUrl}`))}
+        onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
         style={{
           width: '100%',
           height: '100%',

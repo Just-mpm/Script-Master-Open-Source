@@ -15,6 +15,7 @@ import {
   BRAND_PRIMARY_LIGHT,
   WHITE_14,
 } from '../../../theme/tokens';
+import { useLocale } from '../../../features/i18n';
 
 export const SPEED_PAINT_DURATION_OPTIONS = [10, 15, 30, 60] as const;
 
@@ -31,6 +32,7 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
   onDurationChange,
   helperText,
 }: AnimationDurationSelectorProps) {
+  const { t } = useLocale();
   const handleChange = (_event: React.MouseEvent<HTMLElement>, value: number | null) => {
     if (value == null) return;
     onDurationChange(value as SpeedPaintDurationOption);
@@ -55,7 +57,7 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
           value={duration}
           exclusive
           onChange={handleChange}
-          aria-label="Duração do speed paint"
+          aria-label={t('speedPaint.durationLabel')}
           sx={{
             display: 'flex',
             flexWrap: 'wrap',

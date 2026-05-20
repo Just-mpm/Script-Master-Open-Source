@@ -3,6 +3,7 @@ import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Close from '@mui/icons-material/Close';
 import { ICON_SIZE_MD } from '../theme/tokens';
+import { useLocale } from '../features/i18n';
 
 interface SuccessToastProps {
   message: string | null;
@@ -16,6 +17,8 @@ const TOAST_SX = {
 } as const;
 
 export function SuccessToast({ message, onDismiss }: SuccessToastProps) {
+  const { t } = useLocale();
+
   return (
     <Snackbar
       open={Boolean(message)}
@@ -34,7 +37,7 @@ export function SuccessToast({ message, onDismiss }: SuccessToastProps) {
         variant="filled"
         onClose={onDismiss}
         action={
-          <IconButton color="inherit" size="small" aria-label="Fechar mensagem de sucesso" onClick={onDismiss}>
+          <IconButton color="inherit" size="small" aria-label={t('common.close')} onClick={onDismiss}>
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         }

@@ -3,6 +3,7 @@ import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Close from '@mui/icons-material/Close';
 import { ICON_SIZE_MD } from '../theme/tokens';
+import { useLocale } from '../features/i18n';
 
 interface WarningToastProps {
   warning: string | null;
@@ -17,6 +18,8 @@ const TOAST_SX = {
 
 /** Snackbar de aviso para falhas parciais (ex: cenas que falharam na geração). */
 export function WarningToast({ warning, onDismiss }: WarningToastProps) {
+  const { t } = useLocale();
+
   return (
     <Snackbar
       open={Boolean(warning)}
@@ -35,7 +38,7 @@ export function WarningToast({ warning, onDismiss }: WarningToastProps) {
         variant="filled"
         onClose={onDismiss}
         action={
-          <IconButton color="inherit" size="small" aria-label="Fechar aviso" onClick={onDismiss}>
+          <IconButton color="inherit" size="small" aria-label={t('common.close')} onClick={onDismiss}>
             <Close sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         }

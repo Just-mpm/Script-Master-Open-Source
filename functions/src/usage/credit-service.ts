@@ -170,11 +170,46 @@ export async function getCreditAvailabilitySnapshot(
   db: Firestore,
   uid: string,
 ): Promise<CreditAvailabilitySnapshot> {
-  const unlimitedCredits = await hasUnlimitedCredits(db, uid);
-  const initialBeta = await getOrCreateBetaAccess(db, uid);
-  const expiredReservations = await expireStaleReservations(db, uid);
+  // Cada etapa é isolada para facilitar o diagnóstico de falhas.
+  // Em caso de erro, o log indica exatamente qual operação falhou.
+
+  let unlimitedCredits: boolean;
+  try {
+    unlimitedCredits = await hasUnlimitedCredits(db, uid);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[credit-service] hasUnlimitedCredits falhou para uid=${uid}: ${msg}`);
+    throw err;
+  }
+
+  let initialBeta: BetaAccess;
+  try {
+    initialBeta = await getOrCreateBetaAccess(db, uid);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[credit-service] getOrCreateBetaAccess (inicial) falhou para uid=${uid}: ${msg}`);
+    throw err;
+  }
+
+  let expiredReservations: number;
+  try {
+    expiredReservations = await expireStaleReservations(db, uid);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[credit-service] expireStaleReservations falhou para uid=${uid}: ${msg}`);
+    throw err;
+  }
+
   const beta = expiredReservations > 0
-    ? await getOrCreateBetaAccess(db, uid)
+    ? await (async () => {
+        try {
+          return await getOrCreateBetaAccess(db, uid);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`[credit-service] getOrCreateBetaAccess (pós-expiração) falhou para uid=${uid}: ${msg}`);
+          throw err;
+        }
+      })()
     : initialBeta;
 
   return {

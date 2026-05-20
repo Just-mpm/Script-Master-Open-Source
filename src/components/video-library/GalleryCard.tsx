@@ -21,6 +21,7 @@ import * as m from 'motion/react-m';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_MEDIUM, RADIUS_SM, BLACK_66 } from '../../theme/tokens';
 import type { VideoLibraryItem } from './types';
 import { MetadataPill } from './MetadataPill';
+import { useLocale } from '../../features/i18n';
 
 interface GalleryCardProps {
   project: VideoLibraryItem;
@@ -40,6 +41,7 @@ export const GalleryCard = memo(function GalleryCard({
   onDownload,
   onDelete,
 }: GalleryCardProps) {
+  const { t } = useLocale();
   const canSelect = Boolean(project.audioUrl && project.scenes);
   const isDownloading = downloadingId === project.id;
 
@@ -106,7 +108,7 @@ export const GalleryCard = memo(function GalleryCard({
             />
 
             <Chip
-              label={project.isGeneration ? 'Geração' : 'Projeto'}
+              label={project.isGeneration ? t('library.generation') : t('library.project')}
               size="small"
               color={project.isGeneration ? 'primary' : 'default'}
               sx={{ position: 'absolute', top: 12, left: 12 }}

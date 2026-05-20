@@ -5,6 +5,7 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import { PageLayout } from './PageLayout';
+import { useLocale } from '../../features/i18n';
 import {
   BRAND_PRIMARY,
   TEXT_PRIMARY,
@@ -43,6 +44,7 @@ function TableOfContents({
   readonly sections: readonly LegalSection[];
   readonly ariaLabel?: string;
 }): ReactNode {
+  const { t } = useLocale();
   const handleClick = (id: string): void => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -54,7 +56,7 @@ function TableOfContents({
         component="h2"
         sx={{ mb: 2, fontWeight: 600, color: TEXT_PRIMARY }}
       >
-        Sumário
+        {t('legal.tocTitle')}
       </Typography>
 
       <Box
@@ -109,6 +111,7 @@ export function LegalPageTemplate({
   tocAriaLabel,
 }: LegalPageTemplateProps): ReactNode {
   const theme = useTheme();
+  const { t } = useLocale();
 
   return (
     <PageLayout>
@@ -130,7 +133,7 @@ export function LegalPageTemplate({
 
           {lastUpdated && (
             <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.5 }}>
-              Última atualização: {lastUpdated}
+              {t('legal.lastUpdated', { date: lastUpdated })}
             </Typography>
           )}
         </Box>
@@ -186,7 +189,7 @@ export function LegalPageTemplate({
             mb: 4,
           }}
         >
-          © {new Date().getFullYear()} Koda AI Studio. Todos os direitos reservados.
+          {t('legal.copyright', { year: String(new Date().getFullYear()) })}
         </Typography>
       </Container>
     </PageLayout>

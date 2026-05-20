@@ -31,7 +31,29 @@ export const creditSnapshot = onCallGenkit(
       }
 
       const db = getFirestore();
-      return getCreditAvailabilitySnapshot(db, uid);
+
+      try {
+        const snapshot = await getCreditAvailabilitySnapshot(db, uid);
+        return snapshot;
+      } catch (err: unknown) {
+        // Log detalhado para diagnóstico no Cloud Logging.
+        // O framework do Firebase Functions mascara o erro para o cliente
+        // como INTERNAL, mas o log fica disponível para debugging.
+        const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error ? err.stack : undefined;
+        console.error(
+          `[creditSnapshot] Erro ao obter snapshot para uid=${uid}: ${message}`,
+        );
+        if (stack) {
+          console.error(`[creditSnapshot] Stack trace:`, stack);
+        }
+
+        // Relança como HttpsError para preservar o código de status HTTP
+        // (500 internal) e garantir que headers CORS sejam incluídos.
+        throw new HttpsError('internal', 'Falha ao carregar saldo de créditos.', {
+          message,
+        });
+      }
     },
   ),
 );

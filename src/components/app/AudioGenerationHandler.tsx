@@ -12,6 +12,7 @@ import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from '../../features/
 import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
 import type { AudioPreflightSummary } from './AudioPreflightDialog';
+import { useLocale } from '../../features/i18n';
 
 const log = createLogger('AudioGenerationHandler');
 
@@ -81,6 +82,7 @@ type AudioPreflightInput = BuiltGenerateOptions & {
  */
 export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const { authError, clearAuthError, user } = useAuth();
+  const { t, locale } = useLocale();
   const userId = user?.uid;
   const { toggle, setDurationOverride } = useGlobalAudioActions();
 
@@ -173,8 +175,8 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
         const errorInfo = getCallableErrorInfo(preflightErr);
         setPreflightError(
           errorInfo.detailCode === 'INSUFFICIENT_CREDITS'
-            ? 'Seu saldo atual não cobre todas as etapas previstas desta geração.'
-            : 'Não foi possível montar a prévia da geração agora. Tente novamente em instantes.',
+            ? t('audioPreflight.insufficientCreditsError')
+            : t('audioPreflight.unavailableText'),
         );
       })
       .finally(() => {
@@ -232,7 +234,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
       const voiceLabel = s.isMultiSpeaker ? `${s.selectedVoice} & ${s.speakerBVoice}` : s.selectedVoice;
       const newItem: SavedAudio = {
         id: crypto.randomUUID(),
-        name: `Roteiro - ${voiceLabel} - ${new Date().toLocaleDateString()}`,
+        name: `${t('audioPreflight.scriptNamePrefix')} - ${voiceLabel} - ${new Date().toLocaleDateString(locale)}`,
         createdAt: Date.now(),
         audioBlob,
         script: s.script,
@@ -243,13 +245,13 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
       await saveGeneration(newItem, userId);
       setIsSaved(true);
       setSuccessMsg(user
-        ? 'Áudio salvo na nuvem com sucesso!'
-        : 'Áudio salvo na biblioteca local!');
+        ? t('audioPreflight.saveCloudSuccess')
+        : t('audioPreflight.saveLocalSuccess'));
     } catch (saveError: unknown) {
       log.error('Erro ao salvar na biblioteca', { error: saveError });
-      setError('Erro ao salvar na biblioteca.');
+      setError(t('audioPreflight.saveError'));
     }
-  }, [audioBlob, isSaved, scenes, user, userId, setError]);
+  }, [audioBlob, isSaved, scenes, user, userId, setError, t, locale]);
 
   const scrollToExport = useCallback(() => {
     const element = document.getElementById('video-export-panel');

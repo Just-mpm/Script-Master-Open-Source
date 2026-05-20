@@ -19,7 +19,8 @@ import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
-import { AUTH_BENEFITS } from '../data/authBenefits';
+import { getLocalizedAuthBenefits } from '../data/authBenefits';
+import { useLocale } from '../features/i18n';
 import logos from '../assets/logos';
 import {
   EMPTY_ICON_SIZE,
@@ -35,14 +36,17 @@ import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
 import { PublicFooter } from '../components/public/PublicFooter';
 
-const SEO_PROPS = getPageSeo({
-  title: 'Login',
-  description: 'Faça login no Script Master e transforme roteiros em audio, video e imagens com inteligencia artificial.',
-  path: '/login',
-});
-
 export function LoginPage() {
   const { login, loginWithEmail, resetPassword, authError, clearAuthError } = useAuth();
+  const { t, locale } = useLocale();
+  const authBenefits = getLocalizedAuthBenefits(locale);
+
+  const seo = getPageSeo({
+    title: t('auth.login.seoTitle'),
+    description: t('auth.login.seoDesc'),
+    path: '/login',
+    locale,
+  });
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,13 +64,13 @@ export function LoginPage() {
     const errors: Record<string, string> = {};
 
     if (!email.trim()) {
-      errors.email = 'Email é obrigatório.';
+      errors.email = t('auth.login.validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Email inválido.';
+      errors.email = t('auth.login.validation.emailInvalid');
     }
 
     if (!password) {
-      errors.password = 'Senha é obrigatória.';
+      errors.password = t('auth.login.validation.passwordRequired');
     }
 
     setFieldErrors(errors);
@@ -91,7 +95,7 @@ export function LoginPage() {
     event.preventDefault();
 
     if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
-      setResetError('Email inválido.');
+      setResetError(t('auth.login.validation.emailInvalid'));
       return;
     }
 
@@ -103,13 +107,12 @@ export function LoginPage() {
       setResetSuccess(true);
     } catch (err: unknown) {
       const firebaseMessage = err instanceof Error ? err.message : '';
-      // W6: extrai mensagem do error lançado em vez de depender do state (stale closure)
       if (firebaseMessage.includes('user-not-found')) {
-        setResetError('Nenhum usuário encontrado com este email.');
+        setResetError(t('auth.login.resetDialog.errors.userNotFound'));
       } else if (firebaseMessage.includes('too-many-requests')) {
-        setResetError('Muitas tentativas. Tente novamente mais tarde.');
+        setResetError(t('auth.login.resetDialog.errors.tooManyRequests'));
       } else {
-        setResetError(firebaseMessage || 'Erro ao enviar email de redefinição.');
+        setResetError(firebaseMessage || t('auth.login.resetDialog.errors.generic'));
       }
     } finally {
       setIsResetting(false);
@@ -125,7 +128,7 @@ export function LoginPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
-      <DocumentHead {...SEO_PROPS} />
+      <DocumentHead {...seo} locale={locale} />
 
       <PublicHeader />
 
@@ -147,15 +150,15 @@ export function LoginPage() {
               <Stack spacing={3}>
                 <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                   <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-                    Crie com IA no beta aberto
+                    {t('auth.login.benefitsTitle')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
-                    Transforme roteiros em áudio, vídeo e imagens profissionais. Créditos mensais gratuitos inclusos.
+                    {t('auth.login.benefitsDesc')}
                   </Typography>
                 </Box>
 
                 <Stack spacing={2.5}>
-                  {AUTH_BENEFITS.map((benefit) => {
+                  {authBenefits.map((benefit) => {
                     const BenefitIcon = benefit.icon;
                     return (
                       <Stack key={benefit.title} direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -223,10 +226,10 @@ export function LoginPage() {
 
                   <Box>
                     <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
-                      Script Master
+                      {t('auth.login.title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Entre com Google ou email
+                      {t('auth.login.subtitle')}
                     </Typography>
                   </Box>
 
@@ -258,7 +261,7 @@ export function LoginPage() {
                       },
                     }}
                   >
-                    Entrar com Google
+                    {t('auth.login.googleBtn')}
                   </Button>
 
                   <Divider sx={{ width: '100%' }}>
@@ -271,7 +274,7 @@ export function LoginPage() {
                         fontWeight: 500,
                       }}
                     >
-                      ou
+                      {t('auth.login.orSeparator')}
                     </Typography>
                   </Divider>
 
@@ -279,7 +282,7 @@ export function LoginPage() {
                   <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
                     <Stack spacing={2}>
                       <TextField
-                        label="Email"
+                        label={t('auth.login.emailLabel')}
                         type="email"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setFieldErrors((prev) => ({ ...prev, email: '' })); }}
@@ -293,7 +296,7 @@ export function LoginPage() {
                       />
 
                       <TextField
-                        label="Senha"
+                        label={t('auth.login.passwordLabel')}
                         type="password"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, password: '' })); }}
@@ -326,7 +329,7 @@ export function LoginPage() {
                           },
                         }}
                       >
-                        Entrar
+                        {isSubmitting ? t('auth.login.submitingBtn') : t('auth.login.submitBtn')}
                       </Button>
                     </Stack>
                   </Box>
@@ -347,17 +350,17 @@ export function LoginPage() {
                         },
                       }}
                     >
-                      Esqueceu a senha?
+                      {t('auth.login.forgotPasswordLink')}
                     </Button>
                     <Typography variant="body2" color="text.secondary">
-                      Não tem conta?{' '}
+                      {t('auth.login.noAccount')}{' '}
                       <Typography
                         component={Link}
                         to="/cadastro"
                         variant="body2"
                         sx={authLinkSx}
                       >
-                        Cadastre-se
+                        {t('auth.login.signUpLink')}
                       </Typography>
                     </Typography>
                   </Stack>
@@ -386,7 +389,7 @@ export function LoginPage() {
         }}
       >
         <DialogTitle id="reset-password-title" sx={{ pb: 1, fontWeight: 700, letterSpacing: '-0.01em' }}>
-          Redefinir senha
+          {t('auth.login.resetDialog.title')}
         </DialogTitle>
         <DialogContent sx={{ pb: 1 }}>
           {resetSuccess ? (
@@ -394,10 +397,10 @@ export function LoginPage() {
               <CheckCircleOutlineRounded sx={{ fontSize: 48, color: SUCCESS_MAIN }} aria-hidden="true" />
               <Box>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Email enviado!
+                  {t('auth.login.resetDialog.successTitle')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                  {t('auth.login.resetDialog.successDesc')}
                 </Typography>
               </Box>
             </Stack>
@@ -405,13 +408,13 @@ export function LoginPage() {
             <Box component="form" onSubmit={handleResetSubmit} sx={{ pt: 1 }}>
               <Stack spacing={2.5}>
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Informe seu email e enviaremos um link para redefinir sua senha.
+                  {t('auth.login.resetDialog.desc')}
                 </Typography>
                 {resetError && (
                   <Alert severity="error" variant="filled">{resetError}</Alert>
                 )}
                 <TextField
-                  label="Email"
+                  label={t('auth.login.resetDialog.emailLabel')}
                   type="email"
                   value={resetEmail}
                   onChange={(e) => { setResetEmail(e.target.value); setResetError(null); }}
@@ -433,7 +436,7 @@ export function LoginPage() {
               fullWidth
               sx={{ py: 1.25 }}
             >
-              Entendi
+              {t('auth.login.resetDialog.closeBtn')}
             </Button>
           ) : (
             <>
@@ -447,16 +450,17 @@ export function LoginPage() {
                   },
                 }}
               >
-                Cancelar
+                {t('auth.login.resetDialog.cancelBtn')}
               </Button>
               <Button
+                onClick={handleResetSubmit}
                 type="submit"
                 variant="contained"
                 disabled={isResetting}
                 startIcon={isResetting ? <CircularProgress size={18} color="inherit" /> : undefined}
                 sx={{ px: 3 }}
               >
-                Enviar link
+                {isResetting ? t('auth.login.resetDialog.submittingBtn') : t('auth.login.resetDialog.submitBtn')}
               </Button>
             </>
           )}

@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import type { UsageResource } from '../types';
 import { formatUsageDisplay } from '../usageUtils';
+import { useLocale } from '../../../features/i18n';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -26,6 +27,7 @@ interface UsageIndicatorProps {
  * Verde (< 60%), amarelo (60-90%), vermelho (> 90%).
  */
 export function UsageIndicator({ resource, used, limit }: UsageIndicatorProps) {
+  const { t } = useLocale();
   const theme = useTheme();
 
   const color = useMemo(() => {
@@ -50,10 +52,10 @@ export function UsageIndicator({ resource, used, limit }: UsageIndicatorProps) {
 
   const label = useMemo(() => {
     const resourceLabels: Record<UsageResource, string> = {
-      audio_generations: 'Gerações de áudio',
-      image_generations: 'Gerações de imagem',
-      video_exports: 'Exportações de vídeo',
-      script_chars: 'Caracteres de roteiro',
+      audio_generations: t('billing.metrics.audioGenerations'),
+      image_generations: t('billing.metrics.imageGenerations'),
+      video_exports: t('billing.metrics.videoExports'),
+      script_chars: t('billing.metrics.scriptChars'),
       storage_mb: 'Armazenamento (MB)',
     };
 

@@ -14,7 +14,8 @@ import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
-import { AUTH_BENEFITS } from '../data/authBenefits';
+import { getLocalizedAuthBenefits } from '../data/authBenefits';
+import { useLocale } from '../features/i18n';
 import logos from '../assets/logos';
 import {
   EMPTY_ICON_SIZE,
@@ -29,14 +30,17 @@ import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
 import { PublicFooter } from '../components/public/PublicFooter';
 
-const SEO_PROPS = getPageSeo({
-  title: 'Cadastro',
-  description: 'Crie sua conta no Script Master e comece a transformar roteiros em audio, video e imagens com inteligencia artificial.',
-  path: '/cadastro',
-});
-
 export function RegisterPage() {
   const { login, signup, authError, clearAuthError } = useAuth();
+  const { t, locale } = useLocale();
+  const authBenefits = getLocalizedAuthBenefits(locale);
+
+  const seo = getPageSeo({
+    title: t('auth.register.seoTitle'),
+    description: t('auth.register.seoDesc'),
+    path: '/cadastro',
+    locale,
+  });
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,21 +52,21 @@ export function RegisterPage() {
     const errors: Record<string, string> = {};
 
     if (!email.trim()) {
-      errors.email = 'Email é obrigatório.';
+      errors.email = t('auth.register.validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Email inválido.';
+      errors.email = t('auth.register.validation.emailInvalid');
     }
 
     if (!password) {
-      errors.password = 'Senha é obrigatória.';
+      errors.password = t('auth.register.validation.passwordRequired');
     } else if (password.length < 6) {
-      errors.password = 'A senha deve ter pelo menos 6 caracteres.';
+      errors.password = t('auth.register.validation.passwordMinLength');
     }
 
     if (!confirmPassword) {
-      errors.confirmPassword = 'Confirme sua senha.';
+      errors.confirmPassword = t('auth.register.validation.confirmPasswordRequired');
     } else if (password !== confirmPassword) {
-      errors.confirmPassword = 'As senhas não conferem.';
+      errors.confirmPassword = t('auth.register.validation.passwordsMismatch');
     }
 
     setFieldErrors(errors);
@@ -85,7 +89,7 @@ export function RegisterPage() {
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: APP_BACKGROUND_GLOW }}>
-      <DocumentHead {...SEO_PROPS} />
+      <DocumentHead {...seo} locale={locale} />
 
       <PublicHeader />
 
@@ -107,15 +111,15 @@ export function RegisterPage() {
               <Stack spacing={3}>
                 <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                   <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-                    Crie com IA no beta aberto
+                    {t('auth.login.benefitsTitle')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
-                    Transforme roteiros em áudio, vídeo e imagens profissionais. Créditos mensais gratuitos inclusos.
+                    {t('auth.login.benefitsDesc')}
                   </Typography>
                 </Box>
 
                 <Stack spacing={2.5}>
-                  {AUTH_BENEFITS.map((benefit) => {
+                  {authBenefits.map((benefit) => {
                     const BenefitIcon = benefit.icon;
                     return (
                       <Stack key={benefit.title} direction="row" spacing={2} sx={{ alignItems: 'center' }}>
@@ -183,10 +187,10 @@ export function RegisterPage() {
 
                   <Box>
                     <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
-                      Criar conta
+                      {t('auth.register.title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Comece a criar com IA
+                      {t('auth.register.subtitle')}
                     </Typography>
                   </Box>
 
@@ -218,7 +222,7 @@ export function RegisterPage() {
                       },
                     }}
                   >
-                    Cadastrar com Google
+                    {t('auth.register.googleBtn')}
                   </Button>
 
                   <Divider sx={{ width: '100%' }}>
@@ -231,7 +235,7 @@ export function RegisterPage() {
                         fontWeight: 500,
                       }}
                     >
-                      ou
+                      {t('auth.register.orSeparator')}
                     </Typography>
                   </Divider>
 
@@ -239,7 +243,7 @@ export function RegisterPage() {
                   <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
                     <Stack spacing={2}>
                       <TextField
-                        label="Email"
+                        label={t('auth.register.emailLabel')}
                         type="email"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setFieldErrors((prev) => ({ ...prev, email: '' })); }}
@@ -253,12 +257,12 @@ export function RegisterPage() {
                       />
 
                       <TextField
-                        label="Senha"
+                        label={t('auth.register.passwordLabel')}
                         type="password"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, password: '' })); }}
                         error={Boolean(fieldErrors.password)}
-                        helperText={fieldErrors.password || 'Pelo menos 6 caracteres'}
+                        helperText={fieldErrors.password || t('auth.register.passwordHelpText')}
                         fullWidth
                         required
                         autoComplete="new-password"
@@ -266,7 +270,7 @@ export function RegisterPage() {
                       />
 
                       <TextField
-                        label="Confirmar senha"
+                        label={t('auth.register.confirmPasswordLabel')}
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, confirmPassword: '' })); }}
@@ -298,20 +302,20 @@ export function RegisterPage() {
                           },
                         }}
                       >
-                        Criar conta
+                        {isSubmitting ? t('auth.register.submittingBtn') : t('auth.register.submitBtn')}
                       </Button>
                     </Stack>
                   </Box>
 
                   <Typography variant="body2" color="text.secondary">
-                    Já tem conta?{' '}
+                    {t('auth.register.hasAccount')}{' '}
                     <Typography
                       component={Link}
                       to="/login"
                       variant="body2"
                       sx={authLinkSx}
                     >
-                      Faça login
+                      {t('auth.register.loginLink')}
                     </Typography>
                   </Typography>
                 </Stack>

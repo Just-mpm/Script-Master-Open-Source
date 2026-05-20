@@ -17,6 +17,7 @@ import {
   RADIUS_CHIP,
   WHITE_08,
 } from '../../../../theme/tokens';
+import { useLocale } from '../../../../features/i18n';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -56,11 +57,14 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
   helperText,
   isRendering,
   onCancel,
-  cancelLabel = 'Cancelar',
-  progressAriaLabel = 'Progresso da exportação',
+  cancelLabel: _cancelLabel,
+  progressAriaLabel: _progressAriaLabel,
   progressValueText,
   sx,
 }: ExportProgressBarProps) {
+  const { t } = useLocale();
+  const cancelLabel = _cancelLabel ?? t('common.cancelEsc').replace(' (Esc)', '');
+  const progressAriaLabel = _progressAriaLabel ?? t('video.exportProgress');
   const resolvedProgressValueText = progressValueText ?? `${progress}%`;
 
   return (

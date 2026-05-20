@@ -35,3 +35,50 @@ Object.defineProperty(globalThis, 'IntersectionObserver', {
   writable: true,
   value: MockIntersectionObserver,
 });
+
+import { vi } from 'vitest';
+import { useContext } from 'react';
+
+vi.mock('../src/features/i18n', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../src/features/i18n')>();
+  
+  // Cache de instâncias estáveis de tradução para evitar loop de renders em hooks dependentes de t
+  const ptMock = {
+    locale: 'pt-BR' as const,
+    setLocale: () => {},
+    t: (key: string, params?: Record<string, string | number>) => {
+      const dict = original.dictionaries['pt-BR'];
+      let value = original.getNestedValue(dict, key);
+      if (value === undefined) {
+        value = key;
+      }
+      return original.interpolate(value, params);
+    }
+  };
+
+  return {
+    ...original,
+    useLocale: () => {
+      try {
+        const ctx = useContext(original.I18nContext);
+        if (ctx) {
+          return ctx;
+        }
+      } catch (e) {
+        // Se falhar (por exemplo, se chamado fora do ambiente React), usa mock padrão
+      }
+      return ptMock;
+    },
+    useLocaleSafe: () => {
+      try {
+        const ctx = useContext(original.I18nContext);
+        if (ctx) {
+          return ctx;
+        }
+      } catch (e) {
+        // Ignora
+      }
+      return ptMock;
+    }
+  };
+});
