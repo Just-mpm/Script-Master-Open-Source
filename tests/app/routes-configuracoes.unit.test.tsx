@@ -12,6 +12,7 @@ const mockUnsubscribe = vi.fn();
 
 vi.mock('../../src/lib/firebase', () => ({
   auth: { currentUser: null },
+  functions: {},
   googleProvider: {},
   signInWithPopup: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
@@ -24,6 +25,22 @@ vi.mock('../../src/lib/firebase', () => ({
     callback(null);
     return mockUnsubscribe;
   }),
+}));
+
+vi.mock('firebase/functions', () => ({
+  httpsCallable: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({
+    data: {
+      summary: 'ok',
+      estimatedDurationSeconds: 0,
+      estimatedChunkCount: 1,
+      estimatedSceneCount: 0,
+      confidence: 'high',
+      steps: [],
+      credits: { available: 0, totalPlanned: 0, remainingAfter: 0, unlimited: false },
+      canProceed: false,
+      notes: [],
+    },
+  })),
 }));
 
 vi.mock('../../src/lib/logger', () => ({

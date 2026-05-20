@@ -16,6 +16,11 @@ import { z } from 'genkit';
 export const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
   text: z.string(),
+  attachments: z.array(z.object({
+    mimeType: z.string(),
+    data: z.string(),
+    name: z.string().optional(),
+  })).optional(),
 });
 
 /** Anexo enviado pelo usuário (imagem ou documento) */
@@ -88,6 +93,12 @@ export const AudioInputSchema = z.object({
   sceneDensity: z.number().optional(),
   visualFramework: z.string().optional(),
   imageTextLanguage: z.string().optional(),
+  referenceImage: z.string().nullable().optional(),
+  preflight: z.object({
+    availableCredits: z.number(),
+    totalPlanned: z.number(),
+    unlimited: z.boolean(),
+  }).optional(),
   requestId: z.string().optional(),
 });
 
@@ -99,6 +110,52 @@ export const AudioOutputSchema = z.object({
   mimeType: z.string(),
   durationInSeconds: z.number(),
   chunks: z.number(),
+  segments: z.array(z.object({
+    text: z.string(),
+    startSec: z.number(),
+    endSec: z.number(),
+    chunkIndex: z.number(),
+  })).optional(),
+});
+
+export const AudioPreflightStepSchema = z.object({
+  type: z.enum(['audio', 'chunking', 'scene_prompts', 'image']),
+  label: z.string(),
+  plannedCount: z.number(),
+  credits: z.number(),
+  details: z.array(z.string()),
+});
+
+export const AudioPreflightInputSchema = AudioInputSchema;
+
+export const AudioPreflightOutputSchema = z.object({
+  summary: z.string(),
+  estimatedDurationSeconds: z.number(),
+  estimatedChunkCount: z.number(),
+  estimatedSceneCount: z.number(),
+  confidence: z.enum(['high', 'medium']),
+  steps: z.array(AudioPreflightStepSchema),
+  credits: z.object({
+    available: z.number(),
+    totalPlanned: z.number(),
+    remainingAfter: z.number(),
+    unlimited: z.boolean(),
+  }),
+  canProceed: z.boolean(),
+  blockingReasonCode: z.string().optional(),
+  blockingMessage: z.string().optional(),
+  notes: z.array(z.string()),
+});
+
+export const CreditSnapshotOutputSchema = z.object({
+  availableCredits: z.number(),
+  usedCredits: z.number(),
+  baseCredits: z.number(),
+  bonusCredits: z.number(),
+  reservedCredits: z.number(),
+  feedbackBonusGranted: z.boolean(),
+  unlimitedCredits: z.boolean(),
+  currentPeriodKey: z.string(),
 });
 
 // ---------------------------------------------------------------------------
@@ -184,6 +241,9 @@ export type InlineAssistantInput = z.infer<typeof InlineAssistantInputSchema>;
 export type InlineAssistantOutput = z.infer<typeof InlineAssistantOutputSchema>;
 export type AudioInput = z.infer<typeof AudioInputSchema>;
 export type AudioOutput = z.infer<typeof AudioOutputSchema>;
+export type AudioPreflightInput = z.infer<typeof AudioPreflightInputSchema>;
+export type AudioPreflightOutput = z.infer<typeof AudioPreflightOutputSchema>;
+export type CreditSnapshotOutput = z.infer<typeof CreditSnapshotOutputSchema>;
 export type ImageInput = z.infer<typeof ImageInputSchema>;
 export type ImageOutput = z.infer<typeof ImageOutputSchema>;
 export type ScenePromptsInput = z.infer<typeof ScenePromptsInputSchema>;

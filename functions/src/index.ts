@@ -17,6 +17,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import express from 'express';
 import Stripe from 'stripe';
+import { APP_ALLOWED_CORS_ORIGINS } from './config/cors.js';
 
 // Inicialização explícita do Firebase Admin SDK (necessário para Genkit flows)
 initializeApp();
@@ -479,7 +480,9 @@ app.post('/portal', handleCreatePortal);
 
 export const stripeApi = onRequest(
   {
-    cors: true,
+    // Libera somente os domínios oficiais, previews do Firebase e ambiente local.
+    cors: APP_ALLOWED_CORS_ORIGINS,
+    invoker: 'public',
     region: 'southamerica-east1',
   },
   app,
@@ -493,6 +496,9 @@ export { ping } from './flows/ping.js';
 export { assistant } from './flows/assistant.js';
 export { inlineAssistant } from './flows/inline-assistant.js';
 export { audio } from './flows/audio.js';
+export { audioPreflight } from './flows/audio-preflight.js';
+export { cancelAiRequest } from './flows/cancel-ai-request.js';
+export { creditSnapshot } from './flows/credit-snapshot.js';
 export { images } from './flows/images.js';
 export { scenePrompts } from './flows/scene-prompts.js';
 export { chunking } from './flows/chunking.js';

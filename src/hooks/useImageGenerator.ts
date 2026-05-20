@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import { base64ToBlobSync } from '../lib/audio';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
+import { isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
+import { useCredits } from './useCredits';
 
 const log = createLogger('useImageGenerator');
 
@@ -65,6 +67,7 @@ interface ImagesFlowOutput {
 const CANCEL_ERROR_MESSAGE = 'Geração cancelada pelo usuário.';
 
 export function useImageGenerator() {
+  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
@@ -76,13 +79,22 @@ export function useImageGenerator() {
 
   // Permite cancelar geração em andamento
   const cancelRef = useRef(false);
+  const activeRequestIdRef = useRef<string | null>(null);
 
   // Timer para auto-dismiss do erro
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelAiRequestCallable = useMemo(
+    () => httpsCallable<{ requestId: string }, { success: boolean }>(functions, 'cancelAiRequest'),
+    [],
+  );
 
   // Revoga blob URL anterior quando a imagem muda ou componente desmonta
   useEffect(() => {
     return () => {
+      const activeRequestId = activeRequestIdRef.current;
+      if (activeRequestId) {
+        void cancelAiRequestCallable({ requestId: activeRequestId }).catch(() => {});
+      }
       if (imageUrlRef.current) {
         URL.revokeObjectURL(imageUrlRef.current);
         imageUrlRef.current = null;
@@ -93,7 +105,15 @@ export function useImageGenerator() {
         errorTimerRef.current = null;
       }
     };
-  }, []);
+  }, [cancelAiRequestCallable]);
+
+  const isCreditBlocked = !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+
+  useEffect(() => {
+    if (!isCreditBlocked) {
+      setCreditsExhausted(false);
+    }
+  }, [isCreditBlocked]);
 
   const generateImage = async (options: ImageGenerationOptions) => {
     cancelRef.current = false;
@@ -128,13 +148,19 @@ export function useImageGenerator() {
       if (cancelRef.current) throw new Error(CANCEL_ERROR_MESSAGE);
 
       const callable = httpsCallable<ImagesFlowInput, ImagesFlowOutput>(functions, 'images');
+      const requestId = crypto.randomUUID();
+      activeRequestIdRef.current = requestId;
 
       const result = await callable({
         prompt: options.prompt,
         aspectRatio: options.aspectRatio,
         referenceImage: referenceBase64,
-        requestId: crypto.randomUUID(),
+        requestId,
       });
+
+      if (cancelRef.current) {
+        throw new Error(CANCEL_ERROR_MESSAGE);
+      }
 
       const { imageBase64, mimeType } = result.data;
 
@@ -151,14 +177,14 @@ export function useImageGenerator() {
     } catch (err: unknown) {
       // Cancelamento silencioso — sem erro para o usuário
       const errorMessageText = err instanceof Error ? err.message : '';
-      if (errorMessageText === CANCEL_ERROR_MESSAGE) {
+      if (errorMessageText === CANCEL_ERROR_MESSAGE || isCallableCancelledError(err)) {
         setIsGenerating(false);
         return;
       }
 
       log.error('Erro ao gerar imagem', { error: err });
       const friendlyMessage = toUserFriendlyImageError(err);
-      if (friendlyMessage.includes('crédito') || friendlyMessage.includes('saldo')) {
+      if (isCreditCallableError(err) || friendlyMessage.includes('crédito') || friendlyMessage.includes('saldo')) {
         setCreditsExhausted(true);
       }
       setError(friendlyMessage);
@@ -169,6 +195,7 @@ export function useImageGenerator() {
         errorTimerRef.current = null;
       }, 8000);
     } finally {
+      activeRequestIdRef.current = null;
       setIsGenerating(false);
     }
   };
@@ -185,6 +212,12 @@ export function useImageGenerator() {
 
   const handleCancel = () => {
     cancelRef.current = true;
+    const activeRequestId = activeRequestIdRef.current;
+    if (activeRequestId) {
+      void cancelAiRequestCallable({ requestId: activeRequestId }).catch((cancelError: unknown) => {
+        log.warn('Falha ao solicitar cancelamento da imagem', { error: cancelError });
+      });
+    }
   };
 
   return {
@@ -196,6 +229,6 @@ export function useImageGenerator() {
     generateImage,
     handleCancel,
     clearImage,
-    creditsExhausted,
+    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

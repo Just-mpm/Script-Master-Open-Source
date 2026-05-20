@@ -3,9 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "24"
+  },
   "main": "dist/index.js",
   "scripts": {
-    "build": "eslint src/ && tsc",
+    "build": "eslint src/ && tsc && node -e \"require('fs').cpSync('src/prompts', 'dist/prompts', {recursive: true})\"",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "serve": "npm run build && firebase emulators:start --only functions",

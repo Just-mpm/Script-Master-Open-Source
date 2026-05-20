@@ -12,10 +12,13 @@ import { saveAudioSegments } from '../lib/db/audio-segments';
 import { detectSceneBoundaries } from '../lib/audio-analysis';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
+import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
 import { useAudioGeneratorStore, getAudioDurationSeconds } from '../features/studio/store';
 import type { SceneItem } from '../features/studio/store';
+import { useCredits } from './useCredits';
 
 const log = createLogger('useAudioGenerator');
+const USER_CANCELLED_MESSAGE = 'Geração cancelada pelo usuário.';
 
 // ---------------------------------------------------------------------------
 // Mapeamento de erros amigáveis
@@ -67,14 +70,21 @@ interface AudioFlowInput {
   audioProfile?: string;
   scene?: string;
   styleNotes?: string;
+  preflight?: {
+    availableCredits: number;
+    totalPlanned: number;
+    unlimited: boolean;
+  };
   requestId: string;
 }
 
 interface AudioFlowOutput {
-  audioBase64: string;
+  audioBase64?: string;
+  audioUrl?: string;
   mimeType: string;
   durationInSeconds: number;
   chunks: number;
+  segments?: AudioSegment[];
 }
 
 interface GenerateOptions {
@@ -98,6 +108,52 @@ interface GenerateOptions {
   emotion?: EmotionType;
   emotionIntensity?: number;
   locale?: Locale;
+  preflight?: {
+    availableCredits: number;
+    totalPlanned: number;
+    unlimited: boolean;
+  };
+}
+
+function buildAudioFlowInput(options: GenerateOptions, requestId: string): AudioFlowInput {
+  const {
+    script,
+    selectedVoice,
+    pace,
+    emotion = 'neutral',
+    emotionIntensity = 0.5,
+    isMultiSpeaker,
+    speakerAName,
+    speakerBName,
+    speakerBVoice,
+    audioProfile,
+    scene,
+    styleNotes,
+    preflight,
+  } = options;
+
+  return {
+    script,
+    voiceConfig: {
+      voiceId: selectedVoice,
+      pace,
+      emotion,
+      emotionIntensity,
+    },
+    isMultiSpeaker: !!isMultiSpeaker,
+    multiSpeakerConfig: isMultiSpeaker
+      ? {
+          speakerAName,
+          speakerBName,
+          speakerBVoice,
+        }
+      : undefined,
+    audioProfile: audioProfile || undefined,
+    scene: scene || undefined,
+    styleNotes: styleNotes || undefined,
+    preflight,
+    requestId,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +173,7 @@ interface GenerateOptions {
  * - Funções de geração (generateAudio, handleCancel)
  */
 export function useAudioGenerator() {
+  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
   // Seletores primitivos — cada um re-renderiza apenas quando seu campo muda
   const isGenerating = useAudioGeneratorStore((s) => s.isGenerating);
   const statusText = useAudioGeneratorStore((s) => s.statusText);
@@ -134,20 +191,27 @@ export function useAudioGenerator() {
 
   // Flag de créditos esgotados — persiste até nova geração com sucesso
   const [creditsExhausted, setCreditsExhausted] = useState(false);
+  const cancelAiRequestCallable = useMemo(
+    () => httpsCallable<{ requestId: string }, { success: boolean }>(functions, 'cancelAiRequest'),
+    [],
+  );
 
   // Refs para cancelamento e restauração (escopo da geração, não compartilhados)
   const cancelRef = useRef(false);
+  const activeRequestIdRef = useRef<string | null>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSuccessfulStateRef = useRef<{
     audioUrl: string | null;
     audioBlob: Blob | null;
     scenes: SceneItem[];
     audioSegments: AudioSegment[];
+    projectId: string | null;
   }>({
     audioUrl: null,
     audioBlob: null,
     scenes: [],
     audioSegments: [],
+    projectId: null,
   });
 
   // Limpa timer de auto-dismiss do erro quando o hook desmonta
@@ -160,8 +224,23 @@ export function useAudioGenerator() {
     };
   }, []);
 
+  const isCreditBlocked = !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+
+  useEffect(() => {
+    if (!isCreditBlocked) {
+      setCreditsExhausted(false);
+    }
+  }, [isCreditBlocked]);
+
   const handleCancel = () => {
     cancelRef.current = true;
+    useAudioGeneratorStore.getState().setStatusText('Parando após concluir a etapa atual...');
+    const activeRequestId = activeRequestIdRef.current;
+    if (activeRequestId) {
+      void cancelAiRequestCallable({ requestId: activeRequestId }).catch((cancelError: unknown) => {
+        log.warn('Falha ao solicitar cancelamento do áudio', { error: cancelError });
+      });
+    }
   };
 
   const restoreLastSuccessfulState = () => {
@@ -170,6 +249,7 @@ export function useAudioGenerator() {
     useAudioGeneratorStore.getState().setAudioBlob(prev.audioBlob);
     useAudioGeneratorStore.getState().setScenes(prev.scenes);
     useAudioGeneratorStore.getState().setAudioSegments(prev.audioSegments);
+    useAudioGeneratorStore.getState().setProjectId(prev.projectId);
   };
 
   // generateAudio usa useCallback com deps [] — acessa tudo via
@@ -218,11 +298,8 @@ export function useAudioGenerator() {
     storeApi.getState().setSceneGenerationWarning(null);
     storeApi.getState().setStatusText('Iniciando...');
 
-    // Cria Project ID antecipadamente
     const currentProjectId = crypto.randomUUID();
-    storeApi.getState().setProjectId(currentProjectId);
 
-    // Inicializa projeto no DB
     const projectMetadata: Project = {
       id: currentProjectId,
       userId,
@@ -247,13 +324,23 @@ export function useAudioGenerator() {
       },
     };
 
-    await saveProject(projectMetadata, userId);
-
     if (onStart) onStart();
 
     // Captura estado anterior via store (evita stale closure)
-    const { audioUrl: prevAudioUrl, audioBlob: prevAudioBlob, scenes: prevScenes, audioSegments: prevSegments } = storeApi.getState();
-    const previousState = { audioUrl: prevAudioUrl, audioBlob: prevAudioBlob, scenes: prevScenes, audioSegments: prevSegments };
+    const {
+      audioUrl: prevAudioUrl,
+      audioBlob: prevAudioBlob,
+      scenes: prevScenes,
+      audioSegments: prevSegments,
+      projectId: prevProjectId,
+    } = storeApi.getState();
+    const previousState = {
+      audioUrl: prevAudioUrl,
+      audioBlob: prevAudioBlob,
+      scenes: prevScenes,
+      audioSegments: prevSegments,
+      projectId: prevProjectId,
+    };
     lastSuccessfulStateRef.current = previousState;
     storeApi.getState().setAudioUrl(null);
     storeApi.getState().setAudioBlob(null);
@@ -267,54 +354,53 @@ export function useAudioGenerator() {
       // ------------------------------------------------------------------
       // 1. Geração de áudio via backend (Genkit flow)
       // ------------------------------------------------------------------
-      if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
+      if (cancelRef.current) throw new Error(USER_CANCELLED_MESSAGE);
 
       storeApi.getState().setStatusText('Gerando áudio...');
       storeApi.getState().setGenerationProgress(10);
 
-      const audioInput: AudioFlowInput = {
-        script,
-        voiceConfig: {
-          voiceId: selectedVoice,
-          pace,
-          emotion,
-          emotionIntensity,
-        },
-        isMultiSpeaker: !!isMultiSpeaker,
-        multiSpeakerConfig: isMultiSpeaker
-          ? {
-              speakerAName,
-              speakerBName,
-              speakerBVoice,
-            }
-          : undefined,
-        audioProfile: audioProfile || undefined,
-        scene: scene || undefined,
-        styleNotes: styleNotes || undefined,
-        requestId: crypto.randomUUID(),
-      };
+      const audioRequestId = crypto.randomUUID();
+      activeRequestIdRef.current = audioRequestId;
+      const audioInput = buildAudioFlowInput(options, audioRequestId);
 
       const audioCallable = httpsCallable<AudioFlowInput, AudioFlowOutput>(functions, 'audio');
       const audioResult = await audioCallable(audioInput);
 
-      const { audioBase64, mimeType, durationInSeconds: audioDurationSec, chunks: chunkCount } = audioResult.data;
+      const {
+        audioBase64,
+        audioUrl: remoteAudioUrl,
+        mimeType,
+        durationInSeconds: audioDurationSec,
+        chunks: chunkCount,
+        segments,
+      } = audioResult.data;
 
-      if (!audioBase64) {
+      let wavBlob: Blob;
+      if (audioBase64) {
+        wavBlob = base64ToBlobSync(audioBase64, mimeType);
+      } else if (remoteAudioUrl) {
+        const remoteAudioResponse = await fetch(remoteAudioUrl);
+        if (!remoteAudioResponse.ok) {
+          throw new Error('Não foi possível baixar o áudio gerado do servidor.');
+        }
+        wavBlob = await remoteAudioResponse.blob();
+      } else {
         throw new Error('Resposta de áudio vazia do servidor.');
       }
 
-      // Converte base64 para Blob WAV
-      const wavBlob = base64ToBlobSync(audioBase64, mimeType);
       const url = URL.createObjectURL(wavBlob);
       generatedAudioUrl = url;
       storeApi.getState().setAudioBlob(wavBlob);
       storeApi.getState().setAudioUrl(url);
+      storeApi.getState().setAudioDuration(audioDurationSec);
       storeApi.getState().setGenerationProgress(50);
 
-      // Cria segmentos de áudio aproximados (o backend não retorna timestamps por chunk)
-      // Os segmentos são baseados na contagem de chunks e duração total
-      const generatedSegments: AudioSegment[] = [];
-      if (chunkCount > 0 && audioDurationSec > 0) {
+      // Usa os segmentos reais do backend quando disponíveis.
+      const generatedSegments: AudioSegment[] = segments && segments.length > 0
+        ? segments
+        : [];
+
+      if (generatedSegments.length === 0 && chunkCount > 0 && audioDurationSec > 0) {
         const segmentDuration = audioDurationSec / chunkCount;
         for (let i = 0; i < chunkCount; i++) {
           generatedSegments.push({
@@ -326,11 +412,14 @@ export function useAudioGenerator() {
         }
       }
       storeApi.getState().setAudioSegments(generatedSegments);
+      activeRequestIdRef.current = null;
 
       // --- Auto-save áudio (UX-5: feedback em caso de falha) ---
       let savedAudioId: string | null = null;
       try {
         storeApi.getState().setStatusText('Salvando áudio na nuvem...');
+        await saveProject(projectMetadata, userId);
+        storeApi.getState().setProjectId(currentProjectId);
         const audioSource: AudioSource = {
           id: crypto.randomUUID(),
           projectId: currentProjectId,
@@ -358,97 +447,193 @@ export function useAudioGenerator() {
 
       // --- Geração de cenas visuais ---
       if (generateScenes) {
-        storeApi.getState().setStatusText('Criando roteiro visual...');
-        storeApi.getState().setGenerationProgress(60);
-        const style = `${scene} ${styleNotes}`.trim();
-
-        const result: ScenePromptResult = await generateScenePrompts(script, audioDurationSec, style, sceneDensity, visualFramework, locale);
-
-        // Avisa o usuário quando o backend falhou e usou fallback genérico
-        if (result.isFallback) {
-          storeApi.getState().setSceneGenerationWarning('Não foi possível gerar o roteiro visual automaticamente. As cenas usarão prompts genéricos — a qualidade visual será reduzida.');
-        }
-
-        const prompts = result.prompts;
-        storeApi.getState().setGenerationProgress(70);
-
         const generatedScenes: SceneItem[] = [];
-        const scenesToGenerate = prompts.length;
-        let failedSceneCount = 0;
+        const sceneAssets: Array<{ blob: Blob; prompt: string }> = [];
+        try {
+          storeApi.getState().setStatusText('Criando roteiro visual...');
+          storeApi.getState().setGenerationProgress(60);
+          const style = `${scene} ${styleNotes}`.trim();
+          const scenePromptsRequestId = crypto.randomUUID();
+          activeRequestIdRef.current = scenePromptsRequestId;
 
-        for (let i = 0; i < prompts.length; i++) {
-          if (cancelRef.current) throw new Error('Geração cancelada pelo usuário.');
-          storeApi.getState().setStatusText(`Pintando cena ${i + 1} de ${prompts.length}...`);
-          storeApi.getState().setGenerationProgress(Math.min(70 + Math.round((i / scenesToGenerate) * 25), 98));
+          const result: ScenePromptResult = await generateScenePrompts(
+            script,
+            audioDurationSec,
+            style,
+            sceneDensity,
+            visualFramework,
+            locale,
+            scenePromptsRequestId,
+          );
+          activeRequestIdRef.current = null;
 
-          const imageUrl = await generateImageFromPrompt(prompts[i].prompt, sceneRatio, referenceImage || undefined);
-          if (imageUrl) {
-            generatedScenes.push({
-              imageUrl,
-              timestamp: prompts[i].timestamp,
-            });
+          if (cancelRef.current) {
+            throw new Error(USER_CANCELLED_MESSAGE);
+          }
+
+          if (result.isFallback) {
+            storeApi.getState().setSceneGenerationWarning('Não foi possível gerar o roteiro visual automaticamente. As cenas usarão prompts genéricos — a qualidade visual será reduzida.');
+          }
+
+          const prompts = result.prompts;
+          storeApi.getState().setGenerationProgress(70);
+          const scenesToGenerate = prompts.length;
+          let failedSceneCount = 0;
+
+          for (let i = 0; i < prompts.length; i++) {
+            if (cancelRef.current) throw new Error(USER_CANCELLED_MESSAGE);
+            storeApi.getState().setStatusText(`Pintando cena ${i + 1} de ${prompts.length}...`);
+            storeApi.getState().setGenerationProgress(Math.min(70 + Math.round((i / scenesToGenerate) * 25), 98));
+
+            const imageRequestId = crypto.randomUUID();
+            activeRequestIdRef.current = imageRequestId;
+            const imageUrl = await generateImageFromPrompt(
+              prompts[i].prompt,
+              sceneRatio,
+              referenceImage || undefined,
+              imageRequestId,
+            );
+            activeRequestIdRef.current = null;
+
+            if (cancelRef.current) {
+              throw new Error(USER_CANCELLED_MESSAGE);
+            }
+
+            if (imageUrl) {
+              generatedScenes.push({
+                imageUrl,
+                timestamp: prompts[i].timestamp,
+              });
+
+              try {
+                const res = await fetch(imageUrl);
+                const blob = await res.blob();
+                sceneAssets.push({
+                  blob,
+                  prompt: prompts[i].prompt,
+                });
+              } catch (imageSaveErr) {
+                log.warn('Erro no auto-save da imagem', { error: imageSaveErr });
+              }
+            } else {
+              failedSceneCount++;
+            }
+          }
+
+          if (failedSceneCount > 0 && failedSceneCount < scenesToGenerate) {
+            const warning = `${generatedScenes.length} de ${scenesToGenerate} cenas geradas com sucesso. ${failedSceneCount} cena(s) falharam apos tentativas de retry.`;
+            storeApi.getState().setSceneGenerationWarning(warning);
+          } else if (failedSceneCount === scenesToGenerate) {
+            const warning = 'Nenhuma cena foi gerada. Todas falharam apos tentativas de retry. Verifique sua conexao ou tente novamente.';
+            storeApi.getState().setSceneGenerationWarning(warning);
+          }
+
+          if (generatedScenes.length > 0) {
+            try {
+              const detectedBoundaries = await detectSceneBoundaries(wavBlob, prompts.length);
+
+              if (detectedBoundaries.length >= generatedScenes.length) {
+                for (let i = 0; i < generatedScenes.length; i++) {
+                  generatedScenes[i].timestamp = detectedBoundaries[i];
+                }
+              }
+            } catch (err) {
+              log.warn('Falha na detecção de silêncio, mantendo timestamps do Gemini', { error: err });
+            }
+          }
+
+          for (const [index, asset] of sceneAssets.entries()) {
+            const scene = generatedScenes[index];
+            if (!scene) {
+              continue;
+            }
 
             try {
-              const res = await fetch(imageUrl);
-              const blob = await res.blob();
               const projectImage: ProjectImage = {
                 id: crypto.randomUUID(),
                 projectId: currentProjectId,
                 userId,
                 imageUrl: '',
-                imageBlob: blob,
-                prompt: prompts[i].prompt,
-                timestamp: prompts[i].timestamp,
+                imageBlob: asset.blob,
+                prompt: asset.prompt,
+                timestamp: scene.timestamp,
                 createdAt: Date.now(),
               };
               await saveImageToProject(projectImage, userId);
             } catch (imageSaveErr) {
               log.warn('Erro no auto-save da imagem', { error: imageSaveErr });
             }
+          }
+
+          storeApi.getState().setScenes(generatedScenes);
+          lastSuccessfulStateRef.current = {
+            audioUrl: url,
+            audioBlob: wavBlob,
+            scenes: generatedScenes,
+            audioSegments: generatedSegments,
+            projectId: currentProjectId,
+          };
+        } catch (sceneError: unknown) {
+          log.warn('Pipeline visual interrompido após gerar o áudio', { error: sceneError });
+          const errorInfo = getCallableErrorInfo(sceneError);
+          const wasCancelled = cancelRef.current || isCallableCancelledError(sceneError);
+
+          if (wasCancelled) {
+            storeApi.getState().setScenes(generatedScenes);
+            storeApi.getState().setSceneGenerationWarning(
+              generatedScenes.length > 0
+                ? 'A geração visual foi interrompida a pedido do usuário. As cenas já prontas foram mantidas.'
+                : null,
+            );
+            lastSuccessfulStateRef.current = {
+              audioUrl: url,
+              audioBlob: wavBlob,
+              scenes: generatedScenes,
+              audioSegments: generatedSegments,
+              projectId: currentProjectId,
+            };
+          } else if (isCreditCallableError(sceneError)) {
+            storeApi.getState().setScenes(generatedScenes);
+            setCreditsExhausted(true);
+            storeApi.getState().setSceneGenerationWarning(
+              errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
+                ? generatedScenes.length > 0
+                  ? 'O áudio foi gerado, mas o saldo mudou depois da prévia. As cenas já prontas foram mantidas.'
+                  : 'O áudio foi gerado, mas o saldo mudou depois da prévia e o pacote visual não pôde continuar.'
+                : generatedScenes.length > 0
+                  ? 'O áudio foi gerado, mas faltaram créditos para concluir o pacote visual. As cenas já prontas foram mantidas.'
+                  : 'O áudio foi gerado, mas o pacote visual não pôde continuar por falta de créditos.',
+            );
+            lastSuccessfulStateRef.current = {
+              audioUrl: url,
+              audioBlob: wavBlob,
+              scenes: generatedScenes,
+              audioSegments: generatedSegments,
+              projectId: currentProjectId,
+            };
           } else {
-            failedSceneCount++;
+            storeApi.getState().setSceneGenerationWarning(
+              generatedScenes.length > 0
+                ? 'O áudio foi gerado, mas houve uma falha técnica antes de concluir todas as cenas. As cenas já prontas foram mantidas.'
+                : 'O áudio foi gerado, mas houve uma falha técnica ao montar o pacote visual. Você pode tentar gerar as cenas novamente.',
+            );
+            storeApi.getState().setScenes(generatedScenes);
+            lastSuccessfulStateRef.current = {
+              audioUrl: url,
+              audioBlob: wavBlob,
+              scenes: generatedScenes,
+              audioSegments: generatedSegments,
+              projectId: currentProjectId,
+            };
           }
         }
-
-        // Notifica o usuário se houve falhas na geração de cenas
-        if (failedSceneCount > 0 && failedSceneCount < scenesToGenerate) {
-          const warning = `${generatedScenes.length} de ${scenesToGenerate} cenas geradas com sucesso. ${failedSceneCount} cena(s) falharam apos tentativas de retry.`;
-          storeApi.getState().setSceneGenerationWarning(warning);
-        } else if (failedSceneCount === scenesToGenerate) {
-          const warning = 'Nenhuma cena foi gerada. Todas falharam apos tentativas de retry. Verifique sua conexao ou tente novamente.';
-          storeApi.getState().setSceneGenerationWarning(warning);
-        }
-
-        // --- Refinamento de timestamps via detecção de silêncio ---
-        // Se o número de cenas geradas for próximo do detectado no áudio,
-        // substitui os timestamps estimados do Gemini por timestamps reais
-        if (generatedScenes.length > 0) {
-          try {
-            const detectedBoundaries = await detectSceneBoundaries(wavBlob, prompts.length);
-
-            if (detectedBoundaries.length >= generatedScenes.length) {
-              for (let i = 0; i < generatedScenes.length; i++) {
-                generatedScenes[i].timestamp = detectedBoundaries[i];
-              }
-            }
-          } catch (err) {
-            log.warn('Falha na detecção de silêncio, mantendo timestamps do Gemini', { error: err });
-          }
-        }
-
-        storeApi.getState().setScenes(generatedScenes);
-        lastSuccessfulStateRef.current = {
-          audioUrl: url,
-          audioBlob: wavBlob,
-          scenes: generatedScenes,
-          audioSegments: generatedSegments,
-        };
       } else {
         lastSuccessfulStateRef.current = {
           audioUrl: url,
           audioBlob: wavBlob,
           scenes: [],
           audioSegments: generatedSegments,
+          projectId: currentProjectId,
         };
       }
 
@@ -460,7 +645,7 @@ export function useAudioGenerator() {
     } catch (err: unknown) {
       const errorMessageText = err instanceof Error ? err.message : '';
 
-      if (errorMessageText === 'Geração cancelada pelo usuário.') {
+      if (errorMessageText === USER_CANCELLED_MESSAGE || isCallableCancelledError(err)) {
         if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
           URL.revokeObjectURL(generatedAudioUrl);
         }
@@ -471,9 +656,12 @@ export function useAudioGenerator() {
       }
 
       log.error('Erro ao gerar áudio', { error: err });
-      const errorMessage = toUserFriendlyError(err);
+      const errorInfo = getCallableErrorInfo(err);
+      const errorMessage = errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
+        ? 'Seu saldo mudou depois da prévia. Revise a geração antes de confirmar novamente.'
+        : toUserFriendlyError(err);
 
-      if (errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
+      if (isCreditCallableError(err)) {
         setCreditsExhausted(true);
       }
 
@@ -488,6 +676,7 @@ export function useAudioGenerator() {
         errorTimerRef.current = null;
       }, 8000);
     } finally {
+      activeRequestIdRef.current = null;
       storeApi.getState().setIsGenerating(false);
       storeApi.getState().setStatusText('');
     }
@@ -517,6 +706,6 @@ export function useAudioGenerator() {
     handleCancel,
     loadProjectData,
     durationInSeconds,
-    creditsExhausted,
+    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

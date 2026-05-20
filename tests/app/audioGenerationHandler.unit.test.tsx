@@ -15,6 +15,7 @@ const {
   mockSetError,
   mockBuildGenerateOptions,
   mockSaveGeneration,
+  mockAudioPreflightCallable,
 } = vi.hoisted(() => ({
   mockAuthState: {
     user: { uid: 'test-uid', email: 'test@test.com' } as { uid: string; email: string } | null,
@@ -51,6 +52,19 @@ const {
   mockSetError: vi.fn(),
   mockBuildGenerateOptions: vi.fn().mockReturnValue({ script: 'opts' }),
   mockSaveGeneration: vi.fn().mockResolvedValue(undefined),
+  mockAudioPreflightCallable: vi.fn().mockResolvedValue({
+    data: {
+      summary: 'Resumo',
+      estimatedDurationSeconds: 42,
+      estimatedChunkCount: 1,
+      estimatedSceneCount: 0,
+      confidence: 'high',
+      steps: [],
+      credits: { available: 100, totalPlanned: 10, remainingAfter: 90, unlimited: false },
+      canProceed: true,
+      notes: [],
+    },
+  }),
 }));
 
 // ─── Mocks de dependências ─────────────────────────────────────
@@ -86,6 +100,7 @@ vi.mock('../../src/hooks/useAudioGenerator', () => ({
     handleCancel: mockHandleCancel,
     loadProjectData: vi.fn(),
     durationInSeconds: 0,
+    creditsExhausted: false,
   }),
 }));
 
@@ -108,6 +123,14 @@ vi.mock('../../src/features/video-render/store/videoRenderBridge', () => ({
 
 vi.mock('../../src/lib/db', () => ({
   saveGeneration: (...args: unknown[]) => mockSaveGeneration(...args),
+}));
+
+vi.mock('../../src/lib/firebase', () => ({
+  functions: {},
+}));
+
+vi.mock('firebase/functions', () => ({
+  httpsCallable: vi.fn().mockReturnValue(mockAudioPreflightCallable),
 }));
 
 vi.mock('../../src/lib/constants', () => ({
@@ -241,26 +264,155 @@ describe('useAudioGenerationHandler', () => {
 
   // ─── handleGenerate ────────────────────────────────────────
 
-  it('deve chamar buildGenerateOptions e generateAudio ao gerar', () => {
+  it('deve abrir a prévia e só gerar após confirmação', async () => {
     const { result } = renderHook(() => useAudioGenerationHandler());
 
-    act(() => {
+    await act(async () => {
       result.current.handleGenerate();
+      await Promise.resolve();
     });
 
     expect(mockBuildGenerateOptions).toHaveBeenCalledWith('test-uid', mockStudioState);
-    expect(mockGenerateAudio).toHaveBeenCalledWith({ script: 'opts' });
+    expect(mockAudioPreflightCallable).toHaveBeenCalledWith({ script: 'opts' });
+    expect(result.current.isPreflightOpen).toBe(true);
+
+    act(() => {
+      result.current.confirmGenerate();
+    });
+
+    expect(mockGenerateAudio).toHaveBeenCalledWith({
+      script: 'opts',
+      preflight: {
+        availableCredits: 100,
+        totalPlanned: 10,
+        unlimited: false,
+      },
+    });
   });
 
-  it('deve chamar buildGenerateOptions com userId undefined quando não autenticado', () => {
+  it('deve chamar buildGenerateOptions com userId undefined quando não autenticado', async () => {
     mockAuthState.user = null;
+    const { result } = renderHook(() => useAudioGenerationHandler());
+
+    await act(async () => {
+      result.current.handleGenerate();
+      await Promise.resolve();
+    });
+
+    expect(mockBuildGenerateOptions).toHaveBeenCalledWith(undefined, mockStudioState);
+  });
+
+  it('deve bloquear confirmação quando a prévia retornar saldo insuficiente estruturado', async () => {
+    mockAudioPreflightCallable.mockRejectedValueOnce({
+      code: 'functions/failed-precondition',
+      message: 'Saldo insuficiente',
+      details: {
+        code: 'INSUFFICIENT_CREDITS',
+      },
+    });
+
+    const { result } = renderHook(() => useAudioGenerationHandler());
+
+    await act(async () => {
+      result.current.handleGenerate();
+      await Promise.resolve();
+    });
+
+    expect(result.current.preflightError).toContain('saldo atual');
+    expect(result.current.preflight).toBeNull();
+    expect(mockGenerateAudio).not.toHaveBeenCalled();
+  });
+
+  it('deve confirmar geração ilimitada sem trafegar Infinity', async () => {
+    mockAudioPreflightCallable.mockResolvedValueOnce({
+      data: {
+        summary: 'Conta ilimitada',
+        estimatedDurationSeconds: 42,
+        estimatedChunkCount: 2,
+        estimatedSceneCount: 3,
+        confidence: 'medium',
+        steps: [],
+        credits: { available: 0, totalPlanned: 25, remainingAfter: 0, unlimited: true },
+        canProceed: true,
+        notes: [],
+      },
+    });
+
+    const { result } = renderHook(() => useAudioGenerationHandler());
+
+    await act(async () => {
+      result.current.handleGenerate();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.confirmGenerate();
+    });
+
+    expect(mockGenerateAudio).toHaveBeenCalledWith({
+      script: 'opts',
+      preflight: {
+        availableCredits: 0,
+        totalPlanned: 25,
+        unlimited: true,
+      },
+    });
+  });
+
+  it('deve permitir fechar a prévia mesmo durante loading e ignorar resultado tardio', async () => {
+    let resolvePreflight: ((value: { data: {
+      summary: string;
+      estimatedDurationSeconds: number;
+      estimatedChunkCount: number;
+      estimatedSceneCount: number;
+      confidence: 'high' | 'medium';
+      steps: [];
+      credits: { available: number; totalPlanned: number; remainingAfter: number; unlimited: boolean };
+      canProceed: boolean;
+      notes: [];
+    } }) => void) | null = null;
+
+    mockAudioPreflightCallable.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolvePreflight = resolve;
+      }),
+    );
+
     const { result } = renderHook(() => useAudioGenerationHandler());
 
     act(() => {
       result.current.handleGenerate();
     });
 
-    expect(mockBuildGenerateOptions).toHaveBeenCalledWith(undefined, mockStudioState);
+    expect(result.current.isPreflightOpen).toBe(true);
+    expect(result.current.isPreparingPreflight).toBe(true);
+
+    act(() => {
+      result.current.closePreflightDialog();
+    });
+
+    expect(result.current.isPreflightOpen).toBe(false);
+    expect(result.current.isPreparingPreflight).toBe(false);
+
+    await act(async () => {
+      resolvePreflight?.({
+        data: {
+          summary: 'Resumo tardio',
+          estimatedDurationSeconds: 30,
+          estimatedChunkCount: 1,
+          estimatedSceneCount: 0,
+          confidence: 'high',
+          steps: [],
+          credits: { available: 100, totalPlanned: 10, remainingAfter: 90, unlimited: false },
+          canProceed: true,
+          notes: [],
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.preflight).toBeNull();
+    expect(result.current.isPreflightOpen).toBe(false);
   });
 
   // ─── durationInFrames ──────────────────────────────────────

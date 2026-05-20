@@ -33,6 +33,7 @@ interface AssistantComposerProps {
   input: string;
   pendingFiles: File[];
   isLoading: boolean;
+  creditsBlocked?: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
@@ -45,6 +46,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   input,
   pendingFiles,
   isLoading,
+  creditsBlocked = false,
   fileInputRef,
   onInputChange,
   onSubmit,
@@ -66,7 +68,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
     }
   };
 
-  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading;
+  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !creditsBlocked;
 
   return (
     <Box
@@ -118,6 +120,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
           onKeyDown={handleKeyDown}
           placeholder={t('assistant.composer.placeholder')}
           fullWidth
+          disabled={creditsBlocked}
           slotProps={{
             input: {
               startAdornment: (
@@ -128,6 +131,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                       edge="start"
                       aria-label={t('assistant.composer.attachFileAria')}
                       size="small"
+                      disabled={creditsBlocked}
                       sx={{
                         color: TEXT_DISABLED,
                         '&:hover': { color: 'text.secondary', backgroundColor: alpha(WHITE_06, 0.5) },

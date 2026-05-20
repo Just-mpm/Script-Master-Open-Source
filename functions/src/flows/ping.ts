@@ -16,13 +16,16 @@
 import { z } from 'genkit';
 import { onCallGenkit, isSignedIn } from 'firebase-functions/v2/https';
 import { ai } from '../genkit/genkit.js';
+import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 
 export const ping = onCallGenkit(
   {
     // Apenas usuários logados podem chamar este flow
     authPolicy: isSignedIn(),
+    cors: APP_ALLOWED_CORS_ORIGINS,
     // Exige token válido do App Check (protege contra abuso)
     enforceAppCheck: true,
+    invoker: 'public',
     // Mesma região do frontend e das demais functions
     region: 'southamerica-east1',
   },

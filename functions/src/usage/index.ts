@@ -40,12 +40,29 @@ export {
 export {
   type BetaAccess,
   type CreditMonth,
+  type CreditAvailabilitySnapshot,
   type ReserveResult,
   type ConfirmResult,
   type BonusResult,
   getOrCreateBetaAccess,
+  getCreditAvailabilitySnapshot,
   reserveCredits,
   confirmCredits,
   revertCredits,
   grantFeedbackBonus,
 } from './credit-service.js';
+
+export {
+  buildAudioPreflightPlan,
+  type CreditSnapshot,
+} from './audio-preflight.js';
+
+export {
+  type AiRequestStatus,
+  type AiRequestRecord,
+  startAiRequest,
+  requestAiCancellation,
+  isAiCancellationRequested,
+  throwIfAiCancellationRequested,
+  finishAiRequest,
+} from './ai-requests.js';

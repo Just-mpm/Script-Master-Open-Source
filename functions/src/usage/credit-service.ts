@@ -22,6 +22,25 @@ import {
 // Tipos internos
 // ---------------------------------------------------------------------------
 
+interface UserEntitlements {
+  unlimitedCredits?: boolean;
+}
+
+interface UserProfile {
+  entitlements?: UserEntitlements;
+}
+
+export interface CreditAvailabilitySnapshot {
+  availableCredits: number;
+  unlimitedCredits: boolean;
+  baseCredits: number;
+  bonusCredits: number;
+  usedCredits: number;
+  reservedCredits: number;
+  feedbackBonusGranted: boolean;
+  currentPeriodKey: string;
+}
+
 /** Dados do documento beta_access/current */
 export interface BetaAccess {
   status: 'active';
@@ -112,12 +131,63 @@ function createInitialCreditMonth(periodKey: string, baseCredits: number, bonusC
   };
 }
 
+function buildRolledOverBetaAccess(current: BetaAccess, nextPeriodKey: string): BetaAccess {
+  return {
+    status: 'active',
+    currentPeriodKey: nextPeriodKey,
+    baseCredits: MONTHLY_BASE_CREDITS,
+    bonusCredits: current.bonusCredits,
+    availableCredits: MONTHLY_BASE_CREDITS + current.bonusCredits,
+    usedCredits: 0,
+    reservedCredits: 0,
+    updatedAt: Date.now(),
+    feedbackBonusGranted: current.feedbackBonusGranted,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Constantes de timeout
 // ---------------------------------------------------------------------------
 
 /** Tempo máximo que uma reserva pode ficar sem confirmação antes de expirar (5 min) */
 const RESERVATION_TIMEOUT_MS = 5 * 60 * 1000;
+
+async function hasUnlimitedCredits(
+  db: Firestore,
+  uid: string,
+): Promise<boolean> {
+  const userSnap = await db.doc(`users/${uid}`).get();
+
+  if (!userSnap.exists) {
+    return false;
+  }
+
+  const userData = userSnap.data() as UserProfile;
+  return userData.entitlements?.unlimitedCredits === true;
+}
+
+export async function getCreditAvailabilitySnapshot(
+  db: Firestore,
+  uid: string,
+): Promise<CreditAvailabilitySnapshot> {
+  const unlimitedCredits = await hasUnlimitedCredits(db, uid);
+  const initialBeta = await getOrCreateBetaAccess(db, uid);
+  const expiredReservations = await expireStaleReservations(db, uid);
+  const beta = expiredReservations > 0
+    ? await getOrCreateBetaAccess(db, uid)
+    : initialBeta;
+
+  return {
+    availableCredits: beta.availableCredits,
+    unlimitedCredits,
+    baseCredits: beta.baseCredits,
+    bonusCredits: beta.bonusCredits,
+    usedCredits: beta.usedCredits,
+    reservedCredits: beta.reservedCredits,
+    feedbackBonusGranted: beta.feedbackBonusGranted,
+    currentPeriodKey: beta.currentPeriodKey,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers de reconciliação de créditos zombie
@@ -142,19 +212,25 @@ async function expireStaleReservations(
 ): Promise<number> {
   const cutoff = Date.now() - RESERVATION_TIMEOUT_MS;
 
-  const staleSnap = await db
+  const reservedSnap = await db
     .collection(`users/${uid}/credit_events`)
     .where('status', '==', 'reserved')
-    .where('createdAt', '<', cutoff)
-    .limit(10)
+    .limit(25)
     .get();
 
-  if (staleSnap.empty) return 0;
+  if (reservedSnap.empty) return 0;
+
+  const staleDocs = reservedSnap.docs.filter((doc) => {
+    const event = doc.data() as CreditEvent;
+    return event.createdAt < cutoff;
+  });
+
+  if (staleDocs.length === 0) return 0;
 
   let releasedCount = 0;
   const betaRef = db.doc(`users/${uid}/beta_access/current`);
 
-  for (const doc of staleSnap.docs) {
+  for (const doc of staleDocs) {
     const staleEvent = doc.data() as CreditEvent;
 
     await db.runTransaction(async (transaction) => {
@@ -162,9 +238,15 @@ async function expireStaleReservations(
       if (!betaSnap.exists) return;
 
       const beta = betaSnap.data() as BetaAccess;
+      const monthRef = db.doc(`users/${uid}/credit_months/${beta.currentPeriodKey}`);
+      const monthSnap = await transaction.get(monthRef);
+      const month = monthSnap.exists
+        ? monthSnap.data() as CreditMonth
+        : createInitialCreditMonth(beta.currentPeriodKey, beta.baseCredits, beta.bonusCredits);
 
       // Só libera o que ainda está reservado (evita saldo negativo)
       const releaseAmount = Math.min(staleEvent.estimatedCredits, beta.reservedCredits);
+      const monthReleaseAmount = Math.min(staleEvent.estimatedCredits, month.reservedCredits);
       if (releaseAmount <= 0) return;
 
       transaction.set(betaRef, {
@@ -172,6 +254,11 @@ async function expireStaleReservations(
         reservedCredits: beta.reservedCredits - releaseAmount,
         updatedAt: Date.now(),
       }, { merge: true });
+      transaction.set(monthRef, {
+        availableCredits: month.availableCredits + monthReleaseAmount,
+        reservedCredits: month.reservedCredits - monthReleaseAmount,
+        updatedAt: Date.now(),
+      } satisfies Partial<CreditMonth>, { merge: true });
 
       transaction.set(doc.ref, {
         status: 'expired' as const,
@@ -210,60 +297,50 @@ export async function getOrCreateBetaAccess(
   uid: string,
 ): Promise<BetaAccess> {
   const betaRef = db.doc(`users/${uid}/beta_access/current`);
-  const snap = await betaRef.get();
-
   const currentPeriod = getCurrentPeriodKey();
+  const monthRef = db.doc(`users/${uid}/credit_months/${currentPeriod}`);
 
-  if (!snap.exists) {
-    // Usuário novo — cria documento inicial
-    const initial = createInitialBetaAccess(currentPeriod);
-    await betaRef.set(initial);
-    console.log(`[credit-service] BetaAccess criado para uid=${uid} periodo=${currentPeriod}`);
-    return initial;
-  }
+  return db.runTransaction(async (transaction) => {
+    const snap = await transaction.get(betaRef);
 
-  const data = snap.data() as BetaAccess;
+    if (!snap.exists) {
+      const initial = createInitialBetaAccess(currentPeriod);
+      transaction.set(betaRef, initial);
+      transaction.set(
+        monthRef,
+        createInitialCreditMonth(currentPeriod, initial.baseCredits, initial.bonusCredits),
+      );
+      console.log(`[credit-service] BetaAccess criado para uid=${uid} periodo=${currentPeriod}`);
+      return initial;
+    }
 
-  // Verifica se o mês virou — rollover atômico
-  if (isNewPeriod(data.currentPeriodKey)) {
-    console.log(
-      `[credit-service] Rollover detectado para uid=${uid}: ` +
-      `${data.currentPeriodKey} → ${currentPeriod}`,
-    );
+    const data = snap.data() as BetaAccess;
 
-    // Envolve o rollover em uma transação para garantir atomicidade.
-    // Evita que duas requisições concorrentes na virada do mês criem
-    // rollovers duplicados ou inconsistentes.
-    const rolledOver = await db.runTransaction(async (transaction) => {
-      // Releitura dentro da transação para garantir consistência
-      const snap = await transaction.get(betaRef);
-      const current = snap.data() as BetaAccess;
+    if (isNewPeriod(data.currentPeriodKey)) {
+      console.log(
+        `[credit-service] Rollover detectado para uid=${uid}: ` +
+        `${data.currentPeriodKey} → ${currentPeriod}`,
+      );
 
-      // Se outro request já fez o rollover, retorna os dados atualizados
-      if (!isNewPeriod(current.currentPeriodKey)) {
-        return current;
-      }
-
-      const fresh: BetaAccess = {
-        status: 'active',
-        currentPeriodKey: currentPeriod,
-        baseCredits: MONTHLY_BASE_CREDITS,
-        bonusCredits: current.bonusCredits, // mantém bônus acumulado
-        availableCredits: MONTHLY_BASE_CREDITS + current.bonusCredits,
-        usedCredits: 0, // reseta consumo
-        reservedCredits: 0, // reseta reservas
-        updatedAt: Date.now(),
-        feedbackBonusGranted: current.feedbackBonusGranted,
-      };
-
+      const fresh = buildRolledOverBetaAccess(data, currentPeriod);
       transaction.set(betaRef, fresh);
+      transaction.set(
+        monthRef,
+        createInitialCreditMonth(currentPeriod, fresh.baseCredits, fresh.bonusCredits),
+      );
       return fresh;
-    });
+    }
 
-    return rolledOver;
-  }
+    const monthSnap = await transaction.get(monthRef);
+    if (!monthSnap.exists) {
+      transaction.set(
+        monthRef,
+        createInitialCreditMonth(currentPeriod, data.baseCredits, data.bonusCredits),
+      );
+    }
 
-  return data;
+    return data;
+  });
 }
 
 /**
@@ -286,6 +363,10 @@ export async function reserveCredits(
   operationType: OperationType,
   estimatedCredits: number,
 ): Promise<ReserveResult> {
+  if (await hasUnlimitedCredits(db, uid)) {
+    return { success: true, eventId: requestId };
+  }
+
   // Feedback não consome créditos — não precisa reservar
   if (operationType === 'feedback') {
     return { success: true };
@@ -328,12 +409,12 @@ export async function reserveCredits(
       if (!betaSnap.exists) {
         beta = createInitialBetaAccess(currentPeriod);
         transaction.set(betaRef, beta);
-        console.log(
-          `[credit-service] BetaAccess criado sob demanda via reserveCredits: ` +
-          `uid=${uid} periodo=${currentPeriod}`,
-        );
       } else {
         beta = betaSnap.data() as BetaAccess;
+        if (isNewPeriod(beta.currentPeriodKey)) {
+          beta = buildRolledOverBetaAccess(beta, currentPeriod);
+          transaction.set(betaRef, beta);
+        }
       }
 
       // 3. Verifica saldo disponível
@@ -346,6 +427,16 @@ export async function reserveCredits(
       const month: CreditMonth = monthSnap.exists
         ? monthSnap.data() as CreditMonth
         : createInitialCreditMonth(currentPeriod, beta.baseCredits, beta.bonusCredits);
+      if (!monthSnap.exists) {
+        transaction.set(monthRef, month);
+      }
+
+      if (!betaSnap.exists) {
+        console.log(
+          `[credit-service] BetaAccess criado sob demanda via reserveCredits: ` +
+          `uid=${uid} periodo=${currentPeriod}`,
+        );
+      }
 
       // 5. Atualiza beta_access
       const updatedBeta: Partial<BetaAccess> = {
@@ -423,35 +514,27 @@ export async function confirmCredits(
   outputSize?: number,
   model?: string,
 ): Promise<ConfirmResult> {
-  // Busca o evento existente (fora da transação para identificar o eventId)
-  const eventsSnap = await db
-    .collection(`users/${uid}/credit_events`)
-    .where('requestId', '==', requestId)
-    .limit(1)
-    .get();
-
-  if (eventsSnap.empty) {
-    return { success: false, availableCredits: 0, error: 'Evento de crédito não encontrado' };
-  }
-
-  const eventDoc = eventsSnap.docs[0];
-  const eventId = eventDoc.id;
-  const event = eventDoc.data() as CreditEvent;
-
-  if (event.status !== 'reserved') {
-    return {
-      success: false,
-      availableCredits: 0,
-      error: `Evento com status inválido: ${event.status}`,
-    };
+  if (await hasUnlimitedCredits(db, uid)) {
+    return { success: true, availableCredits: Number.POSITIVE_INFINITY };
   }
 
   const currentPeriod = getCurrentPeriodKey();
   const betaRef = db.doc(`users/${uid}/beta_access/current`);
   const monthRef = db.doc(`users/${uid}/credit_months/${currentPeriod}`);
+  const eventRef = db.doc(`users/${uid}/credit_events/${requestId}`);
 
   try {
     const result = await db.runTransaction(async (transaction) => {
+      const eventSnap = await transaction.get(eventRef);
+      if (!eventSnap.exists) {
+        throw new Error('Evento de crédito não encontrado');
+      }
+
+      const event = eventSnap.data() as CreditEvent;
+      if (event.status !== 'reserved') {
+        throw new Error(`Evento com status inválido: ${event.status}`);
+      }
+
       // 1. Leitura do beta_access
       const betaSnap = await transaction.get(betaRef);
       if (!betaSnap.exists) {
@@ -466,30 +549,25 @@ export async function confirmCredits(
         ? monthSnap.data() as CreditMonth
         : createInitialCreditMonth(currentPeriod, beta.baseCredits, beta.bonusCredits);
 
-      // 3. Calcula ajustes
+      // 3. Calcula ajustes de forma consistente entre beta_access e credit_month.
+      // A confirmação só segue se o saldo total confirmável (reserva liberada +
+      // saldo livre restante) cobre o custo final real.
       const estimatedCredits = event.estimatedCredits;
-      const creditDelta = estimatedCredits - finalCredits;
-      // Positivo = devolver, Negativo = consumir adicional
+      const releasableReservation = Math.min(estimatedCredits, beta.reservedCredits);
+      const releasableMonthReservation = Math.min(estimatedCredits, month.reservedCredits);
+      const betaConfirmableCredits = beta.availableCredits + releasableReservation;
+      const monthConfirmableCredits = month.availableCredits + releasableMonthReservation;
 
-      let newAvailable = beta.availableCredits;
-      let newReserved = beta.reservedCredits - estimatedCredits; // libera reserva
-      let newUsed = beta.usedCredits + finalCredits;
-
-      if (creditDelta > 0) {
-        // Estimativa foi maior que o real → devolve a diferença
-        newAvailable += creditDelta;
-      } else if (creditDelta < 0) {
-        // Consumo foi maior que a estimativa → consome a diferença extra do available
-        const extraConsumption = Math.abs(creditDelta);
-        if (beta.availableCredits < extraConsumption) {
-          // Saldo insuficiente para cobrir o extra — usa o que tem disponível
-          newAvailable = 0;
-          newUsed -= (extraConsumption - beta.availableCredits);
-        } else {
-          newAvailable -= extraConsumption;
-        }
+      if (betaConfirmableCredits < finalCredits || monthConfirmableCredits < finalCredits) {
+        throw new Error('Saldo insuficiente para confirmar o consumo final');
       }
-      // creditDelta === 0 → sem ajuste
+
+      const newAvailable = betaConfirmableCredits - finalCredits;
+      const newReserved = beta.reservedCredits - releasableReservation;
+      const newUsed = beta.usedCredits + finalCredits;
+      const newMonthAvailable = monthConfirmableCredits - finalCredits;
+      const newMonthReserved = month.reservedCredits - releasableMonthReservation;
+      const newMonthUsed = month.usedCredits + finalCredits;
 
       // 4. Atualiza beta_access
       const updatedBeta: Partial<BetaAccess> = {
@@ -502,16 +580,15 @@ export async function confirmCredits(
 
       // 5. Atualiza credit_month
       const updatedMonth: Partial<CreditMonth> = {
-        reservedCredits: Math.max(0, month.reservedCredits - estimatedCredits),
-        usedCredits: month.usedCredits + finalCredits,
-        availableCredits: Math.max(0, newAvailable),
+        reservedCredits: Math.max(0, newMonthReserved),
+        usedCredits: newMonthUsed,
+        availableCredits: Math.max(0, newMonthAvailable),
         updatedAt: Date.now(),
         usage: buildUsageUpdate(month.usage, event.flowName, finalCredits),
       };
       transaction.set(monthRef, updatedMonth, { merge: true });
 
       // 6. Atualiza credit_event
-      const eventRef = db.doc(`users/${uid}/credit_events/${eventId}`);
       const updatedEvent: Partial<CreditEvent> = {
         status: 'confirmed',
         finalCredits,
@@ -554,21 +631,19 @@ export async function revertCredits(
   requestId: string,
   errorCode?: string,
 ): Promise<void> {
-  // Busca o evento existente
-  const eventsSnap = await db
-    .collection(`users/${uid}/credit_events`)
-    .where('requestId', '==', requestId)
-    .limit(1)
-    .get();
+  if (await hasUnlimitedCredits(db, uid)) {
+    return;
+  }
 
-  if (eventsSnap.empty) {
+  const eventRef = db.doc(`users/${uid}/credit_events/${requestId}`);
+  const eventSnap = await eventRef.get();
+
+  if (!eventSnap.exists) {
     console.log(`[credit-service] Reversão ignorada: evento não encontrado para requestId=${requestId}`);
     return;
   }
 
-  const eventDoc = eventsSnap.docs[0];
-  const eventId = eventDoc.id;
-  const event = eventDoc.data() as CreditEvent;
+  const event = eventSnap.data() as CreditEvent;
 
   if (event.status !== 'reserved') {
     console.log(
@@ -616,7 +691,6 @@ export async function revertCredits(
       transaction.set(monthRef, updatedMonth, { merge: true });
 
       // 5. Atualiza credit_event
-      const eventRef = db.doc(`users/${uid}/credit_events/${eventId}`);
       const updatedEvent: Partial<CreditEvent> = {
         status: 'reverted',
         errorCode: errorCode,

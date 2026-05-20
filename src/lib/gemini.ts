@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import { createLogger } from './logger';
+import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from './callable-errors';
 
 import type { Locale } from '../features/i18n/types';
 
@@ -43,6 +44,7 @@ export async function generateScenePrompts(
   densitySeconds: number = 15,
   visualFramework: string = 'general',
   locale: Locale = 'pt-BR',
+  requestId?: string,
 ): Promise<ScenePromptResult> {
   try {
     const callable = httpsCallable<{
@@ -62,7 +64,7 @@ export async function generateScenePrompts(
       densitySeconds,
       visualFramework,
       locale,
-      requestId: crypto.randomUUID(),
+      requestId: requestId ?? crypto.randomUUID(),
     });
 
     const { prompts, isFallback } = result.data;
@@ -74,6 +76,10 @@ export async function generateScenePrompts(
     return { prompts, isFallback };
   } catch (error) {
     log.error('Erro ao gerar prompts de cena', { error });
+    if (isCreditCallableError(error) || isCallableCancelledError(error)) {
+      throw error;
+    }
+
     // Fallback genérico como último recurso após falha
     const fallbackPrompts: ScenePrompt[] = [{
       timestamp: 0,
@@ -91,6 +97,7 @@ export async function generateImageFromPrompt(
   prompt: string,
   aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' = '16:9',
   referenceImage?: string,
+  requestId?: string,
 ): Promise<string | null> {
   try {
     const callable = httpsCallable<{
@@ -104,7 +111,7 @@ export async function generateImageFromPrompt(
       prompt,
       aspectRatio,
       referenceImage,
-      requestId: crypto.randomUUID(),
+      requestId: requestId ?? crypto.randomUUID(),
     });
 
     const { imageBase64, mimeType } = result.data;
@@ -116,6 +123,14 @@ export async function generateImageFromPrompt(
     return `data:${mimeType};base64,${imageBase64}`;
   } catch (error) {
     log.error('Erro ao gerar imagem', { error });
+    const errorInfo = getCallableErrorInfo(error);
+    if (
+      isCallableCancelledError(error) ||
+      errorInfo.detailCode === 'INSUFFICIENT_CREDITS' ||
+      errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
+    ) {
+      throw error;
+    }
     return null;
   }
 }

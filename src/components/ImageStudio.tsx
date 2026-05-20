@@ -459,7 +459,7 @@ export function ImageStudio() {
                     ) : (
                       <Button
                         onClick={handleGenerate}
-                        disabled={!prompt.trim()}
+                        disabled={!prompt.trim() || creditsExhausted}
                         variant="contained"
                         size="large"
                         startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}

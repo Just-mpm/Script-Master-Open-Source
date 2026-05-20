@@ -21,6 +21,7 @@
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ai } from '../genkit/genkit.js';
+import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import {
   FeedbackInputSchema,
   FeedbackOutputSchema,
@@ -38,8 +39,10 @@ export const feedback = onCallGenkit(
   {
     // Apenas usuários logados podem enviar feedback
     authPolicy: isSignedIn(),
+    cors: APP_ALLOWED_CORS_ORIGINS,
     // Exige token válido do App Check (protege contra abuso)
     enforceAppCheck: true,
+    invoker: 'public',
     // Mesma região do frontend e das demais functions
     region: 'southamerica-east1',
   },

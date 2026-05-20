@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import {
   getAuth,
+  connectAuthEmulator,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -13,10 +14,10 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getFunctions } from 'firebase/functions';
-import { getFirebaseEnvConfig, getRecaptchaSiteKey } from './env';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getFirebaseEnvConfig, getRecaptchaSiteKey, getAppCheckDebugToken } from './env';
 
 const appletConfig = getFirebaseEnvConfig();
 
@@ -43,8 +44,9 @@ if (recaptchaKey) {
     isTokenAutoRefreshEnabled: true,
   });
 } else if (import.meta.env.DEV) {
-  // Desenvolvimento: modo debug gera token local (console do Firebase)
-  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  // Desenvolvimento: modo debug com token do .env (ou true para gerar no console)
+  const debugToken = getAppCheckDebugToken();
+  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken ?? true;
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(GOOGLE_RECAPTCHA_TEST_SITE_KEY),
     isTokenAutoRefreshEnabled: true,
@@ -69,6 +71,19 @@ export const db = appletConfig.firestoreDatabaseId
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'southamerica-east1');
 export const googleProvider = new GoogleAuthProvider();
+
+// ── Emuladores Firebase (desenvolvimento local) ─────────────────────────────
+// Quando VITE_USE_EMULATORS=true, conecta todos os SDKs aos emuladores locais.
+// As Cloud Functions emuladas setam automaticamente as variáveis de ambiente
+// FIRESTORE_EMULATOR_HOST, STORAGE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST
+// para o firebase-admin (backend).
+
+if (import.meta.env.VITE_USE_EMULATORS === 'true') {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+}
 
 export { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged };
 export type { User };

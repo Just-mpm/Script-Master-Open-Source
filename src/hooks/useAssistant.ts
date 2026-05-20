@@ -7,8 +7,11 @@ import type { Attachment, AssistantStudioState, ChatMessage } from '../features/
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
+import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
+import { useCredits } from './useCredits';
 
 const log = createLogger('useAssistant');
+const STREAM_ABORTED = Symbol('assistant-stream-aborted');
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
@@ -53,7 +56,11 @@ function buildErrorMapper(t: (key: string) => string) {
 
 interface AssistantFlowInput {
   message: string;
-  history?: Array<{ role: 'user' | 'model'; text: string }>;
+  history?: Array<{
+    role: 'user' | 'model';
+    text: string;
+    attachments?: Array<{ mimeType: string; data: string; name?: string }>;
+  }>;
   attachments?: Array<{ mimeType: string; data: string; name?: string }>;
   studioState?: Record<string, unknown>;
   requestId: string;
@@ -71,6 +78,7 @@ interface AssistantFlowOutput {
 export function useAssistant(currentState?: AssistantStudioState) {
   const { user } = useAuth();
   const { t } = useLocale();
+  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
 
   // Mapeador de erros recriado quando locale muda
   const toUserFriendlyAssistantError = useMemo(() => buildErrorMapper(t), [t]);
@@ -95,12 +103,26 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const chunkBufferRef = useRef<string>('');
   const rafRef = useRef<number>(0);
   const streamingTargetRef = useRef<string>('');
+  const activeRequestIdRef = useRef<string | null>(null);
+  const streamedContentStartedRef = useRef(false);
 
   // Callable estável (a instância do SDK é memoizada)
   const assistantCallable = useMemo(
     () => httpsCallable<AssistantFlowInput, AssistantFlowOutput>(functions, 'assistant'),
     [],
   );
+  const cancelAiRequestCallable = useMemo(
+    () => httpsCallable<{ requestId: string }, { success: boolean }>(functions, 'cancelAiRequest'),
+    [],
+  );
+
+  const requestRemoteCancellation = useCallback((requestId?: string | null) => {
+    if (!requestId) return;
+
+    void cancelAiRequestCallable({ requestId }).catch((cancelError: unknown) => {
+      log.warn('Falha ao solicitar cancelamento do assistente', { error: cancelError });
+    });
+  }, [cancelAiRequestCallable]);
 
   // ---------------------------------------------------------------------------
   // Scroll automático
@@ -132,10 +154,19 @@ export function useAssistant(currentState?: AssistantStudioState) {
   // Aborta chamada em andamento ao desmontar
   useEffect(() => {
     return () => {
+      requestRemoteCancellation(activeRequestIdRef.current);
       abortControllerRef.current?.abort();
       streamActiveRef.current = false;
     };
-  }, []);
+  }, [requestRemoteCancellation]);
+
+  const isCreditBlocked = !!user && !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+
+  useEffect(() => {
+    if (!isCreditBlocked) {
+      setCreditsExhausted(false);
+    }
+  }, [isCreditBlocked]);
 
   // Auto-save session (após streaming, evita centenas de saves por segundo)
   useEffect(() => {
@@ -188,7 +219,51 @@ export function useAssistant(currentState?: AssistantStudioState) {
     }));
   };
 
+  const removePendingAssistantPlaceholder = useCallback(() => {
+    if (streamedContentStartedRef.current) {
+      return;
+    }
+
+    const targetId = streamingTargetRef.current;
+    if (!targetId) {
+      return;
+    }
+
+    setMessages((prev) => prev.filter((message) => !(message.id === targetId && message.role === 'model' && message.text === '')));
+  }, []);
+
+  const waitForAbortSignal = (signal: AbortSignal): Promise<typeof STREAM_ABORTED> => (
+    new Promise((resolve) => {
+      if (signal.aborted) {
+        resolve(STREAM_ABORTED);
+        return;
+      }
+
+      let pollId: ReturnType<typeof setInterval> | null = setInterval(() => {
+        if (!signal.aborted) return;
+        if (pollId) {
+          clearInterval(pollId);
+          pollId = null;
+        }
+        signal.removeEventListener('abort', handleAbort);
+        resolve(STREAM_ABORTED);
+      }, 16);
+
+      const handleAbort = () => {
+        if (pollId) {
+          clearInterval(pollId);
+          pollId = null;
+        }
+        signal.removeEventListener('abort', handleAbort);
+        resolve(STREAM_ABORTED);
+      };
+
+      signal.addEventListener('abort', handleAbort, { once: true });
+    })
+  );
+
   const startNewChat = () => {
+    requestRemoteCancellation(activeRequestIdRef.current);
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     streamActiveRef.current = false;
@@ -201,6 +276,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   };
 
   const loadSession = (session: ChatSession) => {
+    requestRemoteCancellation(activeRequestIdRef.current);
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     streamActiveRef.current = false;
@@ -216,7 +292,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
   // Envio de mensagem com streaming (backend Genkit)
   // ---------------------------------------------------------------------------
 
-  const sendMessage = useCallback(async (text: string, attachments?: Attachment[]) => {
+  const sendMessage = useCallback(async (
+    text: string,
+    attachments?: Attachment[],
+    historyOverride?: ChatMessage[],
+  ) => {
     if (!text.trim() && (!attachments || attachments.length === 0)) return;
 
     const newUserMsg: ChatMessage = {
@@ -238,15 +318,27 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
     // ID da mensagem de resposta do assistente (para atualização progressiva)
     const assistantMsgId = (Date.now() + 1).toString();
+    streamedContentStartedRef.current = false;
 
     try {
       // Constrói input para o flow assistant
       // O backend gerencia memórias, vozes, ritmos e system prompt sozinho
+      const requestId = crypto.randomUUID();
+      activeRequestIdRef.current = requestId;
+
+      const historySource = historyOverride ?? messages;
       const input: AssistantFlowInput = {
         message: text,
-        history: messages.slice(1).map((msg) => ({
+        history: historySource.slice(1).map((msg) => ({
           role: msg.role,
           text: msg.text,
+          attachments: msg.attachments
+            ?.filter((attachment) => !!attachment.data)
+            .map((attachment) => ({
+              mimeType: attachment.mimeType,
+              data: attachment.data,
+              name: attachment.name,
+            })),
         })),
         attachments: attachments
           ?.filter((att) => !!att.data)
@@ -254,9 +346,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
             mimeType: att.mimeType,
             data: att.data!,
             name: att.name,
-          })),
+        })),
         studioState: currentState as Record<string, unknown> | undefined,
-        requestId: crypto.randomUUID(),
+        requestId,
       };
 
       // Adiciona mensagem vazia do assistente (texto progressivo)
@@ -272,13 +364,29 @@ export function useAssistant(currentState?: AssistantStudioState) {
       // Salva target ID no ref para o flush acessar sem closure stale
       streamingTargetRef.current = assistantMsgId;
 
-      // Processa chunks progressivamente com buffer por frame
-      for await (const chunk of stream) {
-        if (abortController.signal.aborted || !streamActiveRef.current) break;
+      // Processa chunks progressivamente com buffer por frame.
+      // A leitura é raced com o abort local para não ficar presa quando o
+      // próximo chunk nunca chega ao cliente.
+      const streamIterator = stream[Symbol.asyncIterator]();
 
-        const chunkText = typeof chunk === 'string' ? chunk : '';
+      while (streamActiveRef.current) {
+        const nextResult = await Promise.race([
+          streamIterator.next(),
+          waitForAbortSignal(abortController.signal),
+        ]);
+
+        if (nextResult === STREAM_ABORTED || abortController.signal.aborted || !streamActiveRef.current) {
+          break;
+        }
+
+        if (nextResult.done) {
+          break;
+        }
+
+        const chunkText = typeof nextResult.value === 'string' ? nextResult.value : '';
         if (!chunkText) continue;
 
+        streamedContentStartedRef.current = true;
         chunkBufferRef.current += chunkText;
 
         // Agenda flush para o próximo frame de display (se não houver um pendente)
@@ -295,13 +403,21 @@ export function useAssistant(currentState?: AssistantStudioState) {
       flushChunkBuffer();
 
       // Aguarda o resultado final do flow (contém jsonSettings extraído pelo backend)
-      try {
-        const output = await finalData;
-        if (output.jsonSettings) {
-          setJsonSettings(output.jsonSettings);
+      if (!abortController.signal.aborted && streamActiveRef.current) {
+        try {
+          const output = await finalData;
+          if (output.jsonSettings) {
+            setJsonSettings(output.jsonSettings);
+          }
+        } catch (finalDataError: unknown) {
+          if (!isCallableCancelledError(finalDataError)) {
+            const errorInfo = getCallableErrorInfo(finalDataError);
+            log.warn('Falha ao obter metadados finais do assistente', { error: errorInfo.message || finalDataError });
+          }
+          // jsonSettings é opcional — falha ao obter não deve quebrar o chat
         }
-      } catch {
-        // jsonSettings é opcional — falha ao obter não deve quebrar o chat
+      } else {
+        void finalData.catch(() => {});
       }
 
     } catch (err: unknown) {
@@ -313,12 +429,15 @@ export function useAssistant(currentState?: AssistantStudioState) {
       flushChunkBuffer();
 
       // Ignora erros de aborto (intencional pelo usuário)
-      if (abortController.signal.aborted) return;
+      if (abortController.signal.aborted || isCallableCancelledError(err)) {
+        removePendingAssistantPlaceholder();
+        return;
+      }
 
       log.error('Erro no assistente', { error: err });
       const errorMessage = toUserFriendlyAssistantError(err);
 
-      if (errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
+      if (isCreditCallableError(err) || errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
         setCreditsExhausted(true);
       }
 
@@ -339,8 +458,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
       }
+      activeRequestIdRef.current = null;
       streamActiveRef.current = false;
       streamingTargetRef.current = '';
+      streamedContentStartedRef.current = false;
       chunkBufferRef.current = '';
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -349,15 +470,33 @@ export function useAssistant(currentState?: AssistantStudioState) {
       setIsLoading(false);
       setIsStreaming(false);
     }
-  }, [messages, currentState, assistantCallable, streamFallbackText, toUserFriendlyAssistantError]);
+  }, [
+    messages,
+    currentState,
+    assistantCallable,
+    streamFallbackText,
+    toUserFriendlyAssistantError,
+  ]);
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {
+    requestRemoteCancellation(activeRequestIdRef.current);
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     streamActiveRef.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    flushChunkBuffer();
+    removePendingAssistantPlaceholder();
+    streamingTargetRef.current = '';
+    streamedContentStartedRef.current = false;
+    chunkBufferRef.current = '';
+    setIsLoading(false);
+    setIsStreaming(false);
   };
 
   /**
@@ -379,9 +518,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
     if (!lastUserMsg) return;
 
-    // Remove a mensagem de fallback e reenvia
-    setMessages((prev) => prev.filter((_, idx) => idx !== lastErrorIdx));
-    void sendMessage(lastUserMsg.text, lastUserMsg.attachments);
+    // Remove a mensagem de fallback e reenvia usando o histórico já limpo,
+    // evitando mandar o fallback técnico de volta para o backend.
+    const sanitizedMessages = messages.filter((_, idx) => idx !== lastErrorIdx);
+    setMessages(sanitizedMessages);
+    void sendMessage(lastUserMsg.text, lastUserMsg.attachments, sanitizedMessages);
   }, [messages, sendMessage, retryDetectionMarker]);
 
   return {
@@ -396,7 +537,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
-    creditsExhausted,
+    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }
 

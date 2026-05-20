@@ -36,7 +36,7 @@ interface InlineAIWidgetProps {
 
 export function InlineAIWidget({ script, setScript, textareaRef, disabled }: InlineAIWidgetProps) {
   const { t } = useLocale();
-  const { isProcessing, rewrite, creditsExhausted } = useInlineAssistant();
+  const { isProcessing, rewrite, stopProcessing, creditsExhausted } = useInlineAssistant();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -53,10 +53,13 @@ export function InlineAIWidget({ script, setScript, textareaRef, disabled }: Inl
   const [instruction, setInstruction] = useState('');
 
   const handleClose = useCallback(() => {
+    if (isProcessing) {
+      stopProcessing();
+    }
     setPopoverAnchor(null);
     setSelectionRange(null);
     setInstruction('');
-  }, []);
+  }, [isProcessing, stopProcessing]);
 
   // Cria um VirtualElement a partir das coordenadas reais da seleção no textarea.
   // Suporta tanto MouseEvent quanto TouchEvent para funcionar em Mobile e Desktop.
@@ -310,7 +313,6 @@ export function InlineAIWidget({ script, setScript, textareaRef, disabled }: Inl
               <Button
                 size="small"
                 onClick={handleClose}
-                disabled={isProcessing}
                 sx={{
                   minWidth: 0,
                   borderRadius: 6,
@@ -322,7 +324,7 @@ export function InlineAIWidget({ script, setScript, textareaRef, disabled }: Inl
                   '&:hover': { bgcolor: 'action.hover' }
                 }}
               >
-                Cancelar
+                {isProcessing ? 'Parar' : 'Cancelar'}
               </Button>
               <Button
                 size="small"

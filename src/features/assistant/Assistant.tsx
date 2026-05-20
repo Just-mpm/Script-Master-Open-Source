@@ -30,6 +30,7 @@ import { glassPanelSx } from '../../theme/surfaces';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { BRAND_PRIMARY } from '../../theme/tokens';
+import { useCredits } from '../../hooks/useCredits';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -45,6 +46,8 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { user } = useAuth();
   const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef, creditsExhausted } = useAssistant(currentState);
+  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
+  const creditBlockedByBalance = !!user && !creditsLoading && !unlimitedCredits && availableCredits <= 0;
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -442,6 +445,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         input={input}
         pendingFiles={pendingFiles}
         isLoading={isLoading}
+        creditsBlocked={creditBlockedByBalance}
         fileInputRef={fileInputRef}
         onInputChange={setInput}
         onSubmit={handleSubmit}

@@ -20,6 +20,7 @@
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ai } from '../genkit/genkit.js';
+import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import {
   InlineAssistantInputSchema,
   InlineAssistantOutputSchema,
@@ -29,9 +30,18 @@ import {
 import {
   calculateCreditCost,
   isRequestIdValid,
+  finishAiRequest,
+  startAiRequest,
+  throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { VOICES, PACE_DESCRIPTIONS } from '../genkit/constants.js';
+import {
+  buildCustomPromptBlock,
+  buildMemoriesText,
+  buildUserProfileBlock,
+  type AssistantUserSettingsDoc,
+} from '../genkit/utils/assistant-context.js';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -71,7 +81,9 @@ function cleanMarkdown(text: string): string {
 export const inlineAssistant = onCallGenkit(
   {
     authPolicy: isSignedIn(),
+    cors: APP_ALLOWED_CORS_ORIGINS,
     enforceAppCheck: true,
+    invoker: 'public',
     region: 'southamerica-east1',
   },
   ai.defineFlow(
@@ -100,10 +112,12 @@ export const inlineAssistant = onCallGenkit(
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
       }
       const requestId = input.requestId || crypto.randomUUID();
+      await startAiRequest(db, uid, requestId, 'inline_assistant');
 
       // -----------------------------------------------------------------------
       // 1. Busca contexto do usuário (memórias + user settings)
       // -----------------------------------------------------------------------
+      await throwIfAiCancellationRequested(db, uid, requestId);
 
       const [memoriesSnap, settingsSnap] = await Promise.all([
         db
@@ -122,16 +136,13 @@ export const inlineAssistant = onCallGenkit(
       const memories: Array<{ content: string }> = memoriesSnap && !memoriesSnap.empty
         ? memoriesSnap.docs.map((d) => d.data() as { content: string })
         : [];
-      const memoriesText = memories.length > 0
-        ? `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map((m) => `- ${m.content}`).join('\n')}`
-        : '';
+      const memoriesText = buildMemoriesText(memories);
 
       const userSettings = settingsSnap?.exists
-        ? (settingsSnap.data() as { customSystemPrompt?: string })
+        ? (settingsSnap.data() as AssistantUserSettingsDoc)
         : null;
-      const customPromptBlock = userSettings?.customSystemPrompt
-        ? `\n\nDIRETRIZES CUSTOMIZADAS DO USUÁRIO:\n${userSettings.customSystemPrompt}`
-        : '';
+      const customPromptBlock = buildCustomPromptBlock(userSettings);
+      const userProfileBlock = buildUserProfileBlock(userSettings);
 
       const voicesList = VOICES.map((v) => `- ${v.name} (${v.style})`).join('\n');
       const paceList = Object.entries(PACE_DESCRIPTIONS)
@@ -149,6 +160,7 @@ export const inlineAssistant = onCallGenkit(
         'inline_assistant',
         { message: input.selectedText },
       );
+      await throwIfAiCancellationRequested(db, uid, requestId);
 
       // -----------------------------------------------------------------------
       // 3. Geração via Dotprompt (sem streaming)
@@ -160,6 +172,7 @@ export const inlineAssistant = onCallGenkit(
         const response = await inlinePrompt({
           input: {
             memoriesText,
+            userProfileBlock,
             voicesList,
             paceList,
             customPromptBlock,
@@ -177,6 +190,7 @@ export const inlineAssistant = onCallGenkit(
 
         // Limpa a resposta para ser um drop-in replacement
         const rewrittenText = cleanMarkdown(text);
+        await throwIfAiCancellationRequested(db, uid, requestId);
 
         // -------------------------------------------------------------------
         // 4. Confirma créditos com o custo real
@@ -201,6 +215,7 @@ export const inlineAssistant = onCallGenkit(
           `[inlineAssistant] Texto reescrito: uid=${uid} requestId=${requestId} ` +
           `inputChars=${inputChars} outputChars=${outputChars} credits=${finalCredits}`,
         );
+        await finishAiRequest(db, uid, requestId, 'completed');
 
         return { rewrittenText };
 
@@ -212,6 +227,10 @@ export const inlineAssistant = onCallGenkit(
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
 
         await creditMeter.revert(errorCode);
+        const finalStatus = error instanceof HttpsError && error.code === 'cancelled'
+          ? 'cancelled'
+          : 'failed';
+        await finishAiRequest(db, uid, requestId, finalStatus, errorCode);
 
         console.error(
           `[inlineAssistant] Erro na geração: uid=${uid} requestId=${requestId} erro=${errorCode}`,

@@ -39,6 +39,7 @@ vi.mock('../../src/lib/db/audio-segments', () => ({
 
 vi.mock('../../src/lib/env', () => ({
   getGeminiApiKey: vi.fn().mockReturnValue('test-api-key'),
+  getAppCheckDebugToken: vi.fn().mockReturnValue(undefined),
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
   isBillingEnabled: vi.fn().mockReturnValue(false),
   isOpenBetaEnabled: vi.fn().mockReturnValue(true),
@@ -77,6 +78,18 @@ vi.mock('../../src/lib/logger', () => ({
 
 vi.mock('../../src/features/studio/store/studioStore', () => ({}));
 vi.mock('../../src/features/studio/store/studio.utils', () => ({}));
+vi.mock('../../src/hooks/useCredits', () => ({
+  useCredits: () => ({
+    availableCredits: 100,
+    usedCredits: 0,
+    baseCredits: 100,
+    bonusCredits: 0,
+    feedbackBonusGranted: false,
+    unlimitedCredits: false,
+    loading: false,
+    error: null,
+  }),
+}));
 
 import { useAudioGenerator } from '../../src/hooks/useAudioGenerator';
 import { useAudioGeneratorStore } from '../../src/features/studio/store';

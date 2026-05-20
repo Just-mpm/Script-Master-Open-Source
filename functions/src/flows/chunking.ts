@@ -23,6 +23,7 @@ import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/http
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { ai } from '../genkit/genkit.js';
+import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { ChunkingInputSchema, ChunkingOutputSchema } from '../genkit/schemas/common.js';
 import {
   calculateCreditCost,
@@ -48,7 +49,9 @@ const DEFAULT_CHUNK_LIMIT = 500;
 export const chunking = onCallGenkit(
   {
     authPolicy: isSignedIn(),
+    cors: APP_ALLOWED_CORS_ORIGINS,
     enforceAppCheck: true,
+    invoker: 'public',
     region: 'southamerica-east1',
   },
   ai.defineFlow(

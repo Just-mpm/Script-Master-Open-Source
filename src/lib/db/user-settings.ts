@@ -17,14 +17,21 @@ const userSettingsCollection = (settingId: string) => doc(db, 'user_settings', s
 
 export async function saveUserSettings(customSystemPrompt: string, userId?: string, profile?: { name?: string; role?: string; goals?: string[] }): Promise<UserSetting> {
   const settingId = userId ?? LOCAL_SETTINGS_ID;
+  const existingSetting = await getUserSettings(userId) ?? undefined;
   const setting: UserSetting = {
     id: settingId,
     userId,
     customSystemPrompt,
     updatedAt: Date.now(),
-    ...(profile?.name && { name: profile.name }),
-    ...(profile?.role && { role: profile.role }),
-    ...(profile?.goals?.length && { goals: profile.goals }),
+    ...(profile?.name !== undefined || existingSetting?.name !== undefined
+      ? { name: profile?.name ?? existingSetting?.name }
+      : {}),
+    ...(profile?.role !== undefined || existingSetting?.role !== undefined
+      ? { role: profile?.role ?? existingSetting?.role }
+      : {}),
+    ...(profile?.goals !== undefined || existingSetting?.goals !== undefined
+      ? { goals: profile?.goals ?? existingSetting?.goals ?? [] }
+      : {}),
   };
 
   if (userId) {

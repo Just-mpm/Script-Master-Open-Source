@@ -9,6 +9,7 @@ import { ScrollToTop } from './components/public/ScrollToTop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
+import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { AppRoutes } from './router/routes';
@@ -27,6 +28,8 @@ export default function App() {
     audioUrl,
     scenes,
     handleGenerate,
+    confirmGenerate,
+    closePreflightDialog,
     handleDownload,
     handleCancel,
     handleSaveToLibrary,
@@ -44,6 +47,10 @@ export default function App() {
     toggleAudioPlayer,
     isSaved,
     creditsExhausted,
+    isPreparingPreflight,
+    isPreflightOpen,
+    preflight,
+    preflightError,
   } = useAudioGenerationHandler();
 
   // ─── Classificação de rotas ──────────────────────────────
@@ -168,6 +175,15 @@ export default function App() {
         isExportingVideo={isExportingVideo}
         videoExportProgress={videoExportProgress}
         isVideoRoute={isVideoRoute}
+      />
+
+      <AudioPreflightDialog
+        open={isPreflightOpen}
+        loading={isPreparingPreflight}
+        preflight={preflight}
+        error={preflightError}
+        onClose={closePreflightDialog}
+        onConfirm={confirmGenerate}
       />
 
       {/* ActionBar — apenas nas rotas /app/estudio e /app/video */}

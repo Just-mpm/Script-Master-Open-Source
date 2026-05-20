@@ -13,9 +13,10 @@ async function* createMockStream(chunks: string[]): AsyncGenerator<string> {
 
 // --- Hoisted mocks (acessíveis dentro das factories de vi.mock) ---
 
-const { mockStreamFn, mockHttpsCallable } = vi.hoisted(() => ({
+const { mockStreamFn, mockHttpsCallable, mockCancelCallable } = vi.hoisted(() => ({
   mockStreamFn: vi.fn(),
   mockHttpsCallable: vi.fn(),
+  mockCancelCallable: vi.fn().mockResolvedValue({ data: { success: true } }),
 }));
 
 // --- Mocks ---
@@ -84,6 +85,19 @@ vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { uid: 'test-uid', email: 'test@test.com' } }),
 }));
 
+vi.mock('../../src/hooks/useCredits', () => ({
+  useCredits: () => ({
+    availableCredits: 100,
+    usedCredits: 0,
+    baseCredits: 100,
+    bonusCredits: 0,
+    feedbackBonusGranted: false,
+    unlimitedCredits: false,
+    loading: false,
+    error: null,
+  }),
+}));
+
 import { useAssistant } from '../../src/hooks/useAssistant';
 
 /** Wrapper com providers necessários para o hook */
@@ -124,9 +138,14 @@ describe('useAssistant', () => {
       '00000000-0000-4000-8000-000000000000' as ReturnType<typeof crypto.randomUUID>,
     );
 
-    // Configura o mock de httpsCallable para retornar objeto com .stream()
-    mockHttpsCallable.mockReturnValue({
-      stream: mockStreamFn,
+    mockHttpsCallable.mockImplementation((_: unknown, callableName: string) => {
+      if (callableName === 'cancelAiRequest') {
+        return mockCancelCallable;
+      }
+
+      return {
+        stream: mockStreamFn,
+      };
     });
 
     // Configura stream padrão
@@ -323,6 +342,37 @@ describe('useAssistant', () => {
     expect(errorMessages).toHaveLength(0);
   });
 
+  it('deve reenviar o retry sem incluir o fallback técnico no histórico', async () => {
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.loadSession({
+        id: 'retry-history-session',
+        userId: 'test-uid',
+        title: 'Sessão com fallback',
+        messages: [
+          { id: '1', role: 'user' as const, text: 'Primeira mensagem', attachments: [] },
+          { id: '2', role: 'model' as const, text: 'Resposta ok', attachments: [] },
+          { id: '3', role: 'user' as const, text: 'Segunda mensagem', attachments: [] },
+          { id: '4', role: 'model' as const, text: '__RETRY_DETECTED__ Falha temporária', attachments: [] },
+        ],
+        updatedAt: Date.now(),
+      });
+    });
+
+    mockStreamFn.mockClear();
+
+    await act(async () => {
+      result.current.retryLastMessage();
+      await Promise.resolve();
+    });
+
+    const retryInput = mockStreamFn.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
+    const retryHistory = retryInput?.history as Array<{ text: string }> | undefined;
+
+    expect(retryHistory?.some((message) => message.text.includes('__RETRY_DETECTED__'))).toBe(false);
+  });
+
   it('não deve alterar mensagens via retryLastMessage quando não há erro com marker', () => {
     const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
 
@@ -430,5 +480,71 @@ describe('useAssistant', () => {
 
     // O erro NÃO deve aparecer (abortos são silenciosos)
     expect(result.current.error).toBeNull();
+    expect(mockCancelCallable).toHaveBeenCalledWith({
+      requestId: '00000000-0000-4000-8000-000000000000',
+    });
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.isStreaming).toBe(false);
+      });
+    });
+
+    const transientAssistantMessages = result.current.messages.filter(
+      (message) => message.role === 'model' && message.id !== 'welcome',
+    );
+    expect(transientAssistantMessages).toHaveLength(0);
+  });
+
+  it('deve solicitar cancelamento remoto ao iniciar novo chat durante streaming', async () => {
+    // eslint-disable-next-line require-yield
+    async function* infiniteStream(): AsyncGenerator<string> {
+      await new Promise(() => {});
+      yield '';
+    }
+
+    mockStreamFn.mockResolvedValue({
+      stream: infiniteStream(),
+      data: new Promise(() => {}),
+    });
+
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    act(() => {
+      void result.current.sendMessage('Mensagem longa');
+    });
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
+      });
+    });
+
+    act(() => {
+      result.current.startNewChat();
+    });
+
+    expect(mockCancelCallable).toHaveBeenCalledWith({
+      requestId: '00000000-0000-4000-8000-000000000000',
+    });
+  });
+
+  it('deve marcar créditos esgotados quando receber details estruturado do backend', async () => {
+    mockStreamFn.mockRejectedValue({
+      code: 'functions/failed-precondition',
+      message: 'Créditos insuficientes',
+      details: {
+        code: 'INSUFFICIENT_CREDITS',
+      },
+    });
+
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.sendMessage('Mensagem que vai falhar por saldo');
+    });
+
+    expect(result.current.creditsExhausted).toBe(true);
   });
 });

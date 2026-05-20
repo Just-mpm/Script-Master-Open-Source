@@ -26,14 +26,26 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { randomUUID } from 'node:crypto';
 import { ai } from '../genkit/genkit.js';
+import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { AudioInputSchema, AudioOutputSchema } from '../genkit/schemas/common.js';
 import {
   calculateCreditCost,
+  finishAiRequest,
+  getCreditAvailabilitySnapshot,
   isRequestIdValid,
+  startAiRequest,
+  throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { CHUNK_LIMIT, PACE_INSTRUCTIONS, EMOTION_INSTRUCTIONS } from '../genkit/constants.js';
 import { splitTextProgrammatically } from '../genkit/utils/chunking.js';
+
+interface AudioSegment {
+  text: string;
+  startSec: number;
+  endSec: number;
+  chunkIndex: number;
+}
 
 /** Taxa de amostragem do áudio gerado (24kHz) */
 const SAMPLE_RATE = 24000;
@@ -150,7 +162,9 @@ function extractPcmFromDataUrl(dataUrl: string): Buffer {
 export const audio = onCallGenkit(
   {
     authPolicy: isSignedIn(),
+    cors: APP_ALLOWED_CORS_ORIGINS,
     enforceAppCheck: true,
+    invoker: 'public',
     region: 'southamerica-east1',
   },
   ai.defineFlow(
@@ -179,48 +193,79 @@ export const audio = onCallGenkit(
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
       }
       const requestId = input.requestId ?? randomUUID();
+      const creditSnapshot = await getCreditAvailabilitySnapshot(db, uid);
+      let requestStarted = false;
+      let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
+      let creditsSettled = false;
 
-      // ------------------------------------------------------------------
-      // 1. Reserva créditos via helper withCreditMetering()
-      //
-      // Usa o helper manual em vez do middleware porque o fluxo de áudio
-      // tem múltiplas chamadas internas a ai.generate() (chunking + TTS
-      // por chunk) que NÃO devem disparar metering individual.
-      // ------------------------------------------------------------------
-      const creditMeter = await withCreditMetering(
-        db,
-        uid,
-        requestId,
-        'audio',
-        { script: input.script },
-      );
-
-      // ------------------------------------------------------------------
-      // 2. Divide o script em chunks
-      // ------------------------------------------------------------------
-      let chunks: string[];
       try {
-        chunks = await chunkScript(input.script, CHUNK_LIMIT);
-      } catch (chunkErr) {
-        console.error(`[audio] Falha no chunking: ${chunkErr instanceof Error ? chunkErr.message : 'desconhecido'}`);
-        await creditMeter.revert('CHUNKING_FAILED');
-        throw new HttpsError(
-          'internal',
-          'Falha ao dividir o roteiro em partes. Tente novamente.',
-        );
-      }
+        await startAiRequest(db, uid, requestId, 'audio');
+        requestStarted = true;
 
-      // ------------------------------------------------------------------
-      // 3. Prepara o prompt base (instruções comuns)
-      // ------------------------------------------------------------------
-      const {
-        voiceConfig,
-        isMultiSpeaker = false,
-        multiSpeakerConfig,
-        audioProfile,
-        scene,
-        styleNotes,
-      } = input;
+        if (
+          input.preflight &&
+          !creditSnapshot.unlimitedCredits &&
+          input.preflight.unlimited === false &&
+          creditSnapshot.availableCredits < input.preflight.totalPlanned &&
+          input.preflight.availableCredits >= input.preflight.totalPlanned
+        ) {
+          throw new HttpsError(
+            'failed-precondition',
+            'Seu saldo mudou depois da prévia. Revise a geração antes de continuar.',
+            {
+              code: 'CREDITS_CHANGED_AFTER_PREFLIGHT',
+              currentAvailableCredits: creditSnapshot.availableCredits,
+              expectedAvailableCredits: input.preflight.availableCredits,
+              plannedTotalCredits: input.preflight.totalPlanned,
+            },
+          );
+        }
+
+        await throwIfAiCancellationRequested(db, uid, requestId);
+
+        // ------------------------------------------------------------------
+        // 1. Reserva créditos via helper withCreditMetering()
+        //
+        // Usa o helper manual em vez do middleware porque o fluxo de áudio
+        // tem múltiplas chamadas internas a ai.generate() (chunking + TTS
+        // por chunk) que NÃO devem disparar metering individual.
+        // ------------------------------------------------------------------
+        creditMeter = await withCreditMetering(
+          db,
+          uid,
+          requestId,
+          'audio',
+          { script: input.script },
+        );
+
+        // ------------------------------------------------------------------
+        // 2. Divide o script em chunks
+        // ------------------------------------------------------------------
+        let chunks: string[];
+        try {
+          chunks = await chunkScript(input.script, CHUNK_LIMIT);
+        } catch (chunkErr) {
+          console.error(`[audio] Falha no chunking: ${chunkErr instanceof Error ? chunkErr.message : 'desconhecido'}`);
+          await creditMeter.revert('CHUNKING_FAILED');
+          creditsSettled = true;
+          throw new HttpsError(
+            'internal',
+            'Falha ao dividir o roteiro em partes. Tente novamente.',
+          );
+        }
+        await throwIfAiCancellationRequested(db, uid, requestId);
+
+        // ------------------------------------------------------------------
+        // 3. Prepara o prompt base (instruções comuns)
+        // ------------------------------------------------------------------
+        const {
+          voiceConfig,
+          isMultiSpeaker = false,
+          multiSpeakerConfig,
+          audioProfile,
+          scene,
+          styleNotes,
+        } = input;
 
       const pace = voiceConfig.pace ?? 'normal';
       const emotion = voiceConfig.emotion ?? 'neutral';
@@ -235,10 +280,10 @@ export const audio = onCallGenkit(
         ? `### TOM EMOCIONAL\n* ${emotionInstructionText} Intensidade: ${(emotionIntensity * 100).toFixed(0)}%.`
         : '';
 
-      // ------------------------------------------------------------------
-      // 4. Configura speechConfig (single ou multi-speaker)
-      // ------------------------------------------------------------------
-      const speechConfig = isMultiSpeaker
+        // ------------------------------------------------------------------
+        // 4. Configura speechConfig (single ou multi-speaker)
+        // ------------------------------------------------------------------
+        const speechConfig = isMultiSpeaker
         ? {
             multiSpeakerVoiceConfig: {
               speakerVoiceConfigs: [
@@ -265,14 +310,17 @@ export const audio = onCallGenkit(
             },
           };
 
-      // ------------------------------------------------------------------
-      // 5. Gera áudio para cada chunk
-      // ------------------------------------------------------------------
-      const pcmBuffers: Buffer[] = [];
-      let totalPcmLength = 0;
+        // ------------------------------------------------------------------
+        // 5. Gera áudio para cada chunk
+        // ------------------------------------------------------------------
+        const pcmBuffers: Buffer[] = [];
+        const generatedSegments: AudioSegment[] = [];
+        let totalPcmLength = 0;
+        let currentStartSec = 0;
 
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
+        for (let i = 0; i < chunks.length; i++) {
+          await throwIfAiCancellationRequested(db, uid, requestId);
+          const chunk = chunks[i];
 
         // Contexto de continuidade para chunks após o primeiro
         const continuityContext = i > 0
@@ -304,6 +352,7 @@ export const audio = onCallGenkit(
               speechConfig,
             } as Record<string, unknown>,
           });
+          await throwIfAiCancellationRequested(db, uid, requestId);
 
           const mediaUrl = response.media?.url;
           if (!mediaUrl) {
@@ -314,28 +363,39 @@ export const audio = onCallGenkit(
           pcmBuffers.push(pcmBuffer);
           totalPcmLength += pcmBuffer.length;
 
+          const chunkDurationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
+          generatedSegments.push({
+            text: chunk,
+            startSec: currentStartSec,
+            endSec: currentStartSec + chunkDurationSec,
+            chunkIndex: i,
+          });
+          currentStartSec += chunkDurationSec;
+
         } catch (chunkErr) {
           const errorMessage = chunkErr instanceof Error ? chunkErr.message : 'Erro desconhecido';
           console.error(`[audio] Falha no chunk ${i + 1}/${chunks.length}: ${errorMessage}`);
 
           // Reverte créditos em caso de falha
           await creditMeter.revert('TTS_CHUNK_FAILED');
+          creditsSettled = true;
 
           throw new HttpsError(
             'internal',
             `Falha ao gerar áudio (parte ${i + 1} de ${chunks.length}). Tente novamente.`,
           );
         }
-      }
+        }
 
-      // ------------------------------------------------------------------
-      // 6. Concatena PCM e cria WAV
-      // ------------------------------------------------------------------
-      const combinedPcm = Buffer.concat(pcmBuffers);
-      const wavBuffer = createWavBuffer(combinedPcm, SAMPLE_RATE);
+        // ------------------------------------------------------------------
+        // 6. Concatena PCM e cria WAV
+        // ------------------------------------------------------------------
+        const combinedPcm = Buffer.concat(pcmBuffers);
+        const wavBuffer = createWavBuffer(combinedPcm, SAMPLE_RATE);
+        await throwIfAiCancellationRequested(db, uid, requestId);
 
-      // Calcula duração: PCM 24kHz 16-bit mono = 48000 bytes por segundo
-      const durationInSeconds = totalPcmLength / (SAMPLE_RATE * 2); // 2 bytes por amostra (16-bit)
+        // Calcula duração: PCM 24kHz 16-bit mono = 48000 bytes por segundo
+        const durationInSeconds = totalPcmLength / (SAMPLE_RATE * 2); // 2 bytes por amostra (16-bit)
 
       // ------------------------------------------------------------------
       // 7. Decide entre base64 (resposta direta) ou Storage (URL signed)
@@ -348,58 +408,90 @@ export const audio = onCallGenkit(
       let audioBase64: string | undefined;
       let audioUrl: string | undefined;
 
-      if (wavBuffer.length > LARGE_AUDIO_THRESHOLD) {
-        const bucket = getStorage().bucket();
-        const storagePath = `users/${uid}/audio/${requestId}.wav`;
-        const file = bucket.file(storagePath);
+        if (wavBuffer.length > LARGE_AUDIO_THRESHOLD) {
+          const bucket = getStorage().bucket();
+          const storagePath = `users/${uid}/audio/${requestId}.wav`;
+          const file = bucket.file(storagePath);
 
-        await file.save(wavBuffer, {
-          metadata: { contentType: 'audio/wav' },
-          resumable: false,
+          await file.save(wavBuffer, {
+            metadata: { contentType: 'audio/wav' },
+            resumable: false,
+          });
+
+          const [signedUrl] = await file.getSignedUrl({
+            version: 'v4',
+            action: 'read',
+            expires: Date.now() + 1000 * 60 * 60 * 24, // 24 horas
+          });
+
+          audioUrl = signedUrl;
+          console.log(
+            `[audio] Áudio grande — upload para Storage: ` +
+            `path=${storagePath} size=${(wavBuffer.length / 1024 / 1024).toFixed(1)}MB`,
+          );
+        } else {
+          audioBase64 = wavBuffer.toString('base64');
+        }
+
+        // ------------------------------------------------------------------
+        // 8. Confirma créditos com o custo real
+        // ------------------------------------------------------------------
+        const finalCredits = calculateCreditCost({
+          operationType: 'audio',
+          inputChars: input.script.length,
         });
 
-        const [signedUrl] = await file.getSignedUrl({
-          version: 'v4',
-          action: 'read',
-          expires: Date.now() + 1000 * 60 * 60 * 24, // 24 horas
+        await creditMeter.confirm({
+          finalCredits,
+          outputSize: totalPcmLength,
+          model: TTS_MODEL,
+        });
+        creditsSettled = true;
+        await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
+          console.error(
+            `[audio] Falha ao finalizar ai_request com sucesso: ` +
+            `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
+          );
         });
 
-        audioUrl = signedUrl;
         console.log(
-          `[audio] Áudio grande — upload para Storage: ` +
-          `path=${storagePath} size=${(wavBuffer.length / 1024 / 1024).toFixed(1)}MB`,
+          `[audio] Geração concluída: uid=${uid} chunks=${chunks.length} ` +
+          `duração=${durationInSeconds.toFixed(1)}s pcm=${totalPcmLength}bytes ` +
+          `créditos=${finalCredits} viaStorage=${audioUrl ? 'sim' : 'não'}`,
         );
-      } else {
-        audioBase64 = wavBuffer.toString('base64');
+
+        return {
+          audioBase64,
+          audioUrl,
+          mimeType: 'audio/wav',
+          durationInSeconds: Math.round(durationInSeconds * 100) / 100,
+          chunks: chunks.length,
+          segments: generatedSegments,
+        };
+      } catch (error) {
+        const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
+
+        if (creditMeter && !creditsSettled) {
+          await creditMeter.revert(errorCode);
+        }
+
+        if (requestStarted) {
+          await finishAiRequest(
+            db,
+            uid,
+            requestId,
+            error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
+            errorCode,
+          ).catch((finishError: unknown) => {
+            console.error(
+              `[audio] Falha ao finalizar ai_request com erro: ` +
+              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
+            );
+          });
+        }
+
+        throw error;
       }
-
-      // ------------------------------------------------------------------
-      // 8. Confirma créditos com o custo real
-      // ------------------------------------------------------------------
-      const finalCredits = calculateCreditCost({
-        operationType: 'audio',
-        inputChars: input.script.length,
-      });
-
-      await creditMeter.confirm({
-        finalCredits,
-        outputSize: totalPcmLength,
-        model: TTS_MODEL,
-      });
-
-      console.log(
-        `[audio] Geração concluída: uid=${uid} chunks=${chunks.length} ` +
-        `duração=${durationInSeconds.toFixed(1)}s pcm=${totalPcmLength}bytes ` +
-        `créditos=${finalCredits} viaStorage=${audioUrl ? 'sim' : 'não'}`,
-      );
-
-      return {
-        audioBase64,
-        audioUrl,
-        mimeType: 'audio/wav',
-        durationInSeconds: Math.round(durationInSeconds * 100) / 100,
-        chunks: chunks.length,
-      };
     },
   ),
 );

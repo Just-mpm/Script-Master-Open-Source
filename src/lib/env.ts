@@ -25,7 +25,9 @@ type OptionalEnvName =
   | 'VITE_STRIPE_PUBLISHABLE_KEY'
   | 'VITE_PEXELS_API_KEY'
   | 'VITE_BILLING_ENABLED'
-  | 'VITE_OPEN_BETA_ENABLED';
+  | 'VITE_OPEN_BETA_ENABLED'
+  | 'VITE_APP_CHECK_DEBUG_TOKEN'
+  | 'VITE_USE_EMULATORS';
 
 function readRequiredEnv(name: RequiredEnvName): string {
   const value = import.meta.env[name];
@@ -67,6 +69,11 @@ export function isBillingEnabled(): boolean {
 export function isOpenBetaEnabled(): boolean {
   // Se não definida, default true (beta aberto)
   return (import.meta.env.VITE_OPEN_BETA_ENABLED as string) !== 'false';
+}
+
+/** Token de depuração do App Check (desenvolvimento apenas — nunca em produção) */
+export function getAppCheckDebugToken(): string | undefined {
+  return readOptionalEnv('VITE_APP_CHECK_DEBUG_TOKEN');
 }
 
 export function getFirebaseEnvConfig(): FirebaseEnvConfig {

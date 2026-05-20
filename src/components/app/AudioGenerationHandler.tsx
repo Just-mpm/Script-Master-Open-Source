@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalAudioActions } from '../../contexts/AudioContext';
 import { useAudioGenerator } from '../../hooks/useAudioGenerator';
 import { MAX_CHARS } from '../../lib/constants';
 import { saveGeneration, type SavedAudio } from '../../lib/db';
 import { createLogger } from '../../lib/logger';
+import { functions } from '../../lib/firebase';
+import { getCallableErrorInfo } from '../../lib/callable-errors';
 import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from '../../features/studio/store';
 import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
+import type { AudioPreflightSummary } from './AudioPreflightDialog';
 
 const log = createLogger('AudioGenerationHandler');
 
@@ -21,6 +25,8 @@ interface AudioGenerationHandlerReturn {
   scenes: SceneItem[];
   // Handlers
   handleGenerate: () => void;
+  confirmGenerate: () => void;
+  closePreflightDialog: () => void;
   handleDownload: () => void;
   handleSaveToLibrary: () => void;
   handleCancel: () => void;
@@ -44,7 +50,21 @@ interface AudioGenerationHandlerReturn {
   isSaved: boolean;
   // Créditos esgotados
   creditsExhausted: boolean;
+  isPreparingPreflight: boolean;
+  isPreflightOpen: boolean;
+  preflight: AudioPreflightSummary | null;
+  preflightError: string | null;
 }
+
+type BuiltGenerateOptions = ReturnType<typeof buildGenerateOptions>;
+
+type AudioPreflightInput = BuiltGenerateOptions & {
+  preflight?: {
+    availableCredits: number;
+    totalPlanned: number;
+    unlimited: boolean;
+  };
+};
 
 // ─── Hook ──────────────────────────────────────────────────
 
@@ -83,9 +103,23 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
 
   // ─── Estado de config do store (Zustand) ──────────────────
   const script = useStudioStore((s) => s.script);
+  const audioPreflightCallable = useMemo(
+    () => httpsCallable<AudioPreflightInput, AudioPreflightSummary>(functions, 'audioPreflight'),
+    [],
+  );
+
+  // ─── UI state transitório ─────────────────────────────────
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isPreparingPreflight, setIsPreparingPreflight] = useState(false);
+  const [isPreflightOpen, setIsPreflightOpen] = useState(false);
+  const [preflight, setPreflight] = useState<AudioPreflightSummary | null>(null);
+  const [preflightError, setPreflightError] = useState<string | null>(null);
+  const [pendingGenerateOptions, setPendingGenerateOptions] = useState<AudioPreflightInput | null>(null);
+  const preflightRequestTokenRef = useRef(0);
 
   // Derivações para ActionBar e atalhos
-  const isGenerateDisabled = isGenerating || !script.trim() || script.length > MAX_CHARS;
+  const isGenerateDisabled = isGenerating || isPreparingPreflight || creditsExhausted || !script.trim() || script.length > MAX_CHARS;
   const durationInFrames = useMemo(
     () => Math.round(durationInSeconds * VIDEO_FPS),
     [durationInSeconds],
@@ -95,10 +129,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   useEffect(() => {
     setDurationOverride(durationInSeconds > 0 ? durationInSeconds : null);
   }, [durationInSeconds, setDurationOverride]);
-
-  // ─── UI state transitório ─────────────────────────────────
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
 
   // Bridge store — lê apenas as slices necessárias (evita re-render 30x/s)
   const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
@@ -121,8 +151,65 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   // handleGenerate: lê config do store via getState() no momento da execução.
   // Deps apenas em generateAudio (estável via useCallback) e userId.
   const handleGenerate = useCallback(() => {
-    generateAudio(buildGenerateOptions(userId, useStudioStore.getState()));
-  }, [generateAudio, userId]);
+    if (isGenerating || isPreparingPreflight) return;
+
+    const options = buildGenerateOptions(userId, useStudioStore.getState());
+    setPendingGenerateOptions(options);
+    setPreflight(null);
+    setPreflightError(null);
+    setIsPreflightOpen(true);
+    setIsPreparingPreflight(true);
+    const requestToken = preflightRequestTokenRef.current + 1;
+    preflightRequestTokenRef.current = requestToken;
+
+    void audioPreflightCallable(options)
+      .then((result) => {
+        if (preflightRequestTokenRef.current !== requestToken) return;
+        setPreflight(result.data);
+      })
+      .catch((preflightErr: unknown) => {
+        if (preflightRequestTokenRef.current !== requestToken) return;
+        log.error('Erro ao preparar prévia da geração', { error: preflightErr });
+        const errorInfo = getCallableErrorInfo(preflightErr);
+        setPreflightError(
+          errorInfo.detailCode === 'INSUFFICIENT_CREDITS'
+            ? 'Seu saldo atual não cobre todas as etapas previstas desta geração.'
+            : 'Não foi possível montar a prévia da geração agora. Tente novamente em instantes.',
+        );
+      })
+      .finally(() => {
+        if (preflightRequestTokenRef.current !== requestToken) return;
+        setIsPreparingPreflight(false);
+      });
+  }, [audioPreflightCallable, isGenerating, isPreparingPreflight, userId]);
+
+  const closePreflightDialog = useCallback(() => {
+    preflightRequestTokenRef.current += 1;
+    setIsPreflightOpen(false);
+    setIsPreparingPreflight(false);
+    setPreflight(null);
+    setPreflightError(null);
+    setPendingGenerateOptions(null);
+  }, []);
+
+  const confirmGenerate = useCallback(() => {
+    if (!pendingGenerateOptions || !preflight || !preflight.canProceed) return;
+
+    const nextOptions: AudioPreflightInput = {
+      ...pendingGenerateOptions,
+      preflight: {
+        availableCredits: preflight.credits.available,
+        totalPlanned: preflight.credits.totalPlanned,
+        unlimited: preflight.credits.unlimited,
+      },
+    };
+
+    setIsPreflightOpen(false);
+    setPreflight(null);
+    setPreflightError(null);
+    setPendingGenerateOptions(null);
+    generateAudio(nextOptions);
+  }, [generateAudio, pendingGenerateOptions, preflight]);
 
   const handleDownload = useCallback(() => {
     if (!audioUrl) return;
@@ -202,6 +289,8 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     audioBlob,
     scenes,
     handleGenerate,
+    confirmGenerate,
+    closePreflightDialog,
     handleDownload,
     handleSaveToLibrary,
     handleCancel,
@@ -219,5 +308,9 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     toggleAudioPlayer: toggle,
     isSaved,
     creditsExhausted,
+    isPreparingPreflight,
+    isPreflightOpen,
+    preflight,
+    preflightError,
   };
 }

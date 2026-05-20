@@ -12,6 +12,8 @@
 // Consumido por todos os flows e utilitários de IA no backend.
 // ---------------------------------------------------------------------------
 
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { genkit, generateMiddleware } from 'genkit';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
@@ -38,17 +40,30 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 enableFirebaseTelemetry({
   // Intervalo de exportação de métricas (padrão: 5 min)
-  // Reduzido para 1 min para dashboards mais responsivos em produção
-  metricExportIntervalMillis: 60_000,
+  // Deve ser >= metricExportTimeoutMillis (padrão do OTel: 30s).
+  // O exportTimeoutMillis padrão do @genkit-ai/google-cloud pode ser maior
+  // que 60s em certas versões, causando crash no deploy. Usamos 5 min para
+  // garantir compatibilidade com qualquer timeout razoável.
+  metricExportIntervalMillis: 300_000,
+  // Timeout explícito: 4 min, garantindo que interval (5 min) >= timeout (4 min)
+  metricExportTimeoutMillis: 240_000,
 });
 
 // ---------------------------------------------------------------------------
 // Instância única do Genkit
 // ---------------------------------------------------------------------------
 
+// Resolve o diretório de prompts relativo a este arquivo.
+// No source:  functions/src/genkit/genkit.ts  → ../prompts = functions/src/prompts/
+// No build:   functions/dist/genkit/genkit.js  → ../prompts = functions/dist/prompts/
+// Elimina dependência do CWD — funciona em qualquer ambiente.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const promptDir = join(__dirname, '..', 'prompts');
+
 /** Instância única do Genkit compartilhada por todos os flows */
 export const ai = genkit({
   plugins: [googleAI()],
+  promptDir,
 });
 
 // ---------------------------------------------------------------------------

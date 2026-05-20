@@ -34,6 +34,7 @@ import { generateMiddleware, z } from 'genkit';
 import type { GenerateRequest, GenerateResponseData } from 'genkit/model';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
+import { HttpsError } from 'firebase-functions/v2/https';
 import {
   estimateCredits,
   reserveCredits,
@@ -42,6 +43,38 @@ import {
   calculateCreditCost,
   type OperationType,
 } from '../../usage/index.js';
+
+function createReserveError(error?: string): HttpsError {
+  if (error === 'Saldo insuficiente') {
+    return new HttpsError(
+      'failed-precondition',
+      'Créditos insuficientes para concluir esta operação.',
+      { code: 'INSUFFICIENT_CREDITS' },
+    );
+  }
+
+  if (error === 'Requisição duplicada') {
+    return new HttpsError(
+      'already-exists',
+      'Esta requisição já foi processada.',
+      { code: 'DUPLICATE_REQUEST' },
+    );
+  }
+
+  return new HttpsError(
+    'internal',
+    'Não foi possível reservar créditos para esta operação.',
+    { code: 'CREDIT_RESERVATION_FAILED', reason: error ?? 'UNKNOWN' },
+  );
+}
+
+function createConfirmError(error?: string): HttpsError {
+  return new HttpsError(
+    'internal',
+    'Não foi possível confirmar os créditos desta operação.',
+    { code: 'CREDIT_CONFIRMATION_FAILED', reason: error ?? 'UNKNOWN' },
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Config Schema
@@ -214,9 +247,7 @@ export const creditMeteringMiddleware = generateMiddleware(
       );
 
       if (!reserveResult.success) {
-        throw new Error(
-          `[credit-metering] Falha na reserva: ${reserveResult.error ?? 'desconhecido'}`,
-        );
+        throw createReserveError(reserveResult.error);
       }
 
       // ------------------------------------------------------------------
@@ -251,19 +282,18 @@ export const creditMeteringMiddleware = generateMiddleware(
             | string
             | undefined;
 
-        await confirmCredits(
+        const confirmResult = await confirmCredits(
           db,
           uid,
           requestId,
           finalCredits,
           outputChars,
           model,
-        ).catch((err: unknown) => {
-          console.error(
-            `[credit-metering] Falha ao confirmar créditos: ` +
-              `${err instanceof Error ? err.message : 'desconhecido'}`,
-          );
-        });
+        );
+
+        if (!confirmResult.success) {
+          throw createConfirmError(confirmResult.error);
+        }
 
         return response;
       } catch (error) {
@@ -340,28 +370,25 @@ export async function withCreditMetering(
   );
 
   if (!reserveResult.success) {
-    throw new Error(
-      `[credit-metering] Falha na reserva: ${reserveResult.error ?? 'desconhecido'}`,
-    );
+    throw createReserveError(reserveResult.error);
   }
 
   return {
     requestId,
     estimated,
     confirm: async ({ finalCredits, outputSize, model }) => {
-      await confirmCredits(
+      const confirmResult = await confirmCredits(
         db,
         uid,
         requestId,
         finalCredits,
         outputSize,
         model,
-      ).catch((err: unknown) => {
-        console.error(
-          `[credit-metering] Falha ao confirmar créditos: ` +
-            `${err instanceof Error ? err.message : 'desconhecido'}`,
-        );
-      });
+      );
+
+      if (!confirmResult.success) {
+        throw createConfirmError(confirmResult.error);
+      }
     },
     revert: async (errorCode) => {
       await revertCredits(db, uid, requestId, errorCode).catch(() => {});

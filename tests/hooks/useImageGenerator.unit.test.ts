@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+const { mockImageCallable, mockCancelCallable, mockHttpsCallable } = vi.hoisted(() => ({
+  mockImageCallable: vi.fn(),
+  mockCancelCallable: vi.fn().mockResolvedValue({ data: { success: true } }),
+  mockHttpsCallable: vi.fn(),
+}));
+
 // --- Mocks ---
 
 vi.mock('../../src/lib/env', () => ({
@@ -37,11 +43,38 @@ vi.mock('../../src/lib/logger', () => ({
   }),
 }));
 
+vi.mock('../../src/hooks/useCredits', () => ({
+  useCredits: () => ({
+    availableCredits: 100,
+    usedCredits: 0,
+    baseCredits: 100,
+    bonusCredits: 0,
+    feedbackBonusGranted: false,
+    unlimitedCredits: false,
+    loading: false,
+    error: null,
+  }),
+}));
+
+vi.mock('firebase/functions', () => ({
+  httpsCallable: mockHttpsCallable,
+}));
+
+vi.mock('../../src/lib/firebase', () => ({
+  functions: {},
+}));
+
 import { useImageGenerator } from '../../src/hooks/useImageGenerator';
 
 describe('useImageGenerator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHttpsCallable.mockImplementation((_: unknown, callableName: string) => {
+      if (callableName === 'cancelAiRequest') {
+        return mockCancelCallable;
+      }
+      return mockImageCallable;
+    });
   });
 
   afterEach(() => {
@@ -77,7 +110,31 @@ describe('useImageGenerator', () => {
     expect(result.current.error).toBeNull();
   });
 
-  // REM-002: Testes de geração de imagem removidos — o mock de vi.mock('rate-limiter')
-  // não é interceptado corretamente pelo hook (hoisting issues com factory functions).
-  // A lógica de clearImage e estados iniciais são cobertos aqui.
+  it('deve solicitar cancelamento remoto da imagem em andamento', async () => {
+    mockImageCallable.mockImplementation(async () => {
+      await new Promise(() => {});
+      return { data: { imageBase64: 'abc', mimeType: 'image/png' } };
+    });
+
+    const { result } = renderHook(() => useImageGenerator());
+
+    act(() => {
+      void result.current.generateImage({
+        prompt: 'Uma imagem',
+        aspectRatio: '1:1',
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleCancel();
+    });
+
+    expect(mockCancelCallable).toHaveBeenCalledWith({
+      requestId: expect.any(String),
+    });
+  });
 });

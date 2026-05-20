@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.38.0",
+  "version": "0.39.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -13,9 +13,15 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "bun run build && firebase deploy --only hosting",
+    "deploy": "bun run build && cd functions && npm run build && cd .. && firebase deploy",
+    "deploy:hosting": "bun run build && firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:storage": "firebase deploy --only storage",
+    "deploy:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
     "deploy:preview": "bun run build && firebase hosting:channel:deploy preview",
-    "deploy:all": "bun run build && cd functions && bun run deploy && cd .. && firebase deploy --only hosting"
+    "emulators": "firebase emulators:start",
+    "emulators:functions": "firebase emulators:start --only functions",
+    "emulators:ui": "firebase emulators:start --only ui"
   },
   "dependencies": {
     "@dnd-kit/helpers": "^0.4.0",
