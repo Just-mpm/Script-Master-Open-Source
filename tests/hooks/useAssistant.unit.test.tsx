@@ -19,6 +19,19 @@ const { mockStreamFn, mockHttpsCallable, mockCancelCallable } = vi.hoisted(() =>
   mockCancelCallable: vi.fn().mockResolvedValue({ data: { success: true } }),
 }));
 
+const mockCreditsState = vi.hoisted(() => ({
+  availableCredits: 100,
+  usedCredits: 0,
+  reservedCredits: 0,
+  baseCredits: 100,
+  bonusCredits: 0,
+  feedbackBonusGranted: false,
+  unlimitedCredits: false,
+  canEnforceBalance: true,
+  loading: false,
+  error: null as string | null,
+}));
+
 // --- Mocks ---
 
 vi.mock('firebase/functions', () => ({
@@ -86,19 +99,11 @@ vi.mock('../../src/contexts/AuthContext', () => ({
 }));
 
 vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({
-    availableCredits: 100,
-    usedCredits: 0,
-    baseCredits: 100,
-    bonusCredits: 0,
-    feedbackBonusGranted: false,
-    unlimitedCredits: false,
-    loading: false,
-    error: null,
-  }),
+  useCredits: () => ({ ...mockCreditsState }),
 }));
 
 import { useAssistant } from '../../src/hooks/useAssistant';
+import type { AssistantStudioState } from '../../src/features/assistant/types';
 
 /** Wrapper com providers necessários para o hook */
 function createWrapper() {
@@ -109,6 +114,16 @@ function createWrapper() {
 
 describe('useAssistant', () => {
   beforeEach(() => {
+    mockCreditsState.availableCredits = 100;
+    mockCreditsState.usedCredits = 0;
+    mockCreditsState.reservedCredits = 0;
+    mockCreditsState.baseCredits = 100;
+    mockCreditsState.bonusCredits = 0;
+    mockCreditsState.feedbackBonusGranted = false;
+    mockCreditsState.unlimitedCredits = false;
+    mockCreditsState.canEnforceBalance = true;
+    mockCreditsState.loading = false;
+    mockCreditsState.error = null;
     vi.clearAllMocks();
 
     // Stubs globais por teste (limpos no afterEach via unstubAllGlobals)
@@ -222,6 +237,44 @@ describe('useAssistant', () => {
     expect(typeof callInput.requestId).toBe('string');
   });
 
+  it('deve enviar o contexto atual do estúdio para o backend', async () => {
+    const currentState: AssistantStudioState = {
+      script: 'Roteiro de teste',
+      selectedVoice: 'Zephyr',
+      isMultiSpeaker: true,
+      speakerAName: 'Narrador',
+      speakerBName: 'Convidado',
+      speakerBVoice: 'Puck',
+      audioProfile: 'Documental',
+      scene: 'Estúdio escuro',
+      pace: 'normal',
+      styleNotes: 'Tom confiante',
+      generateScenes: true,
+      sceneRatio: '16:9',
+      sceneDensity: 12,
+      visualFramework: 'general',
+      referenceImage: null,
+      emotion: 'dramatic',
+      emotionIntensity: 0.8,
+      imageTextLanguage: 'pt-BR',
+    };
+
+    const { result } = renderHook(() => useAssistant(currentState), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.sendMessage('Oi');
+    });
+
+    const callInput = mockStreamFn.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
+    const studioState = callInput?.studioState as Record<string, unknown> | undefined;
+
+    expect(studioState).toBeDefined();
+    expect(studioState?.script).toBe('Roteiro de teste');
+    expect(studioState?.speakerAName).toBe('Narrador');
+    expect(studioState?.speakerBName).toBe('Convidado');
+    expect(studioState?.speakerBVoice).toBe('Puck');
+  });
+
   it('deve acumular chunks de streaming na mensagem do assistente', async () => {
     // Configura stream com múltiplos chunks
     mockStreamFn.mockResolvedValue({
@@ -282,6 +335,36 @@ describe('useAssistant', () => {
     expect(result.current.messages).toHaveLength(2);
     expect(result.current.messages[0].text).toBe('Oi');
     expect(result.current.messages[1].text).toBe('Olá!');
+  });
+
+  it('deve normalizar attachments nulos ao carregar sessão e reenviar histórico', async () => {
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.loadSession({
+        id: 'legacy-session',
+        userId: 'test-uid',
+        title: 'Sessão legada',
+        messages: [
+          { id: '1', role: 'user' as const, text: 'Primeira', attachments: null as unknown as [] },
+          { id: '2', role: 'model' as const, text: 'Resposta anterior', attachments: null as unknown as [] },
+        ],
+        updatedAt: Date.now(),
+      });
+    });
+
+    mockStreamFn.mockClear();
+
+    await act(async () => {
+      await result.current.sendMessage('Segunda');
+    });
+
+    const callInput = mockStreamFn.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
+    const history = callInput?.history as Array<{ attachments?: unknown[] }> | undefined;
+
+    expect(Array.isArray(history)).toBe(true);
+    expect(Array.isArray(history?.[0]?.attachments)).toBe(true);
+    expect(Array.isArray(history?.[1]?.attachments)).toBe(true);
   });
 
   it('deve ignorar sendMessage com texto vazio e sem anexos', async () => {
@@ -546,5 +629,15 @@ describe('useAssistant', () => {
     });
 
     expect(result.current.creditsExhausted).toBe(true);
+  });
+
+  it('não bloqueia por saldo quando o zero ainda não foi confirmado', () => {
+    mockCreditsState.availableCredits = 0;
+    mockCreditsState.canEnforceBalance = false;
+
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    expect(result.current.creditBlockedByBalance).toBe(false);
+    expect(result.current.creditsExhausted).toBe(false);
   });
 });

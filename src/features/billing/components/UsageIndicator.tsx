@@ -60,7 +60,7 @@ export function UsageIndicator({ resource, used, limit }: UsageIndicatorProps) {
     };
 
     return resourceLabels[resource] ?? resource;
-  }, [resource]);
+  }, [resource, t]);
 
   return (
     <Box sx={{ width: '100%' }}>

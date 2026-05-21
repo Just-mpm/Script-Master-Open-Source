@@ -71,6 +71,17 @@ interface AssistantFlowOutput {
   jsonSettings?: Record<string, unknown>;
 }
 
+function normalizeAttachments(attachments: Attachment[] | null | undefined): Attachment[] {
+  return Array.isArray(attachments) ? attachments : [];
+}
+
+function normalizeChatMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    attachments: normalizeAttachments(message.attachments),
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Hook principal
 // ---------------------------------------------------------------------------
@@ -78,7 +89,7 @@ interface AssistantFlowOutput {
 export function useAssistant(currentState?: AssistantStudioState) {
   const { user } = useAuth();
   const { t } = useLocale();
-  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
+  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
 
   // Mapeador de erros recriado quando locale muda
   const toUserFriendlyAssistantError = useMemo(() => buildErrorMapper(t), [t]);
@@ -160,7 +171,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     };
   }, [requestRemoteCancellation]);
 
-  const isCreditBlocked = !!user && !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+  const isCreditBlocked = !!user && canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
 
   useEffect(() => {
     if (!isCreditBlocked) {
@@ -178,7 +189,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         id: currentSessionId,
         userId: user?.uid,
         title,
-        messages,
+        messages: normalizeChatMessages(messages),
         updatedAt: Date.now()
       };
 
@@ -282,7 +293,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     streamActiveRef.current = false;
 
     setCurrentSessionId(session.id);
-    setMessages(session.messages);
+    setMessages(normalizeChatMessages(session.messages));
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
@@ -329,10 +340,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
       const historySource = historyOverride ?? messages;
       const input: AssistantFlowInput = {
         message: text,
-        history: historySource.slice(1).map((msg) => ({
+        history: historySource.filter((msg) => msg.id !== 'welcome').map((msg) => ({
           role: msg.role,
           text: msg.text,
-          attachments: msg.attachments
+          attachments: normalizeAttachments(msg.attachments)
             ?.filter((attachment) => !!attachment.data)
             .map((attachment) => ({
               mimeType: attachment.mimeType,
@@ -341,12 +352,14 @@ export function useAssistant(currentState?: AssistantStudioState) {
             })),
         })),
         attachments: attachments
+          ? normalizeAttachments(attachments)
           ?.filter((att) => !!att.data)
           .map((att) => ({
             mimeType: att.mimeType,
             data: att.data!,
             name: att.name,
-        })),
+          }))
+          : undefined,
         studioState: currentState as Record<string, unknown> | undefined,
         requestId,
       };
@@ -474,6 +487,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     messages,
     currentState,
     assistantCallable,
+    removePendingAssistantPlaceholder,
     streamFallbackText,
     toUserFriendlyAssistantError,
   ]);
@@ -537,6 +551,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
+    creditBlockedByBalance: isCreditBlocked,
     creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

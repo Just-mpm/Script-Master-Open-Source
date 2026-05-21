@@ -35,6 +35,8 @@ import {
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { buildImageInstruction } from '../genkit/utils/assistant-context.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -77,13 +79,8 @@ export const images = onCallGenkit(
       inputSchema: ImageInputSchema,
       outputSchema: ImageOutputSchema,
     },
-    async (input) => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -122,7 +119,13 @@ export const images = onCallGenkit(
         const promptParts: Array<
           | { text: string }
           | { media: { url: string; contentType: string } }
-        > = [{ text: input.prompt }];
+        > = [{
+          text: buildImageInstruction({
+            prompt: input.prompt,
+            aspectRatio: input.aspectRatio,
+            hasReferenceImage: hasReference,
+          }),
+        }];
 
         if (hasReference && input.referenceImage) {
           promptParts.push({

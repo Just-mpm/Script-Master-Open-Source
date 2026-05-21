@@ -28,6 +28,9 @@ export interface StudioDraftState {
   script: string;
   selectedVoice: string;
   isMultiSpeaker: boolean;
+  speakerAName: string;
+  speakerBName: string;
+  speakerBVoice: string;
   audioProfile: string;
   scene: string;
   pace: string;

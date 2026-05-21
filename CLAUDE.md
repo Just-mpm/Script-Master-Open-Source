@@ -53,7 +53,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 |--------|-----|
 | `gemini-3.1-flash-tts-preview` | Text-to-speech |
 | `gemini-3.1-flash-image-preview` | Geração de imagens |
-| `gemini-3.1-flash-lite-preview` | Chunking de roteiros, prompts de cena, chat do assistente |
+| `gemini-3.1-flash-lite` | Chunking de roteiros, prompts de cena, chat do assistente |
 
 ## Convenções
 
@@ -147,7 +147,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/features/studio/store/audioGeneratorStore.ts`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/lib/audio.ts`, `functions/src/flows/audio.ts`, `functions/src/flows/chunking.ts`, `functions/src/flows/audio-preflight.ts`, `functions/src/usage/audio-preflight.ts` |
 | **Frontend** | `useAudioGenerator` chama Cloud Function `audio` via `httpsCallable` (Genkit). Tipos `AudioFlowInput`/`AudioFlowOutput`. Sem chamada direta ao Gemini |
 | **Backend (Genkit)** | Flow `audio.ts` — recebe script, voz, locale, emotion; faz chunking interno (se >500 chars via `chunking.ts`); chama Gemini TTS; retorna chunks de áudio base64. Middleware `credit-metering.ts` estima/reserva/confirma créditos. Flow `audio-preflight.ts` — pré-verifica créditos antes da geração |
-| **Chunking** | Se >500 chars, Cloud Function `chunking` divide via Dotprompt JSON output. Fallback: `splitTextProgrammatically` por sentenças (em `functions/src/genkit/utils/chunking.ts`) |
+| **Chunking** | Se >500 chars, Cloud Function `chunking` divide o roteiro via Genkit com output schema em código e instrução montada por `buildChunkingInstruction()`. Fallback: `splitTextProgrammatically` por sentenças (em `functions/src/genkit/utils/chunking.ts`) |
 | **Continuidade** | A partir do chunk 2, injeta "TAKES CONTÍNUOS" no prompt para manter tom/energia consistentes |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
 | **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
@@ -169,7 +169,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
-| **Prompts de cena** | `generateScenePrompts()` chama Cloud Function `scene-prompts` via `httpsCallable` (Genkit com Dotprompt). Gera descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
+| **Prompts de cena** | `generateScenePrompts()` chama Cloud Function `scene-prompts` via `httpsCallable` (Genkit com instrução gerada por `buildScenePromptsInstruction()` + output schema em código). Gera descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
 | **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels) |
 | **Créditos** | `CreditBlockedMessage` exibido no ImageStudio quando créditos estão esgotados |
@@ -223,14 +223,15 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/systemPrompt.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts` |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts`, `functions/src/genkit/utils/callable-auth.ts` |
 | **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming via Cloud Function `inline-assistant` (Genkit) e `VirtualElement` para posicionamento contextual (Popover) |
-| **Backend (Genkit)** | Chat principal usa Cloud Function `assistant` via `httpsCallable`. Inline assistant usa `inline-assistant`. Ambos com Dotprompts em `functions/src/prompts/` |
-| **Modelo** | `gemini-3.1-flash-lite-preview` (streaming via Genkit no backend) |
+| **Backend (Genkit)** | Chat principal usa Cloud Function `assistant` via `httpsCallable`. Inline assistant usa `inline-assistant`. As instruções agora são montadas em código por `assistant-context.ts`, sem arquivos `.prompt` separados |
+| **Modelo** | `gemini-3.1-flash-lite` (streaming via Genkit no backend) |
 | **UI centralizada** | `assistantUi.ts` — 13 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button); componentes internos importam de `assistantUi` em vez de `tokens.ts` |
 | **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
 | **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini (via backend). Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
-| **System prompt** | Montado dinamicamente via Dotprompt no backend: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
+| **System prompt** | Montado dinamicamente no backend por builders TypeScript em `assistant-context.ts`: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
+| **Auth callable** | Flows callable do Genkit combinam `authPolicy: isSignedIn()` com `getCallableUidOrThrow(flowContext)` para validar `context.auth.uid` no servidor |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
 | **Memórias** | Injetadas no system prompt. Curta: texto direto. Upload: `.md/.txt/.csv` até 500KB (truncado 490K chars) |
@@ -298,11 +299,12 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Planos** | Gratuito (limites base), Pro (R$ 49,90/mês), Business (R$ 149,90/mês) — definidos em `plans.ts`; `formatPrice()` para exibição |
 | **Store** | `useBillingStore` (Zustand) — plano ativo, uso, status de loading; carrega do Firestore (`users/{uid}/subscription/current`) via `onSnapshot` em tempo real; desabilitado quando `isBillingEnabled() === false` |
 | **Init** | `useBillingInit` — hook de inicialização, usado uma vez no AuthContext; escuta mudanças de auth para ativar/desativar billing listener |
-| **Componentes** | `PlanBadge` (chip de plano no Header), `UsageIndicator` (progress bar de uso), `UpgradeDialog` (dialog com cards de plano e redirect Stripe Checkout), `CreditBlockedMessage` (alerta de créditos esgotados), `CreditIndicator` (chip de créditos no Header) |
+| **Componentes** | `PlanBadge` (chip de plano no Header), `UsageIndicator` (progress bar de uso), `UpgradeDialog` (dialog com cards de plano e redirect Stripe Checkout), `CreditBlockedMessage` (alerta de créditos esgotados), `CreditIndicator` (chip de créditos no Header com estados `loading`, `syncing`, `error`, `unlimited`) |
 | **Utilitários** | `checkEntitlement(state, feature)` verifica se o plano permite a feature; `useIsFreePlan()`, `useIsStripeAvailable()`, `useHasActiveSubscription()` |
 | **Stripe client** | `src/lib/stripe.ts` — `loadStripe` lazy singleton; funciona sem key (plano Free); desabilitado quando `isBillingEnabled() === false` |
 | **Cloud Functions** | `functions/src/index.ts` — 3 endpoints Stripe: `stripeWebhook` (Express, eventos Stripe), `createCheckoutSession` (assinatura), `createPortalSession` (Customer Portal); endpoints retornam 503 quando `BILLING_ENABLED !== 'true'` |
 | **Credit system** | `functions/src/usage/` — `credit-service.ts` (estimar/reservar/confirmar/reverter, `getCreditAvailabilitySnapshot`, `hasUnlimitedCredits`), `credit-metering.ts` (middleware Genkit), `credit-estimator.ts`, `credit-policy.ts` (MONTHLY_BASE_CREDITS, FEEDBACK_BONUS_CREDITS), `credit-events.ts`, `period.ts`, `idempotency.ts`. Flow `credit-snapshot.ts` para snapshot em tempo real; `cancel-ai-request.ts` para cancelamento cooperativo; `ai-requests.ts` para rastreamento de requisições |
+| **Saldo no frontend** | `useCredits` agora usa uma store global Zustand para compartilhar listener do Firestore, snapshot callable, cooldown de falha e reconciliação com retry/backoff. O hook expõe `canEnforceBalance` para evitar bloqueio prematuro com saldo ainda não confirmado |
 | **Firestore indexes** | `stripeCustomerId` (ASC + DESC) na collection `users`; `credit_events` (status+createdAt, requestId, createdAt DESC) |
 | **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions), `VITE_BILLING_ENABLED=false`, `VITE_OPEN_BETA_ENABLED=true` |
 
@@ -417,7 +419,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.40.0`
+- **Current:** `0.40.1`
 - **Last release:** 2026-05-20
 
 ### Últimas mudanças (atualizado por /fast)
@@ -426,8 +428,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| 0.40.1 | **Hardening das callables + centralização das instruções Genkit + store global de créditos** — `callable-auth.ts` valida `context.auth.uid` em todos os flows callable; `assistant-context.ts` passa a gerar em código as instruções de chat, inline, chunking, TTS, imagem e cena; prompts estáticos em `functions/src/prompts/` removidos; `useCredits` vira store Zustand com reconciliação/cooldown e novo `canEnforceBalance`; `CreditIndicator` ganha estados de sincronização/erro/ilimitado; testes e auditoria de auth callable adicionados |
 | 0.40.0 | **Internacionalização massiva + centralização de dados legais** — `useLocale()` integrado em ~30 componentes com textos hardcoded; `useLocaleSafe()` para contextos sem provider; 12 novos namespaces i18n (`metrics`, `auth`, `notFound`, `audioPreflight`, `legal`, `errorBoundary`, etc.); `legalData.ts` centraliza dados de páginas legais; constantes de reconciliação em `useCredits` (MAX_RECONCILE_ATTEMPTS); `credit-snapshot` com try/catch; `credit-service` com etapas isoladas |
 | 0.39.0 | **Robustez IA: Callable errors, Audio Preflight, Cancel AI Request, Credit Snapshot, CORS config** — `callable-errors.ts` centraliza parsing de erros `httpsCallable`; `AudioPreflightDialog` exibe prévia de custo antes da geração; `cancel-ai-request` flow para cancelamento cooperativo; `credit-snapshot` flow com detecção de créditos ilimitados; `cors.ts` configuração centralizada de CORS; `assistant-context.ts` extraído; `ai-requests.ts` rastreamento de requisições; `VITE_APP_CHECK_DEBUG_TOKEN` para debug local; emuladores Firebase configurados; deploy granular por serviço; Dotprompts migrados para `functions/src/prompts/`; `VITE_USE_EMULATORS` para desenvolvimento local |
 | 0.38.0 | **Migração de IA para Cloud Functions com Genkit + sistema de créditos** — `@google/genai` removido do frontend; 8 flows de IA no backend (audio, images, assistant, inline-assistant, scene-prompts, chunking, feedback, ping) com Genkit e Dotprompts; sistema de créditos com middleware `credit-metering.ts`, `credit-service.ts`, `credit-policy.ts`; App Check com reCAPTCHA v3; modo Open Beta (`OPEN_BETA_ENABLED`); `CreditIndicator` e `CreditBlockedMessage` no frontend; PricingPage convertida para beta aberto; Firestore rules para `beta_access`, `credit_months`, `credit_events`, `feedback_rewards`; `VITE_GEMINI_API_KEY` removido do frontend |
 | 0.37.1 | **Guard de duração na exportação de vídeo** — `VideoExportPanel` agora desabilita o botão de exportar enquanto `durationInFrames <= 0`; `useVideoExporter` previne renderização sem duração carregada com erro; teste de regressão para o guard; novo arquivo de teste `useVideoExporter-speedpaint.unit.test.tsx` para cenas de speed paint no exporter |
-| 0.37.0 | **Timings centralizados do Speed Paint** — novo módulo `speedPaintTimings.ts` consolida constantes, tipos (`SpeedPaintTimingMode`, `SpeedPaintSequenceTiming`) e funções (`getSpeedPaintTimingConfig`, `getSpeedPaintOverlapFrames`, `getSpeedPaintSequenceTiming`); constantes hardcoded removidas de `SpeedPaintScene` e `VideoComposition`; prop `timingMode` adicionada em `SpeedPaintScene`; `sequenced-batch` e `duration-based` como modos de temporização; testes unitários do novo módulo; auditoria de timing |

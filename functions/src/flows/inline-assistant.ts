@@ -37,11 +37,13 @@ import {
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { VOICES, PACE_DESCRIPTIONS } from '../genkit/constants.js';
 import {
+  buildInlineAssistantInstruction,
   buildCustomPromptBlock,
   buildMemoriesText,
   buildUserProfileBlock,
   type AssistantUserSettingsDoc,
 } from '../genkit/utils/assistant-context.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -92,13 +94,8 @@ export const inlineAssistant = onCallGenkit(
       inputSchema: InlineAssistantInputSchema,
       outputSchema: InlineAssistantOutputSchema,
     },
-    async (input: InlineAssistantInput): Promise<InlineAssistantOutput> => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input: InlineAssistantInput, flowContext): Promise<InlineAssistantOutput> => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -163,22 +160,26 @@ export const inlineAssistant = onCallGenkit(
       await throwIfAiCancellationRequested(db, uid, requestId);
 
       // -----------------------------------------------------------------------
-      // 3. Geração via Dotprompt (sem streaming)
+      // 3. Geração via instrução em código (sem streaming)
       // -----------------------------------------------------------------------
 
-      const inlinePrompt = ai.prompt('inline-assistant');
-
       try {
-        const response = await inlinePrompt({
-          input: {
-            memoriesText,
-            userProfileBlock,
-            voicesList,
-            paceList,
-            customPromptBlock,
-            selectedText: input.selectedText,
-            instruction: input.instruction,
-            fullScript: input.fullScript ?? '',
+        const instruction = buildInlineAssistantInstruction({
+          memoriesText,
+          userProfileBlock,
+          voicesList,
+          paceList,
+          customPromptBlock,
+          selectedText: input.selectedText,
+          instruction: input.instruction,
+          fullScript: input.fullScript ?? '',
+        });
+
+        const response = await ai.generate({
+          model: 'googleai/gemini-3.1-flash-lite',
+          prompt: instruction,
+          config: {
+            temperature: 0.7,
           },
         });
 
@@ -208,7 +209,7 @@ export const inlineAssistant = onCallGenkit(
         await creditMeter.confirm({
           finalCredits,
           outputSize: outputChars,
-          model: 'gemini-3.1-flash-lite-preview',
+          model: 'googleai/gemini-3.1-flash-lite',
         });
 
         console.log(

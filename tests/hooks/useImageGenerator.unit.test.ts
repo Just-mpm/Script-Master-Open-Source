@@ -7,6 +7,19 @@ const { mockImageCallable, mockCancelCallable, mockHttpsCallable } = vi.hoisted(
   mockHttpsCallable: vi.fn(),
 }));
 
+const mockCreditsState = vi.hoisted(() => ({
+  availableCredits: 100,
+  usedCredits: 0,
+  reservedCredits: 0,
+  baseCredits: 100,
+  bonusCredits: 0,
+  feedbackBonusGranted: false,
+  unlimitedCredits: false,
+  canEnforceBalance: true,
+  loading: false,
+  error: null as string | null,
+}));
+
 // --- Mocks ---
 
 vi.mock('../../src/lib/env', () => ({
@@ -44,16 +57,7 @@ vi.mock('../../src/lib/logger', () => ({
 }));
 
 vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({
-    availableCredits: 100,
-    usedCredits: 0,
-    baseCredits: 100,
-    bonusCredits: 0,
-    feedbackBonusGranted: false,
-    unlimitedCredits: false,
-    loading: false,
-    error: null,
-  }),
+  useCredits: () => ({ ...mockCreditsState }),
 }));
 
 vi.mock('firebase/functions', () => ({
@@ -68,6 +72,16 @@ import { useImageGenerator } from '../../src/hooks/useImageGenerator';
 
 describe('useImageGenerator', () => {
   beforeEach(() => {
+    mockCreditsState.availableCredits = 100;
+    mockCreditsState.usedCredits = 0;
+    mockCreditsState.reservedCredits = 0;
+    mockCreditsState.baseCredits = 100;
+    mockCreditsState.bonusCredits = 0;
+    mockCreditsState.feedbackBonusGranted = false;
+    mockCreditsState.unlimitedCredits = false;
+    mockCreditsState.canEnforceBalance = true;
+    mockCreditsState.loading = false;
+    mockCreditsState.error = null;
     vi.clearAllMocks();
     mockHttpsCallable.mockImplementation((_: unknown, callableName: string) => {
       if (callableName === 'cancelAiRequest') {
@@ -136,5 +150,14 @@ describe('useImageGenerator', () => {
     expect(mockCancelCallable).toHaveBeenCalledWith({
       requestId: expect.any(String),
     });
+  });
+
+  it('não bloqueia imagem quando o saldo zero ainda não foi confirmado', () => {
+    mockCreditsState.availableCredits = 0;
+    mockCreditsState.canEnforceBalance = false;
+
+    const { result } = renderHook(() => useImageGenerator());
+
+    expect(result.current.creditsExhausted).toBe(false);
   });
 });

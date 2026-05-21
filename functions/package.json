@@ -8,7 +8,7 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "build": "eslint src/ && tsc && node -e \"require('fs').cpSync('src/prompts', 'dist/prompts', {recursive: true})\"",
+    "build": "eslint src/ && tsc",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "serve": "npm run build && firebase emulators:start --only functions",

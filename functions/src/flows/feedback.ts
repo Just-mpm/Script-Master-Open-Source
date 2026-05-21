@@ -31,6 +31,7 @@ import {
   getOrCreateBetaAccess,
   isRequestIdValid,
 } from '../usage/index.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 /** Comprimento mínimo do texto de feedback para evitar abuso trivial */
 const MIN_TEXT_LENGTH = 10;
@@ -52,14 +53,8 @@ export const feedback = onCallGenkit(
       inputSchema: FeedbackInputSchema,
       outputSchema: FeedbackOutputSchema,
     },
-    async (input) => {
-      // O contexto de auth é populado automaticamente pelo onCallGenkit
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Validação de negócio: texto mínimo para evitar abuso trivial
       if (!input.text || input.text.trim().length < MIN_TEXT_LENGTH) {

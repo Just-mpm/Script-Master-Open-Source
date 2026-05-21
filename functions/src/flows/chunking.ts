@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Flow utilitário de chunking — divisão inteligente de scripts com Dotprompt
+// Flow utilitário de chunking — divisão inteligente de scripts com instrução em código
 // ---------------------------------------------------------------------------
 //
 // Substitui a lógica client-side de chunking do useAudioGenerator.ts.
@@ -8,7 +8,7 @@
 //   1. Valida autenticação (isSignedIn + App Check)
 //   2. Reserva créditos via withCreditMetering() helper
 //   3. Se script <= limit: retorna array com 1 elemento
-//   4. Se script > limit: usa Dotprompt externo (chunking.prompt) para chunking inteligente
+//   4. Se script > limit: usa builder TypeScript + structured output
 //   5. Fallback: divisão programática por sentenças
 //   6. Confirma ou reverte créditos conforme resultado
 //   7. Retorna array de strings (chunks)
@@ -19,6 +19,7 @@
 //   - Região: southamerica-east1
 // ---------------------------------------------------------------------------
 
+import { z } from 'genkit';
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
@@ -30,14 +31,16 @@ import {
   isRequestIdValid,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { buildChunkingInstruction } from '../genkit/utils/assistant-context.js';
 import { splitTextProgrammatically } from '../genkit/utils/chunking.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
 // Constantes
 // ---------------------------------------------------------------------------
 
 /** Modelo usado para chunking (registro em credit_events) */
-const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite-preview';
+const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 /** Limite padrão de caracteres por chunk */
 const DEFAULT_CHUNK_LIMIT = 500;
@@ -60,13 +63,8 @@ export const chunking = onCallGenkit(
       inputSchema: ChunkingInputSchema,
       outputSchema: ChunkingOutputSchema,
     },
-    async (input) => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -101,15 +99,17 @@ export const chunking = onCallGenkit(
       );
 
       // ------------------------------------------------------------------
-      // 3. Chunking via Dotprompt externo
+      // 3. Chunking via builder TypeScript + structured output
       // ------------------------------------------------------------------
       try {
-        const chunkingPrompt = ai.prompt('chunking');
-
-        const response = await chunkingPrompt({
-          input: {
-            limit: String(limit),
-            script: input.script,
+        const response = await ai.generate({
+          model: CHUNKING_MODEL,
+          prompt: buildChunkingInstruction(input.script, limit),
+          config: {
+            temperature: 0,
+          },
+          output: {
+            schema: z.array(z.string()),
           },
         });
 

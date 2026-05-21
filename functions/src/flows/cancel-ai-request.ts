@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { isRequestIdValid, requestAiCancellation } from '../usage/index.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 const CancelAiRequestInputSchema = z.object({
   requestId: z.string(),
@@ -27,13 +28,8 @@ export const cancelAiRequest = onCallGenkit(
       inputSchema: CancelAiRequestInputSchema,
       outputSchema: CancelAiRequestOutputSchema,
     },
-    async (input) => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       if (!isRequestIdValid(input.requestId)) {
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');

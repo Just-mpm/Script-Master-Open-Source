@@ -13,6 +13,7 @@ import {
   getCreditAvailabilitySnapshot,
   isRequestIdValid,
 } from '../usage/index.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 export const audioPreflight = onCallGenkit(
   {
@@ -28,13 +29,8 @@ export const audioPreflight = onCallGenkit(
       inputSchema: AudioPreflightInputSchema,
       outputSchema: AudioPreflightOutputSchema,
     },
-    async (input: AudioPreflightInput): Promise<AudioPreflightOutput> => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input: AudioPreflightInput, flowContext): Promise<AudioPreflightOutput> => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
         throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');

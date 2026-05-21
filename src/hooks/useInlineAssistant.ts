@@ -11,7 +11,7 @@ const log = createLogger('useInlineAssistant');
 
 export function useInlineAssistant() {
   const { t } = useLocale();
-  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
+  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function useInlineAssistant() {
     [],
   );
 
-  const isCreditBlocked = !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
 
   useEffect(() => {
     if (!isCreditBlocked) {

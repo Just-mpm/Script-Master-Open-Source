@@ -639,6 +639,7 @@ export const es: TranslationDictionary = {
       credits: {
         loading: 'Cargando créditos...',
         error: 'Error al cargar créditos',
+        syncing: 'Sincronizando saldo de créditos...',
         ariaLabel: 'Saldo de créditos: {credits}',
         breakdown: 'Base: {base} | Bono: {bonus} | Usados: {used}',
       },
@@ -859,6 +860,7 @@ export const es: TranslationDictionary = {
   },
 
   assistant: {
+    deleteMemoryConfirm: '¿Eliminar memoria?',
     header: {
       title: 'Asistente creativo',
       subtitle: 'Un panel de dirección creativa para pulir guion, voz, memoria de proyecto y ajustes de escena.',

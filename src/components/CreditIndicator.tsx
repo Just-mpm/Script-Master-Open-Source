@@ -11,7 +11,7 @@ import { useLocale } from '../features/i18n';
  * Exibe o saldo disponível com breakdown no tooltip.
  */
 export function CreditIndicator() {
-  const { availableCredits, baseCredits, bonusCredits, usedCredits, unlimitedCredits, loading, error } = useCredits();
+  const { availableCredits, baseCredits, bonusCredits, usedCredits, unlimitedCredits, canEnforceBalance, loading, error } = useCredits();
   const { t } = useLocale();
 
   if (loading) {
@@ -23,6 +23,56 @@ export function CreditIndicator() {
         sx={{ borderRadius: 3, bgcolor: 'action.hover' }}
         aria-label={t('studio.header.credits.loading')}
       />
+    );
+  }
+
+  const unlimitedLabel = t('billing.usage.unlimited');
+
+  if (unlimitedCredits) {
+    return (
+      <Tooltip title={unlimitedLabel}>
+        <Chip
+          icon={<WorkspacePremium sx={{ fontSize: 14 }} />}
+          label={unlimitedLabel}
+          size="small"
+          aria-label={t('studio.header.credits.ariaLabel', { credits: unlimitedLabel })}
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.7rem',
+            letterSpacing: '0.04em',
+            backgroundColor: 'rgba(59, 130, 246, 0.12)',
+            color: 'info.light',
+            border: '1px solid rgba(59, 130, 246, 0.28)',
+            '& .MuiChip-label': { px: 1 },
+            '& .MuiChip-icon': {
+              color: 'info.light',
+              ml: 0.5,
+            },
+          }}
+        />
+      </Tooltip>
+    );
+  }
+
+  if (!canEnforceBalance) {
+    return (
+      <Tooltip title={t('studio.header.credits.syncing')}>
+        <Chip
+          icon={<WarningAmber sx={{ fontSize: 14 }} />}
+          size="small"
+          aria-label={t('studio.header.credits.syncing')}
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.7rem',
+            letterSpacing: '0.04em',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            color: 'warning.light',
+            border: '1px solid rgba(245, 158, 11, 0.28)',
+            '& .MuiChip-label': { px: 1 },
+            '& .MuiChip-icon': { color: 'warning.light', ml: 0.5 },
+          }}
+        />
+      </Tooltip>
     );
   }
 
@@ -53,34 +103,6 @@ export function CreditIndicator() {
     bonus: String(bonusCredits),
     used: String(usedCredits),
   });
-
-  const unlimitedLabel = t('billing.usage.unlimited');
-
-  if (unlimitedCredits) {
-    return (
-      <Tooltip title={unlimitedLabel}>
-        <Chip
-          icon={<WorkspacePremium sx={{ fontSize: 14 }} />}
-          label={unlimitedLabel}
-          size="small"
-          aria-label={t('studio.header.credits.ariaLabel', { credits: unlimitedLabel })}
-          sx={{
-            fontWeight: 600,
-            fontSize: '0.7rem',
-            letterSpacing: '0.04em',
-            backgroundColor: 'rgba(59, 130, 246, 0.12)',
-            color: 'info.light',
-            border: '1px solid rgba(59, 130, 246, 0.28)',
-            '& .MuiChip-label': { px: 1 },
-            '& .MuiChip-icon': {
-              color: 'info.light',
-              ml: 0.5,
-            },
-          }}
-        />
-      </Tooltip>
-    );
-  }
 
   const hasCredits = availableCredits > 0;
   const lowCredits = availableCredits > 0 && availableCredits <= 100;

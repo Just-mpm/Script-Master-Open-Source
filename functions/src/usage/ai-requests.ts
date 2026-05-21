@@ -30,6 +30,48 @@ function getRequestRef(db: Firestore, uid: string, requestId: string) {
   return db.doc(`users/${uid}/ai_requests/${requestId}`);
 }
 
+function buildAiRequestPatch(record: {
+  requestId?: string;
+  flow?: AiRequestFlow;
+  status?: AiRequestStatus;
+  createdAt?: number;
+  updatedAt?: number;
+  finishedAt?: number;
+  errorCode?: string;
+}): Partial<AiRequestRecord> {
+  const patch: Partial<AiRequestRecord> = {};
+
+  if (typeof record.requestId === 'string' && record.requestId.length > 0) {
+    patch.requestId = record.requestId;
+  }
+
+  if (typeof record.flow === 'string') {
+    patch.flow = record.flow;
+  }
+
+  if (typeof record.status === 'string') {
+    patch.status = record.status;
+  }
+
+  if (typeof record.createdAt === 'number') {
+    patch.createdAt = record.createdAt;
+  }
+
+  if (typeof record.updatedAt === 'number') {
+    patch.updatedAt = record.updatedAt;
+  }
+
+  if (typeof record.finishedAt === 'number') {
+    patch.finishedAt = record.finishedAt;
+  }
+
+  if (typeof record.errorCode === 'string' && record.errorCode.length > 0) {
+    patch.errorCode = record.errorCode;
+  }
+
+  return patch;
+}
+
 export async function startAiRequest(
   db: Firestore,
   uid: string,
@@ -44,7 +86,7 @@ export async function startAiRequest(
     const existing = snap.exists ? snap.data() as AiRequestRecord : null;
     const status = existing?.status === 'cancel_requested' ? 'cancel_requested' : 'running';
 
-    transaction.set(ref, {
+    transaction.set(ref, buildAiRequestPatch({
       requestId,
       flow,
       status,
@@ -52,7 +94,7 @@ export async function startAiRequest(
       updatedAt: now,
       finishedAt: existing?.finishedAt,
       errorCode: existing?.errorCode,
-    } satisfies AiRequestRecord, { merge: true });
+    }), { merge: true });
   });
 }
 
@@ -72,7 +114,7 @@ export async function requestAiCancellation(
       return;
     }
 
-    transaction.set(ref, {
+    transaction.set(ref, buildAiRequestPatch({
       requestId,
       flow: current?.flow ?? 'pending',
       status: 'cancel_requested',
@@ -80,7 +122,7 @@ export async function requestAiCancellation(
       updatedAt: now,
       finishedAt: current?.finishedAt,
       errorCode: current?.errorCode,
-    } satisfies AiRequestRecord, { merge: true });
+    }), { merge: true });
   });
 
   return true;
@@ -125,10 +167,10 @@ export async function finishAiRequest(
 ): Promise<void> {
   const ref = getRequestRef(db, uid, requestId);
 
-  await ref.set({
+  await ref.set(buildAiRequestPatch({
     status,
-    errorCode,
     updatedAt: Date.now(),
     finishedAt: Date.now(),
-  } satisfies Partial<AiRequestRecord>, { merge: true });
+    errorCode,
+  }), { merge: true });
 }

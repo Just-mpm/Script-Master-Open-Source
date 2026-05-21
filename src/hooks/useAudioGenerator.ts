@@ -173,7 +173,7 @@ function buildAudioFlowInput(options: GenerateOptions, requestId: string): Audio
  * - Funções de geração (generateAudio, handleCancel)
  */
 export function useAudioGenerator() {
-  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
+  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
   // Seletores primitivos — cada um re-renderiza apenas quando seu campo muda
   const isGenerating = useAudioGeneratorStore((s) => s.isGenerating);
   const statusText = useAudioGeneratorStore((s) => s.statusText);
@@ -224,7 +224,7 @@ export function useAudioGenerator() {
     };
   }, []);
 
-  const isCreditBlocked = !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
 
   useEffect(() => {
     if (!isCreditBlocked) {

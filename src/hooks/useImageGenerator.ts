@@ -67,7 +67,7 @@ interface ImagesFlowOutput {
 const CANCEL_ERROR_MESSAGE = 'Geração cancelada pelo usuário.';
 
 export function useImageGenerator() {
-  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
+  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
@@ -107,7 +107,7 @@ export function useImageGenerator() {
     };
   }, [cancelAiRequestCallable]);
 
-  const isCreditBlocked = !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
 
   useEffect(() => {
     if (!isCreditBlocked) {

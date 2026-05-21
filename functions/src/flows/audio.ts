@@ -38,7 +38,9 @@ import {
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { CHUNK_LIMIT, PACE_INSTRUCTIONS, EMOTION_INSTRUCTIONS } from '../genkit/constants.js';
+import { buildChunkingInstruction, buildTtsInstruction } from '../genkit/utils/assistant-context.js';
 import { splitTextProgrammatically } from '../genkit/utils/chunking.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 interface AudioSegment {
   text: string;
@@ -54,7 +56,7 @@ const SAMPLE_RATE = 24000;
 const TTS_MODEL = 'googleai/gemini-3.1-flash-tts-preview';
 
 /** Modelo para chunking de scripts longos */
-const CHUNKING_MODEL = 'googleai/gemini-2.5-flash-lite';
+const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 // ---------------------------------------------------------------------------
 // Helpers de chunking
@@ -69,19 +71,10 @@ async function chunkScript(script: string, limit: number): Promise<string[]> {
     return [script];
   }
 
-  const chunkingPrompt = [
-    `Divida o seguinte roteiro em partes sequenciais.`,
-    `É CRÍTICO que cada parte tenha no MÁXIMO ${limit} caracteres.`,
-    'Faça as quebras em pausas lógicas (pontos finais, fim de parágrafo).',
-    'NÃO altere, adicione ou remova nenhuma palavra do texto original, apenas divida-o.',
-    '',
-    `Roteiro:\n${script}`,
-  ].join('\n');
-
   try {
     const response = await ai.generate({
       model: CHUNKING_MODEL,
-      prompt: chunkingPrompt,
+      prompt: buildChunkingInstruction(script, limit),
       output: {
         schema: z.array(z.string()),
       },
@@ -173,13 +166,8 @@ export const audio = onCallGenkit(
       inputSchema: AudioInputSchema,
       outputSchema: AudioOutputSchema,
     },
-    async (input) => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -333,16 +321,15 @@ export const audio = onCallGenkit(
           : '';
 
         // Monta o prompt completo (instruções + transcrição)
-        const finalPrompt = [
-          'Gere a fala para a seguinte transcrição, interpretando a persona e as notas de direção fornecidas. NÃO leia o perfil, a cena ou as notas em voz alta. APENAS fale a transcrição.',
+        const finalPrompt = buildTtsInstruction({
           continuityContext,
-          multiCtx,
-          audioProfile ? `# PERFIL DE ÁUDIO: ${audioProfile}` : '',
-          scene ? `## A CENA: ${scene}` : '',
+          multiSpeakerContext: multiCtx,
+          audioProfile: audioProfile ?? '',
+          scene: scene ?? '',
           emotionInstruction,
-          combinedNotes ? `### NOTAS DE DIREÇÃO\n* ${combinedNotes}` : '',
-          `#### TRANSCRIÇÃO\n${chunk}`,
-        ].filter(Boolean).join('\n\n');
+          directionNotes: combinedNotes,
+          chunk,
+        });
 
         try {
           const response = await ai.generate({

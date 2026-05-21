@@ -19,9 +19,10 @@
 //     use: [creditMeteringMiddleware({ operationType: 'image' })],
 //   });
 //
-//   // Em Dotprompt (ai.prompt().stream()):
-//   const { stream } = await prompt.stream({
-//     input: { ... },
+//   // Em ai.generateStream():
+//   const { stream } = ai.generateStream({
+//     model: '...',
+//     system: '...',
 //     messages: [...],
 //     use: [creditMeteringMiddleware({ operationType: 'assistant' })],
 //   });

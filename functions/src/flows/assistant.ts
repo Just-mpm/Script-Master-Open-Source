@@ -39,12 +39,14 @@ import {
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { VOICES, PACE_DESCRIPTIONS } from '../genkit/constants.js';
 import {
+  buildAssistantSystemInstruction,
   buildCustomPromptBlock,
   buildMemoriesText,
   buildStudioBlock,
   buildUserProfileBlock,
   type AssistantUserSettingsDoc,
 } from '../genkit/utils/assistant-context.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -108,13 +110,9 @@ export const assistant = onCallGenkit(
       outputSchema: AssistantOutputSchema,
       streamSchema: AssistantStreamSchema,
     },
-    async (input: AssistantInput, { sendChunk }): Promise<AssistantOutput> => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input: AssistantInput, flowContext): Promise<AssistantOutput> => {
+      const uid = getCallableUidOrThrow(flowContext);
+      const { sendChunk } = flowContext;
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -235,24 +233,25 @@ export const assistant = onCallGenkit(
         const messages = [...historyMessages, currentMessage];
 
         // -----------------------------------------------------------------------
-        // 4. Geração com streaming via Dotprompt
+        // 4. Geração com streaming via instrução em código
         // -----------------------------------------------------------------------
 
-        const assistantPrompt = ai.prompt('assistant');
+        const systemInstruction = buildAssistantSystemInstruction({
+          memoriesText,
+          userProfileBlock,
+          voicesList,
+          paceList,
+          studioBlock,
+          customPromptBlock,
+        });
 
         let fullText = '';
         let sendFailed = false;
 
         try {
-          const { response: streamResponse, stream } = await assistantPrompt.stream({
-            input: {
-              memoriesText,
-              userProfileBlock,
-              voicesList,
-              paceList,
-              customPromptBlock,
-              studioBlock,
-            },
+          const { response: streamResponse, stream } = ai.generateStream({
+            model: 'googleai/gemini-3.1-flash-lite',
+            system: systemInstruction,
             messages,
           });
 
@@ -292,7 +291,7 @@ export const assistant = onCallGenkit(
               await creditMeter.confirm({
                 finalCredits: partialCredits,
                 outputSize: outputChars,
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'googleai/gemini-3.1-flash-lite',
               });
               creditsSettled = true;
 
@@ -344,7 +343,7 @@ export const assistant = onCallGenkit(
           await creditMeter.confirm({
             finalCredits,
             outputSize: outputChars,
-            model: 'gemini-3.1-flash-lite-preview',
+            model: 'googleai/gemini-3.1-flash-lite',
           });
           creditsSettled = true;
 

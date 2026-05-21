@@ -30,7 +30,6 @@ import { glassPanelSx } from '../../theme/surfaces';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { BRAND_PRIMARY } from '../../theme/tokens';
-import { useCredits } from '../../hooks/useCredits';
 import { useLocale } from '../../features/i18n';
 
 interface AssistantProps {
@@ -47,9 +46,20 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { t } = useLocale();
   const { user } = useAuth();
-  const { messages, isLoading, isStreaming, error, sendMessage, startNewChat, loadSession, stopGeneration, retryLastMessage, messagesEndRef, creditsExhausted } = useAssistant(currentState);
-  const { availableCredits, unlimitedCredits, loading: creditsLoading } = useCredits();
-  const creditBlockedByBalance = !!user && !creditsLoading && !unlimitedCredits && availableCredits <= 0;
+  const {
+    messages,
+    isLoading,
+    isStreaming,
+    error,
+    sendMessage,
+    startNewChat,
+    loadSession,
+    stopGeneration,
+    retryLastMessage,
+    messagesEndRef,
+    creditsExhausted,
+    creditBlockedByBalance,
+  } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
@@ -251,11 +261,14 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       return;
     }
 
-    const attachments = await Promise.all(pendingFiles.map((file) => fileToAttachment(file)));
-
-    await sendMessage(input, attachments);
+    const nextInput = input;
+    const nextFiles = pendingFiles;
     setInput('');
     setPendingFiles([]);
+
+    const attachments = await Promise.all(nextFiles.map((file) => fileToAttachment(file)));
+
+    await sendMessage(nextInput, attachments);
   }, [input, pendingFiles, isLoading, sendMessage]);
 
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -309,7 +322,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
   const handleSuggestionClick = useCallback(async (prompt: string) => {
     if (isLoading) return;
-    setInput(prompt);
+    setInput('');
     await sendMessage(prompt, []);
   }, [isLoading, sendMessage]);
 

@@ -145,6 +145,39 @@ function buildRolledOverBetaAccess(current: BetaAccess, nextPeriodKey: string): 
   };
 }
 
+function readNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : fallback;
+}
+
+function sanitizeBetaAccess(raw: unknown, fallbackPeriodKey: string): BetaAccess {
+  const data = raw && typeof raw === 'object'
+    ? raw as Partial<BetaAccess>
+    : {};
+
+  const baseCredits = readNumber(data.baseCredits, MONTHLY_BASE_CREDITS);
+  const bonusCredits = readNumber(data.bonusCredits, 0);
+  const usedCredits = readNumber(data.usedCredits, 0);
+  const reservedCredits = readNumber(data.reservedCredits, 0);
+  const availableFallback = Math.max(baseCredits + bonusCredits - usedCredits - reservedCredits, 0);
+  const availableCredits = readNumber(data.availableCredits, availableFallback);
+
+  return {
+    status: 'active',
+    currentPeriodKey: typeof data.currentPeriodKey === 'string' && data.currentPeriodKey.length > 0
+      ? data.currentPeriodKey
+      : fallbackPeriodKey,
+    baseCredits,
+    bonusCredits,
+    availableCredits,
+    usedCredits,
+    reservedCredits,
+    updatedAt: readNumber(data.updatedAt, Date.now()),
+    feedbackBonusGranted: data.feedbackBonusGranted === true,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Constantes de timeout
 // ---------------------------------------------------------------------------
@@ -272,7 +305,7 @@ async function expireStaleReservations(
       const betaSnap = await transaction.get(betaRef);
       if (!betaSnap.exists) return;
 
-      const beta = betaSnap.data() as BetaAccess;
+      const beta = sanitizeBetaAccess(betaSnap.data(), getCurrentPeriodKey());
       const monthRef = db.doc(`users/${uid}/credit_months/${beta.currentPeriodKey}`);
       const monthSnap = await transaction.get(monthRef);
       const month = monthSnap.exists
@@ -349,7 +382,7 @@ export async function getOrCreateBetaAccess(
       return initial;
     }
 
-    const data = snap.data() as BetaAccess;
+    const data = sanitizeBetaAccess(snap.data(), currentPeriod);
 
     if (isNewPeriod(data.currentPeriodKey)) {
       console.log(
@@ -373,6 +406,8 @@ export async function getOrCreateBetaAccess(
         createInitialCreditMonth(currentPeriod, data.baseCredits, data.bonusCredits),
       );
     }
+
+    transaction.set(betaRef, data);
 
     return data;
   });
@@ -445,9 +480,11 @@ export async function reserveCredits(
         beta = createInitialBetaAccess(currentPeriod);
         transaction.set(betaRef, beta);
       } else {
-        beta = betaSnap.data() as BetaAccess;
+        beta = sanitizeBetaAccess(betaSnap.data(), currentPeriod);
         if (isNewPeriod(beta.currentPeriodKey)) {
           beta = buildRolledOverBetaAccess(beta, currentPeriod);
+          transaction.set(betaRef, beta);
+        } else {
           transaction.set(betaRef, beta);
         }
       }
@@ -576,7 +613,7 @@ export async function confirmCredits(
         throw new Error('BetaAccess não encontrado');
       }
 
-      const beta = betaSnap.data() as BetaAccess;
+      const beta = sanitizeBetaAccess(betaSnap.data(), currentPeriod);
 
       // 2. Leitura do credit_month
       const monthSnap = await transaction.get(monthRef);
@@ -699,7 +736,7 @@ export async function revertCredits(
         throw new Error('BetaAccess não encontrado');
       }
 
-      const beta = betaSnap.data() as BetaAccess;
+      const beta = sanitizeBetaAccess(betaSnap.data(), currentPeriod);
 
       // 2. Leitura do credit_month
       const monthSnap = await transaction.get(monthRef);
@@ -777,7 +814,7 @@ export async function grantFeedbackBonus(
         throw new Error('BetaAccess não encontrado — execute getOrCreateBetaAccess primeiro');
       }
 
-      const beta = betaSnap.data() as BetaAccess;
+      const beta = sanitizeBetaAccess(betaSnap.data(), currentPeriod);
 
       // 2. Verifica se já recebeu bônus
       if (beta.feedbackBonusGranted) {

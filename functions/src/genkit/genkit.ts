@@ -12,8 +12,6 @@
 // Consumido por todos os flows e utilitários de IA no backend.
 // ---------------------------------------------------------------------------
 
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { genkit, generateMiddleware } from 'genkit';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
@@ -53,17 +51,9 @@ enableFirebaseTelemetry({
 // Instância única do Genkit
 // ---------------------------------------------------------------------------
 
-// Resolve o diretório de prompts relativo a este arquivo.
-// No source:  functions/src/genkit/genkit.ts  → ../prompts = functions/src/prompts/
-// No build:   functions/dist/genkit/genkit.js  → ../prompts = functions/dist/prompts/
-// Elimina dependência do CWD — funciona em qualquer ambiente.
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const promptDir = join(__dirname, '..', 'prompts');
-
 /** Instância única do Genkit compartilhada por todos os flows */
 export const ai = genkit({
   plugins: [googleAI()],
-  promptDir,
 });
 
 // ---------------------------------------------------------------------------
@@ -93,7 +83,7 @@ if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
 // Controlado pela variável de ambiente OPEN_BETA_ENABLED.
 //
 // Uso: adicione `use: [openBetaGuard]` nas opções de ai.generate() ou
-// Dotprompt para bloquear chamadas quando o beta estiver fechado.
+// ai.generateStream() para bloquear chamadas quando o beta estiver fechado.
 //
 // Planejado (Fase 5): Aplicar este middleware em todos os flows de IA quando
 // o beta aberto terminar e a cobrança por créditos for ativada.

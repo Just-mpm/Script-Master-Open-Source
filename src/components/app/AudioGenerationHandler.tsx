@@ -183,7 +183,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
         if (preflightRequestTokenRef.current !== requestToken) return;
         setIsPreparingPreflight(false);
       });
-  }, [audioPreflightCallable, isGenerating, isPreparingPreflight, userId]);
+  }, [audioPreflightCallable, isGenerating, isPreparingPreflight, t, userId]);
 
   const closePreflightDialog = useCallback(() => {
     preflightRequestTokenRef.current += 1;

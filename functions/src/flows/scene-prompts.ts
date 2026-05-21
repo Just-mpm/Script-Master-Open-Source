@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Flow de geração de prompts de cena — Gemini via Genkit com Dotprompt
+// Flow de geração de prompts de cena — Gemini via Genkit com instrução em código
 // ---------------------------------------------------------------------------
 //
 // Substitui a lógica client-side do generateScenePrompts() em src/lib/gemini.ts.
@@ -7,7 +7,7 @@
 // Pipeline:
 //   1. Valida autenticação (isSignedIn + App Check)
 //   2. Reserva créditos via withCreditMetering() helper
-//   3. Gera prompts de cena via Dotprompt externo (scene-prompts.prompt)
+//   3. Gera prompts de cena com builder TypeScript + structured output
 //   4. Confirma ou reverte créditos conforme resultado
 //   5. Retorna array de { timestamp, prompt } + flag isFallback
 //
@@ -20,6 +20,7 @@
 //   - Região: southamerica-east1
 // ---------------------------------------------------------------------------
 
+import { z } from 'genkit';
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
@@ -37,13 +38,15 @@ import {
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { buildScenePromptsInstruction } from '../genkit/utils/assistant-context.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
 // Constantes
 // ---------------------------------------------------------------------------
 
 /** Modelo usado para geração de prompts de cena (registro em credit_events) */
-const SCENE_PROMPTS_MODEL = 'googleai/gemini-3.1-flash-lite-preview';
+const SCENE_PROMPTS_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 /** Densidade padrão de cenas (em segundos) */
 const DEFAULT_DENSITY_SECONDS = 15;
@@ -81,13 +84,8 @@ export const scenePrompts = onCallGenkit(
       inputSchema: ScenePromptsInputSchema,
       outputSchema: ScenePromptsOutputSchema,
     },
-    async (input) => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (input, flowContext) => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       // Guard do beta aberto — bloqueia acesso quando beta fechado
       if (process.env.OPEN_BETA_ENABLED !== 'true') {
@@ -125,15 +123,13 @@ export const scenePrompts = onCallGenkit(
         );
 
         // ------------------------------------------------------------------
-        // 2. Prepara variáveis para o Dotprompt
+        // 2. Prepara variáveis para a instrução em código
         // ------------------------------------------------------------------
         const visualFramework = input.visualFramework ?? 'general';
         const locale = input.locale ?? 'pt-BR';
         const languageName = LOCALE_LANGUAGE_MAP[locale] ?? locale;
         const style = input.style ?? 'Nenhum específico';
 
-        // Instruções específicas do framework visual (pré-montadas como no padrão
-        // do assistant.prompt, que usa {{studioBlock}} e {{customPromptBlock}})
         const frameworkInstructions = visualFramework === 'whiteboard'
           ? `
 [CRÍTICO: MODO WHITEBOARD MASTER]
@@ -148,21 +144,31 @@ Regras estritas deste modo:
 As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estritamente a direção de arte e estilo configurados.`;
 
         // ------------------------------------------------------------------
-        // 3. Gera prompts de cena via Dotprompt externo
+        // 3. Gera prompts de cena com structured output
         // ------------------------------------------------------------------
         try {
-          const scenePrompt = ai.prompt('scene-prompts');
+          const instruction = buildScenePromptsInstruction({
+            durationLabel: input.durationInSeconds.toFixed(1),
+            imageCount,
+            densitySeconds,
+            frameworkInstructions,
+            style,
+            languageName,
+            languageNameUpper: languageName.toUpperCase(),
+            script: input.script,
+          });
 
-          const response = await scenePrompt({
-            input: {
-              duration: input.durationInSeconds.toFixed(1),
-              imageCount: String(imageCount),
-              densitySeconds: String(densitySeconds),
-              frameworkInstructions,
-              style,
-              languageName,
-              languageNameUpper: languageName.toUpperCase(),
-              script: input.script,
+          const response = await ai.generate({
+            model: SCENE_PROMPTS_MODEL,
+            prompt: instruction,
+            config: {
+              temperature: 0.8,
+            },
+            output: {
+              schema: z.array(z.object({
+                timestamp: z.number(),
+                prompt: z.string(),
+              })),
             },
           });
           await throwIfAiCancellationRequested(db, uid, requestId);

@@ -64,7 +64,7 @@ export function useBatchDownload() {
 
     downloadingRef.current = false;
     setDownloadingId(null);
-  }, []);
+  }, [t]);
 
   return {
     downloadingId,

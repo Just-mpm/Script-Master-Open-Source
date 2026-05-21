@@ -1,25 +1,34 @@
 /**
- * Hook useCredits em vez de store Zustand — a leitura é via onSnapshot
- * do Firestore (tempo real), e o estado é local a cada componente consumidor.
- * Uma store global não traria benefício porque o Firestore já é a fonte
- * da verdade.
+ * useCredits — saldo global de créditos compartilhado entre toda a aplicação.
+ *
+ * A leitura continua vindo do Firestore em tempo real, mas agora o estado,
+ * o listener e a lógica de reconciliação vivem em uma store única para evitar
+ * duplicação entre áudio, imagem, assistente e header.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect } from 'react';
+import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { httpsCallable } from 'firebase/functions';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { functions } from '../lib/firebase';
+import { doc, onSnapshot, type DocumentSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { db, functions } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
 
 const log = createLogger('useCredits');
+const CREDIT_SNAPSHOT_FAILURE_COOLDOWN_MS = 30_000;
+const CREDIT_SNAPSHOT_COOLDOWN_ERROR = 'creditSnapshot cooldown active';
+const MAX_RECONCILE_ATTEMPTS = 5;
+const BASE_RECONCILE_DELAY_MS = 1000;
+const MAX_RECONCILE_DELAY_MS = 30_000;
 
-interface UserEntitlements {
+interface BetaAccessDocument {
+  availableCredits?: number;
+  usedCredits?: number;
+  reservedCredits?: number;
+  baseCredits?: number;
+  bonusCredits?: number;
+  feedbackBonusGranted?: boolean;
   unlimitedCredits?: boolean;
-}
-
-interface UserProfile {
-  entitlements?: UserEntitlements;
 }
 
 /** Estado do saldo de créditos do usuário (subcoleção beta_access) */
@@ -38,6 +47,8 @@ export interface CreditState {
   feedbackBonusGranted: boolean;
   /** Se a conta tem créditos ilimitados */
   unlimitedCredits: boolean;
+  /** Se o saldo atual já foi confirmado e pode ser usado para bloqueio */
+  canEnforceBalance: boolean;
   /** Se está carregando o documento */
   loading: boolean;
   /** Mensagem de erro, se houver */
@@ -54,224 +65,429 @@ interface CreditSnapshotCallableOutput {
   unlimitedCredits: boolean;
 }
 
-// NOTE: creditsExhausted é gerenciado por hook individualmente — uma store global
-// (ex: useCreditsStore) centralizaria no futuro, evitando o estado fragmentado entre
-// useAudioGenerator, useAssistant, useImageGenerator e useInlineAssistant.
-/** Hook que lê o saldo de créditos do usuário via listener em tempo real no Firestore */
-export function useCredits(): CreditState {
-  const { user } = useAuth();
-  const [state, setState] = useState<CreditState>({
-    availableCredits: 0,
-    usedCredits: 0,
-    reservedCredits: 0,
-    baseCredits: 0,
-    bonusCredits: 0,
-    feedbackBonusGranted: false,
-    unlimitedCredits: false,
-    loading: true,
-    error: null,
-  });
-  const bootstrapCompletedRef = useRef(false);
-  const refreshInFlightRef = useRef(false);
-  const lastBlockedReconcileKeyRef = useRef<string | null>(null);
-  // Backoff exponencial para evitar loop de chamadas quando creditSnapshot falha.
-  // Cada tentativa dobra o delay (1s → 2s → 4s → 8s → 16s → 30s máx).
-  // Após 5 tentativas consecutivas, para de tentar até o próximo ciclo.
-  const reconcileAttemptRef = useRef(0);
-  const reconcileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const MAX_RECONCILE_ATTEMPTS = 5;
-  const BASE_RECONCILE_DELAY_MS = 1000;
-  const MAX_RECONCILE_DELAY_MS = 30_000;
-  const creditSnapshotCallable = useMemo(
-    () => httpsCallable<Record<string, never>, CreditSnapshotCallableOutput>(functions, 'creditSnapshot'),
-    [],
+interface CreditStore extends CreditState {
+  syncAuth: (uid: string | null, authLoading: boolean) => void;
+  refreshCredits: (setLoading?: boolean) => Promise<void>;
+  reset: () => void;
+}
+
+interface CreditsControllerState {
+  authLoading: boolean;
+  currentUid: string | null;
+  syncedAuthKey: string | null;
+  unsubscribe: Unsubscribe | null;
+  bootstrapCompleted: boolean;
+  balanceResolved: boolean;
+  successfulSnapshot: boolean;
+  refreshInFlight: boolean;
+  reconcileAttempt: number;
+  reconcileTimer: ReturnType<typeof setTimeout> | null;
+  lastBlockedReconcileKey: string | null;
+}
+
+const creditSnapshotCallable = httpsCallable<Record<string, never>, CreditSnapshotCallableOutput>(
+  functions,
+  'creditSnapshot',
+);
+
+const creditSnapshotRequests = new Map<string, Promise<CreditSnapshotCallableOutput>>();
+const creditSnapshotCooldowns = new Map<string, number>();
+
+const initialState: CreditState = {
+  availableCredits: 0,
+  usedCredits: 0,
+  reservedCredits: 0,
+  baseCredits: 0,
+  bonusCredits: 0,
+  feedbackBonusGranted: false,
+  unlimitedCredits: false,
+  canEnforceBalance: false,
+  loading: true,
+  error: null,
+};
+
+const controller: CreditsControllerState = {
+  authLoading: true,
+  currentUid: null,
+  syncedAuthKey: null,
+  unsubscribe: null,
+  bootstrapCompleted: false,
+  balanceResolved: false,
+  successfulSnapshot: false,
+  refreshInFlight: false,
+  reconcileAttempt: 0,
+  reconcileTimer: null,
+  lastBlockedReconcileKey: null,
+};
+
+function resetControllerState(): void {
+  controller.authLoading = true;
+  controller.currentUid = null;
+  controller.syncedAuthKey = null;
+  controller.bootstrapCompleted = false;
+  controller.balanceResolved = false;
+  controller.successfulSnapshot = false;
+  controller.refreshInFlight = false;
+  controller.reconcileAttempt = 0;
+  controller.lastBlockedReconcileKey = null;
+}
+
+function clearReconcileTimer(): void {
+  if (controller.reconcileTimer !== null) {
+    clearTimeout(controller.reconcileTimer);
+    controller.reconcileTimer = null;
+  }
+}
+
+function teardownCreditsListener(): void {
+  controller.unsubscribe?.();
+  controller.unsubscribe = null;
+}
+
+function readNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : Number(value) || 0;
+}
+
+function readCreditState(store: CreditStore): CreditState {
+  return {
+    availableCredits: store.availableCredits,
+    usedCredits: store.usedCredits,
+    reservedCredits: store.reservedCredits,
+    baseCredits: store.baseCredits,
+    bonusCredits: store.bonusCredits,
+    feedbackBonusGranted: store.feedbackBonusGranted,
+    unlimitedCredits: store.unlimitedCredits,
+    canEnforceBalance: store.canEnforceBalance,
+    loading: store.loading,
+    error: store.error,
+  };
+}
+
+function setCreditState(updater: (state: CreditState) => Partial<CreditState>): void {
+  useCreditsStore.setState((store) => updater(readCreditState(store)));
+  evaluateCreditReconciliation();
+}
+
+async function requestCreditSnapshot(
+  uid: string,
+  fetchSnapshot: () => Promise<CreditSnapshotCallableOutput>,
+): Promise<CreditSnapshotCallableOutput> {
+  const cooldownUntil = creditSnapshotCooldowns.get(uid) ?? 0;
+  if (cooldownUntil > Date.now()) {
+    throw new Error(CREDIT_SNAPSHOT_COOLDOWN_ERROR);
+  }
+
+  const inFlightRequest = creditSnapshotRequests.get(uid);
+  if (inFlightRequest) {
+    return inFlightRequest;
+  }
+
+  const request = fetchSnapshot()
+    .catch((error: unknown) => {
+      creditSnapshotCooldowns.set(uid, Date.now() + CREDIT_SNAPSHOT_FAILURE_COOLDOWN_MS);
+      throw error;
+    })
+    .finally(() => {
+      creditSnapshotRequests.delete(uid);
+    });
+
+  creditSnapshotRequests.set(uid, request);
+  return request;
+}
+
+function handleCreditSnapshot(snapshot: DocumentSnapshot): void {
+  const fromCache = snapshot.metadata?.fromCache === true;
+  const canEnforceBalance = !fromCache || controller.successfulSnapshot;
+
+  if (snapshot.exists()) {
+    controller.balanceResolved = true;
+    controller.successfulSnapshot = canEnforceBalance;
+
+    const data = snapshot.data() as BetaAccessDocument;
+    const availableCredits = readNumber(data.availableCredits);
+    const usedCredits = readNumber(data.usedCredits);
+    const reservedCredits = readNumber(data.reservedCredits);
+    const baseCredits = readNumber(data.baseCredits);
+    const bonusCredits = readNumber(data.bonusCredits);
+    const feedbackBonusGranted = data.feedbackBonusGranted === true;
+    const unlimitedCredits = typeof data.unlimitedCredits === 'boolean'
+      ? data.unlimitedCredits
+      : undefined;
+
+    setCreditState((prev) => ({
+      availableCredits,
+      usedCredits,
+      reservedCredits,
+      baseCredits,
+      bonusCredits,
+      feedbackBonusGranted,
+      unlimitedCredits: unlimitedCredits ?? prev.unlimitedCredits,
+      canEnforceBalance,
+      loading: false,
+      error: canEnforceBalance ? null : prev.error,
+    }));
+    return;
+  }
+
+  controller.balanceResolved = true;
+  controller.successfulSnapshot = canEnforceBalance;
+
+  setCreditState((prev) => ({
+    availableCredits: canEnforceBalance ? 0 : prev.availableCredits,
+    usedCredits: canEnforceBalance ? 0 : prev.usedCredits,
+    reservedCredits: canEnforceBalance ? 0 : prev.reservedCredits,
+    baseCredits: canEnforceBalance ? 0 : prev.baseCredits,
+    bonusCredits: canEnforceBalance ? 0 : prev.bonusCredits,
+    feedbackBonusGranted: canEnforceBalance ? false : prev.feedbackBonusGranted,
+    canEnforceBalance,
+    loading: false,
+    error: canEnforceBalance ? null : prev.error,
+  }));
+}
+
+function handleCreditSnapshotError(error: unknown): void {
+  log.error('Falha ao carregar documento beta_access', { error: String(error) });
+  setCreditState((prev) => ({
+    loading: false,
+    error: prev.canEnforceBalance || controller.balanceResolved
+      ? prev.error
+      : 'Erro ao carregar saldo de créditos.',
+  }));
+}
+
+function subscribeToCredits(uid: string): void {
+  teardownCreditsListener();
+  const creditsRef = doc(db, 'users', uid, 'beta_access', 'current');
+
+  controller.unsubscribe = onSnapshot(
+    creditsRef,
+    (snapshot) => {
+      if (uid !== controller.currentUid) {
+        return;
+      }
+
+      handleCreditSnapshot(snapshot);
+    },
+    (error) => {
+      if (uid !== controller.currentUid) {
+        return;
+      }
+
+      handleCreditSnapshotError(error);
+    },
+  );
+}
+
+function evaluateCreditReconciliation(): void {
+  const state = readCreditState(useCreditsStore.getState());
+
+  if (
+    controller.authLoading ||
+    !controller.currentUid ||
+    state.loading ||
+    state.unlimitedCredits ||
+    state.error
+  ) {
+    controller.lastBlockedReconcileKey = null;
+    controller.reconcileAttempt = 0;
+    clearReconcileTimer();
+    return;
+  }
+
+  const needsInitialSnapshotConfirmation =
+    state.availableCredits <= 0 &&
+    state.reservedCredits === 0 &&
+    !controller.successfulSnapshot;
+  const isPotentiallyStaleBlockedState =
+    needsInitialSnapshotConfirmation ||
+    (state.availableCredits <= 0 && state.reservedCredits > 0);
+
+  if (!isPotentiallyStaleBlockedState) {
+    controller.lastBlockedReconcileKey = null;
+    controller.reconcileAttempt = 0;
+    clearReconcileTimer();
+    return;
+  }
+
+  if (controller.reconcileAttempt >= MAX_RECONCILE_ATTEMPTS) {
+    return;
+  }
+
+  const reconcileKey = `${controller.currentUid}:${state.availableCredits}:${state.reservedCredits}`;
+  if (controller.lastBlockedReconcileKey === reconcileKey && controller.reconcileTimer !== null) {
+    return;
+  }
+
+  controller.lastBlockedReconcileKey = reconcileKey;
+  clearReconcileTimer();
+
+  const delayMs = Math.min(
+    BASE_RECONCILE_DELAY_MS * Math.pow(2, controller.reconcileAttempt),
+    MAX_RECONCILE_DELAY_MS,
   );
 
-  const applySnapshot = useCallback((snapshot: CreditSnapshotCallableOutput) => {
-    setState((prev) => ({
-      ...prev,
-      availableCredits: snapshot.availableCredits,
-      usedCredits: snapshot.usedCredits,
-      reservedCredits: snapshot.reservedCredits,
-      baseCredits: snapshot.baseCredits,
-      bonusCredits: snapshot.bonusCredits,
-      feedbackBonusGranted: snapshot.feedbackBonusGranted,
-      unlimitedCredits: snapshot.unlimitedCredits,
-      loading: false,
-      error: null,
-    }));
-  }, []);
+  controller.reconcileAttempt += 1;
+  controller.reconcileTimer = setTimeout(() => {
+    controller.reconcileTimer = null;
+    void useCreditsStore.getState().refreshCredits(false);
+  }, delayMs);
+}
 
-  const refreshCredits = useCallback(async (setLoading = false) => {
-    if (!user || refreshInFlightRef.current) {
+export const useCreditsStore = create<CreditStore>()((set, get) => ({
+  ...initialState,
+
+  syncAuth: (uid: string | null, authLoading: boolean) => {
+    const authKey = authLoading ? 'loading' : uid ?? 'anonymous';
+    if (controller.syncedAuthKey === authKey) {
       return;
     }
 
-    refreshInFlightRef.current = true;
+    controller.syncedAuthKey = authKey;
+    controller.authLoading = authLoading;
+
+    if (authLoading) {
+      teardownCreditsListener();
+      clearReconcileTimer();
+      controller.currentUid = null;
+      controller.bootstrapCompleted = false;
+      controller.balanceResolved = false;
+      controller.successfulSnapshot = false;
+      controller.refreshInFlight = false;
+      controller.reconcileAttempt = 0;
+      controller.lastBlockedReconcileKey = null;
+      set((store) => ({
+        ...readCreditState(store),
+        loading: true,
+        error: null,
+      }));
+      return;
+    }
+
+    if (!uid) {
+      teardownCreditsListener();
+      clearReconcileTimer();
+      resetControllerState();
+      set({ ...initialState, loading: false });
+      return;
+    }
+
+    const shouldResetForNewUser = controller.currentUid !== uid;
+    controller.currentUid = uid;
+
+    if (shouldResetForNewUser) {
+      clearReconcileTimer();
+      controller.bootstrapCompleted = false;
+      controller.balanceResolved = false;
+      controller.successfulSnapshot = false;
+      controller.refreshInFlight = false;
+      controller.reconcileAttempt = 0;
+      controller.lastBlockedReconcileKey = null;
+      set({ ...initialState });
+    }
+
+    if (!controller.unsubscribe) {
+      subscribeToCredits(uid);
+    }
+
+    if (shouldResetForNewUser || get().loading) {
+      void get().refreshCredits(true);
+    }
+  },
+
+  refreshCredits: async (setLoading = false) => {
+    const uid = controller.currentUid;
+    if (controller.authLoading || !uid || controller.refreshInFlight) {
+      return;
+    }
+
+    controller.refreshInFlight = true;
     if (setLoading) {
-      setState((prev) => ({ ...prev, loading: true }));
+      setCreditState(() => ({ loading: true }));
     }
 
     try {
-      const result = await creditSnapshotCallable({});
-      bootstrapCompletedRef.current = true;
-      applySnapshot(result.data);
-    } catch (error: unknown) {
-      bootstrapCompletedRef.current = true;
-      log.error('Falha ao reconciliar saldo de créditos', { error: String(error) });
-      setState((prev) => ({
-        ...prev,
+      const resultData = await requestCreditSnapshot(uid, async () => {
+        const result = await creditSnapshotCallable({});
+        return result.data;
+      });
+
+      controller.bootstrapCompleted = true;
+      controller.balanceResolved = true;
+      controller.successfulSnapshot = true;
+
+      setCreditState(() => ({
+        availableCredits: resultData.availableCredits,
+        usedCredits: resultData.usedCredits,
+        reservedCredits: resultData.reservedCredits,
+        baseCredits: resultData.baseCredits,
+        bonusCredits: resultData.bonusCredits,
+        feedbackBonusGranted: resultData.feedbackBonusGranted,
+        unlimitedCredits: resultData.unlimitedCredits,
+        canEnforceBalance: true,
         loading: false,
-        error: 'Erro ao carregar saldo de créditos.',
+        error: null,
+      }));
+    } catch (error: unknown) {
+      controller.bootstrapCompleted = true;
+
+      if (error instanceof Error && error.message === CREDIT_SNAPSHOT_COOLDOWN_ERROR) {
+        setCreditState((prev) => ({
+          loading: false,
+          error: prev.canEnforceBalance ? null : prev.error,
+        }));
+        return;
+      }
+
+      log.error('Falha ao reconciliar saldo de créditos', { error: String(error) });
+      setCreditState((prev) => ({
+        loading: false,
+        error: prev.canEnforceBalance || controller.balanceResolved
+          ? prev.error
+          : 'Erro ao carregar saldo de créditos.',
       }));
     } finally {
-      refreshInFlightRef.current = false;
+      controller.refreshInFlight = false;
     }
-  }, [applySnapshot, creditSnapshotCallable, user]);
+  },
+
+  reset: () => {
+    teardownCreditsListener();
+    clearReconcileTimer();
+    resetControllerState();
+    set(initialState);
+  },
+}));
+
+export function resetUseCreditsTestState(): void {
+  teardownCreditsListener();
+  clearReconcileTimer();
+  creditSnapshotRequests.clear();
+  creditSnapshotCooldowns.clear();
+  resetControllerState();
+  useCreditsStore.setState(initialState);
+}
+
+export function useCredits(): CreditState {
+  const { user, loading: authLoading } = useAuth();
+  const syncAuth = useCreditsStore((store) => store.syncAuth);
+  const state = useCreditsStore(useShallow((store) => ({
+    availableCredits: store.availableCredits,
+    usedCredits: store.usedCredits,
+    reservedCredits: store.reservedCredits,
+    baseCredits: store.baseCredits,
+    bonusCredits: store.bonusCredits,
+    feedbackBonusGranted: store.feedbackBonusGranted,
+    unlimitedCredits: store.unlimitedCredits,
+    canEnforceBalance: store.canEnforceBalance,
+    loading: store.loading,
+    error: store.error,
+  })));
 
   useEffect(() => {
-    if (!user) {
-      bootstrapCompletedRef.current = false;
-      refreshInFlightRef.current = false;
-      lastBlockedReconcileKeyRef.current = null;
-      setState((prev) => ({ ...prev, loading: false }));
-      return;
-    }
-
-    bootstrapCompletedRef.current = false;
-    void refreshCredits(true);
-
-    const creditsRef = doc(db, 'users', user.uid, 'beta_access', 'current');
-    const userRef = doc(db, 'users', user.uid);
-
-    const unsubscribeCredits = onSnapshot(
-      creditsRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          // Validação runtime: Firestore pode retornar strings, NaN, etc.
-          setState((prev) => ({
-            ...prev,
-            availableCredits: typeof data.availableCredits === 'number' ? data.availableCredits : Number(data.availableCredits) || 0,
-            usedCredits: typeof data.usedCredits === 'number' ? data.usedCredits : Number(data.usedCredits) || 0,
-            reservedCredits: typeof data.reservedCredits === 'number' ? data.reservedCredits : Number(data.reservedCredits) || 0,
-            baseCredits: typeof data.baseCredits === 'number' ? data.baseCredits : Number(data.baseCredits) || 0,
-            bonusCredits: typeof data.bonusCredits === 'number' ? data.bonusCredits : Number(data.bonusCredits) || 0,
-            feedbackBonusGranted: typeof data.feedbackBonusGranted === 'boolean' ? data.feedbackBonusGranted : Boolean(data.feedbackBonusGranted),
-            loading: false,
-            error: null,
-          }));
-        } else {
-          if (bootstrapCompletedRef.current) {
-            setState((prev) => ({ ...prev, loading: false }));
-          }
-        }
-      },
-      (err) => {
-        log.error('Falha ao carregar documento beta_access', { error: String(err) });
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: 'Erro ao carregar saldo de créditos.',
-        }));
-      },
-    );
-
-    const unsubscribeUser = onSnapshot(
-      userRef,
-      (snapshot) => {
-        const userData = snapshot.exists()
-          ? snapshot.data() as UserProfile
-          : null;
-
-        setState((prev) => ({
-          ...prev,
-          unlimitedCredits: userData?.entitlements?.unlimitedCredits === true,
-          loading: false,
-          error: null,
-        }));
-      },
-      (err) => {
-        log.error('Falha ao carregar documento do usuário', { error: String(err) });
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: 'Erro ao carregar permissões da conta.',
-        }));
-      },
-    );
-
-    return () => {
-      unsubscribeCredits();
-      unsubscribeUser();
-    };
-  }, [refreshCredits, user]);
-
-  useEffect(() => {
-    // Limpa timer e reseta contador quando o usuário muda ou desloga
-    if (!user || state.loading || state.unlimitedCredits) {
-      lastBlockedReconcileKeyRef.current = null;
-      reconcileAttemptRef.current = 0;
-      if (reconcileTimerRef.current !== null) {
-        clearTimeout(reconcileTimerRef.current);
-        reconcileTimerRef.current = null;
-      }
-      return;
-    }
-
-    const isPotentiallyStaleBlockedState = state.availableCredits <= 0 && state.reservedCredits > 0;
-    if (!isPotentiallyStaleBlockedState) {
-      lastBlockedReconcileKeyRef.current = null;
-      reconcileAttemptRef.current = 0;
-      if (reconcileTimerRef.current !== null) {
-        clearTimeout(reconcileTimerRef.current);
-        reconcileTimerRef.current = null;
-      }
-      return;
-    }
-
-    // Limite de tentativas consecutivas — evita loop infinito quando
-    // creditSnapshot está consistentemente retornando 500.
-    if (reconcileAttemptRef.current >= MAX_RECONCILE_ATTEMPTS) {
-      return;
-    }
-
-    const reconcileKey = `${user.uid}:${state.availableCredits}:${state.reservedCredits}`;
-    // Só tenta de novo se a chave mudou (ex: reservedCredits aumentou)
-    // OU se o timer expirou (retry após falha)
-    if (lastBlockedReconcileKeyRef.current === reconcileKey && reconcileTimerRef.current !== null) {
-      return;
-    }
-
-    lastBlockedReconcileKeyRef.current = reconcileKey;
-
-    // Backoff exponencial: 1s, 2s, 4s, 8s, 16s, 30s (máx)
-    const delayMs = Math.min(
-      BASE_RECONCILE_DELAY_MS * Math.pow(2, reconcileAttemptRef.current),
-      MAX_RECONCILE_DELAY_MS,
-    );
-
-    reconcileAttemptRef.current += 1;
-
-    reconcileTimerRef.current = setTimeout(() => {
-      reconcileTimerRef.current = null;
-      void refreshCredits(false);
-    }, delayMs);
-
-    return () => {
-      if (reconcileTimerRef.current !== null) {
-        clearTimeout(reconcileTimerRef.current);
-        reconcileTimerRef.current = null;
-      }
-    };
-  }, [
-    refreshCredits,
-    state.availableCredits,
-    state.loading,
-    state.reservedCredits,
-    state.unlimitedCredits,
-    user,
-  ]);
+    syncAuth(user?.uid ?? null, authLoading);
+  }, [authLoading, syncAuth, user?.uid]);
 
   return state;
 }

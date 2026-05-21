@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { CreditSnapshotOutputSchema, type CreditSnapshotOutput } from '../genkit/schemas/common.js';
+import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 import { getCreditAvailabilitySnapshot } from '../usage/index.js';
 
 const CreditSnapshotInputSchema = z.object({});
@@ -22,13 +23,8 @@ export const creditSnapshot = onCallGenkit(
       inputSchema: CreditSnapshotInputSchema,
       outputSchema: CreditSnapshotOutputSchema,
     },
-    async (): Promise<CreditSnapshotOutput> => {
-      const auth = ai.currentContext()?.auth;
-      const uid = auth?.uid;
-
-      if (!uid) {
-        throw new HttpsError('unauthenticated', 'Usuário não autenticado');
-      }
+    async (_input, flowContext): Promise<CreditSnapshotOutput> => {
+      const uid = getCallableUidOrThrow(flowContext);
 
       const db = getFirestore();
 

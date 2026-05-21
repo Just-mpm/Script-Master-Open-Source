@@ -651,6 +651,7 @@ export const ptBR: TranslationDictionary = {
       credits: {
         loading: 'Carregando créditos...',
         error: 'Erro ao carregar créditos',
+        syncing: 'Sincronizando saldo de créditos...',
         ariaLabel: 'Saldo de créditos: {credits}',
         breakdown: 'Base: {base} | Bônus: {bonus} | Usados: {used}',
       },
@@ -873,6 +874,7 @@ export const ptBR: TranslationDictionary = {
 
   // ── Assistente ──────────────────────────────────────────────────────
   assistant: {
+    deleteMemoryConfirm: 'Excluir memória?',
     header: {
       title: 'Assistente criativo',
       subtitle: 'Um painel de direção criativa para lapidar roteiro, voz, memória de projeto e ajustes de cena.',
