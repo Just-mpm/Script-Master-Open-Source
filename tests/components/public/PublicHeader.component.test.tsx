@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
@@ -9,11 +8,11 @@ import { I18nProvider } from '../../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
-function Wrapper({ children }: { children: ReactNode }) {
+function Wrapper({ children, initialEntries = ['/'] }: { children: ReactNode; initialEntries?: string[] }) {
   return (
     <I18nProvider>
       <ThemeProvider theme={darkTheme}>
-        <MemoryRouter>{children}</MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
       </ThemeProvider>
     </I18nProvider>
   );
@@ -103,6 +102,14 @@ describe('PublicHeader', () => {
     render(<PublicHeader />, { wrapper: Wrapper });
     // MUI Button com component={Link} renderiza como link no DOM
     expect(screen.getByRole('link', { name: /Entrar/i })).toBeDefined();
+  });
+
+  it('mostra link "Criar conta" quando o usuário já está na página de login', () => {
+    render(<PublicHeader />, {
+      wrapper: ({ children }) => <Wrapper initialEntries={['/login']}>{children}</Wrapper>,
+    });
+    expect(screen.getByRole('link', { name: /Criar conta/i })).toBeDefined();
+    expect(screen.queryByRole('link', { name: /^Entrar$/i })).toBeNull();
   });
 
   it('mostra link "Abrir App" quando autenticado', () => {

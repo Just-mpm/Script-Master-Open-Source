@@ -13,6 +13,7 @@ import Pause from '@mui/icons-material/Pause';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import { ICON_SIZE_SM, GAP_COMPACT, GAP_DEFAULT, RADIUS_SM, RADIUS_XS, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import type { Voice } from '../lib/types';
+import { useLocale } from '../features/i18n';
 
 // ─── Props ────────────────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ export const VoiceCard = React.memo(function VoiceCard({
   disabled = false,
 }: VoiceCardProps) {
   const theme = useTheme();
+  const { t } = useLocale();
 
   return (
     <Paper
@@ -94,7 +96,7 @@ export const VoiceCard = React.memo(function VoiceCard({
             {isSelected && <CheckCircle sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} aria-hidden="true" />}
           </Stack>
           <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            {voice.style}
+            {t(`common.voiceStyles.${voice.styleKey}`)}
           </Typography>
         </Stack>
       </ButtonBase>

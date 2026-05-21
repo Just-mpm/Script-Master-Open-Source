@@ -160,6 +160,18 @@ type GenerateOptionsState = StudioDraftState & {
   speakerBName: string;
 };
 
+function getDefaultProjectLabel(locale: Locale): string {
+  switch (locale) {
+    case 'en':
+      return 'Project';
+    case 'es':
+      return 'Proyecto';
+    case 'pt-BR':
+    default:
+      return 'Projeto';
+  }
+}
+
 /**
  * Constrói opções de geração de áudio a partir do estado do store.
  * Recebe o estado via parâmetro para evitar import circular com studioStore.
@@ -170,11 +182,12 @@ export function buildGenerateOptions(
   userId: string | undefined,
   state: GenerateOptionsState,
 ) {
+  const locale = state.imageTextLanguage;
   return {
     userId,
-    projectName: `Projeto ${new Date().toLocaleDateString()}`,
+    projectName: `${getDefaultProjectLabel(locale)} ${new Date().toLocaleDateString()}`,
     ...state,
-    locale: state.imageTextLanguage,
+    locale,
   };
 }
 

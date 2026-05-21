@@ -140,6 +140,13 @@ describe('ImageStudio', () => {
     expect(screen.getByText('Imagens salvas')).toBeDefined();
   });
 
+  it('traduz a aba de stock para espanhol', () => {
+    localStorage.setItem('s2a_locale', 'es');
+    render(<ImageStudio />, { wrapper: Wrapper });
+    expect(screen.getByRole('tab', { name: 'Imágenes de stock' })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Mídia Stock' })).toBeNull();
+  });
+
   it('mostra skeletons na galeria durante carregamento', () => {
     render(<ImageStudio />, { wrapper: Wrapper });
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');

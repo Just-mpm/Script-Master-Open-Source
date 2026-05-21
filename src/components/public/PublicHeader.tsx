@@ -48,6 +48,11 @@ export function PublicHeader() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isLoginRoute = location.pathname === '/login';
+  const isRegisterRoute = location.pathname === '/cadastro';
+  const guestCta = isLoginRoute
+    ? { to: '/cadastro', label: t('nav.register') }
+    : { to: '/login', label: t('nav.login') };
 
   /** Itens de navegação com labels traduzidos via i18n */
   const navItems = [
@@ -93,7 +98,8 @@ export function PublicHeader() {
               textDecoration: 'none',
               color: 'inherit',
               minWidth: 0,
-              flexShrink: 0,
+              flexGrow: { xs: 1, md: 0 },
+              flexShrink: 1,
               transition: 'opacity 0.2s ease',
               '&:hover': { opacity: 0.88 },
             }}
@@ -105,11 +111,29 @@ export function PublicHeader() {
               aria-hidden="true"
               sx={{ width: 36, height: 36, objectFit: 'contain' }}
             />
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="overline" sx={{ color: 'text.secondary', lineHeight: 1.1, letterSpacing: '0.08em', fontSize: '0.625rem' }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  color: 'text.secondary',
+                  lineHeight: 1.1,
+                  letterSpacing: '0.08em',
+                  fontSize: '0.625rem',
+                }}
+              >
                 AI Studio
               </Typography>
-              <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  lineHeight: 1.1,
+                  fontSize: { xs: '0.95rem', sm: '1.25rem' },
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 Script Master
               </Typography>
             </Box>
@@ -157,12 +181,13 @@ export function PublicHeader() {
               })}
             </Box>
           )}
-
-          {isMobile && <Box sx={{ flex: 1 }} />}
-
           {/* CTA / Avatar — mobile: sempre mostrar hamburger + botão */}
           {!loading && (
-            <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
+            <Stack
+              direction="row"
+              spacing={{ xs: 1, sm: GAP_MEDIUM }}
+              sx={{ flexShrink: 0, alignItems: 'center' }}
+            >
               <LocaleSelector size="small" />
               {isMobile && (
                 <IconButton
@@ -197,9 +222,9 @@ export function PublicHeader() {
               ) : (
                 <Button
                   component={Link}
-                  to="/login"
+                  to={guestCta.to}
                   variant="contained"
-                  startIcon={!isMobile ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                  startIcon={!isMobile && !isRegisterRoute ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
                   size="small"
                   sx={{
                     transition: 'box-shadow 0.2s ease',
@@ -208,7 +233,7 @@ export function PublicHeader() {
                     },
                   }}
                 >
-                  {t('nav.login')}
+                  {guestCta.label}
                 </Button>
               )}
             </Stack>

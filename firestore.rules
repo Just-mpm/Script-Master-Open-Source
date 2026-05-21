@@ -17,6 +17,15 @@ service cloud.firestore {
               (request.auth.token.email.lower() == "kurosaki.mpm@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    function isAssetUrl(url) {
+      return url is string && (
+        url.matches("^https://.*") ||
+        url.matches("^http://localhost[:/].*") ||
+        url.matches("^http://127\\.0\\.0\\.1[:/].*") ||
+        url.matches("^blob:.*")
+      );
+    }
+
     function isValidMemory(data) {
       return data.keys().hasAll(['id', 'userId', 'content', 'createdAt']) &&
              data.id is string &&
@@ -51,7 +60,7 @@ service cloud.firestore {
              data.userId == request.auth.uid &&
              data.name is string && data.name.size() > 0 &&
              data.script is string && data.script.size() > 0 &&
-             data.audioUrl is string && (data.audioUrl.matches("^https://.*") || data.audioUrl.matches("^blob:.*")) &&
+             isAssetUrl(data.audioUrl) &&
              data.createdAt is number &&
              (!('scenes' in data) || (data.scenes is list && data.scenes.size() <= 100));
     }
@@ -84,7 +93,7 @@ service cloud.firestore {
              data.id is string &&
              data.projectId is string &&
              data.userId == request.auth.uid &&
-             data.audioUrl is string && (data.audioUrl.matches("^https://.*") || data.audioUrl.matches("^blob:.*")) &&
+             isAssetUrl(data.audioUrl) &&
              data.createdAt is number;
     }
 

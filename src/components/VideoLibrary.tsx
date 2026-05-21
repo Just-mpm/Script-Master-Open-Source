@@ -114,9 +114,9 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             <FolderOpen sx={{ fontSize: 24, color: 'common.white' }} />
           </Box>
           <Stack spacing={GAP_COMPACT}>
-            <Typography variant="h6">{t('library.emptyGallery')}</Typography>
+            <Typography variant="h6">{t('library.emptyTitle')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Assim que você gerar projetos com áudio e cenas, eles aparecerão aqui para revisão e download.
+              {t('library.emptyDescription')}
             </Typography>
           </Stack>
           <Button
@@ -125,7 +125,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             onClick={() => navigate('/app/estudio')}
             sx={{ mt: 0.5 }}
           >
-            Ir para o Estúdio
+            {t('video.preview.goToStudio')}
           </Button>
         </Stack>
       </Paper>
@@ -149,9 +149,9 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             <Search sx={{ fontSize: 24, color: 'common.white' }} />
           </Box>
           <Stack spacing={GAP_COMPACT}>
-            <Typography variant="h6">Nenhum resultado</Typography>
+            <Typography variant="h6">{t('library.noResultsTitle')}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Nenhum projeto corresponde a &ldquo;{searchQuery}&rdquo;.
+              {t('library.noResultsDescription', { query: searchQuery })}
             </Typography>
           </Stack>
         </Stack>
@@ -168,16 +168,23 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
           <Movie sx={{ fontSize: ICON_SIZE_MD }} />
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
-            Sua galeria
+            {t('library.title')}
           </Typography>
-          <Chip label={`${filteredProjects.length} itens`} size="small" variant="outlined" />
+          <Chip
+            label={t('library.projectCount', {
+              count: filteredProjects.length,
+              plural: filteredProjects.length === 1 ? '' : 's',
+            })}
+            size="small"
+            variant="outlined"
+          />
         </Stack>
 
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
           <TextField
             size="small"
-            placeholder="Buscar..."
-            aria-label="Buscar projetos"
+            placeholder={t('library.searchPlaceholder')}
+            aria-label={t('library.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             slotProps={{
@@ -214,7 +221,11 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
           />
 
           <Tooltip title={sortOrder === 'recent' ? t('library.sortOldestFirst') : t('library.sortNewestFirst')}>
-            <IconButton size="small" aria-label="Ordenar" onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}>
+            <IconButton
+              size="small"
+              aria-label={sortOrder === 'recent' ? t('library.sortOldestFirst') : t('library.sortNewestFirst')}
+              onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}
+            >
               {sortOrder === 'recent'
                 ? <ArrowDownward sx={{ fontSize: ICON_SIZE_MD }} />
                 : <ArrowUpward sx={{ fontSize: ICON_SIZE_MD }} />

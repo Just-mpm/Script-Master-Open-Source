@@ -14,6 +14,7 @@ const {
   mockHandleCancel,
   mockSetError,
   mockBuildGenerateOptions,
+  mockBuildAudioFlowInput,
   mockSaveGeneration,
   mockAudioPreflightCallable,
 } = vi.hoisted(() => ({
@@ -51,6 +52,7 @@ const {
   mockHandleCancel: vi.fn(),
   mockSetError: vi.fn(),
   mockBuildGenerateOptions: vi.fn().mockReturnValue({ script: 'opts' }),
+  mockBuildAudioFlowInput: vi.fn().mockReturnValue({ script: 'opts' }),
   mockSaveGeneration: vi.fn().mockResolvedValue(undefined),
   mockAudioPreflightCallable: vi.fn().mockResolvedValue({
     data: {
@@ -84,6 +86,7 @@ vi.mock('../../src/contexts/AudioContext', () => ({
 }));
 
 vi.mock('../../src/hooks/useAudioGenerator', () => ({
+  buildAudioFlowInput: (...args: unknown[]) => mockBuildAudioFlowInput(...args),
   useAudioGenerator: () => ({
     isGenerating: false,
     statusText: '',
@@ -273,6 +276,7 @@ describe('useAudioGenerationHandler', () => {
     });
 
     expect(mockBuildGenerateOptions).toHaveBeenCalledWith('test-uid', mockStudioState);
+    expect(mockBuildAudioFlowInput).toHaveBeenCalled();
     expect(mockAudioPreflightCallable).toHaveBeenCalledWith({ script: 'opts' });
     expect(result.current.isPreflightOpen).toBe(true);
 

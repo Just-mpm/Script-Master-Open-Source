@@ -20,6 +20,7 @@ import {
   assistantComposerContainerSx,
   assistantComposerInputSx,
   assistantAttachmentChipSx,
+  assistantActionIconButtonSx,
   assistantSendButtonSx,
 } from './assistantUi';
 import AttachFile from '@mui/icons-material/AttachFile';
@@ -151,14 +152,14 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                         aria-label={t('assistant.composer.stopGeneration')}
                         size="small"
                         sx={{
-                          ...assistantSendButtonSx,
+                          ...assistantActionIconButtonSx,
                           minWidth: 40,
                           width: 40,
                           height: 40,
                           backgroundColor: 'error.main',
                           boxShadow: `0 4px 16px ${alpha(ERROR_MAIN, 0.24)}`,
                           '&:hover': {
-                            ...assistantSendButtonSx['&:hover'],
+                            ...assistantActionIconButtonSx['&:hover'],
                             backgroundColor: 'error.dark',
                             boxShadow: `0 6px 24px ${alpha(ERROR_MAIN, 0.36)}`,
                           },
@@ -173,10 +174,18 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                       variant="contained"
                       size="small"
                       disabled={!canSend}
-                      endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM, ml: -0.5 }} />}
+                      aria-label={t('assistant.composer.send')}
+                      endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM }} />}
                       sx={assistantSendButtonSx}
                     >
-                      {t('assistant.composer.send')}
+                      <Box
+                        component="span"
+                        sx={{
+                          display: { xs: 'none', sm: 'inline' },
+                        }}
+                      >
+                        {t('assistant.composer.send')}
+                      </Box>
                     </Button>
                   )}
                 </InputAdornment>

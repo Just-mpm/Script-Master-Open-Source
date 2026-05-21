@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGlobalAudioActions } from '../../contexts/AudioContext';
-import { useAudioGenerator } from '../../hooks/useAudioGenerator';
+import { buildAudioFlowInput, useAudioGenerator } from '../../hooks/useAudioGenerator';
+import type { GenerateOptions } from '../../hooks/useAudioGenerator';
 import { MAX_CHARS } from '../../lib/constants';
 import { saveGeneration, type SavedAudio } from '../../lib/db';
 import { createLogger } from '../../lib/logger';
@@ -15,6 +16,9 @@ import type { AudioPreflightSummary } from './AudioPreflightDialog';
 import { useLocale } from '../../features/i18n';
 
 const log = createLogger('AudioGenerationHandler');
+const AUDIO_PREFLIGHT_TIMEOUT_MS = 15_000;
+const SHOULD_SKIP_BROKEN_PREFLIGHT_IN_DEV =
+  import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true';
 
 interface AudioGenerationHandlerReturn {
   // Estado de geração de áudio
@@ -57,15 +61,33 @@ interface AudioGenerationHandlerReturn {
   preflightError: string | null;
 }
 
-type BuiltGenerateOptions = ReturnType<typeof buildGenerateOptions>;
-
-type AudioPreflightInput = BuiltGenerateOptions & {
-  preflight?: {
-    availableCredits: number;
-    totalPlanned: number;
-    unlimited: boolean;
-  };
+type AudioPreflightInput = ReturnType<typeof buildAudioFlowInput>;
+type AudioPreflightCallableResult = {
+  data?: AudioPreflightSummary;
+  result?: AudioPreflightSummary;
 };
+
+function isAudioPreflightSummary(value: unknown): value is AudioPreflightSummary {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const candidate = value as Partial<AudioPreflightSummary>;
+  return (
+    typeof candidate.summary === 'string' &&
+    typeof candidate.estimatedDurationSeconds === 'number' &&
+    typeof candidate.estimatedChunkCount === 'number' &&
+    typeof candidate.estimatedSceneCount === 'number' &&
+    Array.isArray(candidate.steps) &&
+    typeof candidate.canProceed === 'boolean' &&
+    Array.isArray(candidate.notes)
+  );
+}
+
+function getAudioPreflightSummary(result: AudioPreflightCallableResult): AudioPreflightSummary | null {
+  if (isAudioPreflightSummary(result.data)) return result.data;
+  if (isAudioPreflightSummary(result.result)) return result.result;
+  if (isAudioPreflightSummary(result)) return result;
+  return null;
+}
 
 // ─── Hook ──────────────────────────────────────────────────
 
@@ -117,7 +139,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const [isPreflightOpen, setIsPreflightOpen] = useState(false);
   const [preflight, setPreflight] = useState<AudioPreflightSummary | null>(null);
   const [preflightError, setPreflightError] = useState<string | null>(null);
-  const [pendingGenerateOptions, setPendingGenerateOptions] = useState<AudioPreflightInput | null>(null);
+  const [pendingGenerateOptions, setPendingGenerateOptions] = useState<GenerateOptions | null>(null);
   const preflightRequestTokenRef = useRef(0);
 
   // Derivações para ActionBar e atalhos
@@ -164,15 +186,50 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     const requestToken = preflightRequestTokenRef.current + 1;
     preflightRequestTokenRef.current = requestToken;
 
-    void audioPreflightCallable(options)
+    const preflightInput = buildAudioFlowInput(options, crypto.randomUUID());
+    const preflightPromise = audioPreflightCallable(preflightInput);
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      window.setTimeout(() => {
+        reject(new Error('audioPreflight timeout'));
+      }, AUDIO_PREFLIGHT_TIMEOUT_MS);
+    });
+
+    void Promise.race([preflightPromise, timeoutPromise])
       .then((result) => {
         if (preflightRequestTokenRef.current !== requestToken) return;
-        setPreflight(result.data);
+        const nextPreflight = getAudioPreflightSummary(result);
+        if (!nextPreflight) {
+          log.warn('Prévia de áudio retornou sem payload utilizável', { result });
+          if (SHOULD_SKIP_BROKEN_PREFLIGHT_IN_DEV) {
+            setIsPreflightOpen(false);
+            setPreflight(null);
+            setPreflightError(null);
+            setPendingGenerateOptions(null);
+            generateAudio(options);
+            return;
+          }
+
+          setPreflightError(t('audioPreflight.unavailableText'));
+          return;
+        }
+
+        setPreflight(nextPreflight);
       })
       .catch((preflightErr: unknown) => {
         if (preflightRequestTokenRef.current !== requestToken) return;
         log.error('Erro ao preparar prévia da geração', { error: preflightErr });
         const errorInfo = getCallableErrorInfo(preflightErr);
+        if (SHOULD_SKIP_BROKEN_PREFLIGHT_IN_DEV) {
+          const isBusinessBlock = errorInfo.detailCode === 'INSUFFICIENT_CREDITS';
+          if (!isBusinessBlock) {
+            setIsPreflightOpen(false);
+            setPreflight(null);
+            setPreflightError(null);
+            setPendingGenerateOptions(null);
+            generateAudio(options);
+            return;
+          }
+        }
         setPreflightError(
           errorInfo.detailCode === 'INSUFFICIENT_CREDITS'
             ? t('audioPreflight.insufficientCreditsError')
@@ -183,7 +240,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
         if (preflightRequestTokenRef.current !== requestToken) return;
         setIsPreparingPreflight(false);
       });
-  }, [audioPreflightCallable, isGenerating, isPreparingPreflight, t, userId]);
+  }, [audioPreflightCallable, generateAudio, isGenerating, isPreparingPreflight, t, userId]);
 
   const closePreflightDialog = useCallback(() => {
     preflightRequestTokenRef.current += 1;
@@ -197,7 +254,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const confirmGenerate = useCallback(() => {
     if (!pendingGenerateOptions || !preflight || !preflight.canProceed) return;
 
-    const nextOptions: AudioPreflightInput = {
+    const nextOptions: GenerateOptions = {
       ...pendingGenerateOptions,
       preflight: {
         availableCredits: preflight.credits.available,

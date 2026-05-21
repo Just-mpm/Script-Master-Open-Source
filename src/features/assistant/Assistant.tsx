@@ -44,7 +44,7 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { user } = useAuth();
   const {
     messages,
@@ -154,7 +154,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     }
 
     if (file.size > MAX_DOCUMENT_SIZE) {
-      setDocumentError(`O arquivo "${file.name}" excede o limite de 500 KB permitido para a Base de Conhecimento.`);
+      setDocumentError(t('assistant.runtime.documentTooLarge', { fileName: file.name }));
 
       if (documentInputRef.current) {
         documentInputRef.current.value = '';
@@ -173,14 +173,16 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         : textContent;
 
       if (wasTruncated) {
-        setDocumentTruncationWarning(`Documento truncado — apenas os primeiros ${MAX_MEMORY_DOCUMENT_TEXT.toLocaleString('pt-BR')} caracteres foram salvos.`);
+        setDocumentTruncationWarning(t('assistant.runtime.documentTruncated', {
+          characterCount: new Intl.NumberFormat(locale).format(MAX_MEMORY_DOCUMENT_TEXT),
+        }));
         window.setTimeout(() => setDocumentTruncationWarning(null), 6000);
       }
 
       await saveMemory(`[Documento Anexado: ${file.name}]\n${truncatedText}`, user?.uid);
       await loadMemories();
     } catch {
-      setDocumentError('Não foi possível processar o documento. Verifique se o arquivo está correto.');
+      setDocumentError(t('assistant.runtime.processDocumentError'));
     } finally {
       setIsUploadingDocument(false);
 
@@ -188,7 +190,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         documentInputRef.current.value = '';
       }
     }
-  }, [user, loadMemories]);
+  }, [user, loadMemories, locale, t]);
 
   const handleAddMemory = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -204,11 +206,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       setNewMemory('');
       await loadMemories();
     } catch {
-      setDocumentError('Não foi possível salvar a memória. Tente novamente.');
+      setDocumentError(t('assistant.runtime.saveMemoryError'));
     } finally {
       setIsSavingMemory(false);
     }
-  }, [newMemory, user, loadMemories]);
+  }, [newMemory, user, loadMemories, t]);
 
   const handleDeleteMemory = useCallback((id: string) => {
     setMemoryToDelete(id);
@@ -294,7 +296,12 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           const maxSizeLabel = isImage ? '10 MB' : '5 MB';
 
           if (file.size > maxSize) {
-            setAttachmentError(`O arquivo "${file.name}" excede o limite de ${maxSizeLabel} para ${isImage ? 'imagens' : 'documentos'}.`);
+            setAttachmentError(t(
+              isImage
+                ? 'assistant.runtime.attachmentTooLargeImage'
+                : 'assistant.runtime.attachmentTooLargeDocument',
+              { fileName: file.name, maxSize: maxSizeLabel },
+            ));
             continue;
           }
 
@@ -312,7 +319,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, []);
+  }, [t]);
 
   const handleApply = useCallback((settings: AssistantSettings, messageId: string) => {
     onApplySettings(settings);
@@ -415,7 +422,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
               '& .MuiAlert-icon': { color: BRAND_PRIMARY },
             }}
           >
-            Você pode usar o assistente sem login, mas o histórico, as memórias e as diretrizes ficam locais ao navegador atual.
+            {t('assistant.runtime.guestNotice')}
           </Alert>
         </Box>
       ) : null}
@@ -434,7 +441,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             sx={{ borderRadius: 2 }}
             action={
               <Button color="inherit" size="small" onClick={retryLastMessage}>
-                Tentar novamente
+                {t('assistant.runtime.retry')}
               </Button>
             }
           >
@@ -475,7 +482,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         deletingItem={deletingConfirm}
         deleteError={null}
         titleIdleLabel={t('assistant.deleteMemoryConfirm')}
-        description="Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas."
+        description={t('assistant.runtime.deleteMemoryDescription')}
         onConfirm={() => void confirmDeleteMemory()}
         onCancel={() => setMemoryToDelete(null)}
       />
@@ -485,8 +492,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         itemName={chatToDelete ?? null}
         deletingItem={deletingConfirm}
         deleteError={null}
-        titleIdleLabel="Excluir conversa?"
-        description="Esta conversa será removida permanentemente do seu histórico."
+        titleIdleLabel={t('assistant.runtime.deleteConversationTitle')}
+        description={t('assistant.runtime.deleteConversationDescription')}
         onConfirm={() => void confirmDeleteChat()}
         onCancel={() => setChatToDelete(null)}
       />

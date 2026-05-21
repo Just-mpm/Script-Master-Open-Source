@@ -13,6 +13,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import Google from '@mui/icons-material/Google';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import { DocumentHead } from '../components/DocumentHead';
@@ -40,6 +42,8 @@ export function LoginPage() {
   const { login, loginWithEmail, resetPassword, authError, clearAuthError } = useAuth();
   const { t, locale } = useLocale();
   const authBenefits = getLocalizedAuthBenefits(locale);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const seo = getPageSeo({
     title: t('auth.login.seoTitle'),
@@ -279,7 +283,7 @@ export function LoginPage() {
                   </Divider>
 
                   {/* Formulario email/senha */}
-                  <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                  <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
                     <Stack spacing={2}>
                       <TextField
                         label={t('auth.login.emailLabel')}
@@ -342,6 +346,7 @@ export function LoginPage() {
                       sx={{
                         p: 0,
                         minWidth: 'auto',
+                        width: isMobile ? '100%' : 'auto',
                         fontWeight: 600,
                         '&:hover': {
                           textDecoration: 'underline',

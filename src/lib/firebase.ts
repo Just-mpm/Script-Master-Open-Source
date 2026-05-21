@@ -36,19 +36,26 @@ const app = initializeApp(appletConfig);
 const GOOGLE_RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
 const recaptchaKey = getRecaptchaSiteKey();
+const debugToken = getAppCheckDebugToken();
+const shouldUseDebugAppCheck =
+  import.meta.env.DEV &&
+  (
+    import.meta.env.VITE_USE_EMULATORS === 'true' ||
+    debugToken !== undefined
+  );
 
-if (recaptchaKey) {
-  // Produção: App Check com reCAPTCHA v3
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(recaptchaKey),
-    isTokenAutoRefreshEnabled: true,
-  });
-} else if (import.meta.env.DEV) {
-  // Desenvolvimento: modo debug com token do .env (ou true para gerar no console)
-  const debugToken = getAppCheckDebugToken();
+if (shouldUseDebugAppCheck) {
+  // Desenvolvimento local: App Check em modo debug evita falhas de reCAPTCHA
+  // em localhost e mantém o fluxo compatível com os emuladores.
   (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken ?? true;
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(GOOGLE_RECAPTCHA_TEST_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+} else if (recaptchaKey) {
+  // Produção: App Check com reCAPTCHA v3
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(recaptchaKey),
     isTokenAutoRefreshEnabled: true,
   });
 }

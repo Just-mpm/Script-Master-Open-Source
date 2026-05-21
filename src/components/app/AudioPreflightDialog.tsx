@@ -48,6 +48,8 @@ interface AudioPreflightDialogProps {
   onConfirm: () => void;
 }
 
+type AudioPreflightStepType = AudioPreflightStep['type'];
+
 function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -69,6 +71,62 @@ export function AudioPreflightDialog({
 }: AudioPreflightDialogProps) {
   const { t } = useLocale();
   const isUnavailable = !loading && !preflight;
+
+  function getSummaryText(): string {
+    if (!preflight) return '';
+    return preflight.estimatedSceneCount > 0
+      ? t('audioPreflight.summaryWithVisual')
+      : t('audioPreflight.summaryAudioOnly');
+  }
+
+  function getBlockingText(): string {
+    if (!preflight) return '';
+    return preflight.blockingMessage ?? t('audioPreflight.insufficientCreditsError');
+  }
+
+  function getStepLabel(type: AudioPreflightStepType): string {
+    return t(`audioPreflight.stepLabels.${type}`);
+  }
+
+  function getStepDetails(step: AudioPreflightStep): string[] {
+    switch (step.type) {
+      case 'audio':
+        return [
+          t('audioPreflight.stepDetails.audio.parts', { count: step.plannedCount }),
+          t('audioPreflight.stepDetails.audio.voice', {
+            voice: step.details[1]?.replace(/^Voz principal:\s*/u, '').replace(/\.$/u, '') ?? '',
+          }),
+        ];
+      case 'chunking':
+        return [
+          t('audioPreflight.stepDetails.chunking.consistency'),
+          t('audioPreflight.stepDetails.chunking.limit'),
+          t('audioPreflight.stepDetails.chunking.included'),
+        ];
+      case 'scene_prompts':
+        return [
+          t('audioPreflight.stepDetails.scenePrompts.estimate', { count: step.plannedCount }),
+          t('audioPreflight.stepDetails.scenePrompts.framework'),
+        ];
+      case 'image':
+        return [
+          t('audioPreflight.stepDetails.image.count', { count: step.plannedCount }),
+          step.details[1]?.toLowerCase().includes('refer')
+            ? t('audioPreflight.stepDetails.image.reference')
+            : t('audioPreflight.stepDetails.image.noReference'),
+        ];
+    }
+  }
+
+  function getNotes(): string[] {
+    if (!preflight) return [];
+    return [
+      t('audioPreflight.notes.freePreview'),
+      preflight.estimatedSceneCount > 0
+        ? t('audioPreflight.notes.visualEstimate')
+        : t('audioPreflight.notes.audioOnly'),
+    ];
+  }
 
   function formatCredits(value: number, unlimited: boolean): string {
     if (unlimited || !Number.isFinite(value)) {
@@ -117,12 +175,12 @@ export function AudioPreflightDialog({
           <Stack spacing={2.5}>
             <Alert severity={preflight.canProceed ? 'success' : 'warning'} variant="outlined">
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {preflight.summary}
+                {getSummaryText()}
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
                 {preflight.canProceed
                   ? t('audioPreflight.confirmReady')
-                  : preflight.blockingMessage}
+                  : getBlockingText()}
               </Typography>
             </Alert>
 
@@ -148,7 +206,7 @@ export function AudioPreflightDialog({
                   <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                     <Box>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        {step.label}
+                        {getStepLabel(step.type)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {step.plannedCount} {t('audioPreflight.stepsLabel')}
@@ -158,7 +216,7 @@ export function AudioPreflightDialog({
                   </Stack>
 
                   <Stack spacing={0.5} sx={{ mt: 1.25 }}>
-                    {step.details.map((detail) => (
+                    {getStepDetails(step).map((detail) => (
                       <Typography key={detail} variant="body2" color="text.secondary">
                         {detail}
                       </Typography>
@@ -198,7 +256,7 @@ export function AudioPreflightDialog({
             </Stack>
 
             <Stack spacing={0.5}>
-              {preflight.notes.map((note) => (
+              {getNotes().map((note) => (
                 <Typography key={note} variant="caption" color="text.secondary">
                   {note}
                 </Typography>

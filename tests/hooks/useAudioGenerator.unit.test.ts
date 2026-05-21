@@ -27,7 +27,7 @@ vi.mock('../../src/lib/constants', () => ({
   CHUNK_LIMIT: 500,
   MAX_CHARS: 50000,
   PACE_INSTRUCTIONS: { normal: 'Fale em ritmo normal.' },
-  VOICES: [{ id: 'Puck', name: 'Puck', style: 'Animada' }],
+  VOICES: [{ id: 'Puck', name: 'Puck', styleKey: 'animated' }],
 }));
 
 vi.mock('../../src/lib/gemini', () => ({

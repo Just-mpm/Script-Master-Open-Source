@@ -57,8 +57,8 @@ vi.mock('../../src/lib/constants', () => ({
   MAX_CHARS: 50000,
   PACE_INSTRUCTIONS: { normal: 'Ritmo normal', lento: 'Ritmo lento', rapido: 'Ritmo rápido' },
   VOICES: [
-    { id: 'Puck', name: 'Puck', style: 'Animada' },
-    { id: 'Zephyr', name: 'Zephyr', style: 'Brilhante' },
+    { id: 'Puck', name: 'Puck', styleKey: 'animated' },
+    { id: 'Zephyr', name: 'Zephyr', styleKey: 'bright' },
   ],
 }));
 

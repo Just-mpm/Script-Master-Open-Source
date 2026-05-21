@@ -476,16 +476,16 @@ export async function reserveCredits(
       //    reserveCredits() primeiro funcione, não apenas o feedback.
       const betaSnap = await transaction.get(betaRef);
       let beta: BetaAccess;
+      let shouldCreateBeta = false;
+      let shouldRefreshBeta = false;
       if (!betaSnap.exists) {
         beta = createInitialBetaAccess(currentPeriod);
-        transaction.set(betaRef, beta);
+        shouldCreateBeta = true;
       } else {
         beta = sanitizeBetaAccess(betaSnap.data(), currentPeriod);
         if (isNewPeriod(beta.currentPeriodKey)) {
           beta = buildRolledOverBetaAccess(beta, currentPeriod);
-          transaction.set(betaRef, beta);
-        } else {
-          transaction.set(betaRef, beta);
+          shouldRefreshBeta = true;
         }
       }
 
@@ -499,15 +499,20 @@ export async function reserveCredits(
       const month: CreditMonth = monthSnap.exists
         ? monthSnap.data() as CreditMonth
         : createInitialCreditMonth(currentPeriod, beta.baseCredits, beta.bonusCredits);
-      if (!monthSnap.exists) {
-        transaction.set(monthRef, month);
-      }
 
-      if (!betaSnap.exists) {
+      if (shouldCreateBeta) {
         console.log(
           `[credit-service] BetaAccess criado sob demanda via reserveCredits: ` +
           `uid=${uid} periodo=${currentPeriod}`,
         );
+      }
+
+      if (shouldCreateBeta || shouldRefreshBeta) {
+        transaction.set(betaRef, beta);
+      }
+
+      if (!monthSnap.exists) {
+        transaction.set(monthRef, month);
       }
 
       // 5. Atualiza beta_access

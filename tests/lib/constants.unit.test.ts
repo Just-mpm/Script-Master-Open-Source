@@ -19,14 +19,14 @@ describe('constants', () => {
       expect(VOICES.length).toBeGreaterThan(0);
     });
 
-    it('cada voz deve ter id, name e style strings não vazios', () => {
+    it('cada voz deve ter id, name e styleKey strings não vazios', () => {
       for (const voice of VOICES) {
         expect(typeof voice.id).toBe('string');
         expect(voice.id.length).toBeGreaterThan(0);
         expect(typeof voice.name).toBe('string');
         expect(voice.name.length).toBeGreaterThan(0);
-        expect(typeof voice.style).toBe('string');
-        expect(voice.style.length).toBeGreaterThan(0);
+        expect(typeof voice.styleKey).toBe('string');
+        expect(voice.styleKey.length).toBeGreaterThan(0);
       }
     });
 

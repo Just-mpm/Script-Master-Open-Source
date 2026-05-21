@@ -43,6 +43,16 @@ const OG_LOCALE_MAP: Record<string, string> = {
   es: 'es_ES',
 };
 
+/** Evita repetir o nome do produto quando a chamada já inclui a marca no título */
+function buildSeoTitle(title: string): string {
+  const normalizedTitle = title.trim();
+  const siteSuffix = `| ${SITE_NAME}`;
+
+  return normalizedTitle.endsWith(siteSuffix)
+    ? normalizedTitle
+    : `${normalizedTitle} ${siteSuffix}`;
+}
+
 /** Gera dados padronizados de SEO para o <head> de cada página */
 export function getPageSeo({
   title,
@@ -52,7 +62,7 @@ export function getPageSeo({
   publishedTime,
   locale,
 }: SeoProps): SeoData {
-  const fullTitle = `${title} | ${SITE_NAME}`;
+  const fullTitle = buildSeoTitle(title);
   const url = `${SITE_URL}${path}`;
   const ogLocale = locale ? (OG_LOCALE_MAP[locale] ?? 'pt_BR') : 'pt_BR';
 

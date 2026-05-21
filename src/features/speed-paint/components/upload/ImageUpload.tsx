@@ -112,8 +112,7 @@ export function ImageUpload() {
         {isDragActive ? t('speedPaint.uploadDragActive') : t('speedPaint.uploadPrompt')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420, lineHeight: 1.7 }}>
-        Arraste e solte suas imagens aqui, ou use o botão abaixo.
-        Suporta JPG, PNG e WebP. Processamento em lote suportado!
+        {t('speedPaint.uploadDescription')}
       </Typography>
       {/* Botão de escolha de arquivo */}
       <Button
@@ -129,7 +128,7 @@ export function ImageUpload() {
           },
         }}
       >
-        Escolher arquivos
+        {t('speedPaint.chooseFiles')}
         <input {...getInputProps()} style={{ display: 'none' }} />
       </Button>
     </Box>

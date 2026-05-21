@@ -282,6 +282,8 @@ export function SpeedPaintPage() {
               <Box
                 component="span"
                 sx={{
+                  display: 'inline-block',
+                  ml: 0.5,
                   background: BRAND_GRADIENT,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',

@@ -82,9 +82,9 @@ vi.mock('../../src/theme/tokens', () => ({
 
 vi.mock('../../src/lib/constants', () => ({
   VOICES: [
-    { id: 'Aoede', name: 'Aoede', style: 'Descontraída' },
-    { id: 'Zephyr', name: 'Zephyr', style: 'Brilhante' },
-    { id: 'Puck', name: 'Puck', style: 'Animada' },
+    { id: 'Aoede', name: 'Aoede', styleKey: 'casual' },
+    { id: 'Zephyr', name: 'Zephyr', styleKey: 'bright' },
+    { id: 'Puck', name: 'Puck', styleKey: 'animated' },
   ],
   MAX_CHARS: 50000,
   CHUNK_LIMIT: 500,
@@ -181,6 +181,14 @@ describe('ConfiguracoesPage', () => {
       expect(screen.getByText('Descontraída')).toBeInTheDocument();
       expect(screen.getByText('Brilhante')).toBeInTheDocument();
       expect(screen.getByText('Animada')).toBeInTheDocument();
+    });
+
+    it('traduz o estilo das vozes quando o idioma está em espanhol', () => {
+      localStorage.setItem('s2a_locale', 'es');
+      render(<ConfiguracoesPage />, { wrapper: Wrapper });
+      expect(screen.getByText('Desenfadada')).toBeInTheDocument();
+      expect(screen.getByText('Brillante')).toBeInTheDocument();
+      expect(screen.queryByText('Descontraída')).not.toBeInTheDocument();
     });
 
     it('seleciona uma voz ao clicar nela', () => {
@@ -302,6 +310,15 @@ describe('ConfiguracoesPage', () => {
       // "Gerar cenas" aparece como descricao da secao e label do switch
       const matches = screen.getAllByText('Gerar cenas');
       expect(matches.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('usa rótulos em espanhol sem misturar português', () => {
+      localStorage.setItem('s2a_locale', 'es');
+      render(<ConfiguracoesPage />, { wrapper: Wrapper });
+      expect(screen.getByText('Escenas e imágenes')).toBeInTheDocument();
+      expect(screen.getAllByText('Dos locutores').length).toBeGreaterThanOrEqual(2);
+      expect(screen.queryByText('Cenas e Imagens')).not.toBeInTheDocument();
+      expect(screen.queryByText('Multi-locutor')).not.toBeInTheDocument();
     });
   });
 });

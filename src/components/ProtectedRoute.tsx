@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -8,15 +8,23 @@ import EmailOutlined from "@mui/icons-material/EmailOutlined";
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendEmailVerification } from '../lib/firebase';
+import type { User } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
 import { useLocale } from '../features/i18n';
 
 const log = createLogger('ProtectedRoute');
+const EMAIL_VERIFICATION_POLL_MS = 5000;
+
+function requiresVerifiedPasswordEmail(user: User): boolean {
+  return user.providerData.every((provider) => provider.providerId === 'password') && !user.emailVerified;
+}
 
 export function ProtectedRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const { t } = useLocale();
   const [isResending, setIsResending] = useState(false);
+  const [isRefreshingVerification, setIsRefreshingVerification] = useState(false);
+  const [isLeavingToLogin, setIsLeavingToLogin] = useState(false);
   const [resendStatus, setResendStatus] = useState<'success' | 'error' | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
@@ -37,6 +45,56 @@ export function ProtectedRoute() {
       setIsResending(false);
     }
   }, [user, t]);
+
+  const handleRefreshVerification = useCallback(async () => {
+    if (!user || !requiresVerifiedPasswordEmail(user)) return;
+    setIsRefreshingVerification(true);
+    try {
+      await user.reload();
+    } catch (err) {
+      log.warn('Falha ao atualizar status de verificação do email', { error: err });
+    } finally {
+      setIsRefreshingVerification(false);
+    }
+  }, [user]);
+
+  const handleBackToLogin = useCallback(async () => {
+    setIsLeavingToLogin(true);
+    try {
+      await logout();
+    } catch {
+      setIsLeavingToLogin(false);
+    }
+  }, [logout]);
+
+  useEffect(() => {
+    if (!user || !requiresVerifiedPasswordEmail(user)) return undefined;
+
+    const refreshIfVisible = () => {
+      if (!document.hidden) {
+        void handleRefreshVerification();
+      }
+    };
+
+    const intervalId = window.setInterval(refreshIfVisible, EMAIL_VERIFICATION_POLL_MS);
+    const handleWindowFocus = () => {
+      void handleRefreshVerification();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void handleRefreshVerification();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleRefreshVerification, user]);
 
   // Aguardando verificação de sessão do Firebase
   if (loading) {
@@ -64,7 +122,7 @@ export function ProtectedRoute() {
   }
 
   // Login por email/senha sem verificação — bloqueia acesso ao app
-  if (user.providerData.every((p) => p.providerId === 'password') && !user.emailVerified) {
+  if (requiresVerifiedPasswordEmail(user)) {
     return (
       <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 3 }}>
         <Stack spacing={3} sx={{ alignItems: 'center', maxWidth: 400, textAlign: 'center' }}>
@@ -73,6 +131,19 @@ export function ProtectedRoute() {
           <Typography variant="body2" color="text.secondary">
             {t('auth.verification.verifyEmailDesc')}
           </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {t('auth.verification.verifyEmailHint')}
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            disabled={isRefreshingVerification}
+            onClick={() => { void handleRefreshVerification(); }}
+          >
+            {isRefreshingVerification
+              ? t('auth.verification.refreshingStatus')
+              : t('auth.verification.refreshStatusBtn')}
+          </Button>
           <Button
             variant="outlined"
             size="small"
@@ -86,7 +157,11 @@ export function ProtectedRoute() {
               {resendMessage}
             </Typography>
           )}
-          <Button variant="outlined" onClick={() => { window.location.href = '/login'; }}>
+          <Button
+            variant="outlined"
+            disabled={isLeavingToLogin}
+            onClick={() => { void handleBackToLogin(); }}
+          >
             {t('auth.verification.backToLogin')}
           </Button>
         </Stack>

@@ -28,7 +28,7 @@ function buildErrorMapper(t: (key: string) => string) {
       ...sharedErrorRules,
       {
         match: (m) => m.includes('app-check') || m.includes('AppCheck') || m.includes('permission-denied'),
-        message: 'Erro de segurança da sessão. Recarregue a página e tente novamente.',
+        message: t('assistantStrings.errors.sessionSecurity'),
       },
       {
         match: (m) => m.includes('deadline_exceeded') || m.includes('504'),
@@ -44,7 +44,7 @@ function buildErrorMapper(t: (key: string) => string) {
       },
       {
         match: (m) => m.includes('saldo') || m.includes('crédito'),
-        message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
+        message: t('assistantStrings.errors.creditsInsufficient'),
       },
     ],
   });
@@ -184,7 +184,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     if (isStreaming) return;
 
     if (messages.length > 1) {
-      const title = messages.find(m => m.role === 'user')?.text.slice(0, 40) || 'Nova Conversa';
+      const title = messages.find(m => m.role === 'user')?.text.slice(0, 40) || t('assistantStrings.defaultChatTitle');
       const session: ChatSession = {
         id: currentSessionId,
         userId: user?.uid,
@@ -205,7 +205,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
           log.error('Erro ao salvar sessão do assistente', { error: sessionError });
         });
     }
-  }, [messages, currentSessionId, user, isStreaming]);
+  }, [messages, currentSessionId, user, isStreaming, t]);
 
   // ---------------------------------------------------------------------------
   // Controle de sessão

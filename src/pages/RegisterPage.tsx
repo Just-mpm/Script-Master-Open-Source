@@ -240,7 +240,7 @@ export function RegisterPage() {
                   </Divider>
 
                   {/* Formulario email/senha */}
-                  <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                  <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
                     <Stack spacing={2}>
                       <TextField
                         label={t('auth.register.emailLabel')}

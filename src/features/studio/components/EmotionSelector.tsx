@@ -37,6 +37,17 @@ const EMOTION_ICONS: Record<EmotionType, React.ElementType> = {
   friendly: SentimentSatisfied,
 };
 
+const EMOTION_LABEL_KEYS: Record<EmotionType, string> = {
+  neutral: 'studio.emotion.options.neutral',
+  happy: 'studio.emotion.options.happy',
+  sad: 'studio.emotion.options.sad',
+  angry: 'studio.emotion.options.angry',
+  calm: 'studio.emotion.options.calm',
+  energetic: 'studio.emotion.options.energetic',
+  dramatic: 'studio.emotion.options.dramatic',
+  friendly: 'studio.emotion.options.friendly',
+};
+
 export const EmotionSelector = React.memo(function EmotionSelector({
   value,
   intensity,
@@ -87,7 +98,7 @@ export const EmotionSelector = React.memo(function EmotionSelector({
             <Chip
               key={option.value}
               icon={<Icon sx={{ fontSize: 14 }} aria-hidden="true" />}
-              label={option.label}
+              label={t(EMOTION_LABEL_KEYS[option.value])}
               size="small"
               variant={isActive ? 'filled' : 'outlined'}
               color={isActive ? 'primary' : 'default'}

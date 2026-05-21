@@ -273,10 +273,10 @@ export const assistantAttachmentChipSx = {
   },
 };
 
-// ─── Send Button ────────────────────────────────────────────────
-// Botão de envio circular com glow ao hover
+// ─── Action Icon Button ─────────────────────────────────────────
+// Botão circular para ações compactas, como parar geração
 
-export const assistantSendButtonSx = {
+export const assistantActionIconButtonSx = {
   minWidth: 40,
   width: 40,
   height: 40,
@@ -290,6 +290,34 @@ export const assistantSendButtonSx = {
   },
   '&:active': {
     transform: 'scale(0.96)',
+  },
+  '&.Mui-disabled': {
+    boxShadow: 'none',
+    transform: 'none',
+  },
+};
+
+// ─── Send Button ────────────────────────────────────────────────
+// Botão principal de envio em formato de pílula, com boa leitura no mobile
+
+export const assistantSendButtonSx = {
+  minWidth: { xs: 40, sm: 104 },
+  height: 40,
+  borderRadius: 999,
+  px: { xs: 0, sm: 1.5 },
+  gap: { xs: 0, sm: 0.75 },
+  boxShadow: `0 4px 16px ${alpha(BRAND_PRIMARY, 0.24)}`,
+  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+  '& .MuiButton-endIcon': {
+    ml: { xs: 0, sm: 0.25 },
+    mr: 0,
+  },
+  '&:hover': {
+    boxShadow: `0 6px 24px ${alpha(BRAND_PRIMARY, 0.36)}`,
+    transform: 'translateY(-1px)',
+  },
+  '&:active': {
+    transform: 'translateY(0)',
   },
   '&.Mui-disabled': {
     boxShadow: 'none',

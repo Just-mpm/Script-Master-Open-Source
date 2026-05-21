@@ -5,13 +5,18 @@ import { ImageUpload } from '../../src/features/speed-paint/components/upload/Im
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({
   palette: { mode: 'dark' },
 });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
 // Mock do react-dropzone — captura onDrop para disparar manualmente
@@ -44,6 +49,7 @@ vi.mock('../../src/theme/tokens', () => ({
 describe('ImageUpload', () => {
   beforeEach(() => {
     capturedOnDrop = null;
+    localStorage.setItem('s2a_locale', 'pt-BR');
     useAnimationStore.getState().clearQueue();
     useAnimationStore.getState().resetJob();
   });
@@ -65,6 +71,16 @@ describe('ImageUpload', () => {
 
     expect(screen.getByText(/Arraste e solte/)).toBeDefined();
     expect(screen.getByText(/JPG, PNG e WebP/)).toBeDefined();
+  });
+
+  it('traduz upload para espanhol sem chave crua', () => {
+    localStorage.setItem('s2a_locale', 'es');
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    expect(screen.getByText('Sube una o más imágenes')).toBeDefined();
+    expect(screen.getByText(/Arrastra y suelta tus imágenes aquí/i)).toBeDefined();
+    expect(screen.getByText('Elegir archivos')).toBeDefined();
+    expect(screen.queryByText('speedPaint.uploadPrompt')).toBeNull();
   });
 
   it('mostra ícone CloudUpload', () => {

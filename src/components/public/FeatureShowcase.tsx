@@ -37,6 +37,7 @@ export function FeatureShowcase({
       sx={{
         py: { xs: 6, md: 10 },
         position: 'relative',
+        overflowX: 'clip',
       }}
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
@@ -57,6 +58,8 @@ export function FeatureShowcase({
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             sx={{
               flex: 1,
+              minWidth: 0,
+              width: '100%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -110,7 +113,7 @@ export function FeatureShowcase({
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={VIEWPORT_ONCE}
                     transition={{ ...SPRING_SMOOTH, delay: 0.2 + idx * 0.06 }}
-                    sx={{ alignItems: 'flex-start' }}
+                    sx={{ alignItems: 'flex-start', minWidth: 0 }}
                   >
                     <Check
                       sx={{
@@ -121,7 +124,10 @@ export function FeatureShowcase({
                       }}
                       aria-hidden="true"
                     />
-                    <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.65 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: TEXT_SECONDARY, lineHeight: 1.65, flex: 1, minWidth: 0 }}
+                    >
                       {benefit}
                     </Typography>
                   </Stack>

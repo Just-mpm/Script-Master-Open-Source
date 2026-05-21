@@ -36,6 +36,7 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantComposerContainerSx: vi.fn(() => ({})),
   assistantComposerInputSx: vi.fn(() => ({})),
   assistantAttachmentChipSx: {},
+  assistantActionIconButtonSx: {},
   assistantSendButtonSx: {},
 }));
 

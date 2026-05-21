@@ -11,7 +11,8 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { motion } from 'motion/react';
 import { DocumentHead } from '../../components/DocumentHead';
 import { getPageSeo } from '../../lib/seo';
@@ -61,6 +62,8 @@ function tabA11yProps(index: number) {
 export default function FaqPage() {
   const [activeTab, setActiveTab] = useState<number>(0);
   const { t, locale } = useLocale();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // ── FAQ items localizados via t() ──
   const GENERAL_FAQ_ITEMS: readonly FAQItem[] = [
@@ -172,13 +175,13 @@ export default function FaqPage() {
             value={activeTab}
             onChange={(_, newValue: number) => setActiveTab(newValue)}
             aria-label={t('faq.categories.ariaLabel')}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
+            variant={isMobile ? 'fullWidth' : 'scrollable'}
+            scrollButtons={isMobile ? false : 'auto'}
+            allowScrollButtonsMobile={!isMobile}
             sx={{
               minHeight: { xs: 48, md: 56 },
               '& .MuiTabs-list': {
-                gap: 0.5,
+                gap: isMobile ? 0 : 0.5,
                 justifyContent: { xs: 'flex-start', md: 'center' },
               },
               '& .MuiTabs-indicator': {

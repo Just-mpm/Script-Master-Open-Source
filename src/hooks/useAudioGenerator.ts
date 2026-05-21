@@ -53,7 +53,7 @@ const toUserFriendlyError = createErrorMapper({
 // ---------------------------------------------------------------------------
 
 /** Input para o flow audio no backend */
-interface AudioFlowInput {
+export interface AudioFlowInput {
   script: string;
   voiceConfig: {
     voiceId: string;
@@ -70,6 +70,12 @@ interface AudioFlowInput {
   audioProfile?: string;
   scene?: string;
   styleNotes?: string;
+  generateScenes?: boolean;
+  sceneRatio?: string;
+  sceneDensity?: number;
+  visualFramework?: string;
+  imageTextLanguage?: string;
+  referenceImage?: string | null;
   preflight?: {
     availableCredits: number;
     totalPlanned: number;
@@ -87,7 +93,7 @@ interface AudioFlowOutput {
   segments?: AudioSegment[];
 }
 
-interface GenerateOptions {
+export interface GenerateOptions {
   userId?: string;
   projectName?: string;
   script: string;
@@ -115,7 +121,7 @@ interface GenerateOptions {
   };
 }
 
-function buildAudioFlowInput(options: GenerateOptions, requestId: string): AudioFlowInput {
+export function buildAudioFlowInput(options: GenerateOptions, requestId: string): AudioFlowInput {
   const {
     script,
     selectedVoice,
@@ -129,10 +135,16 @@ function buildAudioFlowInput(options: GenerateOptions, requestId: string): Audio
     audioProfile,
     scene,
     styleNotes,
+    generateScenes,
+    sceneDensity,
+    sceneRatio,
+    visualFramework,
+    referenceImage,
+    locale,
     preflight,
   } = options;
 
-  return {
+  const input: AudioFlowInput = {
     script,
     voiceConfig: {
       voiceId: selectedVoice,
@@ -141,19 +153,72 @@ function buildAudioFlowInput(options: GenerateOptions, requestId: string): Audio
       emotionIntensity,
     },
     isMultiSpeaker: !!isMultiSpeaker,
-    multiSpeakerConfig: isMultiSpeaker
-      ? {
-          speakerAName,
-          speakerBName,
-          speakerBVoice,
-        }
-      : undefined,
-    audioProfile: audioProfile || undefined,
-    scene: scene || undefined,
-    styleNotes: styleNotes || undefined,
-    preflight,
     requestId,
   };
+
+  if (isMultiSpeaker) {
+    input.multiSpeakerConfig = {
+      ...(speakerAName ? { speakerAName } : {}),
+      ...(speakerBName ? { speakerBName } : {}),
+      ...(speakerBVoice ? { speakerBVoice } : {}),
+    };
+  }
+
+  if (audioProfile) {
+    input.audioProfile = audioProfile;
+  }
+
+  if (scene) {
+    input.scene = scene;
+  }
+
+  if (styleNotes) {
+    input.styleNotes = styleNotes;
+  }
+
+  if (typeof generateScenes === 'boolean') {
+    input.generateScenes = generateScenes;
+  }
+
+  if (typeof sceneDensity === 'number') {
+    input.sceneDensity = sceneDensity;
+  }
+
+  if (sceneRatio) {
+    input.sceneRatio = sceneRatio;
+  }
+
+  if (visualFramework) {
+    input.visualFramework = visualFramework;
+  }
+
+  if (referenceImage) {
+    input.referenceImage = referenceImage;
+  }
+
+  if (locale) {
+    input.imageTextLanguage = locale;
+  }
+
+  if (preflight) {
+    input.preflight = preflight;
+  }
+
+  return input;
+}
+
+function getDefaultProjectName(locale: Locale): string {
+  const dateLabel = new Date().toLocaleDateString();
+
+  switch (locale) {
+    case 'en':
+      return `Project - ${dateLabel}`;
+    case 'es':
+      return `Proyecto - ${dateLabel}`;
+    case 'pt-BR':
+    default:
+      return `Projeto - ${dateLabel}`;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -303,7 +368,7 @@ export function useAudioGenerator() {
     const projectMetadata: Project = {
       id: currentProjectId,
       userId,
-      name: projectName || `Projeto - ${new Date().toLocaleDateString()}`,
+      name: projectName || getDefaultProjectName(locale),
       script,
       createdAt: Date.now(),
       settings: {
