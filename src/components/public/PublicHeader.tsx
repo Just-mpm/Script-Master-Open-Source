@@ -87,10 +87,11 @@ export function PublicHeader() {
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1, md: 1.5 } }}>
-          {/* Logo */}
+          {/* Logo — aria-label descritivo para screen readers */}
           <Box
             component={Link}
             to="/"
+            aria-label={t('nav.logoAlt')}
             sx={{
               display: 'flex',
               alignItems: 'center',
@@ -126,6 +127,7 @@ export function PublicHeader() {
               </Typography>
               <Typography
                 variant="h6"
+                component="div"
                 sx={{
                   lineHeight: 1.1,
                   fontSize: { xs: '0.95rem', sm: '1.25rem' },
@@ -273,7 +275,7 @@ export function PublicHeader() {
             >
               <Mic sx={{ fontSize: ICON_SIZE_MD }} />
             </Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            <Typography variant="subtitle2" component="p" sx={{ fontWeight: 700 }}>
               Script Master
             </Typography>
           </Stack>

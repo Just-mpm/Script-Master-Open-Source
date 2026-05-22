@@ -28,7 +28,7 @@ import { EmotionSelector } from '../features/studio/components/EmotionSelector';
 import { getInitialStudioConfig, saveStudioDefaults, clearStudioDefaults } from '../features/studio/store/studio.utils';
 import { useStudioStore } from '../features/studio/store';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT } from '../theme/tokens';
+import { ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_RELAXED } from '../theme/tokens';
 import { useLocale } from '../features/i18n';
 import { LOCALE_CONFIGS } from '../features/i18n/locales';
 import type { Locale } from '../features/i18n/types';
@@ -211,9 +211,9 @@ export function Configuracoes() {
   }, []);
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={GAP_RELAXED}>
       <Stack spacing={GAP_COMPACT}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+        <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
           {t('configuracoes.title')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -291,8 +291,8 @@ export function Configuracoes() {
           multiline rows={2}
         />
         <FormControl fullWidth size="small">
-          <InputLabel>{t('configuracoes.paceLabel')}</InputLabel>
-          <Select value={pace} label={t('configuracoes.paceLabel')} onChange={(e) => setPace(e.target.value)}>
+          <InputLabel id="config-pace-label">{t('configuracoes.paceLabel')}</InputLabel>
+          <Select labelId="config-pace-label" value={pace} label={t('configuracoes.paceLabel')} onChange={(e) => setPace(e.target.value)}>
             {paceOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </Select>
         </FormControl>
@@ -316,26 +316,26 @@ export function Configuracoes() {
           />
         </Stack>
         <FormControl fullWidth size="small">
-          <InputLabel>{t('configuracoes.sceneDensityLabel')}</InputLabel>
-          <Select value={sceneDensity} label={t('configuracoes.sceneDensityLabel')} onChange={(e) => setSceneDensity(Number(e.target.value))}>
+          <InputLabel id="config-density-label">{t('configuracoes.sceneDensityLabel')}</InputLabel>
+          <Select labelId="config-density-label" value={sceneDensity} label={t('configuracoes.sceneDensityLabel')} onChange={(e) => setSceneDensity(Number(e.target.value))}>
             {densityOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </Select>
         </FormControl>
         <FormControl fullWidth size="small">
-          <InputLabel>{t('configuracoes.sceneRatioLabel')}</InputLabel>
-          <Select value={sceneRatio} label={t('configuracoes.sceneRatioLabel')} onChange={(e) => setSceneRatio(e.target.value as SceneRatio)}>
+          <InputLabel id="config-ratio-label">{t('configuracoes.sceneRatioLabel')}</InputLabel>
+          <Select labelId="config-ratio-label" value={sceneRatio} label={t('configuracoes.sceneRatioLabel')} onChange={(e) => setSceneRatio(e.target.value as SceneRatio)}>
             {sceneRatioOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </Select>
         </FormControl>
         <FormControl fullWidth size="small">
-          <InputLabel>{t('configuracoes.visualFrameworkLabel')}</InputLabel>
-          <Select value={visualFramework} label={t('configuracoes.visualFrameworkLabel')} onChange={(e) => setVisualFramework(e.target.value)}>
+          <InputLabel id="config-framework-label">{t('configuracoes.visualFrameworkLabel')}</InputLabel>
+          <Select labelId="config-framework-label" value={visualFramework} label={t('configuracoes.visualFrameworkLabel')} onChange={(e) => setVisualFramework(e.target.value)}>
             {visualFrameworkOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </Select>
         </FormControl>
         <FormControl fullWidth size="small">
-          <InputLabel>{t('configuracoes.imageTextLanguageLabel')}</InputLabel>
-          <Select value={imageTextLanguage} label={t('configuracoes.imageTextLanguageLabel')} onChange={(e) => setImageTextLanguage(e.target.value as Locale)}>
+          <InputLabel id="config-language-label">{t('configuracoes.imageTextLanguageLabel')}</InputLabel>
+          <Select labelId="config-language-label" value={imageTextLanguage} label={t('configuracoes.imageTextLanguageLabel')} onChange={(e) => setImageTextLanguage(e.target.value as Locale)}>
             {localeOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
           </Select>
         </FormControl>

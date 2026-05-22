@@ -68,6 +68,7 @@ export const ptBR: TranslationDictionary = {
     ariaNav: 'Navegação pública',
     ariaMenu: 'Menu',
     ariaDrawerMenu: 'Menu de navegação',
+    logoAlt: 'Script Master — Ir para a página inicial',
   },
 
   // ── Footer ─────────────────────────────────────────────────────────────
@@ -119,10 +120,6 @@ export const ptBR: TranslationDictionary = {
           'Transforme roteiros em áudio profissional com Gemini TTS. Controle de voz, pace e multi-speaker.',
       },
       video: {
-    exportProgress: 'Progresso da exportação',
-    exportQuality: 'Qualidade de exportação',
-    timingError: 'Início deve ser menor que fim',
-    undoDelete: 'Desfazer exclusão',
         title: 'Vídeo Automático',
         description:
           'Crie vídeos client-side com legendas, transições e waveform. Nenhum backend necessário.',
@@ -877,6 +874,7 @@ export const ptBR: TranslationDictionary = {
       booleanYes: 'Sim',
       booleanNo: 'Não',
       sceneDensityValue: '{value}s por cena',
+      appliedToast: 'Template "{name}" aplicado com sucesso!',
     },
     emotion: {
       label: 'Emoção da voz',
@@ -909,6 +907,10 @@ export const ptBR: TranslationDictionary = {
   video: {
     pageTitle: 'Montagem visual',
     pageDescription: 'Revise a cena atual, confira a atmosfera do vídeo e carregue projetos anteriores sem sair do fluxo.',
+    exportProgress: 'Progresso da exportação',
+    exportQuality: 'Qualidade de exportação',
+    timingError: 'Início deve ser menor que fim',
+    undoDelete: 'Desfazer exclusão',
     controlsEmpty: {
       eyebrow: 'Painel lateral',
       title: 'Controles aguardando conteúdo',
@@ -1041,6 +1043,7 @@ export const ptBR: TranslationDictionary = {
     savedProjects: 'Projetos salvos',
     description: 'Um painel mais claro para revisar ativos do projeto, renomear versões, retomar áudio e baixar cenas sem excesso de ruído visual.',
     projectCount: '{count} projeto{plural}',
+    projectCountEmpty: 'Nenhum projeto salvo',
     searchPlaceholder: 'Buscar projeto...',
     clearSearchAria: 'Limpar busca',
     offlineHint: 'Sem login, a biblioteca usa armazenamento local deste navegador. Entre com sua conta para sincronizar projetos na nuvem.',
@@ -1096,6 +1099,11 @@ export const ptBR: TranslationDictionary = {
 
   // ── Speed Paint ─────────────────────────────────────────────────────
   speedPaint: {
+    durationLabel: 'Duração do speed paint',
+    durationGroupAria: 'Selecionar duração da animação',
+    durationOptionAria: '{seconds} segundos',
+    durationTitle: 'Duração do vídeo',
+    durationHelper: 'Escolha quanto tempo cada animação deve durar.',
     pageTitle: 'Transforme Imagens em',
     pageHighlight: 'Speed Paints',
     pageDescription: 'Envie qualquer imagem e assista a ela sendo desenhada traço por traço.\nNosso motor analisa a imagem e gera uma animação de pintura progressiva.',
@@ -1106,14 +1114,18 @@ export const ptBR: TranslationDictionary = {
     libraryQueueBannerTitle: 'Fila carregada da biblioteca',
     libraryQueueSourceChip: 'Origem: Biblioteca',
     libraryQueueModeChip: 'Fluxo sem áudio',
-    libraryQueueItemsChip: '{count} item(ns)',
+    libraryQueueItemsChip_one: '{count} item',
+    libraryQueueItemsChip_other: '{count} itens',
     libraryQueueClearAction: 'Limpar fila',
     libraryQueueReady: 'As imagens do projeto "{project}" já estão prontas na fila. Revise a ordem e siga para a animação.',
     libraryQueueAudioHint: 'Aqui você está animando apenas as imagens do projeto. O áudio salvo na biblioteca não é usado nesse fluxo.',
     queueTitle: 'Fila pronta para animar',
-    queueDescription: '{count} imagem(ns) pronta(s). Reordene a sequência, ajuste a velocidade e escolha entre só pré-visualizar ou já gerar um vídeo final único.',
-    queueFinalVideoSummary: '{eligible} imagem(ns) entrarão no vídeo final.',
-    queueFailedSummary: '{failed} imagem(ns) serão ignoradas por falha anterior no preview.',
+    queueDescription_one: '{count} imagem pronta. Reordene a sequência, ajuste a velocidade e escolha entre só pré-visualizar ou já gerar um vídeo final único.',
+    queueDescription_other: '{count} imagens prontas. Reordene a sequência, ajuste a velocidade e escolha entre só pré-visualizar ou já gerar um vídeo final único.',
+    queueFinalVideoSummary_one: '{eligible} imagem entrará no vídeo final.',
+    queueFinalVideoSummary_other: '{eligible} imagens entrarão no vídeo final.',
+    queueFailedSummary_one: '{failed} imagem será ignorada por falha anterior no preview.',
+    queueFailedSummary_other: '{failed} imagens serão ignoradas por falha anterior no preview.',
     queueNoEligibleSummary: 'Nenhuma imagem válida para o vídeo final. Remova ou substitua os itens com falha para continuar.',
     queueRemoveImage: 'Remover imagem',
     queueRemoveImageAria: 'Remover {filename}',
@@ -1534,7 +1546,7 @@ export const ptBR: TranslationDictionary = {
   configuracoes: {
     title: 'Configurações Padrão',
     subtitle: 'Defina os valores iniciais do estúdio de produção.',
-    save: 'Salvar padrões',
+    save: 'Salvar como padrões do estúdio',
     saved: 'Padrões salvos com sucesso!',
     reset: 'Restaurar padrões',
     resetConfirm: 'Isso vai limpar todas as suas configurações salvas e restaurar os valores originais. Continuar?',
@@ -1718,6 +1730,124 @@ export const ptBR: TranslationDictionary = {
     tocAriaLabelTerms: 'Sumário dos termos',
     tocAriaLabelPrivacy: 'Sumário da política de privacidade',
     tocAriaLabelCookies: 'Sumário da política de cookies',
+  },
+
+  // ── Jobs Assíncronos ────────────────────────────────────────────────────
+  jobs: {
+    title: 'Tarefas',
+    pageSubtitle: 'Acompanhe o progresso das suas gerações de áudio, imagens e vídeos.',
+    badge: {
+      tooltip: '{count, plural, one {# tarefa em andamento} other {# tarefas em andamento}}',
+      ariaLabel: '{count, plural, one {# tarefa em andamento} other {# tarefas em andamento}}',
+    },
+    empty: {
+      title: 'Nenhuma tarefa',
+      description: 'Suas gerações aparecerão aqui quando você iniciar uma.',
+      filteredDescription: 'Nenhuma tarefa de {type} encontrada.',
+    },
+    filter: {
+      all: 'Todos',
+      audio: 'Áudio',
+      images: 'Imagens',
+      video: 'Vídeo',
+      scenes: 'Cenas',
+    },
+    statusFilter: {
+      all: 'Todos',
+      active: 'Em andamento',
+      completed: 'Concluídos',
+      failed: 'Com erro',
+    },
+    sort: {
+      recent: 'Mais recentes',
+    },
+    status: {
+      queued: 'Na fila',
+      running: 'Em andamento',
+      completed: 'Concluído',
+      failed: 'Falhou',
+      cancelled: 'Cancelado',
+    },
+    progress: {
+      audio: {
+        generating: 'Gerando áudio...',
+        chunkProgress: 'Gerando chunk {current}/{total}...',
+      },
+      images: {
+        generating: 'Gerando imagens...',
+        itemProgress: 'Imagem {current}/{total}...',
+      },
+      scenes: {
+        generating: 'Gerando descrições de cenas...',
+      },
+      video: {
+        bundling: 'Preparando vídeo...',
+        rendering: 'Renderizando vídeo...',
+        uploading: 'Enviando vídeo...',
+      },
+    },
+    action: {
+      cancel: 'Cancelar',
+      viewResult: 'Ver resultado',
+      retry: 'Tentar novamente',
+      retryUnavailable: 'Esta tarefa não pode ser reexecutada. Crie uma nova.',
+      clear: 'Limpar',
+      clearAll: 'Limpar concluídos',
+    },
+    toast: {
+      audioCompleted: 'Áudio pronto!',
+      imagesCompleted: 'Imagens geradas!',
+      videoCompleted: 'Vídeo renderizado!',
+      scenesCompleted: 'Cenas geradas!',
+      failed: 'Erro ao gerar {type}: {message}',
+      failedGeneric: 'Erro ao processar {type}',
+      cancelled: 'Tarefa cancelada',
+      viewResult: 'Ver',
+    },
+    cancelDialog: {
+      title: 'Cancelar tarefa?',
+      description: 'A geração de {type} "{name}" será interrompida.',
+      creditWarning: 'Créditos já utilizados não serão devolvidos.',
+      confirm: 'Cancelar tarefa',
+      dismiss: 'Continuar',
+    },
+    pipeline: {
+      title: 'Pipeline: {name}',
+      step: {
+        audio: 'Gerar áudio',
+        scenes: 'Gerar cenas',
+        images: 'Gerar imagens',
+        video: 'Renderizar vídeo',
+        waiting: 'Aguardando...',
+      },
+      cancelAll: 'Cancelar tudo',
+      cancelDialog: {
+        title: 'Cancelar pipeline?',
+        description: 'Todas as etapas restantes serão canceladas. Resultados já concluídos ficarão disponíveis.',
+      },
+    },
+    limitReached: {
+      title: 'Limite de tarefas atingido',
+      description: 'Aguarde uma tarefa terminar antes de iniciar outra.',
+      action: 'Ver tarefas',
+    },
+  },
+
+  // ── Painel de Jobs de Áudio (estúdio) ─────────────────────────────────────
+  audioJobs: {
+    title: 'Fila de áudio',
+    subtitle: 'Acompanhe o progresso e reabra resultados concluídos.',
+    defaultProjectName: 'Projeto de áudio',
+    openAudio: 'Abrir áudio',
+    cancel: 'Cancelar',
+    status: {
+      queued: 'Na fila',
+      running: 'Gerando',
+      completed: 'Concluído',
+      failed: 'Falhou',
+      cancelled: 'Cancelado',
+      cancelling: 'Cancelando',
+    },
   },
 
   errorBoundary: {

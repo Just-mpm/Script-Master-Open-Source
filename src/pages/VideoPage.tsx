@@ -27,6 +27,8 @@ import { useStudioStore, VIDEO_FPS, useAudioGeneratorStore, getAudioDurationSeco
 import { useShallow } from 'zustand/react/shallow';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
+import { DocumentHead } from '../components/DocumentHead';
+import { getPageSeo } from '../lib/seo';
 
 interface VideoPageProps {
   videoPlayerRef: RefObject<VideoPreviewHandle | null>;
@@ -35,7 +37,7 @@ interface VideoPageProps {
 export function VideoPage({
   videoPlayerRef,
 }: VideoPageProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const navigate = useNavigate();
   const { pause: pauseGlobalAudio } = useGlobalAudioActions();
   const { user } = useAuth();
@@ -252,8 +254,18 @@ export function VideoPage({
     [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, captionVisible, handleCaptionToggle, videoPlayerRef],
   );
 
+  // SEO data para a página — usa getPageSeo para incluir OG/Twitter tags
+  const seo = useMemo(() => getPageSeo({
+    title: t('video.pageTitle'),
+    description: t('video.pageDescription'),
+    path: '/app/video',
+    locale,
+  }), [t, locale]);
+
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
+      <DocumentHead {...seo} />
+
       {/* Título + Descrição — largura total */}
       <Box>
         <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>

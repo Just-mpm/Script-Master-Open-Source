@@ -11,6 +11,7 @@ export {
   detectBrowserLocale,
   isValidLocale,
   LOCALE_STORAGE_KEY,
+  pluralKey,
 } from './utils';
 
 // ── Locales ────────────────────────────────────────────────────────────

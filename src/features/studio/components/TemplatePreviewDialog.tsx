@@ -157,7 +157,7 @@ export function TemplatePreviewDialog({
 
           {/* Preview do roteiro */}
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: GAP_COMPACT }}>
+            <Typography variant="subtitle2" component="p" sx={{ mb: GAP_COMPACT }}>
               {t('studio.templates.previewTitle')}
             </Typography>
             <Box
@@ -186,7 +186,7 @@ export function TemplatePreviewDialog({
 
           {/* Configurações que serão aplicadas */}
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: GAP_DEFAULT }}>
+            <Typography variant="subtitle2" component="p" sx={{ mb: GAP_DEFAULT }}>
               {t('studio.templates.appliedSettings')}
             </Typography>
             <Stack

@@ -6,6 +6,7 @@ import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -14,9 +15,10 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { alpha } from '@mui/material/styles';
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
+import { TransitionGroup } from 'react-transition-group';
 import { useAnimationStore } from '../../store/animationStore';
 import type { QueuedImage } from '../../types';
-import { useLocale } from '../../../i18n';
+import { useLocale, pluralKey } from '../../../i18n';
 import {
   ERROR_MAIN,
   BRAND_PRIMARY,
@@ -231,15 +233,15 @@ export function QueueStaging() {
               {t('speedPaint.queueTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {t('speedPaint.queueDescription', { count: queue.length })}
+              {t(pluralKey('speedPaint.queueDescription', queue.length), { count: queue.length })}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
-              {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleCount })}
+              {t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleCount), { eligible: eligibleCount })}
             </Typography>
             {failedCount > 0 && (
               <Alert severity={eligibleCount > 0 ? 'warning' : 'error'} sx={{ mt: 1.5, borderRadius: 2 }}>
                 {eligibleCount > 0
-                  ? t('speedPaint.queueFailedSummary', { failed: failedCount })
+                  ? t(pluralKey('speedPaint.queueFailedSummary', failedCount), { failed: failedCount })
                   : t('speedPaint.queueNoEligibleSummary')}
               </Alert>
             )}
@@ -274,13 +276,16 @@ export function QueueStaging() {
             pb: 1,
           }}
         >
-          {queue.map((img, index) => (
-            <SortableQueueImage
-              key={img.id}
-              img={img}
-              index={index}
-            />
-          ))}
+          <TransitionGroup component={null}>
+            {queue.map((img, index) => (
+              <Collapse key={img.id} timeout={300}>
+                <SortableQueueImage
+                  img={img}
+                  index={index}
+                />
+              </Collapse>
+            ))}
+          </TransitionGroup>
         </Box>
 
         <DragOverlay>
@@ -358,6 +363,9 @@ export function QueueStaging() {
             startIcon={<CancelIcon sx={{ fontSize: 18 }} />}
             sx={{
               color: 'text.secondary',
+              display: 'inline-flex',
+              alignItems: 'center',
+              lineHeight: 1.5,
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 color: ERROR_MAIN,

@@ -112,7 +112,7 @@ export function ScriptEditor({
   }, [isGenerateDisabled, isGenerating, handleGenerate]);
 
   return (
-    <Stack component="section" spacing={2} ref={containerRef} id="script-editor">
+    <Stack component="section" spacing={2} ref={containerRef} id="script-editor-section">
       <Paper
         elevation={0}
         sx={(theme): SystemStyleObject<Theme> => ({
@@ -162,7 +162,7 @@ export function ScriptEditor({
           }}
         >
           <Stack spacing={GAP_COMPACT}>
-            <Typography variant="overline" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+            <Typography variant="overline" component="label" htmlFor="script-editor" id="script-label" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
               {t('studio.scriptEditor.label')}
             </Typography>
             {currentScene ? (
@@ -247,7 +247,6 @@ export function ScriptEditor({
               htmlInput: {
                 spellCheck: false,
                 maxLength: MAX_CHARS + 500,
-                'aria-labelledby': 'script-label',
                 'aria-label': t('studio.scriptEditor.editorAriaLabel'),
               },
             }}

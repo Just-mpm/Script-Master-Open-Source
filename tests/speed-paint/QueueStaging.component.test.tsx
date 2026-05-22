@@ -101,7 +101,7 @@ describe('QueueStaging', () => {
     render(<QueueStaging />, { wrapper: Wrapper });
 
     const body2 = screen.getByText((text) =>
-      text.includes('3') && text.includes('pronta(s)'),
+      text.includes('3') && text.includes('prontas'),
     );
     expect(body2).toBeDefined();
   });
@@ -110,7 +110,7 @@ describe('QueueStaging', () => {
     useAnimationStore.getState().setQueue(sampleQueue);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('3 imagem(ns) entrarão no vídeo final.')).toBeDefined();
+    expect(screen.getByText('3 imagens entrarão no vídeo final.')).toBeDefined();
   });
 
   it('renderiza cada imagem da fila', () => {
@@ -207,7 +207,7 @@ describe('QueueStaging', () => {
 
     expect(screen.getByText('Queue ready to animate')).toBeDefined();
     expect(screen.getByText('Preview only')).toBeDefined();
-    expect(screen.getByText('3 image(s) will be included in the final video.')).toBeDefined();
+    expect(screen.getByText('3 images will be included in the final video.')).toBeDefined();
     expect(screen.getByLabelText('Remove foto1.png')).toBeDefined();
     expect(screen.getByLabelText('Reorder foto1.png')).toBeDefined();
   });
@@ -220,8 +220,8 @@ describe('QueueStaging', () => {
     ]);
     render(<QueueStaging />, { wrapper: Wrapper });
 
-    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final.')).toBeDefined();
-    expect(screen.getByText('1 imagem(ns) serão ignoradas por falha anterior no preview.')).toBeDefined();
+    expect(screen.getByText('2 imagens entrarão no vídeo final.')).toBeDefined();
+    expect(screen.getByText('1 imagem será ignorada por falha anterior no preview.')).toBeDefined();
   });
 
   it('desabilita gerar vídeo final quando todas as imagens falharam', () => {

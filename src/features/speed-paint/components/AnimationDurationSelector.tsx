@@ -44,11 +44,11 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
           <TimerOutlinedIcon sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-            Duração do vídeo
+            {t('speedPaint.durationTitle')}
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-          {helperText ?? 'Escolha quanto tempo cada animação deve durar.'}
+          {helperText ?? t('speedPaint.durationHelper')}
         </Typography>
       </Stack>
 
@@ -57,7 +57,7 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
           value={duration}
           exclusive
           onChange={handleChange}
-          aria-label={t('speedPaint.durationLabel')}
+          aria-label={t('speedPaint.durationGroupAria')}
           sx={{
             display: 'flex',
             flexWrap: 'wrap',
@@ -84,7 +84,11 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
           }}
         >
           {SPEED_PAINT_DURATION_OPTIONS.map((option) => (
-            <ToggleButton key={option} value={option} aria-label={`${option} segundos`}>
+            <ToggleButton
+              key={option}
+              value={option}
+              aria-label={t('speedPaint.durationOptionAria', { seconds: option })}
+            >
               {option}s
             </ToggleButton>
           ))}

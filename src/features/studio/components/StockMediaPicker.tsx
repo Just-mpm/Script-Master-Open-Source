@@ -85,7 +85,7 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
         <Stack spacing={GAP_COMPACT}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <PhotoLibrary sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle2" component="p" sx={{ fontWeight: 600 }}>
               {t('studio.stockMedia.title')}
             </Typography>
           </Stack>
@@ -104,6 +104,9 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
           onKeyDown={handleKeyDown}
           sx={searchFieldSx}
           slotProps={{
+            htmlInput: {
+              'aria-label': t('studio.stockMedia.searchAriaLabel'),
+            },
             input: {
               endAdornment: (
                 <IconButton

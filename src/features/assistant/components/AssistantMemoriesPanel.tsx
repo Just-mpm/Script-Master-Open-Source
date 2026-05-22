@@ -130,6 +130,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
 
           <input
             type="file"
+            id="assistant-document-input"
             ref={documentInputRef}
             onChange={onDocumentUpload}
             accept=".md,.txt,.csv"

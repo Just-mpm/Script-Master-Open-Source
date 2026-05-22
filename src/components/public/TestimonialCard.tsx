@@ -94,7 +94,7 @@ export function TestimonialCard({ testimonial, index }: TestimonialCardProps) {
               {testimonial.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
             </Avatar>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle2" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+              <Typography variant="subtitle2" component="p" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
                 {testimonial.name}
               </Typography>
               <Typography variant="caption" sx={{ color: TEXT_SECONDARY, lineHeight: 1.4 }}>

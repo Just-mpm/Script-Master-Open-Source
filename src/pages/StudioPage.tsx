@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { Inspector } from '../components/Inspector';
 import { ScriptEditor } from '../components/ScriptEditor';
 import { useAudioCurrentTime } from '../contexts/AudioContext';
+import { DocumentHead } from '../components/DocumentHead';
+import { getPageSeo } from '../lib/seo';
 import { useLocale } from '../features/i18n';
 import { useStudioStore } from '../features/studio/store';
 
@@ -47,6 +49,12 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [activeTab, setActiveTab] = useState(0);
 
+  const seo = getPageSeo({
+    title: 'Estúdio',
+    description: 'Transforme roteiros em áudio profissional com IA. Editor, vozes e configurações de geração.',
+    path: '/app/estudio',
+  });
+
   // Estado de config do store — apenas script para o ScriptEditor (Inspector usa o store diretamente)
   const { script, setScript } = useStudioStore(useShallow((s) => ({
     script: s.script,
@@ -58,6 +66,7 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
   if (isMobile) {
     return (
         <Box sx={{ pb: 10 }}>
+          <DocumentHead {...seo} />
           <Tabs
             value={activeTab}
             onChange={(_event, newValue: number) => setActiveTab(newValue)}
@@ -96,7 +105,10 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
   }
 
   return (
-      <Grid container spacing={{ xs: 3, lg: 4 }}>
+      <Box>
+        <DocumentHead {...seo} />
+
+        <Grid container spacing={{ xs: 3, lg: 4 }}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Inspector isGenerating={isGenerating} />
         </Grid>
@@ -113,5 +125,6 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
           />
         </Grid>
       </Grid>
+    </Box>
   );
 }

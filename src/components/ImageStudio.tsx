@@ -395,7 +395,7 @@ export function ImageStudio() {
                 sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}
               >
                 <Stack spacing={0.75}>
-                  <Typography variant="h4">{t('imageStudio.pageTitle')}</Typography>
+                  <Typography variant="h4" component="h1">{t('imageStudio.pageTitle')}</Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
                     {t('imageStudio.pageDescription')}
                   </Typography>

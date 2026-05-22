@@ -141,6 +141,7 @@ export const TemplateCard = React.memo(function TemplateCard({
       <Box sx={{ flex: 1 }}>
         <Typography
           variant="subtitle2"
+          component="p"
           sx={{
             mb: GAP_COMPACT,
             fontWeight: 600,

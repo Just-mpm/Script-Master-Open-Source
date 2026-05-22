@@ -86,7 +86,7 @@ export function PublicFooter() {
                 aria-hidden="true"
                 sx={{ width: 32, height: 32, objectFit: 'contain' }}
               />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              <Typography variant="subtitle2" component="p" sx={{ fontWeight: 700 }}>
                 Script Master
               </Typography>
             </Stack>
@@ -98,7 +98,7 @@ export function PublicFooter() {
           {/* Grupos de links */}
           {footerGroups.map((group) => (
             <Box key={group.title} sx={{ flex: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, fontSize: '0.8125rem', letterSpacing: '0.02em' }}>
+              <Typography variant="subtitle2" component="p" sx={{ mb: 1.5, fontWeight: 700, fontSize: '0.8125rem', letterSpacing: '0.02em' }}>
                 {group.title}
               </Typography>
               <Stack spacing={0.75}>

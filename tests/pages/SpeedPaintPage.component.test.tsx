@@ -397,7 +397,7 @@ describe('SpeedPaintPage', () => {
 
     expect(screen.getAllByText('Vídeo Final da Fila')).toHaveLength(1);
     expect(screen.getByText('Renderizando vídeo final... 51%')).toBeDefined();
-    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final.')).toBeDefined();
+    expect(screen.getByText('2 imagens entrarão no vídeo final.')).toBeDefined();
   });
 
   it('mantém o resumo de itens ignorados durante a renderização do vídeo final do lote', () => {
@@ -413,6 +413,6 @@ describe('SpeedPaintPage', () => {
 
     render(<SpeedPaintPage />, { wrapper: Wrapper });
 
-    expect(screen.getByText('2 imagem(ns) entrarão no vídeo final. 1 imagem(ns) serão ignoradas por falha anterior no preview.')).toBeDefined();
+    expect(screen.getByText('2 imagens entrarão no vídeo final. 1 imagem será ignorada por falha anterior no preview.')).toBeDefined();
   });
 });

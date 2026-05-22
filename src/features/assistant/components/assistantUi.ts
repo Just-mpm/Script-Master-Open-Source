@@ -6,6 +6,7 @@ import {
   APP_SURFACE,
   APP_SURFACE_ELEVATED,
   BRAND_PRIMARY,
+  BRAND_PRIMARY_GLOW_SOFT,
   BRAND_SECONDARY,
   SHADOW_DEEP,
   WHITE_01,
@@ -13,6 +14,7 @@ import {
   WHITE_06,
   WHITE_08,
   WHITE_10,
+  WHITE_82,
   BLACK_50,
   GAP_COMPACT,
   GAP_MEDIUM,
@@ -257,6 +259,26 @@ export const assistantEmptyStateSx = {
   textAlign: 'center' as const,
   px: { xs: 3, md: 4 },
   py: 4,
+};
+
+// ─── Suggestion Chip ─────────────────────────────────────────────
+// Chips de prompt rápido no empty state com hover feedback
+
+export const assistantSuggestionChipSx = {
+  cursor: 'pointer',
+  borderColor: APP_BORDER,
+  color: WHITE_82,
+  fontWeight: 500,
+  transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.15s ease',
+  '&:hover': {
+    borderColor: BRAND_PRIMARY,
+    color: 'text.primary',
+    backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
+    transform: 'scale(1.04)',
+  },
+  '&:active': {
+    transform: 'scale(0.98)',
+  },
 };
 
 // ─── Attachment Chip ────────────────────────────────────────────

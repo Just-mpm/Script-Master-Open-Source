@@ -49,6 +49,22 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantMessagesContainerSx: {},
   assistantTypingIndicatorSx: {},
   assistantEmptyStateSx: {},
+  assistantSuggestionChipSx: {
+    cursor: 'pointer',
+    borderColor: 'rgba(255,255,255,0.08)',
+    color: 'rgba(255,255,255,0.82)',
+    fontWeight: 500,
+    transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.15s ease',
+    '&:hover': {
+      borderColor: '#06b6d4',
+      color: 'text.primary',
+      backgroundColor: 'rgba(46,117,182,0.12)',
+      transform: 'scale(1.04)',
+    },
+    '&:active': {
+      transform: 'scale(0.98)',
+    },
+  },
 }));
 
 // Mock do react-markdown

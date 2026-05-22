@@ -28,7 +28,9 @@ import { useSpeedPaintExporter } from '../features/speed-paint/hooks/useSpeedPai
 import { ExportProgressBar } from '../features/video-render/components/export/ExportProgressBar';
 import { ExportResultActions } from '../features/video-render/components/export/ExportResultActions';
 import { ImageUpload } from '../features/speed-paint/components/upload/ImageUpload';
-import { useLocale } from '../features/i18n';
+import { useLocale, pluralKey } from '../features/i18n';
+import { DocumentHead } from '../components/DocumentHead';
+import { getPageSeo } from '../lib/seo';
 import type { SpeedPaintTimingMode } from '../features/video-render/lib/speedPaintTimings';
 import {
   BRAND_GRADIENT,
@@ -224,8 +226,8 @@ export function SpeedPaintPage() {
   const isBatchRendering = speedPaintExporter.isRendering;
   const batchProgressValue = `${Math.round(speedPaintExporter.renderProgress)}%`;
   const batchProgressHelperText = failedBatchCount > 0
-    ? `${t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })} ${t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}`
-    : t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length });
+    ? `${t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleBatchQueue.length), { eligible: eligibleBatchQueue.length })} ${t(pluralKey('speedPaint.queueFailedSummary', failedBatchCount), { failed: failedBatchCount })}`
+    : t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleBatchQueue.length), { eligible: eligibleBatchQueue.length });
   const batchSummaryText = speedPaintExporter.isRendering
     ? speedPaintExporter.renderStatusText
     : speedPaintExporter.error
@@ -234,7 +236,7 @@ export function SpeedPaintPage() {
         ? t('speedPaint.batchExportCancelledTitle')
         : speedPaintExporter.outputUrl
           ? speedPaintExporter.renderStatusText
-          : t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length });
+          : t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleBatchQueue.length), { eligible: eligibleBatchQueue.length });
   const queueProjectName = queueSourceProjectName ?? t('library.title');
 
   const handleBatchExportReset = () => {
@@ -262,8 +264,15 @@ export function SpeedPaintPage() {
   // Render
   // -------------------------------------------------------------------------
 
+  const seo = getPageSeo({
+    title: 'Speed Paint',
+    description: 'Transforme imagens em animações de pintura progressiva com exportação de vídeo.',
+    path: '/app/pintura-rapida',
+  });
+
   return (
     <Stack spacing={{ xs: 3, md: 4 }} sx={{ maxWidth: 1200, mx: 'auto' }}>
+      <DocumentHead {...seo} />
       <BatchOrchestrator />
 
       {/* Estado vazio — fila vazia */}
@@ -336,7 +345,7 @@ export function SpeedPaintPage() {
                     </Typography>
                     <Chip size="small" label={t('speedPaint.libraryQueueSourceChip')} variant="outlined" />
                     <Chip size="small" label={t('speedPaint.libraryQueueModeChip')} color="secondary" />
-                    <Chip size="small" label={t('speedPaint.libraryQueueItemsChip', { count: queueLength })} variant="outlined" />
+                    <Chip size="small" label={t(pluralKey('speedPaint.libraryQueueItemsChip', queueLength), { count: queueLength })} variant="outlined" />
                   </Stack>
 
                   <Typography variant="body2" sx={{ lineHeight: 1.65 }}>
@@ -487,10 +496,10 @@ export function SpeedPaintPage() {
                     }}
                   >
                     <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
-                      {t('speedPaint.queueDescription', { count: queueLength })}
+                      {t(pluralKey('speedPaint.queueDescription', queueLength), { count: queueLength })}
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-                      {t('speedPaint.queueFinalVideoSummary', { eligible: eligibleBatchQueue.length })}
+                      {t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleBatchQueue.length), { eligible: eligibleBatchQueue.length })}
                     </Typography>
                   </Box>
 
@@ -509,7 +518,7 @@ export function SpeedPaintPage() {
                         {t('speedPaint.batchExportTitle')}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-                        {t('speedPaint.queueFailedSummary', { failed: failedBatchCount })}
+                        {t(pluralKey('speedPaint.queueFailedSummary', failedBatchCount), { failed: failedBatchCount })}
                       </Typography>
                     </Box>
                   ) : null}

@@ -215,7 +215,7 @@ function IncidentHistory() {
                   sx={{ height: 20, fontSize: '0.7rem' }}
                 />
               </Stack>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.25 }}>
+              <Typography variant="subtitle2" component="p" sx={{ fontWeight: 600, mb: 0.25 }}>
                 {t(`status.incidents.items.${index}.title`)}
               </Typography>
               <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
@@ -238,6 +238,7 @@ export default function StatusPage() {
     title: t('seo.status.title'),
     description: t('seo.status.description'),
     path: '/status',
+    locale,
   });
 
   // ── Serviços monitorados — dentro do componente para acessar t() ──

@@ -189,7 +189,7 @@ export function LoginPage() {
                           <BenefitIcon sx={{ fontSize: ICON_SIZE_LG }} aria-hidden="true" />
                         </Box>
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="subtitle2">{benefit.title}</Typography>
+                          <Typography variant="subtitle2" component="div">{benefit.title}</Typography>
                           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, lineHeight: 1.5 }}>
                             {benefit.description}
                           </Typography>
@@ -229,7 +229,7 @@ export function LoginPage() {
                   />
 
                   <Box>
-                    <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
+                    <Typography variant="h5" component="h2" sx={{ letterSpacing: '-0.02em' }}>
                       {t('auth.login.title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

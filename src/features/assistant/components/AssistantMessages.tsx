@@ -33,6 +33,7 @@ import {
   assistantMessagesContainerSx,
   assistantTypingIndicatorSx,
   assistantEmptyStateSx,
+  assistantSuggestionChipSx,
 } from './assistantUi';
 import {
   BRAND_PRIMARY,
@@ -163,7 +164,7 @@ const MessageBubble = React.memo(function MessageBubble({
           elevation={0}
           sx={(theme) => (isModel ? assistantBubbleModelSx(theme) : assistantBubbleUserSx(theme))}
         >
-          <Stack spacing={GAP_COMPACT}>
+          <Stack spacing={GAP_DEFAULT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
               <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
                 {isModel
@@ -332,17 +333,7 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
             size="small"
             variant="outlined"
             onClick={() => onSuggestionClick(t(`assistant.messages.suggestionPrompts.${key}`))}
-            sx={{
-              cursor: 'pointer',
-              borderColor: APP_BORDER,
-              color: TEXT_SECONDARY,
-              fontWeight: 500,
-              '&:hover': {
-                borderColor: BRAND_PRIMARY,
-                color: 'text.primary',
-                backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
-              },
-            }}
+            sx={assistantSuggestionChipSx}
           />
         ))}
       </Stack>

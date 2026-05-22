@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.41.0",
+  "version": "0.42.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -19,6 +19,7 @@
     "deploy:storage": "firebase deploy --only storage",
     "deploy:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
     "deploy:preview": "bun run build && firebase hosting:channel:deploy preview",
+    "deploy:cloudrun": "cd cloud-run && powershell -File scripts/deploy.ps1 -ServiceAccount \"remotion-renderer-sa@script-master-7ac07.iam.gserviceaccount.com\"",
     "emulators": "firebase emulators:start",
     "emulators:functions": "firebase emulators:start --only functions",
     "emulators:ui": "firebase emulators:start --only ui"
@@ -47,6 +48,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-dropzone": "^15.0.0",
+    "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.1",
     "remotion": "4.0.448",

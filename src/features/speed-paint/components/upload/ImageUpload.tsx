@@ -108,7 +108,7 @@ export function ImageUpload() {
       >
         <CloudUploadIcon sx={{ fontSize: 28, color: BRAND_PRIMARY_LIGHT }} aria-hidden="true" />
       </Box>
-      <Typography variant="h6" sx={{ mb: 0.75, fontWeight: 700, letterSpacing: '-0.02em' }}>
+<Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700, letterSpacing: '-0.02em' }}>
         {isDragActive ? t('speedPaint.uploadDragActive') : t('speedPaint.uploadPrompt')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 420, lineHeight: 1.7 }}>

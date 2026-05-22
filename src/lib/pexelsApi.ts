@@ -83,7 +83,7 @@ export class PexelsApiError extends Error {
 // Constantes
 // ---------------------------------------------------------------------------
 
-const PEXELS_BASE_URL = 'https://api.pexels.com/v1';
+const PEXELS_BASE_URL = 'https://api.pexels.com/v1/';
 
 /** Configuração de retry para Pexels (delay mais conservador que Gemini) */
 const PEXELS_RETRY_CONFIG = {
@@ -164,7 +164,7 @@ export async function searchPexelsPhotos(
 
   const { value } = await withRetry(
     () => fetchPexels<PexelsSearchResponse>(
-      '/search',
+      'search',
       {
         query: effectiveQuery,
         orientation,

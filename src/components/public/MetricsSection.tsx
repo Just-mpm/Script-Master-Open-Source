@@ -115,6 +115,7 @@ export function MetricsSection() {
                     {/* Label */}
                     <Typography
                       variant="subtitle2"
+                      component="p"
                       sx={{ color: 'text.primary', fontWeight: 600 }}
                     >
                       {metric.label}

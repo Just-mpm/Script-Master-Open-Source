@@ -70,3 +70,12 @@ export function isValidLocale(locale: string): locale is Locale {
 
 /** Chave usada para persistir o locale no localStorage */
 export const LOCALE_STORAGE_KEY = 's2a_locale';
+
+/**
+ * Retorna a chave de pluralização correta com base na quantidade.
+ * Convenção: `baseKey_one` para 1, `baseKey_other` para != 1.
+ * Ex: pluralKey('speedPaint.queueDescription', 3) → 'speedPaint.queueDescription_other'
+ */
+export function pluralKey(baseKey: string, count: number): string {
+  return count === 1 ? `${baseKey}_one` : `${baseKey}_other`;
+}

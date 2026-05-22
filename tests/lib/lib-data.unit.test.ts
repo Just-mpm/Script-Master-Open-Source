@@ -272,18 +272,24 @@ describe('DEFAULT_DESCRIPTION', () => {
 // Stock Media — searchStockImages (integração com array estático)
 // ---------------------------------------------------------------------------
 
-describe('searchStockImages — busca em array estático', () => {
+describe('Stock Media — busca no placeholder local', () => {
   let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let pexelsKeySpy: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    // Força fallback para placeholder local (independente de .env ter VITE_PEXELS_API_KEY)
+    const env = await import('../../src/lib/env');
+    pexelsKeySpy = vi.spyOn(env, 'getPexelsApiKey').mockReturnValue(undefined);
   });
 
   afterEach(() => {
     consoleSpy.mockRestore();
+    pexelsKeySpy.mockRestore();
   });
 
-  it('retorna resultados para query vazia', async () => {
+  describe('searchStockImages — busca em array estático', () => {
+    it('retorna resultados para query vazia', async () => {
     const { searchStockImages } = await import('../../src/lib/stockMedia');
     const results = await searchStockImages({ query: '' });
     expect(results.length).toBeGreaterThan(0);
@@ -367,19 +373,20 @@ describe('searchStockImages — busca em array estático', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Stock Media — tipos
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Stock Media — tipos
+  // ---------------------------------------------------------------------------
 
-describe('StockImage — tipo', () => {
-  it('source é um dos valores permitidos', async () => {
-    const { searchStockImages } = await import('../../src/lib/stockMedia');
-    const results = await searchStockImages({ query: '' });
-    const validSources = ['pexels', 'unsplash', 'placeholder'];
+  describe('StockImage — tipo', () => {
+    it('source é um dos valores permitidos', async () => {
+      const { searchStockImages } = await import('../../src/lib/stockMedia');
+      const results = await searchStockImages({ query: '' });
+      const validSources = ['pexels', 'unsplash', 'placeholder'];
 
-    for (const img of results) {
-      expect(validSources).toContain(img.source);
-    }
+      for (const img of results) {
+        expect(validSources).toContain(img.source);
+      }
+    });
   });
 });
 

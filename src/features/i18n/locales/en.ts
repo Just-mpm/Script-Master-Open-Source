@@ -65,9 +65,8 @@ export const en: TranslationDictionary = {
     ariaNav: 'Public navigation',
     ariaMenu: 'Menu',
     ariaDrawerMenu: 'Navigation menu',
-  },
-
-  footer: {
+    logoAlt: 'Script Master — Go to homepage',
+  },  footer: {
     description:
       'Turn scripts into art with AI. Professional audio, video, and images powered by Gemini.',
     copyright: 'Script Master. All rights reserved.',
@@ -114,10 +113,6 @@ export const en: TranslationDictionary = {
           'Transform scripts into professional audio with Gemini TTS. Voice control, pace, and multi-speaker.',
       },
       video: {
-    exportProgress: 'Export progress',
-    exportQuality: 'Export quality',
-    timingError: 'Start must be before end',
-    undoDelete: 'Undo deletion',
         title: 'Automatic Video',
         description:
           'Create client-side videos with subtitles, transitions, and waveform. No backend needed.',
@@ -865,6 +860,7 @@ export const en: TranslationDictionary = {
       booleanYes: 'Yes',
       booleanNo: 'No',
       sceneDensityValue: '{value}s per scene',
+      appliedToast: 'Template "{name}" applied successfully!',
     },
     emotion: {
       label: 'Voice emotion',
@@ -896,6 +892,10 @@ export const en: TranslationDictionary = {
   video: {
     pageTitle: 'Visual composition',
     pageDescription: 'Review the current scene, check the video atmosphere, and load previous projects without leaving the flow.',
+    exportProgress: 'Export progress',
+    exportQuality: 'Export quality',
+    timingError: 'Start must be before end',
+    undoDelete: 'Undo deletion',
     controlsEmpty: {
       eyebrow: 'Side panel',
       title: 'Controls waiting for content',
@@ -1026,6 +1026,7 @@ export const en: TranslationDictionary = {
     savedProjects: 'Saved projects',
     description: 'A cleaner panel to review project assets, rename versions, resume audio, and download scenes without visual noise.',
     projectCount: '{count} project{plural}',
+    projectCountEmpty: 'No saved projects',
     searchPlaceholder: 'Search project...',
     clearSearchAria: 'Clear search',
     offlineHint: 'Without login, the library uses local storage. Sign in to sync projects to the cloud.',
@@ -1080,6 +1081,11 @@ export const en: TranslationDictionary = {
   },
 
   speedPaint: {
+    durationLabel: 'Speed paint duration',
+    durationGroupAria: 'Select animation duration',
+    durationOptionAria: '{seconds} seconds',
+    durationTitle: 'Video duration',
+    durationHelper: 'Choose how long each animation should last.',
     pageTitle: 'Transform Images into',
     pageHighlight: 'Speed Paints',
     pageDescription: 'Upload any image and watch it being drawn stroke by stroke.\nOur engine analyzes the image and generates a progressive painting animation.',
@@ -1090,14 +1096,18 @@ export const en: TranslationDictionary = {
     libraryQueueBannerTitle: 'Queue loaded from the library',
     libraryQueueSourceChip: 'Source: Library',
     libraryQueueModeChip: 'Audio-free flow',
-    libraryQueueItemsChip: '{count} item(s)',
+    libraryQueueItemsChip_one: '{count} item',
+    libraryQueueItemsChip_other: '{count} items',
     libraryQueueClearAction: 'Clear queue',
     libraryQueueReady: 'The images from project "{project}" are already in the queue. Review the order and continue with the animation.',
     libraryQueueAudioHint: 'You are animating only the project images here. The audio saved in the library is not used in this flow.',
     queueTitle: 'Queue ready to animate',
-    queueDescription: '{count} image(s) ready. Reorder the sequence, adjust the speed, and choose whether to preview only or generate one final video now.',
-    queueFinalVideoSummary: '{eligible} image(s) will be included in the final video.',
-    queueFailedSummary: '{failed} image(s) will be ignored because they failed in the preview.',
+    queueDescription_one: '{count} image ready. Reorder the sequence, adjust the speed, and choose whether to preview only or generate one final video now.',
+    queueDescription_other: '{count} images ready. Reorder the sequence, adjust the speed, and choose whether to preview only or generate one final video now.',
+    queueFinalVideoSummary_one: '{eligible} image will be included in the final video.',
+    queueFinalVideoSummary_other: '{eligible} images will be included in the final video.',
+    queueFailedSummary_one: '{failed} image will be ignored because it failed in the preview.',
+    queueFailedSummary_other: '{failed} images will be ignored because they failed in the preview.',
     queueNoEligibleSummary: 'There are no valid images for the final video. Remove or replace the failed items to continue.',
     queueRemoveImage: 'Remove image',
     queueRemoveImageAria: 'Remove {filename}',
@@ -1516,7 +1526,7 @@ export const en: TranslationDictionary = {
   configuracoes: {
     title: 'Default Settings',
     subtitle: 'Set the initial values for the production studio.',
-    save: 'Save defaults',
+    save: 'Save as studio defaults',
     saved: 'Defaults saved successfully!',
     reset: 'Restore defaults',
     resetConfirm: 'This will clear all your saved settings and restore the original values. Continue?',
@@ -1700,6 +1710,124 @@ export const en: TranslationDictionary = {
     tocAriaLabelTerms: 'Summary of terms',
     tocAriaLabelPrivacy: 'Summary of privacy policy',
     tocAriaLabelCookies: 'Summary of cookies policy',
+  },
+
+  // ── Async Jobs ──────────────────────────────────────────────────────────
+  jobs: {
+    title: 'Tasks',
+    pageSubtitle: 'Track the progress of your audio, image, and video generations.',
+    badge: {
+      tooltip: '{count, plural, one {# task in progress} other {# tasks in progress}}',
+      ariaLabel: '{count, plural, one {# task in progress} other {# tasks in progress}}',
+    },
+    empty: {
+      title: 'No tasks',
+      description: 'Your generations will appear here when you start one.',
+      filteredDescription: 'No {type} tasks found.',
+    },
+    filter: {
+      all: 'All',
+      audio: 'Audio',
+      images: 'Images',
+      video: 'Video',
+      scenes: 'Scenes',
+    },
+    statusFilter: {
+      all: 'All',
+      active: 'In progress',
+      completed: 'Completed',
+      failed: 'Failed',
+    },
+    sort: {
+      recent: 'Most recent',
+    },
+    status: {
+      queued: 'Queued',
+      running: 'In progress',
+      completed: 'Completed',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+    },
+    progress: {
+      audio: {
+        generating: 'Generating audio...',
+        chunkProgress: 'Generating chunk {current}/{total}...',
+      },
+      images: {
+        generating: 'Generating images...',
+        itemProgress: 'Image {current}/{total}...',
+      },
+      scenes: {
+        generating: 'Generating scene descriptions...',
+      },
+      video: {
+        bundling: 'Preparing video...',
+        rendering: 'Rendering video...',
+        uploading: 'Uploading video...',
+      },
+    },
+    action: {
+      cancel: 'Cancel',
+      viewResult: 'View result',
+      retry: 'Try again',
+      retryUnavailable: 'This task cannot be re-run. Please create a new one.',
+      clear: 'Clear',
+      clearAll: 'Clear completed',
+    },
+    toast: {
+      audioCompleted: 'Audio ready!',
+      imagesCompleted: 'Images generated!',
+      videoCompleted: 'Video rendered!',
+      scenesCompleted: 'Scenes generated!',
+      failed: 'Error generating {type}: {message}',
+      failedGeneric: 'Error processing {type}',
+      cancelled: 'Task cancelled',
+      viewResult: 'View',
+    },
+    cancelDialog: {
+      title: 'Cancel task?',
+      description: 'The {type} generation "{name}" will be stopped.',
+      creditWarning: 'Credits already used will not be refunded.',
+      confirm: 'Cancel task',
+      dismiss: 'Continue',
+    },
+    pipeline: {
+      title: 'Pipeline: {name}',
+      step: {
+        audio: 'Generate audio',
+        scenes: 'Generate scenes',
+        images: 'Generate images',
+        video: 'Render video',
+        waiting: 'Waiting...',
+      },
+      cancelAll: 'Cancel all',
+      cancelDialog: {
+        title: 'Cancel pipeline?',
+        description: 'All remaining steps will be cancelled. Completed results will remain available.',
+      },
+    },
+    limitReached: {
+      title: 'Task limit reached',
+      description: 'Wait for a task to finish before starting another one.',
+      action: 'View tasks',
+    },
+  },
+
+  // ── Audio Jobs Panel (studio) ─────────────────────────────────────────────
+  audioJobs: {
+    title: 'Audio queue',
+    subtitle: 'Track progress and reopen completed results.',
+    defaultProjectName: 'Audio project',
+    openAudio: 'Open audio',
+    cancel: 'Cancel',
+    status: {
+      queued: 'Queued',
+      running: 'Generating',
+      completed: 'Completed',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+      cancelling: 'Cancelling',
+    },
   },
 
   errorBoundary: {

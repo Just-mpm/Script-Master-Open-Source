@@ -141,6 +141,7 @@ export function Header() {
           <Box
             component={Link}
             to="/app/estudio"
+            aria-label={t('nav.logoAlt')}
             sx={{
               display: 'flex',
               alignItems: 'center',

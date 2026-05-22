@@ -103,6 +103,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
 
         <input
           type="file"
+          id="assistant-file-input"
           ref={fileInputRef}
           onChange={onFileChange}
           hidden

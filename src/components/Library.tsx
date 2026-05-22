@@ -349,12 +349,12 @@ export function Library() {
         sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
       >
         <Stack spacing={GAP_COMPACT}>
-          <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
+          <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 700, letterSpacing: '0.18em' }}>
             {t('library.title')}
           </Typography>
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
             <Folder sx={{ fontSize: ICON_SIZE_LG, color: 'primary.main' }} />
-            <Typography variant="h4">{t('library.savedProjects')}</Typography>
+            <Typography variant="h4" component="h1">{t('library.savedProjects')}</Typography>
           </Stack>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 640 }}>
             {t('library.description')}
@@ -362,7 +362,11 @@ export function Library() {
         </Stack>
 
         <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'flex-end' }}>
-          <Chip label={t('library.projectCount', { count: filteredProjects.length, plural: filteredProjects.length === 1 ? '' : 's' })} variant="outlined" />
+          {filteredProjects.length > 0 ? (
+            <Chip label={t('library.projectCount', { count: filteredProjects.length, plural: filteredProjects.length === 1 ? '' : 's' })} variant="outlined" />
+          ) : (
+            <Chip label={t('library.projectCountEmpty')} variant="outlined" sx={{ borderColor: 'primary.main', color: 'primary.light' }} />
+          )}
           {projects.length > 0 && (
             <TextField
               type="search"
@@ -461,7 +465,7 @@ export function Library() {
             }}>
               <Album sx={{ fontSize: 28, color: 'common.white' }} />
             </Box>
-            <Typography variant="h5">{t('library.emptyTitle')}</Typography>
+            <Typography variant="h5" component="h2">{t('library.emptyTitle')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               {t('library.emptyDescription')}
             </Typography>
@@ -482,7 +486,7 @@ export function Library() {
             }}>
               <Search sx={{ fontSize: 28, color: 'common.white' }} />
             </Box>
-            <Typography variant="h5">{t('library.noResultsTitle')}</Typography>
+            <Typography variant="h5" component="h2">{t('library.noResultsTitle')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               {t('library.noResultsDescription', { query: searchQuery })}
             </Typography>

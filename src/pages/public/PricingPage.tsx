@@ -95,7 +95,7 @@ function CreditInfoCard({
           >
             <Icon sx={{ fontSize: 28 }} />
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 700, mb: 1 }}>
             {data.title}
           </Typography>
           <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7 }}>
@@ -286,7 +286,7 @@ export default function PricingPage() {
         {/* ── Aviso: pagamentos pausados ── */}
         <Box sx={{ pb: { xs: 8, md: 12 }, mx: { xs: 2, sm: 3 } }}>
           <BetaNotice>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+            <Typography variant="subtitle2" component="p" sx={{ fontWeight: 700, mb: 0.5 }}>
               {t('pricing.notice.title')}
             </Typography>
             <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>

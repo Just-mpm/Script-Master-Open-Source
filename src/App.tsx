@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { ActionBar } from './components/ActionBar';
 import { Header } from './components/Header';
 import { ScrollToTop } from './components/public/ScrollToTop';
@@ -119,6 +120,27 @@ export default function App() {
       </Typography>
 
       <ScrollToTop />
+
+      {/* Container de toasts do react-hot-toast — posição top-center para não conflitar com o ToastManager */}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1e1e2e',
+            color: '#e0e0e0',
+            borderRadius: '12px',
+            fontSize: '0.875rem',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#4caf50',
+              secondary: '#1e1e2e',
+            },
+          },
+        }}
+      />
 
       {/* Header do app — apenas nas rotas /app/* */}
       {showAppLayout && <Header />}

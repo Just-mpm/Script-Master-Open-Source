@@ -90,7 +90,7 @@ export const VoiceCard = React.memo(function VoiceCard({
       >
         <Stack spacing={GAP_COMPACT} sx={{ width: '100%' }}>
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="subtitle2" color={isSelected ? 'primary.main' : 'text.primary'}>
+            <Typography variant="subtitle2" component="p" color={isSelected ? 'primary.main' : 'text.primary'}>
               {voice.name}
             </Typography>
             {isSelected && <CheckCircle sx={{ fontSize: ICON_SIZE_SM, color: theme.palette.primary.main }} aria-hidden="true" />}

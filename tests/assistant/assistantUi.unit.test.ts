@@ -4,6 +4,7 @@ import {
   assistantDrawerPaperSx,
   assistantInsetSx,
   assistantMarkdownSx,
+  assistantSuggestionChipSx,
 } from '../../src/features/assistant/components/assistantUi';
 
 // Mock das dependências de tema
@@ -13,13 +14,15 @@ vi.mock('../../src/theme/tokens', () => ({
   APP_SURFACE: 'rgba(20,20,30,1)',
   APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
   SHADOW_DEEP: 'rgba(0,0,0,0.5)',
-  WHITE_04: 'rgba(255,255,255,0.04)',
   WHITE_01: 'rgba(255,255,255,0.01)',
+  WHITE_04: 'rgba(255,255,255,0.04)',
   WHITE_06: 'rgba(255,255,255,0.06)',
   WHITE_08: 'rgba(255,255,255,0.08)',
   WHITE_10: 'rgba(255,255,255,0.10)',
+  WHITE_82: 'rgba(255,255,255,0.82)',
   BLACK_50: 'rgba(0,0,0,0.5)',
   BRAND_PRIMARY: '#2E75B6',
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
   BRAND_SECONDARY: '#F7941E',
   GAP_COMPACT: 4,
   GAP_MEDIUM: 8,
@@ -130,6 +133,36 @@ describe('assistantUi', () => {
     it('tem estilo para itens de lista', () => {
       expect(assistantMarkdownSx).toHaveProperty('& li');
       expect(assistantMarkdownSx['& li']).toHaveProperty('mb');
+    });
+  });
+
+  describe('assistantSuggestionChipSx', () => {
+    it('é um objeto (não função)', () => {
+      expect(typeof assistantSuggestionChipSx).toBe('object');
+      expect(assistantSuggestionChipSx).not.toBeNull();
+    });
+
+    it('tem cursor pointer', () => {
+      expect(assistantSuggestionChipSx.cursor).toBe('pointer');
+    });
+
+    it('tem hover state com borderColor', () => {
+      const hover = assistantSuggestionChipSx['&:hover'];
+      expect(hover).toBeDefined();
+      expect(hover).toHaveProperty('borderColor');
+      expect(hover).toHaveProperty('transform');
+    });
+
+    it('tem active state com transform', () => {
+      const active = assistantSuggestionChipSx['&:active'];
+      expect(active).toBeDefined();
+      expect(active).toHaveProperty('transform');
+    });
+
+    it('tem transition para animação suave', () => {
+      expect(assistantSuggestionChipSx).toHaveProperty('transition');
+      expect(assistantSuggestionChipSx.transition).toContain('border-color');
+      expect(assistantSuggestionChipSx.transition).toContain('transform');
     });
   });
 });

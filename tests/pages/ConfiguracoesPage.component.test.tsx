@@ -75,6 +75,7 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_COMPACT: 0.5,
   GAP_DEFAULT: 1,
   GAP_MEDIUM: 1.5,
+  GAP_RELAXED: 2,
   RADIUS_SM: 8,
   RADIUS_XS: 4,
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(99, 102, 241, 0.15)',
@@ -219,9 +220,9 @@ describe('ConfiguracoesPage', () => {
   // --- Botões de ação ---
 
   describe('botões de ação', () => {
-    it('renderiza o botão "Salvar padrões"', () => {
+    it('renderiza o botão "Salvar como padrões do estúdio"', () => {
       render(<ConfiguracoesPage />, { wrapper: Wrapper });
-      expect(screen.getByText('Salvar padrões')).toBeInTheDocument();
+      expect(screen.getByText('Salvar como padrões do estúdio')).toBeInTheDocument();
     });
 
     it('renderiza o botão "Restaurar padrões"', () => {

@@ -217,6 +217,7 @@ function ContactInfoPanel() {
       <Box sx={{ borderTop: `1px solid ${APP_BORDER}`, pt: 3 }}>
         <Typography
           variant="subtitle2"
+          component="p"
           sx={{ color: TEXT_SECONDARY, mb: 2, fontWeight: 600 }}
         >
           {t('contact.info.socials.title')}
@@ -340,7 +341,7 @@ function FeedbackForm() {
         >
           <RateReviewIcon sx={{ fontSize: 28 }} />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="p" sx={{ fontWeight: 700 }}>
           {t('contact.feedback.title')}
         </Typography>
         <Alert severity="success" variant="outlined" sx={{ maxWidth: 480 }}>
@@ -644,7 +645,7 @@ export default function ContactPage() {
               >
                 <RateReviewIcon sx={{ fontSize: 28 }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" component="p" sx={{ fontWeight: 700 }}>
                 {t('contact.feedback.title')}
               </Typography>
               <Typography variant="body2" sx={{ color: TEXT_SECONDARY, maxWidth: 480, lineHeight: 1.7 }}>
@@ -668,7 +669,7 @@ export default function ContactPage() {
               >
                 <LoginIcon sx={{ fontSize: 28 }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" component="p" sx={{ fontWeight: 700 }}>
                 {t('contact.feedback.loginPrompt')}
               </Typography>
               <Button

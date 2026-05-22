@@ -24,6 +24,7 @@ import { useStudioStore } from '../store';
 import { glassPanelSx, insetPanelSx } from '../../../theme/surfaces';
 import { ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT } from '../../../theme/tokens';
 import { createLogger } from '../../../lib/logger';
+import { toast } from 'react-hot-toast';
 
 const log = createLogger('TemplateSelector');
 
@@ -51,6 +52,7 @@ export function TemplateSelector() {
     if (!selectedTemplate) return;
     log.info('Aplicando template', { id: selectedTemplate.id, name: selectedTemplate.name });
     useStudioStore.getState().applySettings(selectedTemplate.patch);
+    toast.success(t('studio.templates.appliedToast', { name: selectedTemplate.name }));
     setIsPreviewOpen(false);
     setSelectedTemplate(null);
     setIsOpen(false);
