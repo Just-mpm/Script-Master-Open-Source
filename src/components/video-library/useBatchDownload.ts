@@ -26,7 +26,7 @@ export function useBatchDownload() {
     const safeName = item.name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
     const failedItems: string[] = [];
-    const totalSteps = 1 + (item.scenes?.length ?? 0); // audio + scenes
+    const totalSteps = (item.audioUrl ? 1 : 0) + (item.scenes?.length ?? 0) + (item.videos?.length ?? 0);
 
     // 1. Download Audio (try/catch individual)
     if (item.audioUrl) {
@@ -49,6 +49,24 @@ export function useBatchDownload() {
         } catch (err) {
           log.error('Falha no download da cena', { error: err, sceneIndex: i + 1 });
           failedItems.push(`cena ${i + 1}`);
+        }
+      }
+    }
+
+    // 3. Download Videos (preserva UX atual, adicionando apenas os arquivos finais salvos)
+    if (item.videos && item.videos.length > 0) {
+      for (let i = 0; i < item.videos.length; i++) {
+        try {
+          await new Promise<void>((resolve) => setTimeout(resolve, 400));
+          const video = item.videos[i];
+          const isSingleVideo = item.videos.length === 1;
+          const videoFilename = isSingleVideo
+            ? `${safeName}-video.${video.format}`
+            : `${safeName}-video-${String(i + 1).padStart(2, '0')}.${video.format}`;
+          await downloadFile(video.resolvedUrl, videoFilename);
+        } catch (err) {
+          log.error('Falha no download do vídeo', { error: err, videoIndex: i + 1 });
+          failedItems.push(`${t('library.video')} ${i + 1}`);
         }
       }
     }

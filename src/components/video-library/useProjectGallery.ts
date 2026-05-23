@@ -114,7 +114,12 @@ export function useProjectGallery(
             thumbnail: details.images[0]?.imageUrl || (details.images[0]?.imageBlob ? createTrackedBlobUrl(details.images[0].imageBlob, item.id) : undefined),
             audioUrl: details.audios[0]?.audioUrl || (details.audios[0]?.audioBlob ? createTrackedBlobUrl(details.audios[0].audioBlob, item.id) : ''),
             scenes: details.images.map((img) => ({ imageUrl: img.imageUrl || (img.imageBlob ? createTrackedBlobUrl(img.imageBlob, item.id) : ''), timestamp: img.timestamp })),
-            videos: details.videos.length > 0 ? details.videos : undefined,
+            videos: details.videos.length > 0
+              ? details.videos.map((video) => ({
+                ...video,
+                resolvedUrl: video.videoUrl || (video.videoBlob ? createTrackedBlobUrl(video.videoBlob, item.id) : ''),
+              }))
+              : undefined,
           };
         } catch {
           return item;

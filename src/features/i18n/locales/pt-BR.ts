@@ -15,7 +15,6 @@ export const ptBR: TranslationDictionary = {
     closeWarning: 'Fechar aviso',
     skipToContent: 'Pular para o conteúdo',
     loading: 'Carregando...',
-    loadingPageSubtitle: 'Estamos preparando a interface para você continuar sem perder o contexto.',
     error: 'Erro',
     success: 'Sucesso',
     cancel: 'Cancelar',
@@ -815,11 +814,6 @@ export const ptBR: TranslationDictionary = {
         tooLarge: 'Imagem muito grande. Tamanho máximo: 10MB.',
         readError: 'Falha ao ler o arquivo. Tente outra imagem.',
       },
-      summary: {
-        podcast: 'Podcast',
-        scenesOn: 'Cenas ativas',
-        scenesOff: 'Sem cenas',
-      },
     },
     scriptEditor: {
       inlineAI: {
@@ -843,13 +837,9 @@ export const ptBR: TranslationDictionary = {
       editorAriaLabel: 'Editor de roteiro',
       generateButton: 'Gerar áudio',
       generateTooltip: 'Gerar áudio ({shortcut} + Enter)',
-      footerShortcutHint: 'Atalho pronto: Ctrl + Enter para gerar sem sair da escrita.',
-      footerSceneHint: 'Cena sincronizada ativa para acompanhar o trecho atual.',
       clearConfirm: 'O roteiro será apagado permanentemente. Deseja continuar?',
     },
     studioPage: {
-      title: 'Estúdio',
-      subtitle: 'Escreva, ajuste a voz e acompanhe a geração sem deixar o fluxo principal poluído.',
       settingsTab: 'Configurações',
       scriptTab: 'Roteiro',
     },
@@ -915,66 +905,21 @@ export const ptBR: TranslationDictionary = {
 
   // ── Vídeo ───────────────────────────────────────────────────────────
   video: {
-      pageTitle: 'Montagem visual',
-      pageDescription: 'Revise a cena atual, confira a atmosfera do vídeo e carregue projetos anteriores sem sair do fluxo.',
-      exportProgress: 'Progresso da exportação',
-      exportQuality: 'Qualidade de exportação',
-      timingError: 'Início deve ser menor que fim',
-      undoDelete: 'Desfazer exclusão',
-      workspace: {
-        eyebrow: 'Canvas ativo',
-        title: 'Preview pronto para ajuste fino',
-        description: 'Use esta área para sentir ritmo, revisar cenas e alinhar legenda antes de exportar.',
-      },
-      summary: {
-        awaitingPreview: 'Preview aguardando projeto',
-        awaitingControls: 'Painel aguardando conteúdo',
-        sceneCount: '{count} cena{plural}',
-        duration: '{duration}s de vídeo',
-        captionsReady: '{count} legenda(s) prontas',
-        captionsPending: 'Legenda ainda não gerada',
-      },
-      summaryPanel: {
-        eyebrow: 'Painel de ajustes',
-        description: 'Legendas, revisão textual e exportação ficam concentradas aqui para você lapidar o vídeo sem perder o preview de vista.',
-        projectLoaded: 'Projeto carregado',
-        exportReady: 'Exportação disponível',
-        captionsReady: 'Legenda disponível',
-        captionsPending: 'Falta gerar legenda',
-      },
-      librarySection: {
-        eyebrow: 'Biblioteca conectada',
-        title: 'Projetos e versões sem roubar o foco do preview',
-        description: 'Abra a galeria quando quiser retomar um projeto, baixar ativos ou comparar versões, sem transformar a página num bloco infinito.',
-        currentProjectLoaded: 'Projeto atual carregado',
-        currentProjectMissing: 'Use a biblioteca para retomar um projeto',
-        expandHint: 'Mostrar galeria',
-        collapseHint: 'Recolher galeria',
-      },
-      controlsEmpty: {
-        eyebrow: 'Painel lateral',
-        title: 'Controles aguardando conteúdo',
-        description: 'Gere áudio e cenas no estúdio para liberar legendas, ajustes finos e exportação aqui.',
-        steps: {
-          0: {
-            title: '1. Gere áudio e cenas no estúdio',
-            description: 'A página de vídeo ganha contexto assim que existe um projeto com narração e imagens.',
-          },
-          1: {
-            title: '2. Ajuste legenda e transcrição',
-            description: 'Depois do carregamento, este painel libera legenda sincronizada e edição fina do texto.',
-          },
-          2: {
-            title: '3. Exporte sem sair do fluxo',
-            description: 'Quando tudo estiver no ponto, a exportação MP4 fica disponível no mesmo painel.',
-          },
-        },
-      },
-      preview: {
-        eyebrow: 'Preview principal',
-        title: 'Preview de vídeo aguardando cenas',
-        description: 'Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.',
-        goToStudio: 'Ir para o Estúdio',
+    pageTitle: 'Montagem visual',
+    pageDescription: 'Revise a cena atual, confira a atmosfera do vídeo e carregue projetos anteriores sem sair do fluxo.',
+    exportProgress: 'Progresso da exportação',
+    exportQuality: 'Qualidade de exportação',
+    timingError: 'Início deve ser menor que fim',
+    undoDelete: 'Desfazer exclusão',
+    controlsEmpty: {
+      eyebrow: 'Painel lateral',
+      title: 'Controles aguardando conteúdo',
+      description: 'Gere áudio e cenas no estúdio para liberar legendas, ajustes finos e exportação aqui.',
+    },
+    preview: {
+      title: 'Preview de vídeo aguardando cenas',
+      description: 'Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.',
+      goToStudio: 'Ir para o Estúdio',
       renderError: 'Erro ao renderizar o vídeo',
       renderErrorDescription: 'Ocorreu um problema durante a composição. Tente recarregar.',
       captionVisible: 'Legenda visível',
@@ -1105,7 +1050,6 @@ export const ptBR: TranslationDictionary = {
     projectCountEmpty: 'Nenhum projeto salvo',
     searchPlaceholder: 'Buscar projeto...',
     clearSearchAria: 'Limpar busca',
-    scriptPreviewFallback: 'Abra os detalhes para revisar áudio, cenas, vídeos e o roteiro completo deste projeto.',
     offlineHint: 'Sem login, a biblioteca usa armazenamento local deste navegador. Entre com sua conta para sincronizar projetos na nuvem.',
     loadError: 'Não foi possível carregar sua biblioteca. Verifique sua conexão e tente novamente.',
     emptyTitle: 'Sua biblioteca ainda está vazia',
@@ -1134,10 +1078,7 @@ export const ptBR: TranslationDictionary = {
     speedPaintPrepareError: 'Não foi possível preparar as imagens para o Speed Paint. Tente novamente.',
     speedPaintPartialWarning: '{ready} imagem(ns) foram preparadas. {failed} imagem(ns) ficaram de fora por falha no carregamento.',
     speedPaintHint: 'Envia as cenas deste projeto para a fila do Speed Paint. O áudio não entra nesta etapa.',
-    speedPaintQueueChip: 'Fila Speed Paint',
     scene: 'Cena {number}',
-    sceneCount: '{count} cena{plural}',
-    audioCount: '{count} áudio{plural}',
     videoItem: 'Vídeo {number}',
     videoCount: '{count} vídeo{plural}',
     downloadSceneAria: 'Baixar cena {number}',
@@ -1643,21 +1584,6 @@ export const ptBR: TranslationDictionary = {
     multiSpeakerLabel: 'Multi-locutor',
     speakerBNameLabel: 'Nome do locutor B',
     speakerBVoiceLabel: 'Voz do locutor B',
-    voiceHint: 'Escolha uma voz base para começar o estúdio já no tom certo.',
-    footerHint: 'Salve quando quiser transformar esta combinação no novo padrão do seu fluxo.',
-    summary: {
-      title: 'Resumo rápido do preset',
-      description: 'Essas preferências viram o ponto de partida do seu estúdio, do vídeo e das rotinas ligadas ao seu perfil.',
-      pending: 'Alterações pendentes',
-      synced: 'Preset em dia',
-      cloud: 'Sincroniza na conta',
-      local: 'Salvo neste navegador',
-      sections: '4 grupos de ajuste',
-      scenesOff: 'Cenas desligadas',
-      multiSpeakerOff: 'Um locutor',
-      multiSpeakerOn: 'Dois locutores',
-      secondSpeakerDefault: 'Locutor B',
-    },
   },
 
   // ── Autenticação (Login e Cadastro) ──────────────────────────────
@@ -1826,20 +1752,6 @@ export const ptBR: TranslationDictionary = {
   jobs: {
     title: 'Tarefas',
     pageSubtitle: 'Acompanhe o progresso das suas gerações de áudio, imagens e vídeos.',
-    summary: {
-      active: {
-        badge: 'Agora',
-        description: 'Jobs que ainda pedem acompanhamento ou ação imediata.',
-      },
-      completed: {
-        badge: 'Entregues',
-        description: 'Execuções concluídas e prontas para consulta de resultado.',
-      },
-      failed: {
-        badge: 'Atenção',
-        description: 'Falhas e cancelamentos que ainda podem pedir revisão.',
-      },
-    },
     badge: {
       tooltip: '{count, plural, one {# tarefa em andamento} other {# tarefas em andamento}}',
       ariaLabel: '{count, plural, one {# tarefa em andamento} other {# tarefas em andamento}}',
@@ -1861,14 +1773,6 @@ export const ptBR: TranslationDictionary = {
       active: 'Em andamento',
       completed: 'Concluídos',
       failed: 'Com erro',
-    },
-    filters: {
-      eyebrow: 'Painel da fila',
-      idleSummary: '{count} itens no histórico total',
-      activeSummary: '{count} itens combinam com os filtros atuais',
-      activeCount: '{count} ativos',
-      completedCount: '{count} concluídos',
-      failedCount: '{count} com erro',
     },
     sort: {
       recent: 'Mais recentes',
@@ -1950,25 +1854,11 @@ export const ptBR: TranslationDictionary = {
 
   // ── Painel de Jobs de Áudio (estúdio) ─────────────────────────────────────
   audioJobs: {
-    title: 'Atividade de áudio',
-    subtitle: 'Só o que importa agora fica em destaque. O restante vira consulta.',
-    idleState: 'Nenhuma tarefa ativa agora. O histórico continua disponível quando você quiser revisar.',
-    activeSummary: '{count, plural, one {1 geração em andamento} other {# gerações em andamento}}',
+    title: 'Fila de áudio',
+    subtitle: 'Acompanhe o progresso e reabra resultados concluídos.',
     defaultProjectName: 'Projeto de áudio',
     openAudio: 'Abrir áudio',
     cancel: 'Cancelar',
-    dismiss: 'Dispensar item',
-    recentTitle: 'Recentes ({count})',
-    recentSubtitle: 'Resultados novos que ainda merecem atenção.',
-    historyTitle: 'Histórico ({count})',
-    historySubtitle: 'Execuções antigas ficam guardadas, sem tomar espaço do estúdio.',
-    showHistory: 'Mostrar histórico ({count})',
-    hideHistory: 'Ocultar histórico',
-    summary: {
-      active: '{count} ativas',
-      recent: '{count} recentes',
-      history: '{count} no histórico',
-    },
     status: {
       queued: 'Na fila',
       running: 'Gerando',

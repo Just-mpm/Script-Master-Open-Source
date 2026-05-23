@@ -10,6 +10,7 @@ export { useBatchDownload } from './useBatchDownload';
 // Tipos
 export type {
   VideoLibraryScene,
+  VideoLibraryVideo,
   VideoLibraryItem,
   VideoLibraryProps,
   SortOrder,

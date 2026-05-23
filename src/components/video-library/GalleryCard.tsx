@@ -163,17 +163,20 @@ export const GalleryCard = memo(function GalleryCard({
               <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', pt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
                 <MetadataPill icon={<CalendarMonth sx={{ fontSize: ICON_SIZE_SM }} />} label={new Date(project.createdAt).toLocaleDateString()} />
                 <MetadataPill icon={<AccessTime sx={{ fontSize: ICON_SIZE_SM }} />} label={new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
+                {project.videos && project.videos.length > 0 ? (
+                  <MetadataPill icon={<Movie sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.videoCount', { count: project.videos.length, plural: project.videos.length === 1 ? '' : 's' })} />
+                ) : null}
               </Stack>
             </Stack>
           </CardContent>
         </CardActionArea>
 
-        <Tooltip title="Sincronizar e baixar todos os arquivos" describeChild>
+        <Tooltip title={t('library.downloadProjectAssets')} describeChild>
           <span>
             <IconButton
               onClick={(event) => onDownload(event, project)}
               disabled={isDownloading}
-              aria-label={`Baixar arquivos do projeto ${project.name}`}
+              aria-label={t('library.downloadProjectAssetsAria', { name: project.name })}
               sx={(theme): SystemStyleObject<Theme> => ({
                 position: 'absolute',
                 top: 10,
@@ -200,14 +203,14 @@ export const GalleryCard = memo(function GalleryCard({
           </span>
         </Tooltip>
 
-        <Tooltip title="Excluir item da galeria" describeChild>
+        <Tooltip title={t('library.deleteGalleryItem')} describeChild>
           <span>
             <IconButton
               onClick={(event) => {
                 event.stopPropagation();
                 onDelete(project);
               }}
-              aria-label={`Excluir ${project.name} da galeria`}
+              aria-label={t('library.deleteGalleryItemAria', { name: project.name })}
               sx={(theme): SystemStyleObject<Theme> => ({
                 position: 'absolute',
                 top: 10,

@@ -6,13 +6,18 @@ export interface VideoLibraryScene {
   timestamp: number;
 }
 
+/** Vídeo salvo com URL já resolvida para uso direto na UI/download. */
+export interface VideoLibraryVideo extends ProjectVideo {
+  resolvedUrl: string;
+}
+
 /** Item da galeria — estende Project com campos opcionais de mídia */
 export interface VideoLibraryItem extends Project {
   thumbnail?: string;
   isGeneration?: boolean;
   audioUrl?: string;
   scenes?: VideoLibraryScene[];
-  videos?: ProjectVideo[];
+  videos?: VideoLibraryVideo[];
 }
 
 /** Props públicas do componente VideoLibrary */
