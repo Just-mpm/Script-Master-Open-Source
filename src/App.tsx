@@ -17,11 +17,15 @@ import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
+import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
 
 export default function App() {
   const { t } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // ─── Auto-save de settings do estúdio no Firestore ────────
+  useAutoSaveStudioSettings();
 
   // ─── Handler de geração de áudio (hook centralizado) ─────
   const {

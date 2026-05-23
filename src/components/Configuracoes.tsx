@@ -34,8 +34,13 @@ import { LOCALE_CONFIGS } from '../features/i18n/locales';
 import type { Locale } from '../features/i18n/types';
 import { VoiceCard } from './VoiceCard';
 import { createPaceOptions, createVisualFrameworkOptions, createSceneRatioOptions, createDensityOptions } from '../data/studioOptions';
+import { useAuth } from '../contexts/AuthContext';
+import { saveUserSettings } from '../lib/db';
+import { createLogger } from '../lib/logger';
 
 // ─── Types ──────────────────────────────────────────────────
+
+const log = createLogger('Configuracoes');
 
 interface SectionProps {
   icon: React.ReactNode;
@@ -104,6 +109,7 @@ function CollapsibleSection({ icon, title, description, sectionId, children }: S
 export function Configuracoes() {
   const theme = useTheme();
   const { t } = useLocale();
+  const { user } = useAuth();
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -168,13 +174,48 @@ export function Configuracoes() {
       imageTextLanguage,
       isMultiSpeaker,
     });
-    setToast(t('configuracoes.saved'));
+
+    // Salva imediatamente no Firestore (se logado)
+    if (user) {
+      saveUserSettings(
+        '',
+        user.uid,
+        undefined,
+        {
+          selectedVoice: voice,
+          speakerAName,
+          speakerBName,
+          speakerBVoice,
+          audioProfile,
+          scene,
+          styleNotes,
+          pace,
+          generateScenes,
+          sceneDensity,
+          sceneRatio,
+          visualFramework,
+          emotion,
+          emotionIntensity,
+          imageTextLanguage,
+          isMultiSpeaker,
+        },
+      ).then(() => {
+        setToast(t('configuracoes.saved'));
+      }).catch((err: unknown) => {
+        log.error('Falha ao salvar configurações no Firestore', { error: err });
+        // localStorage salvou com sucesso — mostra toast mesmo assim
+        setToast(t('configuracoes.saved'));
+      });
+    } else {
+      setToast(t('configuracoes.saved'));
+    }
+
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
     }, 3000);
-  }, [voice, speakerAName, speakerBName, speakerBVoice, audioProfile, scene, styleNotes, pace, generateScenes, sceneDensity, sceneRatio, visualFramework, emotion, emotionIntensity, imageTextLanguage, isMultiSpeaker, t]);
+  }, [voice, speakerAName, speakerBName, speakerBVoice, audioProfile, scene, styleNotes, pace, generateScenes, sceneDensity, sceneRatio, visualFramework, emotion, emotionIntensity, imageTextLanguage, isMultiSpeaker, t, user]);
 
   // Limpa timer de toast ao desmontar
   useEffect(() => {
@@ -208,7 +249,37 @@ export function Configuracoes() {
     setIsMultiSpeaker(fresh.isMultiSpeaker);
     setSpeakerBName(fresh.speakerBName);
     setSpeakerBVoice(fresh.speakerBVoice);
-  }, []);
+
+    // Persistir valores default no Firestore (se logado) para evitar
+    // que a próxima carga restaure os valores antigos do Firestore
+    if (user) {
+      saveUserSettings(
+        '',
+        user.uid,
+        undefined,
+        {
+          selectedVoice: fresh.selectedVoice,
+          isMultiSpeaker: fresh.isMultiSpeaker,
+          speakerAName: fresh.speakerAName,
+          speakerBName: fresh.speakerBName,
+          speakerBVoice: fresh.speakerBVoice,
+          audioProfile: fresh.audioProfile,
+          scene: fresh.scene,
+          styleNotes: fresh.styleNotes,
+          pace: fresh.pace,
+          generateScenes: fresh.generateScenes,
+          sceneDensity: fresh.sceneDensity,
+          sceneRatio: fresh.sceneRatio,
+          visualFramework: fresh.visualFramework,
+          emotion: fresh.emotion,
+          emotionIntensity: fresh.emotionIntensity,
+          imageTextLanguage: fresh.imageTextLanguage,
+        },
+      ).catch((err: unknown) => {
+        log.error('Falha ao resetar configurações no Firestore', { error: err });
+      });
+    }
+  }, [user]);
 
   return (
     <Stack spacing={GAP_RELAXED}>

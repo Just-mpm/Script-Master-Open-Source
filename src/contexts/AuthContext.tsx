@@ -7,6 +7,8 @@ import { deleteAllUserData } from '../lib/db/account-cleanup';
 import { getUserSettings } from '../lib/db/user-settings';
 import { useBillingInit } from '../features/billing/hooks';
 import { isBillingEnabled } from '../lib/env';
+import type { StudioDraftState } from '../features/studio/types';
+import { useStudioStore } from '../features/studio/store';
 
 const log = createLogger('AuthContext');
 
@@ -100,16 +102,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           getUserSettings(authUser.uid).then((settings) => {
             const actuallyCompleted = settings && (settings.name || settings.goals?.length);
             if (actuallyCompleted) {
-              // Firestore confirma que onboarding foi concluído — localStorage foi limpo
               localStorage.setItem('s2a_onboarding_completed', 'true');
-              setLoading(false);
-            } else if (window.location.pathname !== '/onboarding') {
+            }
+
+            // Carregar settings do estúdio do Firestore ANTES de setLoading(false)
+            if (settings) {
+              const studioFields: Record<string, unknown> = {};
+              const studioKeys = [
+                'selectedVoice', 'isMultiSpeaker', 'speakerAName', 'speakerBName',
+                'speakerBVoice', 'audioProfile', 'scene', 'pace', 'styleNotes',
+                'generateScenes', 'sceneDensity', 'sceneRatio', 'visualFramework',
+                'emotion', 'emotionIntensity', 'imageTextLanguage',
+              ] as const;
+              for (const key of studioKeys) {
+                const value = (settings as unknown as Record<string, unknown>)[key];
+                if (value !== undefined) {
+                  studioFields[key] = value;
+                }
+              }
+              if (Object.keys(studioFields).length > 0) {
+                useStudioStore.getState().loadFromFirestore(studioFields as Partial<StudioDraftState>);
+              }
+            }
+
+            if (!actuallyCompleted && window.location.pathname !== '/onboarding') {
               window.location.href = '/onboarding';
             } else {
-              // Já está no /onboarding e Firestore confirma que não completou → deixa a página decidir
               setLoading(false);
             }
           }).catch(() => {
+            // Carregar settings falhou — continuar com localStorage
             if (window.location.pathname !== '/onboarding') {
               window.location.href = '/onboarding';
             } else {
@@ -119,7 +141,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setLoading(false);
+        // Onboarding já concluído — carregar settings do estúdio do Firestore antes de liberar a UI
+        getUserSettings(authUser.uid).then((settings) => {
+          if (settings) {
+            const studioFields: Record<string, unknown> = {};
+            const studioKeys = [
+              'selectedVoice', 'isMultiSpeaker', 'speakerAName', 'speakerBName',
+              'speakerBVoice', 'audioProfile', 'scene', 'pace', 'styleNotes',
+              'generateScenes', 'sceneDensity', 'sceneRatio', 'visualFramework',
+              'emotion', 'emotionIntensity', 'imageTextLanguage',
+            ] as const;
+            for (const key of studioKeys) {
+              const value = (settings as unknown as Record<string, unknown>)[key];
+              if (value !== undefined) {
+                studioFields[key] = value;
+              }
+            }
+            if (Object.keys(studioFields).length > 0) {
+              useStudioStore.getState().loadFromFirestore(studioFields as Partial<StudioDraftState>);
+            }
+          }
+          setLoading(false);
+        }).catch((err: unknown) => {
+          log.warn('Falha ao carregar settings do Firestore — usando localStorage', { error: err });
+          setLoading(false);
+        });
       } else {
         setLoading(false);
       }

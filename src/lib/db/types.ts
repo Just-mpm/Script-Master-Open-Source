@@ -89,6 +89,23 @@ export interface UserSetting {
   goals?: string[];
   customSystemPrompt: string;
   updatedAt: number;
+  // Preferências do estúdio (opcionais — sincronizadas via Firestore)
+  selectedVoice?: string;
+  isMultiSpeaker?: boolean;
+  speakerAName?: string;
+  speakerBName?: string;
+  speakerBVoice?: string;
+  audioProfile?: string;
+  scene?: string;
+  pace?: string;
+  styleNotes?: string;
+  generateScenes?: boolean;
+  sceneRatio?: string;
+  sceneDensity?: number;
+  visualFramework?: string;
+  emotion?: string;
+  emotionIntensity?: number;
+  imageTextLanguage?: string;
 }
 
 export interface AttachmentRecord {

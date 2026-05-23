@@ -433,29 +433,29 @@ export async function reserveCredits(
   operationType: OperationType,
   estimatedCredits: number,
 ): Promise<ReserveResult> {
-  if (await hasUnlimitedCredits(db, uid)) {
-    return { success: true, eventId: requestId };
-  }
-
-  // Feedback não consome créditos — não precisa reservar
-  if (operationType === 'feedback') {
-    return { success: true };
-  }
-
-  // Expira reservas stale (>5 min) antes da nova reserva.
-  // Evita acúmulo de créditos zombie quando a função crasha após
-  // gerar o conteúdo mas antes de confirmar/reverter os créditos.
-  await expireStaleReservations(db, uid);
-
-  const currentPeriod = getCurrentPeriodKey();
-  const betaRef = db.doc(`users/${uid}/beta_access/current`);
-  const monthRef = db.doc(`users/${uid}/credit_months/${currentPeriod}`);
-
-  // O eventId é o próprio requestId — isso torna a verificação de
-  // idempotência atômica: basta ler o documento dentro da transação.
-  const eventRef = db.doc(`users/${uid}/credit_events/${requestId}`);
-
   try {
+    if (await hasUnlimitedCredits(db, uid)) {
+      return { success: true, eventId: requestId };
+    }
+
+    // Feedback não consome créditos — não precisa reservar
+    if (operationType === 'feedback') {
+      return { success: true };
+    }
+
+    // Expira reservas stale (>5 min) antes da nova reserva.
+    // Evita acúmulo de créditos zombie quando a função crasha após
+    // gerar o conteúdo mas antes de confirmar/reverter os créditos.
+    await expireStaleReservations(db, uid);
+
+    const currentPeriod = getCurrentPeriodKey();
+    const betaRef = db.doc(`users/${uid}/beta_access/current`);
+    const monthRef = db.doc(`users/${uid}/credit_months/${currentPeriod}`);
+
+    // O eventId é o próprio requestId — isso torna a verificação de
+    // idempotência atômica: basta ler o documento dentro da transação.
+    const eventRef = db.doc(`users/${uid}/credit_events/${requestId}`);
+
     // Transação atômica: idempotência + reserva + criação do evento
     await db.runTransaction(async (transaction) => {
       // 1. Verifica idempotência lendo credit_events/{requestId}

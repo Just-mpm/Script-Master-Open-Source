@@ -6,7 +6,7 @@
 import { VOICES } from '../../../lib/constants';
 import type { Locale } from '../../i18n/types';
 import { isValidLocale } from '../../i18n/utils';
-import type { SceneRatio, StudioDraftState, EmotionType } from '../types';
+import type { SceneRatio, StudioDraftState, EmotionType, StudioSettingsPatch } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -194,25 +194,6 @@ export function buildGenerateOptions(
 // ---------------------------------------------------------------------------
 // Persistência de padrões (página de configurações)
 // ---------------------------------------------------------------------------
-
-type StudioSettingsPatch = Partial<{
-  isMultiSpeaker: boolean;
-  speakerAName: string;
-  selectedVoice: string;
-  speakerBName: string;
-  speakerBVoice: string;
-  audioProfile: string;
-  scene: string;
-  styleNotes: string;
-  pace: string;
-  generateScenes: boolean;
-  sceneDensity: number;
-  sceneRatio: SceneRatio;
-  visualFramework: string;
-  emotion: EmotionType;
-  emotionIntensity: number;
-  imageTextLanguage: Locale;
-}>;
 
 /** Chaves s2a_* que a página de configurações gerencia (exclui script e referenceImage) */
 const DEFAULTS_KEYS: ReadonlyArray<keyof typeof STORAGE_KEYS> = [

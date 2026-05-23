@@ -1,4 +1,4 @@
-export { useStudioStore, useCurrentStudioState } from './studioStore';
+export { useStudioStore, useCurrentStudioState, getStudioSettingsPatch } from './studioStore';
 export {
   VIDEO_FPS,
   buildGenerateOptions,

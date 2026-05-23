@@ -81,21 +81,29 @@ export async function startAiRequest(
   const ref = getRequestRef(db, uid, requestId);
   const now = Date.now();
 
-  await db.runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    const existing = snap.exists ? snap.data() as AiRequestRecord : null;
-    const status = existing?.status === 'cancel_requested' ? 'cancel_requested' : 'running';
+  try {
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      const existing = snap.exists ? snap.data() as AiRequestRecord : null;
+      const status = existing?.status === 'cancel_requested' ? 'cancel_requested' : 'running';
 
-    transaction.set(ref, buildAiRequestPatch({
-      requestId,
-      flow,
-      status,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      finishedAt: existing?.finishedAt,
-      errorCode: existing?.errorCode,
-    }), { merge: true });
-  });
+      transaction.set(ref, buildAiRequestPatch({
+        requestId,
+        flow,
+        status,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+        finishedAt: existing?.finishedAt,
+        errorCode: existing?.errorCode,
+      }), { merge: true });
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[ai-requests] startAiRequest falhou: uid=${uid} requestId=${requestId} flow=${flow} erro=${message}`);
+    throw new HttpsError('internal', `Falha ao registrar requisição de IA: ${message}`, {
+      code: 'START_AI_REQUEST_FAILED',
+    });
+  }
 }
 
 export async function requestAiCancellation(

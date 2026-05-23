@@ -7,6 +7,63 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.44.0] - 2026-05-23
+
+### Adicionado
+
+- **`useAutoSaveStudioSettings`** (`src/hooks/useAutoSaveStudioSettings.ts`): novo hook que observa mudanças no `useStudioStore` (Zustand) e persiste automaticamente as preferências do estúdio no Firestore com debounce de 2s quando o usuário está logado. Montado uma vez no `App.tsx` — sincronização contínua sem intervenção manual
+- **`getStudioSettingsPatch()`** (`src/features/studio/store/studioStore.ts`): nova função exportada que extrai 16 campos persistíveis do estado do estúdio (`StudioConfigState` → `StudioUserSettings`), excluindo `script` e `referenceImage`. Reaproveitada pelo hook de auto-save e pela página de Configurações
+- **`StudioUserSettings`** (`src/lib/db/user-settings.ts`): nova interface que define 16 campos de estúdio sincronizados com Firestore (`selectedVoice`, `isMultiSpeaker`, `speakerAName`, `speakerBName`, `speakerBVoice`, `audioProfile`, `scene`, `pace`, `styleNotes`, `generateScenes`, `sceneDensity`, `sceneRatio`, `visualFramework`, `emotion`, `emotionIntensity`, `imageTextLanguage`)
+- **Campos de estúdio em `UserSetting`** (`src/lib/db/types.ts`): interface `UserSetting` expandida com 16 campos opcionais de preferências do estúdio — persistidos via `{ merge: true }` no Firestore sem sobrescrever dados existentes
+- **Import `HttpsError`** (`functions/src/usage/generic-jobs.ts`): adicionado import de `firebase-functions/v2/https` para tipagem correta
+
+### Alterado
+
+- **`saveUserSettings()`** (`src/lib/db/user-settings.ts`): agora aceita 4º parâmetro opcional `studio?: StudioUserSettings` — faz merge dos campos de estúdio no documento `user_settings` do Firestore com `{ merge: true }`, preservando `customSystemPrompt` e perfil
+- **`Configuracoes.tsx`**: `handleSave` agora também chama `saveUserSettings()` com o patch do estúdio — salvamento duplo (localStorage + Firestore) quando usuário logado
+- **`AuthContext.tsx`**: agora importa `getUserSettings`, `StudioDraftState` e `useStudioStore` — ao logar, carrega preferências do estúdio do Firestore e aplica no estado do estúdio
+- **`App.tsx`**: adicionado `import { useAutoSaveStudioSettings }` e hook invocado no corpo do componente — sincronização automática ativada
+- **`src/features/studio/store/index.ts`**: barrel export expandido — `getStudioSettingsPatch` agora exportado publicamente
+- **`studio.utils.ts`**: tipo `StudioSettingsPatch` removido (substituído por `StudioUserSettings` do `user-settings.ts`)
+- **`start-audio-job.ts`** (+114/-99): implementação de `progress` refatorada — atualização de progresso e segmentos mais robusta
+- **`ai-requests.ts`** (+23/-15): transação Firestore simplificada — remove verificação redundante de `cancel_requested` antes do `transaction.set`
+- **`credit-service.ts`** (+18/-18): fluxo de feedback não consome créditos — pulava verificação `hasUnlimitedCredits` desnecessária; feedback retorna direto `{ success: true, eventId: requestId }`
+- **Teste `ConfiguracoesPage.component.test.tsx`**: adicionados mocks de `useAuth` e `saveUserSettings` para compatibilidade com novo fluxo
+
+### Removido
+
+- **Planos de arquitetura concluídos** (`docs/plan/`): `remover-async-jobs-flag-contract.md` (-175 linhas) e `remover-async-jobs-flag-plano-final.md` (-284 linhas) — ambos concluídos na 0.43.0 e incorporados ao código
+- **`StudioSettingsPatch`** de `src/features/studio/types.ts`: tipo substituído por `StudioUserSettings` do módulo `user-settings.ts`
+- **Verificação redundante de `cancel_requested`** em `ai-requests.ts`: transação simplificada
+
+---
+
+## [0.43.0] - 2026-05-23
+
+### Removido
+
+- **Feature flag `ASYNC_JOBS_ENABLED`**: removida permanentemente — jobs assíncronos agora são o único caminho em áudio, imagens e scene prompts. Guarda `process.env.ASYNC_JOBS_ENABLED` removida de 4 Cloud Functions (`startAudioJob`, `startImageJob`, `startScenePromptJob`, `startVideoJob`). `isAsyncJobsEnabled()` removida de `src/lib/env.ts`. `VITE_ASYNC_JOBS_ENABLED` removida de `.env` e `.env.example`
+- **Bifurcação sync/async em `useImageGenerator`**: caminho legado síncrono (`httpsCallable('images')` + `base64ToBlobSync`) eliminado — hook usa exclusivamente `startImageJob` + `waitForImageJob` + `fetchFirstImageAsDataUrl`
+
+### Adicionado
+
+- **`src/lib/image-jobs.ts`**: módulo compartilhado com `waitForImageJob()` (onSnapshot + timeout 5min), `fetchFirstImageAsDataUrl()` (Storage URL → data URL) e tipos `ImageJobCompleted`/`ImageJobResult`
+- **`generateImageFromPrompt()` com suporte a jobs**: novo parâmetro `userId` (5º argumento, opcional) — quando presente, usa `startImageJob` + `waitForImageJob` + `fetchFirstImageAsDataUrl`; fallback síncrono mantido para quando `userId` ausente
+
+### Corrigido
+
+- **Bug do `resultImageBase64`**: campo nunca populado pelo backend — substituído por `results[0].downloadUrl` (Storage URL) via `fetchFirstImageAsDataUrl()`, eliminando base64 duplicado
+
+### Alterado
+
+- **`generateScenePrompts()`**: condicional `isAsyncJobsEnabled() && userId` simplificada para `if (userId)`
+- **`useAudioGenerator.ts`**: chamada de `generateImageFromPrompt` agora passa `userId` como 5º argumento
+- **`AudioGenerationHandler.tsx`**: chave i18n `scene_prompts` corrigida de `scenePrompts` para `scene_prompts` (alinhamento com padrão snake_case)
+- **i18n (`en.ts`, `es.ts`, `pt-BR.ts`)**: chave `video` adicionada ao namespace `audioPreflight.stepLabels` para suporte a labels do pipeline de vídeo
+- **4 arquivos de teste**: removidos mocks de `isAsyncJobsEnabled`; `useImageGenerator.unit.test.ts` adaptado ao fluxo async-only com mock de `image-jobs`
+
+---
+
 ## [0.42.2] - 2026-05-22
 
 ### Adicionado

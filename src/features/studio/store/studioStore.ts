@@ -73,6 +73,8 @@ export interface StudioConfigState {
   applySettings: (patch: StudioSettingsPatch) => void;
   /** Restaura ao estado inicial (import-time). Não re-lê localStorage — use para "voltar aos padrões do app". */
   reset: () => void;
+  /** Carrega preferências do Firestore (merge — só aplica campos diferentes do estado atual) */
+  loadFromFirestore: (settings: Partial<StudioDraftState>) => void;
 
   // Valores derivados
   videoFps: number;
@@ -156,6 +158,22 @@ export const useStudioStore = create<StudioConfigState>()((set) => ({
   }),
 
   reset: () => set(INITIAL_STATE),
+
+  loadFromFirestore: (settings) => set((state) => {
+    const updates: Partial<StudioConfigState> = {};
+    const allowedKeys = new Set([
+      'selectedVoice', 'isMultiSpeaker', 'speakerAName', 'speakerBName',
+      'speakerBVoice', 'audioProfile', 'scene', 'pace', 'styleNotes',
+      'generateScenes', 'sceneDensity', 'sceneRatio', 'visualFramework',
+      'emotion', 'emotionIntensity', 'imageTextLanguage',
+    ]);
+    for (const [key, value] of Object.entries(settings)) {
+      if (value !== undefined && allowedKeys.has(key) && value !== (state as unknown as Record<string, unknown>)[key]) {
+        (updates as Record<string, unknown>)[key] = value;
+      }
+    }
+    return updates;
+  }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -219,4 +237,32 @@ try {
   localStorage.removeItem('s2a_has_ref_image');
 } catch {
   // Safari Private Browsing — ignorar silenciosamente
+}
+
+// ---------------------------------------------------------------------------
+// Helper: extrai campos persistíveis no Firestore (exclui script e referenceImage)
+// ---------------------------------------------------------------------------
+
+import type { StudioUserSettings } from '../../../lib/db/user-settings';
+
+/** Extrai campos persistíveis no Firestore (exclui script e referenceImage) */
+export function getStudioSettingsPatch(state: StudioConfigState): StudioUserSettings {
+  return {
+    selectedVoice: state.selectedVoice,
+    isMultiSpeaker: state.isMultiSpeaker,
+    speakerAName: state.speakerAName,
+    speakerBName: state.speakerBName,
+    speakerBVoice: state.speakerBVoice,
+    audioProfile: state.audioProfile,
+    scene: state.scene,
+    pace: state.pace,
+    styleNotes: state.styleNotes,
+    generateScenes: state.generateScenes,
+    sceneDensity: state.sceneDensity,
+    sceneRatio: state.sceneRatio,
+    visualFramework: state.visualFramework,
+    emotion: state.emotion,
+    emotionIntensity: state.emotionIntensity,
+    imageTextLanguage: state.imageTextLanguage,
+  };
 }
