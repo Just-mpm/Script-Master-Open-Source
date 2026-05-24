@@ -119,7 +119,7 @@ export function ScriptEditor({
           ...glassPanelSx(theme),
           display: 'flex',
           flexDirection: 'column',
-          minHeight: { xs: '52vh', sm: '60vh', lg: 'calc(100vh - 12rem)' },
+          minHeight: { xs: '52vh', sm: '60vh', lg: 'calc(100vh - 14rem)' },
           pb: { xs: 'env(safe-area-inset-bottom, 0px)', sm: 0 },
         })}
       >
@@ -287,60 +287,83 @@ export function ScriptEditor({
           />
           <InlineAIWidget script={script} setScript={setScript} textareaRef={textareaRef} disabled={isGenerating} />
         </Box>
-      </Paper>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={GAP_MEDIUM}
+          useFlexGap
+          sx={(theme) => ({
+            px: { xs: 2.5, sm: 3 },
+            py: { xs: 2, sm: 2.25 },
+            position: 'relative',
+            zIndex: 2,
+            alignItems: { xs: 'stretch', sm: 'center' },
+            justifyContent: 'space-between',
+            borderTop: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+            background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.02)} 0%, ${alpha(theme.palette.background.paper, 0.22)} 100%)`,
+          })}
+        >
+          <Stack spacing={0.5} sx={{ minWidth: 0, display: { xs: 'none', sm: 'flex' } }}>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+              {currentScene
+                ? t('studio.scriptEditor.footerSceneHint')
+                : t('studio.scriptEditor.footerShortcutHint')}
+            </Typography>
+          </Stack>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
-        <Tooltip title={t('studio.scriptEditor.generateTooltip', { shortcut: navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl' })}>
-          <span style={{ display: 'flex', width: '100%' }}>
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerateDisabled}
-              variant="contained"
-              size="large"
-              startIcon={<Mic sx={{ fontSize: ICON_SIZE_LG }} />}
-              sx={(theme) => ({
-                minHeight: { xs: 44, sm: 48 },
-                px: { xs: 3, sm: 4 },
-                borderRadius: 2,
-                fontSize: { xs: '1rem', sm: '1.05rem' },
-                fontWeight: 700,
-                backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
-                boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.32)}`,
-                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-                  boxShadow: `0 24px 56px ${alpha(theme.palette.primary.main, 0.38)}`,
-                  transform: 'translateY(-2px)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                },
-                '&:focus-visible': {
-                  boxShadow: BRAND_GLOW_FOCUS,
-                },
-              })}
-            >
-              <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
-                <span>{t('studio.scriptEditor.generateButton')}</span>
-                <Box
-                  sx={{
-                    display: { xs: 'none', sm: 'inline-flex' },
-                    px: 1,
-                    py: 0.25,
-                    borderRadius: 1.5,
-                    border: `1px solid ${WHITE_16}`,
-                    backgroundColor: BLACK_18,
-                    fontSize: '0.75rem',
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  {navigator.platform?.includes('Mac') ? '⌘ ↵' : 'Ctrl ↵'}
-                </Box>
-              </Stack>
-            </Button>
-          </span>
-        </Tooltip>
-      </Stack>
+          <Tooltip title={t('studio.scriptEditor.generateTooltip', { shortcut: navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl' })}>
+            <span style={{ display: 'flex', width: '100%', justifyContent: 'flex-end' }}>
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerateDisabled}
+                variant="contained"
+                size="large"
+                disableElevation
+                startIcon={<Mic sx={{ fontSize: ICON_SIZE_LG }} />}
+                sx={(theme) => ({
+                  width: { xs: '100%', sm: 'auto' },
+                  minHeight: { xs: 48, sm: 50 },
+                  px: { xs: 3, sm: 4 },
+                  borderRadius: 3,
+                  fontSize: { xs: '1rem', sm: '1.05rem' },
+                  fontWeight: 700,
+                  backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
+                  boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.28)}`,
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+                    boxShadow: `0 22px 50px ${alpha(theme.palette.primary.main, 0.34)}`,
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                  },
+                  '&:focus-visible': {
+                    boxShadow: BRAND_GLOW_FOCUS,
+                  },
+                })}
+              >
+                <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center' }}>
+                  <span>{t('studio.scriptEditor.generateButton')}</span>
+                  <Box
+                    sx={{
+                      display: { xs: 'none', sm: 'inline-flex' },
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1.5,
+                      border: `1px solid ${WHITE_16}`,
+                      backgroundColor: BLACK_18,
+                      fontSize: '0.75rem',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {navigator.platform?.includes('Mac') ? '⌘ ↵' : 'Ctrl ↵'}
+                  </Box>
+                </Stack>
+              </Button>
+            </span>
+          </Tooltip>
+        </Stack>
+      </Paper>
     </Stack>
   );
 }

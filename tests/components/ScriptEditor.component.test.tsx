@@ -153,9 +153,8 @@ describe('ScriptEditor', () => {
   it('aciona Ctrl+Enter para gerar áudio via listener do container', () => {
     render(<ScriptEditor {...defaultProps} />, { wrapper: Wrapper });
 
-    // O componente usa containerRef num Stack com component="section"
-    // No jsdom, o role pode não ser detectado automaticamente, então usamos o container real
-    const container = screen.getByText('Script').closest('section') ?? screen.getByText('Script').parentElement!.parentElement!;
+    const container = screen.getByRole('textbox', { name: /Editor de roteiro/i }).closest('section');
+    expect(container).not.toBeNull();
 
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
@@ -163,7 +162,7 @@ describe('ScriptEditor', () => {
       bubbles: true,
       cancelable: true,
     });
-    container.dispatchEvent(event);
+    container!.dispatchEvent(event);
 
     expect(defaultProps.handleGenerate).toHaveBeenCalledTimes(1);
   });
@@ -171,7 +170,8 @@ describe('ScriptEditor', () => {
   it('NÃO aciona handleGenerate quando isGenerateDisabled é true com Ctrl+Enter', () => {
     render(<ScriptEditor {...defaultProps} isGenerateDisabled={true} />, { wrapper: Wrapper });
 
-    const container = screen.getByText('Script').closest('section') ?? screen.getByText('Script').parentElement!.parentElement!;
+    const container = screen.getByRole('textbox', { name: /Editor de roteiro/i }).closest('section');
+    expect(container).not.toBeNull();
 
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
@@ -179,7 +179,7 @@ describe('ScriptEditor', () => {
       bubbles: true,
       cancelable: true,
     });
-    container.dispatchEvent(event);
+    container!.dispatchEvent(event);
 
     expect(defaultProps.handleGenerate).not.toHaveBeenCalled();
   });
@@ -187,7 +187,8 @@ describe('ScriptEditor', () => {
   it('NÃO aciona handleGenerate com Enter sem Ctrl', () => {
     render(<ScriptEditor {...defaultProps} />, { wrapper: Wrapper });
 
-    const container = screen.getByText('Script').closest('section') ?? screen.getByText('Script').parentElement!.parentElement!;
+    const container = screen.getByRole('textbox', { name: /Editor de roteiro/i }).closest('section');
+    expect(container).not.toBeNull();
 
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
@@ -195,7 +196,7 @@ describe('ScriptEditor', () => {
       bubbles: true,
       cancelable: true,
     });
-    container.dispatchEvent(event);
+    container!.dispatchEvent(event);
 
     expect(defaultProps.handleGenerate).not.toHaveBeenCalled();
   });

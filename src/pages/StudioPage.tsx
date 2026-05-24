@@ -2,6 +2,8 @@ import Grid from '@mui/material/Grid';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
@@ -42,7 +44,12 @@ function TabPanel({ children, value, index }: { children: React.ReactNode; value
   );
 }
 
-export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDisabled }: StudioPageProps) {
+export function StudioPage({
+  isGenerating,
+  scenes,
+  handleGenerate,
+  isGenerateDisabled,
+}: StudioPageProps) {
   const { t } = useLocale();
   const currentTime = useAudioCurrentTime();
   const theme = useTheme();
@@ -61,29 +68,65 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
     setScript: s.setScript,
   })));
 
+  const intro = (
+    <Stack spacing={0.75}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+        {t('studio.studioPage.title')}
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>
+        {t('studio.studioPage.subtitle')}
+      </Typography>
+    </Stack>
+  );
+
   // Em mobile: tabs alternam entre Inspector e ScriptEditor
   // Em desktop (lg+): grid 2 colunas (layout original)
   if (isMobile) {
     return (
-        <Box sx={{ pb: 10 }}>
+        <Stack spacing={2.5} sx={{ pb: 10 }}>
           <DocumentHead {...seo} />
-          <Tabs
-            value={activeTab}
-            onChange={(_event, newValue: number) => setActiveTab(newValue)}
-            variant="fullWidth"
+          {intro}
+
+          <Box
             sx={{
-              minHeight: 44,
-              '& .MuiTab-root': {
-                minHeight: 44,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-              },
+              position: 'sticky',
+              top: 68,
+              zIndex: 5,
+              py: 0.5,
+              mx: -0.5,
+              px: 0.5,
+              borderRadius: 3,
+              bgcolor: 'rgba(5, 8, 22, 0.88)',
+              backdropFilter: 'blur(16px)',
             }}
           >
-            <Tab label={t('studio.studioPage.settingsTab')} {...a11yProps(0)} />
-            <Tab label={t('studio.studioPage.scriptTab')} {...a11yProps(1)} />
-          </Tabs>
+            <Tabs
+              value={activeTab}
+              onChange={(_event, newValue: number) => setActiveTab(newValue)}
+              variant="fullWidth"
+              sx={{
+                minHeight: 46,
+                borderRadius: 3,
+                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                '& .MuiTabs-indicator': {
+                  height: '100%',
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(46, 117, 182, 0.18)',
+                  zIndex: 0,
+                },
+                '& .MuiTab-root': {
+                  minHeight: 46,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  zIndex: 1,
+                },
+              }}
+            >
+              <Tab label={t('studio.studioPage.settingsTab')} {...a11yProps(0)} />
+              <Tab label={t('studio.studioPage.scriptTab')} {...a11yProps(1)} />
+            </Tabs>
+          </Box>
 
           <TabPanel value={activeTab} index={0}>
             <Inspector isGenerating={isGenerating} />
@@ -100,17 +143,25 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
               currentTime={currentTime}
             />
           </TabPanel>
-        </Box>
+        </Stack>
     );
   }
 
   return (
-      <Box>
+      <Stack spacing={3}>
         <DocumentHead {...seo} />
+        {intro}
 
         <Grid container spacing={{ xs: 3, lg: 4 }}>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Inspector isGenerating={isGenerating} />
+          <Box
+            sx={{
+              position: { lg: 'sticky' },
+              top: { lg: 84 },
+            }}
+          >
+            <Inspector isGenerating={isGenerating} />
+          </Box>
         </Grid>
 
         <Grid size={{ xs: 12, lg: 8 }}>
@@ -124,7 +175,7 @@ export function StudioPage({ isGenerating, scenes, handleGenerate, isGenerateDis
             currentTime={currentTime}
           />
         </Grid>
-      </Grid>
-    </Box>
+        </Grid>
+      </Stack>
   );
 }

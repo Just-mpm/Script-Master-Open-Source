@@ -94,6 +94,15 @@ function VoiceTabPanel({
   );
 }
 
+function compactSummary(text: string, maxLength = 28): string {
+  const normalized = text.trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
 export const Inspector = React.memo(function Inspector({ isGenerating }: InspectorProps) {
   const theme = useTheme();
   const { t } = useLocale();
@@ -223,6 +232,54 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
   const isVoiceOpen = !isVoiceCollapsed;
   const isDirectionOpen = !isDirectionCollapsed;
   const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
+  const selectedPrimaryVoice = useMemo(
+    () => VOICES.find((voice) => voice.id === selectedVoice)?.name ?? selectedVoice,
+    [selectedVoice],
+  );
+  const selectedSecondaryVoice = useMemo(
+    () => VOICES.find((voice) => voice.id === speakerBVoice)?.name ?? speakerBVoice,
+    [speakerBVoice],
+  );
+  const paceLabel = useMemo(
+    () => paceOptions.find((option) => option.value === pace)?.label ?? pace,
+    [pace, paceOptions],
+  );
+  const ratioLabel = useMemo(
+    () => sceneRatioOptions.find((option) => option.value === sceneRatio)?.label ?? sceneRatio,
+    [sceneRatio, sceneRatioOptions],
+  );
+  const densityLabel = useMemo(
+    () => densityOptions.find((option) => option.value === sceneDensity)?.label ?? `${sceneDensity}`,
+    [densityOptions, sceneDensity],
+  );
+  const voiceSummaryItems = useMemo(() => {
+    const items = [selectedPrimaryVoice];
+
+    if (isMultiSpeaker) {
+      items.push(t('studio.inspector.summary.podcast'));
+      items.push(`${compactSummary(speakerAName || 'A')} + ${compactSummary(speakerBName || 'B')}`);
+      items.push(`${selectedPrimaryVoice} / ${selectedSecondaryVoice}`);
+    }
+
+    return items;
+  }, [isMultiSpeaker, selectedPrimaryVoice, selectedSecondaryVoice, speakerAName, speakerBName, t]);
+  const directionSummaryItems = useMemo(() => {
+    const items = [paceLabel];
+
+    if (audioProfile.trim()) {
+      items.push(compactSummary(audioProfile));
+    }
+
+    if (generateScenes) {
+      items.push(t('studio.inspector.summary.scenesOn'));
+      items.push(compactSummary(ratioLabel, 26));
+      items.push(compactSummary(densityLabel, 22));
+    } else {
+      items.push(t('studio.inspector.summary.scenesOff'));
+    }
+
+    return items;
+  }, [audioProfile, densityLabel, generateScenes, paceLabel, ratioLabel, t]);
 
   const handleEmotionChange = useCallback(
     (newEmotion: EmotionType, newIntensity: number) => {
@@ -307,6 +364,22 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                 {t('studio.inspector.voiceSection.description')}
               </Typography>
+              {!isVoiceOpen && (
+                <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap' }}>
+                  {voiceSummaryItems.map((item) => (
+                    <Chip
+                      key={item}
+                      label={item}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        bgcolor: alpha(theme.palette.common.white, 0.03),
+                        borderColor: alpha(theme.palette.common.white, 0.08),
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
             </Stack>
 
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
@@ -456,6 +529,22 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                 {t('studio.inspector.directionSection.description')}
               </Typography>
+              {!isDirectionOpen && (
+                <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap' }}>
+                  {directionSummaryItems.map((item) => (
+                    <Chip
+                      key={item}
+                      label={item}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        bgcolor: alpha(theme.palette.common.white, 0.03),
+                        borderColor: alpha(theme.palette.common.white, 0.08),
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
             </Stack>
 
             {isDirectionOpen ? <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} />}

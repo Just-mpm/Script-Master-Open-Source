@@ -180,23 +180,23 @@ describe('ConfiguracoesPage', () => {
   describe('grid de vozes', () => {
     it('renderiza pelo menos as 3 vozes do mock', () => {
       render(<ConfiguracoesPage />, { wrapper: Wrapper });
-      expect(screen.getByText('Aoede')).toBeInTheDocument();
-      expect(screen.getByText('Zephyr')).toBeInTheDocument();
-      expect(screen.getByText('Puck')).toBeInTheDocument();
+      expect(screen.getAllByText('Aoede').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Zephyr').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Puck').length).toBeGreaterThanOrEqual(1);
     });
 
     it('renderiza o estilo de cada voz', () => {
       render(<ConfiguracoesPage />, { wrapper: Wrapper });
-      expect(screen.getByText('Descontraída')).toBeInTheDocument();
-      expect(screen.getByText('Brilhante')).toBeInTheDocument();
-      expect(screen.getByText('Animada')).toBeInTheDocument();
+      expect(screen.getAllByText('Descontraída').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Brilhante').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Animada').length).toBeGreaterThanOrEqual(1);
     });
 
     it('traduz o estilo das vozes quando o idioma está em espanhol', () => {
       localStorage.setItem('s2a_locale', 'es');
       render(<ConfiguracoesPage />, { wrapper: Wrapper });
-      expect(screen.getByText('Desenfadada')).toBeInTheDocument();
-      expect(screen.getByText('Brillante')).toBeInTheDocument();
+      expect(screen.getAllByText('Desenfadada').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Brillante').length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText('Descontraída')).not.toBeInTheDocument();
     });
 

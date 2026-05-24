@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AppBar from '@mui/material/AppBar';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
 import { useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState, useMemo, type ElementType } from 'react';
@@ -75,6 +76,10 @@ export function Header() {
   const currentPath = location.pathname;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isScrolled = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 12,
+  });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -129,10 +134,12 @@ export function Header() {
       component="header"
       role="banner"
       sx={{
-        transition: 'box-shadow 0.3s ease, background-color 0.3s ease',
-        '&:not(:first-of-type)': {
-          boxShadow: `0 4px 24px ${SHADOW_DEEP}`,
-        },
+        backdropFilter: isScrolled ? 'blur(20px)' : 'blur(14px)',
+        backgroundColor: isScrolled ? 'rgba(7, 10, 25, 0.92)' : 'rgba(7, 10, 25, 0.82)',
+        backgroundImage: isScrolled ? `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)` : 'none',
+        borderBottom: `1px solid ${isScrolled ? APP_BORDER_STRONG : APP_BORDER}`,
+        boxShadow: isScrolled ? `0 12px 40px ${SHADOW_DEEP}` : 'none',
+        transition: 'box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease',
       }}
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
@@ -193,6 +200,8 @@ export function Header() {
                 overscrollBehaviorX: 'contain',
                 flex: 1,
                 minWidth: 0,
+                backgroundColor: isScrolled ? WHITE_015 : undefined,
+                borderColor: isScrolled ? APP_BORDER_STRONG : undefined,
                 '&::-webkit-scrollbar': {
                   display: 'none',
                 },
@@ -269,6 +278,7 @@ export function Header() {
                     px: { xs: 1, sm: 1.5 },
                     py: 0.75,
                     borderRadius: 8,
+                    backgroundColor: isScrolled ? WHITE_015 : undefined,
                     transition: 'border-color 0.2s ease',
                     '&:hover': {
                       borderColor: APP_BORDER_STRONG,
@@ -349,25 +359,58 @@ export function Header() {
       >
         {/* Cabeçalho do drawer */}
         <Box sx={{ px: 2.5, py: 2 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Box
-              aria-hidden="true"
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'common.white',
-                background: BRAND_GRADIENT,
-                boxShadow: `0 12px 28px ${BRAND_PRIMARY_GLOW}`,
-              }}
-            >
-              <Mic sx={{ fontSize: ICON_SIZE_MD }} />
-            </Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Script Master
-            </Typography>
+          <Stack spacing={1.5}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Box
+                aria-hidden="true"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'common.white',
+                  background: BRAND_GRADIENT,
+                  boxShadow: `0 12px 28px ${BRAND_PRIMARY_GLOW}`,
+                }}
+              >
+                <Mic sx={{ fontSize: ICON_SIZE_MD }} />
+              </Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                Script Master
+              </Typography>
+            </Stack>
+
+            {user && (
+              <Paper
+                variant="outlined"
+                sx={(theme) => ({
+                  ...glassSurfaceSx(theme),
+                  px: 1.25,
+                  py: 1,
+                  borderRadius: 3,
+                })}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Avatar
+                    alt={user.displayName ?? t('studio.header.user.alt')}
+                    src={user.photoURL ?? undefined}
+                    slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
+                    sx={{ width: 32, height: 32, bgcolor: 'action.hover' }}
+                  >
+                    {!user.photoURL && <Person sx={{ fontSize: ICON_SIZE_SM }} />}
+                  </Avatar>
+                  <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                      {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0] ?? t('studio.header.user.fallback')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {user.email ?? t('studio.header.user.tooltip')}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Paper>
+            )}
           </Stack>
         </Box>
 

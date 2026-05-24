@@ -164,23 +164,33 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
   return (
     <Stack spacing={GAP_RELAXED}>
       {/* Toolbar: título, busca e ordenação */}
-      <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={GAP_MEDIUM}
+        sx={{ alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between' }}
+      >
+        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', minWidth: 0, flexWrap: 'wrap' }}>
           <Movie sx={{ fontSize: ICON_SIZE_MD }} />
           <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.2em' }}>
             {t('library.title')}
           </Typography>
           <Chip
-            label={t('library.projectCount', {
-              count: filteredProjects.length,
-              plural: filteredProjects.length === 1 ? '' : 's',
-            })}
+            label={filteredProjects.length > 0
+              ? t('library.projectCount', {
+                count: filteredProjects.length,
+                plural: filteredProjects.length === 1 ? '' : 's',
+              })
+              : t('library.projectCountEmpty')}
             size="small"
             variant="outlined"
           />
         </Stack>
 
-        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={GAP_DEFAULT}
+          sx={{ alignItems: { xs: 'stretch', sm: 'center' }, width: { xs: '100%', md: 'auto' } }}
+        >
           <TextField
             size="small"
             placeholder={t('library.searchPlaceholder')}
@@ -197,7 +207,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
               },
             }}
             sx={{
-              width: 200,
+              width: { xs: '100%', sm: 240 },
               '& .MuiOutlinedInput-root': {
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -225,6 +235,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
               size="small"
               aria-label={sortOrder === 'recent' ? t('library.sortOldestFirst') : t('library.sortNewestFirst')}
               onClick={() => setSortOrder((prev) => prev === 'recent' ? 'oldest' : 'recent')}
+              sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
             >
               {sortOrder === 'recent'
                 ? <ArrowDownward sx={{ fontSize: ICON_SIZE_MD }} />
@@ -237,7 +248,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
       {/* Lista horizontal de cards */}
       <LazyMotion features={domAnimation} strict>
-        <Box sx={{ overflowX: 'auto', pb: 1.5, mx: -0.5, px: 0.5 }}>
+        <Box sx={{ overflowX: 'auto', pb: 1.5, mx: -0.5, px: 0.5, scrollSnapType: 'x proximity' }}>
           <Stack direction="row" spacing={2} useFlexGap sx={{ minWidth: 'max-content', pr: 0.5 }}>
             {filteredProjects.map((project) => (
               <GalleryCard

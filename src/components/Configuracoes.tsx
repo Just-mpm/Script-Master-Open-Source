@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
+import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
@@ -14,7 +16,7 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import GraphicEq from '@mui/icons-material/GraphicEq';
@@ -47,12 +49,45 @@ interface SectionProps {
   title: string;
   description: string;
   sectionId: string;
+  summary?: React.ReactNode;
   children: React.ReactNode;
+}
+
+interface SettingsSnapshot {
+  selectedVoice: string;
+  speakerAName: string;
+  speakerBName: string;
+  speakerBVoice: string;
+  audioProfile: string;
+  scene: string;
+  styleNotes: string;
+  pace: string;
+  generateScenes: boolean;
+  sceneDensity: number;
+  sceneRatio: SceneRatio;
+  visualFramework: string;
+  emotion: EmotionType;
+  emotionIntensity: number;
+  imageTextLanguage: Locale;
+  isMultiSpeaker: boolean;
+}
+
+function buildSettingsSnapshot(config: SettingsSnapshot): SettingsSnapshot {
+  return config;
+}
+
+function compactSummary(text: string, maxLength = 28): string {
+  const normalized = text.trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 // ─── Section Colapsavel ─────────────────────────────────────
 
-function CollapsibleSection({ icon, title, description, sectionId, children }: SectionProps) {
+function CollapsibleSection({ icon, title, description, sectionId, summary, children }: SectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -84,6 +119,11 @@ function CollapsibleSection({ icon, title, description, sectionId, children }: S
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
               {description}
             </Typography>
+            {summary ? (
+              <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', pt: 0.5 }}>
+                {summary}
+              </Stack>
+            ) : null}
           </Stack>
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
             {!isExpanded ? <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} />}
@@ -91,7 +131,7 @@ function CollapsibleSection({ icon, title, description, sectionId, children }: S
         </Stack>
       </ButtonBase>
 
-      <Collapse in={isExpanded} timeout="auto" id={sectionId}>
+      <Collapse in={isExpanded} timeout="auto" unmountOnExit id={sectionId}>
         <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
           <Paper elevation={0} sx={(t) => ({ ...insetPanelSx(t), p: 2 })}>
             <Stack spacing={2}>
@@ -150,6 +190,111 @@ export function Configuracoes() {
     label: `${c.flag} ${c.label}`,
   }));
 
+  const currentSnapshot = useMemo<SettingsSnapshot>(() => buildSettingsSnapshot({
+    selectedVoice: voice,
+    speakerAName,
+    speakerBName,
+    speakerBVoice,
+    audioProfile,
+    scene,
+    styleNotes,
+    pace,
+    generateScenes,
+    sceneDensity,
+    sceneRatio,
+    visualFramework,
+    emotion,
+    emotionIntensity,
+    imageTextLanguage,
+    isMultiSpeaker,
+  }), [
+    audioProfile,
+    emotion,
+    emotionIntensity,
+    generateScenes,
+    imageTextLanguage,
+    isMultiSpeaker,
+    pace,
+    scene,
+    sceneDensity,
+    sceneRatio,
+    speakerAName,
+    speakerBName,
+    speakerBVoice,
+    styleNotes,
+    visualFramework,
+    voice,
+  ]);
+
+  const [savedSnapshot, setSavedSnapshot] = useState<SettingsSnapshot>(() => currentSnapshot);
+
+  const selectedVoiceOption = useMemo(
+    () => VOICES.find((item) => item.id === voice) ?? VOICES[0],
+    [voice],
+  );
+  const speakerBVoiceOption = useMemo(
+    () => VOICES.find((item) => item.id === speakerBVoice) ?? VOICES[0],
+    [speakerBVoice],
+  );
+  const paceLabel = useMemo(
+    () => paceOptions.find((item) => item.value === pace)?.label ?? pace,
+    [pace, paceOptions],
+  );
+  const densityLabel = useMemo(
+    () => densityOptions.find((item) => item.value === sceneDensity)?.label ?? String(sceneDensity),
+    [densityOptions, sceneDensity],
+  );
+  const ratioLabel = useMemo(
+    () => sceneRatioOptions.find((item) => item.value === sceneRatio)?.label ?? sceneRatio,
+    [sceneRatio, sceneRatioOptions],
+  );
+  const visualFrameworkLabel = useMemo(
+    () => visualFrameworkOptions.find((item) => item.value === visualFramework)?.label ?? visualFramework,
+    [visualFramework, visualFrameworkOptions],
+  );
+  const imageLanguageLabel = useMemo(
+    () => localeOptions.find((item) => item.value === imageTextLanguage)?.label ?? imageTextLanguage,
+    [imageTextLanguage, localeOptions],
+  );
+  const hasUnsavedChanges = useMemo(
+    () => JSON.stringify(currentSnapshot) !== JSON.stringify(savedSnapshot),
+    [currentSnapshot, savedSnapshot],
+  );
+
+  const voiceSummary = useMemo(() => [
+    selectedVoiceOption.name,
+    t(`common.voiceStyles.${selectedVoiceOption.styleKey}`),
+  ], [selectedVoiceOption.name, selectedVoiceOption.styleKey, t]);
+
+  const personaSummary = useMemo(() => {
+    const items = [paceLabel, emotionIntensity > 0 ? t(`studio.emotion.options.${emotion}`) : ''];
+    if (speakerAName.trim()) {
+      items.unshift(compactSummary(speakerAName, 22));
+    }
+    if (audioProfile.trim()) {
+      items.push(compactSummary(audioProfile, 24));
+    }
+    return items.filter(Boolean);
+  }, [audioProfile, emotion, emotionIntensity, paceLabel, speakerAName, t]);
+
+  const scenesSummary = useMemo(() => {
+    if (!generateScenes) {
+      return [t('configuracoes.summary.scenesOff')];
+    }
+    return [densityLabel, ratioLabel, compactSummary(visualFrameworkLabel, 30), compactSummary(imageLanguageLabel, 24)];
+  }, [densityLabel, generateScenes, imageLanguageLabel, ratioLabel, t, visualFrameworkLabel]);
+
+  const multiSpeakerSummary = useMemo(() => {
+    if (!isMultiSpeaker) {
+      return [t('configuracoes.summary.multiSpeakerOff')];
+    }
+    return [
+      t('configuracoes.summary.multiSpeakerOn'),
+      speakerBName.trim() ? compactSummary(speakerBName, 18) : t('configuracoes.summary.secondSpeakerDefault'),
+      speakerBVoiceOption.name,
+    ];
+  }, [isMultiSpeaker, speakerBName, speakerBVoiceOption.name, t]);
+
   const handleEmotionChange = useCallback((newEmotion: EmotionType, newIntensity: number) => {
     setEmotion(newEmotion);
     setEmotionIntensity(newIntensity);
@@ -174,6 +319,7 @@ export function Configuracoes() {
       imageTextLanguage,
       isMultiSpeaker,
     });
+    setSavedSnapshot(currentSnapshot);
 
     // Salva imediatamente no Firestore (se logado)
     if (user) {
@@ -215,7 +361,7 @@ export function Configuracoes() {
       setToast(null);
       toastTimerRef.current = null;
     }, 3000);
-  }, [voice, speakerAName, speakerBName, speakerBVoice, audioProfile, scene, styleNotes, pace, generateScenes, sceneDensity, sceneRatio, visualFramework, emotion, emotionIntensity, imageTextLanguage, isMultiSpeaker, t, user]);
+  }, [audioProfile, currentSnapshot, emotion, emotionIntensity, generateScenes, imageTextLanguage, isMultiSpeaker, pace, scene, sceneDensity, sceneRatio, speakerAName, speakerBName, speakerBVoice, styleNotes, t, user, visualFramework, voice]);
 
   // Limpa timer de toast ao desmontar
   useEffect(() => {
@@ -246,9 +392,27 @@ export function Configuracoes() {
     setEmotion(fresh.emotion);
     setEmotionIntensity(fresh.emotionIntensity);
     setImageTextLanguage(fresh.imageTextLanguage);
-    setIsMultiSpeaker(fresh.isMultiSpeaker);
-    setSpeakerBName(fresh.speakerBName);
-    setSpeakerBVoice(fresh.speakerBVoice);
+      setIsMultiSpeaker(fresh.isMultiSpeaker);
+      setSpeakerBName(fresh.speakerBName);
+      setSpeakerBVoice(fresh.speakerBVoice);
+      setSavedSnapshot(buildSettingsSnapshot({
+        selectedVoice: fresh.selectedVoice,
+        speakerAName: fresh.speakerAName,
+        speakerBName: fresh.speakerBName,
+        speakerBVoice: fresh.speakerBVoice,
+        audioProfile: fresh.audioProfile,
+        scene: fresh.scene,
+        styleNotes: fresh.styleNotes,
+        pace: fresh.pace,
+        generateScenes: fresh.generateScenes,
+        sceneDensity: fresh.sceneDensity,
+        sceneRatio: fresh.sceneRatio,
+        visualFramework: fresh.visualFramework,
+        emotion: fresh.emotion,
+        emotionIntensity: fresh.emotionIntensity,
+        imageTextLanguage: fresh.imageTextLanguage,
+        isMultiSpeaker: fresh.isMultiSpeaker,
+      }));
 
     // Persistir valores default no Firestore (se logado) para evitar
     // que a próxima carga restaure os valores antigos do Firestore
@@ -292,11 +456,38 @@ export function Configuracoes() {
         </Typography>
       </Stack>
 
-      {toast && (
-        <Alert severity="success" onClose={() => setToast(null)}>
-          {toast}
-        </Alert>
-      )}
+      <Paper
+        elevation={0}
+        sx={(currentTheme) => ({
+          ...glassPanelSx(currentTheme),
+          px: { xs: 2.5, md: 3 },
+          py: 2.5,
+          borderColor: alpha(currentTheme.palette.primary.main, 0.18),
+          background: `linear-gradient(135deg, ${alpha(currentTheme.palette.primary.main, 0.12)} 0%, ${alpha(currentTheme.palette.background.paper, 0.82)} 100%)`,
+        })}
+      >
+        <Stack spacing={1.5}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            {t('configuracoes.summary.title')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 760 }}>
+            {t('configuracoes.summary.description')}
+          </Typography>
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+            <Chip
+              size="small"
+              color={hasUnsavedChanges ? 'warning' : 'success'}
+              label={hasUnsavedChanges ? t('configuracoes.summary.pending') : t('configuracoes.summary.synced')}
+            />
+            <Chip
+              size="small"
+              variant="outlined"
+              label={user ? t('configuracoes.summary.cloud') : t('configuracoes.summary.local')}
+            />
+            <Chip size="small" variant="outlined" label={t('configuracoes.summary.sections')} />
+          </Stack>
+        </Stack>
+      </Paper>
 
       {/* -- Secao Voz -- */}
       <CollapsibleSection
@@ -304,26 +495,40 @@ export function Configuracoes() {
         title={t('configuracoes.sectionVoice')}
         description={t('configuracoes.voiceLabel')}
         sectionId="config-voice"
+        summary={voiceSummary.map((item) => (
+          <Chip key={item} size="small" variant="outlined" label={item} />
+        ))}
       >
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
           {t('configuracoes.voiceLabel')}
         </Typography>
-        <Grid container spacing={1.5} role="listbox" aria-label={t('configuracoes.voiceLabel')}>
-          {VOICES.map((v) => (
-            <Grid key={v.id} size={{ xs: 12, sm: 6 }}>
-              <VoiceCard
-                voice={v}
-                isSelected={voice === v.id}
-                onSelect={setVoice}
-                isPlaying={playingId === v.id}
-                hasError={errorId === v.id}
-                onPlayPreview={playPreview}
-                previewVoiceLabel={t('studio.inspector.voiceSelection.previewVoice', { voice: v.name })}
-                previewErrorLabel={t('studio.inspector.voiceSelection.previewError')}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <Typography variant="body2" color="text.secondary">
+          {t('configuracoes.voiceHint')}
+        </Typography>
+        <Box
+          sx={{
+            maxHeight: { xs: 'none', lg: 560 },
+            overflowY: { xs: 'visible', lg: 'auto' },
+            pr: { xs: 0, lg: 1 },
+          }}
+        >
+          <Grid container spacing={1.5} role="listbox" aria-label={t('configuracoes.voiceLabel')}>
+            {VOICES.map((v) => (
+              <Grid key={v.id} size={{ xs: 12, sm: 6 }}>
+                <VoiceCard
+                  voice={v}
+                  isSelected={voice === v.id}
+                  onSelect={setVoice}
+                  isPlaying={playingId === v.id}
+                  hasError={errorId === v.id}
+                  onPlayPreview={playPreview}
+                  previewVoiceLabel={t('studio.inspector.voiceSelection.previewVoice', { voice: v.name })}
+                  previewErrorLabel={t('studio.inspector.voiceSelection.previewError')}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </CollapsibleSection>
 
       {/* -- Secao Persona e Direcao -- */}
@@ -332,41 +537,60 @@ export function Configuracoes() {
         title={t('configuracoes.sectionPersona')}
         description={t('configuracoes.personaNameLabel')}
         sectionId="config-persona"
+        summary={personaSummary.map((item) => (
+          <Chip key={item} size="small" variant="outlined" label={item} />
+        ))}
       >
-        <TextField
-          fullWidth size="small"
-          label={t('configuracoes.personaNameLabel')}
-          value={speakerAName}
-          onChange={(e) => setSpeakerAName(e.target.value)}
-        />
-        {/* WARNING-2/3: TextField livre em vez de Select fixo -- consistente com Inspector */}
-        <TextField
-          fullWidth size="small"
-          label={t('configuracoes.profileLabel')}
-          value={audioProfile}
-          onChange={(e) => setAudioProfile(e.target.value)}
-          placeholder={t('studio.inspector.directionFields.characterPlaceholder')}
-          helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined}
-        />
-        <TextField
-          fullWidth size="small"
-          label={t('configuracoes.sceneLabel')}
-          value={scene}
-          onChange={(e) => setScene(e.target.value)}
-        />
-        <TextField
-          fullWidth size="small"
-          label={t('configuracoes.styleNotesLabel')}
-          value={styleNotes}
-          onChange={(e) => setStyleNotes(e.target.value)}
-          multiline rows={2}
-        />
-        <FormControl fullWidth size="small">
-          <InputLabel id="config-pace-label">{t('configuracoes.paceLabel')}</InputLabel>
-          <Select labelId="config-pace-label" value={pace} label={t('configuracoes.paceLabel')} onChange={(e) => setPace(e.target.value)}>
-            {paceOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-          </Select>
-        </FormControl>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label={t('configuracoes.personaNameLabel')}
+              value={speakerAName}
+              onChange={(e) => setSpeakerAName(e.target.value)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="config-pace-label">{t('configuracoes.paceLabel')}</InputLabel>
+              <Select labelId="config-pace-label" value={pace} label={t('configuracoes.paceLabel')} onChange={(e) => setPace(e.target.value)}>
+                {paceOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label={t('configuracoes.profileLabel')}
+              value={audioProfile}
+              onChange={(e) => setAudioProfile(e.target.value)}
+              placeholder={t('studio.inspector.directionFields.characterPlaceholder')}
+              helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label={t('configuracoes.sceneLabel')}
+              value={scene}
+              onChange={(e) => setScene(e.target.value)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label={t('configuracoes.styleNotesLabel')}
+              value={styleNotes}
+              onChange={(e) => setStyleNotes(e.target.value)}
+              multiline
+              rows={2}
+            />
+          </Grid>
+        </Grid>
         <EmotionSelector value={emotion} intensity={emotionIntensity} onChange={handleEmotionChange} />
       </CollapsibleSection>
 
@@ -376,6 +600,9 @@ export function Configuracoes() {
         title={t('configuracoes.sectionScenes')}
         description={t('configuracoes.generateScenesLabel')}
         sectionId="config-scenes"
+        summary={scenesSummary.map((item) => (
+          <Chip key={item} size="small" variant="outlined" label={item} />
+        ))}
       >
         {/* WARNING-1: aria-label adicionado ao Switch */}
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -386,30 +613,40 @@ export function Configuracoes() {
             slotProps={{ input: { 'aria-label': t('configuracoes.generateScenesLabel') } }}
           />
         </Stack>
-        <FormControl fullWidth size="small">
-          <InputLabel id="config-density-label">{t('configuracoes.sceneDensityLabel')}</InputLabel>
-          <Select labelId="config-density-label" value={sceneDensity} label={t('configuracoes.sceneDensityLabel')} onChange={(e) => setSceneDensity(Number(e.target.value))}>
-            {densityOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth size="small">
-          <InputLabel id="config-ratio-label">{t('configuracoes.sceneRatioLabel')}</InputLabel>
-          <Select labelId="config-ratio-label" value={sceneRatio} label={t('configuracoes.sceneRatioLabel')} onChange={(e) => setSceneRatio(e.target.value as SceneRatio)}>
-            {sceneRatioOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth size="small">
-          <InputLabel id="config-framework-label">{t('configuracoes.visualFrameworkLabel')}</InputLabel>
-          <Select labelId="config-framework-label" value={visualFramework} label={t('configuracoes.visualFrameworkLabel')} onChange={(e) => setVisualFramework(e.target.value)}>
-            {visualFrameworkOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth size="small">
-          <InputLabel id="config-language-label">{t('configuracoes.imageTextLanguageLabel')}</InputLabel>
-          <Select labelId="config-language-label" value={imageTextLanguage} label={t('configuracoes.imageTextLanguageLabel')} onChange={(e) => setImageTextLanguage(e.target.value as Locale)}>
-            {localeOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-          </Select>
-        </FormControl>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="config-density-label">{t('configuracoes.sceneDensityLabel')}</InputLabel>
+              <Select labelId="config-density-label" value={sceneDensity} label={t('configuracoes.sceneDensityLabel')} onChange={(e) => setSceneDensity(Number(e.target.value))}>
+                {densityOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="config-ratio-label">{t('configuracoes.sceneRatioLabel')}</InputLabel>
+              <Select labelId="config-ratio-label" value={sceneRatio} label={t('configuracoes.sceneRatioLabel')} onChange={(e) => setSceneRatio(e.target.value as SceneRatio)}>
+                {sceneRatioOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="config-framework-label">{t('configuracoes.visualFrameworkLabel')}</InputLabel>
+              <Select labelId="config-framework-label" value={visualFramework} label={t('configuracoes.visualFrameworkLabel')} onChange={(e) => setVisualFramework(e.target.value)}>
+                {visualFrameworkOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="config-language-label">{t('configuracoes.imageTextLanguageLabel')}</InputLabel>
+              <Select labelId="config-language-label" value={imageTextLanguage} label={t('configuracoes.imageTextLanguageLabel')} onChange={(e) => setImageTextLanguage(e.target.value as Locale)}>
+                {localeOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
       </CollapsibleSection>
 
       {/* -- Secao Multi-locutor -- */}
@@ -418,6 +655,9 @@ export function Configuracoes() {
         title={t('configuracoes.sectionMultiSpeaker')}
         description={t('configuracoes.multiSpeakerLabel')}
         sectionId="config-multispeaker"
+        summary={multiSpeakerSummary.map((item) => (
+          <Chip key={item} size="small" variant="outlined" label={item} />
+        ))}
       >
         {/* WARNING-1: aria-label adicionado ao Switch */}
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -461,37 +701,76 @@ export function Configuracoes() {
       </CollapsibleSection>
 
       {/* -- Botoes de acao -- */}
-      <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end', pt: 1 }}>
-        {resetConfirmOpen ? (
-          <Alert
-            severity="warning"
-            action={
-              <Stack direction="row" spacing={1}>
-                {/* WARNING-4: "Cancelar" substituido por t('common.cancel') */}
-                <Button size="small" color="inherit" onClick={() => setResetConfirmOpen(false)}>
-                  {t('common.cancel')}
-                </Button>
-                <Button size="small" color="warning" variant="contained" onClick={handleReset}>
-                  {t('configuracoes.reset')}
-                </Button>
-              </Stack>
-            }
-          >
-            {t('configuracoes.resetConfirm')}
-          </Alert>
-        ) : (
-          <Button
-            variant="outlined"
-            color="warning"
-            onClick={() => setResetConfirmOpen(true)}
-          >
-            {t('configuracoes.reset')}
-          </Button>
-        )}
-        <Button variant="contained" onClick={handleSave}>
-          {t('configuracoes.save')}
-        </Button>
-      </Stack>
+      <Paper
+        elevation={0}
+        sx={(currentTheme) => ({
+          ...glassPanelSx(currentTheme),
+          position: 'sticky',
+          bottom: 16,
+          zIndex: 12,
+          px: { xs: 2, md: 2.5 },
+          py: 1.5,
+          borderColor: alpha(currentTheme.palette.common.white, 0.12),
+          backgroundColor: alpha(currentTheme.palette.background.paper, 0.88),
+          backdropFilter: 'blur(18px)',
+        })}
+      >
+        <Stack
+          direction={{ xs: 'column', lg: 'row' }}
+          spacing={1.5}
+          sx={{ alignItems: { xs: 'stretch', lg: 'center' }, justifyContent: 'space-between' }}
+          useFlexGap
+        >
+          <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              <Chip
+                size="small"
+                color={hasUnsavedChanges ? 'warning' : 'success'}
+                label={hasUnsavedChanges ? t('configuracoes.summary.pending') : t('configuracoes.summary.synced')}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {t('configuracoes.footerHint')}
+              </Typography>
+            </Stack>
+            {toast ? (
+              <Alert severity="success" onClose={() => setToast(null)} sx={{ py: 0 }}>
+                {toast}
+              </Alert>
+            ) : null}
+            {resetConfirmOpen ? (
+              <Alert
+                severity="warning"
+                action={
+                  <Stack direction="row" spacing={1}>
+                    <Button size="small" color="inherit" onClick={() => setResetConfirmOpen(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button size="small" color="warning" variant="contained" onClick={handleReset}>
+                      {t('configuracoes.reset')}
+                    </Button>
+                  </Stack>
+                }
+              >
+                {t('configuracoes.resetConfirm')}
+              </Alert>
+            ) : null}
+          </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ flexShrink: 0 }}>
+            {!resetConfirmOpen ? (
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() => setResetConfirmOpen(true)}
+              >
+                {t('configuracoes.reset')}
+              </Button>
+            ) : null}
+            <Button variant="contained" onClick={handleSave}>
+              {t('configuracoes.save')}
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
     </Stack>
   );
 }

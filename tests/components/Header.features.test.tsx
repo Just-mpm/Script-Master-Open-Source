@@ -118,7 +118,7 @@ describe('Header — Features atualizadas', () => {
     });
 
     render(<Header />, { wrapper: Wrapper });
-    expect(screen.getByText('joao')).toBeDefined();
+    expect(screen.getAllByText('joao').length).toBeGreaterThanOrEqual(1);
   });
 
   it('mostra fallback quando displayName e email são null', () => {
@@ -134,7 +134,7 @@ describe('Header — Features atualizadas', () => {
 
     render(<Header />, { wrapper: Wrapper });
     // O fallback é o texto de "Conta" do i18n (studio.header.user.fallback)
-    expect(screen.getByText('Conta')).toBeDefined();
+    expect(screen.getAllByText('Conta').length).toBeGreaterThanOrEqual(1);
   });
 
   it('abre dialog de exclusão de conta ao clicar em Excluir conta no drawer mobile', async () => {

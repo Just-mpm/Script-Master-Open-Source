@@ -52,6 +52,8 @@ interface ActionBarProps {
   videoExportProgress?: number;
 }
 
+const PIPELINE_SUCCESS_VISIBILITY_MS = 12_000;
+
 export function ActionBar({
   isGenerating,
   audioUrl,
@@ -304,6 +306,7 @@ export function ActionBar({
           </Stack>
         </Paper>
       )}
+
 
         <Paper
           variant="outlined"

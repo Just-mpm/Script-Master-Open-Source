@@ -23,10 +23,6 @@ export const en: TranslationDictionary = {
     next: 'Next',
     skip: 'Skip',
     tryAgain: 'Try again',
-    clear: 'Clear',
-    offline: 'Offline',
-    offlineTooltip: 'You are offline. Some features may not be available.',
-    continue: 'Continue',
     learnMore: 'Learn more',
     getStarted: 'Get started',
     seeAll: 'See all',
@@ -73,13 +69,12 @@ export const en: TranslationDictionary = {
     logoAlt: 'Script Master — Go to homepage',
   },  footer: {
     description:
-      'Turn scripts into art with AI. Professional audio, video, and images powered by artificial intelligence.',
+      'Turn scripts into art with AI. Professional audio, video, and images powered by Gemini.',
     copyright: 'Script Master. All rights reserved.',
-    madeWith: 'Built with AI',
+    madeWith: 'Built with AI and Gemini',
     productGroup: 'Product',
     companyGroup: 'Company',
     legalGroup: 'Legal',
-    resourcesGroup: 'Resources',
     links: {
       features: 'Features',
       pricing: 'Beta',
@@ -91,102 +86,110 @@ export const en: TranslationDictionary = {
       terms: 'Terms of Use',
       privacy: 'Privacy',
       cookies: 'Cookies',
-      roadmap: 'Roadmap',
-      changelog: 'Changelog',
-      community: 'Community',
     },
   },
 
   landing: {
     hero: {
-      title: 'Stop editing for hours. Your narration ready in minutes.',
+      title: 'Turn scripts into art with AI',
       subtitle:
-        'Turn scripts into professional audio, videos, and images with AI. All in your browser — no server, no complexity.',
+        'Complete platform to create professional audio, video, and images from scripts. All client-side with Gemini AI.',
       cta: 'Create free account',
-      ctaSecondary: 'See features',
-      alt: 'Script Master — turn scripts into professional content with AI',
+      ctaSecondary: 'View Features',
+      alt: 'Script Master illustration — turning scripts into art with AI',
     },
     socialProof: {
-      label: 'Thousands of creators already build with AI',
-      sublabel: 'Professional audio, images, and integrated assistant — all in minutes',
+      label: 'Powered by Gemini AI',
+      sublabel: 'TTS, image generation, and conversational assistant',
     },
     features: {
-      title: 'Build everything in one platform',
+      title: 'Everything you need to create',
       subtitle:
-        'Audio studio, video, images, and AI assistant. No tool switching, no lost momentum.',
+        'Six integrated tools in a single platform to transform your ideas into professional content.',
     },
-featureCards: {
+    featureCards: {
       voice: {
-        title: 'AI Narration',
+        title: 'AI Voice',
         description:
-          'Script ready becomes professional audio. Choose the voice, control the pace, publish in minutes.',
+          'Transform scripts into professional audio with Gemini TTS. Voice control, pace, and multi-speaker.',
       },
       video: {
         title: 'Automatic Video',
         description:
-          'Subtitles, transitions, and optimized format. Your video ready to publish without software.',
+          'Create client-side videos with subtitles, transitions, and waveform. No backend needed.',
       },
       images: {
-        title: 'AI Images',
+        title: 'Image Generation',
         description:
-          'Describe the scene, receive the image. 8 formats, visual reference, and cloud gallery.',
+          '8 aspect ratios, visual reference, and full gallery with cloud persistence.',
       },
       speedPaint: {
+    durationLabel: 'Speed paint duration',
+    uploadDragActive: 'Drop images here',
+    uploadPrompt: 'Upload one or more images',
+    uploadDescription: 'Drag and drop your images here, or use the button below. Supports JPG, PNG, and WebP. Batch processing is enabled.',
+    chooseFiles: 'Choose files',
         title: 'Speed Paint',
         description:
-          'Turn any image into a painting animation. Unique effect that grabs attention.',
+          'Progressive painting animation with edge detection, batch processing, and export.',
       },
       assistant: {
-        title: 'Creative Assistant',
+    deleteMemoryConfirm: 'Delete memory?',
+        title: 'AI Assistant',
         description:
-          'Real-time chat that helps improve scripts, adjust tone, and suggest scenes.',
+          'Chat with streaming, memories, attachments, and direct integration with the production studio.',
       },
       library: {
-        title: 'Complete Library',
+    emptyGallery: 'Your gallery is empty',
+    sortOldestFirst: 'Oldest first',
+    sortNewestFirst: 'Newest first',
+    generation: 'Generation',
+    project: 'Project',
+        title: 'Library',
         description:
-          'Projects, audio, scenes, and videos — saved in the cloud and accessible from anywhere.',
+          'Complete project management with audios, scenes, videos, and dual persistence.',
       },
     },
     ttsShowcase: {
-      title: 'Narration that sounds natural',
+      title: 'Professional Voice with Gemini TTS',
       description:
-        'AI voice that understands context, detects scenes, and maintains pace. No roboticism.',
+        'Transform any script into professional narration with natural voices and full control over pace, pitch, and audio profile.',
       benefits: {
-        0: 'Up to 2 speakers per script',
-        1: 'Automatic pause and scene detection',
-        2: 'Full control over pace and tone',
-        3: '15 voices to preview before choosing',
-        4: 'Professional quality audio',
+        0: 'Multi-speaker with 2 independent narrators',
+        1: 'Automatic scene detection via silence analysis (RMS)',
+        2: 'Pace, pitch, and audio profile control (podcast, audiobook, narration)',
+        3: 'Voice previews available for each voice',
+        4: 'High-quality 24kHz mono 16-bit PCM audio',
       },
     },
     videoShowcase: {
-      title: 'Video rendered in your browser',
+      title: 'Client-Side Video with Remotion',
       description:
-        'No upload, no server cost. Your script never leaves your device.',
+        'Render complete videos directly in your browser. No server, no rendering cost. WebCodecs + Whisper for automatic subtitles.',
       benefits: {
-        0: 'High-quality MP4, works everywhere',
-        1: 'Automatic synced subtitles',
-        2: '3 formats: horizontal, vertical, square',
-        3: 'Preview with waveform and transitions',
-        4: 'One-click export',
+        0: 'Codec fallback: H.264+AAC+MP4 > H.264 no audio > VP8+Opus+WebM',
+        1: 'Automatic subtitles with Whisper WASM (3 sync sources)',
+        2: 'Crossfade between scenes with spring animation (400ms overlap)',
+        3: '3 resolutions: 16:9, 9:16, 1:1',
+        4: 'Waveform overlay synced with video',
       },
     },
     assistantShowcase: {
-      title: 'Creative direction with AI',
+      title: 'Integrated AI Assistant',
       description:
-        'The assistant understands your project, suggests adjustments, and applies them in the studio with one click.',
+        'Conversational chat with Gemini streaming, long-term memories, and direct studio integration. The assistant suggests changes you apply with one click.',
       benefits: {
-        0: 'Real-time responses',
-        1: 'Project memories + document upload',
-        2: '5 attachments per message (images and files)',
-        3: 'Suggestions with \'Apply in studio\' button',
-        4: 'Full history, auto-save',
+        0: 'Real-time streaming with Gemini 3.1 Flash',
+        1: 'Memory system: short texts + document upload (.md, .txt, .csv)',
+        2: 'Attachments: 5 per message (images 10MB, documents 5MB)',
+        3: 'JSON extraction from chat with "Apply in studio" button',
+        4: 'Auto-save sessions with full history',
       },
     },
     useCases: {
-      title: 'Built for creators who don\'t have time to waste',
+      title: 'For every type of creator',
       subtitle:
-        'YouTubers, podcasters, educators, marketers — everyone publishes faster with Script Master.',
+        'Whether you are a YouTuber, podcaster, teacher, or marketer — Script Master adapts to your workflow.',
       learnMore: 'Learn more',
     },
     metrics: {
@@ -217,56 +220,56 @@ featureCards: {
       noCreditCard: 'No credit card · Setup in 30 seconds',
     },
     testimonials: {
-      title: 'Who creates faster',
+      title: 'What our creators say',
       subtitle:
-        'Creators who abandoned manual editing and never went back.',
+        'Thousands of creators already use Script Master to turn ideas into professional content.',
     },
     howItWorks: {
-      title: 'Three steps to publish',
+      title: 'How It Works',
       subtitle:
-        'Write, generate, export. No complexity, no waiting.',
+        'Three steps to transform your script into professional content.',
     },
     steps: {
       1: {
         title: 'Write your script',
         description:
-          'Use the built-in editor or paste your text. The assistant helps improve if needed.',
+          'Use the built-in editor or paste your text. The AI assistant can help improve your script.',
       },
       2: {
-        title: 'Generate with one click',
+        title: 'Generate with AI',
         description:
-          'Audio, images, scenes — all ready in minutes, not hours.',
+          'One click to transform your script into audio, images, and video with Gemini.',
       },
       3: {
-        title: 'Export and publish',
+        title: 'Export and share',
         description:
-          'Download WAV, MP4, or PNG and publish directly to your platform.',
+          'Download your WAV audio, MP4/WebM video, or high-resolution PNG images.',
       },
     },
     moreFeatures: {
       title: 'And Much More',
       cards: {
         multiSpeaker: {
-          title: '2 speakers',
+          title: 'Multi-speaker',
           description:
-            'Configure independent voices for each character in your script.',
+            'Support for 2 narrators with independent voice and name configuration.',
         },
         chunking: {
-          title: 'Smart splitting',
+          title: 'Smart Chunking',
           description:
-            'Long script becomes natural segments. Voice doesn\'t stutter, repeat, or lose tone.',
+            'Optimized splitting via LLM + programmatic fallback. 500 chars per chunk limit.',
         },
         dualStorage: {
-          title: 'Cloud storage',
+          title: 'Dual Storage',
           description:
-            'Projects saved online. Accessed from any device, any time.',
+            'Firestore (authenticated) + IndexedDB (local) with automatic migration.',
         },
       },
     },
     cta: {
-      title: 'Start for free today',
-      subtitle: '1,000 credits per month, automatically renewed. No credit card.',
-      button: 'Create free account',
+      title: 'Start creating now',
+      subtitle: 'Create your first narration for free. No credit card required.',
+      button: 'Get started',
     },
   },
 
@@ -274,12 +277,12 @@ featureCards: {
     hero: {
       title: 'Everything you need to create',
       subtitle:
-        'Six integrated tools in one platform that understands your workflow.',
-      cta: 'Start free',
-      ctaSecondary: 'See how it works',
+        'Explore all the integrated tools of Script Master to transform your scripts into professional content.',
+      cta: 'Get Started Free',
+      ctaSecondary: 'View beta',
     },
     sections: {
-      tts: 'Voice Studio',
+      tts: 'Voice Studio (TTS)',
       video: 'Video Rendering',
       images: 'Image Generation',
       speedPaint: 'Speed Paint & Animation',
@@ -287,15 +290,15 @@ featureCards: {
       platform: 'Platform',
     },
     ttsShowcase: {
-      title: 'Professional Audio with AI',
+      title: 'Professional Audio with Gemini TTS',
       description:
-        'Our AI voice engine generates natural narrations with full control over all voice parameters.',
+        'Our TTS engine uses the most advanced Gemini model to generate natural narrations with full control over all voice parameters.',
       benefits: {
-        0: 'Complete control of voice, pace, and style',
-        1: 'Automatic scene detection via analysis of generated audio',
-        2: 'Automatic pause detection calibration in up to 3 iterations',
-        3: 'Automatic retries in case of instability',
-        4: 'Voice samples for instant playback',
+        0: 'Support for 14+ studio parameters in the Inspector',
+        1: 'Automatic scene detection via RMS analysis of generated audio',
+        2: 'Automatic silence threshold calibration in up to 3 iterations',
+        3: 'Smart retry: 3 attempts with jitter and exponential backoff',
+        4: 'Static WAV voice previews for instant playback',
       },
     },
     videoShowcase: {
@@ -303,58 +306,58 @@ featureCards: {
       description:
         'All rendering happens in your browser. No video upload, no processing cost. Total privacy and control.',
       benefits: {
-        0: 'High-quality MP4 video, compatible with all devices',
-        1: 'Built-in automatic transcription (no external server)',
-        2: 'Inline subtitle style editor',
-        3: 'Waveform visualization that disables during export for performance',
+        0: 'Codec fallback: H.264+AAC+MP4 > H.264 > VP8+Opus+WebM',
+        1: 'Built-in Whisper WASM transcription (no backend)',
+        2: 'Inline subtitle style editor (fontSize, padding, borderRadius, opacity)',
+        3: 'Waveform overlay that disables during export for performance',
+        4: 'Canvas patch for Remotion font-stretch bug fix',
       },
     },
     imagesShowcase: {
       title: 'Images with Visual Reference',
       description:
-        'Generate images with AI using text prompts and, optionally, a reference image to guide style and composition.',
+        'Generate images with Gemini using text prompts and, optionally, a reference image to guide style and composition.',
       benefits: {
         0: '8 aspect ratios: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9',
-        1: 'Visual styles: cinematic/photographic or illustrated',
+        1: 'Visual frameworks: cinema/photography or whiteboard',
         2: 'Automatic scene generation from script',
-        3: 'Persistence: saved in the cloud and browser',
+        3: 'Dual persistence: Firestore + IndexedDB',
       },
     },
     cta: {
       title: 'Ready to create?',
-      subtitle: 'Free credits, no commitment. Your first narration in under 1 minute.',
-      button: 'Start free',
+      subtitle: 'Start using all these features for free.',
+      button: 'Get Started Free',
     },
   },
 
   // ── Open Beta ─────────────────────────────────────────────────────────
   pricing: {
-    popular: 'Popular',
     hero: {
-      title: 'Open beta: 100% free',
-      subtitle: '1,000 monthly credits for you to create without limits. Automatic renewal, no bureaucracy.',
+      title: 'Open Beta',
+      subtitle: 'Script Master is in open beta. AI usage requires login.',
       cta: 'Create free account',
-      ctaSecondary: 'See how it works',
+      ctaSecondary: 'How it works',
     },
     credits: {
-      title: 'Monthly credits',
-      subtitle: 'Each action uses credits. You get 1,000 per month, free.',
-      monthly: '1,000 credits per month',
-      monthlyDesc: 'Automatically renewed at the start of each month.',
-      bonus: '+250 credits for feedback',
-      bonusDesc: 'Send constructive suggestions and earn bonus credits to create more.',
-      noPayment: 'No credit card',
-      noPaymentDesc: 'Beta is 100% free. No charges during the period.',
+      title: 'Credits',
+      subtitle: 'Credits are the beta currency. Each action consumes credits, renewed every month.',
+      monthly: '1,000 free monthly credits',
+      monthlyDesc: 'Credits automatically renewed at the beginning of each month.',
+      bonus: '+250 credits for sending feedback',
+      bonusDesc: 'Send constructive feedback and earn a credit bonus.',
+      noPayment: 'No payment',
+      noPaymentDesc: 'No credit card needed. The beta is 100% free.',
     },
     howItWorks: {
       title: 'How it works',
-      subtitle: 'Simple: write, generate, export.',
+      subtitle: 'It\'s simple to start creating with Script Master.',
       step1Title: 'Sign in',
-      step1Desc: 'Google or email — takes 30 seconds.',
+      step1Desc: 'Sign in with your Google account or email to access all tools.',
       step2Title: 'Create content',
-      step2Desc: 'Audio, images, and scenes with AI. Each generation uses credits from your balance.',
+      step2Desc: 'Each audio, image, or chat generation consumes credits from your monthly balance.',
       step3Title: 'Track your balance',
-      step3Desc: 'Credits displayed in the header. Automatic renewal every month.',
+      step3Desc: 'Your available credits appear in the header after login.',
     },
     notice: {
       title: 'Payments and subscriptions are temporarily paused.',
@@ -364,8 +367,8 @@ featureCards: {
       title: 'Frequently asked questions about the beta',
     },
     cta: {
-      title: 'Start creating now',
-      subtitle: 'Your first narration in under 1 minute. Free, no commitment.',
+      title: 'Ready to get started?',
+      subtitle: 'Create your first narration for free. Monthly credits renewed every month.',
       button: 'Sign in with Google',
     },
   },
@@ -548,23 +551,23 @@ featureCards: {
         },
         1: {
           title: 'Speed Paint & Advanced Video',
-          description: 'Progressive painting animation and video export',
+          description: 'Progressive painting animation, Web Worker for rendering, LRU cache, and WebM export',
         },
         2: {
           title: 'Production Studio',
-          description: 'Complete studio reorganization, preference persistence, and granular speed paint control',
+          description: 'Complete studio refactoring with Zustand, preference persistence, and granular speed paint control',
         },
         3: {
           title: 'LGPD Account Deletion',
-          description: 'Complete account deletion flow, email verification, and centralized assistant UI',
+          description: 'Complete deletion pipeline (Firestore + Storage + IndexedDB), email verification, and centralized assistant UI',
         },
         4: {
           title: 'Video Quality & Export',
-          description: 'Export quality (720p–4k), file size estimation, and per-phase speed control',
+          description: 'Export quality (720p–4k), file size estimation, per-phase speed paint multipliers, and 1185 tests',
         },
         5: {
           title: 'Plans & Payments',
-          description: 'Subscription and payment system for paid plans',
+          description: 'Stripe integration for subscriptions, payments, and plan management',
         },
         6: {
           title: 'Official Launch',
@@ -587,7 +590,7 @@ featureCards: {
         'Informational status of Script Master services. Manually updated data.',
     },
     disclaimer:
-      'The data displayed on this page is informational and does not represent real-time monitoring. Actual service status depends on external providers.',
+      'The data displayed on this page is informational and does not represent real-time monitoring. Actual service status depends on third parties (Google Gemini, Firebase).',
     globalStatus: 'All systems operational',
     lastCheck: 'Last update: build {date} (informational data)',
     incidents: {
@@ -597,34 +600,34 @@ featureCards: {
       items: {
         0: {
           title: 'Audio generation instability',
-          description: 'The AI API experienced high latency for approximately 2 hours, affecting audio generation. The service was automatically normalized.',
+          description: 'The Gemini API experienced high latency for approximately 2 hours, affecting TTS audio generation. The service was automatically normalized.',
         },
         1: {
-          title: 'Storage degradation',
+          title: 'Firebase Storage degradation',
           description: 'Image uploads experienced slowness for 45 minutes. The impact was limited to the image studio.',
         },
       },
     },
     services: {
       api: {
-        name: 'AI API',
+        name: 'Gemini API (AI)',
         description: 'Audio generation, images, and conversational assistant',
       },
       auth: {
-        name: 'Authentication',
+        name: 'Firebase Auth',
         description: 'Authentication and account management',
       },
       firestore: {
-        name: 'Database',
+        name: 'Firebase Firestore',
         description: 'Database and project synchronization',
       },
       storage: {
-        name: 'Storage',
+        name: 'Firebase Storage',
         description: 'Audio, image, and video storage',
       },
       video: {
         name: 'Video Rendering',
-        description: 'Video rendering in the browser',
+        description: 'Client-side processing via WebCodecs',
       },
     },
     statusLabels: {
@@ -635,34 +638,12 @@ featureCards: {
     },
   },
 
-  // ── Data Migration ────────────────────────────────────────────────
-  dataMigration: {
-    checking: 'Checking local data...',
-    completed: 'Transfer completed',
-    successMessage: 'All {count} items were transferred successfully.',
-    partialSuccessMessage: '{count} items transferred successfully. {errors} errors found.',
-    mediaNote: 'Media files (audio, images, videos) were transferred as reference information. Physical files need to be regenerated.',
-    unexpectedError: 'Unexpected error during migration.',
-    ignoreAndContinue: 'Ignore and continue',
-    confirmTitle: 'Transfer data to your account?',
-    confirmDescription: 'We detected {totalItems} items saved locally in your browser. Would you like to transfer them to the cloud to access from any device?',
-    projectCount: '{count} projects',
-    audioGenerationCount: '{count} audio generations',
-    imageGenerationCount: '{count} image generations',
-    memoryCount: '{count} AI memories',
-    chatCount: '{count} conversations',
-    confirmMediaNote: 'Media files (audio, images) will be transferred as reference information. Physical files cannot be transferred and will need to be regenerated.',
-    transferring: 'Transferring...',
-    transfer: 'Transfer data',
-  },
-
   localeSelector: {
     ariaLabel: 'Select language',
   },
 
   studio: {
     header: {
-      subtitle: 'AI Studio',
       nav: {
         studio: 'Studio',
         image: 'Image',
@@ -699,7 +680,7 @@ featureCards: {
       credits: {
         loading: 'Loading credits...',
         error: 'Error loading credits',
-        syncing: 'Updating balance...',
+        syncing: 'Syncing credit balance...',
         ariaLabel: 'Credit balance: {credits}',
         breakdown: 'Base: {base} | Bonus: {bonus} | Used: {used}',
       },
@@ -709,7 +690,7 @@ featureCards: {
       generatingScenes: 'Generating visual scenes...',
       sceneProgressLabel: 'Visual scene generation progress',
       cancelImages: 'Cancel image generation',
-      synthesizingVoice: 'Generating voice...',
+      synthesizingVoice: 'Synthesizing voice...',
       audioProgressLabel: 'Audio generation progress',
       pausePlayback: 'Pause playback',
       startPlayback: 'Start playback',
@@ -734,7 +715,7 @@ featureCards: {
       voiceSection: {
         title: 'Narrator voice',
         description: 'Choose the vocal signature and organize voices for narration or podcast.',
-        optionsCount: '{count} voices available',
+        optionsCount: '{count} options',
       },
       podcast: {
         title: 'Podcast Mode (2 voices)',
@@ -816,7 +797,6 @@ featureCards: {
         '60': 'Slow (1 min)',
         '120': 'Very slow (2 min)',
       },
-      generateScenes: 'Generate scenes',
       referenceImage: {
         tooLarge: 'Image too large. Maximum size: 10MB.',
         readError: 'Failed to read the file. Try another image.',
@@ -920,32 +900,10 @@ featureCards: {
   },
 
   video: {
-      loadingSceneImage: 'Loading scene image...',
-      failLoadImage: 'Failed to load image',
       pageTitle: 'Visual composition',
       pageDescription: 'Review the current scene, check the video atmosphere, and load previous projects without leaving the flow.',
       exportProgress: 'Export progress',
       exportQuality: 'Export quality',
-      exportButton: 'Export video',
-      exportNotSupported: 'Browser does not support video export. Please update your browser to the latest version.',
-      animateScenesTooltip: 'Adds painting animation to each scene. May considerably increase export time.',
-      animateScenesLabel: 'Animate scenes (Speed Paint)',
-      speedPaintWarningsTitle: 'Some scenes could not be animated:',
-      fileNameLabel: 'File name',
-      fileNamePlaceholder: 'video-export',
-      subtitleLabel: 'Subtitle',
-      exportInfo: 'Resolution: {width}x{height} | {fps} frames per second',
-      exportBackgroundProcess: 'Processing continues in the background in this tab.',
-      transcription: {
-        title: 'Subtitles',
-        staleWarning: 'The script has been edited since the last subtitle generation. Subtitles may be misaligned.',
-        wordCount: '{count} words transcribed',
-        regenerate: 'Regenerate',
-        sourceSegmentTiming: 'Synced with voice',
-        sourceWhisperAligned: 'Precise sync',
-        sourceProportional: 'Automatic',
-        sourceManual: 'Manual',
-      },
       timingError: 'Start must be before end',
       undoDelete: 'Undo deletion',
       workspace: {
@@ -1047,7 +1005,7 @@ featureCards: {
       copied: 'Copied!',
       copyText: 'Copy text',
       copyTextAria: 'Copy message text',
-      malformedJson: 'The assistant suggested adjustments that could not be applied automatically.',
+      malformedJson: 'The assistant suggested adjustments, but the format could not be interpreted.',
       applied: 'Applied',
       applyToStudio: 'Apply in studio',
       savedToMemory: 'Saved to memory',
@@ -1096,7 +1054,7 @@ featureCards: {
       saving: 'Saving...',
       save: 'Save',
       knowledgeBase: 'Knowledge base',
-      knowledgeBaseDescription: 'Upload text files with guidelines, documentation, or repertoire the assistant should consider.',
+      knowledgeBaseDescription: 'Upload .md, .txt or .csv with guidelines, documentation, or repertoire the assistant should consider.',
       uploading: 'Uploading...',
       attachDocument: 'Attach document',
       noMemories: 'No memories saved yet',
@@ -1113,7 +1071,7 @@ featureCards: {
       whatToWriteDescription: 'Ex.: brand tone, preferred pace, visual restrictions, CTA type, opening style, vocabulary, and suggestion format.',
       guidelinesAlert: 'Avoid conflicting rules. The clearer the direction, the more predictable the assistant behavior.',
       guidelinesLabel: 'Permanent guidelines',
-      guidelinesPlaceholder: 'Ex.: respond with focus on YouTube retention, propose lean scripts, preserve clear language, and always offer adjustment settings when suggesting applicable studio changes.',
+      guidelinesPlaceholder: 'Ex.: respond with focus on YouTube retention, propose lean scripts, preserve clear language, and always offer a JSON block when suggesting applicable studio adjustments.',
       applyGuidelines: 'Apply guidelines',
     },
   },
@@ -1271,17 +1229,8 @@ featureCards: {
     controlsCaptureError: 'Could not capture the image. Please try again.',
     controlsContextError: 'Error creating export context.',
     controlsExportImageError: 'Failed to export image. Please try again.',
-    speedSectionTitle: 'Speed Paint Speed',
-    speedSectionDescription: 'Separate speed control for drawing and coloring.',
-    sketchLabel: 'Sketch',
-    sketchAriaLabel: 'Sketch speed',
-    revealLabel: 'Reveal',
-    durationHelperText: 'The animation uses 80% of the time for drawing and 20% for painting.',
-    durationExportHelper: 'The chosen duration will also be used in the exported video.',
-    exportInfo: 'Resolution: {width}x{height} | {fps} frames per second',
-    fileNamePlaceholder: 'speed-paint',
     exportTitle: 'Export video',
-    exportBrowserWarning: 'Browser does not support video export. Please update your browser to the latest version.',
+    exportBrowserWarning: 'Browser does not support video export. Use Chrome 94+ or Firefox 130+.',
     exportDismissError: 'Dismiss error',
     exportQualityAria: 'Export quality',
     exportFileName: 'File name',
@@ -1291,7 +1240,7 @@ featureCards: {
     exportAgain: 'Export again',
     exportClear: 'Clear',
     exportButton: 'Export',
-    exportCompleted: 'Video ready!',
+    exportCompleted: 'Export completed!',
     exportDownload: 'Download',
     exportRenderStatus: 'Rendering... {percent}%',
     pageGenerating: 'Generating Animation',
@@ -1356,7 +1305,7 @@ featureCards: {
     welcome: {
       title: 'Welcome to Script Master!',
       description: 'Transform your scripts into professional audio, visual scenes, and videos\nwith artificial intelligence. We\'ll show you how in a few steps.',
-      featureTTS: 'AI Voice',
+      featureTTS: 'AI TTS',
       featureScenes: 'Visual scenes',
       featureVideo: 'Automatic video',
       tourHint: 'Quick 1-minute tour — you can skip anytime',
@@ -1411,8 +1360,8 @@ featureCards: {
   // ── SEO (meta tags por página) ─────────────────────────────────────
   seo: {
     landing: {
-      title: 'Create videos and audio with AI in minutes | Script Master',
-      description: 'Turn scripts into professional narration, videos, and images with AI. 100% in your browser. Free in open beta.',
+      title: 'Turn scripts into art with AI | Script Master',
+      description: 'Complete platform to create professional audio, video, and images from scripts with Gemini AI. All client-side.',
     },
     about: {
       title: 'About Script Master',
@@ -1431,8 +1380,8 @@ featureCards: {
       description: 'Discover all Script Master features: audio generation, images, videos, AI assistant, and more.',
     },
     pricing: {
-      title: 'Open beta free — 1,000 credits per month | Script Master',
-      description: 'Script Master is in open beta. Create audio, video, and images with AI. 1,000 free monthly credits, no card.',
+      title: 'Open Beta | Script Master',
+      description: 'Script Master is in open beta. Access for free with 1,000 monthly credits.',
     },
     status: {
       title: 'Service Status | Script Master',
@@ -1483,15 +1432,15 @@ featureCards: {
       },
       2: {
         question: 'How do videos work?',
-        answer: 'Videos are rendered directly in your browser. You can combine generated audio, scene images, and automatic subtitles. Rendering happens entirely in your browser — your script never leaves your device.',
+        answer: 'Videos are rendered directly in your browser using WebCodecs. You can combine generated audio, scene images, and automatic subtitles. Rendering is 100% client-side — your script never leaves your device.',
       },
       3: {
         question: 'What is the audio quality?',
-        answer: 'Audio is generated in professional high-quality format.',
+        answer: 'Audio is generated in WAV 24kHz mono 16-bit PCM, with professional quality.',
       },
       4: {
         question: 'How do automatic subtitles work?',
-        answer: 'We use an AI model for automatic audio transcription. Subtitles are generated with precise timestamps and can be manually edited in the subtitle editor.',
+        answer: 'We use the Whisper model for automatic audio transcription. Subtitles are generated with precise timestamps and can be manually edited in the subtitle editor.',
       },
     },
     account: {
@@ -1501,7 +1450,7 @@ featureCards: {
       },
       1: {
         question: 'Can I use it on multiple devices?',
-        answer: 'Yes! Your projects and settings are synced online. Just sign in on any device to access your content.',
+        answer: 'Yes! Your projects and settings are synced via Firebase. Just sign in on any device to access your content.',
       },
       2: {
         question: 'How do I delete my account?',
@@ -1513,41 +1462,41 @@ featureCards: {
   // ── Features (FuncionalidadesPage — cards por seção) ────────────────
   featureItems: {
     audio: {
-      0: { title: 'AI Audio Generation', description: 'Transform scripts into professional audio with studio quality.' },
-      1: { title: 'Smart Splitting', description: 'Smart script splitting into parts to maintain voice naturalness.' },
-      2: { title: 'Multiple Speakers', description: 'Support for 2 narrators (Speaker A + B) with independent voice and name configuration.' },
-      3: { title: 'Voice Control', description: 'Voice selection, pace, tone, and narration style (podcast, audiobook, conversation, narration).' },
+      0: { title: 'TTS Audio Generation', description: 'Transform scripts into professional audio with Gemini TTS (24kHz mono 16-bit PCM).' },
+      1: { title: 'Smart Chunking', description: 'Optimized splitting via LLM + programmatic fallback. 500 chars per chunk limit.' },
+      2: { title: 'Multi-speaker', description: 'Support for 2 narrators (Speaker A + B) with independent voice and name configuration.' },
+      3: { title: 'Voice Control', description: 'Voice selection, pace, pitch, and audio profile (podcast, audiobook, conversation, narration).' },
     },
     video: {
-      0: { title: 'Video Composition', description: 'Rendered directly in your browser. No server cost.' },
-      1: { title: 'Automatic Subtitles', description: 'Automatic subtitles synced with audio at three levels of precision.' },
+      0: { title: 'Video Composition', description: 'Client-side videos with Remotion and WebCodecs. No backend, no rendering cost.' },
+      1: { title: 'Automatic Subtitles', description: '3 sync sources: segment-timing > whisper-aligned > proportional.' },
       2: { title: '3 Resolutions', description: '16:9 (1920x1080), 9:16 (1080x1920), and 1:1 (1080x1080).' },
     },
     image: {
-      0: { title: 'Image Studio', description: 'Generate images with AI from prompts + optional visual reference.' },
+      0: { title: 'Image Studio', description: 'Generate images with Gemini from prompts + optional visual reference.' },
       1: { title: '8 Aspect Ratios', description: '1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9.' },
-      2: { title: 'Integrated Gallery', description: 'History of generated images with preview, deletion, saved in cloud and browser.' },
+      2: { title: 'Integrated Gallery', description: 'History of generated images with preview, deletion, and dual persistence.' },
     },
     assistant: {
-      0: { title: 'Conversational Chat', description: 'Real-time responses with image and document attachments.' },
-      1: { title: 'Studio Integration', description: 'Model suggests changes you apply with one click in the studio.' },
-      2: { title: 'Memory System', description: 'Short memories (text) + document upload with guidelines and references up to 500KB' },
+      0: { title: 'Conversational Chat', description: 'Streaming with Gemini, memories, attachments (5 per msg: image 10MB, document 5MB).' },
+      1: { title: 'Studio Integration', description: 'Model suggests changes in JSON block, "Apply in studio" button for partial patch.' },
+      2: { title: 'Memory System', description: 'Short memories (text) + document upload (.md/.txt/.csv up to 500KB).' },
     },
     library: {
       0: { title: 'Project Management', description: 'Organize audios, scenes, videos, and images in projects with complete metadata.' },
       1: { title: 'Easy Download', description: 'Download WAV audio, MP4/WebM videos, and PNG images with one click.' },
-      2: { title: 'Dual Storage', description: 'Projects saved in the cloud and browser, with automatic synchronization.' },
+      2: { title: 'Dual Persistence', description: 'Firestore (authenticated) + IndexedDB (local), automatic migration on login.' },
     },
     speedPaint: {
-      0: { title: 'Painting Animation', description: 'Transform images into step-by-step painting animations.' },
-      1: { title: 'Batch Processing', description: 'Image queue with viewing and recording modes.' },
-      2: { title: 'Media Export', description: 'Export images in high resolution and videos in professional quality.' },
+      0: { title: 'Painting Animation', description: 'Upload > edge detection > BFS clustering > vectorization > progressive rendering.' },
+      1: { title: 'Batch Processing', description: 'Image queue with watch (auto-advance) and record (record + advance) modes.' },
+      2: { title: 'Media Export', description: 'Export PNG (2x) and WebM (H.264 > VP9 > default, 12Mbps).' },
     },
   },
 
   // ── Landing showcases (alt texts) ───────────────────────────────────
   landingShowcases: {
-    audio: { alt: 'AI audio generation with Script Master' },
+    audio: { alt: 'TTS audio generation with Script Master' },
     video: { alt: 'Video rendering with Script Master' },
     assistant: { alt: 'Script Master AI assistant' },
   },
@@ -1604,8 +1553,8 @@ featureCards: {
       limitReached: 'Limit reached',
       upgradeRequired: 'Upgrade to continue',
       featureLocked: 'Feature available on paid plans only',
-      multiSpeakerLocked: 'Multiple speakers available on Pro plan or higher',
-      emotionalTTSLocked: 'Emotional voice available on Pro plan or higher',
+      multiSpeakerLocked: 'Multi-speaker available on Pro plan or higher',
+      emotionalTTSLocked: 'Emotional TTS available on Pro plan or higher',
       stockMediaLocked: 'Stock media available on Pro plan or higher',
     },
   },
@@ -1658,7 +1607,7 @@ featureCards: {
     sectionVoice: 'Voice',
     sectionPersona: 'Persona & Direction',
     sectionScenes: 'Scenes & Images',
-    sectionMultiSpeaker: 'Multiple Speakers',
+    sectionMultiSpeaker: 'Multi-speaker',
     voiceLabel: 'Default voice',
     personaNameLabel: 'Speaker name',
     profileLabel: 'Voice profile',
@@ -1668,10 +1617,10 @@ featureCards: {
     generateScenesLabel: 'Generate scenes',
     sceneDensityLabel: 'Scene density',
     sceneRatioLabel: 'Aspect ratio',
-    visualFrameworkLabel: 'Visual style',
+    visualFrameworkLabel: 'Visual framework',
     imageTextLanguageLabel: 'Text language',
       emotionLabel: 'Emotion',
-      multiSpeakerLabel: 'Multiple Speakers',
+      multiSpeakerLabel: 'Multi-speaker',
       speakerBNameLabel: 'Speaker B name',
       speakerBVoiceLabel: 'Speaker B voice',
       voiceHint: 'Choose a base voice so the studio starts in the right tone.',
@@ -1787,7 +1736,7 @@ featureCards: {
     unavailableText: 'Could not create preview right now. Try again in a moment.',
     confirmReady: 'All set to confirm generation.',
     durationLabel: 'Estimated duration',
-    chunksLabel: 'Parts',
+    chunksLabel: 'Chunks',
     scenesLabel: 'Planned scenes',
     confidenceLabel: 'Confidence',
     confidenceHigh: 'High',
@@ -1805,7 +1754,7 @@ featureCards: {
     summaryAudioOnly: 'Audio ready for confirmation.',
     summaryWithVisual: 'Audio confirmed as the main step, with the visual package estimated for confirmation.',
     stepLabels: {
-      audio: 'Audio generation',
+      audio: 'Audio synthesis',
       chunking: 'Smart script splitting',
       scene_prompts: 'Visual scene script',
       image: 'Scene image generation',
@@ -1817,13 +1766,13 @@ featureCards: {
         voice: 'Main voice: {voice}.',
       },
       chunking: {
-        consistency: 'Pre-processing to keep voice consistency.',
+        consistency: 'Pre-processing to keep TTS consistency.',
         limit: 'Target limit: 500 characters per part.',
         included: 'This step is already included in audio processing at no extra cost.',
       },
       scenePrompts: {
         estimate: 'Visual estimate based on {count} planned scene(s).',
-        framework: 'The configured visual style will be considered in this step.',
+        framework: 'The configured visual framework will be considered in this step.',
       },
       image: {
         count: '{count} image(s) planned.',
@@ -1834,7 +1783,7 @@ featureCards: {
     notes: {
       freePreview: 'This preview is free and does not reserve credits.',
       visualEstimate: 'The visual part uses a conservative estimate to reduce balance surprises, but it still depends on the available balance at each step.',
-      audioOnly: 'No visual production: the final cost should stay very close to this preview.',
+      audioOnly: 'No visual pipeline: the final cost should stay very close to this preview.',
     },
     scriptNamePrefix: 'Script',
     saveCloudSuccess: 'Audio successfully saved to the cloud!',
@@ -1886,7 +1835,6 @@ featureCards: {
       images: 'Images',
       video: 'Video',
       scenes: 'Scenes',
-      pipeline: 'Batch production',
     },
     statusFilter: {
       all: 'All',
@@ -1917,7 +1865,7 @@ featureCards: {
     progress: {
       audio: {
         generating: 'Generating audio...',
-        chunkProgress: 'Generating part {current}/{total}...',
+        chunkProgress: 'Generating chunk {current}/{total}...',
       },
       images: {
         generating: 'Generating images...',
@@ -1945,7 +1893,7 @@ featureCards: {
       imagesCompleted: 'Images generated!',
       videoCompleted: 'Video rendered!',
       scenesCompleted: 'Scenes generated!',
-      pipelineCompleted: 'Production completed!',
+      pipelineCompleted: 'Pipeline completed!',
       failed: 'Error generating {type}: {message}',
       failedGeneric: 'Error processing {type}',
       cancelled: 'Task cancelled',
@@ -1959,7 +1907,7 @@ featureCards: {
       dismiss: 'Continue',
     },
     pipeline: {
-      title: 'Production: {name}',
+      title: 'Pipeline: {name}',
       step: {
         audio: 'Generate audio',
         scenes: 'Generate scenes',
@@ -1969,7 +1917,7 @@ featureCards: {
       },
       cancelAll: 'Cancel all',
       cancelDialog: {
-        title: 'Cancel production?',
+        title: 'Cancel pipeline?',
         description: 'All remaining steps will be cancelled. Completed results will remain available.',
       },
     },

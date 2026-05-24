@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
+import ChecklistRounded from '@mui/icons-material/ChecklistRounded';
+import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
+import MovieOutlined from '@mui/icons-material/MovieOutlined';
+import SubtitlesOutlined from '@mui/icons-material/SubtitlesOutlined';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
+import VideoLibraryOutlined from '@mui/icons-material/VideoLibraryOutlined';
 import { useNavigate } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
 import { glassSurfaceSx } from '../theme/surfaces';
-import { EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_MD, EMPTY_WRAPPER_PADDING_XS, GAP_COMPACT, GAP_MEDIUM, GAP_RELAXED } from '../theme/tokens';
+import { EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_MD, EMPTY_WRAPPER_PADDING_XS, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED } from '../theme/tokens';
 import { useGlobalAudioActions } from '../contexts/AudioContext';
 import { VideoLibrary } from '../components/VideoLibrary';
 import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPreview';
@@ -123,6 +133,7 @@ export function VideoPage({
 
   // Toggle: legenda visível no preview (estado local, não afeta exportação)
   const [captionVisible, setCaptionVisible] = useState(true);
+  const [libraryExpanded, setLibraryExpanded] = useState(false);
 
   // Posição vertical da legenda — persistido no localStorage
   const [subtitlePosition, setSubtitlePosition] = useState<SubtitlePosition>(() => {
@@ -156,7 +167,33 @@ export function VideoPage({
     [durationInFrames, videoFps],
   );
 
+  const hasPreviewContent = Boolean(audioUrl && scenes.length > 0);
   const hasControlPanelContent = Boolean((audioUrl && scenes.length > 0) || captions.length > 0);
+  const libraryStatusLabel = currentProjectId
+    ? t('video.librarySection.currentProjectLoaded')
+    : t('video.librarySection.currentProjectMissing');
+  const statusChips = useMemo(() => {
+    if (!hasPreviewContent) {
+      return [
+        t('video.summary.awaitingPreview'),
+        t('video.summary.awaitingControls'),
+      ];
+    }
+
+    return [
+      t('video.summary.sceneCount', {
+        count: scenes.length,
+        plural: scenes.length === 1 ? '' : 's',
+      }),
+      t('video.summary.duration', {
+        duration: durationInSeconds.toFixed(1),
+      }),
+      captions.length > 0
+        ? t('video.summary.captionsReady', { count: captions.length })
+        : t('video.summary.captionsPending'),
+      sceneRatio,
+    ];
+  }, [captions.length, durationInSeconds, hasPreviewContent, sceneRatio, scenes.length, t]);
 
   // Ref para portal da toolbar de legenda — renderizada fora do preview
   const toolbarPortalRef = useRef<HTMLDivElement>(null);
@@ -192,6 +229,12 @@ export function VideoPage({
   useEffect(() => {
     pauseGlobalAudio();
   }, [pauseGlobalAudio]);
+
+  useEffect(() => {
+    if (!hasPreviewContent) {
+      setLibraryExpanded(true);
+    }
+  }, [hasPreviewContent]);
 
   // --- Handlers ---
 
@@ -274,34 +317,66 @@ export function VideoPage({
         <Typography variant="body1" color="text.secondary">
           {t('video.pageDescription')}
         </Typography>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', mt: 2 }}>
+          {statusChips.map((item) => (
+            <Chip key={item} size="small" variant="outlined" label={item} />
+          ))}
+        </Stack>
       </Box>
 
       {/* Conteúdo principal — 2 colunas no desktop, empilhado no mobile */}
       <Grid container spacing={{ xs: 3, md: 4 }}>
         {/* Coluna esquerda — Player + Toolbar */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Stack spacing={GAP_RELAXED}>
-            <SubtitleInlineEditor
-              hasCaptions={captions.length > 0}
-              subtitleStyle={subtitleStyle}
-              onSubtitleStyleChange={setSubtitleStyle}
-              ratio={sceneRatio}
-              toolbarPortal={toolbarPortalRef}
-              subtitlePosition={subtitlePosition}
-              onSubtitlePositionChange={setSubtitlePosition}
-            >
-              {videoPreviewElement}
-            </SubtitleInlineEditor>
+          <Paper
+            elevation={0}
+            sx={(theme) => ({
+              ...glassSurfaceSx(theme),
+              p: { xs: 2, md: 2.5 },
+              borderRadius: { xs: 3, md: 4 },
+            })}
+          >
+            <Stack spacing={GAP_RELAXED}>
+              <Stack spacing={GAP_COMPACT}>
+                <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 700, letterSpacing: '0.18em' }}>
+                  {hasPreviewContent ? t('video.workspace.eyebrow') : t('video.preview.eyebrow')}
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  {hasPreviewContent ? t('video.workspace.title') : t('video.preview.title')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hasPreviewContent ? t('video.workspace.description') : t('video.preview.description')}
+                </Typography>
+              </Stack>
 
-            {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
-            <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
-          </Stack>
+              <SubtitleInlineEditor
+                hasCaptions={captions.length > 0}
+                subtitleStyle={subtitleStyle}
+                onSubtitleStyleChange={setSubtitleStyle}
+                ratio={sceneRatio}
+                toolbarPortal={toolbarPortalRef}
+                subtitlePosition={subtitlePosition}
+                onSubtitlePositionChange={setSubtitlePosition}
+              >
+                {videoPreviewElement}
+              </SubtitleInlineEditor>
+
+              {/* Portal target para toolbar de legenda — renderizada abaixo do preview */}
+              <Box ref={toolbarPortalRef} sx={{ minHeight: 0 }} />
+            </Stack>
+          </Paper>
         </Grid>
 
         {/* Coluna direita — Controles empilhados */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Stack spacing={GAP_MEDIUM}>
-            {!hasControlPanelContent && (
+          <Box
+            sx={{
+              position: { xs: 'static', md: 'sticky' },
+              top: { md: 96 },
+            }}
+          >
+            <Stack spacing={GAP_MEDIUM}>
+              {!hasControlPanelContent ? (
               <Paper
                 elevation={0}
                 sx={(theme) => ({
@@ -309,104 +384,214 @@ export function VideoPage({
                   p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD },
                   minHeight: { xs: 240, md: 320 },
                   borderRadius: { xs: 3, md: 4 },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                 })}
               >
-                <Stack spacing={GAP_MEDIUM} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH, alignItems: 'center', textAlign: 'center' }}>
-                  <Box
-                    sx={(theme) => ({
-                      width: 56,
-                      height: 56,
-                      borderRadius: '50%',
-                      display: 'grid',
-                      placeItems: 'center',
-                      backgroundColor: alpha(theme.palette.common.white, 0.06),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
-                      boxShadow: `0 12px 32px ${alpha(theme.palette.common.black, 0.18)}`,
-                    })}
-                  >
-                    <TuneOutlined sx={{ fontSize: 26, opacity: 0.6 }} />
-                  </Box>
+                <Stack spacing={GAP_MEDIUM}>
+                  <Stack spacing={GAP_DEFAULT} sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
+                    <Box
+                      sx={(theme) => ({
+                        width: 56,
+                        height: 56,
+                        borderRadius: '50%',
+                        display: 'grid',
+                        placeItems: 'center',
+                        backgroundColor: alpha(theme.palette.common.white, 0.06),
+                        border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+                        boxShadow: `0 12px 32px ${alpha(theme.palette.common.black, 0.18)}`,
+                      })}
+                    >
+                      <TuneOutlined sx={{ fontSize: 26, opacity: 0.6 }} />
+                    </Box>
 
-                  <Stack spacing={GAP_COMPACT}>
-                    <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.14em' }}>
-                      {t('video.controlsEmpty.eyebrow')}
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-                      {t('video.controlsEmpty.title')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('video.controlsEmpty.description')}
-                    </Typography>
+                    <Stack spacing={GAP_COMPACT}>
+                      <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.14em' }}>
+                        {t('video.controlsEmpty.eyebrow')}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                        {t('video.controlsEmpty.title')}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {t('video.controlsEmpty.description')}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+
+                  <Stack spacing={1.25}>
+                    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+                      <AutoAwesomeOutlined sx={{ fontSize: 18, mt: 0.25, color: 'primary.light' }} />
+                      <Stack spacing={0.25}>
+                        <Typography variant="subtitle2">{t('video.controlsEmpty.steps.0.title')}</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('video.controlsEmpty.steps.0.description')}</Typography>
+                      </Stack>
+                    </Stack>
+                    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+                      <SubtitlesOutlined sx={{ fontSize: 18, mt: 0.25, color: 'primary.light' }} />
+                      <Stack spacing={0.25}>
+                        <Typography variant="subtitle2">{t('video.controlsEmpty.steps.1.title')}</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('video.controlsEmpty.steps.1.description')}</Typography>
+                      </Stack>
+                    </Stack>
+                    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+                      <MovieOutlined sx={{ fontSize: 18, mt: 0.25, color: 'primary.light' }} />
+                      <Stack spacing={0.25}>
+                        <Typography variant="subtitle2">{t('video.controlsEmpty.steps.2.title')}</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('video.controlsEmpty.steps.2.description')}</Typography>
+                      </Stack>
+                    </Stack>
                   </Stack>
 
                   <Button
                     variant="outlined"
                     size="small"
                     onClick={() => navigate('/app/estudio')}
-                    sx={{ mt: 0.5 }}
+                    sx={{ mt: 0.5, alignSelf: 'flex-start' }}
                   >
                     {t('video.preview.goToStudio')}
                   </Button>
                 </Stack>
               </Paper>
-            )}
+              ) : (
+                <>
+                  <Paper
+                    elevation={0}
+                    sx={(theme) => ({
+                      ...glassSurfaceSx(theme),
+                      p: 2,
+                      borderRadius: { xs: 3, md: 4 },
+                    })}
+                  >
+                    <Stack spacing={1.25}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <ChecklistRounded sx={{ fontSize: 18, color: 'primary.light' }} />
+                        <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 700, letterSpacing: '0.18em' }}>
+                          {t('video.summaryPanel.eyebrow')}
+                        </Typography>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {t('video.summaryPanel.description')}
+                      </Typography>
+                      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                        <Chip size="small" variant="outlined" label={t('video.summaryPanel.projectLoaded')} />
+                        <Chip size="small" variant="outlined" label={t('video.summaryPanel.exportReady')} />
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          label={captions.length > 0 ? t('video.summaryPanel.captionsReady') : t('video.summaryPanel.captionsPending')}
+                        />
+                      </Stack>
+                    </Stack>
+                  </Paper>
 
-            {/* Painel de transcrição/legendas */}
-            <TranscriptionPanel
-              audioUrl={audioUrl}
-              script={script}
-              scenes={scenesForTranscription}
-              durationInFrames={durationInFrames}
-              fps={videoFps}
-              transcriptionSource={transcriptionSource}
-              isTranscribing={isTranscribing}
-              transcriptionProgress={transcriptionProgress}
-              transcriptionStatusText={transcriptionStatusText}
-              transcriptionError={transcriptionError}
-              whisperSupported={whisperSupported}
-              captionCount={captions.length}
-              isStale={isStale}
-              onTranscribe={handleTranscribe}
-              onCancel={cancelTranscription}
-              onClear={clearTranscription}
-            />
+                  <TranscriptionPanel
+                    audioUrl={audioUrl}
+                    script={script}
+                    scenes={scenesForTranscription}
+                    durationInFrames={durationInFrames}
+                    fps={videoFps}
+                    transcriptionSource={transcriptionSource}
+                    isTranscribing={isTranscribing}
+                    transcriptionProgress={transcriptionProgress}
+                    transcriptionStatusText={transcriptionStatusText}
+                    transcriptionError={transcriptionError}
+                    whisperSupported={whisperSupported}
+                    captionCount={captions.length}
+                    isStale={isStale}
+                    onTranscribe={handleTranscribe}
+                    onCancel={cancelTranscription}
+                    onClear={clearTranscription}
+                  />
 
-            {/* Editor de legendas — visível quando há captions */}
-            <CaptionEditorPanel
-              captions={captions}
-              onUpdateCaptions={updateCaptions}
-              fps={videoFps}
-              onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
-            />
+                  <CaptionEditorPanel
+                    captions={captions}
+                    onUpdateCaptions={updateCaptions}
+                    fps={videoFps}
+                    onSeekToFrame={(frame) => videoPlayerRef.current?.seekTo(frame)}
+                  />
 
-            {/* Painel de exportação MP4 */}
-            <VideoExportPanel
-              scenes={scenes}
-              audioUrl={audioUrl}
-              fps={videoFps}
-              durationInFrames={durationInFrames}
-              ratio={sceneRatio}
-              projectId={currentProjectId ?? undefined}
-              userId={userId}
-              exporter={videoExporter}
-              captions={captions.length > 0 ? captions : undefined}
-              subtitleStyle={mergedSubtitleStyle}
-              includeSubtitles={includeSubtitles}
-              onIncludeSubtitlesChange={setIncludeSubtitles}
-              durationInSeconds={durationInSeconds}
-            />
-          </Stack>
+                  <VideoExportPanel
+                    scenes={scenes}
+                    audioUrl={audioUrl}
+                    fps={videoFps}
+                    durationInFrames={durationInFrames}
+                    ratio={sceneRatio}
+                    projectId={currentProjectId ?? undefined}
+                    userId={userId}
+                    exporter={videoExporter}
+                    captions={captions.length > 0 ? captions : undefined}
+                    subtitleStyle={mergedSubtitleStyle}
+                    includeSubtitles={includeSubtitles}
+                    onIncludeSubtitlesChange={setIncludeSubtitles}
+                    durationInSeconds={durationInSeconds}
+                  />
+                </>
+              )}
+            </Stack>
+          </Box>
         </Grid>
       </Grid>
 
-      {/* Biblioteca — largura total */}
-      <VideoLibrary
-        activeProjectId={currentProjectId}
-        onSelect={handleLibrarySelect}
-      />
+      <Accordion
+        expanded={libraryExpanded}
+        onChange={(_, expanded) => setLibraryExpanded(expanded)}
+        disableGutters
+        elevation={0}
+        sx={(theme) => ({
+          ...glassSurfaceSx(theme),
+          borderRadius: { xs: 3, md: 4 },
+          overflow: 'hidden',
+          '&::before': { display: 'none' },
+        })}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreRounded />}
+          aria-controls="video-library-content"
+          id="video-library-header"
+          sx={{
+            px: { xs: 2, md: 2.5 },
+            py: 0.5,
+            '& .MuiAccordionSummary-content': {
+              my: 1.5,
+            },
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            sx={{ width: '100%', alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
+          >
+            <Stack spacing={GAP_COMPACT} sx={{ minWidth: 0 }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <VideoLibraryOutlined sx={{ fontSize: 18, color: 'primary.light' }} />
+                <Typography variant="overline" sx={{ color: 'primary.light', fontWeight: 700, letterSpacing: '0.18em' }}>
+                  {t('video.librarySection.eyebrow')}
+                </Typography>
+              </Stack>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {t('video.librarySection.title')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('video.librarySection.description')}
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+              <Chip size="small" variant="outlined" label={libraryStatusLabel} />
+              <Chip
+                size="small"
+                variant="outlined"
+                label={libraryExpanded ? t('video.librarySection.collapseHint') : t('video.librarySection.expandHint')}
+              />
+            </Stack>
+          </Stack>
+        </AccordionSummary>
+
+        <AccordionDetails sx={{ px: { xs: 2, md: 2.5 }, pb: { xs: 2, md: 2.5 }, pt: 0 }}>
+          <VideoLibrary
+            activeProjectId={currentProjectId}
+            onSelect={handleLibrarySelect}
+          />
+        </AccordionDetails>
+      </Accordion>
     </Stack>
   );
 }

@@ -119,7 +119,7 @@ describe('Header', () => {
     // O avatar usa alt={user.displayName} — pode não estar acessível como img
     // se photoURL é null (renderiza ícone Person ao invés)
     // Verificamos pela presença do primeiro nome
-    expect(screen.getByText('João')).toBeDefined();
+    expect(screen.getAllByText('João').length).toBeGreaterThanOrEqual(1);
   });
 
   it('mostra o botão de logout quando logado', () => {

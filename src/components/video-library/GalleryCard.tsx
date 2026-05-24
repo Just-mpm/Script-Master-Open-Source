@@ -46,8 +46,9 @@ export const GalleryCard = memo(function GalleryCard({
   const isDownloading = downloadingId === project.id;
 
   return (
-    <m.div key={project.id} whileHover={{ y: -4 }} style={{ minWidth: 260, maxWidth: 260 }}>
+    <m.div key={project.id} whileHover={{ y: -4 }} style={{ minWidth: 260, maxWidth: 260, scrollSnapAlign: 'start' }}>
       <Card
+        variant="outlined"
         sx={(theme): SystemStyleObject<Theme> => ({
           position: 'relative',
           height: '100%',
@@ -57,15 +58,15 @@ export const GalleryCard = memo(function GalleryCard({
           backgroundColor: alpha(theme.palette.background.paper, 0.82),
           backgroundImage: 'none',
           boxShadow: isActive
-            ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.32)}, 0 24px 60px ${alpha(theme.palette.primary.main, 0.18)}`
-            : `0 20px 48px ${alpha(theme.palette.common.black, 0.22)}`,
+            ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.32)}, 0 16px 36px ${alpha(theme.palette.primary.main, 0.16)}`
+            : `0 12px 28px ${alpha(theme.palette.common.black, 0.18)}`,
           backdropFilter: 'blur(18px)',
           transition: theme.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
           '&:hover': {
             borderColor: isActive ? alpha(theme.palette.primary.main, 0.7) : alpha(theme.palette.common.white, 0.14),
             boxShadow: isActive
-              ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.38)}, 0 28px 64px ${alpha(theme.palette.primary.main, 0.22)}`
-              : `0 24px 56px ${alpha(theme.palette.common.black, 0.3)}`,
+              ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.38)}, 0 18px 40px ${alpha(theme.palette.primary.main, 0.2)}`
+              : `0 16px 34px ${alpha(theme.palette.common.black, 0.24)}`,
             '& .gallery-thumb-gradient': {
               background: 'linear-gradient(180deg, transparent 10%, rgba(0, 0, 0, 0.78) 100%)',
             },

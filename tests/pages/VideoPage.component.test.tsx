@@ -8,6 +8,20 @@ import { VideoPage } from '../../src/pages/VideoPage';
 import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
+const mockStudioState = {
+  script: '',
+  setScript: vi.fn(),
+  sceneRatio: '16:9',
+};
+const mockAudioGenState = {
+  audioUrl: null as string | null,
+  audioBlob: null as Blob | null,
+  scenes: [] as { imageUrl: string; timestamp: number }[],
+  audioSegments: [] as unknown[],
+  projectId: null as string | null,
+  audioDuration: 0,
+  loadProjectData: vi.fn(),
+};
 
 function Wrapper({ children }: { children: ReactNode }) {
   return (
@@ -51,16 +65,6 @@ vi.mock('../../src/hooks/useAudioGenerator', () => ({
     durationInSeconds: 0,
   }),
 }));
-
-const audioGenStoreState = {
-  audioUrl: null as string | null,
-  audioBlob: null as Blob | null,
-  scenes: [] as { imageUrl: string; timestamp: number }[],
-  audioSegments: [] as unknown[],
-  projectId: null as string | null,
-  audioDuration: 0,
-  loadProjectData: vi.fn(),
-};
 
 vi.mock('../../src/features/video-render/hooks/useVideoExporter', () => ({
   useVideoExporter: () => ({
@@ -137,26 +141,12 @@ vi.mock('../../src/features/video-render/components/SubtitleInlineEditor', () =>
 }));
 
 vi.mock('../../src/features/studio/store', () => {
-  const studioState = {
-    script: '',
-    setScript: vi.fn(),
-    sceneRatio: '16:9',
-  };
-  const audioGenState = {
-    audioUrl: null as string | null,
-    audioBlob: null as Blob | null,
-    scenes: [] as { imageUrl: string; timestamp: number }[],
-    audioSegments: [] as unknown[],
-    projectId: null as string | null,
-    audioDuration: 0,
-    loadProjectData: vi.fn(),
-  };
   return {
-    useStudioStore: (selector?: (s: typeof studioState) => unknown) =>
-      selector ? selector(studioState) : studioState,
+    useStudioStore: (selector?: (s: typeof mockStudioState) => unknown) =>
+      selector ? selector(mockStudioState) : mockStudioState,
     VIDEO_FPS: 30,
-    useAudioGeneratorStore: (selector?: (s: typeof audioGenState) => unknown) =>
-      selector ? selector(audioGenState) : audioGenState,
+    useAudioGeneratorStore: (selector?: (s: typeof mockAudioGenState) => unknown) =>
+      selector ? selector(mockAudioGenState) : mockAudioGenState,
     getAudioDurationSeconds: () => 0,
   };
 });
@@ -167,6 +157,14 @@ describe('VideoPage', () => {
   beforeEach(() => {
     localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
+    mockStudioState.script = '';
+    mockStudioState.sceneRatio = '16:9';
+    mockAudioGenState.audioUrl = null;
+    mockAudioGenState.audioBlob = null;
+    mockAudioGenState.scenes = [];
+    mockAudioGenState.audioSegments = [];
+    mockAudioGenState.projectId = null;
+    mockAudioGenState.audioDuration = 0;
   });
 
   it('renderiza o título da página', () => {
@@ -186,11 +184,15 @@ describe('VideoPage', () => {
   });
 
   it('renderiza o TranscriptionPanel', () => {
+    mockAudioGenState.audioUrl = 'https://example.com/audio.wav';
+    mockAudioGenState.scenes = [{ imageUrl: 'https://example.com/1.png', timestamp: 0 }];
     render(<VideoPage videoPlayerRef={videoPlayerRef} />, { wrapper: Wrapper });
     expect(screen.getByTestId('transcription-panel')).toBeDefined();
   });
 
   it('renderiza o VideoExportPanel', () => {
+    mockAudioGenState.audioUrl = 'https://example.com/audio.wav';
+    mockAudioGenState.scenes = [{ imageUrl: 'https://example.com/1.png', timestamp: 0 }];
     render(<VideoPage videoPlayerRef={videoPlayerRef} />, { wrapper: Wrapper });
     expect(screen.getByTestId('video-export-panel')).toBeDefined();
   });

@@ -26,6 +26,7 @@ import Folder from '@mui/icons-material/Folder';
 import GraphicEq from '@mui/icons-material/GraphicEq';
 import Close from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
+import Movie from '@mui/icons-material/Movie';
 import Pause from '@mui/icons-material/Pause';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Search from '@mui/icons-material/Search';
@@ -40,6 +41,7 @@ import {
   type Project,
   type AudioSource,
   type ProjectImage,
+  type ProjectVideo,
 } from '../lib/db';
 import { useAudioIsPlaying, useAudioActiveId, useGlobalAudioActions } from '../contexts/AudioContext';
 import { useLocale } from '../features/i18n';
@@ -55,11 +57,26 @@ import { useAnimationStore } from '../features/speed-paint/store/animationStore'
 interface ProjectDataState {
   audios: AudioSource[];
   images: ProjectImage[];
+  videos: ProjectVideo[];
 }
 
-const EMPTY_PROJECT_DATA: ProjectDataState = { audios: [], images: [] };
+const EMPTY_PROJECT_DATA: ProjectDataState = { audios: [], images: [], videos: [] };
 
 const log = createLogger('Library');
+
+function buildScriptPreview(script: string, maxLength = 180): string {
+  const normalized = script
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
 
 export function Library() {
   const { t } = useLocale();
@@ -95,12 +112,18 @@ export function Library() {
 
   // Rastreia blob URLs criados para limpeza ao desmontar/trocar projeto
   const blobUrlsRef = useRef<Set<string>>(new Set());
+  const mediaBlobUrlsRef = useRef<Set<string>>(new Set());
 
   const cleanupBlobUrls = () => {
     for (const url of blobUrlsRef.current) {
       URL.revokeObjectURL(url);
     }
     blobUrlsRef.current = new Set();
+
+    for (const url of mediaBlobUrlsRef.current) {
+      URL.revokeObjectURL(url);
+    }
+    mediaBlobUrlsRef.current = new Set();
   };
 
   // Cleanup ao desmontar
@@ -149,8 +172,8 @@ export function Library() {
     setDetailError(null);
     setProjectData(EMPTY_PROJECT_DATA);
     try {
-      const { audios, images } = await getProjectDetails(projectId, user?.uid);
-      setProjectData({ audios, images });
+      const { audios, images, videos } = await getProjectDetails(projectId, user?.uid);
+      setProjectData({ audios, images, videos });
     } catch (err) {
       log.error('Falha ao carregar detalhes do projeto', { error: err });
       setDetailError(t('library.detailError'));
@@ -185,25 +208,41 @@ export function Library() {
     }));
   }, [projectData.images]);
 
-  // Registra blob URLs criados pelo useMemo para cleanup, revogando URLs anteriores
+  const resolvedVideos = useMemo(() => {
+    return projectData.videos.map((video) => ({
+      ...video,
+      resolvedUrl: video.videoUrl || (video.videoBlob ? URL.createObjectURL(video.videoBlob) : ''),
+    }));
+  }, [projectData.videos]);
+
+  // Registra blob URLs derivados do projeto atual e revoga apenas mídias substituídas.
   useEffect(() => {
-    const blobUrls = resolvedImageUrls
-      .map((img) => img.resolvedUrl)
+    const currentMediaBlobUrls = [
+      ...resolvedImageUrls.map((img) => img.resolvedUrl),
+      ...resolvedVideos.map((video) => video.resolvedUrl),
+    ]
       .filter((url) => url.startsWith('blob:'));
-    // Revoga URLs anteriores que não estão mais no set atual
-    const previousUrls = new Set(blobUrlsRef.current);
-    for (const url of blobUrls) {
+
+    const previousUrls = new Set(mediaBlobUrlsRef.current);
+    for (const url of currentMediaBlobUrls) {
       previousUrls.delete(url);
     }
     for (const url of previousUrls) {
       URL.revokeObjectURL(url);
-      blobUrlsRef.current.delete(url);
+      mediaBlobUrlsRef.current.delete(url);
     }
-    // Acumula apenas as novas
-    for (const url of blobUrls) {
-      blobUrlsRef.current.add(url);
+
+    for (const url of currentMediaBlobUrls) {
+      mediaBlobUrlsRef.current.add(url);
     }
-  }, [resolvedImageUrls]);
+  }, [resolvedImageUrls, resolvedVideos]);
+
+  const formatVideoDuration = useCallback((durationInSeconds: number): string => {
+    const totalSeconds = Math.max(0, Math.round(durationInSeconds));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }, []);
 
   // Filtra projetos por nome com base na busca
   const filteredProjects = useMemo(() => {
@@ -497,14 +536,17 @@ export function Library() {
           {filteredProjects.map((project: Project) => {
             const isExpanded = expandedProjectId === project.id;
             const isPreparingSpeedPaint = preparingSpeedPaintProjectId === project.id;
+            const projectPreview = buildScriptPreview(project.script);
 
             return (
-              <Card key={project.id} elevation={0} sx={(theme): SystemStyleObject<Theme> => ({
+              <Card key={project.id} elevation={0} variant="outlined" sx={(theme): SystemStyleObject<Theme> => ({
                 ...glassPanelSx(theme),
                 overflow: 'hidden',
-                transition: theme.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
+                borderColor: alpha(theme.palette.common.white, 0.08),
+                transition: theme.transitions.create(['border-color', 'box-shadow', 'transform'], { duration: 200 }),
                 '&:hover': {
                   borderColor: alpha(theme.palette.primary.main, 0.2),
+                  transform: 'translateY(-2px)',
                   boxShadow: `0 24px 80px ${alpha(theme.palette.common.black, 0.55)}, 0 0 0 1px ${alpha(theme.palette.primary.main, 0.06)}`,
                 },
               })}>
@@ -547,7 +589,7 @@ export function Library() {
                             }}
                           />
                         ) : (
-                            <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                          <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
                             <Typography variant="h5" sx={{ minWidth: 0 }} noWrap>
                               {project.name}
                             </Typography>
@@ -565,14 +607,39 @@ export function Library() {
                           </Stack>
                         )}
 
+                        {editingId !== project.id ? (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              maxWidth: 760,
+                              display: '-webkit-box',
+                              WebkitBoxOrient: 'vertical',
+                              WebkitLineClamp: isExpanded ? 3 : 2,
+                              overflow: 'hidden',
+                              lineHeight: 1.65,
+                            }}
+                          >
+                            {projectPreview || t('library.scriptPreviewFallback')}
+                          </Typography>
+                        ) : null}
+
                         <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
                           <Chip icon={<GraphicEq sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.audio')} size="small" variant="outlined" />
                           <Chip icon={<ImageIcon sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.scenes')} size="small" variant="outlined" />
-                          <Chip label={new Date(project.createdAt).toLocaleString()} size="small" />
+                          <Chip icon={<Movie sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.video')} size="small" variant="outlined" />
+                          <Chip label={new Date(project.createdAt).toLocaleString()} size="small" variant="outlined" />
                         </Stack>
                       </Stack>
 
-                      <Stack spacing={0.75} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: { xs: 'stretch', md: 'flex-end' } }}>
+                      <Stack
+                        spacing={1}
+                        sx={{
+                          width: { xs: '100%', md: 'auto' },
+                          alignItems: { xs: 'stretch', md: 'flex-end' },
+                          maxWidth: { md: 440 },
+                        }}
+                      >
                         <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { md: 'flex-end' } }}>
                           <Button
                             onClick={() => void handleExpandProject(project.id)}
@@ -582,19 +649,23 @@ export function Library() {
                             {isExpanded ? t('library.hideDetails') : t('library.showDetails')}
                           </Button>
 
-                          <Button
-                            onClick={() => void handleOpenInSpeedPaint(project)}
-                            variant="contained"
-                            color="secondary"
-                            disabled={isPreparingAnySpeedPaint || detailLoading}
-                            loading={isPreparingSpeedPaint}
-                            loadingPosition="start"
-                            startIcon={!isPreparingSpeedPaint ? <Brush sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
-                          >
-                            {isPreparingSpeedPaint
-                              ? t('library.speedPaintPreparing')
-                              : t('library.openInSpeedPaint')}
-                          </Button>
+                          <Tooltip title={t('library.speedPaintHint')}>
+                            <span>
+                              <Button
+                                onClick={() => void handleOpenInSpeedPaint(project)}
+                                variant="contained"
+                                color="secondary"
+                                disabled={isPreparingAnySpeedPaint || detailLoading}
+                                loading={isPreparingSpeedPaint}
+                                loadingPosition="start"
+                                startIcon={!isPreparingSpeedPaint ? <Brush sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                              >
+                                {isPreparingSpeedPaint
+                                  ? t('library.speedPaintPreparing')
+                                  : t('library.openInSpeedPaint')}
+                              </Button>
+                            </span>
+                          </Tooltip>
 
                           <Button
                             onClick={() => { setItemToDelete(project.id); setProjectNameToDelete(project.name); }}
@@ -606,13 +677,39 @@ export function Library() {
                           </Button>
                         </Stack>
 
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ maxWidth: 320, textAlign: { xs: 'left', md: 'right' }, lineHeight: 1.5 }}
-                        >
-                          {t('library.speedPaintHint')}
-                        </Typography>
+                        <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: { md: 'flex-end' } }}>
+                          <Chip size="small" variant="outlined" color="secondary" label={t('library.speedPaintQueueChip')} />
+                          {isExpanded ? (
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={t('library.audioCount', {
+                                count: projectData.audios.length,
+                                plural: projectData.audios.length === 1 ? '' : 's',
+                              })}
+                            />
+                          ) : null}
+                          {isExpanded ? (
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={t('library.sceneCount', {
+                                count: projectData.images.length,
+                                plural: projectData.images.length === 1 ? '' : 's',
+                              })}
+                            />
+                          ) : null}
+                          {isExpanded ? (
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={t('library.videoCount', {
+                                count: projectData.videos.length,
+                                plural: projectData.videos.length === 1 ? '' : 's',
+                              })}
+                            />
+                          ) : null}
+                        </Stack>
                       </Stack>
                     </Stack>
 
@@ -827,14 +924,136 @@ export function Library() {
                         </Grid>
 
                         <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2 })}>
+                          <Stack spacing={1.5}>
+                            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.18em' }}>
+                              {t('library.savedVideos')}
+                            </Typography>
+
+                            {detailError ? (
+                              <Alert
+                                variant="outlined"
+                                severity="error"
+                                action={(
+                                  <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
+                                    {t('common.tryAgain')}
+                                  </Button>
+                                )}
+                              >
+                                {detailError}
+                              </Alert>
+                            ) : resolvedVideos.length === 0 ? (
+                              <Typography variant="body2" color="text.secondary">
+                                {t('library.noVideos')}
+                              </Typography>
+                            ) : (
+                              <Grid container spacing={1.5}>
+                                {resolvedVideos.map((video, index) => (
+                                  <Grid key={video.id} size={{ xs: 12, md: 6, xl: 4 }}>
+                                    <Card
+                                      elevation={0}
+                                      sx={(theme): SystemStyleObject<Theme> => ({
+                                        borderRadius: RADIUS_SM,
+                                        overflow: 'hidden',
+                                        bgcolor: alpha(theme.palette.common.white, 0.03),
+                                        transition: theme.transitions.create(['box-shadow', 'transform'], { duration: 200 }),
+                                        '&:hover': {
+                                          boxShadow: `0 12px 36px ${alpha(theme.palette.common.black, 0.36)}`,
+                                          transform: 'translateY(-2px)',
+                                        },
+                                      })}
+                                    >
+                                      {video.resolvedUrl ? (
+                                        <Box
+                                          component="video"
+                                          src={video.resolvedUrl}
+                                          controls
+                                          preload="metadata"
+                                          sx={{ width: '100%', aspectRatio: '16 / 9', bgcolor: 'common.black' }}
+                                        />
+                                      ) : (
+                                        <Stack
+                                          spacing={1}
+                                          sx={{
+                                            width: '100%',
+                                            aspectRatio: '16 / 9',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: alpha('#000', 0.22),
+                                          }}
+                                        >
+                                          <Movie sx={{ fontSize: 32, color: 'text.secondary' }} />
+                                          <Typography variant="caption" color="text.secondary">
+                                            {t('library.video')}
+                                          </Typography>
+                                        </Stack>
+                                      )}
+
+                                      <Stack spacing={1.25} sx={{ p: 1.5 }}>
+                                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                                          <Typography variant="subtitle2">
+                                            {t('library.version', { time: new Date(video.createdAt).toLocaleTimeString() })}
+                                          </Typography>
+                                          <Chip
+                                            size="small"
+                                            variant="outlined"
+                                            label={t('library.videoItem', { number: index + 1 })}
+                                          />
+                                        </Stack>
+
+                                        <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                                          <Chip size="small" variant="outlined" label={video.format.toUpperCase()} />
+                                          <Chip size="small" variant="outlined" label={`${video.width}x${video.height}`} />
+                                          <Chip size="small" variant="outlined" label={formatVideoDuration(video.durationInSeconds)} />
+                                        </Stack>
+
+                                        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                                          <Typography variant="caption" color="text.secondary">
+                                            {new Date(video.createdAt).toLocaleDateString()}
+                                          </Typography>
+                                          <Tooltip title={t('library.downloadVideo')}>
+                                            <span>
+                                              <IconButton
+                                                onClick={() => {
+                                                  if (video.resolvedUrl) {
+                                                    void downloadFile(
+                                                      video.resolvedUrl,
+                                                      `${project.name}-video-${index + 1}.${video.format}`,
+                                                    );
+                                                  }
+                                                }}
+                                                aria-label={t('library.downloadVideoAria')}
+                                              >
+                                                <Download sx={{ fontSize: ICON_SIZE_MD }} />
+                                              </IconButton>
+                                            </span>
+                                          </Tooltip>
+                                        </Stack>
+                                      </Stack>
+                                    </Card>
+                                  </Grid>
+                                ))}
+                              </Grid>
+                            )}
+                          </Stack>
+                        </Box>
+
+                        <Box sx={(theme): SystemStyleObject<Theme> => ({ ...insetPanelSx(theme), p: 2 })}>
                           <Stack spacing={1}>
                             <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.16em' }}>
                               {t('library.originalScript')}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
-                              {project.script}
-                            </Typography>
-                          </Stack>
+                            <Box
+                              sx={{
+                                maxHeight: 320,
+                                overflowY: 'auto',
+                                pr: 1,
+                              }}
+                            >
+                              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>
+                                {project.script}
+                              </Typography>
+                            </Box>
+                         </Stack>
                          </Box>
                          </>
                          )}

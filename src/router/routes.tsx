@@ -1,10 +1,17 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useMemo, type ReactNode } from 'react';
+import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
 import type { RefObject } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { VideoPreviewHandle } from '../components/VideoPreview';
+
 import { GuestRoute } from '../components/GuestRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { publicCompatRedirects, appCompatRedirects } from './Redirects';
@@ -123,15 +130,78 @@ const NotFoundPage = lazy(async () => {
 // ─── Fallback de carregamento ──────────────────────────────
 
 function RouteFallback() {
+  const location = useLocation();
+  const { t } = useLocale();
+
+  const pageLabel = useMemo(() => {
+    const path = location.pathname;
+
+    if (path.startsWith('/app/estudio')) return t('studio.header.nav.studio');
+    if (path.startsWith('/app/imagens')) return t('studio.header.nav.image');
+    if (path.startsWith('/app/video')) return t('studio.header.nav.video');
+    if (path.startsWith('/app/pintura-rapida')) return t('studio.header.nav.speedPaint');
+    if (path.startsWith('/app/assistente')) return t('studio.header.nav.ai');
+    if (path.startsWith('/app/biblioteca')) return t('studio.header.nav.library');
+    if (path.startsWith('/app/configuracoes')) return t('studio.header.nav.settings');
+    if (path.startsWith('/app/jobs')) return t('jobs.title');
+
+    return null;
+  }, [location.pathname, t]);
+
   return (
-    <Stack
-      spacing={2}
-      sx={{ minHeight: '55vh', textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <CircularProgress size={28} />
-      <Typography variant="body2" color="text.secondary">
-        Carregando página...
-      </Typography>
+    <Stack sx={{ minHeight: '55vh', justifyContent: 'center' }}>
+      <Paper
+        elevation={0}
+        sx={(theme) => ({
+          mx: 'auto',
+          width: '100%',
+          maxWidth: 760,
+          overflow: 'hidden',
+          borderRadius: { xs: 4, md: 5 },
+          border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+          background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.96)} 0%, ${alpha(theme.palette.background.paper, 0.84)} 100%)`,
+          boxShadow: `0 24px 64px ${alpha(theme.palette.common.black, 0.22)}`,
+        })}
+      >
+        <Stack spacing={3} sx={{ p: { xs: 3, md: 4 } }}>
+          <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Box
+                sx={(theme) => ({
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  display: 'grid',
+                  placeItems: 'center',
+                  bgcolor: alpha(theme.palette.primary.main, 0.14),
+                  color: 'primary.main',
+                })}
+              >
+                <CircularProgress size={20} thickness={5} color="inherit" />
+              </Box>
+              <Stack spacing={0.35}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  {t('common.loading')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('common.loadingPageSubtitle')}
+                </Typography>
+              </Stack>
+            </Stack>
+
+            {pageLabel ? <Chip label={pageLabel} size="small" variant="outlined" /> : null}
+          </Stack>
+
+          <Stack spacing={1.2}>
+            <Skeleton variant="text" animation="wave" width="36%" height={18} />
+            <Skeleton variant="rounded" animation="wave" height={88} sx={{ borderRadius: 3 }} />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
+              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: 3 }} />
+              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: 3 }} />
+            </Stack>
+          </Stack>
+        </Stack>
+      </Paper>
     </Stack>
   );
 }

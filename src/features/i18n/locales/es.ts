@@ -23,10 +23,6 @@ export const es: TranslationDictionary = {
     next: 'Siguiente',
     skip: 'Omitir',
     tryAgain: 'Intentar de nuevo',
-    clear: 'Limpiar',
-    offline: 'Sin conexión',
-    offlineTooltip: 'Estás sin conexión. Algunas funciones pueden no estar disponibles.',
-    continue: 'Continuar',
     learnMore: 'Más información',
     getStarted: 'Comenzar ahora',
     seeAll: 'Ver todo',
@@ -73,13 +69,12 @@ export const es: TranslationDictionary = {
     logoAlt: 'Script Master — Ir a la página de inicio',
   },  footer: {
     description:
-      'Convierte guiones en arte con IA. Audio, video e imágenes profesionales generados por inteligencia artificial.',
+      'Convierte guiones en arte con IA. Audio, video e imágenes profesionales generados por Gemini.',
     copyright: 'Script Master. Todos los derechos reservados.',
-    madeWith: 'Hecho con IA',
+    madeWith: 'Hecho con IA y Gemini',
     productGroup: 'Producto',
     companyGroup: 'Empresa',
     legalGroup: 'Legal',
-    resourcesGroup: 'Recursos',
     links: {
       features: 'Funcionalidades',
       pricing: 'Beta',
@@ -91,45 +86,42 @@ export const es: TranslationDictionary = {
       terms: 'Términos de Uso',
       privacy: 'Privacidad',
       cookies: 'Cookies',
-      roadmap: 'Roadmap',
-      changelog: 'Changelog',
-      community: 'Comunidad',
     },
   },
 
   landing: {
     hero: {
-      title: 'Deja de editar por horas. Tu narración lista en minutos.',
+      title: 'Convierte guiones en arte con IA',
       subtitle:
-        'Transforma guiones en audio profesional, videos e imágenes con IA. Todo en tu navegador — sin servidor, sin complicaciones.',
+        'Plataforma completa para crear audio, video e imágenes profesionales a partir de guiones. Todo del lado del cliente con Gemini AI.',
       cta: 'Crear cuenta gratuita',
-      ctaSecondary: 'Ver funcionalidades',
-      alt: 'Script Master — transforma guiones en contenido profesional con IA',
+      ctaSecondary: 'Ver Funcionalidades',
+      alt: 'Ilustración de Script Master — convirtiendo guiones en arte con IA',
     },
     socialProof: {
-      label: 'Miles de creadores ya crean con IA',
-      sublabel: 'Audio profesional, imágenes y asistente integrado — todo en minutos',
+      label: 'Powered by Gemini AI',
+      sublabel: 'TTS, generación de imágenes y asistente conversacional',
     },
     features: {
-      title: 'Crea todo en una única plataforma',
+      title: 'Todo lo que necesitas para crear',
       subtitle:
-        'Estudio de audio, video, imágenes y asistente IA. Sin cambiar de herramienta, sin perder el flujo.',
+        'Seis herramientas integradas en una sola plataforma para transformar tus ideas en contenido profesional.',
     },
     featureCards: {
       voice: {
-        title: 'Narración con IA',
+        title: 'Voz con IA',
         description:
-          'Guión listo se convierte en audio profesional. Elige la voz, controla el ritmo, publica en minutos.',
+          'Transforma guiones en audio profesional con Gemini TTS. Control de voz, ritmo y multi-locutor.',
       },
       video: {
-        title: 'Video automático',
+        title: 'Video Automático',
         description:
-          'Subtítulos, transiciones y formato optimizado. Tu video listo para publicar sin software.',
+          'Crea videos del lado del cliente con subtítulos, transiciones y waveform. Sin backend.',
       },
       images: {
-        title: 'Imágenes con IA',
+        title: 'Generación de Imágenes',
         description:
-          'Describe la escena, recibe la imagen. 8 formatos, referencia visual y galería en la nube.',
+          '8 aspect ratios, referencia visual y galería completa con persistencia en la nube.',
       },
       speedPaint: {
     durationLabel: 'Duración del speed paint',
@@ -139,13 +131,13 @@ export const es: TranslationDictionary = {
     chooseFiles: 'Elegir archivos',
         title: 'Speed Paint',
         description:
-          'Transforma cualquier imagen en animación de pintura. Efecto único que captura la atención.',
+          'Animación de pintura progresiva con detección de bordes, procesamiento por lotes y exportación.',
       },
       assistant: {
     deleteMemoryConfirm: '¿Eliminar memoria?',
-        title: 'Asistente creativo',
+        title: 'Asistente IA',
         description:
-          'Chat en tiempo real que ayuda a mejorar guiones, ajustar tono y sugerir escenas.',
+          'Chat con streaming, memorias, archivos adjuntos e integración directa con el estudio de producción.',
       },
       library: {
     emptyGallery: 'Tu galería está vacía',
@@ -153,51 +145,51 @@ export const es: TranslationDictionary = {
     sortNewestFirst: 'Más recientes primero',
     generation: 'Generación',
     project: 'Proyecto',
-        title: 'Biblioteca completa',
+        title: 'Biblioteca',
         description:
-          'Proyectos, audios, escenas y videos — guardados en la nube y accesibles desde cualquier lugar.',
+          'Gestión completa de proyectos con audios, escenas, videos y persistencia dual.',
       },
     },
     ttsShowcase: {
-      title: 'Narración que suena natural',
+      title: 'Voz Profesional con Gemini TTS',
       description:
-        'Voz con IA que entiende contexto, detecta escenas y mantiene el ritmo. Sin robotismo.',
+        'Transforma cualquier guion en narración profesional con voces naturales y control total sobre ritmo, tono y perfil de audio.',
       benefits: {
-        0: 'Hasta 2 locutores por guión',
-        1: 'Detección automática de pausas y escenas',
-        2: 'Control total de ritmo y tono',
-        3: '15 voces para escuchar antes de elegir',
-        4: 'Audio en calidad profesional',
+        0: 'Multi-locutor con 2 narradores independientes',
+        1: 'Detección automática de escenas mediante análisis de silencio (RMS)',
+        2: 'Control de ritmo, tono y perfil de audio (podcast, audiolibro, narración)',
+        3: 'Previews de voz disponibles para cada voz',
+        4: 'Audio de alta calidad 24kHz mono 16-bit PCM',
       },
     },
     videoShowcase: {
-      title: 'Video renderizado en tu navegador',
+      title: 'Video del Lado del Cliente con Remotion',
       description:
-        'Sin upload, sin costo de servidor. Tu guión nunca sale de tu dispositivo.',
+        'Renderiza videos completos directamente en tu navegador. Sin servidor, sin costo de renderización. WebCodecs + Whisper para subtítulos automáticos.',
       benefits: {
-        0: 'MP4 de alta calidad, compatible en cualquier lugar',
-        1: 'Subtítulos sincronizados automáticamente',
-        2: '3 formatos: horizontal, vertical, cuadrado',
-        3: 'Preview con forma de onda y transiciones',
-        4: 'Exportación con un clic',
+        0: 'Fallback de codec: H.264+AAC+MP4 > H.264 sin audio > VP8+Opus+WebM',
+        1: 'Subtítulos automáticos con Whisper WASM (3 fuentes de sincronización)',
+        2: 'Crossfade entre escenas con spring animation (400ms overlap)',
+        3: '3 resoluciones: 16:9, 9:16, 1:1',
+        4: 'Waveform overlay sincronizado con el video',
       },
     },
     assistantShowcase: {
-      title: 'Dirección creativa con IA',
+      title: 'Asistente IA Integrado',
       description:
-        'El asistente entiende tu proyecto, sugiere ajustes y los aplica en el estudio con un clic.',
+        'Chat conversacional con streaming de Gemini, memorias a largo plazo e integración directa con el estudio. El asistente sugiere cambios que aplicas con un clic.',
       benefits: {
-        0: 'Respuestas en tiempo real',
-        1: 'Memorias de proyecto + upload de documentos',
-        2: '5 archivos adjuntos por mensaje (imágenes y archivos)',
-        3: 'Sugerencias con botón "Aplicar en el estudio"',
-        4: 'Historial completo, auto-guardado',
+        0: 'Streaming en tiempo real con Gemini 3.1 Flash',
+        1: 'Sistema de memoria: textos cortos + carga de documentos (.md, .txt, .csv)',
+        2: 'Adjuntos: 5 por mensaje (imágenes 10MB, documentos 5MB)',
+        3: 'Extracción de JSON del chat con botón "Aplicar en el estudio"',
+        4: 'Auto-guardado de sesiones con historial completo',
       },
     },
     useCases: {
-      title: 'Hecho para creadores que no tienen tiempo que perder',
+      title: 'Para cada tipo de creador',
       subtitle:
-        'YouTubers, podcasters, educadores, marketers — todos publican más rápido con Script Master.',
+        'Ya seas YouTuber, podcaster, profesor o marketer — Script Master se adapta a tu flujo de trabajo.',
       learnMore: 'Más información',
     },
     metrics: {
@@ -228,56 +220,56 @@ export const es: TranslationDictionary = {
       noCreditCard: 'Sin tarjeta de crédito · Configuración en 30 segundos',
     },
     testimonials: {
-      title: 'Quién crea más rápido',
+      title: 'Lo que dicen nuestros creadores',
       subtitle:
-        'Creadores que abandonaron la edición manual y nunca volvieron.',
+        'Miles de creadores ya usan Script Master para transformar ideas en contenido profesional.',
     },
     howItWorks: {
-      title: 'Tres pasos para publicar',
+      title: 'Cómo Funciona',
       subtitle:
-        'Escribe, genera, exporta. Sin complicaciones, sin espera.',
+        'Tres pasos para transformar tu guion en contenido profesional.',
     },
     steps: {
       1: {
-        title: 'Escribe tu guión',
+        title: 'Escribe tu guion',
         description:
-          'Usa el editor integrado o pega tu texto. El asistente ayuda a mejorar si necesitas.',
+          'Usa el editor integrado o pega tu texto. El asistente IA puede ayudar a mejorar tu guion.',
       },
       2: {
-        title: 'Genera con un clic',
+        title: 'Genera con IA',
         description:
-          'Audio, imágenes, escenas — todo listo en minutos, no en horas.',
+          'Un clic para transformar tu guion en audio, imágenes y video con Gemini.',
       },
       3: {
-        title: 'Exporta y publica',
+        title: 'Exporta y comparte',
         description:
-          'Descarga WAV, MP4 o PNG y publica directamente en tu plataforma.',
+          'Descarga tu audio WAV, video MP4/WebM o imágenes PNG en alta resolución.',
       },
     },
     moreFeatures: {
       title: 'Y Mucho Más',
       cards: {
         multiSpeaker: {
-          title: '2 locutores',
+          title: 'Multi-locutor',
           description:
-            'Configura voces independientes para cada personaje de tu guión.',
+            'Soporte para 2 locutores con configuración independiente de voz y nombre.',
         },
         chunking: {
-          title: 'División inteligente',
+          title: 'Chunking Inteligente',
           description:
-            'Guión largo se convierte en segmentos naturales. La voz no se atasca, no repite, no pierde el tono.',
+            'División optimizada vía LLM + fallback programático. Límite de 500 caracteres por chunk.',
         },
         dualStorage: {
-          title: 'Almacenamiento en la nube',
+          title: 'Dual Storage',
           description:
-            'Proyectos guardados online. Accedidos desde cualquier dispositivo, a cualquier hora.',
+            'Firestore (autenticado) + IndexedDB (local) con migración automática.',
         },
       },
     },
     cta: {
-      title: 'Empieza gratis hoy',
-      subtitle: '1.000 créditos por mes, renovados automáticamente. Sin tarjeta de crédito.',
-      button: 'Crear cuenta gratuita',
+      title: 'Empieza a crear ahora',
+      subtitle: 'Crea tu primera narración gratuitamente. Sin tarjeta de crédito.',
+      button: 'Comenzar ahora',
     },
   },
 
@@ -285,12 +277,12 @@ export const es: TranslationDictionary = {
     hero: {
       title: 'Todo lo que necesitas para crear',
       subtitle:
-        'Seis herramientas integradas en una plataforma que entiende tu flujo.',
-      cta: 'Empezar gratis',
-      ctaSecondary: 'Ver cómo funciona',
+        'Explora todas las herramientas integradas de Script Master para transformar tus guiones en contenido profesional.',
+      cta: 'Empezar Gratis',
+      ctaSecondary: 'Ver beta',
     },
     sections: {
-      tts: 'Estudio de Voz',
+      tts: 'Estudio de Voz (TTS)',
       video: 'Renderización de Video',
       images: 'Generación de Imágenes',
       speedPaint: 'Speed Paint y Animación',
@@ -298,15 +290,15 @@ export const es: TranslationDictionary = {
       platform: 'Plataforma',
     },
     ttsShowcase: {
-      title: 'Audio Profesional con IA',
+      title: 'Audio Profesional con Gemini TTS',
       description:
-        'Nuestro motor de voz con IA genera narraciones naturales con control total sobre todos los parámetros de voz.',
+        'Nuestro motor de TTS usa el modelo más avanzado de Gemini para generar narraciones naturales con control total sobre todos los parámetros de voz.',
       benefits: {
-        0: 'Control completo de voz, ritmo y estilo',
-        1: 'Detección automática de escenas mediante análisis del audio generado',
-        2: 'Calibración automática de detección de pausas en hasta 3 iteraciones',
-        3: 'Reintentos automáticos en caso de inestabilidad',
-        4: 'Muestras de voz para reproducción instantánea',
+        0: 'Soporte para 14+ parámetros de estudio en el Inspector',
+        1: 'Detección automática de escenas mediante análisis RMS del audio generado',
+        2: 'Calibración automática del umbral de silencio en hasta 3 iteraciones',
+        3: 'Reintentos inteligentes: 3 intentos con jitter y backoff exponencial',
+        4: 'Previews de voz estáticos WAV para reproducción instantánea',
       },
     },
     videoShowcase: {
@@ -314,58 +306,58 @@ export const es: TranslationDictionary = {
       description:
         'Toda la renderización ocurre en tu navegador. Sin carga de video, sin costo de procesamiento. Total privacidad y control.',
       benefits: {
-        0: 'Video en MP4 de alta calidad, compatible con todos los dispositivos',
-        1: 'Transcripción automática integrada (sin servidor externo)',
-        2: 'Editor inline de estilo de subtítulos',
-        3: 'Visualización de la forma de onda que se deshabilita durante la exportación para rendimiento',
+        0: 'Fallback de codec: H.264+AAC+MP4 > H.264 > VP8+Opus+WebM',
+        1: 'Transcripción Whisper WASM integrada (sin backend)',
+        2: 'Editor inline de estilo de subtítulos (fontSize, padding, borderRadius, opacity)',
+        3: 'Waveform overlay que se deshabilita durante la exportación para rendimiento',
+        4: 'Canvas patch para corrección de bug font-stretch en Remotion',
       },
     },
     imagesShowcase: {
       title: 'Imágenes con Referencia Visual',
       description:
-        'Genera imágenes con IA usando prompts de texto y, opcionalmente, una imagen de referencia para guiar el estilo y composición.',
+        'Genera imágenes con Gemini usando prompts de texto y, opcionalmente, una imagen de referencia para guiar el estilo y composición.',
       benefits: {
         0: '8 aspect ratios: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9',
         1: 'Frameworks visuales: cine/fotografía o pizarra',
         2: 'Generación automática de escenas a partir del guion',
-        3: 'Persistencia: guardados en la nube y en el navegador',
+        3: 'Persistencia dual: Firestore + IndexedDB',
       },
     },
     cta: {
       title: '¿Listo para crear?',
-      subtitle: 'Créditos gratuitos, sin compromiso. Tu primera narración en menos de 1 minuto.',
-      button: 'Empezar gratis',
+      subtitle: 'Empieza a usar todas estas funciones gratuitamente.',
+      button: 'Empezar Gratis',
     },
   },
 
   // ── Beta Abierto ─────────────────────────────────────────────────────
   pricing: {
-    popular: 'Popular',
     hero: {
-      title: 'Beta abierto: 100% gratuito',
-      subtitle: '1.000 créditos mensuales para que crees sin límites. Renovación automática, sin burocracia.',
+      title: 'Beta Abierto',
+      subtitle: 'Script Master está en beta abierto. El uso de IA requiere inicio de sesión.',
       cta: 'Crear cuenta gratuita',
       ctaSecondary: 'Cómo funciona',
     },
     credits: {
-      title: 'Créditos mensuales',
-      subtitle: 'Cada acción consume créditos. Tú recibes 1.000 por mes, gratis.',
-      monthly: '1.000 créditos por mes',
-      monthlyDesc: 'Renovados automáticamente al inicio de cada mes.',
-      bonus: '+250 créditos por feedback',
-      bonusDesc: 'Envía sugerencias constructivas y gana créditos de bonus para crear más.',
-      noPayment: 'Sin tarjeta de crédito',
-      noPaymentDesc: 'El beta es 100% gratuito. Sin cobros durante el período.',
+      title: 'Créditos',
+      subtitle: 'Los créditos son la moneda del beta. Cada acción consume créditos, renovados cada mes.',
+      monthly: '1.000 créditos mensuales gratuitos',
+      monthlyDesc: 'Créditos renovados automáticamente al inicio de cada mes.',
+      bonus: '+250 créditos al enviar feedback',
+      bonusDesc: 'Envía feedback constructivo y gana un bono de créditos.',
+      noPayment: 'Sin pago',
+      noPaymentDesc: 'Sin tarjeta de crédito. El beta es 100% gratuito.',
     },
     howItWorks: {
       title: 'Cómo funciona',
-      subtitle: 'Simple: escribe, genera, exporta.',
+      subtitle: 'Es simple comenzar a crear con Script Master.',
       step1Title: 'Inicia sesión',
-      step1Desc: 'Google o email — lleva 30 segundos.',
+      step1Desc: 'Inicia sesión con tu cuenta de Google o email para acceder a todas las herramientas.',
       step2Title: 'Crea contenido',
-      step2Desc: 'Audio, imágenes y escenas con IA. Cada generación usa créditos de tu saldo.',
-      step3Title: 'Sigue tu saldo',
-      step3Desc: 'Créditos mostrados en el header. Renovación automática cada mes.',
+      step2Desc: 'Cada generación de audio, imagen o chat consume créditos de tu saldo mensual.',
+      step3Title: 'Monitorea tu saldo',
+      step3Desc: 'Tus créditos disponibles aparecen en el encabezado después de iniciar sesión.',
     },
     notice: {
       title: 'Los pagos y suscripciones están temporalmente pausados.',
@@ -375,8 +367,8 @@ export const es: TranslationDictionary = {
       title: 'Preguntas frecuentes sobre el beta',
     },
     cta: {
-      title: 'Empieza a crear ahora',
-      subtitle: 'Tu primera narración en menos de 1 minuto. Gratis, sin compromiso.',
+      title: '¿Listo para empezar?',
+      subtitle: 'Crea tu primera narración gratuitamente. Créditos mensuales renovados cada mes.',
       button: 'Iniciar sesión con Google',
     },
   },
@@ -559,23 +551,23 @@ export const es: TranslationDictionary = {
         },
         1: {
           title: 'Speed Paint y Video Avanzado',
-          description: 'Animación de pintura progresiva y exportación en video',
+          description: 'Animación de pintura progresiva, Web Worker para renderización, caché LRU y exportación WebM',
         },
         2: {
           title: 'Estudio de Producción',
-          description: 'Reorganización completa del estudio de producción, persistencia de preferencias y control granular de speed paint',
+          description: 'Refactorización completa del estudio con Zustand, persistencia de preferencias y control granular de speed paint',
         },
         3: {
           title: 'Eliminación de Cuenta LGPD',
-          description: 'Pipeline de eliminación completo, verificación de email e UI centralizada del asistente',
+          description: 'Pipeline de eliminación completo (Firestore + Storage + IndexedDB), verificación de email y UI centralizada del asistente',
         },
         4: {
           title: 'Calidad de Video y Exportación',
-          description: 'Exportación en múltiples calidades (720p a 4K), estimación de tamaño y control de velocidad por fase',
+          description: 'Export quality (720p–4k), estimación de tamaño, multiplicadores de speed paint por fase y 1185 tests',
         },
         5: {
           title: 'Planes y Pagos',
-          description: 'Sistema de suscripciones y pagos para planes de pago',
+          description: 'Integración con Stripe para suscripciones, pagos y gestión de planes',
         },
         6: {
           title: 'Lanzamiento Oficial',
@@ -598,7 +590,7 @@ export const es: TranslationDictionary = {
         'Estado informativo de los servicios de Script Master. Datos actualizados manualmente.',
     },
     disclaimer:
-      'Los datos mostrados en esta página son informativos y no representan monitoreo en tiempo real. El estado real de los servicios depende de proveedores externos.',
+      'Los datos mostrados en esta página son informativos y no representan monitoreo en tiempo real. El estado real de los servicios depende de terceros (Google Gemini, Firebase).',
     globalStatus: 'Todos los sistemas operativos',
     lastCheck: 'Última actualización: build {date} (datos informativos)',
     incidents: {
@@ -608,34 +600,34 @@ export const es: TranslationDictionary = {
       items: {
         0: {
           title: 'Inestabilidad en la generación de audio',
-          description: 'La API de IA presentó latencia elevada por aproximadamente 2 horas, afectando la generación de audio. El servicio se normalizó automáticamente.',
+          description: 'La API Gemini presentó latencia elevada por aproximadamente 2 horas, afectando la generación de audio TTS. El servicio se normalizó automáticamente.',
         },
         1: {
-          title: 'Degradación en el almacenamiento',
+          title: 'Degradación en Firebase Storage',
           description: 'Las subidas de imágenes presentaron lentitud por 45 minutos. El impacto se limitó al estudio de imágenes.',
         },
       },
     },
     services: {
       api: {
-        name: 'API de IA',
+        name: 'API Gemini (IA)',
         description: 'Generación de audio, imágenes y asistente conversacional',
       },
       auth: {
-        name: 'Autenticación',
+        name: 'Firebase Auth',
         description: 'Autenticación y gestión de cuentas',
       },
       firestore: {
-        name: 'Base de datos',
+        name: 'Firebase Firestore',
         description: 'Base de datos y sincronización de proyectos',
       },
       storage: {
-        name: 'Almacenamiento',
+        name: 'Firebase Storage',
         description: 'Almacenamiento de audios, imágenes y videos',
       },
       video: {
         name: 'Renderización de Video',
-        description: 'Renderización de video en el navegador',
+        description: 'Procesamiento del lado del cliente vía WebCodecs',
       },
     },
     statusLabels: {
@@ -646,34 +638,12 @@ export const es: TranslationDictionary = {
     },
   },
 
-  // ── Migración de datos ────────────────────────────────────────────────
-  dataMigration: {
-    checking: 'Verificando datos locales...',
-    completed: 'Transferencia completada',
-    successMessage: 'Todos los {count} elementos fueron transferidos con éxito.',
-    partialSuccessMessage: '{count} elementos transferidos con éxito. {errors} errores encontrados.',
-    mediaNote: 'Los archivos multimedia (audio, imágenes, videos) fueron transferidos como información de referencia. Los archivos físicos deben generarse nuevamente.',
-    unexpectedError: 'Error inesperado durante la migración.',
-    ignoreAndContinue: 'Ignorar y continuar',
-    confirmTitle: '¿Transferir datos a tu cuenta?',
-    confirmDescription: 'Detectamos {totalItems} elementos guardados localmente en tu navegador. ¿Deseas transferirlos a la nube para acceder desde cualquier dispositivo?',
-    projectCount: '{count} proyectos',
-    audioGenerationCount: '{count} generaciones de audio',
-    imageGenerationCount: '{count} generaciones de imagen',
-    memoryCount: '{count} memorias de la IA',
-    chatCount: '{count} conversaciones',
-    confirmMediaNote: 'Los archivos multimedia (audio, imágenes) serán transferidos como información de referencia. Los archivos físicos no pueden transferirse y deberán generarse nuevamente.',
-    transferring: 'Transfiriendo...',
-    transfer: 'Transferir datos',
-  },
-
   localeSelector: {
     ariaLabel: 'Seleccionar idioma',
   },
 
   studio: {
     header: {
-      subtitle: 'AI Studio',
       nav: {
         studio: 'Estudio',
         image: 'Imagen',
@@ -710,7 +680,7 @@ export const es: TranslationDictionary = {
       credits: {
         loading: 'Cargando créditos...',
         error: 'Error al cargar créditos',
-        syncing: 'Actualizando saldo...',
+        syncing: 'Sincronizando saldo de créditos...',
         ariaLabel: 'Saldo de créditos: {credits}',
         breakdown: 'Base: {base} | Bono: {bonus} | Usados: {used}',
       },
@@ -720,7 +690,7 @@ export const es: TranslationDictionary = {
       generatingScenes: 'Generando escenas visuales...',
       sceneProgressLabel: 'Progreso de la generación de escenas visuales',
       cancelImages: 'Cancelar generación de imágenes',
-      synthesizingVoice: 'Generando voz...',
+      synthesizingVoice: 'Sintetizando voz...',
       audioProgressLabel: 'Progreso de la generación de audio',
       pausePlayback: 'Pausar reproducción',
       startPlayback: 'Iniciar reproducción',
@@ -745,7 +715,7 @@ export const es: TranslationDictionary = {
       voiceSection: {
         title: 'Voz del locutor',
         description: 'Elige la firma vocal y organiza voces para narración o podcast.',
-        optionsCount: '{count} voces disponibles',
+        optionsCount: '{count} opciones',
       },
       podcast: {
         title: 'Modo Podcast (2 voces)',
@@ -827,7 +797,6 @@ export const es: TranslationDictionary = {
         '60': 'Lento (1 min)',
         '120': 'Muy lento (2 min)',
       },
-      generateScenes: 'Generar escenas',
       referenceImage: {
         tooLarge: 'Imagen demasiado grande. Tamaño máximo: 10MB.',
         readError: 'Error al leer el archivo. Intenta con otra imagen.',
@@ -931,32 +900,10 @@ export const es: TranslationDictionary = {
   },
 
   video: {
-      loadingSceneImage: 'Cargando imagen de la escena...',
-      failLoadImage: 'Error al cargar imagen',
       pageTitle: 'Composición visual',
       pageDescription: 'Revisa la escena actual, consulta la atmósfera del video y carga proyectos anteriores sin salir del flujo.',
       exportProgress: 'Progreso de exportación',
       exportQuality: 'Calidad de exportación',
-      exportButton: 'Exportar vídeo',
-      exportNotSupported: 'El navegador no soporta exportación de vídeo. Actualiza tu navegador a la última versión.',
-      animateScenesTooltip: 'Añade animación de pintura a cada escena. Puede aumentar considerablemente el tiempo de exportación.',
-      animateScenesLabel: 'Animar escenas (Speed Paint)',
-      speedPaintWarningsTitle: 'Algunas escenas no pudieron ser animadas:',
-      fileNameLabel: 'Nombre del archivo',
-      fileNamePlaceholder: 'video-export',
-      subtitleLabel: 'Subtítulo',
-      exportInfo: 'Resolución: {width}x{height} | {fps} fotogramas por segundo',
-      exportBackgroundProcess: 'El procesamiento continúa en segundo plano en esta pestaña.',
-      transcription: {
-        title: 'Subtítulos',
-        staleWarning: 'El guion fue editado desde la última generación de subtítulos. Los subtítulos pueden estar desalineados.',
-        wordCount: '{count} palabras transcritas',
-        regenerate: 'Generar de nuevo',
-        sourceSegmentTiming: 'Sincronizado con la voz',
-        sourceWhisperAligned: 'Sincronización precisa',
-        sourceProportional: 'Automático',
-        sourceManual: 'Manual',
-      },
       timingError: 'El inicio debe ser anterior al final',
       undoDelete: 'Deshacer eliminación',
       workspace: {
@@ -1058,7 +1005,7 @@ export const es: TranslationDictionary = {
       copied: '¡Copiado!',
       copyText: 'Copiar texto',
       copyTextAria: 'Copiar texto del mensaje',
-      malformedJson: 'El asistente sugirió ajustes que no pudieron aplicarse automáticamente.',
+      malformedJson: 'El asistente sugirió ajustes, pero el formato no pudo ser interpretado.',
       applied: 'Aplicado',
       applyToStudio: 'Aplicar en el estudio',
       savedToMemory: 'Guardado en memoria',
@@ -1107,7 +1054,7 @@ export const es: TranslationDictionary = {
       saving: 'Guardando...',
       save: 'Guardar',
       knowledgeBase: 'Base de conocimiento',
-      knowledgeBaseDescription: 'Envía archivos de texto con directrices, documentación o repertorio que el asistente debe considerar.',
+      knowledgeBaseDescription: 'Envía .md, .txt o .csv con directrices, documentación o repertorio que el asistente debe considerar.',
       uploading: 'Enviando...',
       attachDocument: 'Adjuntar documento',
       noMemories: 'Aún no hay memorias guardadas',
@@ -1124,7 +1071,7 @@ export const es: TranslationDictionary = {
       whatToWriteDescription: 'Ej.: tono de marca, ritmo preferido, restricciones visuales, tipo de CTA, estilo de apertura, vocabulario y formato de las sugerencias.',
       guidelinesAlert: 'Evita reglas conflictivas. Cuanto más claro el direccionamiento, más predecible será el comportamiento del asistente.',
       guidelinesLabel: 'Directrices permanentes',
-      guidelinesPlaceholder: 'Ej.: responde con foco en retención para YouTube, propone guiones concisos, preserva lenguaje claro y siempre ofrece una configuración de ajuste cuando sugieras cambios aplicables en el estudio.',
+      guidelinesPlaceholder: 'Ej.: responde con foco en retención para YouTube, propone guiones concisos, preserva lenguaje claro y siempre ofrece un bloque JSON cuando sugieras ajustes aplicables en el estudio.',
       applyGuidelines: 'Aplicar directrices',
     },
   },
@@ -1282,17 +1229,8 @@ export const es: TranslationDictionary = {
     controlsCaptureError: 'No se pudo capturar la imagen. Inténtalo de nuevo.',
     controlsContextError: 'Error al crear contexto de exportación.',
     controlsExportImageError: 'Error al exportar imagen. Inténtalo de nuevo.',
-    speedSectionTitle: 'Velocidad del Speed Paint',
-    speedSectionDescription: 'Control separado de velocidad para dibujo y coloreado.',
-    sketchLabel: 'Dibujo (Sketch)',
-    sketchAriaLabel: 'Velocidad del dibujo (sketch)',
-    revealLabel: 'Colorear (Reveal)',
-    durationHelperText: 'La animación usa 80% del tiempo para dibujar y 20% para pintar.',
-    durationExportHelper: 'La duración elegida también se usará en el vídeo exportado.',
-    exportInfo: 'Resolución: {width}x{height} | {fps} fotogramas por segundo',
-    fileNamePlaceholder: 'speed-paint',
     exportTitle: 'Exportar vídeo',
-    exportBrowserWarning: 'El navegador no soporta exportación de vídeo. Actualiza tu navegador a la última versión.',
+    exportBrowserWarning: 'El navegador no soporta exportación de vídeo. Usa Chrome 94+ o Firefox 130+.',
     exportDismissError: 'Descartar error',
     exportQualityAria: 'Calidad de exportación',
     exportFileName: 'Nombre del archivo',
@@ -1302,7 +1240,7 @@ export const es: TranslationDictionary = {
     exportAgain: 'Exportar de nuevo',
     exportClear: 'Limpiar',
     exportButton: 'Exportar',
-    exportCompleted: '¡Vídeo listo!',
+    exportCompleted: '¡Exportación completada!',
     exportDownload: 'Descargar',
     exportRenderStatus: 'Renderizando... {percent}%',
     pageGenerating: 'Generando Animación',
@@ -1367,7 +1305,7 @@ export const es: TranslationDictionary = {
     welcome: {
       title: '¡Bienvenido a Script Master!',
       description: 'Transforma tus guiones en audio profesional, escenas visuales y videos\ncon inteligencia artificial. Te mostraremos cómo en pocos pasos.',
-      featureTTS: 'Voz con IA',
+      featureTTS: 'TTS con IA',
       featureScenes: 'Escenas visuales',
       featureVideo: 'Video automático',
       tourHint: 'Tour rápido de 1 minuto — puedes saltar cuando quieras',
@@ -1422,8 +1360,8 @@ export const es: TranslationDictionary = {
   // ── SEO (meta tags por página) ─────────────────────────────────────
   seo: {
     landing: {
-      title: 'Crea videos y audio con IA en minutos | Script Master',
-      description: 'Transforma guiones en narración profesional, videos e imágenes con IA. 100% en tu navegador. Gratis en beta abierto.',
+      title: 'Convierte guiones en arte con IA | Script Master',
+      description: 'Plataforma completa para crear audio, video e imágenes profesionales a partir de guiones con Gemini AI. Todo del lado del cliente.',
     },
     about: {
       title: 'Acerca de Script Master',
@@ -1442,8 +1380,8 @@ export const es: TranslationDictionary = {
       description: 'Conoce todas las funcionalidades de Script Master: generación de audio, imágenes, videos, asistente IA y más.',
     },
     pricing: {
-      title: 'Beta abierto gratuito — 1.000 créditos por mes | Script Master',
-      description: 'Script Master está en beta abierto. Crea audio, video e imágenes con IA. 1.000 créditos mensuales gratis, sin tarjeta.',
+      title: 'Beta Abierto | Script Master',
+      description: 'Script Master está en beta abierto. Accede gratis con 1.000 créditos mensuales.',
     },
     status: {
       title: 'Estado de los Servicios | Script Master',
@@ -1494,15 +1432,15 @@ export const es: TranslationDictionary = {
       },
       2: {
         question: '¿Cómo funcionan los videos?',
-        answer: 'Los videos se renderizan directamente en tu navegador. Puedes combinar audio generado, imágenes de escena y subtítulos automáticos. La renderización ocurre totalmente en el navegador — tu guion nunca sale de tu dispositivo.',
+        answer: 'Los videos se renderizan directamente en tu navegador usando WebCodecs. Puedes combinar audio generado, imágenes de escena y subtítulos automáticos. La renderización es 100% del lado del cliente — tu guion nunca sale de tu dispositivo.',
       },
       3: {
         question: '¿Cuál es la calidad del audio generado?',
-        answer: 'El audio se genera en formato profesional de alta calidad.',
+        answer: 'El audio se genera en WAV 24kHz mono 16-bit PCM, con calidad profesional.',
       },
       4: {
         question: '¿Cómo funcionan los subtítulos automáticos?',
-        answer: 'Usamos un modelo de IA para transcripción automática del audio. Los subtítulos se generan con timestamps precisos y pueden editarse manualmente en el editor de subtítulos.',
+        answer: 'Usamos el modelo Whisper para transcripción automática del audio. Los subtítulos se generan con timestamps precisos y pueden editarse manualmente en el editor de subtítulos.',
       },
     },
     account: {
@@ -1512,7 +1450,7 @@ export const es: TranslationDictionary = {
       },
       1: {
         question: '¿Puedo usarlo en más de un dispositivo?',
-        answer: '¡Sí! Tus proyectos y configuraciones se sincronizan online. Solo inicia sesión en cualquier dispositivo para acceder a tu contenido.',
+        answer: '¡Sí! Tus proyectos y configuraciones se sincronizan vía Firebase. Solo inicia sesión en cualquier dispositivo para acceder a tu contenido.',
       },
       2: {
         question: '¿Cómo elimino mi cuenta?',
@@ -1524,41 +1462,41 @@ export const es: TranslationDictionary = {
   // ── Features (FuncionalidadesPage — cards por seção) ────────────────
   featureItems: {
     audio: {
-      0: { title: 'Generación de Audio con IA', description: 'Transforma guiones en audio profesional con calidad de estudio.' },
-      1: { title: 'División Inteligente', description: 'División inteligente del guion en partes para mantener la naturalidad de la voz.' },
-      2: { title: 'Múltiples locutores', description: 'Soporte para 2 locutores (Locutor A + B) con configuración independiente de voz y nombre.' },
-      3: { title: 'Control de Voz', description: 'Selección de voz, ritmo, tono y estilo de narración (podcast, audiolibro, conversación, narración).' },
+      0: { title: 'Generación de Audio TTS', description: 'Transforma guiones en audio profesional con Gemini TTS (24kHz mono 16-bit PCM).' },
+      1: { title: 'Chunking Inteligente', description: 'División optimizada vía LLM + fallback programático. Límite de 500 caracteres por chunk.' },
+      2: { title: 'Multi-locutor', description: 'Soporte para 2 locutores (Speaker A + B) con configuración independiente de voz y nombre.' },
+      3: { title: 'Control de Voz', description: 'Selección de voz, ritmo, tono y perfil de audio (podcast, audiolibro, conversación, narración).' },
     },
     video: {
-      0: { title: 'Composición de Video', description: 'Renderizado directamente en tu navegador. Sin costo de servidor.' },
-      1: { title: 'Subtítulos Automáticos', description: 'Subtítulos automáticos sincronizados con el audio en tres niveles de precisión.' },
+      0: { title: 'Composición de Video', description: 'Videos del lado del cliente con Remotion y WebCodecs. Sin backend, sin costo de renderización.' },
+      1: { title: 'Subtítulos Automáticos', description: '3 fuentes de sincronización: segment-timing > whisper-aligned > proportional.' },
       2: { title: '3 Resoluciones', description: '16:9 (1920x1080), 9:16 (1080x1920) y 1:1 (1080x1080).' },
     },
     image: {
-      0: { title: 'Estudio de Imagen', description: 'Generación de imágenes con IA a partir de prompts + referencia visual opcional.' },
+      0: { title: 'Estudio de Imagen', description: 'Generación de imágenes con Gemini a partir de prompts + referencia visual opcional.' },
       1: { title: '8 Aspect Ratios', description: '1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9.' },
-      2: { title: 'Galería Integrada', description: 'Historial de imágenes generadas con visualización, eliminación, guardados en la nube y el navegador.' },
+      2: { title: 'Galería Integrada', description: 'Historial de imágenes generadas con visualización, eliminación y persistencia dual.' },
     },
     assistant: {
-      0: { title: 'Chat Conversacional', description: 'Respuestas en tiempo real con adjuntos de imagen y documento.' },
-      1: { title: 'Integración con Estudio', description: 'El modelo sugiere cambios que aplicas con un clic en el estudio.' },
-      2: { title: 'Sistema de Memoria', description: 'Memorias cortas (texto) + carga de documentos con directrices y referencias de hasta 500KB' },
+      0: { title: 'Chat Conversacional', description: 'Streaming con Gemini, memorias, adjuntos (5 por msg: imagen 10MB, documento 5MB).' },
+      1: { title: 'Integración con Estudio', description: 'Modelo sugiere alteraciones en bloque JSON, botón "Aplicar en el estudio" para patch parcial.' },
+      2: { title: 'Sistema de Memoria', description: 'Memorias cortas (texto) + carga de documentos (.md/.txt/.csv hasta 500KB).' },
     },
     library: {
       0: { title: 'Gestión de Proyectos', description: 'Organiza audios, escenas, videos e imágenes en proyectos con metadatos completos.' },
       1: { title: 'Descarga Fácil', description: 'Descarga audio WAV, videos MP4/WebM e imágenes PNG con un clic.' },
-      2: { title: 'Almacenamiento Dual', description: 'Proyectos guardados en la nube y el navegador, con sincronización automática.' },
+      2: { title: 'Persistencia Dual', description: 'Firestore (autenticado) + IndexedDB (local), migración automática al iniciar sesión.' },
     },
     speedPaint: {
-      0: { title: 'Animación de Pintura', description: 'Transforma imágenes en animaciones de pintura paso a paso.' },
-      1: { title: 'Procesamiento por Lotes', description: 'Cola de imágenes con modos de visualización y grabación.' },
-      2: { title: 'Exportación de Medios', description: 'Exporta imágenes en alta resolución y videos en calidad profesional.' },
+      0: { title: 'Animación de Pintura', description: 'Subida > detección de bordes > clusterización BFS > vectorización > renderización progresiva.' },
+      1: { title: 'Procesamiento por Lotes', description: 'Cola de imágenes con modos watch (auto-avanza) y record (graba + avanza).' },
+      2: { title: 'Exportación de Medios', description: 'Export PNG (2x) y WebM (H.264 > VP9 > predeterminado, 12Mbps).' },
     },
   },
 
   // ── Landing showcases (alt texts) ───────────────────────────────────
   landingShowcases: {
-    audio: { alt: 'Generación de audio con IA con Script Master' },
+    audio: { alt: 'Generación de audio TTS con Script Master' },
     video: { alt: 'Renderización de video con Script Master' },
     assistant: { alt: 'Asistente IA de Script Master' },
   },
@@ -1616,7 +1554,7 @@ export const es: TranslationDictionary = {
       upgradeRequired: 'Actualiza para continuar',
       featureLocked: 'Función disponible solo en planes de pago',
       multiSpeakerLocked: 'Multi-locutor disponible en plan Pro o superior',
-      emotionalTTSLocked: 'Voz con emociones disponible en plan Pro o superior',
+      emotionalTTSLocked: 'TTS emocional disponible en plan Pro o superior',
       stockMediaLocked: 'Mimedia stock disponible en plan Pro o superior',
     },
   },
@@ -1679,7 +1617,7 @@ export const es: TranslationDictionary = {
     generateScenesLabel: 'Generar escenas',
     sceneDensityLabel: 'Densidad de escenas',
     sceneRatioLabel: 'Proporción',
-    visualFrameworkLabel: 'Estilo visual',
+    visualFrameworkLabel: 'Framework visual',
     imageTextLanguageLabel: 'Idioma de los textos',
       emotionLabel: 'Emoción',
       multiSpeakerLabel: 'Dos locutores',
@@ -1798,7 +1736,7 @@ export const es: TranslationDictionary = {
     unavailableText: 'No se pudo crear la vista previa ahora. Intente de nuevo en unos momentos.',
     confirmReady: 'Todo listo para confirmar la generación.',
     durationLabel: 'Duración estimada',
-    chunksLabel: 'Partes',
+    chunksLabel: 'Chunks',
     scenesLabel: 'Escenas previstas',
     confidenceLabel: 'Confianza',
     confidenceHigh: 'Alta',
@@ -1816,7 +1754,7 @@ export const es: TranslationDictionary = {
     summaryAudioOnly: 'Audio listo para confirmar.',
     summaryWithVisual: 'Audio confirmado como etapa principal, con paquete visual estimado para confirmación.',
     stepLabels: {
-      audio: 'Generación del audio',
+      audio: 'Síntesis del audio',
       chunking: 'División inteligente del guion',
       scene_prompts: 'Guion visual de las escenas',
       image: 'Generación de imágenes de las escenas',
@@ -1828,13 +1766,13 @@ export const es: TranslationDictionary = {
         voice: 'Voz principal: {voice}.',
       },
       chunking: {
-        consistency: 'Preprocesamiento para mantener la consistencia de la voz.',
+        consistency: 'Preprocesamiento para mantener la consistencia del TTS.',
         limit: 'Límite objetivo: 500 caracteres por parte.',
         included: 'Esta etapa ya está incluida en el procesamiento del audio, sin costo adicional.',
       },
       scenePrompts: {
         estimate: 'Estimación visual basada en {count} escena(s) previstas.',
-        framework: 'El estilo visual configurado se tendrá en cuenta en esta etapa.',
+        framework: 'El framework visual configurado se tendrá en cuenta en esta etapa.',
       },
       image: {
         count: '{count} imagen(es) previstas.',
@@ -1845,7 +1783,7 @@ export const es: TranslationDictionary = {
     notes: {
       freePreview: 'Esta vista previa es gratuita y no reserva créditos.',
       visualEstimate: 'La parte visual usa una estimación conservadora para reducir sorpresas en el saldo, pero sigue sujeta al saldo disponible en cada etapa.',
-      audioOnly: 'Sin producción visual: el costo final debería quedar muy cerca de esta vista previa.',
+      audioOnly: 'Sin pipeline visual: el costo final debería quedar muy cerca de esta vista previa.',
     },
     scriptNamePrefix: 'Guion',
     saveCloudSuccess: '¡Audio guardado en la nube con éxito!',
@@ -1897,7 +1835,6 @@ export const es: TranslationDictionary = {
       images: 'Imágenes',
       video: 'Video',
       scenes: 'Escenas',
-      pipeline: 'Producción en lote',
     },
     statusFilter: {
       all: 'Todos',
@@ -1956,7 +1893,7 @@ export const es: TranslationDictionary = {
       imagesCompleted: '¡Imágenes generadas!',
       videoCompleted: '¡Video renderizado!',
       scenesCompleted: '¡Escenas generadas!',
-      pipelineCompleted: '¡Producción completada!',
+      pipelineCompleted: '¡Pipeline completado!',
       failed: 'Error al generar {type}: {message}',
       failedGeneric: 'Error al procesar {type}',
       cancelled: 'Tarea cancelada',
@@ -1970,7 +1907,7 @@ export const es: TranslationDictionary = {
       dismiss: 'Continuar',
     },
     pipeline: {
-      title: 'Producción: {name}',
+      title: 'Pipeline: {name}',
       step: {
         audio: 'Generar audio',
         scenes: 'Generar escenas',
@@ -1980,7 +1917,7 @@ export const es: TranslationDictionary = {
       },
       cancelAll: 'Cancelar todo',
       cancelDialog: {
-        title: '¿Cancelar producción?',
+        title: '¿Cancelar pipeline?',
         description: 'Todas las etapas restantes serán canceladas. Los resultados completados seguirán disponibles.',
       },
     },
