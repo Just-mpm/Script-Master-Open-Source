@@ -9,11 +9,19 @@ import { saveGeneration, type SavedAudio } from '../../lib/db';
 import { createLogger } from '../../lib/logger';
 import { functions } from '../../lib/firebase';
 import { getCallableErrorInfo } from '../../lib/callable-errors';
-import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from '../../features/studio/store';
+import { useStudioStore, VIDEO_FPS, buildGenerateOptions, useAudioGeneratorStore } from '../../features/studio/store';
 import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
 import type { AudioPreflightSummary } from './AudioPreflightDialog';
 import { useLocale } from '../../features/i18n';
+import { STEP_LABEL_KEYS } from '../../features/i18n/utils';
+import type { AudioJobRecord } from '../../lib/audio-jobs';
+import { fetchAudioJobBlob } from '../../lib/audio-jobs';
+import {
+  usePipelineOrchestrator,
+  type PipelineState,
+  type PipelineOptions,
+} from '../../hooks/usePipelineOrchestrator';
 
 const log = createLogger('AudioGenerationHandler');
 const AUDIO_PREFLIGHT_TIMEOUT_MS = 15_000;
@@ -28,6 +36,7 @@ interface AudioGenerationHandlerReturn {
   audioUrl: string | null;
   audioBlob: Blob | null;
   scenes: SceneItem[];
+  audioJobs: AudioJobRecord[];
   // Handlers
   handleGenerate: () => void;
   confirmGenerate: () => void;
@@ -35,6 +44,7 @@ interface AudioGenerationHandlerReturn {
   handleDownload: () => void;
   handleSaveToLibrary: () => void;
   handleCancel: () => void;
+  openCompletedAudioJob: (job: AudioJobRecord) => Promise<void>;
   scrollToExport: () => void;
   // Derivações
   isGenerateDisabled: boolean;
@@ -59,6 +69,8 @@ interface AudioGenerationHandlerReturn {
   isPreflightOpen: boolean;
   preflight: AudioPreflightSummary | null;
   preflightError: string | null;
+  // Pipeline (jobs assíncronos)
+  pipelineState: PipelineState | null;
 }
 
 type AudioPreflightInput = ReturnType<typeof buildAudioFlowInput>;
@@ -100,7 +112,6 @@ function getAudioPreflightSummary(result: AudioPreflightCallableResult): AudioPr
  * - Handlers de download e salvamento na biblioteca
  * - Priorização de erros (auth > studio)
  * - Sincronização de duração com AudioContext
- * - Aviso beforeunload durante geração/exportação
  */
 export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const { authError, clearAuthError, user } = useAuth();
@@ -116,14 +127,19 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     audioUrl,
     audioBlob,
     scenes,
+    audioJobs,
     error,
     setError,
     sceneGenerationWarning,
-    generateAudio,
     handleCancel,
+    openCompletedAudioJob,
     durationInSeconds,
     creditsExhausted,
   } = useAudioGenerator();
+
+  // ─── Pipeline orchestrator (jobs assíncronos multi-etapa) ──────
+  const pipeline = usePipelineOrchestrator();
+  const pipelineActive = pipeline.isRunning;
 
   // ─── Estado de config do store (Zustand) ──────────────────
   const script = useStudioStore((s) => s.script);
@@ -143,7 +159,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const preflightRequestTokenRef = useRef(0);
 
   // Derivações para ActionBar e atalhos
-  const isGenerateDisabled = isGenerating || isPreparingPreflight || creditsExhausted || !script.trim() || script.length > MAX_CHARS;
+  const isGenerateDisabled = isGenerating || pipelineActive || isPreparingPreflight || creditsExhausted || !script.trim() || script.length > MAX_CHARS;
   const durationInFrames = useMemo(
     () => Math.round(durationInSeconds * VIDEO_FPS),
     [durationInSeconds],
@@ -158,24 +174,53 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
   const videoExportProgress = useVideoRenderBridge((s) => s.videoExportProgress);
 
-  // Aviso antes de fechar aba durante geração ou exportação
-  useEffect(() => {
-    if (!isGenerating && !isExportingVideo) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isGenerating, isExportingVideo]);
-
   // ─── Handlers ─────────────────────────────────────────────
 
+  /** Cancelamento combinado: pipeline ou áudio, dependendo do que está ativo */
+  const handleCancelCombined = useCallback(() => {
+    if (pipelineActive) {
+      pipeline.cancel();
+      return;
+    }
+    handleCancel();
+  }, [handleCancel, pipeline, pipelineActive]);
+
   // handleGenerate: lê config do store via getState() no momento da execução.
-  // Deps apenas em generateAudio (estável via useCallback) e userId.
+
+  /** Constrói PipelineOptions a partir de GenerateOptions + store */
+  const buildPipelineOptions = useCallback(
+    (options: GenerateOptions): PipelineOptions => ({
+      userId: userId ?? '',
+      projectName: options.projectName ?? '',
+      script: options.script,
+      voiceId: options.selectedVoice,
+      pace: options.pace,
+      emotion: options.emotion ?? 'neutral',
+      emotionIntensity: options.emotionIntensity ?? 0.5,
+      isMultiSpeaker: options.isMultiSpeaker ?? false,
+      speakerAName: options.speakerAName ?? '',
+      speakerBName: options.speakerBName ?? '',
+      speakerBVoice: options.speakerBVoice ?? '',
+      audioProfile: options.audioProfile,
+      scene: options.scene,
+      styleNotes: options.styleNotes,
+      sceneDensity: options.sceneDensity ?? 15,
+      sceneRatio: options.sceneRatio ?? '16:9',
+      visualFramework: options.visualFramework ?? 'general',
+      generateScenes: options.generateScenes ?? false,
+      referenceImage: options.referenceImage ?? undefined,
+      locale: options.locale ?? 'pt-BR',
+      animateScenes: true,
+      includeSubtitles: false,
+      videoQuality: '1080p',
+      codec: 'h264',
+      fps: VIDEO_FPS,
+    }),
+    [userId],
+  );
+
   const handleGenerate = useCallback(() => {
-    if (isGenerating || isPreparingPreflight) return;
+    if (isGenerating || pipelineActive || isPreparingPreflight) return;
 
     const options = buildGenerateOptions(userId, useStudioStore.getState());
     setPendingGenerateOptions(options);
@@ -205,7 +250,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
             setPreflight(null);
             setPreflightError(null);
             setPendingGenerateOptions(null);
-            generateAudio(options);
+            void pipeline.start(buildPipelineOptions(options));
             return;
           }
 
@@ -226,7 +271,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
             setPreflight(null);
             setPreflightError(null);
             setPendingGenerateOptions(null);
-            generateAudio(options);
+            void pipeline.start(buildPipelineOptions(options));
             return;
           }
         }
@@ -240,7 +285,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
         if (preflightRequestTokenRef.current !== requestToken) return;
         setIsPreparingPreflight(false);
       });
-  }, [audioPreflightCallable, generateAudio, isGenerating, isPreparingPreflight, t, userId]);
+  }, [audioPreflightCallable, pipeline, buildPipelineOptions, isGenerating, pipelineActive, isPreparingPreflight, t, userId]);
 
   const closePreflightDialog = useCallback(() => {
     preflightRequestTokenRef.current += 1;
@@ -267,8 +312,11 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     setPreflight(null);
     setPreflightError(null);
     setPendingGenerateOptions(null);
-    generateAudio(nextOptions);
-  }, [generateAudio, pendingGenerateOptions, preflight]);
+
+    // Sempre usa o pipeline (jobs assíncronos server-side)
+    const pipelineOptions = buildPipelineOptions(nextOptions);
+    void pipeline.start(pipelineOptions);
+  }, [pipeline, buildPipelineOptions, pendingGenerateOptions, preflight]);
 
   const handleDownload = useCallback(() => {
     if (!audioUrl) return;
@@ -340,19 +388,145 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     if (isGenerating) setIsSaved(false);
   }, [isGenerating]);
 
+  // Marca isGenerating no store quando o pipeline inicia
+  useEffect(() => {
+    if (!pipeline.isRunning) return;
+
+    const storeApi = useAudioGeneratorStore;
+    if (!storeApi.getState().isGenerating) {
+      storeApi.getState().setIsGenerating(true);
+      storeApi.getState().setGenerationProgress(0);
+      storeApi.getState().setError(null);
+      storeApi.getState().setSceneGenerationWarning(null);
+      storeApi.getState().setAudioUrl(null);
+      storeApi.getState().setAudioBlob(null);
+      storeApi.getState().setAudioDuration(0);
+      storeApi.getState().setScenes([]);
+      storeApi.getState().setAudioSegments([]);
+    }
+  }, [pipeline.isRunning]);
+
+  // Sincroniza progresso do pipeline no store durante execução
+  useEffect(() => {
+    if (!pipeline.isRunning) return;
+
+    const storeApi = useAudioGeneratorStore;
+    const step = pipeline.steps[pipeline.currentStep];
+    if (step) {
+      storeApi.getState().setStatusText(t(STEP_LABEL_KEYS[step.step] ?? step.step));
+      storeApi.getState().setGenerationProgress(step.progress ?? 0);
+    }
+  }, [pipeline.isRunning, pipeline.steps, pipeline.currentStep, t]);
+
+  // Carrega áudio e imagens do pipeline no audioGeneratorStore quando o pipeline completa
+  useEffect(() => {
+    if (!pipeline.isCompleted || !pipeline.audioResultUrl) return;
+
+    const loadPipelineResults = async () => {
+      try {
+        const blob = await fetchAudioJobBlob(pipeline.audioResultUrl!);
+        const nextUrl = URL.createObjectURL(blob);
+        const storeApi = useAudioGeneratorStore;
+        const prevUrl = storeApi.getState().audioUrl;
+
+        // Revoga blob URL anterior para evitar memory leak
+        if (prevUrl && prevUrl.startsWith('blob:') && prevUrl !== nextUrl) {
+          URL.revokeObjectURL(prevUrl);
+        }
+
+        storeApi.getState().setAudioBlob(blob);
+        storeApi.getState().setAudioUrl(nextUrl);
+        storeApi.getState().setAudioDuration(pipeline.audioResultDurationSecs ?? 0);
+        storeApi.getState().setProjectId(pipeline.audioResultProjectId ?? '');
+        storeApi.getState().setAudioSegments([]);
+        storeApi.getState().setGenerationProgress(100);
+        storeApi.getState().setIsGenerating(false);
+        storeApi.getState().setStatusText('');
+
+        // Carrega imagens do pipeline se disponíveis
+        const imageResults = pipeline.results?.images?.images;
+        if (imageResults && imageResults.length > 0) {
+          const scenesFromPipeline: SceneItem[] = imageResults.map((img, idx) => ({
+            imageUrl: img.downloadUrl,
+            timestamp: pipeline.results?.scenePrompts?.prompts?.[idx]?.timestamp ?? idx * 10,
+          }));
+          storeApi.getState().setScenes(scenesFromPipeline);
+          log.info('Imagens do pipeline carregadas no estúdio', { count: scenesFromPipeline.length });
+        } else {
+          storeApi.getState().setScenes([]);
+        }
+
+        log.info('Áudio do pipeline carregado no estúdio', {
+          duration: pipeline.audioResultDurationSecs,
+          projectId: pipeline.audioResultProjectId,
+        });
+      } catch (err) {
+        log.error('Erro ao carregar áudio do pipeline', { error: err });
+        useAudioGeneratorStore.getState().setIsGenerating(false);
+        useAudioGeneratorStore.getState().setStatusText('');
+      }
+    };
+
+    void loadPipelineResults();
+  }, [pipeline.isCompleted, pipeline.audioResultUrl, pipeline.audioResultDurationSecs, pipeline.audioResultProjectId, pipeline.results]);
+
+  // Trata falha/cancelamento do pipeline
+  useEffect(() => {
+    if (!pipeline.isFailed && !pipeline.isCancelled) return;
+    if (!pipeline.isRunning) {
+      // Pipeline parou — finaliza o store se ainda estiver em isGenerating
+      const storeApi = useAudioGeneratorStore;
+      if (storeApi.getState().isGenerating) {
+        storeApi.getState().setIsGenerating(false);
+        storeApi.getState().setStatusText('');
+        if (pipeline.isFailed && pipeline.error) {
+          storeApi.getState().setError(pipeline.error);
+        }
+      }
+    }
+  }, [pipeline.isFailed, pipeline.isCancelled, pipeline.isRunning, pipeline.error]);
+
+  // ─── Estado derivado do pipeline para exibição ─────────────────
+
+  /** Status text combinado: pipeline > audio */
+  const combinedStatusText = useMemo(() => {
+    if (pipelineActive) {
+      const step = pipeline.steps[pipeline.currentStep];
+      if (step) {
+        return t(STEP_LABEL_KEYS[step.step] ?? step.step);
+      }
+      return t('audioPreflight.stepLabels.audio');
+    }
+    return statusText;
+  }, [pipelineActive, pipeline.steps, pipeline.currentStep, statusText, t]);
+
+  /** Progress combinado: pipeline > audio */
+  const combinedProgress = useMemo(() => {
+    if (pipelineActive) {
+      const step = pipeline.steps[pipeline.currentStep];
+      return step?.progress ?? 0;
+    }
+    return generationProgress;
+  }, [pipelineActive, pipeline.steps, pipeline.currentStep, generationProgress]);
+
+  /** isGenerating combinado: pipeline > audio */
+  const combinedIsGenerating = pipelineActive || isGenerating;
+
   return {
-    isGenerating,
-    statusText,
-    generationProgress,
-    audioUrl,
-    audioBlob,
+    isGenerating: combinedIsGenerating,
+    statusText: combinedStatusText,
+    generationProgress: combinedProgress,
+    audioUrl: pipelineActive ? null : audioUrl,
+    audioBlob: pipelineActive ? null : audioBlob,
     scenes,
+    audioJobs,
     handleGenerate,
     confirmGenerate,
     closePreflightDialog,
     handleDownload,
     handleSaveToLibrary,
-    handleCancel,
+    handleCancel: handleCancelCombined,
+    openCompletedAudioJob,
     scrollToExport,
     isGenerateDisabled,
     durationInFrames,
@@ -371,5 +545,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     isPreflightOpen,
     preflight,
     preflightError,
+    pipelineState: pipeline,
   };
 }

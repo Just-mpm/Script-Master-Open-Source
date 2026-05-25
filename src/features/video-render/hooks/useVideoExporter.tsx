@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { renderMediaOnWeb } from '@remotion/web-renderer';
 import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
 import type { ComponentType } from 'react';
+import { httpsCallable } from 'firebase/functions';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps } from '../types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
@@ -15,6 +17,8 @@ import { isCancellationError, toUserFriendlyError } from '../lib/exportUtils';
 import { useCodecSupport } from '../hooks/useCodecSupport';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
+import { isCloudRunVideoEnabled } from '../../../lib/env';
+import { db, functions } from '../../../lib/firebase';
 import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
@@ -95,12 +99,23 @@ const INITIAL_STATE: VideoExporterState = {
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
 function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const { scenes, audioUrl, fps, captions, subtitleStyle, speedPaintSpeed, speedPaintMultipliers, showDrawTool } = props;
+  const {
+    scenes,
+    audioUrl,
+    fps,
+    animateScenes,
+    captions,
+    subtitleStyle,
+    speedPaintSpeed,
+    speedPaintMultipliers,
+    showDrawTool,
+  } = props;
   return (
     <VideoComposition
       scenes={scenes}
       audioUrl={audioUrl}
       fps={fps}
+      animateScenes={typeof animateScenes === 'boolean' ? animateScenes : false}
       captions={captions}
       subtitleStyle={subtitleStyle}
       isExporting={true}
@@ -191,7 +206,12 @@ export function useVideoExporter() {
   }, [codecSupport.resolvedAudioCodec]);
 
   // -------------------------------------------------------------------------
-  // Inicia renderização via WebCodecs
+  // Cloud Run check — se habilitado, desvia para renderização server-side
+  // -------------------------------------------------------------------------
+  const useCloudRun = isCloudRunVideoEnabled();
+
+  // -------------------------------------------------------------------------
+  // Inicia renderização via WebCodecs (ou Cloud Run)
   // -------------------------------------------------------------------------
   const startRender = useCallback(async (options: VideoExportOptions) => {
     const {
@@ -247,6 +267,233 @@ export function useVideoExporter() {
     const resolution = getResolutionFromQuality(ratio, resolvedQuality);
     let mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
 
+    // ─── Gera strokeAnimations ANTES de enviar para Cloud Run ────────────────
+    // O pipeline server-side (onSubJobCompleted) não gera speed paint,
+    // então precisamos gerar aqui no frontend antes de chamar startVideoJob.
+    // Isso garante que o Cloud Run receba scenes com strokeAnimation populado.
+    if (animateScenes && mappedScenes.length > 0) {
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      setState(prev => ({
+        ...prev,
+        renderStatusText: 'Gerando animações de speed paint...',
+      }));
+
+      try {
+        log.info('Gerando strokeAnimations para Cloud Run', { sceneCount: mappedScenes.length });
+        const enhanceResult = await enhanceScenesWithSpeedPaint(mappedScenes, {
+          onProgress: (progress) => {
+            const pct = Math.round(progress * 30); // 0-30% para speed paint
+            if (pct !== lastReportedPercentRef.current) {
+              lastReportedPercentRef.current = pct;
+              setState(prev => ({
+                ...prev,
+                renderProgress: pct,
+                renderStatusText: `Gerando animações... ${pct}%`,
+              }));
+            }
+          },
+          signal: abortController.signal,
+        });
+
+        mappedScenes = enhanceResult.scenes;
+        if (enhanceResult.warnings.length > 0) {
+          setState(prev => ({
+            ...prev,
+            speedPaintWarnings: enhanceResult.warnings,
+          }));
+        }
+      } catch (err) {
+        log.warn('Falha ao gerar strokeAnimations para Cloud Run — enviando sem animação', { error: err });
+        setState(prev => ({
+          ...prev,
+          speedPaintWarnings: [...prev.speedPaintWarnings, 'Speed paint não pôde ser gerado.'],
+        }));
+      } finally {
+        abortControllerRef.current = null;
+        // Preserva o peso do speed paint para o Cloud Run não sobrescrever o progresso
+        speedPaintPhaseWeightRef.current = 30;
+      }
+    }
+
+    // ─── Cloud Run path ──────────────────────────────────────────────────
+    if (useCloudRun) {
+      try {
+        const startVideoCallable = httpsCallable(functions, 'startVideoJob');
+        const requestId = crypto.randomUUID();
+
+        log.info('Iniciando renderização via Cloud Run', {
+          projectId,
+          durationInFrames,
+          resolution: resolvedQuality,
+        });
+
+        setState(prev => ({
+          ...prev,
+          renderStatusText: 'Enviando para renderização...',
+        }));
+
+        const callResult = await startVideoCallable({
+          requestId,
+          projectId: projectId || undefined,
+          projectName: fileName || 'Vídeo Script Master',
+          compositionId: 'VideoComposition',
+          inputProps: {
+            scenes: mappedScenes,
+            audioUrl,
+            fps,
+            width: resolution.width,
+            height: resolution.height,
+            animateScenes,
+            captions,
+            subtitleStyle,
+            projectId: projectId || '',
+            userId: userId || '',
+          } as Record<string, unknown>,
+          codec: resolvedVideoCodecRef.current,
+          width: resolution.width,
+          height: resolution.height,
+          fps,
+          durationInFrames,
+          resolutionLabel: resolvedQuality,
+        });
+
+        const { jobId } = callResult.data as { jobId: string; status: string; projectId: string };
+
+        // ─── Aguarda job completar via onSnapshot ────────────────────────
+        log.info('Job de vídeo criado, aguardando conclusão', { jobId });
+
+        const jobDocRef = doc(db, 'users', userId || '', 'video_jobs', jobId);
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        await new Promise<void>((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            unsubscribe();
+            reject(new Error('Timeout aguardando renderização de vídeo.'));
+          }, 15 * 60 * 1000); // 15 minutos
+
+          const unsubscribe = onSnapshot(
+            jobDocRef,
+            (snapshot) => {
+              if (!snapshot.exists()) return;
+
+              const jobData = snapshot.data();
+              const progress = jobData.progress as { percent: number; label: string } | undefined;
+              const status = jobData.status as string;
+
+              if (progress) {
+                // Acumula progresso do Cloud Run com o peso do speed paint (30%)
+                const speedPaintOffset = speedPaintPhaseWeightRef.current;
+                const cloudRunProgress = speedPaintOffset + Math.round(progress.percent * (1 - speedPaintOffset / 100));
+                setState(prev => ({
+                  ...prev,
+                  renderProgress: cloudRunProgress,
+                  renderStatusText: progress.label || 'Renderizando...',
+                }));
+              }
+
+              if (status === 'completed') {
+                clearTimeout(timeoutId);
+                unsubscribe();
+
+                // Busca o blob do resultado
+                const resultUrl = jobData.resultUrl as string;
+                if (resultUrl) {
+                  fetch(resultUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                      const url = URL.createObjectURL(blob);
+                      setState({
+                        ...INITIAL_STATE,
+                        canRender: true,
+                        outputBlob: blob,
+                        outputUrl: url,
+                        renderProgress: 100,
+                        renderStatusText: 'Exportação concluída!',
+                        speedPaintWarnings: [],
+                      });
+
+                      // Salva no projeto
+                      if (projectId) {
+                        const durationInSeconds = durationInFrames / fps;
+                        saveVideoToProject(
+                          {
+                            projectId,
+                            userId: userId ?? '',
+                            videoUrl: url,
+                            format: 'mp4',
+                            width: resolution.width,
+                            height: resolution.height,
+                            fps,
+                            durationInSeconds,
+                            fileSizeBytes: blob.size,
+                            videoBlob: blob,
+                          },
+                          userId,
+                        ).catch(() => {
+                          if (renderIdRef.current !== renderId) return;
+                          setState(prev => ({
+                            ...prev,
+                            saveWarning: 'O vídeo foi exportado, mas não foi possível salvar no projeto.',
+                          }));
+                        });
+                      }
+                    })
+                    .catch(err => {
+                      log.error('Falha ao baixar resultado do Cloud Run', { error: err });
+                      setState(prev => ({
+                        ...prev,
+                        error: 'Vídeo renderizado, mas falha ao baixar o arquivo.',
+                        isRendering: false,
+                      }));
+                    });
+                }
+                resolve();
+              } else if (status === 'failed') {
+                clearTimeout(timeoutId);
+                unsubscribe();
+                const errorMsg = (jobData.errorMessage as string) || 'Falha ao renderizar vídeo no servidor.';
+                reject(new Error(errorMsg));
+              } else if (status === 'cancelled') {
+                clearTimeout(timeoutId);
+                unsubscribe();
+                reject(new Error('Renderização cancelada.'));
+              }
+            },
+            (error) => {
+              clearTimeout(timeoutId);
+              reject(new Error(`Erro ao monitorar renderização: ${String(error)}`));
+            },
+          );
+
+          // Listener de abort pelo usuário
+          abortController.signal.addEventListener('abort', () => {
+            clearTimeout(timeoutId);
+            unsubscribe();
+            reject(new Error('Renderização cancelada.'));
+          });
+        });
+
+      } catch (err: unknown) {
+        if (renderIdRef.current !== renderId) return;
+        const cancelled = isCancellationError(err);
+        setState(prev => ({
+          ...prev,
+          isRendering: false,
+          error: cancelled ? null : toUserFriendlyError(err, log),
+          renderStatusText: cancelled ? 'Exportação cancelada.' : prev.renderStatusText,
+        }));
+      } finally {
+        if (renderIdRef.current === renderId) {
+          abortControllerRef.current = null;
+          speedPaintPhaseWeightRef.current = 0;
+        }
+      }
+      return;
+    }
+
     // Cria AbortController ANTES da fase de speed paint para permitir cancelamento
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -295,6 +542,7 @@ export function useVideoExporter() {
       scenes: mappedScenes,
       audioUrl,
       fps,
+      animateScenes,
       captions,
       subtitleStyle,
       speedPaintSpeed,
@@ -431,7 +679,7 @@ export function useVideoExporter() {
         speedPaintPhaseWeightRef.current = 0;
       }
     }
-  }, []);
+  }, [useCloudRun]);
 
   // -------------------------------------------------------------------------
   // Cancela renderização em andamento

@@ -470,7 +470,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 ## Version
 
-- **Current:** `0.49.2`
+- **Current:** `0.49.3`
 - **Last release:** 2026-05-25
 
 ### Últimas mudanças (atualizado por /fast)
@@ -479,8 +479,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | Versão | Resumo |
 |--------|--------|
+| 0.49.3 | **Remoção de `beforeunload` no AudioGenerationHandler + chave i18n `generateScenes` + warnings de speed paint** — removido listener de `beforeunload` que gerava confusão sem bloquear efetivamente o fechamento da aba; nova chave `generateScenes` nos 3 locales para label "Gerar cenas"; `speedPaintWarnings` adicionado ao estado do `useVideoExporter` para feedback de falhas parciais de speed paint |
 | 0.49.2 | **Centralização da geração de Speed Paint + ajustes de testes/i18n + plano de arquitetura** — novos `speedPaintService` e `useSpeedPaintEnhancer` centralizam a geração de speed paint, extraindo lógica de `VideoComposition` e `useVideoExporter` para resolver bug de timeout (28s `delayRender`); 7 testes ajustados para alinhamento de strings i18n; `generateScenes` default `true` refletido em teste; novo plano de arquitetura em `docs/plan-speed-paint-centralizado.md` |
 | 0.49.1 | **Internacionalização massiva de componentes + novos namespaces i18n + correções** — 18 componentes migrados de texto hardcoded pt-BR para `t()` via `useLocale`; novos namespaces `dataMigration` e `transcription` nos 3 locales (~160 chaves); `ExportResultActions` simplificado (props `container`/`labelDownload` removidos); mensagem de erro em `start-image-job` corrigida para português; `DataMigrationDialog` refatorado com mensagens de erro mais descritivas |
 | 0.49.0 | **Refinamento de UI, AudioJobsPanel Accordion, SettingsSnapshot, staleness de jobs + testes** — `PIPELINE_SUCCESS_VISIBILITY_MS` (12s) para auto-dismiss do pipeline; `SettingsSnapshot` + `buildSettingsSnapshot()` + `compactSummary()` em Configuracoes; `isJobConsideredActive()` com staleness de 2h; `AudioJobsPanel` refatorado com Accordion, `JobRow`, `RECENT_TERMINAL_WINDOW_MS` (10min) e seções colapsáveis; `buildScriptPreview()` na Library; `useScrollTrigger` no Header; `DocumentHead` + SEO na JobsPage; sticky layout no StudioPage e VideoPage; fallback de loading enriquecido no Router; ~130 novas chaves i18n nos 3 locales; 2 novos arquivos de teste; responsividade em ScriptEditor, Library, JobList, VideoPage |
 | 0.48.0 | **`animateScenes`/`includeSubtitles` no pipeline + `video-captions.ts` + speed paint no pipeline de vídeo** — novos campos opcionais no pipeline server-side (`animateScenes`, `includeSubtitles`) com schemas Zod, tipos e defaults; nova biblioteca `functions/src/lib/video-captions.ts` com tipos de legenda; `buildPipelineCaptions()` no `onSubJobCompleted`; `VideoComposition` integrado com `generateScenesWithSpeedPaint`; `getResolutionFromRatioAndQuality()` substitui `getResolutionFromQuality`; `getVideoMetadata()`/`asPositiveNumber()` no Cloud Run; Storage bucket migrado para `.firebasestorage.app` |
-| 0.47.0 | **Nova `processVideoJob` + Cloud Run síncrono + vídeos na biblioteca** — nova Cloud Function `processVideoJob` via Cloud Tasks para vídeo; Cloud Run migrado de async (202) para resposta síncrona com download tokens persistentes; `persistProjectImage()` para imagens do pipeline; `buildVideoScenes()` e `clampSceneTimestamp()` no pipeline; `getSubJobRequestId()` para cancelamento preciso; `sceneTimestamps` em ImageJobRecord; `projectId` vinculado ao pipeline; `VideoLibraryVideo` com exibição e download de vídeos na biblioteca; chaves i18n de vídeo nos 3 locales; Cloud Run deploy com min-instances 1 + no-cpu-throttling |

@@ -837,6 +837,7 @@ export const ptBR: TranslationDictionary = {
         '60': 'Lento (1 min)',
         '120': 'Muito lento (2 min)',
       },
+      generateScenes: 'Gerar cenas',
       referenceImage: {
         tooLarge: 'Imagem muito grande. Tamanho máximo: 10MB.',
         readError: 'Falha ao ler o arquivo. Tente outra imagem.',

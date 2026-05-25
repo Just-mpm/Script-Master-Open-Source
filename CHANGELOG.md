@@ -7,6 +7,20 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.49.3] - 2026-05-25
+
+### Adicionado
+
+- **Chave i18n `generateScenes`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): label "Gerar cenas" / "Generate scenes" / "Generar escenas" para uso no estúdio — preenche lacuna de cobertura nas labels de opções de cena
+
+- **`speedPaintWarnings`** no estado do `useVideoExporter` (`src/features/video-render/hooks/useVideoExporter.tsx`): novo array de strings (`useState<string[]>`) que acumula avisos quando a geração de speed paint falha durante a exportação de vídeo, melhorando o feedback ao usuário sobre falhas parciais
+
+### Removido
+
+- **`beforeunload` listener no `AudioGenerationHandler.tsx`**: removido o `useEffect` que registrava um aviso de navegação durante geração, exportação ou pipeline ativo. O evento `beforeunload` tem suporte limitado nos navegadores modernos (não permite mensagens customizadas desde Chrome 51+) e não bloqueava efetivamente o fechamento da aba, gerando apenas confusão com o prompt genérico do navegador
+
+---
+
 ## [0.49.2] - 2026-05-25
 
 ### Adicionado

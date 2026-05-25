@@ -823,6 +823,7 @@ export const es: TranslationDictionary = {
         '60': 'Lento (1 min)',
         '120': 'Muy lento (2 min)',
       },
+      generateScenes: 'Generar escenas',
       referenceImage: {
         tooLarge: 'Imagen demasiado grande. Tamaño máximo: 10MB.',
         readError: 'Error al leer el archivo. Intenta con otra imagen.',
