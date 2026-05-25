@@ -183,7 +183,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/video-render/` (inclui `src/features/video-render/lib/speedPaintTimings.ts` — timings centralizados do Speed Paint) |
+| **Arquivos** | `src/features/video-render/` (inclui `src/features/video-render/lib/speedPaintTimings.ts` — timings centralizados do Speed Paint; `src/features/video-render/lib/speedPaintService.ts` — service centralizado de geração; `src/features/video-render/hooks/useSpeedPaintEnhancer.ts` — hook unificado para preview e exportação) |
 | **Renderização** | Client-side via WebCodecs. Sem backend |
 | **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
 | **Crossfade** | Overlap dinâmico por cena: speed paint usa 1s (`getSpeedPaintOverlapFrames`), cenas estáticas usam 400ms. Fade = 12 frames para cenas estáticas, spring `{damping:26, stiffness:100, mass:1}` |
@@ -193,7 +193,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromRatioAndQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
 | **Timing centralizado** | `src/features/video-render/lib/speedPaintTimings.ts` — módulo que consolida constantes de temporização do Speed Paint: tipos `SpeedPaintTimingMode` (`'default'` \| `'duration-based'` \| `'sequenced-batch'`), `SpeedPaintSequenceTiming` (`overlapFrames`, `sceneStepFrames`, `totalDurationInFrames`); constantes `DEFAULT_SPEED_PAINT_HOLD_SECONDS` (3s), `DEFAULT_SPEED_PAINT_FADE_SECONDS` (1s), `DURATION_BASED_SKETCH_RATIO` (0.8); funções `getSpeedPaintTimingConfig()`, `getSpeedPaintOverlapFrames()`, `getSpeedPaintSequenceTiming()`. Consumido por `SpeedPaintScene`, `VideoComposition`, `useSpeedPaintExporter`, `SpeedPaintPage`, `SpeedPaintComposition` e `SpeedPaintPlayer` |
 | **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s) no modo `default`, ou animação pura sem overhead no modo `duration-based`. Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Controle de duração via `AnimationDurationSelector` com opções predefinidas (substitui `SpeedPaintControls`). `DURATION_BASED_SKETCH_RATIO=0.8` define proporção automática sketch/reveal baseada na duração total. `SpeedPaintSpeed` type (`slow` \| `normal` \| `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) applied no renderer (`{ sketch: 1.0, reveal: 1.0 }`) |
-| **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
+| **Speed Paint pipeline** | `enhanceScenesWithSpeedPaint()` (via `speedPaintService`) com `{ useWorker: true }`. A geração é centralizada no service, consumida por `useSpeedPaintEnhancer` (preview) e `useVideoExporter` (exportação). Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
 | **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `REVEAL_SPEED_SCALE = 0.5` torna reveal 2x mais lento que linear. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
 | **Stroke worker** | `strokeWorker.ts` — `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` |
@@ -376,7 +376,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/speed-paint/` |
+| **Arquivos** | `src/features/speed-paint/`, `src/features/video-render/lib/speedPaintService.ts` (service de geração), `src/features/video-render/hooks/useSpeedPaintEnhancer.ts` (hook unificado) |
 | **Pipeline** | Upload → edge detection (grayscale + diferença adjacente) → clusterização BFS → vetorização → renderização progressiva via player Remotion nativo. Processamento pesado (edge detection + BFS) via Web Worker inline (Blob URL) — não bloqueia a main thread |
 | **Fases** | Sketch (bordas) → Reveal (coloração), renderizadas via `SpeedPaintScene` do video-render com suporte a multi-velocidade granular (`SpeedPaintMultipliers`) |
 | **Player** | `SpeedPaintPlayer` (wrapper `@remotion/player`) + `SpeedPaintPlayerControls` (play/pause, seek slider, screenshot, snapshot PNG, indicadores de fase). `showDrawTool` default `true` — lápis animado visível durante preview e exportação |
@@ -470,8 +470,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 ## Version
 
-- **Current:** `0.49.1`
-- **Last release:** 2026-05-24
+- **Current:** `0.49.2`
+- **Last release:** 2026-05-25
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -479,8 +479,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | Versão | Resumo |
 |--------|--------|
+| 0.49.2 | **Centralização da geração de Speed Paint + ajustes de testes/i18n + plano de arquitetura** — novos `speedPaintService` e `useSpeedPaintEnhancer` centralizam a geração de speed paint, extraindo lógica de `VideoComposition` e `useVideoExporter` para resolver bug de timeout (28s `delayRender`); 7 testes ajustados para alinhamento de strings i18n; `generateScenes` default `true` refletido em teste; novo plano de arquitetura em `docs/plan-speed-paint-centralizado.md` |
 | 0.49.1 | **Internacionalização massiva de componentes + novos namespaces i18n + correções** — 18 componentes migrados de texto hardcoded pt-BR para `t()` via `useLocale`; novos namespaces `dataMigration` e `transcription` nos 3 locales (~160 chaves); `ExportResultActions` simplificado (props `container`/`labelDownload` removidos); mensagem de erro em `start-image-job` corrigida para português; `DataMigrationDialog` refatorado com mensagens de erro mais descritivas |
 | 0.49.0 | **Refinamento de UI, AudioJobsPanel Accordion, SettingsSnapshot, staleness de jobs + testes** — `PIPELINE_SUCCESS_VISIBILITY_MS` (12s) para auto-dismiss do pipeline; `SettingsSnapshot` + `buildSettingsSnapshot()` + `compactSummary()` em Configuracoes; `isJobConsideredActive()` com staleness de 2h; `AudioJobsPanel` refatorado com Accordion, `JobRow`, `RECENT_TERMINAL_WINDOW_MS` (10min) e seções colapsáveis; `buildScriptPreview()` na Library; `useScrollTrigger` no Header; `DocumentHead` + SEO na JobsPage; sticky layout no StudioPage e VideoPage; fallback de loading enriquecido no Router; ~130 novas chaves i18n nos 3 locales; 2 novos arquivos de teste; responsividade em ScriptEditor, Library, JobList, VideoPage |
 | 0.48.0 | **`animateScenes`/`includeSubtitles` no pipeline + `video-captions.ts` + speed paint no pipeline de vídeo** — novos campos opcionais no pipeline server-side (`animateScenes`, `includeSubtitles`) com schemas Zod, tipos e defaults; nova biblioteca `functions/src/lib/video-captions.ts` com tipos de legenda; `buildPipelineCaptions()` no `onSubJobCompleted`; `VideoComposition` integrado com `generateScenesWithSpeedPaint`; `getResolutionFromRatioAndQuality()` substitui `getResolutionFromQuality`; `getVideoMetadata()`/`asPositiveNumber()` no Cloud Run; Storage bucket migrado para `.firebasestorage.app` |
 | 0.47.0 | **Nova `processVideoJob` + Cloud Run síncrono + vídeos na biblioteca** — nova Cloud Function `processVideoJob` via Cloud Tasks para vídeo; Cloud Run migrado de async (202) para resposta síncrona com download tokens persistentes; `persistProjectImage()` para imagens do pipeline; `buildVideoScenes()` e `clampSceneTimestamp()` no pipeline; `getSubJobRequestId()` para cancelamento preciso; `sceneTimestamps` em ImageJobRecord; `projectId` vinculado ao pipeline; `VideoLibraryVideo` com exibição e download de vídeos na biblioteca; chaves i18n de vídeo nos 3 locales; Cloud Run deploy com min-instances 1 + no-cpu-throttling |
-| 0.46.0 | **Componente PipelineSteps + i18n job status + correções** — novo `PipelineSteps` (+264 linhas) com visualização de 4 etapas do pipeline; `STEP_LABEL_KEYS` em `i18n/utils.ts`; chaves `pending`/`skipped` nos 3 locales; integração do `PipelineState` na ActionBar e App.tsx; `ActionBar` com botão `AutoAwesome` e `PipelineSteps`; `VALID_STEPS`/`VALID_STATUSES` em `usePipelineOrchestrator`; estilo default de cena localizado em `process-scene-prompt-job`; `generateScenes` default corrigido para `true`; `VIDEO_JOB_QUEUE` não utilizada removida |

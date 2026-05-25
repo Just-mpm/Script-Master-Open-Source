@@ -64,7 +64,7 @@ describe('LandingPage', () => {
 
   it('renderiza a barra SocialProofBar', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Powered by Gemini AI')).toBeDefined();
+    expect(screen.getByText('Tecnologia de IA avançada')).toBeDefined();
   });
 
   it('renderiza a seção de features highlights', () => {
@@ -82,11 +82,11 @@ describe('LandingPage', () => {
     expect(screen.getByText('Biblioteca')).toBeDefined();
   });
 
-  it('renderiza os feature showcases (TTS, Vídeo, IA)', () => {
+it('renderiza os feature showcases (TTS, Vídeo, IA)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('heading', { level: 2, name: 'Voz Profissional com Gemini TTS' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Vídeo Client-Side com Remotion' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Assistente IA Integrado' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Voz Profissional com IA' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Vídeo Direto no Navegador' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Assistente IA Integrado' })).toBeInTheDocument();
   });
 
   it('renderiza a seção "Como Funciona"', () => {
@@ -106,11 +106,11 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'E Muito Mais' })).toBeDefined();
   });
 
-  it('renderiza features extras (Multi-speaker, Chunking, Dual Storage)', () => {
+it('renderiza features extras (Multi-speaker, Chunking, Dual Storage)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Multi-speaker')).toBeDefined();
-    expect(screen.getByText('Chunking Inteligente')).toBeDefined();
-    expect(screen.getByText('Dual Storage')).toBeDefined();
+    expect(screen.getByText('Múltiplos locutores')).toBeInTheDocument();
+    expect(screen.getByText('Divisão Inteligente')).toBeInTheDocument();
+    expect(screen.getByText('Armazenamento Duplo')).toBeInTheDocument();
   });
 
   it('renderiza a CTA final', () => {

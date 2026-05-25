@@ -223,7 +223,7 @@ describe('AssistantMessages', () => {
       { wrapper: Wrapper },
     );
 
-    expect(screen.getByText(/formato não pôde ser interpretado/i)).toBeDefined();
+    expect(screen.getByText(/O assistente sugeriu ajustes que não puderam ser aplicados automaticamente/i)).toBeDefined();
   });
 
   it('mostra skeleton de loading quando isLoading e não isStreaming', () => {

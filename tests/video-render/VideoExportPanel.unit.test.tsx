@@ -100,23 +100,23 @@ describe('VideoExportPanel', () => {
   describe('renderização', () => {
     it('renderiza o painel quando há conteúdo (áudio + cenas)', () => {
       render(<VideoExportPanel {...defaultProps} />);
-      expect(screen.getByText(/Exportar vídeo/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /exportar vídeo/i })).toBeInTheDocument();
     });
 
     it('não renderiza quando não há áudio', () => {
       render(<VideoExportPanel {...defaultProps} audioUrl={null} />);
-      expect(screen.queryByText(/Exportar vídeo/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /exportar vídeo/i })).not.toBeInTheDocument();
     });
 
     it('não renderiza quando não há cenas', () => {
       render(<VideoExportPanel {...defaultProps} scenes={[]} />);
-      expect(screen.queryByText(/Exportar vídeo/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /exportar vídeo/i })).not.toBeInTheDocument();
     });
 
-    it('exibe informações de resolução e codec', () => {
+    it('exibe informações de resolução', () => {
       render(<VideoExportPanel {...defaultProps} />);
       expect(screen.getByText(/1920x1080/i)).toBeInTheDocument();
-      expect(screen.getByText(/H264/i)).toBeInTheDocument();
+      expect(screen.getByText(/30 quadros por segundo/i)).toBeInTheDocument();
     });
 
     it('exibe estimativa de tamanho quando durationInSeconds é fornecido', () => {
@@ -155,12 +155,12 @@ describe('VideoExportPanel', () => {
       expect(screen.queryByText(/Velocidade do Speed Paint/i)).not.toBeInTheDocument();
     });
 
-    it('exporta speed paint sem enviar ajustes manuais de velocidade', () => {
+it('exporta speed paint sem enviar ajustes manuais de velocidade', () => {
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
 
       // Clica exportar
-      const exportBtn = screen.getByText(/Exportar MP4/i);
+      const exportBtn = screen.getByRole('button', { name: /exportar vídeo/i });
       act(() => {
         fireEvent.click(exportBtn);
       });
@@ -200,10 +200,10 @@ describe('VideoExportPanel', () => {
 
   // --- Botão exportar ---
 
-  describe('botão exportar', () => {
+describe('botão exportar', () => {
     it('habilita o botão quando canRender é true e há conteúdo', () => {
       render(<VideoExportPanel {...defaultProps} />);
-      const exportBtn = screen.getByText(/Exportar MP4/i);
+      const exportBtn = screen.getByRole('button', { name: /exportar vídeo/i });
       expect(exportBtn).not.toBeDisabled();
     });
 
@@ -211,21 +211,21 @@ describe('VideoExportPanel', () => {
       const exporter = makeExporter({ canRender: false });
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
       // O botão aparece mas está desabilitado
-      const btn = screen.getByText(/Exportar MP4/i);
+      const btn = screen.getByRole('button', { name: /exportar vídeo/i });
       expect(btn).toBeDisabled();
     });
 
     it('desabilita o botão quando a duração do áudio ainda está em 0', () => {
       render(<VideoExportPanel {...defaultProps} durationInFrames={0} durationInSeconds={0} />);
-      const btn = screen.getByText(/Exportar MP4/i);
+      const btn = screen.getByRole('button', { name: /exportar vídeo/i });
       expect(btn).toBeDisabled();
       expect(screen.getByText(/Aguardando a duração do áudio/i)).toBeInTheDocument();
     });
 
-    it('chama startRender ao clicar em exportar', () => {
+it('chama startRender ao clicar em exportar', () => {
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
-      const exportBtn = screen.getByText(/Exportar MP4/i);
+      const exportBtn = screen.getByRole('button', { name: /exportar vídeo/i });
       act(() => {
         fireEvent.click(exportBtn);
       });
@@ -344,7 +344,7 @@ describe('VideoExportPanel', () => {
       });
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
       expect(screen.getByText(/Exportação concluída/i)).toBeInTheDocument();
-      expect(screen.getByText(/Baixar MP4/i)).toBeInTheDocument();
+      expect(screen.getByText(/Baixar vídeo/i)).toBeInTheDocument();
       expect(screen.getByText(/Exportar novamente/i)).toBeInTheDocument();
       expect(screen.getByText(/Limpar/i)).toBeInTheDocument();
     });

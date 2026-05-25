@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
+import React, { useMemo } from 'react';
+import { AbsoluteFill, Sequence } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps } from '../types';
 import { SPEED_PAINT_MULTIPLIERS } from '../types';
@@ -24,7 +24,7 @@ const FADE_DURATION_MS = 400;
  * - Legendas opcionais sobrepostas
  * - Cross-scene via overlap de Sequences (crossfade real entre cenas)
  */
-export function VideoComposition({
+export const VideoComposition = React.memo(function VideoComposition({
   scenes,
   audioUrl,
   fps,
@@ -36,7 +36,6 @@ export function VideoComposition({
   showDrawTool = true,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
-  const frame = useCurrentFrame();
   const speedPaintOverlapFrames = useMemo(() => getSpeedPaintOverlapFrames('default', fps), [fps]);
 
   // Pré-computa captions por cena — evita filter+map a cada frame (P1: hotspot em ~300K iterações/s)
@@ -140,12 +139,11 @@ export function VideoComposition({
             )}
 
             {/* Waveform de áudio sincronizado com a cena — usa frame absoluto (não local da Sequence) */}
-            {audioUrl && (
+            {audioUrl && !isExporting && (
               <WaveformOverlay
                 audioUrl={audioUrl}
                 sceneStartTime={scene.timestamp}
                 sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
-                frame={frame}
                 fps={fps}
                 opacity={0.3}
                 isExporting={isExporting}
@@ -156,4 +154,4 @@ export function VideoComposition({
       })}
     </AbsoluteFill>
   );
-}
+});

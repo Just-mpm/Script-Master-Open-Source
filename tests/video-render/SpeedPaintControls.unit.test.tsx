@@ -16,6 +16,31 @@ vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
 }));
 
+vi.mock('../../src/features/i18n', () => ({
+  useLocaleSafe: () => ({
+    t: (key: string) => {
+      const labels: Record<string, string> = {
+        'speedPaint.speedLabels.verySlow': 'Muito lento',
+        'speedPaint.speedLabels.slow': 'Lento',
+        'speedPaint.speedLabels.normal': 'Normal',
+        'speedPaint.speedLabels.fast': 'Rápido',
+        'speedPaint.speedLabels.veryFast': 'Muito rápido',
+        'speedPaint.speedLabels.maximum': 'Máximo',
+        'speedPaint.revealSpeed': 'Velocidade da coloração (reveal)',
+        'speedPaint.speedSectionTitle': 'Velocidade do Speed Paint',
+        'speedPaint.speedSectionDescription': 'Controle separado de velocidade para desenho e coloração.',
+        'speedPaint.sketchSpeed': 'Desenho (Sketch)',
+        'speedPaint.revealSpeedLabel': 'Colorir (Reveal)',
+        'speedPaint.sketchAriaLabel': 'Velocidade do desenho (sketch)',
+        'speedPaint.sketchLabel': 'Desenho (Sketch)',
+        'speedPaint.revealLabel': 'Colorir (Reveal)',
+      };
+      return labels[key] ?? key;
+    },
+    locale: 'pt-BR' as const,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (apos mocks)
 // ---------------------------------------------------------------------------

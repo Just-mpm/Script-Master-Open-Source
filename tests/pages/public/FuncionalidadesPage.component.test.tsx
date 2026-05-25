@@ -62,7 +62,7 @@ describe('FuncionalidadesPage', () => {
   it('renderiza todas as 6 seções de features', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     const sections = [
-      'Estúdio de Voz (TTS)',
+      'Estúdio de Voz',
       'Renderização de Vídeo',
       'Geração de Imagens',
       'Speed Paint & Animação',
@@ -84,12 +84,11 @@ describe('FuncionalidadesPage', () => {
     expect(document.getElementById('platform')).toBeDefined();
   });
 
-  it('renderiza features de TTS', () => {
+it('renderiza features de TTS', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Geração de Áudio TTS')).toBeDefined();
-    expect(screen.getByText('Chunking Inteligente')).toBeDefined();
-    expect(screen.getByText('Multi-speaker')).toBeDefined();
-    expect(screen.getByText('Controle de Voz')).toBeDefined();
+    expect(screen.getByText('Geração de Áudio com IA')).toBeDefined();
+    expect(screen.getByText('Divisão Inteligente')).toBeDefined();
+    expect(screen.getByText('Múltiplos locutores')).toBeDefined();
   });
 
   it('renderiza features de vídeo', () => {
@@ -109,8 +108,8 @@ describe('FuncionalidadesPage', () => {
   it('renderiza features de Speed Paint', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     expect(screen.getByText('Animação de Pintura')).toBeDefined();
-    expect(screen.getByText('Batch Processing')).toBeDefined();
-    expect(screen.getByText('Exportação Mídia')).toBeDefined();
+    expect(screen.getByText('Processamento em Lote')).toBeDefined();
+    expect(screen.getByText('Exportação de Mídia')).toBeDefined();
   });
 
   it('renderiza features do assistente', () => {
@@ -122,14 +121,14 @@ describe('FuncionalidadesPage', () => {
 
   it('renderiza features da plataforma', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Persistência Dual')).toBeDefined();
+    expect(screen.getByText('Armazenamento Duplo')).toBeDefined();
     expect(screen.getByText('Download Fácil')).toBeDefined();
     expect(screen.getByText('Gestão de Projetos')).toBeDefined();
   });
 
   it('renderiza os feature showcases de deep dive', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Áudio Profissional com Gemini TTS')).toBeDefined();
+    expect(screen.getByText('Áudio Profissional com IA')).toBeDefined();
     expect(screen.getByText('Vídeo Sem Servidor')).toBeDefined();
     expect(screen.getByText('Imagens com Referência Visual')).toBeDefined();
   });

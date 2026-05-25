@@ -53,7 +53,7 @@ describe('CreditIndicator', () => {
 
     render(<CreditIndicator />, { wrapper: Wrapper });
 
-    expect(screen.getByLabelText('Sincronizando saldo de créditos...')).toBeDefined();
+    expect(screen.getByLabelText('Atualizando saldo...')).toBeDefined();
   });
 
   it('mostra estado de erro quando a leitura de créditos falha', () => {

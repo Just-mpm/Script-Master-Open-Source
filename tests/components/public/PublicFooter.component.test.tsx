@@ -84,8 +84,8 @@ describe('PublicFooter', () => {
     expect(screen.getByText(new RegExp(`${year} Script Master\\. Todos os direitos reservados\\.`))).toBeDefined();
   });
 
-  it('renderiza texto "Feito com IA e Gemini"', () => {
+  it('renderiza texto "Feito com IA"', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
-    expect(screen.getByText('Feito com IA e Gemini')).toBeDefined();
+    expect(screen.getByText('Feito com IA')).toBeDefined();
   });
 });

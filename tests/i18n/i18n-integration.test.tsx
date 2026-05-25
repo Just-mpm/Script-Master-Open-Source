@@ -109,9 +109,9 @@ describe('i18n — integração com componentes públicos', () => {
       expect(screen.getByText(/Script Master\. Todos os direitos reservados/)).toBeDefined();
     });
 
-    it('renderiza "Feito com IA e Gemini" traduzido', () => {
+    it('renderiza "Feito com IA" traduzido', () => {
       render(<PublicFooter />, { wrapper: Wrapper });
-      expect(screen.getByText('Feito com IA e Gemini')).toBeDefined();
+      expect(screen.getByText('Feito com IA')).toBeDefined();
     });
 
     it('renderiza links do footer com labels traduzidos', () => {

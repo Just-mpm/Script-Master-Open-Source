@@ -8,7 +8,7 @@ import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 import type { SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
-import { generateScenesWithSpeedPaint } from '../lib/speedPaintRenderer';
+import { enhanceScenesWithSpeedPaint } from '../lib/speedPaintService';
 import { clearStrokeCache } from '../lib/strokeCache';
 import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
 import { isCancellationError, toUserFriendlyError } from '../lib/exportUtils';
@@ -261,9 +261,8 @@ export function useVideoExporter() {
 
       try {
         log.info('Gerando strokeAnimations para cenas', { sceneCount: mappedScenes.length });
-        const strokeResults = await generateScenesWithSpeedPaint(
-          mappedScenes.map((s) => ({ imageUrl: s.imageUrl })),
-          (progress) => {
+        const enhanceResult = await enhanceScenesWithSpeedPaint(mappedScenes, {
+          onProgress: (progress) => {
             const pct = Math.round(progress * SPEED_PAINT_PHASE_WEIGHT);
             if (pct !== lastReportedPercentRef.current) {
               lastReportedPercentRef.current = pct;
@@ -274,20 +273,11 @@ export function useVideoExporter() {
               }));
             }
           },
-          { useWorker: true },
-        );
-
-        // Mapeia resultados para as cenas e coleta avisos de falha
-        mappedScenes = mappedScenes.map((scene, index) => {
-          const result = strokeResults[index];
-          if (result?.error) {
-            collectedWarnings.push(`Cena ${index + 1}: ${result.error}`);
-          }
-          return {
-            ...scene,
-            strokeAnimation: result?.animation,
-          };
+          signal: abortController.signal,
         });
+
+        mappedScenes = enhanceResult.scenes;
+        collectedWarnings = enhanceResult.warnings;
 
         // Armazena o peso da fase de speed paint para progresso acumulado
         speedPaintPhaseWeightRef.current = SPEED_PAINT_PHASE_WEIGHT;

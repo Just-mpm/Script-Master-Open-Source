@@ -7,6 +7,31 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.49.2] - 2026-05-25
+
+### Adicionado
+
+- **`useSpeedPaintEnhancer`** (`src/features/video-render/hooks/useSpeedPaintEnhancer.ts`): novo hook (+140 linhas) que centraliza a geração de speed paint, extraindo a lógica de `VideoComposition.tsx` e `useVideoExporter.tsx` para um único ponto de entrada. Prepara o terreno para resolver a geração triplicada de speed paint (bug de timeout de 28s do Remotion `delayRender`)
+
+- **`speedPaintService`** (`src/features/video-render/lib/speedPaintService.ts`): novo módulo service (+134 linhas) que abstrai a chamada a `speedPaintRenderer`, provendo uma API limpa de `enhanceScenesWithSpeedPaint()` consumida por `useVideoExporter` e `useSpeedPaintEnhancer`
+
+- **Plano de arquitetura** (`docs/plan-speed-paint-centralizado.md`): documento de 600 linhas com diagnóstico completo do bug de geração triplicada de speed paint, comparação arquitetura atual vs proposta e roteiro de implementação
+
+### Alterado
+
+- **`VideoPreview.tsx`**: importa e utiliza `useSpeedPaintEnhancer` em vez de gerenciar geração localmente — alinhamento com a nova arquitetura centralizada
+- **`VideoComposition.tsx`**: import de `speedPaintRenderer` removido — a composição não gera mais speed paint internamente, eliminando fonte do bug de `delayRender` não liberado
+- **`useVideoExporter.tsx`**: migrado de `speedPaintRenderer` (remoção de import) para `speedPaintService` (`enhanceScenesWithSpeedPaint`) — lógica de geração extraída para o service
+
+### Corrigido
+
+- **Testes de texto/i18n** (7 arquivos): ajustes de strings em `AssistantMessages.component.test.tsx` (mensagem de erro do assistente), `CreditIndicator.component.test.tsx` ("Atualizando saldo..." mais conciso), `PublicFooter.component.test.tsx` e `i18n-integration.test.tsx` ("Feito com IA" simplificado), `FuncionalidadesPage.component.test.tsx` (features renomeadas), `LandingPage.component.test.tsx` (showcases realinhados)
+- **`studio.defaults.unit.test.ts`**: expectation de `generateScenes` ajustada de `false` para `true` — reflete o comportamento real do sistema
+- **`SpeedPaintControls.unit.test.tsx`**: novas chaves i18n de speed paint adicionadas ao mock de locale para cobertura de teste
+- **`VideoExportPanel.unit.test.tsx`**: textos de exportação atualizados para alinhamento com i18n
+
+---
+
 ## [0.49.1] - 2026-05-24
 
 ### Adicionado
