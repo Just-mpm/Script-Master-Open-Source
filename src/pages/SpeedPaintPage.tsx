@@ -612,7 +612,6 @@ export function SpeedPaintPage() {
             {!speedPaintExporter.isRendering && speedPaintExporter.outputUrl && (
               <ExportResultActions
                 hasOutput={true}
-                container={speedPaintExporter.resolvedContainer}
                 onDownload={speedPaintExporter.handleDownload}
                 onReset={handleBatchExportBackToQueue}
                 onClear={handleBatchExportReset}

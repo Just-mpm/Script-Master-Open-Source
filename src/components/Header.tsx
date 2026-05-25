@@ -167,7 +167,7 @@ export function Header() {
                 variant="overline"
                 sx={{ color: 'text.secondary', lineHeight: 1.1, letterSpacing: '0.08em', fontSize: '0.625rem' }}
               >
-                AI Studio
+                {t('studio.header.subtitle')}
               </Typography>
               <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
                 Script Master

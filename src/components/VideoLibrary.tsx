@@ -88,7 +88,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
         severity="error"
         action={
           <Button color="inherit" size="small" onClick={() => { void reload(); }}>
-            Tentar novamente
+            {t('common.tryAgain')}
           </Button>
         }
       >

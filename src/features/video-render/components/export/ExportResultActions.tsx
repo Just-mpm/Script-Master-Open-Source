@@ -33,8 +33,6 @@ import {
 export interface ExportResultActionsProps {
   /** Se tem output disponível (sucesso) */
   hasOutput: boolean;
-  /** Container do vídeo ('mp4' ou 'webm') — usado no label de download */
-  container: string;
   /** Callback de download */
   onDownload: () => void;
   /** Callback de reset (nova exportação) */
@@ -51,7 +49,7 @@ export interface ExportResultActionsProps {
   retryIcon?: ReactNode;
   /** Label do botão "Limpar" */
   labelClear?: string;
-  /** Label do botão "Baixar MP4/WebM" — o container é anexado automaticamente */
+  /** Label do botão "Baixar vídeo" */
   labelDownload?: string;
   /** sx override */
   sx?: SystemStyleObject<Theme>;
@@ -71,7 +69,6 @@ function formatBlobSize(bytes: number): string {
 
 export const ExportResultActions = React.memo(function ExportResultActions({
   hasOutput,
-  container,
   onDownload,
   onReset,
   onClear,
@@ -80,7 +77,7 @@ export const ExportResultActions = React.memo(function ExportResultActions({
   labelRetry = 'Exportar novamente',
   retryIcon,
   labelClear = 'Limpar',
-  labelDownload = 'Baixar',
+  labelDownload = 'Baixar vídeo',
   sx,
 }: ExportResultActionsProps) {
   if (!hasOutput) return null;
@@ -135,7 +132,7 @@ export const ExportResultActions = React.memo(function ExportResultActions({
             transition: 'transform 0.15s ease',
           }}
         >
-          {labelDownload} {container.toUpperCase()}
+          {labelDownload}
         </Button>
       </Stack>
     </Stack>

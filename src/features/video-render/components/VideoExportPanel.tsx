@@ -36,6 +36,7 @@ import {
 } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
+import { useLocale } from '../../i18n';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -96,6 +97,8 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   onIncludeSubtitlesChange,
   durationInSeconds,
 }: VideoExportPanelProps) {
+  const { t } = useLocale();
+
   // --- State local de opções de exportação (elimina re-renders em cascata no pai) ---
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
@@ -174,7 +177,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: exporter.isRendering || exporter.outputUrl ? 2 : 0 }}>
           <VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-            Exportar vídeo
+            {t('video.exportButton')}
           </Typography>
         </Stack>
 
@@ -185,7 +188,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             icon={<WarningAmber sx={{ fontSize: 20 }} />}
             sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
           >
-            {exporter.error || 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.'}
+            {exporter.error || t('video.exportNotSupported')}
           </Alert>
         )}
 
@@ -221,7 +224,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
           >
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Algumas cenas não puderam ser animadas:
+              {t('video.speedPaintWarningsTitle')}
             </Typography>
             <Typography variant="caption" component="ul" sx={{ pl: 2, mt: 0.5 }}>
               {exporter.speedPaintWarnings.map((warning, i) => (
@@ -236,7 +239,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
           <Stack spacing={GAP_MEDIUM}>
             {/* Info de resolução, codec e estimativa */}
             <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
-              Resolução: {resolution.width}x{resolution.height} | FPS: {fps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}
+              {t('video.exportInfo', { width: resolution.width, height: resolution.height, fps })}
             </Typography>
 
             {/* Toggle: animar cenas com Speed Paint */}
@@ -250,12 +253,12 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               }
               label={
                 <Tooltip
-                  title="Adiciona animação de pintura a cada cena. Pode aumentar o tempo de exportação consideravelmente."
+                  title={t('video.animateScenesTooltip')}
                   placement="top"
                   arrow
                 >
                   <Typography variant="caption" sx={{ color: 'text.secondary', cursor: 'help' }}>
-                    Animar cenas (Speed Paint)
+                    {t('video.animateScenesLabel')}
                   </Typography>
                 </Tooltip>
               }
@@ -273,8 +276,8 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
 
             {/* Campo de nome do arquivo */}
             <TextField
-              label="Nome do arquivo"
-              placeholder="video-export"
+              label={t('video.fileNameLabel')}
+              placeholder={t('video.fileNamePlaceholder')}
               variant="outlined"
               size="small"
               value={fileName ?? ''}
@@ -323,7 +326,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
                   }
                   label={
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      Legenda
+                      {t('video.subtitleLabel')}
                     </Typography>
                   }
                   sx={{ mr: 0 }}
@@ -344,7 +347,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
                   } : {}),
                 }}
               >
-                Exportar {exporter.resolvedContainer.toUpperCase()}
+                {t('video.exportButton')}
               </Button>
             </Stack>
           </Stack>
@@ -357,7 +360,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             statusText={exporter.renderStatusText}
             isRendering={exporter.isRendering}
             onCancel={exporter.handleCancel}
-            cancelLabel="Cancelar"
+            cancelLabel={t('common.cancel')}
             progressAriaLabel="Progresso da exportação de vídeo"
           />
         )}
@@ -366,7 +369,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         {!exporter.isRendering && exporter.outputUrl && (
           <ExportResultActions
             hasOutput={true}
-            container={exporter.resolvedContainer}
             onDownload={exporter.handleDownload}
             onReset={exporter.reset}
             statusText={exporter.renderStatusText}

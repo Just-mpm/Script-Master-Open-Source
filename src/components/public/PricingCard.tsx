@@ -23,6 +23,7 @@ import {
   SHADOW_DEEP,
 } from '../../theme/tokens';
 import { fadeInUp, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
+import { useLocale } from '../../features/i18n';
 
 // ── Constantes de layout ──────────────────────────────────────
 
@@ -133,6 +134,7 @@ export function PricingCard({
   onCtaClick,
   index = 0,
 }: PricingCardProps) {
+  const { t } = useLocale();
   const buttonStyle = resolveButtonStyle(ctaVariant, recommended);
 
   return (
@@ -183,7 +185,7 @@ export function PricingCard({
               </Typography>
               {recommended && (
                 <Chip
-                  label="Popular"
+                  label={t('pricing.popular')}
                   size="small"
                   sx={(theme) => ({
                     bgcolor: `${alpha(theme.palette.secondary.main, 0.15)}`,

@@ -281,7 +281,7 @@ const PhraseCard = React.memo(function PhraseCard({
             </>
           ) : (
             <>
-              <Tooltip title="Editar timing">
+               <Tooltip title="Ajustar sincronização">
                 <IconButton
                   size="small"
                   onClick={(e) => { e.stopPropagation(); onToggleTiming(); }}

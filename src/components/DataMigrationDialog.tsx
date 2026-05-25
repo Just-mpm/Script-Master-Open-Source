@@ -56,7 +56,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
       }
     } catch (error: unknown) {
       log.error('Erro na migração', { error });
-      setMigrationResult({ migrated: 0, errors: 1, details: 'Erro inesperado durante a migração.' });
+        setMigrationResult({ migrated: 0, errors: 1, details: t('dataMigration.unexpectedError') });
     } finally {
       setIsMigrating(false);
     }
@@ -69,12 +69,12 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
 
   if (!checkResult) {
     return (
-      <Dialog open aria-label="Migrando dados">
+      <Dialog open aria-label={t('dataMigration.checking')}>
         <DialogContent>
           <Stack spacing={2} sx={{ alignItems: 'center', py: 3 }}>
             <CircularProgress size={28} />
             <Typography variant="body2" color="text.secondary">
-              Verificando dados locais...
+              {t('dataMigration.checking')}
             </Typography>
           </Stack>
         </DialogContent>
@@ -88,14 +88,14 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
       <Dialog open aria-labelledby="migration-complete-title">
         <DialogTitle id="migration-complete-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <CloudUpload color="primary" />
-          Migração concluída
+          {t('dataMigration.completed')}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1.5}>
             <Typography variant="body2">
               {migrationResult.errors === 0
-                ? `Todos os ${migrationResult.migrated} itens foram migrados com sucesso.`
-                : `${migrationResult.migrated} itens migrados com sucesso. ${migrationResult.errors} erros encontrados.`}
+                ? t('dataMigration.successMessage', { count: migrationResult.migrated })
+                : t('dataMigration.partialSuccessMessage', { count: migrationResult.migrated, errors: migrationResult.errors })}
             </Typography>
             {migrationResult.details && (
               <Typography variant="body2" color="text.secondary">
@@ -103,8 +103,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
               </Typography>
             )}
             <DialogContentText sx={{ mt: 1 }} variant="caption" color="text.disabled">
-              Arquivos de mídia (áudio, imagens, vídeos) foram migrados como metadados.
-              Os arquivos físicos precisam ser gerados novamente.
+              {t('dataMigration.mediaNote')}
             </DialogContentText>
           </Stack>
         </DialogContent>
@@ -112,15 +111,15 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
           {migrationResult.errors > 0 ? (
             <>
               <Button color="inherit" onClick={handleMigrate} disabled={isMigrating}>
-                Tentar novamente
+                {t('common.tryAgain')}
               </Button>
               <Button variant="contained" onClick={() => { markMigrationCompleted(userId); onComplete(); }}>
-                Ignorar e continuar
+                {t('dataMigration.ignoreAndContinue')}
               </Button>
             </>
           ) : (
             <Button variant="contained" onClick={onComplete}>
-              Continuar
+              {t('common.continue')}
             </Button>
           )}
         </DialogActions>
@@ -137,13 +136,12 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
     <Dialog open maxWidth="sm" fullWidth aria-labelledby="migration-confirm-title">
       <DialogTitle id="migration-confirm-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <CloudUpload color="primary" />
-        Migrar dados locais?
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2}>
-          <DialogContentText>
-            Detectamos <Box component="strong">{totalItems} itens</Box> salvos localmente
-            no seu navegador. Deseja migrá-los para a nuvem para acessar de qualquer dispositivo?
+        {t('dataMigration.confirmTitle')}
+       </DialogTitle>
+       <DialogContent>
+         <Stack spacing={2}>
+           <DialogContentText>
+              {t('dataMigration.confirmDescription', { totalItems })}
           </DialogContentText>
 
           <Box
@@ -155,23 +153,22 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
               '& li': { py: 0.25 },
             }}
           >
-            {summary.projects > 0 && <Typography component="li" variant="body2">{summary.projects} projetos</Typography>}
-            {summary.generations > 0 && <Typography component="li" variant="body2">{summary.generations} gerações de áudio</Typography>}
-            {summary.imageGenerations > 0 && <Typography component="li" variant="body2">{summary.imageGenerations} gerações de imagem</Typography>}
-            {summary.memories > 0 && <Typography component="li" variant="body2">{summary.memories} memórias da IA</Typography>}
-            {summary.chats > 0 && <Typography component="li" variant="body2">{summary.chats} conversas</Typography>}
+            {summary.projects > 0 && <Typography component="li" variant="body2">{t('dataMigration.projectCount', { count: summary.projects })}</Typography>}
+            {summary.generations > 0 && <Typography component="li" variant="body2">{t('dataMigration.audioGenerationCount', { count: summary.generations })}</Typography>}
+            {summary.imageGenerations > 0 && <Typography component="li" variant="body2">{t('dataMigration.imageGenerationCount', { count: summary.imageGenerations })}</Typography>}
+            {summary.memories > 0 && <Typography component="li" variant="body2">{t('dataMigration.memoryCount', { count: summary.memories })}</Typography>}
+            {summary.chats > 0 && <Typography component="li" variant="body2">{t('dataMigration.chatCount', { count: summary.chats })}</Typography>}
             {summary.settings && <Typography component="li" variant="body2">{t('settings.customSettings')}</Typography>}
           </Box>
 
           <DialogContentText variant="caption" color="text.disabled">
-            Arquivos de mídia (áudio, imagens) serão migrados como metadados.
-            Os arquivos físicos não podem ser transferidos e precisarão ser gerados novamente.
+             {t('dataMigration.confirmMediaNote')}
           </DialogContentText>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={handleSkip} disabled={isMigrating}>
-          Ignorar
+          {t('common.skip')}
         </Button>
         <Button
           variant="contained"
@@ -179,7 +176,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
           disabled={isMigrating}
           startIcon={isMigrating ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {isMigrating ? 'Migrando...' : 'Migrar dados'}
+          {isMigrating ? t('dataMigration.transferring') : t('dataMigration.transfer')}
         </Button>
       </DialogActions>
     </Dialog>

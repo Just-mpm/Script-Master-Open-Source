@@ -218,7 +218,7 @@ export function LoginPage() {
                   <Box
                     component="img"
                     src={logos.mark.round}
-                    alt="Script Master"
+                    alt={t('nav.logoAlt')}
                     sx={{
                       width: EMPTY_ICON_SIZE * 2,
                       height: EMPTY_ICON_SIZE * 2,

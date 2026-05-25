@@ -56,7 +56,7 @@ export function UsageIndicator({ resource, used, limit }: UsageIndicatorProps) {
       image_generations: t('billing.metrics.imageGenerations'),
       video_exports: t('billing.metrics.videoExports'),
       script_chars: t('billing.metrics.scriptChars'),
-      storage_mb: 'Armazenamento (MB)',
+      storage_mb: t('billing.usage.storageMb'),
     };
 
     return resourceLabels[resource] ?? resource;

@@ -119,11 +119,11 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                 aria-hidden="true"
               />
               <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                Velocidade do Speed Paint
+                {t('speedPaint.speedSectionTitle')}
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              Controle separado de velocidade para desenho e coloração.
+              {t('speedPaint.speedSectionDescription')}
             </Typography>
           </Stack>
 
@@ -149,7 +149,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   sx={{ alignItems: 'center', justifyContent: 'space-between' }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    Desenho (Sketch)
+                    {t('speedPaint.sketchLabel')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
                     {sketchLabel}
@@ -162,7 +162,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   step={SPEED_STEP}
                   value={sketch}
                   onChange={handleSketchChange}
-                  aria-label="Velocidade do desenho (sketch)"
+                  aria-label={t('speedPaint.sketchAriaLabel')}
                   sx={{
                     color: 'primary.main',
                     '& .MuiSlider-thumb': {
@@ -185,7 +185,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
                   sx={{ alignItems: 'center', justifyContent: 'space-between' }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    Colorir (Reveal)
+                    {t('speedPaint.revealLabel')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
                     {revealLabel}

@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import WifiOff from '@mui/icons-material/WifiOff';
 import { ICON_SIZE_SM, GAP_COMPACT, ERROR_BG_MEDIUM } from '../theme/tokens';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useLocale } from '../features/i18n';
 
 /**
  * Indicador discreto de status de conexão.
@@ -10,11 +11,12 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus';
  */
 export function NetworkStatusIndicator() {
   const isOnline = useOnlineStatus();
+  const { t } = useLocale();
 
   if (isOnline) return null;
 
   return (
-    <Tooltip title="Você está offline. Algumas funções podem não estar disponíveis.">
+    <Tooltip title={t('common.offlineTooltip')}>
       <Typography
         component="span"
         role="status"
@@ -40,7 +42,7 @@ export function NetworkStatusIndicator() {
           sx={{ fontSize: ICON_SIZE_SM, animation: 'pulse 2s ease-in-out infinite' }}
           aria-hidden="true"
         />
-        Offline
+        {t('common.offline')}
       </Typography>
     </Tooltip>
   );

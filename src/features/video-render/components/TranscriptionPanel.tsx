@@ -37,6 +37,7 @@ import {
 // ---------------------------------------------------------------------------
 
 import type { CaptionSource } from '../types';
+import { useLocale } from '../../i18n';
 
 interface TranscriptionPanelProps {
   /** URL do áudio — null desabilita o botão */
@@ -92,6 +93,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
   onCancel,
   onClear,
 }: TranscriptionPanelProps) {
+  const { t } = useLocale();
   // Só aparece quando há áudio e cenas para gerar legendas
   const hasContent = Boolean(audioUrl && scenes.length > 0);
   const canTranscribe = hasContent && !isTranscribing;
@@ -105,13 +107,13 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
   // Rótulo da fonte de transcrição para exibição
   const sourceLabel =
     transcriptionSource === 'segment-timing'
-      ? 'Timing TTS'
+      ? t('video.transcription.sourceSegmentTiming')
       : transcriptionSource === 'whisper-aligned'
-        ? 'Whisper Alinhado'
+        ? t('video.transcription.sourceWhisperAligned')
         : transcriptionSource === 'proportional'
-          ? 'Proporcional'
+          ? t('video.transcription.sourceProportional')
           : transcriptionSource === 'manual'
-            ? 'Manual'
+            ? t('video.transcription.sourceManual')
             : null;
 
   return (
@@ -128,7 +130,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: 2 }}>
           <ClosedCaption sx={{ fontSize: 22, color: 'primary.main' }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-            Legendas
+            {t('video.transcription.title')}
           </Typography>
         </Stack>
 
@@ -142,7 +144,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
                 sx={{ mb: 1, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
               >
-                O roteiro foi editado desde a última geração de legendas. As legendas podem estar desalinhadas.
+                {t('video.transcription.staleWarning')}
               </Alert>
             )}
 
@@ -154,7 +156,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
             <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center' }}>
               <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN, filter: `drop-shadow(0 0 6px ${SUCCESS_GLOW})` }} />
               <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: '-0.01em' }}>
-                {captionCount} palavras transcritas
+                {t('video.transcription.wordCount', { count: captionCount })}
               </Typography>
               {sourceLabel && (
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -170,7 +172,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                 onClick={onClear}
                 startIcon={<DeleteOutline sx={{ fontSize: ICON_SIZE_MD }} />}
               >
-                Limpar
+                {t('common.clear')}
               </Button>
               <Button
                 variant="contained"
@@ -183,7 +185,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                   '&:hover': { background: BRAND_GRADIENT_HOVER },
                 }}
               >
-                Gerar novamente
+                {t('video.transcription.regenerate')}
               </Button>
             </Stack>
           </Stack>
@@ -234,7 +236,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
               startIcon={<StopCircleOutlined sx={{ fontSize: ICON_SIZE_MD }} />}
               sx={{ alignSelf: 'flex-end', mt: 0.5 }}
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </Stack>
         )}
@@ -253,14 +255,14 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
               size="small"
               onClick={onTranscribe}
               startIcon={<Refresh sx={{ fontSize: ICON_SIZE_MD }} />}
-              sx={{
-                background: BRAND_GRADIENT,
-                boxShadow: BRAND_GLOW,
-                '&:hover': { background: BRAND_GRADIENT_HOVER },
-              }}
-            >
-              Tentar novamente
-            </Button>
+                sx={{
+                  background: BRAND_GRADIENT,
+                  boxShadow: BRAND_GLOW,
+                  '&:hover': { background: BRAND_GRADIENT_HOVER },
+                }}
+              >
+                {t('common.tryAgain')}
+              </Button>
           </Stack>
         )}
 
@@ -274,7 +276,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
                 sx={{ borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
               >
-                Seu navegador não suporta Whisper. As legendas serão geradas por distribuição proporcional (menos precisas).
+                As legendas serão geradas automaticamente com base no tempo do áudio.
               </Alert>
             )}
 
@@ -285,8 +287,8 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
             >
               <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
                 {whisperSupported
-                  ? 'Transcreve o áudio com Whisper para legendas palavra-a-palavra sincronizadas.'
-                  : 'Distribui o roteiro proporcionalmente pelo tempo de áudio.'}
+                  ? 'Transcreve o áudio para legendas palavra-a-palavra sincronizadas.'
+                  : 'Distribui o roteiro pelo tempo de áudio automaticamente.'}
               </Typography>
 
               <Button

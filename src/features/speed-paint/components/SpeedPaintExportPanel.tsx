@@ -190,15 +190,15 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
       {/* Painel de configuração antes de exportar */}
       {!exporter.isRendering && !exporter.outputUrl && (
         <Stack spacing={GAP_MEDIUM}>
-          {/* Info de resolução + codec + estimativa */}
-          <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
-            Resolução: {resolution.width}x{resolution.height} | FPS: {resolvedFps} | Codec: {exporter.resolvedVideoCodec.toUpperCase()}
-          </Typography>
+          {/* Info de resolução + estimativa */}
+           <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+             {t('speedPaint.exportInfo', { width: resolution.width, height: resolution.height, fps: resolvedFps })}
+           </Typography>
 
           <AnimationDurationSelector
             duration={animationDuration}
             onDurationChange={onAnimationDurationChange}
-            helperText="A duração escolhida também será usada no vídeo exportado."
+            helperText={t('speedPaint.durationExportHelper')}
           />
 
           {/* Seletor de qualidade (sem 4K) */}
@@ -213,7 +213,7 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
           {/* Campo de nome do arquivo */}
           <TextField
             label={t('speedPaint.exportFileName')}
-            placeholder="speed-paint"
+            placeholder={t('speedPaint.fileNamePlaceholder')}
             variant="outlined"
             size="small"
             value={fileName ?? ''}
@@ -261,7 +261,7 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
               } : {}),
             }}
           >
-            {t('speedPaint.exportButton')} {exporter.resolvedContainer.toUpperCase()}
+            {t('speedPaint.exportButton')} vídeo
           </Button>
         </Stack>
       )}
@@ -282,7 +282,6 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
       {!exporter.isRendering && exporter.outputUrl && (
         <ExportResultActions
           hasOutput={true}
-          container={exporter.resolvedContainer}
           onDownload={exporter.handleDownload}
           onReset={exporter.reset}
           statusText={exporter.renderStatusText}

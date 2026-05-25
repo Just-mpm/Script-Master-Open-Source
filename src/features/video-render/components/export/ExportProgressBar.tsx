@@ -161,7 +161,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
         sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}
       >
         <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          {isRendering ? 'O processamento continua em segundo plano nesta aba.' : statusText}
+          {isRendering ? t('video.exportBackgroundProcess') : statusText}
         </Typography>
         <Button
           variant="outlined"

@@ -603,7 +603,7 @@ export const SpeedPaintPlayerControls = React.memo(function SpeedPaintPlayerCont
           <AnimationDurationSelector
             duration={animationDuration}
             onDurationChange={onAnimationDurationChange}
-            helperText="A animação usa 80% do tempo para desenhar e 20% para pintar."
+            helperText={t('speedPaint.durationHelperText')}
           />
 
           <ActionButtons

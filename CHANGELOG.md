@@ -7,6 +7,197 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.49.1] - 2026-05-24
+
+### Adicionado
+
+- **Novos namespaces i18n** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): `dataMigration` (labels de migração de dados) e `transcription` (labels de transcrição) — +155–161 linhas por locale, preenchendo lacunas de cobertura do assistente e migração
+
+### Alterado
+
+- **Internacionalização de 18 componentes** que ainda usavam texto hardcoded em pt-BR — `Header.tsx` (subtitle via `t('studio.header.subtitle')`), `NetworkStatusIndicator.tsx`, `PricingCard.tsx`, `VideoLibrary.tsx` (`t('common.tryAgain')`), `AssistantHeader.tsx` (label `"Gemini"` → `"IA"`), `UsageIndicator.tsx` (`storage_mb` via i18n), `JobCard.tsx` (`Pipeline` → `t('jobs.filter.pipeline')`), `SpeedPaintPlayerControls.tsx` (helperText via i18n), `CaptionEditorPanel.tsx` (Tooltip via `t('video.ajustarSincronizacao')`), `SpeedPaintControls.tsx` (labels sketch/reveal via i18n), `VideoExportPanel.tsx`, `TranscriptionPanel.tsx`, `ExportProgressBar.tsx`, `SpeedPaintExportPanel.tsx`, `LoginPage.tsx`, `RegisterPage.tsx` (logo alt via `t('nav.logoAlt')`)
+
+- **`ExportResultActions.tsx`**: props simplificadas — `container` e `labelDownload` removidos, agora usa apenas `label` com tradução inline via `t('common.download')`. Impacta `SpeedPaintPage.tsx` que usava `container={speedPaintExporter.resolvedContainer}`
+
+- **`SpeedPaintExportPanel.tsx`**: informações de codec/resolução removidas do card de exportação (eram exibidas como `caption` fixo) — layout mais limpo e responsivo. `helperText` do `AnimationDurationSelector` agora vem de `t('speedPaint.durationHelperText')`
+
+### Corrigido
+
+- **`start-image-job.ts`**: mensagem de erro corrigida de `"batch"` para `"lote"` (português) — alinhamento com idioma do projeto
+- **`DataMigrationDialog.tsx`**: refatorado com mensagens de erro mais descritivas e tratamento de estados durante migração (removido `aria-label` redundante e texto hardcoded substituído por variáveis de estado)
+
+---
+
+## [0.49.0] - 2026-05-24
+
+### Adicionado
+
+- **`PIPELINE_SUCCESS_VISIBILITY_MS`** (`src/components/ActionBar.tsx`): nova constante (12s) que controla o tempo de exibição do estado de sucesso do pipeline antes do auto-dismiss
+
+- **`SettingsSnapshot` e `buildSettingsSnapshot()`** (`src/components/Configuracoes.tsx`): nova interface e função para captura de snapshot das configurações do estúdio, permitindo visualização compacta do estado atual
+
+- **`compactSummary()`** (`src/components/Configuracoes.tsx`, `src/components/Inspector.tsx`): nova função utilitária compartilhada que trunca texto longo com ellipsis para visualização em cards e painéis
+
+- **`buildScriptPreview()`** (`src/components/Library.tsx`): nova função que gera preview do roteiro com limite de 180 caracteres para exibição na biblioteca
+
+- **`isJobConsideredActive()` e `ACTIVE_JOB_STALE_AFTER_MS`** (`src/features/jobs/hooks/useActiveJobs.ts`): nova função de staleness detection para jobs — jobs com status `running`/`queued` atualizados há mais de 2h são considerados inativos, prevenindo travamentos na UI
+
+- **`AudioJobsPanel` refatorado** (`src/features/studio/components/AudioJobsPanel.tsx`): +317 linhas — migrado para layout Accordion com `JobRow` (componente extraído), `RECENT_TERMINAL_WINDOW_MS` (10min), `HISTORY_PANEL_MAX_HEIGHT` (420px), `getTerminalCardStyles()` para estilização por status. Seções colapsáveis para jobs recentes e histórico completo
+
+- **Novas chaves i18n nos 3 locales** (`en.ts`, `es.ts`, `pt-BR.ts`): namespaces `loadingPageSubtitle`, `workspace`, `summaryPanel`, `librarySection`, `steps` (3 passos), `active`, `completed`, `failed`, `filters` — ~130 novas chaves por locale
+
+- **`useScrollTrigger`** (`src/components/Header.tsx`): integração com hook de scroll para comportamentos adaptativos do AppBar
+
+- **SEO na JobsPage** (`src/pages/JobsPage.tsx`): integração de `DocumentHead` + `getPageSeo()` para SEO dinâmico; import de `Chip`, `Grid`, `Paper`, `glassSurfaceSx`
+
+- **Sticky layout no StudioPage e VideoPage**: `position: sticky` e `top` adicionados ao Inspector (StudioPage, lg: 84px) e painel lateral (VideoPage, md: 96px) para navegação contínua durante scroll
+
+- **Fallback de loading no Router** (`src/router/routes.tsx`): Suspense fallback enriquecido com `Skeleton`, `Chip`, `Paper` e `alpha` do tema MUI — experiência visual melhorada durante carregamento lazy
+
+### Alterado
+
+- **Configuracoes.tsx** (+396/-117): refatorado com seções colapsáveis (`maxHeight: 560` com scroll), `overflowY` responsivo, snapshot compacto de configurações, padding adaptativo. Novos imports: `Box`, `Chip`
+- **ScriptEditor.tsx** (+77/-54): padding (`py`), alinhamento (`alignItems`) e largura de ações (`width`) responsivos por breakpoint
+- **Library.tsx** (+108/-29): largura (`width: 100% md: auto`), alinhamento (`alignItems`) e largura máxima (`maxWidth: 440`) responsivos na seção de áudio
+- **GalleryCard.tsx**: sombras de hover refinadas com `alpha()` do tema — glow primary 32% → 38% quando selecionado, sombra base 22% → 30%
+- **JobCard.tsx**: layout otimizado — Stack horizontal simplificado, Chip com ícone de status, flex refinado
+- **JobList.tsx** (+154/-104): integração com `glassPanelSx` e `Paper`; sticky header com `top: 84`; padding e border-radius responsivos
+- **VideoPage.tsx** (+286/-101): layout reorganizado com `Accordion`, `Chip` e ícones temáticos (`AutoAwesomeOutlined`, `ChecklistRounded`, `ExpandMoreRounded`, `MovieOutlined`, `SubtitlesOutlined`, `VideoLibraryOutlined`). Sidebar com sticky, padding e border-radius responsivos
+- **Testes**: Header — `getByText` migrado para `getAllByText` (robustez contra duplicação de labels em tela); ScriptEditor — query strategy corrigida para `closest` fallback
+
+### Corrigido
+
+- **ConfiguracoesPage.component.test.tsx**: labels duplicados (`getByText` → `getAllByText`) para `Aoede`, `Zephyr`, `Puck`, `Descontraída`, `Brilhante` — evitava TimeoutError quando componente renderizava múltiplas instâncias
+
+---
+
+## [0.48.0] - 2026-05-24
+
+### Adicionado
+
+- **`animateScenes` e `includeSubtitles` como opções do pipeline** (`functions/src/genkit/schemas/common.ts`, `functions/src/usage/pipeline-jobs.ts`, `functions/src/flows/start-pipeline.ts`, `src/hooks/usePipelineOrchestrator.ts`, `src/components/app/AudioGenerationHandler.tsx`): novos campos opcionais no pipeline server-side que controlam animação de cenas (speed paint) e inclusão de legendas no vídeo final. Defaults: `animateScenes: true`, `includeSubtitles: false`. Schemas Zod, tipos de pipeline e frontend atualizados para propagar os novos parâmetros
+
+- **`VideoComposition` integrado com `generateScenesWithSpeedPaint`** (`src/features/video-render/components/VideoComposition.tsx`): a composição Remotion do pipeline de vídeo agora importa e utiliza o renderizador speed paint para animação de cenas quando `animateScenes` está ativo
+
+- **Nova biblioteca de legendas** (`functions/src/lib/video-captions.ts`, +358 linhas): módulo compartilhado com tipos `CaptionWord`, `AudioSegmentData`, `TextSegment` e constantes `PUNCTUATION_PAUSES` para construção programática de legendas no backend do pipeline
+
+- **`buildPipelineCaptions()`** (`functions/src/flows/on-sub-job-completed.ts`): nova função que constrói legendas do pipeline utilizando a biblioteca `video-captions`. Importada no `onSubJobCompleted` para gerar legendas durante a montagem do payload de vídeo
+
+- **`getResolutionFromRatioAndQuality()`** (`functions/src/flows/on-sub-job-completed.ts`): nova função para resolução de vídeo baseada na proporção + qualidade, substituindo `getResolutionFromQuality` com suporte a aspect ratio
+
+- **`getVideoMetadata()` e `asPositiveNumber()`** (`cloud-run/remotion/index.tsx`): novas funções utilitárias no módulo Remotion do Cloud Run para extração e validação de metadados de composição
+
+- **Suporte a `FIREBASE_STORAGE_BUCKET` via env var** (`cloud-run/src/firebase.ts`, `cloud-run/scripts/deploy.ps1`): o storage bucket agora pode ser configurado via variável de ambiente, com fallback para `${projectId}.firebasestorage.app` (substitui o antigo `.appspot.com`)
+
+### Alterado
+
+- **`WaveformOverlay.tsx`** (`src/features/video-render/components/`): implementação refinada para compatibilidade com o novo fluxo de pipeline de vídeo
+
+- **`useVideoExporter.tsx`** (`src/features/video-render/hooks/`): destructuring de scenes ajustado para suportar scenes com e sem animação
+
+- **`cloud-run/src/renderer.ts`**: import não utilizado de `firebase-admin/auth` removido
+
+- **Testes**: `remotion-components.component.test.tsx` — parâmetros `frame` removidos de chamadas de componente; `usePipelineOrchestrator.unit.test.ts` — campos `animateScenes` e `includeSubtitles` adicionados ao mock de input
+
+---
+
+## [0.47.0] - 2026-05-23
+
+### Adicionado
+
+- **`processVideoJob`** (`functions/src/flows/process-video-job.ts`, +176 linhas): nova Cloud Function `onTaskDispatched` para processamento de jobs de vídeo via Cloud Tasks. Tipos `VideoJobTaskPayload` e `CloudRunRenderPayload`. Substitui chamada HTTP direta ao Cloud Run por fila assíncrona gerenciada
+- **`persistProjectImage()`** (`functions/src/flows/process-image-job.ts`): nova função para salvar imagens do pipeline na subcoleção `projects/{id}/images` com `storagePath`, `downloadUrl`, `prompt` e dimensões
+- **`buildVideoScenes()`** e **`clampSceneTimestamp()`** (`functions/src/flows/on-sub-job-completed.ts`): funções para montar o payload de cenas do vídeo do pipeline e ajustar timestamps contra a duração total do áudio
+- **`getSubJobRequestId()`** (`functions/src/flows/cancel-pipeline.ts`): função auxiliar para resolução precisa do `requestId` de cada sub-job durante cancelamento de pipeline
+- **`sceneTimestamps`** opcional em `ImageJobRecord` (`functions/src/usage/image-jobs.ts`): campo para preservar timestamps das cenas e manter ordem cronológica no projeto
+- **`projectId`** em `pipeline-jobs.ts` e `start-pipeline.ts`: campo obrigatório que vincula o pipeline ao projeto desde a criação
+- **`VideoLibraryVideo`** (`src/components/video-library/types.ts`): nova interface que estende `ProjectVideo` com `resolvedUrl` para exibição de vídeos salvos na biblioteca
+- **Chaves i18n de vídeo** nos 3 locales (`pt-BR.ts`, `en.ts`, `es.ts`): `library.video`, `library.savedVideos`, `library.noVideos`, `library.videoItem`, `library.videoCount`
+- **Download de vídeos no lote** (`useBatchDownload.ts`): `downloadFile()` agora inclui vídeos do projeto no download em lote (áudio + cenas + vídeos)
+
+### Alterado
+
+- **Cloud Run renderer (`cloud-run/src/`)**: migrado de resposta assíncrona (202 Accepted + background render) para resposta síncrona (status `completed`/`error`). Adicionados `createDownloadToken()` e `buildStorageDownloadUrl()` para URLs de download persistentes com token (substitui signed URLs temporárias de 7 dias)
+- **Cloud Run deploy (`cloud-run/scripts/deploy.ps1`)**: `MIN_INSTANCES` alterado de 0 para 1, adicionado `--no-cpu-throttling` para estabilidade em produção
+- **Pipeline de vídeo migrado para Cloud Tasks**: `start-video-job.ts` substitui chamadas HTTP diretas ao Cloud Run por `VIDEO_JOB_QUEUE` (Cloud Tasks via `firebase-admin/functions`). Removidas `getCloudRunUrl()` e `getIdentityToken()` de chamada HTTP direta
+- **`on-sub-job-completed.ts`**: refatorado com `buildVideoScenes()` e `clampSceneTimestamp()` para construção correta do payload de vídeo do pipeline
+- **`Library.tsx`** (+154 linhas): expandido com exibição de vídeos salvos no projeto (importa `Movie` icon, tipo `ProjectVideo`)
+- **`GalleryCard.tsx`**: exibe contagem de vídeos no card do projeto
+- **`useProjectGallery.ts`**: mapeia `resolvedUrl` para vídeos do projeto
+- **`functions/src/index.ts`**: exporta nova `processVideoJob` — total: 24 flows de IA
+
+### Corrigido
+
+- **Cloud Run types (`cloud-run/src/types.ts`)**: `RenderResponse.status` corrigido de `'accepted' | 'error'` para `'completed' | 'error'` — alinhado com o novo comportamento síncrono do renderer
+
+---
+
+## [0.45.2] - 2026-05-23
+
+### Corrigido
+
+- **`cancel-job.ts`: suporte a cancelamento de pipeline jobs (`functions/src/flows/cancel-job.ts`)** — adicionados os tipos `PipelineJobRecord` (especialização de `BaseJobRecord` com campos de pipeline) e `AnyJobRecord` (union type `BaseJobRecord | PipelineJobRecord`). O `JobType` agora inclui `pipeline` como caso válido no switch de cancelamento. Antes, pipeline jobs não podiam ser cancelados via `cancelJob` callable genérica — agora o cancelamento cooperativo funciona também para pipelines
+
+- **`cleanup-old-jobs.ts`: pipeline jobs incluídos na limpeza automática (`functions/src/flows/cleanup-old-jobs.ts`)** — adicionado `'pipeline_jobs'` ao array de coleções varridas pela função agendada diária (03:00 BRT). Pipeline jobs completed >30d, failed >7d, cancelled >3d agora são removidos automaticamente, e jobs presos em running/queued >24h são marcados como failed
+
+- **`useJobsStore.ts`: filtro de pipeline jobs na UI regular (`src/hooks/useJobsStore.ts`)** — o listener unificado de jobs agora filtra `'pipeline'` da lista de tipos (`jobTypes.filter(jt => jt !== 'pipeline')`). Pipeline jobs têm UI própria (`PipelineCard`) e não devem aparecer na lista geral de jobs para evitar duplicação visual
+
+- **`firestore.rules`: regras faltantes para `transcriptions` e `pipeline_jobs`** — adicionada regra de leitura/escrita exclusiva para admin na coleção `transcriptions/{docId}` (alinhamento com política de dados apenas IndexedDB); adicionada regra de leitura pelo próprio usuário e escrita apenas admin para `pipeline_jobs/{jobId}` (consistente com as demais coleções de jobs)
+
+### Alterado
+
+- **`JobList.tsx` e `src/features/jobs/types.ts`** — `FILTER_OPTIONS` e `JobType` atualizados para refletir o novo tipo `pipeline`, garantindo que os filtros da página de jobs estejam sincronizados com os tipos reais
+
+---
+
+## [0.45.1] - 2026-05-23
+
+### Corrigido
+
+- **`removeUndefinedFields` recursivo em `generic-jobs.ts` e `pipeline-jobs.ts`** — a função utilitária de limpeza de campos `undefined` foi migrada de remoção superficial (shallow) para recursiva. Agora percorre objetos aninhados e arrays recursivamente, prevenindo erros de serialização no Firestore quando `undefined` aparece em níveis profundos (Firestore rejeita `undefined` como valor em qualquer nível de aninhamento). A assinatura mudou de `removeUndefinedFields<T extends object>(obj: T): T` para `removeUndefinedFields<T>(value: T): T`, aceitando qualquer tipo como entrada e preservando a estrutura original
+
+---
+
+## [0.45.0] - 2026-05-23
+
+### Adicionado
+
+- **Pipeline Server-Side (Fase 1)** — orquestrador de pipeline migrado do frontend para Cloud Functions. 3 novas Cloud Functions: `startPipeline` (callable), `cancelPipeline` (callable), `onSubJobCompleted` (`onDocumentWritten`). O pipeline de produção (áudio → scene prompts → imagens → vídeo) agora é gerenciado inteiramente no backend, com sub-jobs monitorados via Firestore + `onSubJobCompleted`
+- **Schemas de pipeline** (`functions/src/genkit/schemas/common.ts`): `PipelineStepStatusSchema`, `PipelineVoiceConfigSchema`, `PipelineMultiSpeakerConfigSchema`, `StartPipelineInputSchema`, `StartPipelineOutputSchema`, `CancelPipelineInputSchema`, `CancelPipelineOutputSchema` + tipos inferidos correspondentes
+- **`functions/src/flows/start-pipeline.ts`** (+315 linhas): Cloud Function callable que cria o pipeline com steps iniciais (audio, scene_prompts, images, video) e dispara o primeiro sub-job (áudio)
+- **`functions/src/flows/cancel-pipeline.ts`** (+156 linhas): Cloud Function callable que cancela pipeline e propaga cancelamento para todos os sub-jobs ativos
+- **`functions/src/flows/on-sub-job-completed.ts`** (+914 linhas): Cloud Function `onDocumentWritten` que escuta conclusão de sub-jobs e avança o pipeline automaticamente para a próxima etapa
+- **`functions/src/usage/pipeline-jobs.ts`** (+292 linhas): módulo utilitário com CRUD de pipeline jobs — tipos `PipelineStepName`, `PipelineStepStatus`, `PipelineStatus`, `PipelineStepRecord`, `PipelineVoiceConfig`, `PipelineMultiSpeakerConfig`, `PipelineInput`, `PipelineAudioResult`, `PipelineScenePromptsResult`, `PipelineImagesResult`, `PipelineVideoResult`, `PipelineResults`, `PipelineJobRecord`
+- **`pipelineId`** em `generic-jobs.ts` (`functions/src/usage/`): campo opcional que vincula sub-jobs ao pipeline pai
+- **Coleção `pipeline_jobs`** — subcollection `users/{uid}/pipeline_jobs` com index COLLECTION_GROUP (`status ASC, updatedAt ASC`) em `firestore.indexes.json`
+- **`JobType.pipeline`** em `src/lib/generic-jobs.ts` — `JobType` estendido para 5 tipos, `PipelineJobRecord` adicionado
+- **Ícone `AutoAwesome`** para pipeline em `src/features/jobs/components/JobCard.tsx` — pipeline jobs agora têm ícone próprio
+- **Toast de pipeline** em `src/features/jobs/hooks/useJobToasts.ts` — case `'pipeline'` retorna chave i18n `'pipelineCompleted'`
+- **5 novas chaves i18n** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): `jobs.sortOldestFirst`, `jobs.sortNewestFirst`, `jobs.generation`, `jobs.project`, `jobs.toasts.pipelineCompleted`
+
+### Alterado
+
+- **`usePipelineOrchestrator.ts`** (+264/-636): refatorado para chamar `startPipeline` (Cloud Function) em vez de `startJob` individuais para cada etapa. Agora usa `StartPipelineInput`/`StartPipelineOutput` como tipos de entrada/saída. Removidos tipos legados (`BaseJobRecord`, `AudioJobInput`, `ImageJobInput`, etc.) — ~372 linhas a menos. `INITIAL_STEPS`, `voiceConfig`, `multiSpeakerConfig` refatorados
+- **`functions/src/index.ts`**: exporta 3 novas Cloud Functions — `startPipeline`, `cancelPipeline`, `onSubJobCompleted`. Total: 23 flows de IA
+- **`functions/src/usage/index.ts`**: barrel exports expandidos com 13 novos tipos de pipeline
+- **`src/components/app/AudioGenerationHandler.tsx`**: removido `loadPipelineAudio()` — lógica antiga de carregamento de áudio do pipeline substituída pelo fluxo server-side
+- **Testes**: `usePipelineOrchestrator.unit.test.ts` (+191/-85) refatorado para mockar `startPipeline` em vez de `startJob`; `generic-jobs.test.ts` valida 5 tipos de job em vez de 4
+
+### Removido
+
+- **Tipos legados do pipeline no frontend** (`usePipelineOrchestrator.ts`): `BaseJobRecord`, `AudioJobInput`, `AudioJobOutput`, `ScenePromptJobInput`, `ScenePromptJobOutput`, `ImageJobInput`, `ImageJobOutput`, `VideoJobInput`, `VideoJobOutput`, `CancelJobOutput`, `isTerminalStatus`, `stepFromIndex`, `collectionForStep`, `waitForJobCompletion`, `CallableRef`, `inputProps` — substituídos pelos tipos server-side
+
+---
+
+## [0.44.1] - 2026-05-23
+
+### Corrigido
+
+- **Hardening de null safety nos schemas Zod do backend** (`functions/src/genkit/schemas/common.ts`): 10 campos em 5 schemas migrados de `.optional()` / `.nullable().optional()` para `.nullish()` — `AudioInputSchema` (`audioProfile`, `scene`, `styleNotes`, `referenceImage`), `ImageInputSchema` (`referenceImage`), `StartImageJobInputSchema` (`referenceImageUrl`, `imageTextLanguage`, `projectName`), `ScenePromptsInputSchema` (`style`, `visualFramework`, `locale`), `StartScenePromptJobInputSchema` (`style`, `visualFramework`, `locale`). `nullish()` aceita tanto `null` quanto `undefined`, prevenindo falhas de persistência no Firestore quando campos opcionais chegam como `null` via deserialização JSON
+- **Tratamento `?? undefined` nos flows de job** (`functions/src/flows/start-image-job.ts`, `functions/src/flows/start-scene-prompt-job.ts`): `referenceImageUrl`, `style`, `visualFramework` e `locale` agora usam `?? undefined` antes de persistir no Firestore, garantindo que valores nulos sejam omitidos do documento (Firestore rejeita `null` em alguns contextos)
+
+---
+
 ## [0.44.0] - 2026-05-23
 
 ### Adicionado

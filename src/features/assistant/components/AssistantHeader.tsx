@@ -77,7 +77,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
               {t('assistant.header.title')}
             </Typography>
             <Chip
-              label="Gemini"
+              label="IA"
               size="small"
               color="secondary"
               variant="outlined"
