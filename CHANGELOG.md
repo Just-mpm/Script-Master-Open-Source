@@ -7,6 +7,114 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.50.1] - 2026-05-25
+
+### Adicionado
+
+- **Interface `GenerateStrokesOptions`** (`cloud-run/src/speed-paint/speedPaintStrokes.ts`): novo tipo que agrupa parâmetros opcionais `cancelSignal` e `targetWidth` para a função `generateStrokesForScenes()`, melhorando a tipagem e extensibilidade do módulo server-side de speed paint
+
+- **Componente `SceneItem` memoizado** (`src/features/video-render/components/VideoComposition.tsx`): novo componente `React.memo` (+75 linhas líquidas) que encapsula a renderização de cada cena individualmente com memoização, reduzindo re-renders durante a composição de vídeo com múltiplas cenas
+
+- **Constante `TIMEOUT_MS`** (`src/features/video-render/lib/strokeWorker.ts`): timeout de 60.000ms (60s) para operações do Web Worker de strokes — previne travamentos permanentes quando o processamento de uma cena excede o limite
+
+- **Relatório de auditoria** (`docs/audits/audit-target-closed-speedpaint.md`): documento de 236 linhas com diagnóstico do erro "Target Closed" durante exportação de vídeo Speed Paint no Cloud Run, cobrindo ciclo de vida do browser Remotion, cancelamento cooperativo, memory pressure e Stage 0 do renderer
+
+### Alterado
+
+- **`cloud-run/src/renderer.ts`**: `generateStrokesForScenes()` agora aceita segundo parâmetro opcional `{ cancelSignal, targetWidth }` — integração com o sistema de cancelamento cooperativo do `makeCancelSignal`. Removida opção `concurrency: 4` do `renderMedia` (configuração desnecessária para single-instância)
+
+- **`cloud-run/src/speed-paint/speedPaintStrokes.ts`**: funções `downloadAndDecode()` e `processScene()` modificadas para aceitar `cancelSignal` e `targetWidth` via `GenerateStrokesOptions` — propagação do cancelamento cooperativo para o pipeline de geração de strokes
+
+- **`src/features/video-render/components/WaveformOverlay.tsx`**: `sceneDurationFrames` e `fadeFrames` migrados de cálculos diretos para `useMemo` — elimina recálculos desnecessários a cada frame durante a reprodução de vídeo
+
+- **`src/features/video-render/lib/strokeWorker.ts`**: adicionada constante `TIMEOUT_MS (60s)` com verificação de timeout no worker — falha graceful com `postMessage({ error })` quando o processamento excede o limite
+
+- **`src/features/video-render/components/SceneSequence.tsx`**: imports ajustados para alinhamento com a refatoração do `VideoComposition`
+
+---
+
+## [0.50.0] - 2026-05-25
+
+### Adicionado
+
+- **Módulo speed-paint no Cloud Run** (`cloud-run/src/speed-paint/`): 5 novos arquivos — `index.ts` (barrel), `types.ts` (tipos `Stroke`/`StrokeAnimation` espelhados do frontend), `cache.ts` (cache SHA-256 para strokes), `imageProcessing.ts` (edge detection + BFS clustering via sharp), `speedPaintStrokes.ts` (geração de strokes server-side). Permite que o pipeline de vídeo no Cloud Run gere animações speed paint sem depender do frontend, eliminando o `ERR_HTTP2_PROTOCOL_ERROR` causado pelo `resizedImage` base64 no payload de vídeo
+
+- **Dependência `sharp`** no Cloud Run (`cloud-run/package.json`): `^0.33.5` — processamento de imagens server-side para edge detection e geração de strokes
+
+- **Regras de Storage para cache de speed paint** (`storage.rules`): novo pattern `/speed-paint-cache/{allPaths=**}` com acesso exclusivo admin (leitura + escrita), permitindo cache persistente de strokes gerados server-side
+
+- **Geração de strokes integrada ao renderer** (`cloud-run/src/renderer.ts`): novo Stage 0 no fluxo de renderização — `generateStrokesForScenes()` é chamado antes do bundling, processando cenas com `animateScenes: true`. Falha degrada gracefulmente (cenas seguem sem animação, sem bloquear o vídeo)
+
+- **Limite de body Express aumentado** (`cloud-run/src/index.ts`): de `10mb` para `50mb` — necessário para payloads de vídeo com múltiplas cenas em altas resoluções
+
+### Alterado
+
+- **`start-video-job.ts`** (`functions/src/flows/`): verificação de env var alterada de `CLOUD_RUN_VIDEO_ENABLED !== 'true'` para `!CLOUD_RUN_URL` — a autorização de renderização agora usa diretamente a URL do Cloud Run como gate, simplificando a lógica de deploy e rollback
+
+- **`useVideoExporter.tsx`** (`src/features/video-render/hooks/`): removidas funções não utilizadas `useCloudRun` e estado `speedPaintWarnings` — alinhamento com a migração da geração speed paint para o service centralizado (`speedPaintService`)
+
+---
+
+## [0.49.3] - 2026-05-25
+
+### Adicionado
+
+- **Chave i18n `generateScenes`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): label "Gerar cenas" / "Generate scenes" / "Generar escenas" para uso no estúdio — preenche lacuna de cobertura nas labels de opções de cena
+
+- **`speedPaintWarnings`** no estado do `useVideoExporter` (`src/features/video-render/hooks/useVideoExporter.tsx`): novo array de strings (`useState<string[]>`) que acumula avisos quando a geração de speed paint falha durante a exportação de vídeo, melhorando o feedback ao usuário sobre falhas parciais
+
+### Removido
+
+- **`beforeunload` listener no `AudioGenerationHandler.tsx`**: removido o `useEffect` que registrava um aviso de navegação durante geração, exportação ou pipeline ativo. O evento `beforeunload` tem suporte limitado nos navegadores modernos (não permite mensagens customizadas desde Chrome 51+) e não bloqueava efetivamente o fechamento da aba, gerando apenas confusão com o prompt genérico do navegador
+
+---
+
+## [0.49.2] - 2026-05-25
+
+### Adicionado
+
+- **`useSpeedPaintEnhancer`** (`src/features/video-render/hooks/useSpeedPaintEnhancer.ts`): novo hook (+140 linhas) que centraliza a geração de speed paint, extraindo a lógica de `VideoComposition.tsx` e `useVideoExporter.tsx` para um único ponto de entrada. Prepara o terreno para resolver a geração triplicada de speed paint (bug de timeout de 28s do Remotion `delayRender`)
+
+- **`speedPaintService`** (`src/features/video-render/lib/speedPaintService.ts`): novo módulo service (+134 linhas) que abstrai a chamada a `speedPaintRenderer`, provendo uma API limpa de `enhanceScenesWithSpeedPaint()` consumida por `useVideoExporter` e `useSpeedPaintEnhancer`
+
+- **Plano de arquitetura** (`docs/plan-speed-paint-centralizado.md`): documento de 600 linhas com diagnóstico completo do bug de geração triplicada de speed paint, comparação arquitetura atual vs proposta e roteiro de implementação
+
+### Alterado
+
+- **`VideoPreview.tsx`**: importa e utiliza `useSpeedPaintEnhancer` em vez de gerenciar geração localmente — alinhamento com a nova arquitetura centralizada
+- **`VideoComposition.tsx`**: import de `speedPaintRenderer` removido — a composição não gera mais speed paint internamente, eliminando fonte do bug de `delayRender` não liberado
+- **`useVideoExporter.tsx`**: migrado de `speedPaintRenderer` (remoção de import) para `speedPaintService` (`enhanceScenesWithSpeedPaint`) — lógica de geração extraída para o service
+
+### Corrigido
+
+- **Testes de texto/i18n** (7 arquivos): ajustes de strings em `AssistantMessages.component.test.tsx` (mensagem de erro do assistente), `CreditIndicator.component.test.tsx` ("Atualizando saldo..." mais conciso), `PublicFooter.component.test.tsx` e `i18n-integration.test.tsx` ("Feito com IA" simplificado), `FuncionalidadesPage.component.test.tsx` (features renomeadas), `LandingPage.component.test.tsx` (showcases realinhados)
+- **`studio.defaults.unit.test.ts`**: expectation de `generateScenes` ajustada de `false` para `true` — reflete o comportamento real do sistema
+- **`SpeedPaintControls.unit.test.tsx`**: novas chaves i18n de speed paint adicionadas ao mock de locale para cobertura de teste
+- **`VideoExportPanel.unit.test.tsx`**: textos de exportação atualizados para alinhamento com i18n
+
+---
+
+## [0.49.1] - 2026-05-24
+
+### Adicionado
+
+- **Novos namespaces i18n** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): `dataMigration` (labels de migração de dados) e `transcription` (labels de transcrição) — +155–161 linhas por locale, preenchendo lacunas de cobertura do assistente e migração
+
+### Alterado
+
+- **Internacionalização de 18 componentes** que ainda usavam texto hardcoded em pt-BR — `Header.tsx` (subtitle via `t('studio.header.subtitle')`), `NetworkStatusIndicator.tsx`, `PricingCard.tsx`, `VideoLibrary.tsx` (`t('common.tryAgain')`), `AssistantHeader.tsx` (label `"Gemini"` → `"IA"`), `UsageIndicator.tsx` (`storage_mb` via i18n), `JobCard.tsx` (`Pipeline` → `t('jobs.filter.pipeline')`), `SpeedPaintPlayerControls.tsx` (helperText via i18n), `CaptionEditorPanel.tsx` (Tooltip via `t('video.ajustarSincronizacao')`), `SpeedPaintControls.tsx` (labels sketch/reveal via i18n), `VideoExportPanel.tsx`, `TranscriptionPanel.tsx`, `ExportProgressBar.tsx`, `SpeedPaintExportPanel.tsx`, `LoginPage.tsx`, `RegisterPage.tsx` (logo alt via `t('nav.logoAlt')`)
+
+- **`ExportResultActions.tsx`**: props simplificadas — `container` e `labelDownload` removidos, agora usa apenas `label` com tradução inline via `t('common.download')`. Impacta `SpeedPaintPage.tsx` que usava `container={speedPaintExporter.resolvedContainer}`
+
+- **`SpeedPaintExportPanel.tsx`**: informações de codec/resolução removidas do card de exportação (eram exibidas como `caption` fixo) — layout mais limpo e responsivo. `helperText` do `AnimationDurationSelector` agora vem de `t('speedPaint.durationHelperText')`
+
+### Corrigido
+
+- **`start-image-job.ts`**: mensagem de erro corrigida de `"batch"` para `"lote"` (português) — alinhamento com idioma do projeto
+- **`DataMigrationDialog.tsx`**: refatorado com mensagens de erro mais descritivas e tratamento de estados durante migração (removido `aria-label` redundante e texto hardcoded substituído por variáveis de estado)
+
+---
+
 ## [0.49.0] - 2026-05-24
 
 ### Adicionado

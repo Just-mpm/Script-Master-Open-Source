@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   AbsoluteFill,
   Img,
@@ -31,7 +31,7 @@ interface SceneSequenceProps {
  * Usa `<Img>` do Remotion que aguarda o carregamento antes de renderizar.
  * Todas as animações usam spring() do Remotion para timing physics-based.
  */
-export function SceneSequence({
+export const SceneSequence = React.memo(function SceneSequence({
   imageUrl,
   durationInFrames,
   fadeFrames: tFrames = 12,
@@ -111,4 +111,4 @@ export function SceneSequence({
       />
     </AbsoluteFill>
   );
-}
+});

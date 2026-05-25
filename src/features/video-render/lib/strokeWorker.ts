@@ -429,26 +429,36 @@ export function processSceneInWorker(
   sceneIndex: number,
 ): Promise<StrokeWorkerResult | null> {
   return new Promise<StrokeWorkerResult | null>((resolve) => {
+    const TIMEOUT_MS = 60_000;
+    let timedOut = false;
+
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      terminateStrokeWorker(worker);
+      log.warn('Worker timeout para cena', { sceneIndex });
+      resolve(null);
+    }, TIMEOUT_MS);
+
     const handler = (e: MessageEvent<StrokeWorkerResponse>) => {
       if (e.data.sceneIndex !== sceneIndex) return;
 
-      worker.removeEventListener('message', handler);
+      if (!timedOut) {
+        clearTimeout(timeoutId);
+        worker.removeEventListener('message', handler);
 
-      if (e.data.type === 'result') {
-        resolve(e.data);
-      } else {
-        // Erro no Worker — resolve com null para graceful degradation
-        log.warn('Worker falhou ao processar cena', {
-          sceneIndex,
-          error: (e.data as StrokeWorkerError).error,
-        });
-        resolve(null);
+        if (e.data.type === 'result') {
+          resolve(e.data);
+        } else {
+          log.warn('Worker falhou ao processar cena', {
+            sceneIndex,
+            error: (e.data as StrokeWorkerError).error,
+          });
+          resolve(null);
+        }
       }
     };
 
     worker.addEventListener('message', handler);
-
-    // Envia requisição ao Worker
     worker.postMessage({
       type: 'process',
       imageUrl,
