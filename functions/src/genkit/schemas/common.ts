@@ -30,6 +30,9 @@ export const AttachmentSchema = z.object({
   name: z.string().optional(),
 });
 
+/** Nível de pensamento do modelo */
+export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
+
 /** Input do flow de chat principal */
 export const AssistantInputSchema = z.object({
   message: z.string(),
@@ -37,6 +40,8 @@ export const AssistantInputSchema = z.object({
   attachments: z.array(AttachmentSchema).optional(),
   studioState: z.record(z.unknown()).optional(),
   requestId: z.string().optional(), // idempotência
+  model: z.enum(['fast', 'specialist']).optional(), // qual modelo usar
+  thinkingLevel: ThinkingLevelSchema.optional(), // nível de pensamento
 });
 
 /** Output do flow de chat */
@@ -57,6 +62,7 @@ export const InlineAssistantInputSchema = z.object({
   instruction: z.string(),
   fullScript: z.string().optional(),
   requestId: z.string().optional(),
+  thinkingLevel: ThinkingLevelSchema.optional(), // nível de pensamento
 });
 
 export const InlineAssistantOutputSchema = z.object({
@@ -237,6 +243,8 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Attachment = z.infer<typeof AttachmentSchema>;
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
+export type ThinkingLevel = z.infer<typeof ThinkingLevelSchema>;
+export type AssistantModel = 'fast' | 'specialist';
 export type InlineAssistantInput = z.infer<typeof InlineAssistantInputSchema>;
 export type InlineAssistantOutput = z.infer<typeof InlineAssistantOutputSchema>;
 export type AudioInput = z.infer<typeof AudioInputSchema>;

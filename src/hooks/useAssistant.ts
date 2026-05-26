@@ -64,6 +64,8 @@ interface AssistantFlowInput {
   attachments?: Array<{ mimeType: string; data: string; name?: string }>;
   studioState?: Record<string, unknown>;
   requestId: string;
+  model?: 'fast' | 'specialist';
+  thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
 }
 
 interface AssistantFlowOutput {
@@ -108,6 +110,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [error, setError] = useState<string | null>(null);
   const [jsonSettings, setJsonSettings] = useState<Record<string, unknown> | null>(null);
   const [creditsExhausted, setCreditsExhausted] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<'fast' | 'specialist'>('fast');
+  const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamActiveRef = useRef(false);
@@ -362,6 +366,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
           : undefined,
         studioState: currentState as Record<string, unknown> | undefined,
         requestId,
+        model: selectedModel,
+        thinkingLevel: selectedThinkingLevel,
       };
 
       // Adiciona mensagem vazia do assistente (texto progressivo)
@@ -490,6 +496,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
     removePendingAssistantPlaceholder,
     streamFallbackText,
     toUserFriendlyAssistantError,
+    selectedModel,
+    selectedThinkingLevel,
   ]);
 
   /** Interrompe a geração em andamento via AbortController. */
@@ -553,6 +561,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
     messagesEndRef,
     creditBlockedByBalance: isCreditBlocked,
     creditsExhausted: creditsExhausted || isCreditBlocked,
+    selectedModel,
+    setSelectedModel,
+    selectedThinkingLevel,
+    setSelectedThinkingLevel,
   };
 }
 

@@ -9,6 +9,8 @@ import {
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_SECONDARY,
   SHADOW_DEEP,
+  TEXT_DISABLED,
+  TEXT_SECONDARY,
   WHITE_01,
   WHITE_04,
   WHITE_06,
@@ -19,6 +21,7 @@ import {
   GAP_COMPACT,
   GAP_MEDIUM,
   RADIUS_XS,
+  RADIUS_CHIP,
 } from '../../../theme/tokens';
 import { insetPanelSx } from '../../../theme/surfaces';
 
@@ -345,4 +348,177 @@ export const assistantSendButtonSx = {
     boxShadow: 'none',
     transform: 'none',
   },
+};
+
+// ─── Composer Wrapper ─────────────────────────────────────────
+// Wrapperanimated que expande/colapsa com spring
+
+export const assistantComposerWrapperSx = {
+  overflow: 'hidden',
+  borderRadius: RADIUS_XS,
+  backgroundColor: alpha(APP_SURFACE, 0.96),
+  backgroundImage: `linear-gradient(180deg, ${WHITE_04} 0%, ${WHITE_01} 100%)`,
+  backdropFilter: 'blur(24px)',
+  WebkitBackdropFilter: 'blur(24px)',
+  border: `1px solid ${APP_BORDER}`,
+  boxShadow: `0 8px 32px ${alpha(SHADOW_DEEP, 0.16)}`,
+  transition: 'box-shadow 0.2s ease',
+};
+
+// ─── Composer Input Row ───────────────────────────────────────
+// Row principal do composer (anexa + input + botões)
+
+export const assistantComposerInputRowSx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.5,
+  px: 1.5,
+  py: 1.25,
+};
+
+// ─── Cycling Placeholder ──────────────────────────────────────
+// Placeholder animado letter-by-letter (blur + translateY) — layer absoluto sobre o input
+
+export const assistantCyclingPlaceholderSx = {
+  position: 'absolute' as const,
+  left: 0,
+  right: 0,
+  top: '50%',
+  transform: 'translateY(-50%)',
+  pointerEvents: 'none' as const,
+  zIndex: 0,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  color: TEXT_DISABLED,
+  userSelect: 'none' as const,
+};
+
+export const assistantPlaceholderLetterSx = {
+  display: 'inline-block',
+};
+
+// ─── Think Toggle ─────────────────────────────────────────────
+// Botão pill "Pensar" com ícone de lâmpada — usa tokens do design system
+
+export const assistantThinkToggleSx = (isActive: boolean) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.5,
+  px: 1.75,
+  py: 0.875,
+  borderRadius: 999,
+  fontWeight: 500,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  transition: 'all 0.2s ease',
+  cursor: 'pointer',
+  border: 'none',
+  outline: 'none',
+  ...(isActive
+    ? {
+        backgroundColor: alpha(BRAND_PRIMARY, 0.14),
+        outline: `1px solid ${alpha(BRAND_PRIMARY, 0.5)}`,
+        color: BRAND_PRIMARY,
+        '& svg': { fill: BRAND_PRIMARY },
+      }
+    : {
+        backgroundColor: alpha(WHITE_06, 0.5),
+        color: TEXT_SECONDARY,
+        '&:hover': {
+          backgroundColor: alpha(WHITE_08, 0.6),
+          color: 'text.primary',
+        },
+      }),
+});
+
+// ─── Control Button (Model/Thinking) ─────────────────────────
+// Botão pill genérico para seletores de modelo/profundidade
+
+export const assistantControlButtonSx = (accentColor: string) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.5,
+  px: 1.5,
+  py: 0.75,
+  borderRadius: 999,
+  fontWeight: 500,
+  fontSize: '0.8125rem',
+  lineHeight: 1,
+  transition: 'all 0.2s ease',
+  cursor: 'pointer',
+  border: 'none',
+  outline: 'none',
+  backgroundColor: alpha(WHITE_06, 0.5),
+  color: 'text.primary',
+  '&:hover': {
+    backgroundColor: alpha(WHITE_08, 0.7),
+    boxShadow: `0 0 12px ${alpha(accentColor, 0.3)}`,
+  },
+  '& svg': {
+    color: accentColor,
+  },
+});
+
+// ─── Expanded Controls Row ─────────────────────────────────────
+// Linha de controles que aparece no estado expanded
+
+export const assistantComposerControlsSx = {
+  display: 'flex',
+  justifyContent: 'flex-start',
+  px: 1.75,
+  pb: 0.5,
+  gap: 1,
+};
+
+// ─── Segmented Control (ToggleButtonGroup) ────────────────────
+// Estilo premium para seletores segmentados no header do assistente
+
+export const assistantSegmentedControlSx = (theme: Theme) => ({
+  backgroundColor: alpha(theme.palette.common.white, 0.04),
+  p: 0.5,
+  borderRadius: RADIUS_CHIP,
+  '& .MuiToggleButtonGroup-grouped': {
+    margin: 0,
+    border: 0,
+    borderRadius: RADIUS_CHIP - 1,
+    textTransform: 'none' as const,
+    fontWeight: 500,
+    fontSize: '0.75rem',
+    lineHeight: 1.2,
+    py: 0.625,
+    px: 1.25,
+    transition: 'background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
+    '&:not(:first-of-type)': {
+      borderRadius: RADIUS_CHIP - 1,
+      borderLeft: 'none',
+    },
+    '&:first-of-type': {
+      borderRadius: RADIUS_CHIP - 1,
+    },
+    '&.Mui-selected': {
+      backgroundColor: alpha(BRAND_PRIMARY, 0.16),
+      color: 'text.primary',
+      boxShadow: `0 1px 4px ${alpha(SHADOW_DEEP, 0.24)}`,
+      '&:hover': {
+        backgroundColor: alpha(BRAND_PRIMARY, 0.22),
+      },
+    },
+    '&:hover:not(.Mui-selected)': {
+      backgroundColor: alpha(theme.palette.common.white, 0.06),
+    },
+  },
+});
+
+// ─── Segmented Control Label ──────────────────────────────────
+// Label sutil acima ou ao lado de cada grupo segmentado
+
+export const assistantSelectorLabelSx = {
+  fontSize: '0.6875rem',
+  fontWeight: 500,
+  color: TEXT_SECONDARY,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase' as const,
+  whiteSpace: 'nowrap' as const,
+  userSelect: 'none' as const,
 };

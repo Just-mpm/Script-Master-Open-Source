@@ -49,6 +49,39 @@ import {
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
+// Constantes de Modelo
+// ---------------------------------------------------------------------------
+
+const MODEL_FAST = 'googleai/gemini-3.1-flash-lite';
+const MODEL_SPECIALIST = 'googleai/gemini-3.5-flash';
+
+interface ModelConfig {
+  model: string;
+  thinkingConfig?: Record<string, unknown>;
+}
+
+/**
+ * Determina a configuração do modelo com base na escolha do usuário.
+ * Se nenhum modelo for especificado, usa o rápido por padrão.
+ */
+function resolveModelConfig(
+  model?: 'fast' | 'specialist',
+  thinkingLevel?: string,
+): ModelConfig {
+  const resolvedModel = model === 'specialist' ? MODEL_SPECIALIST : MODEL_FAST;
+
+  // Se nível de pensamento for especificado, inclui no config
+  if (thinkingLevel && ['minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
+    return {
+      model: resolvedModel,
+      thinkingConfig: { thinkingLevel },
+    };
+  }
+
+  return { model: resolvedModel };
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -248,11 +281,18 @@ export const assistant = onCallGenkit(
         let fullText = '';
         let sendFailed = false;
 
+        // Resolve configuração do modelo com base na escolha do usuário
+        const { model: resolvedModel, thinkingConfig } = resolveModelConfig(
+          input.model,
+          input.thinkingLevel,
+        );
+
         try {
           const { response: streamResponse, stream } = ai.generateStream({
-            model: 'googleai/gemini-3.1-flash-lite',
+            model: resolvedModel,
             system: systemInstruction,
             messages,
+            config: thinkingConfig ? { thinkingConfig } : undefined,
           });
 
           // Itera sobre chunks de texto do modelo
@@ -291,7 +331,7 @@ export const assistant = onCallGenkit(
               await creditMeter.confirm({
                 finalCredits: partialCredits,
                 outputSize: outputChars,
-                model: 'googleai/gemini-3.1-flash-lite',
+                model: resolvedModel,
               });
               creditsSettled = true;
 
@@ -343,7 +383,7 @@ export const assistant = onCallGenkit(
           await creditMeter.confirm({
             finalCredits,
             outputSize: outputChars,
-            model: 'googleai/gemini-3.1-flash-lite',
+            model: resolvedModel,
           });
           creditsSettled = true;
 

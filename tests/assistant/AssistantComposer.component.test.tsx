@@ -44,11 +44,16 @@ const defaultProps = {
   input: '',
   pendingFiles: [] as File[],
   isLoading: false,
+  isThinkActive: false,
   fileInputRef: { current: null } as React.RefObject<HTMLInputElement | null>,
+  selectedModel: 'fast' as const,
+  selectedThinkingLevel: 'minimal' as const,
   onInputChange: vi.fn(),
   onSubmit: vi.fn(),
   onFileChange: vi.fn(),
   onRemoveFile: vi.fn(),
+  onModelChange: vi.fn(),
+  onThinkingLevelChange: vi.fn(),
 };
 
 describe('AssistantComposer', () => {

@@ -18,8 +18,9 @@ import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
 import { useLocale } from '../features/i18n';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS } from '../theme/tokens';
+import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS, BRAND_PRIMARY_GLOW } from '../theme/tokens';
 import { InlineAIWidget } from '../features/studio/components/InlineAIWidget';
+import { AIModeToggle } from '../features/studio/components/AIModeToggle';
 
 export interface ScriptEditorProps {
   script: string;
@@ -52,7 +53,34 @@ export function ScriptEditor({
   const [copiedScript, setCopiedScript] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Callbacks estáveis — evita nova referência a cada render,
+  // Estado do modo AI (ativado pelo AIModeToggle)
+  const [aiModeActive, setAiModeActive] = useState(false);
+  // Ref para a função forceOpenAtCursor do InlineAIWidget
+  const forceOpenAtCursorRef = useRef<(() => void) | null>(null);
+
+  const handleAIModeToggle = useCallback((active: boolean) => {
+    setAiModeActive(active);
+  }, []);
+
+  const handleForceOpenRef = useCallback((fn: () => void) => {
+    forceOpenAtCursorRef.current = fn;
+  }, []);
+
+  const handleActivateWithSelection = useCallback(() => {
+    // Se já tem algo selecionado, força a abertura do popover
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      if (start !== end) {
+        forceOpenAtCursorRef.current?.();
+      }
+    }
+  }, []);
+
+  // Callback para o AIModeToggle — desativa modo ao fechar popover
+  const handleInlineAIModeDeactivate = useCallback(() => {
+    setAiModeActive(false);
+  }, []);
   // prevenindo dessincronia interna no TextareaAutosize do MUI v9
   const handleScriptChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => setScript(event.target.value),
@@ -214,6 +242,20 @@ export function ScriptEditor({
               </Stack>
             )}
 
+            {/* Botão de modo AI */}
+            {!isGenerating && (
+              <AIModeToggle
+                isActive={aiModeActive}
+                onToggle={handleAIModeToggle}
+                getHasSelection={() => {
+                  const el = textareaRef.current;
+                  return el ? el.selectionStart !== el.selectionEnd : false;
+                }}
+                onActivateWithSelection={handleActivateWithSelection}
+                disabled={isGenerating}
+              />
+            )}
+
             <Typography
               variant="caption"
               component="div"
@@ -271,6 +313,15 @@ export function ScriptEditor({
                 '&.Mui-focused': {
                   boxShadow: 'inset 0 -1px 0 rgba(46, 117, 182, 0.2)',
                 },
+                // Feedback visual sutil quando modo AI está ativo — glow interno + borda fina
+                ...(aiModeActive && {
+                  '& fieldset': {
+                    borderColor: `${alpha(BRAND_PRIMARY_GLOW, 0.6)} !important`,
+                    borderWidth: '1px !important',
+                  },
+                  boxShadow: `inset 0 0 24px ${alpha(BRAND_PRIMARY_GLOW, 0.08)}, 0 0 16px ${alpha(BRAND_PRIMARY_GLOW, 0.15)}`,
+                  animation: 'aiModePulse 3s ease-in-out infinite',
+                }),
               },
               '& .MuiInputBase-inputMultiline': {
                 height: '100% !important',
@@ -282,10 +333,31 @@ export function ScriptEditor({
                 lineHeight: 1.85,
                 color: 'text.primary',
                 textShadow: `0 1px 12px ${BLACK_24}`,
+                // Cursor text quando modo AI está ativo (natural para seleção)
+                ...(aiModeActive && {
+                  cursor: 'text',
+                }),
+              },
+              // Keyframes para animação sutil do modo AI
+              '@keyframes aiModePulse': {
+                '0%, 100%': {
+                  boxShadow: `inset 0 0 24px ${alpha(BRAND_PRIMARY_GLOW, 0.08)}, 0 0 16px ${alpha(BRAND_PRIMARY_GLOW, 0.15)}`,
+                },
+                '50%': {
+                  boxShadow: `inset 0 0 28px ${alpha(BRAND_PRIMARY_GLOW, 0.12)}, 0 0 20px ${alpha(BRAND_PRIMARY_GLOW, 0.22)}`,
+                },
               },
             }}
           />
-          <InlineAIWidget script={script} setScript={setScript} textareaRef={textareaRef} disabled={isGenerating} />
+          <InlineAIWidget
+            script={script}
+            setScript={setScript}
+            textareaRef={textareaRef}
+            disabled={isGenerating}
+            aiModeActive={aiModeActive}
+            onAIModeDeactivate={handleInlineAIModeDeactivate}
+            onRegisterForceOpen={handleForceOpenRef}
+          />
         </Box>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}

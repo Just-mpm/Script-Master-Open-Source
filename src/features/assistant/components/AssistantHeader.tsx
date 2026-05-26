@@ -1,8 +1,6 @@
 import React from 'react';
 import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
@@ -72,18 +70,9 @@ export const AssistantHeader = React.memo(function AssistantHeader({
         </Avatar>
 
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-            <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
-              {t('assistant.header.title')}
-            </Typography>
-            <Chip
-              label="IA"
-              size="small"
-              color="secondary"
-              variant="outlined"
-              sx={{ flexShrink: 0, fontWeight: 600, fontSize: '0.7rem' }}
-            />
-          </Stack>
+          <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
+            {t('assistant.header.title')}
+          </Typography>
 
           <Typography
             variant="caption"
@@ -164,15 +153,6 @@ export const AssistantHeader = React.memo(function AssistantHeader({
             <Settings sx={{ fontSize: ICON_SIZE_MD }} />
           </IconButton>
         </Tooltip>
-
-        <Box sx={{ display: { xs: 'none', lg: 'block' }, ml: 0.5 }}>
-          <Chip
-            label={t('assistant.header.cleanReading')}
-            size="small"
-            variant="outlined"
-            sx={{ fontWeight: 500, fontSize: '0.7rem' }}
-          />
-        </Box>
       </Stack>
     </Stack>
   );

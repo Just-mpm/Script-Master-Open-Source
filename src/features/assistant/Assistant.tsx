@@ -46,7 +46,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { locale, t } = useLocale();
   const { user } = useAuth();
-  const {
+const {
     messages,
     isLoading,
     isStreaming,
@@ -59,12 +59,17 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     messagesEndRef,
     creditsExhausted,
     creditBlockedByBalance,
+    selectedModel,
+    setSelectedModel,
+    selectedThinkingLevel,
+    setSelectedThinkingLevel,
   } = useAssistant(currentState);
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
   const [savedToMemoryId, setSavedToMemoryId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [isThinkActive, setIsThinkActive] = useState(false);
   const [showMemories, setShowMemories] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -327,11 +332,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     window.setTimeout(() => setAppliedMessageId(null), 3000);
   }, [onApplySettings]);
 
-  const handleSuggestionClick = useCallback(async (prompt: string) => {
-    if (isLoading) return;
-    setInput('');
-    await sendMessage(prompt, []);
-  }, [isLoading, sendMessage]);
+  const handleSuggestionClick = useCallback((prompt: string) => {
+    setInput(prompt);
+  }, []);
 
   const handleCloseMemories = useCallback(() => setShowMemories(false), []);
   const handleCloseHistory = useCallback(() => setShowHistory(false), []);
@@ -467,13 +470,19 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         input={input}
         pendingFiles={pendingFiles}
         isLoading={isLoading}
+        isThinkActive={isThinkActive}
         creditsBlocked={creditBlockedByBalance}
         fileInputRef={fileInputRef}
+        selectedModel={selectedModel}
+        selectedThinkingLevel={selectedThinkingLevel}
         onInputChange={setInput}
         onSubmit={handleSubmit}
         onFileChange={handleFileChange}
         onRemoveFile={handleRemoveFile}
         onStopGeneration={stopGeneration}
+        onThinkToggle={() => setIsThinkActive((prev) => !prev)}
+        onModelChange={setSelectedModel}
+        onThinkingLevelChange={setSelectedThinkingLevel}
       />
 
       <DeleteConfirmationDialog

@@ -46,6 +46,32 @@ import {
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
+// Constantes de Modelo
+// ---------------------------------------------------------------------------
+
+const MODEL_FAST = 'googleai/gemini-3.1-flash-lite';
+
+interface ModelConfig {
+  model: string;
+  thinkingConfig?: Record<string, unknown>;
+}
+
+/**
+ * Determina a configuração do modelo com base na escolha do usuário.
+ * Inline assistant sempre usa o modelo rápido por padrão.
+ */
+function resolveModelConfig(thinkingLevel?: string): ModelConfig {
+  if (thinkingLevel && ['minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
+    return {
+      model: MODEL_FAST,
+      thinkingConfig: { thinkingLevel },
+    };
+  }
+
+  return { model: MODEL_FAST };
+}
+
+// ---------------------------------------------------------------------------
 // Helper
 // ---------------------------------------------------------------------------
 
@@ -175,11 +201,17 @@ export const inlineAssistant = onCallGenkit(
           fullScript: input.fullScript ?? '',
         });
 
+        // Resolve configuração do modelo com base na escolha do usuário
+        const { model: resolvedModel, thinkingConfig } = resolveModelConfig(
+          input.thinkingLevel,
+        );
+
         const response = await ai.generate({
-          model: 'googleai/gemini-3.1-flash-lite',
+          model: resolvedModel,
           prompt: instruction,
           config: {
             temperature: 0.7,
+            ...(thinkingConfig ? { thinkingConfig } : {}),
           },
         });
 
@@ -209,7 +241,7 @@ export const inlineAssistant = onCallGenkit(
         await creditMeter.confirm({
           finalCredits,
           outputSize: outputChars,
-          model: 'googleai/gemini-3.1-flash-lite',
+          model: resolvedModel,
         });
 
         console.log(

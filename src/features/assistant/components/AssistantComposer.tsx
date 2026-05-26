@@ -1,13 +1,37 @@
-import React, { type ChangeEvent, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
+import { AnimatePresence, motion } from 'motion/react';
+import Lightbulb from '@mui/icons-material/Lightbulb';
+import AttachFile from '@mui/icons-material/AttachFile';
+import Close from '@mui/icons-material/Close';
+import Description from '@mui/icons-material/Description';
+import Image from '@mui/icons-material/Image';
+import SendIcon from '@mui/icons-material/Send';
+import Stop from '@mui/icons-material/Stop';
+import Bolt from '@mui/icons-material/Bolt';
+import Psychology from '@mui/icons-material/Psychology';
+import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
+import Check from '@mui/icons-material/Check';
 import { useLocale } from '../../../features/i18n';
 import {
   ICON_SIZE_SM,
@@ -15,54 +39,101 @@ import {
   WHITE_06,
   TEXT_DISABLED,
   ERROR_MAIN,
+  SHADOW_DEEP,
+  BRAND_PRIMARY,
 } from '../../../theme/tokens';
 import {
   assistantComposerContainerSx,
-  assistantComposerInputSx,
   assistantAttachmentChipSx,
   assistantActionIconButtonSx,
   assistantSendButtonSx,
+  assistantComposerInputRowSx,
+  assistantThinkToggleSx,
+  assistantComposerWrapperSx,
+  assistantCyclingPlaceholderSx,
+  assistantPlaceholderLetterSx,
+  assistantComposerControlsSx,
+  assistantControlButtonSx,
 } from './assistantUi';
-import AttachFile from '@mui/icons-material/AttachFile';
-import Close from '@mui/icons-material/Close';
-import Description from '@mui/icons-material/Description';
-import Image from '@mui/icons-material/Image';
-import SendIcon from '@mui/icons-material/Send';
-import Stop from '@mui/icons-material/Stop';
+
+// Placeholders que cycling a cada 3s — sem tradução (prompts de exemplo)
+const PLACEHOLDERS = [
+  'Como melhorar meu roteiro?',
+  'Crie uma cena de suspense',
+  'Resuma este trecho',
+  'Sugira uma transição',
+  'Como otimizar o ritmo?',
+  'Gere uma narração',
+];
 
 interface AssistantComposerProps {
   input: string;
   pendingFiles: File[];
   isLoading: boolean;
+  isThinkActive: boolean;
   creditsBlocked?: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  selectedModel: 'fast' | 'specialist';
+  selectedThinkingLevel: 'minimal' | 'low' | 'medium' | 'high';
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (index: number) => void;
   onStopGeneration?: () => void;
+  onThinkToggle?: () => void;
+  onModelChange: (model: 'fast' | 'specialist') => void;
+  onThinkingLevelChange: (level: 'minimal' | 'low' | 'medium' | 'high') => void;
 }
 
 export const AssistantComposer = React.memo(function AssistantComposer({
   input,
   pendingFiles,
   isLoading,
+  isThinkActive,
   creditsBlocked = false,
   fileInputRef,
+  selectedModel,
+  selectedThinkingLevel,
   onInputChange,
   onSubmit,
   onFileChange,
   onRemoveFile,
   onStopGeneration,
+  onThinkToggle,
+  onModelChange,
+  onThinkingLevelChange,
 }: AssistantComposerProps) {
   const { t } = useLocale();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
+  const [modelMenuAnchor, setModelMenuAnchor] = useState<HTMLElement | null>(null);
+  const [thinkingMenuAnchor, setThinkingMenuAnchor] = useState<HTMLElement | null>(null);
+
+  // Cycling placeholder quando input está inativo — intervalo de 3.5s para ritmo mais calmo
+  useEffect(() => {
+    if (isFocused || input) return;
+
+    const interval = setInterval(() => {
+      setShowPlaceholder(false);
+      setTimeout(() => {
+        setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        setShowPlaceholder(true);
+      }, 350);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isFocused, input]);
+
+  const isExpanded = isFocused || input.length > 0 || Boolean(modelMenuAnchor) || Boolean(thinkingMenuAnchor);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit();
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       onSubmit();
@@ -71,131 +142,388 @@ export const AssistantComposer = React.memo(function AssistantComposer({
 
   const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !creditsBlocked;
 
+  // Letter animation variants — blur + translateY com spring suave
+  const letterVariants = {
+    initial: { opacity: 0, filter: 'blur(10px)', y: 8 },
+    animate: {
+      opacity: 1,
+      filter: 'blur(0px)',
+      y: 0,
+      transition: { opacity: { duration: 0.3 }, filter: { duration: 0.45 }, y: { type: 'spring' as const, stiffness: 70, damping: 18 } },
+    },
+    exit: {
+      opacity: 0,
+      filter: 'blur(10px)',
+      y: -8,
+      transition: { opacity: { duration: 0.2 }, filter: { duration: 0.3 }, y: { type: 'spring' as const, stiffness: 70, damping: 18 } },
+    },
+  };
+
+  const containerVariants = {
+    collapsed: {
+      height: 68,
+      boxShadow: `0 2px 8px 0 ${alpha(SHADOW_DEEP, 0.12)}`,
+      transition: { type: 'spring' as const, stiffness: 120, damping: 18 },
+    },
+    expanded: {
+      height: 104,
+      boxShadow: `0 8px 32px 0 ${alpha(SHADOW_DEEP, 0.24)}`,
+      transition: { type: 'spring' as const, stiffness: 120, damping: 18 },
+    },
+  };
+
+  const controlsVariants = {
+    hidden: { opacity: 0, y: 12, pointerEvents: 'none' as const, transition: { duration: 0.2 } },
+    visible: { opacity: 1, y: 0, pointerEvents: 'auto' as const, transition: { duration: 0.3, delay: 0.06 } },
+  };
+
+  const handleModelMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setModelMenuAnchor(event.currentTarget);
+  };
+
+  const handleModelMenuClose = () => setModelMenuAnchor(null);
+
+  const handleModelSelect = (model: 'fast' | 'specialist') => {
+    onModelChange(model);
+    handleModelMenuClose();
+  };
+
+  const handleThinkingMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setThinkingMenuAnchor(event.currentTarget);
+  };
+
+  const handleThinkingMenuClose = () => setThinkingMenuAnchor(null);
+
+  const handleThinkingSelect = (level: 'minimal' | 'low' | 'medium' | 'high') => {
+    onThinkingLevelChange(level);
+    handleThinkingMenuClose();
+  };
+
+  const modelLabels: Record<'fast' | 'specialist', string> = {
+    fast: t('assistant.composer.modelFast'),
+    specialist: t('assistant.composer.modelSpecialist'),
+  };
+
+  const thinkingLabels: Record<'minimal' | 'low' | 'medium' | 'high', string> = {
+    minimal: t('assistant.composer.thinkingMinimal'),
+    low: t('assistant.composer.thinkingLow'),
+    medium: t('assistant.composer.thinkingMedium'),
+    high: t('assistant.composer.thinkingHigh'),
+  };
+
   return (
     <Box
       component="form"
       onSubmit={handleSubmit}
       sx={(theme) => assistantComposerContainerSx(theme)}
     >
-      <Stack spacing={1}>
+      <Box
+        component={motion.div}
+        ref={wrapperRef}
+        variants={containerVariants}
+        animate={isExpanded ? 'expanded' : 'collapsed'}
+        initial="collapsed"
+        sx={assistantComposerWrapperSx}
+        onMouseDown={(e: React.MouseEvent) => {
+          // Previne que cliques nos botões internos tirem o foco do textarea
+          const target = e.target as HTMLElement;
+          if (target.tagName === 'BUTTON' || target.closest('button')) {
+            e.preventDefault();
+          }
+        }}
+      >
+        {/* File chips */}
         {pendingFiles.length > 0 ? (
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            {pendingFiles.map((file, index) => {
-              const isImage = file.type.startsWith('image/');
+          <Box sx={{ px: 1.5, pt: 1.25 }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+              {pendingFiles.map((file, index) => {
+                const isImage = file.type.startsWith('image/');
 
-              return (
-                <Chip
-                  key={`${file.name}-${index}`}
-                  icon={isImage
-                    ? <Image sx={{ fontSize: ICON_SIZE_SM }} />
-                    : <Description sx={{ fontSize: ICON_SIZE_SM }} />}
-                  label={file.name}
-                  onDelete={() => onRemoveFile(index)}
-                  deleteIcon={<Close sx={{ fontSize: ICON_SIZE_SM }} />}
-                  variant="outlined"
-                  size="small"
-                  sx={assistantAttachmentChipSx}
-                />
-              );
-            })}
-          </Stack>
+                return (
+                  <Chip
+                    key={`${file.name}-${index}`}
+                    icon={isImage
+                      ? <Image sx={{ fontSize: ICON_SIZE_SM }} />
+                      : <Description sx={{ fontSize: ICON_SIZE_SM }} />}
+                    label={file.name}
+                    onDelete={() => onRemoveFile(index)}
+                    deleteIcon={<Close sx={{ fontSize: ICON_SIZE_SM }} />}
+                    variant="outlined"
+                    size="small"
+                    sx={assistantAttachmentChipSx}
+                  />
+                );
+              })}
+            </Stack>
+          </Box>
         ) : null}
 
-        <input
-          type="file"
-          id="assistant-file-input"
-          ref={fileInputRef}
-          onChange={onFileChange}
-          hidden
-          multiple
-          accept="image/*,.pdf,.txt"
-        />
+        <Box sx={assistantComposerInputRowSx}>
+          <input
+            type="file"
+            id="assistant-file-input"
+            ref={fileInputRef}
+            onChange={onFileChange}
+            hidden
+            multiple
+            accept="image/*,.pdf,.txt"
+          />
 
-        <TextField
-          id="assistant-chat-input"
-          name="chat-message"
-          multiline
-          minRows={1}
-          maxRows={6}
-          value={input}
-          onChange={(event) => onInputChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={t('assistant.composer.placeholder')}
-          fullWidth
-          disabled={creditsBlocked}
+          <Tooltip title={t('assistant.composer.attachFile')}>
+            <IconButton
+              onClick={() => fileInputRef.current?.click()}
+              edge="start"
+              aria-label={t('assistant.composer.attachFileAria')}
+              size="small"
+              disabled={creditsBlocked}
+              sx={{
+                color: TEXT_DISABLED,
+                '&:hover': { color: 'text.secondary', backgroundColor: alpha(WHITE_06, 0.5) },
+              }}
+            >
+              <AttachFile sx={{ fontSize: ICON_SIZE_MD }} />
+            </IconButton>
+          </Tooltip>
+
+          {/* Text Input & Cycling Placeholder */}
+          <Box sx={{ position: 'relative', flex: 1 }}>
+            {/* Cycling placeholder — layer absoluto com letter-by-letter animation */}
+            <AnimatePresence mode="wait">
+              {showPlaceholder && !isFocused && !input && (
+                <Box
+                  key={placeholderIndex}
+                  component={motion.div}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  sx={assistantCyclingPlaceholderSx}
+                >
+                  {PLACEHOLDERS[placeholderIndex].split('').map((char, i) => (
+                    <Box component="span" key={i} sx={assistantPlaceholderLetterSx}>
+                      <motion.span variants={letterVariants}>
+                        {char === ' ' ? '\u00A0' : char}
+                      </motion.span>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </AnimatePresence>
+
+            {/* Plain textarea — placeholder renderizado via layer absoluto */}
+            <textarea
+              id="assistant-chat-input"
+              name="chat-message"
+              rows={1}
+              value={input}
+              onChange={(event) => onInputChange(event.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={(e) => {
+                // Não perde foco se o relatedTarget está dentro do wrapper
+                // (ex: clicou no botão do dropdown)
+                const related = e.relatedTarget as Node | null;
+                if (related && wrapperRef.current?.contains(related)) return;
+                setIsFocused(false);
+              }}
+              disabled={creditsBlocked}
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                color: 'inherit',
+                padding: 0,
+                minHeight: 24,
+                maxHeight: 144,
+                overflowY: 'auto' as const,
+                width: '100%',
+              }}
+            />
+          </Box>
+
+          {/* Send / Stop button */}
+          {isLoading ? (
+            <Tooltip title={t('assistant.composer.stopGeneration')}>
+              <IconButton
+                onClick={onStopGeneration || onSubmit}
+                aria-label={t('assistant.composer.stopGeneration')}
+                size="small"
+                sx={{
+                  ...assistantActionIconButtonSx,
+                  minWidth: 40,
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'error.main',
+                  boxShadow: `0 4px 16px ${alpha(ERROR_MAIN, 0.24)}`,
+                  '&:hover': {
+                    ...assistantActionIconButtonSx['&:hover'],
+                    backgroundColor: 'error.dark',
+                    boxShadow: `0 6px 24px ${alpha(ERROR_MAIN, 0.36)}`,
+                  },
+                }}
+              >
+                <Stop sx={{ fontSize: ICON_SIZE_SM }} />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              disabled={!canSend}
+              aria-label={t('assistant.composer.send')}
+              endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM }} />}
+              sx={assistantSendButtonSx}
+            >
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                {t('assistant.composer.send')}
+              </Box>
+            </Button>
+          )}
+        </Box>
+
+        {/* Expanded Controls Row */}
+        <Box
+          component={motion.div}
+          variants={controlsVariants}
+          initial="hidden"
+          animate={isExpanded ? 'visible' : 'hidden'}
+          sx={assistantComposerControlsSx}
+        >
+          {/* Model Dropdown */}
+          <Box
+            component="button"
+            onClick={handleModelMenuOpen}
+            sx={assistantControlButtonSx(selectedModel === 'fast' ? '#fbbf24' : '#a78bfa')}
+            type="button"
+            title={t('assistant.composer.modelSelectorLabel')}
+          >
+            {selectedModel === 'fast' ? (
+              <Bolt sx={{ fontSize: ICON_SIZE_SM }} />
+            ) : (
+              <Psychology sx={{ fontSize: ICON_SIZE_SM }} />
+            )}
+            <Box component="span" sx={{ pb: '2px' }}>
+              {modelLabels[selectedModel]}
+            </Box>
+            <KeyboardArrowUp sx={{ fontSize: ICON_SIZE_SM, ml: -0.5 }} />
+          </Box>
+
+          {/* Thinking Level Dropdown */}
+          <Box
+            component="button"
+            onClick={handleThinkingMenuOpen}
+            sx={assistantControlButtonSx('#60a5fa')}
+            type="button"
+            title={t('assistant.composer.thinkingSelectorLabel')}
+          >
+            <Box component="span" sx={{ pb: '2px' }}>
+              {thinkingLabels[selectedThinkingLevel]}
+            </Box>
+            <KeyboardArrowUp sx={{ fontSize: ICON_SIZE_SM, ml: -0.5 }} />
+          </Box>
+
+          {/* Think Toggle */}
+          {onThinkToggle ? (
+            <Box
+              component="button"
+              onClick={(e) => { e.stopPropagation(); onThinkToggle(); }}
+              sx={assistantThinkToggleSx(isThinkActive)}
+              type="button"
+              title={t('assistant.composer.think')}
+            >
+              <Lightbulb sx={{ fontSize: ICON_SIZE_SM, color: isThinkActive ? BRAND_PRIMARY : '#fbbf24' }} />
+              <Box component="span" sx={{ pb: '2px', color: isThinkActive ? BRAND_PRIMARY : 'text.primary' }}>
+                {t('assistant.composer.think')}
+              </Box>
+            </Box>
+          ) : null}
+        </Box>
+
+        {/* Model Menu — abre para cima */}
+        <Menu
+          anchorEl={modelMenuAnchor}
+          open={Boolean(modelMenuAnchor)}
+          onClose={handleModelMenuClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start" sx={{ alignSelf: 'flex-end', mb: 0.25 }}>
-                  <Tooltip title={t('assistant.composer.attachFile')}>
-                    <IconButton
-                      onClick={() => fileInputRef.current?.click()}
-                      edge="start"
-                      aria-label={t('assistant.composer.attachFileAria')}
-                      size="small"
-                      disabled={creditsBlocked}
-                      sx={{
-                        color: TEXT_DISABLED,
-                        '&:hover': { color: 'text.secondary', backgroundColor: alpha(WHITE_06, 0.5) },
-                      }}
-                    >
-                      <AttachFile sx={{ fontSize: ICON_SIZE_MD }} />
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 0.25, mr: 0.25 }}>
-                  {isLoading ? (
-                    <Tooltip title={t('assistant.composer.stopGeneration')}>
-                      <IconButton
-                        onClick={onStopGeneration || onSubmit}
-                        aria-label={t('assistant.composer.stopGeneration')}
-                        size="small"
-                        sx={{
-                          ...assistantActionIconButtonSx,
-                          minWidth: 40,
-                          width: 40,
-                          height: 40,
-                          backgroundColor: 'error.main',
-                          boxShadow: `0 4px 16px ${alpha(ERROR_MAIN, 0.24)}`,
-                          '&:hover': {
-                            ...assistantActionIconButtonSx['&:hover'],
-                            backgroundColor: 'error.dark',
-                            boxShadow: `0 6px 24px ${alpha(ERROR_MAIN, 0.36)}`,
-                          },
-                        }}
-                      >
-                        <Stop sx={{ fontSize: ICON_SIZE_SM }} />
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      size="small"
-                      disabled={!canSend}
-                      aria-label={t('assistant.composer.send')}
-                      endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM }} />}
-                      sx={assistantSendButtonSx}
-                    >
-                      <Box
-                        component="span"
-                        sx={{
-                          display: { xs: 'none', sm: 'inline' },
-                        }}
-                      >
-                        {t('assistant.composer.send')}
-                      </Box>
-                    </Button>
-                  )}
-                </InputAdornment>
-              ),
+            paper: {
+              sx: (theme) => ({
+                mt: 1,
+                minWidth: 180,
+                borderRadius: 2,
+                backgroundColor: alpha(theme.palette.background.paper, 0.96),
+                backdropFilter: 'blur(20px)',
+                border: `1px solid ${alpha(BRAND_PRIMARY, 0.15)}`,
+                boxShadow: `0 8px 32px ${alpha(SHADOW_DEEP, 0.24)}`,
+              }),
             },
           }}
-          sx={(theme) => assistantComposerInputSx(theme)}
-        />
-      </Stack>
+        >
+          <MenuItem
+            onClick={() => handleModelSelect('fast')}
+            selected={selectedModel === 'fast'}
+          >
+            <ListItemIcon>
+              <Bolt sx={{ fontSize: ICON_SIZE_MD }} />
+            </ListItemIcon>
+            <ListItemText primary={t('assistant.composer.modelFast')} />
+            {selectedModel === 'fast' && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
+          </MenuItem>
+          <MenuItem
+            onClick={() => handleModelSelect('specialist')}
+            selected={selectedModel === 'specialist'}
+          >
+            <ListItemIcon>
+              <Psychology sx={{ fontSize: ICON_SIZE_MD }} />
+            </ListItemIcon>
+            <ListItemText primary={t('assistant.composer.modelSpecialist')} />
+            {selectedModel === 'specialist' && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
+          </MenuItem>
+        </Menu>
+
+        {/* Thinking Level Menu — abre para cima */}
+        <Menu
+          anchorEl={thinkingMenuAnchor}
+          open={Boolean(thinkingMenuAnchor)}
+          onClose={handleThinkingMenuClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: (theme) => ({
+                mt: 1,
+                minWidth: 140,
+                borderRadius: 2,
+                backgroundColor: alpha(theme.palette.background.paper, 0.96),
+                backdropFilter: 'blur(20px)',
+                border: `1px solid ${alpha(BRAND_PRIMARY, 0.15)}`,
+                boxShadow: `0 8px 32px ${alpha(SHADOW_DEEP, 0.24)}`,
+              }),
+            },
+          }}
+        >
+          {(['minimal', 'low', 'medium', 'high'] as const).map((level) => (
+            <MenuItem
+              key={level}
+              onClick={() => handleThinkingSelect(level)}
+              selected={selectedThinkingLevel === level}
+            >
+              <ListItemText primary={thinkingLabels[level]} />
+              {selectedThinkingLevel === level && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
     </Box>
   );
 });
