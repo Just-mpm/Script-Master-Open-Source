@@ -29,6 +29,14 @@ export function PublicFooter() {
       ],
     },
     {
+      title: t('footer.resourcesGroup'),
+      links: [
+        { label: t('footer.links.roadmap'), href: '/roadmap' },
+        { label: t('footer.links.changelog'), href: '/changelog' },
+        { label: t('footer.links.community'), href: '/community' },
+      ],
+    },
+    {
       title: t('footer.companyGroup'),
       links: [
         { label: t('footer.links.about'), href: '/sobre' },

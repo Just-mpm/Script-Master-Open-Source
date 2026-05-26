@@ -24,62 +24,62 @@ const useCasesStrings = {
   'pt-BR': {
     uc0Title: 'Vídeos para YouTube',
     uc0Desc:
-      'Roteiros longos divididos em cenas, narração profissional e vídeo com legendas automáticas. Tudo em um fluxo.',
-    uc1Title: 'Podcasts e áudios',
+      'Roteiro longo vira cenas, narração e legendas automáticas. publique mais, edite menos.',
+    uc1Title: 'Podcasts e audiobooks',
     uc1Desc:
-      'Multi-speaker com vozes distintas, controle de pace e perfil de áudio. Ideal para episódios e audiobooks.',
-    uc2Title: 'Conteúdo educacional',
+      '2 vozes distintas com ritmo e tom controlados. Episódios profissionais sem estudio.',
+    uc2Title: 'Material educacional',
     uc2Desc:
-      'Audiodescrição, aulas narradas e material acessível. Controle total sobre clareza e ritmo da fala.',
-    uc3Title: 'Marketing digital',
+      'Aulas narradas, audiodescrição e legendas acessíveis. Alunos engajados, conteúdo claro.',
+    uc3Title: 'Marketing e campanhas',
     uc3Desc:
-      'Escalabilidade para campanhas com vídeos, áudios e imagens gerados a partir de scripts de marketing.',
+      'Escala de produção com IA. Mais vídeos, mais campanhas, mesmo time.',
     uc4Title: 'Storytelling e narrativas',
     uc4Desc:
-      'Do roteiro à cena: imagens, narração e vídeo com transições. Perfeito para narrativas visuais.',
+      'Do roteiro à imagem: cenas visuais, narração e transições. Histórias que prendem.',
     uc5Title: 'Acessibilidade',
     uc5Desc:
-      'Audiodescrição de qualidade profissional, legendas automáticas com Whisper e múltiplos formatos de exportação.',
+      'Audiodescrição profissional, legendas precisas e múltiplos formatos de exportação.',
   },
   en: {
     uc0Title: 'YouTube Videos',
     uc0Desc:
-      'Long scripts split into scenes, professional narration, and video with automatic subtitles. All in one workflow.',
-    uc1Title: 'Podcasts & Audio',
+      'Long scripts become scenes, narration, and automatic subtitles. Publish more, edit less.',
+    uc1Title: 'Podcasts & Audiobooks',
     uc1Desc:
-      'Multi-speaker with distinct voices, pace and audio profile control. Ideal for episodes and audiobooks.',
+      '2 distinct voices with controlled pace and tone. Professional episodes without a studio.',
     uc2Title: 'Educational Content',
     uc2Desc:
-      'Audio descriptions, narrated lessons, and accessible material. Full control over speech clarity and pace.',
-    uc3Title: 'Digital Marketing',
+      'Narrated lessons, audio descriptions, and accessible subtitles. Engaged students, clear content.',
+    uc3Title: 'Marketing & Campaigns',
     uc3Desc:
-      'Scalability for campaigns with videos, audios, and images generated from marketing scripts.',
+      'Production scale with AI. More videos, more campaigns, same team.',
     uc4Title: 'Storytelling & Narratives',
     uc4Desc:
-      'From script to scene: images, narration, and video with transitions. Perfect for visual narratives.',
+      'From script to image: visual scenes, narration, and transitions. Stories that captivate.',
     uc5Title: 'Accessibility',
     uc5Desc:
-      'Professional-quality audio descriptions, automatic subtitles with Whisper, and multiple export formats.',
+      'Professional audio descriptions, accurate subtitles, and multiple export formats.',
   },
   es: {
     uc0Title: 'Videos para YouTube',
     uc0Desc:
-      'Guiones largos divididos en escenas, narración profesional y video con subtítulos automáticos. Todo en un flujo.',
-    uc1Title: 'Podcasts y audios',
+      'Guión largo se convierte en escenas, narración y subtítulos automáticos. Publica más, edita menos.',
+    uc1Title: 'Podcasts y audiolibros',
     uc1Desc:
-      'Multi-locutor con voces distintas, control de ritmo y perfil de audio. Ideal para episodios y audiolibros.',
-    uc2Title: 'Contenido educacional',
+      '2 voces distintas con ritmo y tono controlados. Episodios profesionales sin estudio.',
+    uc2Title: 'Material educativo',
     uc2Desc:
-      'Audiodescripción, clases narradas y material accesible. Control total sobre claridad y ritmo del habla.',
-    uc3Title: 'Marketing digital',
+      'Clases narradas, audiodescripción y subtítulos accesibles. Alumnos comprometidos, contenido claro.',
+    uc3Title: 'Marketing y campañas',
     uc3Desc:
-      'Escalabilidad para campañas con videos, audios e imágenes generados a partir de scripts de marketing.',
+      'Escala de producción con IA. Más videos, más campañas, mismo equipo.',
     uc4Title: 'Storytelling y narrativas',
     uc4Desc:
-      'Del guion a la escena: imágenes, narración y video con transiciones. Perfecto para narrativas visuales.',
+      'Del guion a la imagen: escenas visuales, narración y transiciones. Historias que atrapan.',
     uc5Title: 'Accesibilidad',
     uc5Desc:
-      'Audiodescripción de calidad profesional, subtítulos automáticos con Whisper y múltiples formatos de exportación.',
+      'Audiodescripción profesional, subtítulos precisos y múltiples formatos de exportación.',
   },
 } as const;
 

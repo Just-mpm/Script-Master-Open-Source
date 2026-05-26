@@ -79,6 +79,7 @@ export const en: TranslationDictionary = {
     productGroup: 'Product',
     companyGroup: 'Company',
     legalGroup: 'Legal',
+    resourcesGroup: 'Resources',
     links: {
       features: 'Features',
       pricing: 'Beta',
@@ -90,110 +91,102 @@ export const en: TranslationDictionary = {
       terms: 'Terms of Use',
       privacy: 'Privacy',
       cookies: 'Cookies',
+      roadmap: 'Roadmap',
+      changelog: 'Changelog',
+      community: 'Community',
     },
   },
 
   landing: {
     hero: {
-      title: 'Turn scripts into art with AI',
+      title: 'Stop editing for hours. Your narration ready in minutes.',
       subtitle:
-        'Complete platform to create professional audio, video, and images from scripts. Everything runs directly in your browser, powered by artificial intelligence.',
+        'Turn scripts into professional audio, videos, and images with AI. All in your browser — no server, no complexity.',
       cta: 'Create free account',
-      ctaSecondary: 'View Features',
-      alt: 'Script Master illustration — turning scripts into art with AI',
+      ctaSecondary: 'See features',
+      alt: 'Script Master — turn scripts into professional content with AI',
     },
     socialProof: {
-      label: 'Advanced AI Technology',
-      sublabel: 'AI voice, image generation, and conversational assistant',
+      label: 'Thousands of creators already build with AI',
+      sublabel: 'Professional audio, images, and integrated assistant — all in minutes',
     },
     features: {
-      title: 'Everything you need to create',
+      title: 'Build everything in one platform',
       subtitle:
-        'Six integrated tools in a single platform to transform your ideas into professional content.',
+        'Audio studio, video, images, and AI assistant. No tool switching, no lost momentum.',
     },
-    featureCards: {
+featureCards: {
       voice: {
-        title: 'AI Voice',
+        title: 'AI Narration',
         description:
-          'Transform scripts into professional audio with AI voice. Voice control, pace, and multiple speakers.',
+          'Script ready becomes professional audio. Choose the voice, control the pace, publish in minutes.',
       },
       video: {
         title: 'Automatic Video',
         description:
-          'Create videos directly in your browser with subtitles, transitions, and waveform. No external server needed.',
+          'Subtitles, transitions, and optimized format. Your video ready to publish without software.',
       },
       images: {
-        title: 'Image Generation',
+        title: 'AI Images',
         description:
-          '8 aspect ratios, visual reference, and full gallery with cloud persistence.',
+          'Describe the scene, receive the image. 8 formats, visual reference, and cloud gallery.',
       },
       speedPaint: {
-    durationLabel: 'Speed paint duration',
-    uploadDragActive: 'Drop images here',
-    uploadPrompt: 'Upload one or more images',
-    uploadDescription: 'Drag and drop your images here, or use the button below. Supports JPG, PNG, and WebP. Batch processing is enabled.',
-    chooseFiles: 'Choose files',
         title: 'Speed Paint',
         description:
-          'Progressive painting animation with smart edge detection, batch processing, and export.',
+          'Turn any image into a painting animation. Unique effect that grabs attention.',
       },
       assistant: {
-    deleteMemoryConfirm: 'Delete memory?',
-        title: 'AI Assistant',
+        title: 'Creative Assistant',
         description:
-          'Chat with streaming, memories, attachments, and direct integration with the production studio.',
+          'Real-time chat that helps improve scripts, adjust tone, and suggest scenes.',
       },
       library: {
-    emptyGallery: 'Your gallery is empty',
-    sortOldestFirst: 'Oldest first',
-    sortNewestFirst: 'Newest first',
-    generation: 'Generation',
-    project: 'Project',
-        title: 'Library',
+        title: 'Complete Library',
         description:
-          'Complete project management with audios, scenes, videos, saved in the cloud and browser.',
+          'Projects, audio, scenes, and videos — saved in the cloud and accessible from anywhere.',
       },
     },
     ttsShowcase: {
-      title: 'Professional Voice with AI',
+      title: 'Narration that sounds natural',
       description:
-        'Transform any script into professional narration with natural voices and full control over pace, tone, and narration style.',
+        'AI voice that understands context, detects scenes, and maintains pace. No roboticism.',
       benefits: {
-        0: 'Up to 2 speakers in a single script',
-        1: 'Smart detection of pauses and scenes in audio',
-        2: 'Pace, tone, and narration style control',
-        3: 'Samples of each voice for you to choose',
-        4: 'Professional high-quality audio',
+        0: 'Up to 2 speakers per script',
+        1: 'Automatic pause and scene detection',
+        2: 'Full control over pace and tone',
+        3: '15 voices to preview before choosing',
+        4: 'Professional quality audio',
       },
     },
     videoShowcase: {
-      title: 'Video Right in Your Browser',
+      title: 'Video rendered in your browser',
       description:
-        'Render complete videos directly in your browser. No server, no rendering cost.',
+        'No upload, no server cost. Your script never leaves your device.',
       benefits: {
-        0: 'High-quality MP4 video, compatible with all devices',
-        1: 'Automatic subtitles synced with audio',
-        2: 'Smooth transitions between scenes',
-        3: '3 resolutions: 16:9, 9:16, 1:1',
-        4: 'Waveform visualization during video',
+        0: 'High-quality MP4, works everywhere',
+        1: 'Automatic synced subtitles',
+        2: '3 formats: horizontal, vertical, square',
+        3: 'Preview with waveform and transitions',
+        4: 'One-click export',
       },
     },
     assistantShowcase: {
-      title: 'Integrated AI Assistant',
+      title: 'Creative direction with AI',
       description:
-        'Conversational chat with real-time responses, long-term memories, and direct studio integration. The assistant suggests changes you apply with one click.',
+        'The assistant understands your project, suggests adjustments, and applies them in the studio with one click.',
       benefits: {
-        0: 'Real-time responses with advanced AI',
-        1: 'Memory system: short texts + document upload (.md, .txt, .csv)',
-        2: 'Attachments: 5 per message (images 10MB, documents 5MB)',
-        3: 'Adjustment suggestions with "Apply in studio" button',
-        4: 'Auto-save sessions with full history',
+        0: 'Real-time responses',
+        1: 'Project memories + document upload',
+        2: '5 attachments per message (images and files)',
+        3: 'Suggestions with \'Apply in studio\' button',
+        4: 'Full history, auto-save',
       },
     },
     useCases: {
-      title: 'For every type of creator',
+      title: 'Built for creators who don\'t have time to waste',
       subtitle:
-        'Whether you are a YouTuber, podcaster, teacher, or marketer — Script Master adapts to your workflow.',
+        'YouTubers, podcasters, educators, marketers — everyone publishes faster with Script Master.',
       learnMore: 'Learn more',
     },
     metrics: {
@@ -224,56 +217,56 @@ export const en: TranslationDictionary = {
       noCreditCard: 'No credit card · Setup in 30 seconds',
     },
     testimonials: {
-      title: 'What our creators say',
+      title: 'Who creates faster',
       subtitle:
-        'Thousands of creators already use Script Master to turn ideas into professional content.',
+        'Creators who abandoned manual editing and never went back.',
     },
     howItWorks: {
-      title: 'How It Works',
+      title: 'Three steps to publish',
       subtitle:
-        'Three steps to transform your script into professional content.',
+        'Write, generate, export. No complexity, no waiting.',
     },
     steps: {
       1: {
         title: 'Write your script',
         description:
-          'Use the built-in editor or paste your text. The AI assistant can help improve your script.',
+          'Use the built-in editor or paste your text. The assistant helps improve if needed.',
       },
       2: {
-        title: 'Generate with AI',
+        title: 'Generate with one click',
         description:
-          'One click to transform your script into audio, images, and video with artificial intelligence.',
+          'Audio, images, scenes — all ready in minutes, not hours.',
       },
       3: {
-        title: 'Export and share',
+        title: 'Export and publish',
         description:
-          'Download your WAV audio, MP4/WebM video, or high-resolution PNG images.',
+          'Download WAV, MP4, or PNG and publish directly to your platform.',
       },
     },
     moreFeatures: {
       title: 'And Much More',
       cards: {
         multiSpeaker: {
-          title: 'Multiple Speakers',
+          title: '2 speakers',
           description:
-            'Support for 2 narrators with independent voice and name configuration.',
+            'Configure independent voices for each character in your script.',
         },
         chunking: {
-          title: 'Smart Splitting',
+          title: 'Smart splitting',
           description:
-            'Smart script splitting to keep the voice natural during reading.',
+            'Long script becomes natural segments. Voice doesn\'t stutter, repeat, or lose tone.',
         },
         dualStorage: {
-          title: 'Dual Storage',
+          title: 'Cloud storage',
           description:
-            'Your projects are saved in the cloud when you are logged in, and in the browser when you are offline.',
+            'Projects saved online. Accessed from any device, any time.',
         },
       },
     },
     cta: {
-      title: 'Start creating now',
-      subtitle: 'Create your first narration for free. No credit card required.',
-      button: 'Get started',
+      title: 'Start for free today',
+      subtitle: '1,000 credits per month, automatically renewed. No credit card.',
+      button: 'Create free account',
     },
   },
 
@@ -281,9 +274,9 @@ export const en: TranslationDictionary = {
     hero: {
       title: 'Everything you need to create',
       subtitle:
-        'Explore all the integrated tools of Script Master to transform your scripts into professional content.',
-      cta: 'Get Started Free',
-      ctaSecondary: 'View beta',
+        'Six integrated tools in one platform that understands your workflow.',
+      cta: 'Start free',
+      ctaSecondary: 'See how it works',
     },
     sections: {
       tts: 'Voice Studio',
@@ -329,8 +322,8 @@ export const en: TranslationDictionary = {
     },
     cta: {
       title: 'Ready to create?',
-      subtitle: 'Start using all these features for free.',
-      button: 'Get Started Free',
+      subtitle: 'Free credits, no commitment. Your first narration in under 1 minute.',
+      button: 'Start free',
     },
   },
 
@@ -338,30 +331,30 @@ export const en: TranslationDictionary = {
   pricing: {
     popular: 'Popular',
     hero: {
-      title: 'Open Beta',
-      subtitle: 'Script Master is in open beta. AI usage requires login.',
+      title: 'Open beta: 100% free',
+      subtitle: '1,000 monthly credits for you to create without limits. Automatic renewal, no bureaucracy.',
       cta: 'Create free account',
-      ctaSecondary: 'How it works',
+      ctaSecondary: 'See how it works',
     },
     credits: {
-      title: 'Credits',
-      subtitle: 'Credits are the beta currency. Each action consumes credits, renewed every month.',
-      monthly: '1,000 free monthly credits',
-      monthlyDesc: 'Credits automatically renewed at the beginning of each month.',
-      bonus: '+250 credits for sending feedback',
-      bonusDesc: 'Send constructive feedback and earn a credit bonus.',
-      noPayment: 'No payment',
-      noPaymentDesc: 'No credit card needed. The beta is 100% free.',
+      title: 'Monthly credits',
+      subtitle: 'Each action uses credits. You get 1,000 per month, free.',
+      monthly: '1,000 credits per month',
+      monthlyDesc: 'Automatically renewed at the start of each month.',
+      bonus: '+250 credits for feedback',
+      bonusDesc: 'Send constructive suggestions and earn bonus credits to create more.',
+      noPayment: 'No credit card',
+      noPaymentDesc: 'Beta is 100% free. No charges during the period.',
     },
     howItWorks: {
       title: 'How it works',
-      subtitle: 'It\'s simple to start creating with Script Master.',
+      subtitle: 'Simple: write, generate, export.',
       step1Title: 'Sign in',
-      step1Desc: 'Sign in with your Google account or email to access all tools.',
+      step1Desc: 'Google or email — takes 30 seconds.',
       step2Title: 'Create content',
-      step2Desc: 'Each audio, image, or chat generation consumes credits from your monthly balance.',
+      step2Desc: 'Audio, images, and scenes with AI. Each generation uses credits from your balance.',
       step3Title: 'Track your balance',
-      step3Desc: 'Your available credits appear in the header after login.',
+      step3Desc: 'Credits displayed in the header. Automatic renewal every month.',
     },
     notice: {
       title: 'Payments and subscriptions are temporarily paused.',
@@ -371,8 +364,8 @@ export const en: TranslationDictionary = {
       title: 'Frequently asked questions about the beta',
     },
     cta: {
-      title: 'Ready to get started?',
-      subtitle: 'Create your first narration for free. Monthly credits renewed every month.',
+      title: 'Start creating now',
+      subtitle: 'Your first narration in under 1 minute. Free, no commitment.',
       button: 'Sign in with Google',
     },
   },
@@ -1418,8 +1411,8 @@ export const en: TranslationDictionary = {
   // ── SEO (meta tags por página) ─────────────────────────────────────
   seo: {
     landing: {
-      title: 'Turn scripts into art with AI | Script Master',
-      description: 'Complete platform to create professional audio, video, and images from scripts with artificial intelligence. Everything in your browser.',
+      title: 'Create videos and audio with AI in minutes | Script Master',
+      description: 'Turn scripts into professional narration, videos, and images with AI. 100% in your browser. Free in open beta.',
     },
     about: {
       title: 'About Script Master',
@@ -1438,8 +1431,8 @@ export const en: TranslationDictionary = {
       description: 'Discover all Script Master features: audio generation, images, videos, AI assistant, and more.',
     },
     pricing: {
-      title: 'Open Beta | Script Master',
-      description: 'Script Master is in open beta. Access for free with 1,000 monthly credits.',
+      title: 'Open beta free — 1,000 credits per month | Script Master',
+      description: 'Script Master is in open beta. Create audio, video, and images with AI. 1,000 free monthly credits, no card.',
     },
     status: {
       title: 'Service Status | Script Master',

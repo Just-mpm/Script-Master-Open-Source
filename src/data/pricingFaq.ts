@@ -12,65 +12,65 @@ export interface PricingFaqItem {
 
 /** Strings do FAQ do beta por idioma */
 const pricingFaqStrings = {
-  'pt-BR': {
+'pt-BR': {
     faq0Question: 'Como funcionam os créditos?',
     faq0Answer:
-      'Cada geração de áudio, imagem ou interação com o assistente IA consome uma quantidade de créditos do seu saldo. Você recebe 1.000 créditos gratuitos todo início de mês. O saldo é exibido no header após o login.',
-    faq1Question: 'O que acontece quando meus créditos acabam?',
+      'Cada geração de áudio, imagem ou interação com o assistente usa créditos do seu saldo. Você recebe 1.000 créditos grátis todo início de mês. Saldo exibido no header.',
+    faq1Question: 'E quando os créditos acabarem?',
     faq1Answer:
-      'Quando seus créditos chegarem a zero, você não conseguirá gerar novos conteúdos até a renovação mensal. Mas não se preocupe — seus projetos, áudios e imagens anteriores continuam acessíveis na biblioteca.',
+      'Você não consegue gerar novo conteúdo até a renovação mensal. Mas seus projetos, áudios e imagens anteriores continuam acessíveis na biblioteca.',
     faq2Question: 'Posso comprar mais créditos?',
     faq2Answer:
-      'Ainda não. Os pagamentos e assinaturas estão temporariamente pausados enquanto focamos em melhorar o produto com feedback real. Planos pagos e compra de créditos voltarão no futuro.',
-    faq3Question: 'O beta é realmente gratuito?',
+      'Ainda não. Pagamentos estão pausados enquanto melhoramos o produto. Planos pagos e compra avulsa voltam no futuro.',
+    faq3Question: 'O beta é mesmo gratuito?',
     faq3Answer:
-      'Sim! O beta aberto é 100% gratuito. Você recebe 1.000 créditos por mês sem precisar de cartão de crédito. Nenhuma cobrança será feita durante o período de beta.',
-    faq4Question: 'Como ganhar créditos bônus?',
+      '100% gratuito. 1.000 créditos por mês, sem cartão de crédito. Nenhuma cobrança durante o beta.',
+    faq4Question: 'Como ganhar créditos extras?',
     faq4Answer:
-      'Você pode ganhar 250 créditos extras ao enviar feedback construtivo pelo formulário de contato (área logada). O bônus é concedido automaticamente ao enviar o feedback. Fique de olho em outras formas de ganhar créditos no futuro.',
-    faq5Question: 'Os créditos acumulam?',
+      'Envie feedback construtivo pela área logada e ganhe 250 créditos bônus. O bônus é creditado automaticamente.',
+    faq5Question: 'Créditos não usados acumulam?',
     faq5Answer:
-      'Não. Os créditos são renovados para 1.000 todo início de mês. Créditos não utilizados no mês anterior não acumulam para o mês seguinte. Aproveite seus créditos mensais!',
+      'Não. O saldo renova para 1.000 no início de cada mês. Créditos não utilizados expirem.',
   },
   en: {
     faq0Question: 'How do credits work?',
     faq0Answer:
-      'Each audio generation, image generation, or AI assistant interaction consumes credits from your balance. You receive 1,000 free credits at the beginning of each month. Your balance is displayed in the header after login.',
-    faq1Question: 'What happens when I run out of credits?',
+      'Each audio, image, or assistant interaction uses credits from your balance. You get 1,000 free credits at the start of each month. Balance shown in the header.',
+    faq1Question: 'What happens when credits run out?',
     faq1Answer:
-      'When your credits reach zero, you won\'t be able to generate new content until the monthly renewal. But don\'t worry — your previous projects, audios, and images remain accessible in the library.',
+      'You can\'t generate new content until monthly renewal. But your previous projects, audio, and images stay accessible in the library.',
     faq2Question: 'Can I buy more credits?',
     faq2Answer:
-      'Not yet. Payments and subscriptions are temporarily paused while we focus on improving the product with real feedback. Paid plans and credit purchases will return in the future.',
+      'Not yet. Payments are paused while we improve the product. Paid plans and credit packs will return in the future.',
     faq3Question: 'Is the beta really free?',
     faq3Answer:
-      'Yes! The open beta is 100% free. You get 1,000 credits per month with no credit card required. No charges will be made during the beta period.',
+      '100% free. 1,000 credits per month, no credit card. No charges during beta.',
     faq4Question: 'How do I earn bonus credits?',
     faq4Answer:
-      'You can earn 250 extra credits by sending constructive feedback through the contact form (logged-in area). The bonus is granted automatically upon submitting your feedback. Stay tuned for more ways to earn credits in the future.',
-    faq5Question: 'Do credits accumulate?',
+      'Send constructive feedback from your logged-in area and earn 250 bonus credits. Credited automatically.',
+    faq5Question: 'Do unused credits accumulate?',
     faq5Answer:
-      'No. Credits reset to 1,000 at the beginning of each month. Unused credits from the previous month do not carry over to the next month. Make the most of your monthly credits!',
+      'No. Balance resets to 1,000 at the start of each month. Unused credits expire.',
   },
   es: {
     faq0Question: '¿Cómo funcionan los créditos?',
     faq0Answer:
-      'Cada generación de audio, imagen o interacción con el asistente IA consume créditos de tu saldo. Recibes 1.000 créditos gratuitos al inicio de cada mes. El saldo se muestra en el encabezado después de iniciar sesión.',
-    faq1Question: '¿Qué pasa cuando se acaban mis créditos?',
+      'Cada generación de audio, imagen o interacción con el asistente usa créditos de tu saldo. Recibes 1.000 créditos gratis al inicio de cada mes. Saldo mostrado en el header.',
+    faq1Question: '¿Qué pasa cuando se acaban los créditos?',
     faq1Answer:
-      'Cuando tus créditos lleguen a cero, no podrás generar nuevo contenido hasta la renovación mensual. Pero no te preocupes — tus proyectos, audios e imágenes anteriores permanecen accesibles en la biblioteca.',
+      'No podrás generar nuevo contenido hasta la renovación mensual. Pero tus proyectos, audios e imágenes anteriores seguirán accesibles en la biblioteca.',
     faq2Question: '¿Puedo comprar más créditos?',
     faq2Answer:
-      'Todavía no. Los pagos y suscripciones están temporalmente pausados mientras nos enfocamos en mejorar el producto con feedback real. Los planes de pago y la compra de créditos volverán en el futuro.',
+      'Todavía no. Los pagos están pausados mientras mejoramos el producto. Planes pagos y compra de créditos volverán en el futuro.',
     faq3Question: '¿El beta es realmente gratuito?',
     faq3Answer:
-      '¡Sí! El beta abierto es 100% gratuito. Recibes 1.000 créditos por mes sin necesidad de tarjeta de crédito. No se realizará ningún cobro durante el período beta.',
+      '100% gratuito. 1.000 créditos por mes, sin tarjeta de crédito. Sin cobros durante el beta.',
     faq4Question: '¿Cómo ganar créditos extra?',
     faq4Answer:
-      'Puedes ganar 250 créditos adicionales enviando feedback constructivo a través del formulario de contacto (área de usuarios registrados). El bono se concede automáticamente al enviar el feedback. Estate atento a más formas de ganar créditos en el futuro.',
-    faq5Question: '¿Los créditos se acumulan?',
+      'Envía feedback constructivo desde tu área conectada y gana 250 créditos de bonus. Acreditados automáticamente.',
+    faq5Question: '¿Los créditos no utilizados se acumulan?',
     faq5Answer:
-      'No. Los créditos se renuevan a 1.000 al inicio de cada mes. Los créditos no utilizados del mes anterior no se acumulan para el siguiente. ¡Aprovecha tus créditos mensuales!',
+      'No. El saldo se renueva a 1.000 al inicio de cada mes. Los créditos no utilizados caducan.',
   },
 } as const;
 

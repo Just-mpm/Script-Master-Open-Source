@@ -85,6 +85,7 @@ export const ptBR: TranslationDictionary = {
     productGroup: 'Produto',
     companyGroup: 'Empresa',
     legalGroup: 'Legal',
+    resourcesGroup: 'Recursos',
     links: {
       features: 'Funcionalidades',
       pricing: 'Beta',
@@ -96,111 +97,114 @@ export const ptBR: TranslationDictionary = {
       terms: 'Termos de Uso',
       privacy: 'Privacidade',
       cookies: 'Cookies',
+      roadmap: 'Roadmap',
+      changelog: 'Changelog',
+      community: 'Comunidade',
     },
   },
 
   // ── Landing Page ───────────────────────────────────────────────────────
   landing: {
     hero: {
-      title: 'Transforme roteiros em arte com IA',
+      title: 'Pare de editar por horas. Sua narração pronta em minutos.',
       subtitle:
-        'Plataforma completa para criar áudio, vídeo e imagens profissionais a partir de roteiros. Tudo funciona direto no seu navegador, com inteligência artificial.',
+        'Transforme roteiros em áudio profissional, vídeos e imagens com IA. Tudo no seu navegador — sem servidor, sem complicação.',
       cta: 'Criar conta gratuita',
-      ctaSecondary: 'Ver Funcionalidades',
-      alt: 'Ilustração do Script Master — transformação de roteiros em arte com IA',
+      ctaSecondary: 'Ver funcionalidades',
+      alt: 'Script Master — transforme roteiros em conteúdo profissional com IA',
     },
     socialProof: {
-      label: 'Tecnologia de IA avançada',
-      sublabel: 'Voz com IA, geração de imagens e assistente conversacional',
+      label: 'Milhares de criadores já criam com IA',
+      sublabel: 'Áudio profissional, imagens e assistente integrado — tudo em minutos',
     },
     features: {
-      title: 'Tudo que você precisa para criar',
+      title: 'Crie tudo em uma única plataforma',
       subtitle:
-        'Seis ferramentas integradas em uma única plataforma para transformar suas ideias em conteúdo profissional.',
+        'Estúdio de áudio, vídeo, imagens e assistente IA. Sem trocar de ferramenta, sem perder o fluxo.',
     },
     featureCards: {
       voice: {
-        title: 'Voz com IA',
+        title: 'Narração com IA',
         description:
-          'Transforme roteiros em áudio profissional com voz com IA. Controle de voz, ritmo e múltiplos locutores.',
+          'Roteiro pronto vira áudio profissional. Escolha a voz, controle o ritmo, publique em minutos.',
       },
       video: {
-        title: 'Vídeo Automático',
+        title: 'Vídeo automático',
         description:
-          'Crie vídeos direto no navegador com legendas, transições e forma de onda. Nenhum servidor externo necessário.',
+          'Legendas, transições e formato otimizado. Seu vídeo pronto para publicar sem softwares.',
       },
       images: {
-        title: 'Geração de Imagens',
+        title: 'Imagens com IA',
         description:
-          '8 aspect ratios, referência visual e galeria completa com persistência na nuvem.',
+          'Descreva a cena, receba a imagem. 8 formatos, referência visual e galeria na nuvem.',
       },
       speedPaint: {
-    durationLabel: 'Duração do speed paint',
-    uploadDragActive: 'Solte as imagens aqui',
-    uploadPrompt: 'Envie uma ou mais imagens',
-    uploadDescription: 'Arraste e solte suas imagens aqui, ou use o botão abaixo. Suporta JPG, PNG e WebP. Processamento em lote suportado!',
-    chooseFiles: 'Escolher arquivos',
+        durationLabel: 'Duração do speed paint',
+        uploadDragActive: 'Solte as imagens aqui',
+        uploadPrompt: 'Envie uma ou mais imagens',
+        uploadDescription: 'Arraste e solte suas imagens aqui, ou use o botão abaixo. Suporta JPG, PNG e WebP. Processamento em lote suportado!',
+        chooseFiles: 'Escolher arquivos',
         title: 'Speed Paint',
         description:
-          'Animação de pintura progressiva com detecção de bordas, processamento em lote e exportação.',
+          'Transforme qualquer imagem em animação de pintura. Efeito único que prende atenção.',
       },
       assistant: {
-    deleteMemoryConfirm: 'Excluir memória?',
-        title: 'Assistente IA',
+        deleteMemoryConfirm: 'Excluir memória?',
+        title: 'Assistente criativo',
         description:
-          'Chat com streaming, memórias, anexos e integração direta com o estúdio de produção.',
+          'Chat em tempo real que ajuda a melhorar roteiro, ajustar tom e sugerir cenas.',
       },
       library: {
-    emptyGallery: 'Sua galeria ainda está vazia',
-    sortOldestFirst: 'Mais antigos primeiro',
-    sortNewestFirst: 'Mais recentes primeiro',
-    generation: 'Geração',
-    project: 'Projeto',
-        title: 'Biblioteca',
+        emptyGallery: 'Sua galeria ainda está vazia',
+        sortOldestFirst: 'Mais antigos primeiro',
+        sortNewestFirst: 'Mais recentes primeiro',
+        generation: 'Geração',
+        project: 'Projeto',
+        title: 'Biblioteca completa',
         description:
-          'Gestão completa de projetos com áudios, cenas, vídeos e salvos na nuvem e no navegador.',
+          'Projetos, áudios, cenas e vídeos — salvos na nuvem e acessíveis de qualquer lugar.',
       },
     },
     ttsShowcase: {
-      title: 'Voz Profissional com IA',
+      title: 'Narração que soa natural',
       description:
-        'Transforme qualquer roteiro em narração profissional com vozes naturais e controle total sobre ritmo, tom e estilo de narração.',
+        'Voz com IA que entende contexto, detecta cenas e mantém o ritmo. Sem roboticismo.',
       benefits: {
-        0: 'Até 2 locutores em um único roteiro',
-        1: 'Detecção inteligente de pausas e cenas no áudio',
-        2: 'Controle de ritmo, tom e estilo de narração',
-        3: 'Amostras de cada voz para você escolher',
-        4: 'Áudio em alta qualidade profissional',
+        0: 'Até 2 locutores por roteiro',
+        1: 'Detecção automática de pausas e cenas',
+        2: 'Controle total de ritmo e tom',
+        3: '15 vozes para ouvir antes de escolher',
+        4: 'Áudio em qualidade profissional',
       },
     },
     videoShowcase: {
-      title: 'Vídeo Direto no Navegador',
+      title: 'Vídeo renderizado no seu navegador',
       description:
-        'Renderize vídeos completos diretamente no navegador. Nenhum servidor, nenhum custo de renderização.',
+        'Nenhum upload, nenhum custo de servidor. Seu roteiro nunca sai do seu dispositivo.',
       benefits: {
-        0: 'Vídeo em MP4 de alta qualidade, compatível com todos os dispositivos',
-        1: 'Legendas automáticas sincronizadas com o áudio',
-        2: 'Transições suaves entre cenas',
-        3: '3 resoluções: 16:9, 9:16, 1:1',
-        4: 'Visualização da forma de onda durante o vídeo',
+        0: 'MP4 de alta qualidade, compatível em qualquer lugar',
+        1: 'Legendas sincronizadas automaticamente',
+        2: '3 formatos: horizontal, vertical, quadrado',
+        3: 'Preview com forma de onda e transições',
+        4: 'Exportação com um clique',
       },
     },
     assistantShowcase: {
-      title: 'Assistente IA Integrado',
+      title: 'Direção criativa com IA',
       description:
-        'Chat conversacional com respostas em tempo real, memórias de longo prazo e integração direta com o estúdio. O assistente sugere alterações que você aplica com um clique.',
+        'O assistente entende seu projeto, sugere ajustes e aplica no estúdio com um clique.',
       benefits: {
-        0: 'Respostas em tempo real com IA avançada',
-        1: 'Sistema de memória: textos curtos + upload de documentos (.md, .txt, .csv)',
-        2: 'Anexos: 5 por mensagem (imagens 10MB, documentos 5MB)',
-        3: 'Sugestões de ajustes com botão "Aplicar no estúdio"',
-        4: 'Auto-save de sessões com histórico completo',
+        0: 'Respostas em tempo real',
+        1: 'Memórias de projeto + upload de documentos',
+        2: '5 anexos por mensagem (imagens e arquivos)',
+        3: 'Sugestões com botão "Aplicar no estúdio"',
+        4: 'Histórico completo, auto-save',
       },
     },
     useCases: {
-      title: 'Para cada tipo de criador',
+      title: 'Feito para criadores que não têm tempo a perder',
       subtitle:
-        'Seja você YouTuber, podcaster, professor ou marketer — o Script Master se adapta ao seu fluxo de trabalho.',
+        'YouTubers, podcasters, educadores, marketers — todos publicam mais rápido com o Script Master.',
       learnMore: 'Saiba mais',
     },
     metrics: {
@@ -231,56 +235,56 @@ export const ptBR: TranslationDictionary = {
       noCreditCard: 'Sem cartão de crédito · Configuração em 30 segundos',
     },
     testimonials: {
-      title: 'O que nossos criadores dizem',
+      title: 'Quem já cria mais rápido',
       subtitle:
-        'Milhares de criadores já usam o Script Master para transformar ideias em conteúdo profissional.',
+        'Criadores que abandonaram a edição manual e nunca mais voltaram.',
     },
     howItWorks: {
-      title: 'Como Funciona',
+      title: 'Três passos para publicar',
       subtitle:
-        'Três passos para transformar seu roteiro em conteúdo profissional.',
+        'Escreva, gere, exporte. Sem complicação, sem espera.',
     },
     steps: {
       1: {
         title: 'Escreva seu roteiro',
         description:
-          'Use o editor integrado ou cole seu texto. O assistente IA pode ajudar a melhorar seu roteiro.',
+          'Use o editor integrado ou cole seu texto. O assistente ajuda a melhorar se precisar.',
       },
       2: {
-        title: 'Gere com IA',
+        title: 'Gere com um clique',
         description:
-          'Um clique para transformar seu roteiro em áudio, imagens e vídeo com inteligência artificial.',
+          'Áudio, imagens, cenas — tudo pronto em minutos, não em horas.',
       },
       3: {
-        title: 'Exporte e compartilhe',
+        title: 'Exporte e publique',
         description:
-          'Baixe seu áudio WAV, vídeo MP4/WebM ou imagens PNG em alta resolução.',
+          'Baixe WAV, MP4 ou PNG e publique diretamente na sua plataforma.',
       },
     },
     moreFeatures: {
       title: 'E Muito Mais',
       cards: {
         multiSpeaker: {
-          title: 'Múltiplos locutores',
+          title: '2 locutores',
           description:
-            'Suporte a 2 locutores com configuração independente de voz e nome.',
+            'Configure vozes independentes para cada personagem do seu roteiro.',
         },
         chunking: {
-          title: 'Divisão Inteligente',
+          title: 'Divisão inteligente',
           description:
-            'Divisão inteligente do roteiro para manter a voz natural durante a leitura.',
+            'Roteiro longo vira segmentos naturais. A voz não trava, não repete, não perde o tom.',
         },
         dualStorage: {
-          title: 'Armazenamento Duplo',
+          title: 'Armazenamento na nuvem',
           description:
-            'Seus projetos ficam salvos na nuvem quando você está logado, e no navegador quando está offline.',
+            'Projetos salvos online. Acessados de qualquer dispositivo, a qualquer hora.',
         },
       },
     },
     cta: {
-      title: 'Comece a criar agora',
-      subtitle: 'Crie sua primeira narração gratuitamente. Sem cartão de crédito.',
-      button: 'Começar agora',
+      title: 'Comece grátis hoje',
+      subtitle: '1.000 créditos por mês, renovados automaticamente. Sem cartão de crédito.',
+      button: 'Criar conta gratuita',
     },
   },
 
@@ -289,9 +293,9 @@ export const ptBR: TranslationDictionary = {
     hero: {
       title: 'Tudo que você precisa para criar',
       subtitle:
-        'Explore todas as ferramentas integradas do Script Master para transformar seus roteiros em conteúdo profissional.',
-      cta: 'Começar Grátis',
-      ctaSecondary: 'Ver beta',
+        'seis ferramentas integradas em uma plataforma que entende o seu fluxo.',
+      cta: 'Começar grátis',
+      ctaSecondary: 'Ver como funciona',
     },
     sections: {
       tts: 'Estúdio de Voz',
@@ -335,10 +339,10 @@ export const ptBR: TranslationDictionary = {
         3: 'Persistência: salvos na nuvem e no navegador',
       },
     },
-    cta: {
+cta: {
       title: 'Pronto para criar?',
-      subtitle: 'Comece a usar todas essas features gratuitamente.',
-      button: 'Começar Grátis',
+      subtitle: 'Créditos gratuitos, sem compromisso. Sua primeira narração em menos de 1 minuto.',
+      button: 'Começar grátis',
     },
   },
 
@@ -346,30 +350,30 @@ export const ptBR: TranslationDictionary = {
   pricing: {
     popular: 'Popular',
     hero: {
-      title: 'Beta Aberto',
-      subtitle: 'O Script Master está em beta aberto. Uso de IA exige login.',
+      title: 'Beta aberto: 100% gratuito',
+      subtitle: '1.000 créditos mensais para você criar sem limites. Renovação automática, sem burocracia.',
       cta: 'Criar conta gratuita',
       ctaSecondary: 'Como funciona',
     },
     credits: {
-      title: 'Créditos',
-      subtitle: 'Créditos são a moeda do beta. Cada ação consome créditos, renovados todo mês.',
-      monthly: '1.000 créditos mensais gratuitos',
-      monthlyDesc: 'Créditos renovados automaticamente todo início de mês.',
-      bonus: '+250 créditos ao enviar feedback',
-      bonusDesc: 'Envie feedback construtivo e ganhe um bônus de créditos.',
-      noPayment: 'Sem pagamento',
-      noPaymentDesc: 'Nada de cartão de crédito. O beta é 100% gratuito.',
+      title: 'Créditos mensais',
+      subtitle: 'Cada ação consome créditos. Você recebe 1.000 por mês, gratis.',
+      monthly: '1.000 créditos por mês',
+      monthlyDesc: 'Renovados automaticamente no início de cada mês.',
+      bonus: '+250 créditos por feedback',
+      bonusDesc: 'Envie sugestões construtivas e ganhe bônus para criar mais.',
+      noPayment: 'Sem cartão de crédito',
+      noPaymentDesc: 'Beta é 100% gratuito. Nenhuma cobrança durante o período.',
     },
     howItWorks: {
       title: 'Como funciona',
-      subtitle: 'É simples começar a criar com o Script Master.',
+      subtitle: 'Simples: escreva, gere, exporte.',
       step1Title: 'Faça login',
-      step1Desc: 'Entre com sua conta Google ou email para acessar todas as ferramentas.',
+      step1Desc: 'Google ou email — leva 30 segundos.',
       step2Title: 'Crie conteúdo',
-      step2Desc: 'Cada geração de áudio, imagem ou chat consome créditos do seu saldo mensal.',
+      step2Desc: 'Áudio, imagens e cenas com IA. Cada geração usa créditos do seu saldo.',
       step3Title: 'Acompanhe seu saldo',
-      step3Desc: 'Seus créditos disponíveis aparecem no header após o login.',
+      step3Desc: 'Créditos exibidos no header. Renovação automática todo mês.',
     },
     notice: {
       title: 'Pagamentos e assinaturas estão temporariamente pausados.',
@@ -379,8 +383,8 @@ export const ptBR: TranslationDictionary = {
       title: 'Perguntas frequentes sobre o beta',
     },
     cta: {
-      title: 'Pronto para começar?',
-      subtitle: 'Crie sua primeira narração gratuitamente. Créditos mensais renovados todo mês.',
+      title: 'Comece a criar agora',
+      subtitle: 'Sua primeira narração em menos de 1 minuto. Grátis, sem compromisso.',
       button: 'Entrar com Google',
     },
   },
@@ -1438,8 +1442,8 @@ export const ptBR: TranslationDictionary = {
   // ── SEO (meta tags por página) ─────────────────────────────────────
   seo: {
     landing: {
-      title: 'Transforme roteiros em arte com IA | Script Master',
-      description: 'Plataforma completa para criar áudio, vídeo e imagens profissionais a partir de roteiros com inteligência artificial. Tudo no seu navegador.',
+      title: 'Crie vídeos e áudios com IA em minutos | Script Master',
+      description: 'Transforme roteiros em narração profissional, vídeos e imagens com inteligência artificial. 100% no seu navegador. Grátis no beta aberto.',
     },
     about: {
       title: 'Sobre o Script Master',
@@ -1458,8 +1462,8 @@ export const ptBR: TranslationDictionary = {
       description: 'Conheça todas as funcionalidades do Script Master: geração de áudio, imagens, vídeos, assistente IA e mais.',
     },
     pricing: {
-      title: 'Beta Aberto | Script Master',
-      description: 'O Script Master está em beta aberto. Acesse gratuitamente com 1.000 créditos mensais.',
+      title: 'Beta aberto gratuito — 1.000 créditos por mês | Script Master',
+      description: 'O Script Master está em beta aberto. Crie áudio, vídeo e imagens com IA. 1.000 créditos mensais grátis, sem cartão.',
     },
     status: {
       title: 'Status dos Serviços | Script Master',

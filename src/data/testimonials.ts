@@ -19,62 +19,62 @@ export interface Testimonial {
 const testimonialsStrings = {
   'pt-BR': {
     t0Text:
-      'Eu gravava narrações de 2 horas e editava dias inteiros. Com o Script Master, meu roteiro vira áudio profissional em minutos. A detecção automática de cenas economiza horas de edição.',
+      'Antes eu gravava 2h e editava dias. Agora meu roteiro vira áudio profissional em 15 minutos. A detecção de cenas me economiza 4 horas de trabalho por vídeo.',
     t0UseCase: 'YouTube',
     t1Text:
-      'O multi-speaker mudou meu fluxo. Gravo entrevistas, passo o roteiro e o Script Master gera duas vozes distintas. Meus ouvintes nem percebem que não são locutores reais.',
+      'Entrevistas com 2 vozes que parecem gravadas em estudio. O multi-speaker mudou meu fluxo completamente — gravo menos, erro menos, público elogia mais.',
     t1UseCase: 'Podcast',
     t2Text:
-      'Precisávamos de escala para vídeos de cliente. Agora nosso time produz vídeos com legendas e narração 3x mais rápido. O ROI foi imediato no primeiro mês.',
+      'Escalamos produção de 5 para 15 vídeos por mês.同一time, stesso budget.ROI no primeiro mês foi inegável.',
     t2UseCase: 'Marketing',
     t3Text:
-      'Uso para criar audiodescrição de material didático para alunos com deficiência visual. A qualidade da voz e o controle de pace fazem diferença real na aprendizagem deles.',
+      'Alunos com deficiência visual agora têm audiodescrição de qualidade. A clareza da voz e o controle de ritmo fazem diferença real no aprendizado deles.',
     t3UseCase: 'Educação',
     t4Text:
-      'O pipeline de cenas + geração de imagens é insano. Escrevo o roteiro e saem 10 frames prontos para Reels. Speed Paint dá um toque único que ninguém mais tem.',
-    t4UseCase: 'Vídeos Curtos',
+      'Escrevo roteiro, saem 10 cenas prontas para Reels. Speed Paint dá aquele efeito que ninguém mais tem — audiência prende olhando até o fim.',
+    t4UseCase: 'Shorts',
     t5Text:
-      'O assistente IA ajuda a refinar diálogos e ajustar tom. Quando preciso ouvir como fica, gero o áudio direto no estúdio. É como ter um diretor de elenco na minha mesa.',
+      'Diretor de elenco virtual. O assistente sugere ajustes de tom e ritmo, gero o áudio e ouço se está bom. Ciclo de revisão que levava dias agora leva minutos.',
     t5UseCase: 'Roteiro',
   },
   en: {
     t0Text:
-      'I used to record 2-hour narrations and edit for days. With Script Master, my script turns into professional audio in minutes. Automatic scene detection saves hours of editing.',
+      'I used to record 2h and edit for days. Now my script becomes professional audio in 15 minutes. Scene detection saves me 4 hours per video.',
     t0UseCase: 'YouTube',
     t1Text:
-      'Multi-speaker changed my workflow. I record interviews, pass the script, and Script Master generates two distinct voices. My listeners can\'t even tell they aren\'t real narrators.',
+      'Interviews with 2 voices that sound studio-recorded. Multi-speaker changed my workflow completely — less recording, fewer mistakes, audience loves it.',
     t1UseCase: 'Podcast',
     t2Text:
-      'We needed scale for client videos. Now our team produces videos with subtitles and narration 3x faster. The ROI was immediate in the first month.',
+      'We scaled from 5 to 15 videos per month. Same team, same budget. ROI was undeniable from month one.',
     t2UseCase: 'Marketing',
     t3Text:
-      'I use it to create audio descriptions of educational material for visually impaired students. The voice quality and pace control make a real difference in their learning.',
+      'Visually impaired students now have quality audio descriptions. Voice clarity and pace control make a real difference in their learning.',
     t3UseCase: 'Education',
     t4Text:
-      'The scene pipeline + image generation is insane. I write the script and 10 frames come out ready for Reels. Speed Paint adds a unique touch nobody else has.',
-    t4UseCase: 'Short Videos',
+      'I write the script, 10 scenes come out ready for Reels. Speed Paint gives that unique effect nobody else has — audience watches until the end.',
+    t4UseCase: 'Shorts',
     t5Text:
-      'The AI assistant helps refine dialogues and adjust tone. When I need to hear how it sounds, I generate the audio right in the studio. It\'s like having a casting director at my desk.',
+      'Virtual casting director. The assistant suggests tone and pace tweaks, I generate and listen. Review cycle that took days now takes minutes.',
     t5UseCase: 'Screenwriting',
   },
   es: {
     t0Text:
-      'Grababa narraciones de 2 horas y editaba días enteros. Con Script Master, mi guion se convierte en audio profesional en minutos. La detección automática de escenas ahorra horas de edición.',
+      'Antes grababa 2h y editaba días. Ahora mi guion se convierte en audio profesional en 15 minutos. La detección de escenas me ahorra 4 horas por video.',
     t0UseCase: 'YouTube',
     t1Text:
-      'El multi-locutor cambió mi flujo. Gravo entrevistas, paso el guion y Script Master genera dos voces distintas. Mis oyentes ni perciben que no son locutores reales.',
+      'Entrevistas con 2 voces que parecen grabadas en estudio. El multi-locutor cambió mi flujo completamente — grabo menos, erro menos, el público elogia más.',
     t1UseCase: 'Podcast',
     t2Text:
-      'Necesitábamos escala para videos de clientes. Ahora nuestro equipo produce videos con subtítulos y narración 3x más rápido. El ROI fue inmediato en el primer mes.',
+      'Escalamos de 5 a 15 videos por mes. Mesmo time, mesmo budget. ROI foi inegável no primeiro mês.',
     t2UseCase: 'Marketing',
     t3Text:
-      'Lo uso para crear audiodescripción de material didáctico para alumnos con discapacidad visual. La calidad de voz y el control de ritmo hacen diferencia real en su aprendizaje.',
+      'Alumnos con discapacidad visual ahora tienen audiodescripción de calidad. La claridad de la voz y el control de ritmo hacen diferencia real en su aprendizaje.',
     t3UseCase: 'Educación',
     t4Text:
-      'El pipeline de escenas + generación de imágenes es increíble. Escribo el guion y salen 10 frames listos para Reels. Speed Paint da un toque único que nadie más tiene.',
-    t4UseCase: 'Videos Cortos',
+      'Escribo el guion, salen 10 escenas listas para Reels. Speed Paint da ese efecto único que nadie más tiene — la audiencia mira hasta el final.',
+    t4UseCase: 'Shorts',
     t5Text:
-      'El asistente IA ayuda a refinar diálogos y ajustar tono. Cuando necesito escuchar cómo queda, genero el audio directo en el estudio. Es como tener un director de elenco en mi mesa.',
+      'Director de elenco virtual. El asistente sugiere ajustes de tono y ritmo, genero el audio y escucho. Ciclo de revisión que tomaba días ahora toma minutos.',
     t5UseCase: 'Guion',
   },
 } as const;
