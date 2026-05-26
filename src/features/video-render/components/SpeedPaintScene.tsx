@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AbsoluteFill, cancelRender, continueRender, delayRender, useCurrentFrame, useVideoConfig } from 'remotion';
 import { interpolate } from 'remotion';
 import type { Stroke } from '../../speed-paint/types';
@@ -145,6 +145,8 @@ interface SpeedPaintSceneProps {
   timingMode?: SpeedPaintTimingMode;
 }
 
+type SpeedPaintResourcesStatus = 'loading' | 'ready';
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
@@ -182,6 +184,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const bufferRef = useRef<HTMLCanvasElement | null>(null);
+  const hasContinuedRenderRef = useRef(false);
 
   // Ref para rastrear o último progress desenhado — evita redesenho duplicado
   // durante o hold (progress=1) quando o frame continua mudando
@@ -190,10 +193,17 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
   // Bloqueia a renderização até que a imagem carregue
   const [handle] = useState(() => delayRender('Carregando imagem do speed paint'));
+  const [resourcesStatus, setResourcesStatus] = useState<SpeedPaintResourcesStatus>('loading');
 
   // Carrega a imagem e cria o buffer canvas uma vez
   useEffect(() => {
     let cancelled = false;
+    setResourcesStatus('loading');
+    imageRef.current = null;
+    bufferRef.current = null;
+    lastDrawnProgressRef.current = -1;
+    lastDrawnOpacityRef.current = -1;
+    hasContinuedRenderRef.current = false;
 
     const init = async () => {
       try {
@@ -201,7 +211,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
         if (cancelled) return;
         imageRef.current = img;
         bufferRef.current = createBufferCanvas(animation);
-        continueRender(handle);
+        setResourcesStatus('ready');
       } catch (err) {
         if (!cancelled) {
           cancelRender(err instanceof Error ? err : new Error('Falha ao carregar imagem do speed paint'));
@@ -311,18 +321,23 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
   // ── Desenho do frame — TUDO síncrono, sem requestAnimationFrame ──
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     const img = imageRef.current;
     const buffer = bufferRef.current;
 
+    if (resourcesStatus !== 'ready') return;
     if (!canvas || !ctx || !img || !buffer) return;
 
     // Early return: durante o hold (progress=1, opacity=1) e o último frame
     // já foi desenhado com os mesmos valores, não redesenha nada.
     // Isso elimina o trabalho pesado de stroke rendering durante os 3s de hold.
     if (progress === lastDrawnProgressRef.current && opacity === lastDrawnOpacityRef.current) {
+      if (!hasContinuedRenderRef.current) {
+        hasContinuedRenderRef.current = true;
+        continueRender(handle);
+      }
       return;
     }
 
@@ -358,7 +373,24 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
         drawTool(ctx, x, y, toolType);
       }
     }
-  }, [frame, animation, progress, opacity, drawSpeed, paintSpeed, speedMultiplier, showDrawTool, isExporting]);
+
+    if (!hasContinuedRenderRef.current) {
+      hasContinuedRenderRef.current = true;
+      continueRender(handle);
+    }
+  }, [
+    frame,
+    animation,
+    progress,
+    opacity,
+    drawSpeed,
+    paintSpeed,
+    speedMultiplier,
+    showDrawTool,
+    isExporting,
+    resourcesStatus,
+    handle,
+  ]);
 
   // Dimensões do canvas — usa as dimensões da animação para pixel-perfect rendering
   const canvasWidth = animation.canvasWidth;

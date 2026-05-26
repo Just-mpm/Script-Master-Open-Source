@@ -111,7 +111,7 @@ describe('i18n — integração com componentes públicos', () => {
 
     it('renderiza "Feito com IA" traduzido', () => {
       render(<PublicFooter />, { wrapper: Wrapper });
-      expect(screen.getByText('Feito com IA')).toBeDefined();
+      expect(screen.getByText(/Feito com IA/)).toBeDefined();
     });
 
     it('renderiza links do footer com labels traduzidos', () => {

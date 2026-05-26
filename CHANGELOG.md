@@ -7,34 +7,47 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.100.0] - 2026-05-26
+
+### Adicionado
+
+- **Testes de guarda i18n** (`tests/i18n/i18n-locale-parity.unit.test.ts`, `tests/i18n/i18n-used-keys.unit.test.ts`): paridade de chaves entre todos os locales + varredura AST de chamadas `t('...')` no código-fonte para detectar chaves faltantes antes de abrir páginas no navegador
+- **Script `bun run i18n`** no `package.json`: atalho para executar apenas os dois guardas de i18n
+- **`SpeedPaintResourcesStatus` type** (`SpeedPaintScene.tsx`): tipo `'loading' | 'ready'` para controle de estado de recursos do canvas
+- **`tests/video-render/SpeedPaintScene.component.test.tsx`** (+113 linhas): teste de componente para SpeedPaintScene com mocks de Remotion e speedPaintRenderer
+- **Novos namespaces i18n** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): `dataMigration` (migração IndexedDB→Firestore), `workspace` (espaço de trabalho do estúdio), `summaryPanel` (painel de resumo), `librarySection` (seção da biblioteca), `transcription` (transcrição de áudio), `speedLabels` (labels de velocidade), `settings` (configurações)
+- **`docs/test/i18n-key-guards.md`**: documentação dos guardas de i18n com escopo, gaps e próximos passos
+
+### Removido
+
+- **Infraestrutura Cloud Run de renderização de vídeo**: arquivo `useVideoExporter.tsx` limpo em ~237 linhas — removidos imports Firebase/Firestore, export `useCloudRun`, `speedPaintWarnings` e `inputProps`; removido script `deploy:cloudrun` do `package.json`; removido mock de env Cloud Run em `useVideoExporter-speedpaint.unit.test.tsx`
+- **Sistema de Jobs Assíncronos**: rota `/app/jobs` removida de `routes.tsx`; namespace `audioJobs` removido dos 3 locales (jobs, badge, empty, filter, pipeline, step, etc.)
+- **`src/lib/image-jobs.ts`**: arquivo de jobs de imagem removido (não mais utilizado)
+
+### Alterado
+
+- **Locales i18n** (`en.ts`, `es.ts`, `pt-BR.ts`, ~+149/-118 linhas cada): reestruturação de namespaces — `audioJobs` removido; 7 novos namespaces adicionados
+- **`tests/i18n/i18n-integration.test.tsx`**: assertion flexível com regex `/Feito com IA/` em vez de match exato de string
+- **`AGENTS.md` / `CLAUDE.md`**: removidas referências a Cloud Run, Cloud Tasks, Jobs Assíncronos e Jobs UI; rota `/app/jobs` removida; stack simplificada
+
+---
+
 ## [0.47.0] - 2026-05-23
 
 ### Adicionado
 
-- **`processVideoJob`** (`functions/src/flows/process-video-job.ts`, +176 linhas): nova Cloud Function `onTaskDispatched` para processamento de jobs de vídeo via Cloud Tasks. Tipos `VideoJobTaskPayload` e `CloudRunRenderPayload`. Substitui chamada HTTP direta ao Cloud Run por fila assíncrona gerenciada
-- **`persistProjectImage()`** (`functions/src/flows/process-image-job.ts`): nova função para salvar imagens do pipeline na subcoleção `projects/{id}/images` com `storagePath`, `downloadUrl`, `prompt` e dimensões
-- **`buildVideoScenes()`** e **`clampSceneTimestamp()`** (`functions/src/flows/on-sub-job-completed.ts`): funções para montar o payload de cenas do vídeo do pipeline e ajustar timestamps contra a duração total do áudio
-- **`getSubJobRequestId()`** (`functions/src/flows/cancel-pipeline.ts`): função auxiliar para resolução precisa do `requestId` de cada sub-job durante cancelamento de pipeline
-- **`sceneTimestamps`** opcional em `ImageJobRecord` (`functions/src/usage/image-jobs.ts`): campo para preservar timestamps das cenas e manter ordem cronológica no projeto
-- **`projectId`** em `pipeline-jobs.ts` e `start-pipeline.ts`: campo obrigatório que vincula o pipeline ao projeto desde a criação
 - **`VideoLibraryVideo`** (`src/components/video-library/types.ts`): nova interface que estende `ProjectVideo` com `resolvedUrl` para exibição de vídeos salvos na biblioteca
 - **Chaves i18n de vídeo** nos 3 locales (`pt-BR.ts`, `en.ts`, `es.ts`): `library.video`, `library.savedVideos`, `library.noVideos`, `library.videoItem`, `library.videoCount`
 - **Download de vídeos no lote** (`useBatchDownload.ts`): `downloadFile()` agora inclui vídeos do projeto no download em lote (áudio + cenas + vídeos)
 
 ### Alterado
 
-- **Cloud Run renderer (`cloud-run/src/`)**: migrado de resposta assíncrona (202 Accepted + background render) para resposta síncrona (status `completed`/`error`). Adicionados `createDownloadToken()` e `buildStorageDownloadUrl()` para URLs de download persistentes com token (substitui signed URLs temporárias de 7 dias)
-- **Cloud Run deploy (`cloud-run/scripts/deploy.ps1`)**: `MIN_INSTANCES` alterado de 0 para 1, adicionado `--no-cpu-throttling` para estabilidade em produção
-- **Pipeline de vídeo migrado para Cloud Tasks**: `start-video-job.ts` substitui chamadas HTTP diretas ao Cloud Run por `VIDEO_JOB_QUEUE` (Cloud Tasks via `firebase-admin/functions`). Removidas `getCloudRunUrl()` e `getIdentityToken()` de chamada HTTP direta
-- **`on-sub-job-completed.ts`**: refatorado com `buildVideoScenes()` e `clampSceneTimestamp()` para construção correta do payload de vídeo do pipeline
 - **`Library.tsx`** (+154 linhas): expandido com exibição de vídeos salvos no projeto (importa `Movie` icon, tipo `ProjectVideo`)
 - **`GalleryCard.tsx`**: exibe contagem de vídeos no card do projeto
 - **`useProjectGallery.ts`**: mapeia `resolvedUrl` para vídeos do projeto
-- **`functions/src/index.ts`**: exporta nova `processVideoJob` — total: 24 flows de IA
 
 ### Corrigido
 
-- **Cloud Run types (`cloud-run/src/types.ts`)**: `RenderResponse.status` corrigido de `'accepted' | 'error'` para `'completed' | 'error'` — alinhado com o novo comportamento síncrono do renderer
 
 ---
 
@@ -42,17 +55,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
-- **`cancel-job.ts`: suporte a cancelamento de pipeline jobs (`functions/src/flows/cancel-job.ts`)** — adicionados os tipos `PipelineJobRecord` (especialização de `BaseJobRecord` com campos de pipeline) e `AnyJobRecord` (union type `BaseJobRecord | PipelineJobRecord`). O `JobType` agora inclui `pipeline` como caso válido no switch de cancelamento. Antes, pipeline jobs não podiam ser cancelados via `cancelJob` callable genérica — agora o cancelamento cooperativo funciona também para pipelines
 
-- **`cleanup-old-jobs.ts`: pipeline jobs incluídos na limpeza automática (`functions/src/flows/cleanup-old-jobs.ts`)** — adicionado `'pipeline_jobs'` ao array de coleções varridas pela função agendada diária (03:00 BRT). Pipeline jobs completed >30d, failed >7d, cancelled >3d agora são removidos automaticamente, e jobs presos em running/queued >24h são marcados como failed
 
-- **`useJobsStore.ts`: filtro de pipeline jobs na UI regular (`src/hooks/useJobsStore.ts`)** — o listener unificado de jobs agora filtra `'pipeline'` da lista de tipos (`jobTypes.filter(jt => jt !== 'pipeline')`). Pipeline jobs têm UI própria (`PipelineCard`) e não devem aparecer na lista geral de jobs para evitar duplicação visual
 
-- **`firestore.rules`: regras faltantes para `transcriptions` e `pipeline_jobs`** — adicionada regra de leitura/escrita exclusiva para admin na coleção `transcriptions/{docId}` (alinhamento com política de dados apenas IndexedDB); adicionada regra de leitura pelo próprio usuário e escrita apenas admin para `pipeline_jobs/{jobId}` (consistente com as demais coleções de jobs)
 
 ### Alterado
 
-- **`JobList.tsx` e `src/features/jobs/types.ts`** — `FILTER_OPTIONS` e `JobType` atualizados para refletir o novo tipo `pipeline`, garantindo que os filtros da página de jobs estejam sincronizados com os tipos reais
 
 ---
 
@@ -60,7 +68,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
-- **`removeUndefinedFields` recursivo em `generic-jobs.ts` e `pipeline-jobs.ts`** — a função utilitária de limpeza de campos `undefined` foi migrada de remoção superficial (shallow) para recursiva. Agora percorre objetos aninhados e arrays recursivamente, prevenindo erros de serialização no Firestore quando `undefined` aparece em níveis profundos (Firestore rejeita `undefined` como valor em qualquer nível de aninhamento). A assinatura mudou de `removeUndefinedFields<T extends object>(obj: T): T` para `removeUndefinedFields<T>(value: T): T`, aceitando qualquer tipo como entrada e preservando a estrutura original
 
 ---
 
@@ -68,30 +75,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Pipeline Server-Side (Fase 1)** — orquestrador de pipeline migrado do frontend para Cloud Functions. 3 novas Cloud Functions: `startPipeline` (callable), `cancelPipeline` (callable), `onSubJobCompleted` (`onDocumentWritten`). O pipeline de produção (áudio → scene prompts → imagens → vídeo) agora é gerenciado inteiramente no backend, com sub-jobs monitorados via Firestore + `onSubJobCompleted`
-- **Schemas de pipeline** (`functions/src/genkit/schemas/common.ts`): `PipelineStepStatusSchema`, `PipelineVoiceConfigSchema`, `PipelineMultiSpeakerConfigSchema`, `StartPipelineInputSchema`, `StartPipelineOutputSchema`, `CancelPipelineInputSchema`, `CancelPipelineOutputSchema` + tipos inferidos correspondentes
-- **`functions/src/flows/start-pipeline.ts`** (+315 linhas): Cloud Function callable que cria o pipeline com steps iniciais (audio, scene_prompts, images, video) e dispara o primeiro sub-job (áudio)
-- **`functions/src/flows/cancel-pipeline.ts`** (+156 linhas): Cloud Function callable que cancela pipeline e propaga cancelamento para todos os sub-jobs ativos
-- **`functions/src/flows/on-sub-job-completed.ts`** (+914 linhas): Cloud Function `onDocumentWritten` que escuta conclusão de sub-jobs e avança o pipeline automaticamente para a próxima etapa
-- **`functions/src/usage/pipeline-jobs.ts`** (+292 linhas): módulo utilitário com CRUD de pipeline jobs — tipos `PipelineStepName`, `PipelineStepStatus`, `PipelineStatus`, `PipelineStepRecord`, `PipelineVoiceConfig`, `PipelineMultiSpeakerConfig`, `PipelineInput`, `PipelineAudioResult`, `PipelineScenePromptsResult`, `PipelineImagesResult`, `PipelineVideoResult`, `PipelineResults`, `PipelineJobRecord`
-- **`pipelineId`** em `generic-jobs.ts` (`functions/src/usage/`): campo opcional que vincula sub-jobs ao pipeline pai
-- **Coleção `pipeline_jobs`** — subcollection `users/{uid}/pipeline_jobs` com index COLLECTION_GROUP (`status ASC, updatedAt ASC`) em `firestore.indexes.json`
-- **`JobType.pipeline`** em `src/lib/generic-jobs.ts` — `JobType` estendido para 5 tipos, `PipelineJobRecord` adicionado
-- **Ícone `AutoAwesome`** para pipeline em `src/features/jobs/components/JobCard.tsx` — pipeline jobs agora têm ícone próprio
-- **Toast de pipeline** em `src/features/jobs/hooks/useJobToasts.ts` — case `'pipeline'` retorna chave i18n `'pipelineCompleted'`
-- **5 novas chaves i18n** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): `jobs.sortOldestFirst`, `jobs.sortNewestFirst`, `jobs.generation`, `jobs.project`, `jobs.toasts.pipelineCompleted`
 
 ### Alterado
 
-- **`usePipelineOrchestrator.ts`** (+264/-636): refatorado para chamar `startPipeline` (Cloud Function) em vez de `startJob` individuais para cada etapa. Agora usa `StartPipelineInput`/`StartPipelineOutput` como tipos de entrada/saída. Removidos tipos legados (`BaseJobRecord`, `AudioJobInput`, `ImageJobInput`, etc.) — ~372 linhas a menos. `INITIAL_STEPS`, `voiceConfig`, `multiSpeakerConfig` refatorados
-- **`functions/src/index.ts`**: exporta 3 novas Cloud Functions — `startPipeline`, `cancelPipeline`, `onSubJobCompleted`. Total: 23 flows de IA
 - **`functions/src/usage/index.ts`**: barrel exports expandidos com 13 novos tipos de pipeline
 - **`src/components/app/AudioGenerationHandler.tsx`**: removido `loadPipelineAudio()` — lógica antiga de carregamento de áudio do pipeline substituída pelo fluxo server-side
-- **Testes**: `usePipelineOrchestrator.unit.test.ts` (+191/-85) refatorado para mockar `startPipeline` em vez de `startJob`; `generic-jobs.test.ts` valida 5 tipos de job em vez de 4
 
 ### Removido
 
-- **Tipos legados do pipeline no frontend** (`usePipelineOrchestrator.ts`): `BaseJobRecord`, `AudioJobInput`, `AudioJobOutput`, `ScenePromptJobInput`, `ScenePromptJobOutput`, `ImageJobInput`, `ImageJobOutput`, `VideoJobInput`, `VideoJobOutput`, `CancelJobOutput`, `isTerminalStatus`, `stepFromIndex`, `collectionForStep`, `waitForJobCompletion`, `CallableRef`, `inputProps` — substituídos pelos tipos server-side
 
 ---
 
@@ -99,8 +90,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
-- **Hardening de null safety nos schemas Zod do backend** (`functions/src/genkit/schemas/common.ts`): 10 campos em 5 schemas migrados de `.optional()` / `.nullable().optional()` para `.nullish()` — `AudioInputSchema` (`audioProfile`, `scene`, `styleNotes`, `referenceImage`), `ImageInputSchema` (`referenceImage`), `StartImageJobInputSchema` (`referenceImageUrl`, `imageTextLanguage`, `projectName`), `ScenePromptsInputSchema` (`style`, `visualFramework`, `locale`), `StartScenePromptJobInputSchema` (`style`, `visualFramework`, `locale`). `nullish()` aceita tanto `null` quanto `undefined`, prevenindo falhas de persistência no Firestore quando campos opcionais chegam como `null` via deserialização JSON
-- **Tratamento `?? undefined` nos flows de job** (`functions/src/flows/start-image-job.ts`, `functions/src/flows/start-scene-prompt-job.ts`): `referenceImageUrl`, `style`, `visualFramework` e `locale` agora usam `?? undefined` antes de persistir no Firestore, garantindo que valores nulos sejam omitidos do documento (Firestore rejeita `null` em alguns contextos)
 
 ---
 
@@ -112,7 +101,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **`getStudioSettingsPatch()`** (`src/features/studio/store/studioStore.ts`): nova função exportada que extrai 16 campos persistíveis do estado do estúdio (`StudioConfigState` → `StudioUserSettings`), excluindo `script` e `referenceImage`. Reaproveitada pelo hook de auto-save e pela página de Configurações
 - **`StudioUserSettings`** (`src/lib/db/user-settings.ts`): nova interface que define 16 campos de estúdio sincronizados com Firestore (`selectedVoice`, `isMultiSpeaker`, `speakerAName`, `speakerBName`, `speakerBVoice`, `audioProfile`, `scene`, `pace`, `styleNotes`, `generateScenes`, `sceneDensity`, `sceneRatio`, `visualFramework`, `emotion`, `emotionIntensity`, `imageTextLanguage`)
 - **Campos de estúdio em `UserSetting`** (`src/lib/db/types.ts`): interface `UserSetting` expandida com 16 campos opcionais de preferências do estúdio — persistidos via `{ merge: true }` no Firestore sem sobrescrever dados existentes
-- **Import `HttpsError`** (`functions/src/usage/generic-jobs.ts`): adicionado import de `firebase-functions/v2/https` para tipagem correta
 
 ### Alterado
 
@@ -122,14 +110,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **`App.tsx`**: adicionado `import { useAutoSaveStudioSettings }` e hook invocado no corpo do componente — sincronização automática ativada
 - **`src/features/studio/store/index.ts`**: barrel export expandido — `getStudioSettingsPatch` agora exportado publicamente
 - **`studio.utils.ts`**: tipo `StudioSettingsPatch` removido (substituído por `StudioUserSettings` do `user-settings.ts`)
-- **`start-audio-job.ts`** (+114/-99): implementação de `progress` refatorada — atualização de progresso e segmentos mais robusta
 - **`ai-requests.ts`** (+23/-15): transação Firestore simplificada — remove verificação redundante de `cancel_requested` antes do `transaction.set`
 - **`credit-service.ts`** (+18/-18): fluxo de feedback não consome créditos — pulava verificação `hasUnlimitedCredits` desnecessária; feedback retorna direto `{ success: true, eventId: requestId }`
 - **Teste `ConfiguracoesPage.component.test.tsx`**: adicionados mocks de `useAuth` e `saveUserSettings` para compatibilidade com novo fluxo
 
 ### Removido
 
-- **Planos de arquitetura concluídos** (`docs/plan/`): `remover-async-jobs-flag-contract.md` (-175 linhas) e `remover-async-jobs-flag-plano-final.md` (-284 linhas) — ambos concluídos na 0.43.0 e incorporados ao código
 - **`StudioSettingsPatch`** de `src/features/studio/types.ts`: tipo substituído por `StudioUserSettings` do módulo `user-settings.ts`
 - **Verificação redundante de `cancel_requested`** em `ai-requests.ts`: transação simplificada
 
@@ -139,13 +125,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Removido
 
-- **Feature flag `ASYNC_JOBS_ENABLED`**: removida permanentemente — jobs assíncronos agora são o único caminho em áudio, imagens e scene prompts. Guarda `process.env.ASYNC_JOBS_ENABLED` removida de 4 Cloud Functions (`startAudioJob`, `startImageJob`, `startScenePromptJob`, `startVideoJob`). `isAsyncJobsEnabled()` removida de `src/lib/env.ts`. `VITE_ASYNC_JOBS_ENABLED` removida de `.env` e `.env.example`
-- **Bifurcação sync/async em `useImageGenerator`**: caminho legado síncrono (`httpsCallable('images')` + `base64ToBlobSync`) eliminado — hook usa exclusivamente `startImageJob` + `waitForImageJob` + `fetchFirstImageAsDataUrl`
 
 ### Adicionado
 
-- **`src/lib/image-jobs.ts`**: módulo compartilhado com `waitForImageJob()` (onSnapshot + timeout 5min), `fetchFirstImageAsDataUrl()` (Storage URL → data URL) e tipos `ImageJobCompleted`/`ImageJobResult`
-- **`generateImageFromPrompt()` com suporte a jobs**: novo parâmetro `userId` (5º argumento, opcional) — quando presente, usa `startImageJob` + `waitForImageJob` + `fetchFirstImageAsDataUrl`; fallback síncrono mantido para quando `userId` ausente
 
 ### Corrigido
 
@@ -153,11 +135,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
-- **`generateScenePrompts()`**: condicional `isAsyncJobsEnabled() && userId` simplificada para `if (userId)`
 - **`useAudioGenerator.ts`**: chamada de `generateImageFromPrompt` agora passa `userId` como 5º argumento
 - **`AudioGenerationHandler.tsx`**: chave i18n `scene_prompts` corrigida de `scenePrompts` para `scene_prompts` (alinhamento com padrão snake_case)
 - **i18n (`en.ts`, `es.ts`, `pt-BR.ts`)**: chave `video` adicionada ao namespace `audioPreflight.stepLabels` para suporte a labels do pipeline de vídeo
-- **4 arquivos de teste**: removidos mocks de `isAsyncJobsEnabled`; `useImageGenerator.unit.test.ts` adaptado ao fluxo async-only com mock de `image-jobs`
 
 ---
 
@@ -173,9 +153,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
-- **Acessibilidade** em 15+ componentes — adicionados `component="h1"|"h2"|"p"|"div"` para semântica HTML correta em Typography; `aria-label` no logo do Header; `id` nos inputs de arquivo do Assistant; `htmlFor` no label do ScriptEditor; `component="label"` no overline do ScriptEditor. Componentes afetados: `ScriptEditor`, `Header`, `VoiceCard`, `ImageStudio`, `Library`, `MetricsSection`, `PublicFooter`, `PublicHeader`, `TestimonialCard`, `TemplateCard`, `TemplatePreviewDialog`, `JobsPage`, `LoginPage`, `RegisterPage`, `ContactPage`, `PricingPage`, `StatusPage`
 - **`index.html`**: meta tags SEO removidas (canonical, OG, Twitter Cards, description) — agora gerenciadas pelo `DocumentHead` por página; Schema.org Organization mantido como global
-- **`useActiveJobs`** (`src/features/jobs/hooks/useActiveJobs.ts`): refatorado com `useCallback`, `useMemo`, `useShallow` (zustand/react/shallow) e constante `FINISHED_STATUSES` para otimização de performance
 - **`QueueStaging`** (`src/features/speed-paint/components/batch/QueueStaging.tsx`): animações de entrada/saída com `Collapse` MUI + `TransitionGroup` (react-transition-group)
 - **`AnimationDurationSelector`** (`src/features/speed-paint/components/AnimationDurationSelector.tsx`): labels internacionalizadas — `t('speedPaint.durationTitle')` substitui texto hardcoded
 - **`StockMediaPicker`** (`src/features/studio/components/StockMediaPicker.tsx`): `htmlInput` com `accept` para filtro de tipos de arquivo
@@ -185,7 +163,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Removido
 
-- **Planos de arquitetura de jobs assíncronos** (`docs/plan/`): 6 documentos de planejamento concluídos e removidos (`async-jobs-architecture.md`, `async-jobs-base.md`, `async-jobs-contract.md`, `async-jobs-plano-final.md`, `async-jobs-product.md`, `async-jobs-research.md`)
 
 ---
 
@@ -193,33 +170,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Rate limiting para jobs assíncronos** (`functions/src/usage/job-rate-limit.ts`): novo módulo com `enforceJobRateLimit()`, `RATE_LIMIT_WINDOW_MS` e `RATE_LIMIT_MAX_JOBS` — previne sobrecarga de jobs por usuário. Integrado nos flows `start-image-job`, `start-scene-prompt-job` e `start-video-job`
-- **Barrel exports do backend** (`functions/src/usage/index.ts`): `AUDIO_JOBS_COLLECTION`, `SCENE_PROMPT_JOBS_COLLECTION`, `IMAGE_JOBS_COLLECTION`, `enforceJobRateLimit` agora exportados para consumo dos flows
-- **Constante `UPDATE_INTERVAL_MS`** (1000ms) em `process-audio-job.ts` e `process-scene-prompt-job.ts` — intervalo de atualização de progresso explicitado
-- **Constante `TWENTY_FOUR_HOURS_MS`, `TWO_HOURS_MS` e `STUCK_RULES`** em `cleanup-old-jobs.ts` — regras de cleanup expandidas com `markStuckJobsAsFailed()` para jobs presos em execução
-- **Constante `TERMINAL_STATUSES`** em `cancel-audio-job.ts` e `cancel-image-job.ts` — verificação de status terminal antes de cancelar
-- **`confirmCredits()` e `revertCredits()`** no Cloud Run renderer (`cloud-run/src/renderer.ts`) — integração com sistema de créditos na renderização server-side
-- **Namespace i18n `audioJobs.status`** nos 3 locales (`pt-BR`, `en`, `es`) — labels de status para jobs de áudio
 - **`docs/CHANGELOG-COMPLETE.md`**: arquivo de changelog completo para consulta histórica, com as entradas anteriores a 0.38.0 extraídas do `CHANGELOG.md` para reduzir o tamanho do arquivo principal
 
 ### Alterado
 
-- **`cleanup-old-jobs.ts`** (+138/-29): refatorado com `markStuckJobsAsFailed()` — jobs presos em `running`/`queued` por mais de 24h são marcados como `failed` automaticamente
-- **`cloud-run/Dockerfile`** (+14/-10): cópia de `src/` em vez de `frontend-src/` — ajuste de imports no sed para compatibilidade com estrutura de diretórios do container
-- **`cloud-run/src/renderer.ts`** (+107/-11): adicionadas funções `confirmCredits()` e `revertCredits()` — progresso agora integra sistema de créditos
-- **`firestore.indexes.json`**: `queryScope` alterado de `COLLECTION` para `COLLECTION_GROUP` nas 4 coleções de jobs (`audio_jobs`, `scene_prompt_jobs`, `image_jobs`, `video_jobs`) — permite queries em grupo para admin
-- **`functions/src/genkit/schemas/common.ts`**: campo `projectName` alterado para `z.string().optional()` — flexibilidade para jobs sem nome de projeto
-- **`src/features/studio/components/AudioJobsPanel.tsx`** (+56/-27): refatorado com integração de i18n e `JobCancelDialog` — função `toAnyJob()` para conversão tipada
-- **`src/lib/audio-jobs.ts`**: Firestore data mapping corrigido para incluir `{ id: docSnap.id, ...docSnap.data() }`
-- **`src/hooks/useAudioGenerator.ts`** e **`usePipelineOrchestrator.ts`**: imports não utilizados removidos (`../lib/audio`, `../lib/env`, `LegacyAudioFlowOutput`, `CancelJobInput`)
 - **`functions/src/usage/credit-estimator.ts`**: refatorado — constante `baseCost` extraída, multiplicadores de resolução simplificados
-- **`functions/src/flows/start-image-job.ts`**, **`start-scene-prompt-job.ts`**, **`start-video-job.ts`**: adicionada verificação de feature flag `ASYNC_JOBS_ENABLED` e integração com `enforceJobRateLimit()`
 - **Testes**: 3 arquivos de teste atualizados com novos campos (`progress`, `segments`, `steps`, `scenes`, `audioSegments`) para compatibilidade com as mudanças
 
 ### Removido
 
-- **`docs/audits/2026-05-21-jobs-migration-final-audit.md`**: relatório de auditoria de migração de jobs (concluído e incorporado)
-- **`docs/scan/async-jobs-gap-analysis-0.42.0.md`**: análise de lacunas da migração de jobs (concluída e incorporada)
 
 ---
 
@@ -227,49 +186,19 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Sistema de jobs assíncronos** — 11 novas Cloud Functions v2 para processamento em background: `startAudioJob`, `processAudioJob`, `cancelAudioJob`, `startImageJob`, `processImageJob`, `cancelImageJob`, `startScenePromptJob`, `processScenePromptJob`, `startVideoJob`, `cancelJob`, `cleanupOldJobs`. Acionadas via Cloud Tasks (`onTaskDispatched`, timeout 30min) com retry configurável. Novos schemas Zod em `functions/src/genkit/schemas/common.ts`
-- **Cloud Run para renderização Remotion server-side** — `cloud-run/` com Docker multi-stage (Chrome headless + FFmpeg), Express API (`POST /render`, `GET /health`), `@remotion/renderer` com progresso no Firestore, cancelamento cooperativo e upload para Firebase Storage. Script `deploy.ps1`, comando `bun run deploy:cloudrun`
-- **Feature flags de infraestrutura** (`src/lib/env.ts`): `VITE_ASYNC_JOBS_ENABLED`, `VITE_CLOUD_RUN_VIDEO_ENABLED`, `VITE_CLOUD_RUN_URL` com helpers `isAsyncJobsEnabled()`, `isCloudRunVideoEnabled()`, `getCloudRunUrl()`
-- **Módulos de uso de jobs no backend** (`functions/src/usage/`): `generic-jobs.ts` (base genérica), `audio-jobs.ts`, `scene-prompt-jobs.ts`, `image-jobs.ts`, `video-jobs.ts` — tipos `BaseJobRecord`, `AudioJobRecord`, `ScenePromptJobRecord`, `ImageJobRecord`, `VideoJobRecord`; progress tracking com throttle (1 update/s)
-- **`audio-generation.ts`** (`functions/src/genkit/utils/`): utilitário Genkit para geração de áudio em jobs com suporte a progresso, segmentação e cancelamento cooperativo
-- **`audio-job-shared.ts`** (`functions/src/flows/`): tipos e helpers compartilhados entre flows de job de áudio
-- **UI de jobs** (`src/features/jobs/`): `JobBadge` (ícone Schedule no Header com badge numérico e animação pulse), `JobCard` (glass effect, Chip de status, progresso, ações de cancelar/retry/limpar), `JobList` (filtros por tipo, ordenação, limpar concluídos), `JobProgressBar` (linear progress com label), `JobCancelDialog` (confirmação com WarningAmber), `AudioJobsPanel` (painel de jobs de áudio no estúdio)
-- **Página de Jobs** (`/app/jobs`): rota protegida com lazy loading, listagem completa de jobs com filtros, cards com glass effect, status Chip e progresso para jobs ativos
-- **`useJobsStore`** (`src/hooks/useJobsStore.ts`): store Zustand que agrega 4 listeners `onSnapshot` em subcollections de jobs (`audio_jobs`, `scene_prompt_jobs`, `image_jobs`, `video_jobs`) unificados em `AnyJob[]`
-- **`usePipelineOrchestrator`** (`src/hooks/usePipelineOrchestrator.ts`): orquestrador de pipeline de 4 etapas (áudio → scene prompts → imagens → vídeo) como jobs encadeados no frontend, com waiter, timeout 5min e cancelamento em cascata
-- **Hooks de jobs**: `useActiveJobs`, `useJobToasts` (toasts de transição de status), `useJobsInit` (inicialização no AuthContext)
-- **Integração de jobs nos hooks de IA**: `useAudioGenerator.ts` e `useImageGenerator.ts` agora suportam toggle sync/async com waiter e timeout; `gemini.ts` integrado com scene prompt jobs
 - **Constantes de TTS** (`functions/src/genkit/constants.ts`): `MAX_TTS_CHUNKS=24`, `MIN_TTS_PCM_BYTES=1024`
 - **`assertValidPcmChunk`** no flow `audio.ts`: validação de chunks PCM com `responseModalities: ['AUDIO']`
-- **Firestore rules** para 4 coleções de jobs (`audio_jobs`, `scene_prompt_jobs`, `image_jobs`, `video_jobs`) — leitura pelo próprio usuário, escrita apenas admin
-- **Firestore indexes** para todas as coleções de jobs (`status ASC, updatedAt ASC`)
-- **Redirect** `/app/tasks` → `/app/jobs` (compatibilidade)
 - **Suporte a `video_render`** em `credit-estimator.ts` e `credit-policy.ts` — estimativa de créditos baseada em duração + resolução
 - **`video_render`** adicionado ao tipo `AiRequestFlow` em `ai-requests.ts`
-- **15+ novos arquivos de teste**: schemas Zod, generic-jobs, audio-jobs, image-jobs, scene-prompt-jobs, useAudioGenerator waiter, useJobsStore, usePipelineOrchestrator, JobBadge, JobCard, JobProgressBar
 
 ### Alterado
 
-- **`useAudioGenerator.ts`** (+248/-124): refatorado com suporte a jobs assíncronos — `AudioJobWaiter`, `LegacyAudioFlowOutput` para compatibilidade com fluxo síncrono; `getDefaultProjectName` movido para `studio.utils.ts`
-- **`useImageGenerator.ts`** (+189/-27): refatorado com suporte a jobs assíncronos — novos tipos `StartImageJobInput/Output`, `CancelJobInput/Output`, função `waitForImageJob`
-- **`gemini.ts`** (+165/-11): suporte a scene prompt jobs — `ScenePromptsFlowInput`, `StartScenePromptJobInput/Output`, `waitForScenePromptJob`, constante `USER_CANCELLED_MESSAGE`
-- **`App.tsx`**: integração com `useJobToasts` e `useActiveJobs` — toasts de jobs aparecem com prioridade merge (estúdio > jobs)
-- **`Header.tsx`**: integração com `JobBadge` — posicionado entre NetworkStatusIndicator e CreditIndicator
-- **`ActionBar.tsx`**: integração com `JobProgressBar` — exibido durante jobs ativos
-- **`ToastProvider.tsx`**: novos estados `jobSuccessMessage`, `jobErrorMessage`, `jobWarningMessage` — notificações de transição de status de jobs
-- **`AuthContext.tsx`**: integração com `useJobsInit` — inicializa listeners de jobs ao logar
-- **`StudioPage.tsx`**: integração com `AudioJobsPanel` — painel de jobs de áudio no estúdio
-- **`routes.tsx`**: lazy loading da `JobsPage`; import de `AudioJobRecord`
-- **`Redirects.tsx`**: adicionado redirect `/app/tasks` → `/app/jobs` (total: 11 redirects 301)
 - **`firebase.ts` (frontend)**: adicionada função `isLocalBrowserHost()` para detecção de ambiente local
 - **`audio-preflight.ts` (backend)**: importa `CHUNK_LIMIT` e `MAX_TTS_CHUNKS` de `genkit/constants.js`
 - **`credit-estimator.ts`**: adicionada estimativa para `video_render` com `durationSeconds` e resolução
 - **`credit-policy.ts`**: adicionada política de créditos para `video_render`
 - **`ai-requests.ts`**: `video_render` adicionado ao union type de flows
 - **`audio.ts` (flow Genkit)**: adicionado `responseModalities: ['AUDIO']` e função `assertValidPcmChunk`
-- **`.env.example`**: adicionados `VITE_ASYNC_JOBS_ENABLED`, `VITE_CLOUD_RUN_VIDEO_ENABLED`, `VITE_CLOUD_RUN_URL`
-- **`tsconfig.json`**: `cloud-run/**` adicionado ao `exclude`
-- **Testes**: 8+ arquivos de teste atualizados com mocks de jobs (`useAudioGenerator`, `useImageGenerator`, `App`, `Header`, `ActionBar`, `StudioPage`, `AuthContext`, `VideoLibrary`, `CaptionEditorPanel`, `SpeedPaintControls`, routing, etc.)
 
 ### Removido
 

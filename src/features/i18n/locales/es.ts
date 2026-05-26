@@ -4,6 +4,8 @@ import type { TranslationDictionary } from '../types';
  * Dicionário ES — Traducciones al español para Script Master.
  */
 export const es: TranslationDictionary = {
+  _locale: 'es',
+
   common: {
     mainContent: 'Contenido principal',
     confirmEnter: 'Confirmar (Enter)',
@@ -13,11 +15,14 @@ export const es: TranslationDictionary = {
     closeWarning: 'Cerrar advertencia',
     skipToContent: 'Saltar al contenido',
     loading: 'Cargando...',
+    loadingPageSubtitle: 'Preparando tu experiencia...',
     error: 'Error',
     success: 'Éxito',
     cancel: 'Cancelar',
     confirm: 'Confirmar',
     close: 'Cerrar',
+    clear: 'Limpiar',
+    continue: 'Continuar',
     back: 'Volver',
     next: 'Siguiente',
     skip: 'Omitir',
@@ -27,6 +32,8 @@ export const es: TranslationDictionary = {
     seeAll: 'Ver todo',
     search: 'Buscar...',
     noResults: 'No se encontraron resultados',
+    offline: 'Sin conexión',
+    offlineTooltip: 'Estás sin conexión. Algunas acciones pueden no estar disponibles.',
     voiceStyles: {
       casual: 'Desenfadada',
       bright: 'Brillante',
@@ -72,6 +79,7 @@ export const es: TranslationDictionary = {
     copyright: 'Script Master. Todos los derechos reservados.',
     madeWith: 'Hecho con IA y Gemini',
     productGroup: 'Producto',
+    resourcesGroup: 'Recursos',
     companyGroup: 'Empresa',
     legalGroup: 'Legal',
     links: {
@@ -79,6 +87,9 @@ export const es: TranslationDictionary = {
       pricing: 'Beta',
       faq: 'Preguntas Frecuentes',
       status: 'Estado',
+      roadmap: 'Roadmap',
+      changelog: 'Changelog',
+      community: 'Comunidad',
       about: 'Acerca de',
       contact: 'Contacto',
       email: 'Email',
@@ -86,6 +97,26 @@ export const es: TranslationDictionary = {
       privacy: 'Privacidad',
       cookies: 'Cookies',
     },
+  },
+
+  dataMigration: {
+    checking: 'Verificando datos locales...',
+    completed: 'Migración completada',
+    successMessage: '{count} elemento(s) transferido(s) a tu cuenta.',
+    partialSuccessMessage: '{count} elemento(s) transferido(s), con {errors} error(es).',
+    mediaNote: 'Los archivos multimedia grandes pueden permanecer solo en el almacenamiento local.',
+    ignoreAndContinue: 'Ignorar y continuar',
+    confirmTitle: '¿Transferir datos locales?',
+    confirmDescription: 'Encontramos {totalItems} elemento(s) creados antes de iniciar sesión. Puedes transferirlos a tu cuenta.',
+    projectCount: '{count} proyecto(s)',
+    audioGenerationCount: '{count} generación(es) de audio',
+    imageGenerationCount: '{count} generación(es) de imagen',
+    memoryCount: '{count} memoria(s)',
+    chatCount: '{count} conversación(es)',
+    confirmMediaNote: 'La transferencia copia metadatos y elementos compatibles a tu cuenta actual.',
+    transferring: 'Transfiriendo...',
+    transfer: 'Transferir',
+    unexpectedError: 'Error inesperado durante la migración.',
   },
 
   landing: {
@@ -338,6 +369,7 @@ export const es: TranslationDictionary = {
       cta: 'Crear cuenta gratuita',
       ctaSecondary: 'Cómo funciona',
     },
+    popular: 'Popular',
     credits: {
       title: 'Créditos',
       subtitle: 'Los créditos son la moneda del beta. Cada acción consume créditos, renovados cada mes.',
@@ -643,6 +675,7 @@ export const es: TranslationDictionary = {
 
   studio: {
     header: {
+      subtitle: 'Estudio de producción',
       nav: {
         studio: 'Estudio',
         image: 'Imagen',
@@ -711,6 +744,11 @@ export const es: TranslationDictionary = {
     },
     inspector: {
       ariaLabel: 'Configuración de voz y dirección',
+      summary: {
+        scenesOn: 'Escenas: Activado',
+        scenesOff: 'Escenas: Desactivado',
+        podcast: 'Podcast',
+      },
       voiceSection: {
         title: 'Voz del locutor',
         description: 'Elige la firma vocal y organiza voces para narración o podcast.',
@@ -811,6 +849,8 @@ export const es: TranslationDictionary = {
         errorGeneric: 'No se pudo procesar. Intenta nuevamente.',
         selectionTooShort: 'Selecciona al menos 3 caracteres.',
       },
+      footerShortcutHint: 'Presiona Ctrl + Enter para generar',
+      footerSceneHint: 'Escena visual sincronizada con el guion',
       label: 'Script',
       syncedSceneChip: 'Escena visual sincronizada con la escritura',
       copyTooltip: 'Copiar guion',
@@ -826,6 +866,8 @@ export const es: TranslationDictionary = {
       clearConfirm: 'El guion será eliminado permanentemente. ¿Deseas continuar?',
     },
     studioPage: {
+      title: 'Estudio de Producción',
+      subtitle: 'Ajusta cada detalle de tu guion antes de generar audio, imágenes y video.',
       settingsTab: 'Configuraciones',
       scriptTab: 'Guion',
     },
@@ -894,14 +936,35 @@ export const es: TranslationDictionary = {
     pageDescription: 'Revisa la escena actual, consulta la atmósfera del video y carga proyectos anteriores sin salir del flujo.',
     exportProgress: 'Progreso de exportación',
     exportQuality: 'Calidad de exportación',
+    exportBackgroundProcess: 'Puedes seguir el progreso de la exportación aquí.',
+    exportNotSupported: 'Este navegador no admite exportación de video.',
     timingError: 'El inicio debe ser anterior al final',
     undoDelete: 'Deshacer eliminación',
+    loadingSceneImage: 'Cargando imagen de la escena...',
+    failLoadImage: 'Error al cargar la imagen',
+    speedPaintWarningsTitle: 'Algunas escenas no pudieron animarse',
+    subtitleLabel: 'Incluir subtítulos',
     controlsEmpty: {
       eyebrow: 'Panel lateral',
       title: 'Controles esperando contenido',
       description: 'Genera audio y escenas en el estudio para habilitar subtítulos, ajustes finos y exportación aquí.',
+      steps: {
+        '0': {
+          title: 'Genera audio y escenas',
+          description: 'En el estudio, elige voz, ritmo y dirección visual para generar el audio y las escenas de tu proyecto.',
+        },
+        '1': {
+          title: 'Ajusta los subtítulos',
+          description: 'Transcribe el audio y ajusta el timing, estilo y posición de los subtítulos en el video.',
+        },
+        '2': {
+          title: 'Exporta el video',
+          description: 'Elige la calidad y el formato de exportación. Video renderizado 100% en el navegador.',
+        },
+      },
     },
     preview: {
+      eyebrow: 'Vista previa',
       title: 'Vista previa del video esperando escenas',
       description: 'Genera el audio y las escenas en el estudio para visualizar la composición aquí.',
       goToStudio: 'Ir al Estudio',
@@ -912,6 +975,52 @@ export const es: TranslationDictionary = {
       showCaption: 'Mostrar subtítulo',
       hideCaption: 'Ocultar subtítulo',
     },
+    workspace: {
+      eyebrow: 'Espacio de trabajo',
+      title: 'Composición Visual',
+      description: 'Visualiza y ajusta tu composición de video con subtítulos y transiciones.',
+    },
+    summary: {
+      awaitingPreview: 'Esperando vista previa',
+      awaitingControls: 'Esperando configuración',
+      sceneCount: '{count} escena{plural}',
+      duration: '{duration}s de duración',
+      captionsReady: '{count} subtítulo{plural}',
+      captionsPending: 'Sin subtítulos',
+    },
+    summaryPanel: {
+      eyebrow: 'Resumen del proyecto',
+      description: 'Tu proyecto está listo para ajustes finos y exportación.',
+      projectLoaded: 'Proyecto cargado',
+      exportReady: 'Listo para exportar',
+      captionsReady: 'Subtítulos listos',
+      captionsPending: 'Sin subtítulos',
+    },
+    librarySection: {
+      eyebrow: 'Biblioteca',
+      title: 'Proyectos Guardados',
+      description: 'Accede a proyectos anteriores para reutilizar escenas, audio y configuraciones.',
+      expandHint: 'Expandir biblioteca',
+      collapseHint: 'Colapsar biblioteca',
+      currentProjectMissing: 'Ningún proyecto activo',
+      currentProjectLoaded: 'Proyecto activo',
+    },
+    transcription: {
+      title: 'Transcripción y Subtítulos',
+      sourceSegmentTiming: 'segmentos de audio',
+      sourceWhisperAligned: 'Whisper alineado',
+      sourceProportional: 'proporcional',
+      sourceManual: 'manual',
+      staleWarning: 'El guion cambió después de la transcripción. Genera de nuevo para actualizar los subtítulos.',
+      wordCount: '{count} subtítulo(s)',
+      regenerate: 'Generar de nuevo',
+    },
+    exportButton: 'Exportar Video',
+    exportInfo: 'Video en {width}x{height} a {fps} fps',
+    animateScenesTooltip: 'Anima cada escena con un efecto Speed Paint, transformando imágenes estáticas en animación de pintura progresiva.',
+    animateScenesLabel: 'Animar escenas (Speed Paint)',
+    fileNameLabel: 'Nombre del archivo',
+    fileNamePlaceholder: 'Mi video',
   },
 
   assistant: {
@@ -1026,6 +1135,7 @@ export const es: TranslationDictionary = {
     sortNewestFirst: 'Más recientes primero',
     generation: 'Generación',
     project: 'Proyecto',
+    scriptPreviewFallback: 'Sin vista previa del guion disponible.',
     title: 'Biblioteca',
     savedProjects: 'Proyectos guardados',
     description: 'Un panel más limpio para revisar activos del proyecto, renombrar versiones, retomar audio y descargar escenas sin exceso de ruido visual.',
@@ -1061,6 +1171,9 @@ export const es: TranslationDictionary = {
     speedPaintPrepareError: 'No se pudieron preparar las imágenes para Speed Paint. Inténtalo de nuevo.',
     speedPaintPartialWarning: 'Se prepararon {ready} imagen(es). {failed} imagen(es) quedaron fuera por un fallo al cargar.',
     speedPaintHint: 'Envía las escenas de este proyecto a la cola de Speed Paint. El audio no se usa en esta etapa.',
+    speedPaintQueueChip: 'Cola Speed Paint',
+    audioCount: '{count} audio{plural}',
+    sceneCount: '{count} escena{plural}',
     scene: 'Escena {number}',
     videoItem: 'Video {number}',
     videoCount: '{count} video{plural}',
@@ -1101,6 +1214,8 @@ export const es: TranslationDictionary = {
     durationOptionAria: '{seconds} segundos',
     durationTitle: 'Duración del video',
     durationHelper: 'Elige cuánto tiempo debe durar cada animación.',
+    durationHelperText: 'La duración controla el tiempo total de la animación.',
+    durationExportHelper: 'Elige la duración usada en el video exportado.',
     pageTitle: 'Transforma Imágenes en',
     pageHighlight: 'Speed Paints',
     pageDescription: 'Sube cualquier imagen y mira cómo es dibujada trazo por trazo.\nNuestro motor analiza la imagen y genera una animación de pintura progresiva.',
@@ -1171,10 +1286,12 @@ export const es: TranslationDictionary = {
     controlsContextError: 'Error al crear contexto de exportación.',
     controlsExportImageError: 'Error al exportar imagen. Inténtalo de nuevo.',
     exportTitle: 'Exportar vídeo',
+    exportInfo: 'Vídeo en {width}x{height} a {fps} fps',
     exportBrowserWarning: 'El navegador no soporta exportación de vídeo. Usa Chrome 94+ o Firefox 130+.',
     exportDismissError: 'Descartar error',
     exportQualityAria: 'Calidad de exportación',
     exportFileName: 'Nombre del archivo',
+    fileNamePlaceholder: 'Mi speed paint',
     exportFileNameAria: 'Nombre del archivo de exportación',
     exportCancel: 'Cancelar',
     exportProgressAria: 'Progreso de exportación de vídeo',
@@ -1195,6 +1312,20 @@ export const es: TranslationDictionary = {
     pageConfigCanvasBlack: 'Lienzo negro',
     tabPlayback: 'Reproducción',
     tabExport: 'Exportar',
+    speedSectionTitle: 'Velocidad del dibujo',
+    speedSectionDescription: 'Ajusta por separado la velocidad del trazo y la colorización.',
+    sketchLabel: 'Dibujo',
+    sketchAriaLabel: 'Velocidad del dibujo',
+    revealLabel: 'Colorización',
+    revealSpeed: 'Velocidad de colorización',
+    speedLabels: {
+      verySlow: 'muy lento',
+      slow: 'lento',
+      normal: 'normal',
+      fast: 'rápido',
+      veryFast: 'muy rápido',
+      maximum: 'máximo',
+    },
   },
 
   imageStudio: {
@@ -1564,6 +1695,22 @@ export const es: TranslationDictionary = {
     multiSpeakerLabel: 'Dos locutores',
     speakerBNameLabel: 'Nombre del locutor B',
     speakerBVoiceLabel: 'Voz del locutor B',
+    voiceHint: 'Elige la voz principal para tus narraciones. Puedes cambiarla en cualquier momento en el estudio.',
+    footerHint: 'Tus preferencias se sincronizan automáticamente con el estudio y se guardan en la nube.',
+    summary: {
+      title: 'Resumen de Configuraciones',
+      description: 'Visión general de tus preferencias actuales aplicadas al estudio de producción.',
+      synced: 'Sincronizado',
+      pending: 'Pendiente',
+      cloud: 'Nube',
+      local: 'Local',
+      sections: 'Preferencias del estudio',
+      scenesOn: 'Escenas: Activado',
+      scenesOff: 'Escenas: Desactivado',
+      multiSpeakerOn: 'Multi-locutor: Activado',
+      multiSpeakerOff: 'Multi-locutor: Desactivado',
+      secondSpeakerDefault: 'Segundo locutor (predeterminado)',
+    },
   },
 
   // ── Autenticación (Login y Registro) ──────────────────────────────
@@ -1728,126 +1875,10 @@ export const es: TranslationDictionary = {
     tocAriaLabelCookies: 'Índice de la política de cookies',
   },
 
-  // ── Tareas Asíncronas ────────────────────────────────────────────────────
-  jobs: {
-    title: 'Tareas',
-    pageSubtitle: 'Sigue el progreso de tus generaciones de audio, imágenes y video.',
-    badge: {
-      tooltip: '{count, plural, one {# tarea en curso} other {# tareas en curso}}',
-      ariaLabel: '{count, plural, one {# tarea en curso} other {# tareas en curso}}',
-    },
-    empty: {
-      title: 'Sin tareas',
-      description: 'Tus generaciones aparecerán aquí cuando inicies una.',
-      filteredDescription: 'No se encontraron tareas de {type}.',
-    },
-    filter: {
-      all: 'Todos',
-      audio: 'Audio',
-      images: 'Imágenes',
-      video: 'Video',
-      scenes: 'Escenas',
-    },
-    statusFilter: {
-      all: 'Todos',
-      active: 'En progreso',
-      completed: 'Completados',
-      failed: 'Con error',
-    },
-    sort: {
-      recent: 'Más recientes',
-    },
-    status: {
-      queued: 'En cola',
-      running: 'En progreso',
-      completed: 'Completado',
-      failed: 'Falló',
-      cancelled: 'Cancelado',
-      pending: 'Pendiente',
-      skipped: 'Omitido',
-    },
-    progress: {
-      audio: {
-        generating: 'Generando audio...',
-        chunkProgress: 'Generando fragmento {current}/{total}...',
-      },
-      images: {
-        generating: 'Generando imágenes...',
-        itemProgress: 'Imagen {current}/{total}...',
-      },
-      scenes: {
-        generating: 'Generando descripciones de escenas...',
-      },
-      video: {
-        bundling: 'Preparando video...',
-        rendering: 'Renderizando video...',
-        uploading: 'Enviando video...',
-      },
-    },
-    action: {
-      cancel: 'Cancelar',
-      viewResult: 'Ver resultado',
-      retry: 'Intentar de nuevo',
-      retryUnavailable: 'Esta tarea no se puede reejecutar. Crea una nueva.',
-      clear: 'Limpiar',
-      clearAll: 'Limpiar completados',
-    },
-    toast: {
-      audioCompleted: '¡Audio listo!',
-      imagesCompleted: '¡Imágenes generadas!',
-      videoCompleted: '¡Video renderizado!',
-      scenesCompleted: '¡Escenas generadas!',
-      pipelineCompleted: '¡Pipeline completado!',
-      failed: 'Error al generar {type}: {message}',
-      failedGeneric: 'Error al procesar {type}',
-      cancelled: 'Tarea cancelada',
-      viewResult: 'Ver',
-    },
-    cancelDialog: {
-      title: '¿Cancelar tarea?',
-      description: 'La generación de {type} "{name}" será interrumpida.',
-      creditWarning: 'Los créditos ya utilizados no serán devueltos.',
-      confirm: 'Cancelar tarea',
-      dismiss: 'Continuar',
-    },
-    pipeline: {
-      title: 'Pipeline: {name}',
-      step: {
-        audio: 'Generar audio',
-        scenes: 'Generar escenas',
-        images: 'Generar imágenes',
-        video: 'Renderizar video',
-        waiting: 'Esperando...',
-      },
-      cancelAll: 'Cancelar todo',
-      cancelDialog: {
-        title: '¿Cancelar pipeline?',
-        description: 'Todas las etapas restantes serán canceladas. Los resultados completados seguirán disponibles.',
-      },
-    },
-    limitReached: {
-      title: 'Límite de tareas alcanzado',
-      description: 'Espere a que una tarea termine antes de iniciar otra.',
-      action: 'Ver tareas',
-    },
+  settings: {
+    customSettings: 'Configuración personalizada',
   },
 
-  // ── Panel de Jobs de Audio (estudio) ──────────────────────────────────────
-  audioJobs: {
-    title: 'Cola de audio',
-    subtitle: 'Sigue el progreso y reabre resultados completados.',
-    defaultProjectName: 'Proyecto de audio',
-    openAudio: 'Abrir audio',
-    cancel: 'Cancelar',
-    status: {
-      queued: 'En cola',
-      running: 'Generando',
-      completed: 'Completado',
-      failed: 'Falló',
-      cancelled: 'Cancelado',
-      cancelling: 'Cancelando',
-    },
-  },
 
   errorBoundary: {
     title: 'Algo salió mal',

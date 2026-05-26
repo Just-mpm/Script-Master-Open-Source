@@ -29,7 +29,6 @@ bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:d
 bun run emulators        # inicia todos os emuladores Firebase localmente
 bun run emulators:functions # inicia apenas o emulador de functions
 bun run emulators:ui     # inicia apenas a UI dos emuladores
-bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud Run
 ```
 
 **Sem formatter e sem CI/CD.**
@@ -40,11 +39,9 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 - **MUI v9** — tema em `src/theme/*`, sem Tailwind
 - **Genkit** (backend via Cloud Functions) — TTS, imagens, prompts de cena, assistente, chunking
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) + App Check (reCAPTCHA v3) | `firebase-tools` ^15.3.0 (deploy)
-- **Firebase Cloud Functions v2** — backend serverless com Genkit (24 flows de IA: audio, startAudioJob, processAudioJob, cancelAudioJob, images, startImageJob, processImageJob, cancelImageJob, scenePrompts, startScenePromptJob, processScenePromptJob, assistant, inline-assistant, chunking, feedback, ping, audio-preflight, cancel-ai-request, cancelJob, credit-snapshot, startPipeline, cancelPipeline, onSubJobCompleted, processVideoJob) + Stripe em `functions/`
-- **Cloud Tasks** — fila assíncrona para jobs de áudio, imagens, scene prompts e vídeo via `onTaskDispatched` (timeout 30min, retry configurável)
-- **Cloud Run** — renderização de vídeo Remotion server-side via Docker + `@remotion/renderer` (timeout 60min, 4 vCPUs + 8 GiB, min 1 instância)
+- **Firebase Cloud Functions v2** — backend serverless com Genkit quando necessário + Stripe em `functions/`
 - **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions); desconectado por flag `VITE_BILLING_ENABLED` durante beta aberto
-- **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas) + server-side via Cloud Run para exportação final
+- **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
@@ -99,13 +96,12 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | `/app/pintura-rapida` | SpeedPaintPage | Sim |
 | `/app/assistente` | AssistantPage | Sim |
 | `/app/biblioteca` | LibraryPage | Sim |
-| `/app/jobs` | JobsPage | Sim |
 | `/app/configuracoes` | ConfiguracoesPage | Sim |
 | `/app` | Redirect → `/app/estudio` | — |
 
 **"Convidado"** = `GuestRoute` wrapper — visitantes veem a página, logados são redirecionados para `/app/estudio`
 
-**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/register` → `/cadastro`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`, `/app/tasks` → `/app/jobs`
+**Redirects de compatibilidade:** `/features` → `/funcionalidades`, `/pricing` → `/precos`, `/faq` → `/perguntas-frequentes`, `/contact` → `/contato`, `/register` → `/cadastro`, `/app/image` → `/app/imagens`, `/app/assistant` → `/app/assistente`, `/app/library` → `/app/biblioteca`, `/app/speed-paint` → `/app/pintura-rapida`
 
 ---
 
@@ -115,7 +111,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | | |
 |---|---|
-| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/app/PipelineSteps.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
+| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
 | **App.tsx** | Shell enxuto (~190 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider` + `Toaster` (react-hot-toast). Importa e invoca `useAutoSaveStudioSettings()` para sincronização automática das preferências do estúdio com Firestore. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
 | **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper para rotas autenticadas, `GuestRoute` wrapper para rotas de convidado (`/`, `/login`, `/cadastro`) |
 | **GuestRoute** | `src/components/GuestRoute.tsx` — inverso do `ProtectedRoute`: exibe spinner durante `loading`, redireciona para `/app/estudio` se `user` existe, renderiza `<Outlet />` para visitantes |
@@ -168,8 +164,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | | |
 |---|---|
-| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/lib/image-jobs.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts`, `functions/src/flows/images.ts` |
-| **Pipeline** | prompt (opcional + referência) → Cloud Function `startImageJob` via `httpsCallable` (Genkit) → job async com `waitForImageJob()` (onSnapshot + timeout 5min) → `fetchFirstImageAsDataUrl()` (Storage URL → data URL) → blob URL. Fallback síncrono via `images` callable mantido quando `userId` ausente |
+| **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts`, `functions/src/flows/images.ts` |
 | **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
 | **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
@@ -205,46 +200,6 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | **Exportação** | `isExporting` em CompositionConfig desabilita overlays pesados (WaveformOverlay) durante renderização |
 | **Lápis animado** | `showDrawTool` prop controla exibição do lápis/pincel seguindo o último stroke visível durante preview e exportação. Default `true`. Propagado via `CompositionInputProps` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`. `VideoPreview` também suporta a prop |
 
-### Jobs Assíncronos
-
-| | |
-|---|---|
-| **Arquivos** | `functions/src/usage/generic-jobs.ts` (base genérica), `functions/src/usage/audio-jobs.ts`, `functions/src/usage/scene-prompt-jobs.ts`, `functions/src/usage/image-jobs.ts`, `functions/src/usage/video-jobs.ts`, `functions/src/usage/pipeline-jobs.ts`, `functions/src/usage/job-rate-limit.ts` (rate limiting), `functions/src/flows/start-audio-job.ts`, `functions/src/flows/process-audio-job.ts`, `functions/src/flows/cancel-audio-job.ts`, `functions/src/flows/start-scene-prompt-job.ts`, `functions/src/flows/process-scene-prompt-job.ts`, `functions/src/flows/start-image-job.ts`, `functions/src/flows/process-image-job.ts`, `functions/src/flows/cancel-image-job.ts`, `functions/src/flows/start-video-job.ts`, `functions/src/flows/process-video-job.ts`, `functions/src/flows/cancel-job.ts`, `functions/src/flows/cleanup-old-jobs.ts`, `functions/src/flows/audio-job-shared.ts`, `functions/src/flows/start-pipeline.ts`, `functions/src/flows/cancel-pipeline.ts`, `functions/src/flows/on-sub-job-completed.ts`, `functions/src/genkit/utils/audio-generation.ts`, `src/lib/generic-jobs.ts`, `src/hooks/useJobsStore.ts`, `src/hooks/usePipelineOrchestrator.ts`, `src/features/jobs/` |
-| **Tipos** | `BaseJobRecord` (schema genérico: id, userId, requestId, projectId, status, progress, cancelRequested, creditEventId, timestamps, result). Especializações: `AudioJobRecord`, `ScenePromptJobRecord`, `ImageJobRecord`, `VideoJobRecord`, `PipelineJobRecord` |
-| **Collections** | `users/{uid}/audio_jobs`, `users/{uid}/scene_prompt_jobs`, `users/{uid}/image_jobs`, `users/{uid}/video_jobs`, `users/{uid}/pipeline_jobs` — todas subcollections |
-| **Progress** | Firestore doc com `progress: { percent, stage, label }`. Frontend via `onSnapshot` (1 listener por collection, limit 100). Throttle no backend: máx 1 update/segundo por job |
-| **Cancelamento** | Cooperativo — flag `cancelRequested` no doc, checada pelo worker a cada etapa. Callable genérico `cancelJob(jobId, jobType)`. Pipeline usa `cancelPipeline` callable que propaga para todos os sub-jobs |
-| **Pipeline Server-Side** | `startPipeline` (Cloud Function callable) orquestra o pipeline completo (áudio → scene prompts → imagens → vídeo) no backend. `onSubJobCompleted` (onDocumentWritten) avança automaticamente entre etapas. Steps de áudio, cenas e imagens usam Cloud Tasks; o step de vídeo usa `processVideoJob` via Cloud Tasks queue para evitar chamadas HTTP diretas ao Cloud Run. `usePipelineOrchestrator` no frontend chama `startPipeline` e monitora o progresso via Firestore. Cancelamento em cascata via `cancelPipeline` |
-| **Feature flags** | `VITE_CLOUD_RUN_VIDEO_ENABLED` (renderização Cloud Run) — default `false`, rollback instantâneo |
-| **Cleanup** | Cloud Function agendada `cleanupOldJobs` (onSchedule diário 03:00 BRT) — remove completed >30d, failed >7d, cancelled >3d; `markStuckJobsAsFailed()` marca jobs presos em running/queued >24h como failed |
-| **Rate limiting** | `enforceJobRateLimit()` em `job-rate-limit.ts` — limite de jobs simultâneos por usuário (configurado por `RATE_LIMIT_WINDOW_MS` e `RATE_LIMIT_MAX_JOBS`) |
-| **Firestore rules** | Jobs: leitura pelo próprio usuário, escrita apenas por admin (Cloud Functions) |
-| **Firestore indexes** | `status ASC, updatedAt ASC` em cada collection de jobs (queryScope `COLLECTION_GROUP` para queries administrativas) |
-
-### Jobs UI
-
-| | |
-|---|---|
-| **Arquivos** | `src/features/jobs/components/JobBadge.tsx`, `JobCard.tsx`, `JobList.tsx`, `JobProgressBar.tsx`, `JobCancelDialog.tsx`, `src/features/jobs/hooks/useActiveJobs.ts`, `useJobsInit.ts`, `useJobToasts.ts`, `src/features/jobs/types.ts`, `src/pages/JobsPage.tsx` |
-| **JobBadge** | Ícone `Schedule` com Badge numérico no Header — posição entre NetworkStatusIndicator e CreditIndicator. Aparece quando há jobs ativos (queued/running). Animação pulse. Tooltip com contagem |
-| **JobsPage** | Rota `/app/jobs` (protegida). Lista todos os jobs com filtros por tipo (Todos|Áudio|Imagens|Vídeo|Cenas), ordenação por data, botão "Limpar concluídos". Cards com glass effect, status Chip, progresso para jobs ativos |
-| **JobCard** | `glassPanelSx` com hover suave, ícone por tipo (Mic/ImageIcon/PlayCircle/AutoAwesome), Chip colorido por status, progresso para running/queued, timestamp relativo. Ações: cancelar (com dialog), ver resultado (navega), retry (novo job), limpar |
-| **PipelineCard** | Visualização consolidada de pipeline com Stepper de 4 etapas + progresso da etapa atual |
-| **Toasts** | `useJobToasts` — detecta transições de status via Zustand subscribe. SuccessToast/ErrorToast/WarningToast integrados ao ToastManager existente com merge de prioridade (estúdio > jobs) |
-| **useJobsStore** | Zustand — agrega 4 onSnapshot listeners em `AnyJob[]` unificado. Ações: `syncAuth(uid)`, `reset()`, `removeJob(jobId)`. Selectors: `useActiveJobs`, `useActiveJobCount`, `useJobsByType`, `useJobById`, `useFinishedJobs` |
-| **i18n** | Namespace `jobs` nos 3 locales (~90 chaves: labels, toasts, status, pipeline, diálogo de cancelamento) |
-
-### Cloud Run (Renderização de Vídeo)
-
-| | |
-|---|---|
-| **Arquivos** | `cloud-run/Dockerfile`, `cloud-run/package.json`, `cloud-run/tsconfig.json`, `cloud-run/.dockerignore`, `cloud-run/scripts/deploy.ps1`, `cloud-run/src/index.ts`, `cloud-run/src/renderer.ts`, `cloud-run/src/firebase.ts`, `cloud-run/src/types.ts`, `cloud-run/src/logger.ts`, `cloud-run/remotion/index.tsx` |
-| **Docker** | Multi-stage: builder (tsc + Remotion bundle) → runner (node:22-bookworm-slim + Chrome headless + FFmpeg). Pre-build do bundle elimina cold start de bundling. Chrome libs instaladas via apt. `enableMultiProcessOnLinux: true` para estabilidade |
-| **API** | Express: `POST /render` (responde com resultado síncrono: `completed`/`error`, renderiza inline) + `GET /health`. Auth via IAM Invoker (mesmo projeto GCP, rede VPC) |
-| **Renderer** | `@remotion/renderer` com `selectComposition` + `renderMedia` + `makeCancelSignal`. Progresso no Firestore throttled (1 update/s). Cancelamento via polling `cancelRequested` a cada 5s. Upload do vídeo final para Firebase Storage com token de download persistente (`createDownloadToken`, `buildStorageDownloadUrl`) |
-| **Config** | 4 vCPUs + 8 GiB, timeout 30min, concorrência 1, escala a zero (min instances = 1, max = 5) |
-| **Deploy** | Script PowerShell `deploy.ps1` com pipeline de 7 etapas: verificação (gcloud/Docker) → typecheck → build TS → Docker build/push → Cloud Run deploy (min-instances 1, no-cpu-throttling) → health check com retry. Comando raiz: `bun run deploy:cloudrun` |
-| **Licença** | Remotion Free tier (individual/demo) — adequado para uso solo |
 
 ### Persistência (Dual Storage)
 
@@ -297,7 +252,6 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | **Store** | `studioStore.ts` (state + setters + actions), `audioGeneratorStore.ts` (estado de geração de áudio: `isGenerating`, `scenes`, `audioSegments`, `projectId`, progress, etc. — tipos `AudioGeneratorState`, `SceneItem`, helper `getAudioDurationSeconds()`), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions` + `saveStudioDefaults`/`clearStudioDefaults`), `index.ts` (barrel exports) |
 | **Persistência** | 17 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only. Quando usuário logado, `getStudioSettingsPatch()` extrai 16 campos persistíveis (`StudioConfigState` → `StudioUserSettings`), sincronizados com Firestore via `useAutoSaveStudioSettings` (App.tsx, debounce 2s) e `Configuracoes.tsx` |
 | **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
-| **ActionBar** | Fixo na parte inferior (z-index 1400). Aparece no estúdio e na página de vídeo. Seletores primitivos do AudioContext (`useAudioIsPlaying`, `useAudioCurrentTime`, `useAudioDuration`) em vez de `useGlobalAudioState` — elimina ~4 re-renders/s. Integrado com `PipelineState` (prop `pipelineState`), botão `AutoAwesome` (Chip) e componente `PipelineSteps` para acesso visual ao pipeline de produção |
 | **Geração** | `useAudioGenerator` hook usa `useAudioGeneratorStore` (Zustand) para estado de geração — instanciado no `App.tsx` via `AudioGenerationHandler`; StudioPage recebe `isGenerating`, `scenes`, `handleGenerate`, `isGenerateDisabled` como props |
 | **buildGenerateOptions** | Construtor DRY em `store/studio.utils.ts` — recebe `GenerateOptionsState` (combina `StudioDraftState` + campos de speaker) e userId, retorna opções de geração com `locale` mapeado de `imageTextLanguage` (usado por App.tsx) |
 | **Inspector** | Lê estado diretamente do `useStudioStore` com `useShallow` — recebe apenas `isGenerating` como prop (22→1 prop desde 0.24.5). Usa `VoiceCard` para seleção de voz e `studioOptions.ts` para opções DRY (pace, visual framework, scene ratio, density) |
@@ -354,7 +308,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | **Credit system** | `functions/src/usage/` — `credit-service.ts` (estimar/reservar/confirmar/reverter, `getCreditAvailabilitySnapshot`, `hasUnlimitedCredits`), `credit-metering.ts` (middleware Genkit), `credit-estimator.ts`, `credit-policy.ts` (MONTHLY_BASE_CREDITS, FEEDBACK_BONUS_CREDITS), `credit-events.ts`, `period.ts`, `idempotency.ts`. Flow `credit-snapshot.ts` para snapshot em tempo real; `cancel-ai-request.ts` para cancelamento cooperativo; `ai-requests.ts` para rastreamento de requisições |
 | **Saldo no frontend** | `useCredits` agora usa uma store global Zustand para compartilhar listener do Firestore, snapshot callable, cooldown de falha e reconciliação com retry/backoff. O hook expõe `canEnforceBalance` para evitar bloqueio prematuro com saldo ainda não confirmado |
 | **Firestore indexes** | `stripeCustomerId` (ASC + DESC) na collection `users`; `credit_events` (status+createdAt, requestId, createdAt DESC) |
-| **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions), `VITE_BILLING_ENABLED=false`, `VITE_OPEN_BETA_ENABLED=true`, `VITE_CLOUD_RUN_VIDEO_ENABLED=false`, `VITE_CLOUD_RUN_URL` (obrigatória quando Cloud Run habilitado) |
+| **Env vars** | `VITE_STRIPE_PUBLISHABLE_KEY` (opcional), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (Functions), `VITE_BILLING_ENABLED=false`, `VITE_OPEN_BETA_ENABLED=true` |
 
 ### Biblioteca & Projetos
 
@@ -411,7 +365,7 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'`; `pluralKey(baseKey, count)` seleciona chave singular/plural baseada no count; `STEP_LABEL_KEYS` mapeia nomes de etapa (`audio`, `scene_prompts`, `images`, `video`) para chaves i18n do namespace `audioPreflight.stepLabels` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
-| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `audioJobs` |
+| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `dataMigration`, `workspace`, `transcription` |
 | **Cobertura** | Todas as páginas públicas + OnboardingPage + ConfiguracoesPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + Assistant (Composer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel) + App.tsx + ToastProvider + AudioGenerationHandler + AudioPreflightDialog + GuestRoute + ProtectedRoute + ErrorBoundary + ErrorToast/SuccessToast/WarningToast + LoginPage + RegisterPage + NotFoundPage + GalleryCard + UpgradeDialog + UsageIndicator + AnimationDurationSelector + ImageUpload + InlineAIWidget + CaptionEditorPanel + SceneSequence + SpeedPaintControls + ExportProgressBar + ExportQualitySelector + VoiceCard |
 
 ### Environment & COEP
@@ -419,8 +373,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 | | |
 |---|---|
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
-| **Env vars** | 7 `VITE_FIREBASE_*` (required) + 9 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `VITE_APP_CHECK_DEBUG_TOKEN`, `VITE_BILLING_ENABLED`, `VITE_OPEN_BETA_ENABLED`, `VITE_USE_EMULATORS`, `VITE_CLOUD_RUN_VIDEO_ENABLED`, `VITE_CLOUD_RUN_URL`). `VITE_GEMINI_API_KEY` removido do frontend (uso apenas no backend via `GOOGLE_GENAI_API_KEY` nas Functions) |
-| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()`, `getRecaptchaSiteKey()`, `getAppCheckDebugToken()`, `isBillingEnabled()`, `isOpenBetaEnabled()`, `isCloudRunVideoEnabled()`, `getCloudRunUrl()` |
+| **Env vars** | 7 `VITE_FIREBASE_*` (required) + 9 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `VITE_APP_CHECK_DEBUG_TOKEN`, `VITE_BILLING_ENABLED`, `VITE_OPEN_BETA_ENABLED`, `VITE_USE_EMULATORS`). `VITE_GEMINI_API_KEY` removido do frontend (uso apenas no backend via `GOOGLE_GENAI_API_KEY` nas Functions) |
+| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()`, `getRecaptchaSiteKey()`, `getAppCheckDebugToken()`, `isBillingEnabled()`, `isOpenBetaEnabled()` |
 | **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`, `/cadastro` e `/onboarding`: SEM COEP (popup Firebase) |
 | **Offline** | `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` (API moderna, suporte nativo a múltiplas abas) |
 | **Dev** | `coepPlugin()` via middleware Vite — exceção `/login`, `/cadastro`, `/onboarding` e todas as rotas públicas (`/funcionalidades`, `/precos`, `/perguntas-frequentes`, `/sobre`, `/termos`, `/privacidade`, `/contato`) |
@@ -467,8 +421,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 ## Version
 
-- **Current:** `0.47.0`
-- **Last release:** 2026-05-23
+- **Current:** `0.100.0`
+- **Last release:** 2026-05-26
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -476,8 +430,8 @@ bun run deploy:cloudrun  # lint + typecheck + build Docker + push + deploy Cloud
 
 | Versão | Resumo |
 |--------|--------|
-| 0.47.0 | **Nova `processVideoJob` + Cloud Run síncrono + vídeos na biblioteca** — nova Cloud Function `processVideoJob` via Cloud Tasks para vídeo; Cloud Run migrado de async (202) para resposta síncrona com download tokens persistentes; `persistProjectImage()` para imagens do pipeline; `buildVideoScenes()` e `clampSceneTimestamp()` no pipeline; `getSubJobRequestId()` para cancelamento preciso; `sceneTimestamps` em ImageJobRecord; `projectId` vinculado ao pipeline; `VideoLibraryVideo` com exibição e download de vídeos na biblioteca; chaves i18n de vídeo nos 3 locales; Cloud Run deploy com min-instances 1 + no-cpu-throttling |
-| 0.46.0 | **Componente PipelineSteps + i18n job status + correções** — novo `PipelineSteps` (+264 linhas) com visualização de 4 etapas do pipeline; `STEP_LABEL_KEYS` em `i18n/utils.ts`; chaves `pending`/`skipped` nos 3 locales; integração do `PipelineState` na ActionBar e App.tsx; `ActionBar` com botão `AutoAwesome` e `PipelineSteps`; `VALID_STEPS`/`VALID_STATUSES` em `usePipelineOrchestrator`; estilo default de cena localizado em `process-scene-prompt-job`; `generateScenes` default corrigido para `true`; `VIDEO_JOB_QUEUE` não utilizada removida |
-| 0.45.2 | **Hardening do sistema de pipeline jobs** — `cancel-job.ts` agora aceita `PipelineJobRecord`/`AnyJobRecord` para cancelamento de pipelines via callable genérica; `cleanup-old-jobs.ts` inclui `pipeline_jobs` na limpeza automática; `useJobsStore.ts` filtra pipeline jobs da UI regular (exibidos via `PipelineCard`); regras de Firestore adicionadas para `transcriptions` (admin-only) e `pipeline_jobs` (leitura usuário, escrita admin); `JobList.tsx` e `types.ts` sincronizados com `JobType.pipeline` |
-| 0.45.1 | **`removeUndefinedFields` recursivo em `generic-jobs.ts` e `pipeline-jobs.ts`** — função utilitária de limpeza de `undefined` migrada de shallow para recursiva. Agora percorre objetos aninhados e arrays recursivamente, prevenindo erros de serialização no Firestore quando `undefined` aparece em níveis profundos |
-| 0.45.0 | **Pipeline Server-Side (Fase 1)** — orquestrador de pipeline migrado do frontend para Cloud Functions. 3 novas Cloud Functions (`startPipeline`, `cancelPipeline`, `onSubJobCompleted`); novos schemas Zod de pipeline; `pipeline_jobs` collection + index; `JobType.pipeline` em `generic-jobs.ts`; ícone `AutoAwesome` para pipeline; toast de pipeline; 5 chaves i18n; `usePipelineOrchestrator.ts` refatorado para chamar `startPipeline`; `functions/src/index.ts` atualizado com 3 novas exports |
+| `0.100.0` | Remoção da infra Cloud Run e sistema de Jobs Assíncronos; guardas de i18n (paridade + varredura AST); reestruturação de namespaces i18n; testes de SpeedPaintScene |
+| `0.47.0` | VideoLibrary com suporte a vídeos salvos; download em lote incluindo vídeos; exibição de contagem de vídeos nos cards da biblioteca |
+| `0.45.2` | Correções e ajustes internos |
+| `0.45.1` | Correções internas |
+| `0.45.0` | Pipeline backend server-side; funções utilitárias de pipeline; i18n de labels de cena; remoção de `loadPipelineAudio()` |

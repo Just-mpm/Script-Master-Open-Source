@@ -4,6 +4,8 @@ import type { TranslationDictionary } from '../types';
  * Dicionário EN — English translations for Script Master.
  */
 export const en: TranslationDictionary = {
+  _locale: 'en',
+
   common: {
     mainContent: 'Main content',
     confirmEnter: 'Confirm (Enter)',
@@ -13,11 +15,14 @@ export const en: TranslationDictionary = {
     closeWarning: 'Close warning',
     skipToContent: 'Skip to content',
     loading: 'Loading...',
+    loadingPageSubtitle: 'Preparing your experience...',
     error: 'Error',
     success: 'Success',
     cancel: 'Cancel',
     confirm: 'Confirm',
     close: 'Close',
+    clear: 'Clear',
+    continue: 'Continue',
     back: 'Back',
     next: 'Next',
     skip: 'Skip',
@@ -27,6 +32,8 @@ export const en: TranslationDictionary = {
     seeAll: 'See all',
     search: 'Search...',
     noResults: 'No results found',
+    offline: 'Offline',
+    offlineTooltip: 'You are offline. Some actions may be unavailable.',
     voiceStyles: {
       casual: 'Casual',
       bright: 'Bright',
@@ -72,6 +79,7 @@ export const en: TranslationDictionary = {
     copyright: 'Script Master. All rights reserved.',
     madeWith: 'Built with AI and Gemini',
     productGroup: 'Product',
+    resourcesGroup: 'Resources',
     companyGroup: 'Company',
     legalGroup: 'Legal',
     links: {
@@ -79,6 +87,9 @@ export const en: TranslationDictionary = {
       pricing: 'Beta',
       faq: 'FAQ',
       status: 'Status',
+      roadmap: 'Roadmap',
+      changelog: 'Changelog',
+      community: 'Community',
       about: 'About',
       contact: 'Contact',
       email: 'Email',
@@ -86,6 +97,26 @@ export const en: TranslationDictionary = {
       privacy: 'Privacy',
       cookies: 'Cookies',
     },
+  },
+
+  dataMigration: {
+    checking: 'Checking local data...',
+    completed: 'Migration completed',
+    successMessage: '{count} item(s) transferred to your account.',
+    partialSuccessMessage: '{count} item(s) transferred, with {errors} error(s).',
+    mediaNote: 'Large media files may remain only in local storage.',
+    ignoreAndContinue: 'Ignore and continue',
+    confirmTitle: 'Transfer local data?',
+    confirmDescription: 'We found {totalItems} item(s) created before sign-in. You can transfer them to your account.',
+    projectCount: '{count} project(s)',
+    audioGenerationCount: '{count} audio generation(s)',
+    imageGenerationCount: '{count} image generation(s)',
+    memoryCount: '{count} memory item(s)',
+    chatCount: '{count} conversation(s)',
+    confirmMediaNote: 'The transfer copies metadata and compatible items to your current account.',
+    transferring: 'Transferring...',
+    transfer: 'Transfer',
+    unexpectedError: 'Unexpected error during migration.',
   },
 
   landing: {
@@ -338,6 +369,7 @@ export const en: TranslationDictionary = {
       cta: 'Create free account',
       ctaSecondary: 'How it works',
     },
+    popular: 'Popular',
     credits: {
       title: 'Credits',
       subtitle: 'Credits are the beta currency. Each action consumes credits, renewed every month.',
@@ -643,6 +675,7 @@ export const en: TranslationDictionary = {
 
   studio: {
     header: {
+      subtitle: 'Production Studio',
       nav: {
         studio: 'Studio',
         image: 'Image',
@@ -711,6 +744,11 @@ export const en: TranslationDictionary = {
     },
     inspector: {
       ariaLabel: 'Voice and direction settings',
+      summary: {
+        scenesOn: 'Scenes: On',
+        scenesOff: 'Scenes: Off',
+        podcast: 'Podcast',
+      },
       voiceSection: {
         title: 'Narrator voice',
         description: 'Choose the vocal signature and organize voices for narration or podcast.',
@@ -811,6 +849,8 @@ export const en: TranslationDictionary = {
         errorGeneric: 'Could not process. Try again.',
         selectionTooShort: 'Select at least 3 characters.',
       },
+      footerShortcutHint: 'Press Ctrl + Enter to generate',
+      footerSceneHint: 'Visual scene synced with script',
       label: 'Script',
       syncedSceneChip: 'Visual scene synced with writing',
       copyTooltip: 'Copy script',
@@ -826,6 +866,8 @@ export const en: TranslationDictionary = {
       clearConfirm: 'The script will be permanently deleted. Continue?',
     },
     studioPage: {
+      title: 'Production Studio',
+      subtitle: 'Fine-tune every detail of your script before generating audio, images, and video.',
       settingsTab: 'Settings',
       scriptTab: 'Script',
     },
@@ -894,14 +936,35 @@ export const en: TranslationDictionary = {
     pageDescription: 'Review the current scene, check the video atmosphere, and load previous projects without leaving the flow.',
     exportProgress: 'Export progress',
     exportQuality: 'Export quality',
+    exportBackgroundProcess: 'You can keep tracking the export here.',
+    exportNotSupported: 'This browser does not support video export.',
     timingError: 'Start must be before end',
     undoDelete: 'Undo deletion',
+    loadingSceneImage: 'Loading scene image...',
+    failLoadImage: 'Failed to load image',
+    speedPaintWarningsTitle: 'Some scenes could not be animated',
+    subtitleLabel: 'Include captions',
     controlsEmpty: {
       eyebrow: 'Side panel',
       title: 'Controls waiting for content',
       description: 'Generate audio and scenes in the studio to unlock captions, fine adjustments, and export here.',
+      steps: {
+        '0': {
+          title: 'Generate audio and scenes',
+          description: 'In the studio, choose voice, pace, and visual direction to generate audio and scenes for your project.',
+        },
+        '1': {
+          title: 'Adjust captions',
+          description: 'Transcribe the audio and adjust the timing, style, and position of captions in the video.',
+        },
+        '2': {
+          title: 'Export the video',
+          description: 'Choose quality and export format. Video rendered 100% in the browser.',
+        },
+      },
     },
     preview: {
+      eyebrow: 'Preview',
       title: 'Video preview waiting for scenes',
       description: 'Generate audio and scenes in the studio to visualize the composition here.',
       goToStudio: 'Go to Studio',
@@ -912,6 +975,52 @@ export const en: TranslationDictionary = {
       showCaption: 'Show caption',
       hideCaption: 'Hide caption',
     },
+    workspace: {
+      eyebrow: 'Workspace',
+      title: 'Visual Composition',
+      description: 'View and adjust your video composition with captions and transitions.',
+    },
+    summary: {
+      awaitingPreview: 'Awaiting preview',
+      awaitingControls: 'Awaiting settings',
+      sceneCount: '{count} scene{plural}',
+      duration: '{duration}s duration',
+      captionsReady: '{count} caption{plural}',
+      captionsPending: 'No captions',
+    },
+    summaryPanel: {
+      eyebrow: 'Project Summary',
+      description: 'Your project is ready for fine adjustments and export.',
+      projectLoaded: 'Project loaded',
+      exportReady: 'Ready to export',
+      captionsReady: 'Captions ready',
+      captionsPending: 'No captions',
+    },
+    librarySection: {
+      eyebrow: 'Library',
+      title: 'Saved Projects',
+      description: 'Access previous projects to reuse scenes, audio, and settings.',
+      expandHint: 'Expand library',
+      collapseHint: 'Collapse library',
+      currentProjectMissing: 'No active project',
+      currentProjectLoaded: 'Active project',
+    },
+    transcription: {
+      title: 'Transcription & Captions',
+      sourceSegmentTiming: 'audio segments',
+      sourceWhisperAligned: 'Whisper aligned',
+      sourceProportional: 'proportional',
+      sourceManual: 'manual',
+      staleWarning: 'The script changed after transcription. Generate again to update captions.',
+      wordCount: '{count} caption(s)',
+      regenerate: 'Generate again',
+    },
+    exportButton: 'Export Video',
+    exportInfo: 'Video at {width}x{height} at {fps} fps',
+    animateScenesTooltip: 'Animates each scene with a Speed Paint effect, transforming static images into progressive painting animation.',
+    animateScenesLabel: 'Animate scenes (Speed Paint)',
+    fileNameLabel: 'File name',
+    fileNamePlaceholder: 'My video',
   },
 
   assistant: {
@@ -1026,6 +1135,7 @@ export const en: TranslationDictionary = {
     sortNewestFirst: 'Newest first',
     generation: 'Generation',
     project: 'Project',
+    scriptPreviewFallback: 'No script preview available.',
     title: 'Library',
     savedProjects: 'Saved projects',
     description: 'A cleaner panel to review project assets, rename versions, resume audio, and download scenes without visual noise.',
@@ -1061,6 +1171,9 @@ export const en: TranslationDictionary = {
     speedPaintPrepareError: 'Could not prepare the images for Speed Paint. Please try again.',
     speedPaintPartialWarning: '{ready} image(s) were prepared. {failed} image(s) were skipped because they failed to load.',
     speedPaintHint: 'Sends this project scenes to the Speed Paint queue. Audio is not used in this step.',
+    speedPaintQueueChip: 'Speed Paint Queue',
+    audioCount: '{count} audio{plural}',
+    sceneCount: '{count} scene{plural}',
     scene: 'Scene {number}',
     videoItem: 'Video {number}',
     videoCount: '{count} video{plural}',
@@ -1101,6 +1214,8 @@ export const en: TranslationDictionary = {
     durationOptionAria: '{seconds} seconds',
     durationTitle: 'Video duration',
     durationHelper: 'Choose how long each animation should last.',
+    durationHelperText: 'Duration controls the total animation time.',
+    durationExportHelper: 'Choose the duration used in the exported video.',
     pageTitle: 'Transform Images into',
     pageHighlight: 'Speed Paints',
     pageDescription: 'Upload any image and watch it being drawn stroke by stroke.\nOur engine analyzes the image and generates a progressive painting animation.',
@@ -1171,10 +1286,12 @@ export const en: TranslationDictionary = {
     controlsContextError: 'Error creating export context.',
     controlsExportImageError: 'Failed to export image. Please try again.',
     exportTitle: 'Export video',
+    exportInfo: 'Video at {width}x{height} at {fps} fps',
     exportBrowserWarning: 'Browser does not support video export. Use Chrome 94+ or Firefox 130+.',
     exportDismissError: 'Dismiss error',
     exportQualityAria: 'Export quality',
     exportFileName: 'File name',
+    fileNamePlaceholder: 'My speed paint',
     exportFileNameAria: 'Export file name',
     exportCancel: 'Cancel',
     exportProgressAria: 'Video export progress',
@@ -1195,6 +1312,20 @@ export const en: TranslationDictionary = {
     pageConfigCanvasBlack: 'Black canvas',
     tabPlayback: 'Playback',
     tabExport: 'Export',
+    speedSectionTitle: 'Drawing speed',
+    speedSectionDescription: 'Adjust stroke and coloring speed separately.',
+    sketchLabel: 'Sketch',
+    sketchAriaLabel: 'Sketch speed',
+    revealLabel: 'Coloring',
+    revealSpeed: 'Coloring speed',
+    speedLabels: {
+      verySlow: 'very slow',
+      slow: 'slow',
+      normal: 'normal',
+      fast: 'fast',
+      veryFast: 'very fast',
+      maximum: 'maximum',
+    },
   },
 
   imageStudio: {
@@ -1564,6 +1695,22 @@ export const en: TranslationDictionary = {
     multiSpeakerLabel: 'Multi-speaker',
     speakerBNameLabel: 'Speaker B name',
     speakerBVoiceLabel: 'Speaker B voice',
+    voiceHint: 'Choose the main voice for your narrations. You can change it anytime in the studio.',
+    footerHint: 'Your preferences are synced automatically with the studio and saved to the cloud.',
+    summary: {
+      title: 'Settings Summary',
+      description: 'Overview of your current preferences applied to the production studio.',
+      synced: 'Synced',
+      pending: 'Pending',
+      cloud: 'Cloud',
+      local: 'Local',
+      sections: 'Studio preferences',
+      scenesOn: 'Scenes: On',
+      scenesOff: 'Scenes: Off',
+      multiSpeakerOn: 'Multi-speaker: On',
+      multiSpeakerOff: 'Multi-speaker: Off',
+      secondSpeakerDefault: 'Second speaker (default)',
+    },
   },
 
   // ── Authentication (Login & Register) ──────────────────────────────
@@ -1728,126 +1875,10 @@ export const en: TranslationDictionary = {
     tocAriaLabelCookies: 'Summary of cookies policy',
   },
 
-  // ── Async Jobs ──────────────────────────────────────────────────────────
-  jobs: {
-    title: 'Tasks',
-    pageSubtitle: 'Track the progress of your audio, image, and video generations.',
-    badge: {
-      tooltip: '{count, plural, one {# task in progress} other {# tasks in progress}}',
-      ariaLabel: '{count, plural, one {# task in progress} other {# tasks in progress}}',
-    },
-    empty: {
-      title: 'No tasks',
-      description: 'Your generations will appear here when you start one.',
-      filteredDescription: 'No {type} tasks found.',
-    },
-    filter: {
-      all: 'All',
-      audio: 'Audio',
-      images: 'Images',
-      video: 'Video',
-      scenes: 'Scenes',
-    },
-    statusFilter: {
-      all: 'All',
-      active: 'In progress',
-      completed: 'Completed',
-      failed: 'Failed',
-    },
-    sort: {
-      recent: 'Most recent',
-    },
-    status: {
-      queued: 'Queued',
-      running: 'In progress',
-      completed: 'Completed',
-      failed: 'Failed',
-      cancelled: 'Cancelled',
-      pending: 'Pending',
-      skipped: 'Skipped',
-    },
-    progress: {
-      audio: {
-        generating: 'Generating audio...',
-        chunkProgress: 'Generating chunk {current}/{total}...',
-      },
-      images: {
-        generating: 'Generating images...',
-        itemProgress: 'Image {current}/{total}...',
-      },
-      scenes: {
-        generating: 'Generating scene descriptions...',
-      },
-      video: {
-        bundling: 'Preparing video...',
-        rendering: 'Rendering video...',
-        uploading: 'Uploading video...',
-      },
-    },
-    action: {
-      cancel: 'Cancel',
-      viewResult: 'View result',
-      retry: 'Try again',
-      retryUnavailable: 'This task cannot be re-run. Please create a new one.',
-      clear: 'Clear',
-      clearAll: 'Clear completed',
-    },
-    toast: {
-      audioCompleted: 'Audio ready!',
-      imagesCompleted: 'Images generated!',
-      videoCompleted: 'Video rendered!',
-      scenesCompleted: 'Scenes generated!',
-      pipelineCompleted: 'Pipeline completed!',
-      failed: 'Error generating {type}: {message}',
-      failedGeneric: 'Error processing {type}',
-      cancelled: 'Task cancelled',
-      viewResult: 'View',
-    },
-    cancelDialog: {
-      title: 'Cancel task?',
-      description: 'The {type} generation "{name}" will be stopped.',
-      creditWarning: 'Credits already used will not be refunded.',
-      confirm: 'Cancel task',
-      dismiss: 'Continue',
-    },
-    pipeline: {
-      title: 'Pipeline: {name}',
-      step: {
-        audio: 'Generate audio',
-        scenes: 'Generate scenes',
-        images: 'Generate images',
-        video: 'Render video',
-        waiting: 'Waiting...',
-      },
-      cancelAll: 'Cancel all',
-      cancelDialog: {
-        title: 'Cancel pipeline?',
-        description: 'All remaining steps will be cancelled. Completed results will remain available.',
-      },
-    },
-    limitReached: {
-      title: 'Task limit reached',
-      description: 'Wait for a task to finish before starting another one.',
-      action: 'View tasks',
-    },
+  settings: {
+    customSettings: 'Custom settings',
   },
 
-  // ── Audio Jobs Panel (studio) ─────────────────────────────────────────────
-  audioJobs: {
-    title: 'Audio queue',
-    subtitle: 'Track progress and reopen completed results.',
-    defaultProjectName: 'Audio project',
-    openAudio: 'Open audio',
-    cancel: 'Cancel',
-    status: {
-      queued: 'Queued',
-      running: 'Generating',
-      completed: 'Completed',
-      failed: 'Failed',
-      cancelled: 'Cancelled',
-      cancelling: 'Cancelling',
-    },
-  },
 
   errorBoundary: {
     title: 'Something went wrong',

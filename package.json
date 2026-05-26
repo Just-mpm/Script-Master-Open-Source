@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.47.0",
+  "version": "0.100.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -12,6 +12,7 @@
     "lint:fix": "eslint src eslint.config.js vite.config.ts --fix",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "i18n": "vitest run tests/i18n/i18n-locale-parity.unit.test.ts tests/i18n/i18n-used-keys.unit.test.ts",
     "test:watch": "vitest",
     "deploy": "bun run build && cd functions && npm run build && cd .. && firebase deploy",
     "deploy:hosting": "bun run build && firebase deploy --only hosting",
@@ -19,7 +20,6 @@
     "deploy:storage": "firebase deploy --only storage",
     "deploy:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
     "deploy:preview": "bun run build && firebase hosting:channel:deploy preview",
-    "deploy:cloudrun": "cd cloud-run && powershell -File scripts/deploy.ps1 -ServiceAccount \"remotion-renderer-sa@script-master-7ac07.iam.gserviceaccount.com\"",
     "emulators": "firebase emulators:start",
     "emulators:functions": "firebase emulators:start --only functions",
     "emulators:ui": "firebase emulators:start --only ui"

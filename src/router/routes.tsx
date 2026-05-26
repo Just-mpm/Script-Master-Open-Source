@@ -144,7 +144,6 @@ function RouteFallback() {
     if (path.startsWith('/app/assistente')) return t('studio.header.nav.ai');
     if (path.startsWith('/app/biblioteca')) return t('studio.header.nav.library');
     if (path.startsWith('/app/configuracoes')) return t('studio.header.nav.settings');
-    if (path.startsWith('/app/jobs')) return t('jobs.title');
 
     return null;
   }, [location.pathname, t]);

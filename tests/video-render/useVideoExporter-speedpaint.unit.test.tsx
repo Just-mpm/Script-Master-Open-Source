@@ -70,19 +70,6 @@ vi.mock('../../src/lib/logger', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock — env (força isCloudRunVideoEnabled=false para testar fluxo local
-// independente do .env, que pode ter VITE_CLOUD_RUN_VIDEO_ENABLED=true)
-// ---------------------------------------------------------------------------
-
-vi.mock('../../src/lib/env', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/lib/env')>();
-  return {
-    ...actual,
-    isCloudRunVideoEnabled: () => false,
-  };
-});
-
-// ---------------------------------------------------------------------------
 // Mocks — speed paint renderer (focus principal)
 // ---------------------------------------------------------------------------
 
