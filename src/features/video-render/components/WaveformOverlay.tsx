@@ -159,7 +159,7 @@ export function WaveformOverlay({
   }, [audioData, frame, fps, sceneTime]);
 
   // ── Fade de entrada/saída do overlay ──
-  const sceneDurationFrames = useMemo(() => sceneDuration * fps, [sceneDuration]);
+  const sceneDurationFrames = useMemo(() => sceneDuration * fps, [sceneDuration, fps]);
   const fadeFrames = useMemo(
     () => Math.min(10, Math.floor(sceneDurationFrames / 4)),
     [sceneDurationFrames],

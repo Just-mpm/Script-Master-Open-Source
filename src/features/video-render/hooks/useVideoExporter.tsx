@@ -102,7 +102,6 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
     scenes,
     audioUrl,
     fps,
-    animateScenes,
     captions,
     subtitleStyle,
     speedPaintSpeed,
