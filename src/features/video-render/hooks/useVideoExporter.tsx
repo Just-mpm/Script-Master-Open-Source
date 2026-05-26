@@ -17,7 +17,6 @@ import { isCancellationError, toUserFriendlyError } from '../lib/exportUtils';
 import { useCodecSupport } from '../hooks/useCodecSupport';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
-import { isCloudRunVideoEnabled } from '../../../lib/env';
 import { db, functions } from '../../../lib/firebase';
 import { createLogger } from '../../../lib/logger';
 
@@ -115,7 +114,6 @@ function ExportableComposition(props: ExportableProps): React.ReactNode {
       scenes={scenes}
       audioUrl={audioUrl}
       fps={fps}
-      animateScenes={typeof animateScenes === 'boolean' ? animateScenes : false}
       captions={captions}
       subtitleStyle={subtitleStyle}
       isExporting={true}
@@ -208,7 +206,7 @@ export function useVideoExporter() {
   // -------------------------------------------------------------------------
   // Cloud Run check — se habilitado, desvia para renderização server-side
   // -------------------------------------------------------------------------
-  const useCloudRun = isCloudRunVideoEnabled();
+  const useCloudRun = false;
 
   // -------------------------------------------------------------------------
   // Inicia renderização via WebCodecs (ou Cloud Run)

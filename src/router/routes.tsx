@@ -14,6 +14,7 @@ import type { VideoPreviewHandle } from '../components/VideoPreview';
 
 import { GuestRoute } from '../components/GuestRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { useLocale } from '../features/i18n';
 import { publicCompatRedirects, appCompatRedirects } from './Redirects';
 
 // ─── Páginas públicas (lazy) — todas usam export default ──

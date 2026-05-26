@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AbsoluteFill, Sequence } from 'remotion';
+import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps, VideoScene, SpeedPaintMultipliers } from '../types';
 import { SPEED_PAINT_MULTIPLIERS } from '../types';
@@ -36,6 +36,7 @@ export const VideoComposition = React.memo(function VideoComposition({
   showDrawTool = true,
 }: VideoCompositionProps) {
   const totalScenes = scenes.length;
+  const frame = useCurrentFrame();
   const speedPaintOverlapFrames = useMemo(() => getSpeedPaintOverlapFrames('default', fps), [fps]);
 
   // Pré-computa captions por cena — evita filter+map a cada frame (P1: hotspot em ~300K iterações/s)
@@ -148,6 +149,7 @@ export const VideoComposition = React.memo(function VideoComposition({
         {audioUrl && !isExporting && (
           <WaveformOverlay
             audioUrl={audioUrl}
+            frame={frame}
             sceneStartTime={scene.timestamp}
             sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
             fps={fps}
