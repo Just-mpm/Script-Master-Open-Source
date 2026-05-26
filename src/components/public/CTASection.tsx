@@ -56,23 +56,34 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
       })}
     >
       <Container maxWidth={false} sx={{ maxWidth: 720, textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        <Stack spacing={3} sx={{ alignItems: 'center' }}>
+        <Stack spacing={{ xs: 2.5, md: 3.5 }} sx={{ alignItems: 'center' }}>
           <Typography
-            variant="h3"
+            variant="h2"
             component="h2"
             sx={{
+              fontSize: { xs: '1.875rem', sm: '2.25rem', md: '3rem' },
+              fontWeight: 800,
               background: BRAND_GRADIENT,
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              letterSpacing: '-0.035em',
+              letterSpacing: '-0.04em',
+              lineHeight: 1.15,
             }}
           >
             {title}
           </Typography>
 
           {subtitle && (
-            <Typography variant="body1" sx={{ color: TEXT_SECONDARY, maxWidth: 480, lineHeight: 1.7 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                color: TEXT_SECONDARY,
+                maxWidth: { xs: 440, md: 520 },
+                lineHeight: 1.75,
+                fontSize: { xs: '0.9375rem', md: '1rem' },
+              }}
+            >
               {subtitle}
             </Typography>
           )}

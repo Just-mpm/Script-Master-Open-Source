@@ -216,7 +216,14 @@ export default function FuncionalidadesPage() {
       />
 
       {/* CTA Final */}
-      <Box sx={{ pt: { xs: 4, md: 8 } }}>
+      <Box
+        sx={{
+          pt: { xs: 4, md: 8 },
+          mt: { xs: 6, md: 8 },
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <CTASection
           title={t('features.cta.title')}
           subtitle={t('features.cta.subtitle')}

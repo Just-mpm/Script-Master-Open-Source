@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.49.3",
+  "version": "0.52.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -17,6 +17,7 @@
     "deploy:hosting": "bun run build && firebase deploy --only hosting",
     "deploy:firestore": "firebase deploy --only firestore",
     "deploy:storage": "firebase deploy --only storage",
+    "deploy:storage:cors": "gcloud storage buckets update gs://script-master-7ac07.firebasestorage.app --cors-file=storage.cors.json",
     "deploy:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
     "deploy:preview": "bun run build && firebase hosting:channel:deploy preview",
     "deploy:cloudrun": "cd cloud-run && powershell -File scripts/deploy.ps1 -ServiceAccount \"remotion-renderer-sa@script-master-7ac07.iam.gserviceaccount.com\"",

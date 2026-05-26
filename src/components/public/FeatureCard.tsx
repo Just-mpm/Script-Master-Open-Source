@@ -89,7 +89,7 @@ export function FeatureCard({
             {title}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7, flex: 1 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7, flex: 1, fontSize: '0.875rem' }}>
             {description}
           </Typography>
 

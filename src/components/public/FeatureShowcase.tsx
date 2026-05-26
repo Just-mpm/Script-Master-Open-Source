@@ -98,7 +98,7 @@ export function FeatureShowcase({
                 {title}
               </Typography>
 
-              <Typography variant="body1" sx={{ color: TEXT_SECONDARY, lineHeight: 1.75 }}>
+              <Typography variant="body1" sx={{ color: TEXT_SECONDARY, lineHeight: 1.75, fontSize: { xs: '0.9375rem', md: '1rem' } }}>
                 {description}
               </Typography>
 

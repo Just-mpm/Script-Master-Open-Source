@@ -275,7 +275,7 @@ export default function LandingPage() {
       <TestimonialsSection />
 
       {/* Como Funciona — 3 steps */}
-      <Box sx={{ pt: { xs: 8, md: 12 } }}>
+      <Box sx={{ pt: { xs: 8, md: 12 } }} id="como-funciona">
         <Box
           component={motion.div}
           variants={staggerContainer(0.08)}
@@ -306,7 +306,14 @@ export default function LandingPage() {
       </Box>
 
       {/* Mais Features */}
-      <Box sx={{ pt: { xs: 8, md: 12 } }}>
+      <Box
+        sx={{
+          pt: { xs: 8, md: 12 },
+          mt: { xs: 4, md: 6 },
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box
           component={motion.div}
           variants={fadeInUp}
@@ -329,7 +336,14 @@ export default function LandingPage() {
       </Box>
 
       {/* CTA Final */}
-      <Box sx={{ pt: { xs: 8, md: 12 } }}>
+      <Box
+        sx={{
+          pt: { xs: 8, md: 12 },
+          mt: { xs: 6, md: 8 },
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <CTASection
           title={t('landing.cta.title')}
           subtitle={t('landing.cta.subtitle')}
