@@ -72,6 +72,7 @@ interface AssistantComposerProps {
   isLoading: boolean;
   isThinkActive: boolean;
   creditsBlocked?: boolean;
+  interviewPending?: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   selectedModel: 'fast' | 'specialist';
   selectedThinkingLevel: 'minimal' | 'low' | 'medium' | 'high';
@@ -91,6 +92,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   isLoading,
   isThinkActive,
   creditsBlocked = false,
+  interviewPending = false,
   fileInputRef,
   selectedModel,
   selectedThinkingLevel,
@@ -140,7 +142,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
     }
   };
 
-  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !creditsBlocked;
+  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !creditsBlocked && !interviewPending;
 
   // Letter animation variants — blur + translateY com spring suave
   const letterVariants = {
@@ -316,6 +318,8 @@ export const AssistantComposer = React.memo(function AssistantComposer({
               id="assistant-chat-input"
               name="chat-message"
               rows={1}
+              placeholder={interviewPending ? t('assistant.composer.interviewPending') : t('assistant.composer.placeholder')}
+              aria-label={interviewPending ? t('assistant.composer.interviewPending') : t('assistant.composer.placeholder')}
               value={input}
               onChange={(event) => onInputChange(event.target.value)}
               onKeyDown={handleKeyDown}
@@ -327,7 +331,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
                 if (related && wrapperRef.current?.contains(related)) return;
                 setIsFocused(false);
               }}
-              disabled={creditsBlocked}
+              disabled={creditsBlocked || interviewPending}
               style={{
                 position: 'relative',
                 zIndex: 1,

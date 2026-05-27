@@ -286,6 +286,7 @@ describe('useAudioGenerationHandler', () => {
 
     expect(mockGenerateAudio).toHaveBeenCalledWith({
       script: 'opts',
+      estimatedChunkCount: 1,
       preflight: {
         availableCredits: 100,
         totalPlanned: 10,
@@ -355,6 +356,7 @@ describe('useAudioGenerationHandler', () => {
 
     expect(mockGenerateAudio).toHaveBeenCalledWith({
       script: 'opts',
+      estimatedChunkCount: 2,
       preflight: {
         availableCredits: 0,
         totalPlanned: 25,

@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import { alpha } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import {
   deleteChatSession,
   deleteMemory,
@@ -24,18 +28,41 @@ import { AssistantHistoryPanel } from './components/AssistantHistoryPanel';
 import { AssistantMemoriesPanel } from './components/AssistantMemoriesPanel';
 import { AssistantMessages } from './components/AssistantMessages';
 import { AssistantSettingsPanel } from './components/AssistantSettingsPanel';
+import { PlanWidget } from './components/PlanWidget';
 import type { AssistantSettings, AssistantStudioState } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
-import { BRAND_PRIMARY } from '../../theme/tokens';
+import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
+import type { StudioSettingsPatch } from '../studio/types';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
   currentState?: AssistantStudioState;
 }
+
+/** Mapeamento de chaves de settings para chaves i18n de labels */
+const SETTINGS_LABEL_KEYS: Record<keyof StudioSettingsPatch, string> = {
+  script: 'studio.header.scriptTab',
+  selectedVoice: 'configuracoes.voiceLabel',
+  isMultiSpeaker: 'configuracoes.multiSpeakerLabel',
+  speakerAName: 'configuracoes.personaNameLabel',
+  speakerBName: 'configuracoes.speakerBNameLabel',
+  speakerBVoice: 'configuracoes.speakerBVoiceLabel',
+  audioProfile: 'configuracoes.profileLabel',
+  scene: 'configuracoes.sceneLabel',
+  pace: 'configuracoes.paceLabel',
+  styleNotes: 'configuracoes.styleNotesLabel',
+  generateScenes: 'configuracoes.generateScenesLabel',
+  sceneDensity: 'configuracoes.sceneDensityLabel',
+  sceneRatio: 'configuracoes.sceneRatioLabel',
+  visualFramework: 'configuracoes.visualFrameworkLabel',
+  emotion: 'configuracoes.emotionLabel',
+  emotionIntensity: 'studio.emotion.intensity',
+  imageTextLanguage: 'configuracoes.imageTextLanguageLabel',
+};
 
 const MAX_DOCUMENT_SIZE = 500 * 1024;
 const MAX_MEMORY_DOCUMENT_TEXT = 490000;
@@ -46,7 +73,7 @@ const MAX_DOCUMENT_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   const { locale, t } = useLocale();
   const { user } = useAuth();
-const {
+  const {
     messages,
     isLoading,
     isStreaming,
@@ -63,9 +90,37 @@ const {
     setSelectedModel,
     selectedThinkingLevel,
     setSelectedThinkingLevel,
+    plan,
+    pendingSettings,
+    toolEvents,
+    interview,
+    respondResult,
+    clearPendingSettings,
+    clearInterview,
   } = useAssistant(currentState);
 
+  /** Formata um valor de setting para exibição amigável */
+  const formatSettingValue = useCallback((key: string, value: unknown): string => {
+    if (typeof value === 'boolean') return value ? t('common.confirm') : t('common.cancel');
+    if (key === 'emotion') return t(`studio.emotion.options.${String(value)}`) ?? String(value);
+    if (key === 'imageTextLanguage') return String(value).toUpperCase();
+    if (typeof value === 'number') return String(value);
+    return String(value);
+  }, [t]);
+
+  /** Gera lista de { label, value } para preview dos settings pendentes */
+  const settingsPreview = useMemo(() => {
+    if (!pendingSettings) return [];
+    return Object.entries(pendingSettings.settings)
+      .filter(([key, value]) => key in SETTINGS_LABEL_KEYS && value !== undefined && value !== null && value !== '')
+      .map(([key, value]) => ({
+        label: t(SETTINGS_LABEL_KEYS[key as keyof StudioSettingsPatch]),
+        value: formatSettingValue(key, value),
+      }));
+  }, [pendingSettings, t, formatSettingValue]);
+
   const [input, setInput] = useState('');
+  const [interviewAnswer, setInterviewAnswer] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
   const [savedToMemoryId, setSavedToMemoryId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -332,6 +387,33 @@ const {
     window.setTimeout(() => setAppliedMessageId(null), 3000);
   }, [onApplySettings]);
 
+  const handleApplyPendingSettings = useCallback(() => {
+    if (!pendingSettings) {
+      return;
+    }
+
+    onApplySettings(pendingSettings.settings);
+    clearPendingSettings();
+  }, [clearPendingSettings, onApplySettings, pendingSettings]);
+
+  const handleAnswerInterview = useCallback((answer: string) => {
+    const trimmedAnswer = answer.trim();
+    if (!interview || !trimmedAnswer) {
+      return;
+    }
+
+    clearInterview();
+    setInterviewAnswer('');
+    void sendMessage(trimmedAnswer, undefined, undefined, {
+      question: interview.question,
+      answer: trimmedAnswer,
+    });
+  }, [clearInterview, interview, sendMessage]);
+
+  const handleSuggestedAction = useCallback((action: string, params?: Record<string, unknown> | null) => {
+    setInput(params ? `${action}\n${JSON.stringify(params, null, 2)}` : action);
+  }, []);
+
   const handleSuggestionClick = useCallback((prompt: string) => {
     setInput(prompt);
   }, []);
@@ -464,7 +546,146 @@ const {
         onSaveToMemory={handleSaveMessageToMemory}
         onStopGeneration={stopGeneration}
         onSuggestionClick={handleSuggestionClick}
+        toolEvents={toolEvents}
       />
+
+      <PlanWidget tasks={plan} />
+
+      {pendingSettings ? (
+        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
+          <Alert
+            variant="outlined"
+            severity="info"
+            sx={{ borderRadius: 2 }}
+            action={
+              <Stack direction="row" spacing={1}>
+                <Button color="inherit" size="small" onClick={handleApplyPendingSettings}>
+                  {t('assistant.messages.applyToStudio')}
+                </Button>
+                <Button color="inherit" size="small" onClick={clearPendingSettings}>
+                  {t('assistant.messages.ignore')}
+                </Button>
+              </Stack>
+            }
+          >
+            <Stack spacing={0.5}>
+              <Typography variant="body2">{pendingSettings.summary}</Typography>
+              {settingsPreview.length > 0 ? (
+                <Stack component="ul" spacing={0.25} sx={{ m: 0, pl: 2 }}>
+                  {settingsPreview.map(({ label, value }) => (
+                    <Typography key={label} component="li" variant="caption" sx={{ color: 'text.secondary' }}>
+                      <strong>{label}:</strong> {value}
+                    </Typography>
+                  ))}
+                </Stack>
+              ) : null}
+            </Stack>
+          </Alert>
+        </Box>
+      ) : null}
+
+      {respondResult && (
+        respondResult.text || (respondResult.suggestedActions?.length ?? 0) > 0 || (respondResult.media?.length ?? 0) > 0
+      ) ? (
+        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
+          <Alert variant="outlined" severity="info" sx={{ borderRadius: 2 }}>
+            <Stack spacing={1.25}>
+              {respondResult.text ? (
+                <Typography variant="body2">{respondResult.text}</Typography>
+              ) : null}
+              {respondResult.suggestedActions && respondResult.suggestedActions.length > 0 ? (
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                  {respondResult.suggestedActions.map((action) => (
+                    <Button
+                      key={`${action.action}-${action.label}`}
+                      color="inherit"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleSuggestedAction(action.action, action.params)}
+                      sx={{ textTransform: 'none', borderColor: APP_BORDER }}
+                    >
+                      {action.label}
+                    </Button>
+                  ))}
+                </Stack>
+              ) : null}
+
+              {respondResult.media && respondResult.media.length > 0 ? (
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                  {respondResult.media.map((media) => (
+                    <Chip
+                      key={`${media.type}-${media.url}`}
+                      component="a"
+                      href={media.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      clickable
+                      label={media.title ?? media.url}
+                      variant="outlined"
+                      sx={{ borderColor: APP_BORDER, maxWidth: '100%' }}
+                    />
+                  ))}
+                </Stack>
+              ) : null}
+            </Stack>
+          </Alert>
+        </Box>
+      ) : null}
+
+      {interview ? (
+        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
+          <Alert
+            variant="outlined"
+            severity="info"
+            sx={{ borderRadius: 2 }}
+          >
+            <Stack spacing={1.5}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {interview.question}
+              </Typography>
+
+              {interview.options && interview.options.length > 0 ? (
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                  {interview.options.map((option) => (
+                    <Button
+                      key={option.label}
+                      color="inherit"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleAnswerInterview(option.label)}
+                      sx={{ textTransform: 'none', borderColor: APP_BORDER, flexDirection: 'column', alignItems: 'flex-start', py: 0.75 }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{option.label}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                        {option.description}
+                      </Typography>
+                    </Button>
+                  ))}
+                </Stack>
+              ) : null}
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <TextField
+                  value={interviewAnswer}
+                  onChange={(event) => setInterviewAnswer(event.target.value)}
+                  size="small"
+                  fullWidth
+                  placeholder={t('assistant.messages.interviewPlaceholder')}
+                  aria-label={t('assistant.messages.interviewPlaceholder')}
+                />
+                <Button
+                  variant="contained"
+                  onClick={() => handleAnswerInterview(interviewAnswer)}
+                  disabled={!interviewAnswer.trim()}
+                  sx={{ flexShrink: 0 }}
+                >
+                  {t('assistant.messages.interviewSend')}
+                </Button>
+              </Stack>
+            </Stack>
+          </Alert>
+        </Box>
+      ) : null}
 
       <AssistantComposer
         input={input}
@@ -472,6 +693,7 @@ const {
         isLoading={isLoading}
         isThinkActive={isThinkActive}
         creditsBlocked={creditBlockedByBalance}
+        interviewPending={!!interview}
         fileInputRef={fileInputRef}
         selectedModel={selectedModel}
         selectedThinkingLevel={selectedThinkingLevel}

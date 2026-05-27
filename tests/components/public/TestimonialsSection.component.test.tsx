@@ -145,6 +145,6 @@ describe('TestimonialsSection', () => {
   it('localiza textos dos depoimentos para en', () => {
     localStorage.setItem('s2a_locale', 'en');
     render(<TestimonialsSection />, { wrapper: Wrapper });
-    expect(screen.getByText(/I used to record 2-hour narrations/)).toBeDefined();
+    expect(screen.getByText(/I used to record 2h and edit for days/)).toBeDefined();
   });
 });

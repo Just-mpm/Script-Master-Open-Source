@@ -223,7 +223,7 @@ describe('AssistantMessages', () => {
       { wrapper: Wrapper },
     );
 
-    expect(screen.getByText(/O assistente sugeriu ajustes que não puderam ser aplicados automaticamente/i)).toBeDefined();
+    expect(screen.getByText(/O assistente sugeriu ajustes, mas o formato não pôde ser interpretado/i)).toBeDefined();
   });
 
   it('mostra skeleton de loading quando isLoading e não isStreaming', () => {
@@ -257,6 +257,27 @@ describe('AssistantMessages', () => {
     );
 
     expect(screen.getByText('Salvar insight')).toBeDefined();
+  });
+
+  it('mostra badges de ferramentas na última mensagem do modelo', () => {
+    const messages = [
+      createMessage({ id: 'm1', role: 'model', text: 'Análise concluída' }),
+    ];
+
+    render(
+      <AssistantMessages
+        {...defaultProps}
+        messages={messages}
+        toolEvents={[
+          { id: 'tool-1', type: 'tool_call', name: 'updatePlan' },
+          { id: 'tool-2', type: 'tool_result', name: 'getStudioState' },
+        ]}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    expect(screen.getByText('updatePlan')).toBeDefined();
+    expect(screen.getByText('getStudioState')).toBeDefined();
   });
 
   it('NÃO mostra "Salvar insight" para mensagem welcome', () => {

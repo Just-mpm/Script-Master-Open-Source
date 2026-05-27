@@ -92,9 +92,9 @@ describe('Header', () => {
     expect(elements.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renderiza o subtítulo "AI Studio"', () => {
+  it('renderiza o subtítulo do estúdio de produção', () => {
     render(<Header />, { wrapper: Wrapper });
-    expect(screen.getByText('AI Studio')).toBeDefined();
+    expect(screen.getByText('Estúdio de produção')).toBeDefined();
   });
 
   it('renderiza a navegação com os itens de navegação', () => {

@@ -296,6 +296,63 @@ describe('useAssistant', () => {
     expect(assistantMsg?.text).toContain('Parte 3');
   });
 
+  it('deve processar updates estruturados de plano e settings sem misturar no texto', async () => {
+    const planChunk = JSON.stringify({
+      type: 'plan_update',
+      plan: [
+        {
+          id: '1',
+          title: 'Analisar roteiro',
+          status: 'in_progress',
+          priority: 'high',
+          level: 0,
+          dependencies: [],
+          subtasks: [],
+        },
+      ],
+    });
+    const settingsChunk = JSON.stringify({
+      type: 'studio_update',
+      settings: { pace: 'lento' },
+      summary: 'Ajuste de ritmo sugerido.',
+    });
+    const interviewChunk = JSON.stringify({
+      type: 'interview',
+      interview: {
+        question: 'Qual estilo você prefere?',
+        options: [{ label: 'Documental', description: 'Tom informativo' }],
+      },
+    });
+    const respondChunk = JSON.stringify({
+      type: 'respond_result',
+      respond: { text: 'Resumo final estruturado.' },
+    });
+
+    mockStreamFn.mockResolvedValue({
+      stream: createMockStream([planChunk, interviewChunk, 'Texto final', settingsChunk, respondChunk]),
+      data: Promise.resolve({
+        text: 'Texto final',
+        plan: JSON.parse(planChunk).plan,
+        appliedSettings: { pace: 'lento' },
+        interview: JSON.parse(interviewChunk).interview,
+        respond: JSON.parse(respondChunk).respond,
+      }),
+    });
+
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.sendMessage('Planeje ajustes');
+    });
+
+    const assistantMsg = result.current.messages.find((m) => m.role === 'model' && m.id !== 'welcome');
+    expect(assistantMsg?.text).toBe('Texto final');
+    expect(result.current.plan).toHaveLength(1);
+    expect(result.current.pendingSettings?.settings).toEqual({ pace: 'lento' });
+    expect(result.current.interview?.question).toBe('Qual estilo você prefere?');
+    expect(result.current.respondResult?.text).toBe('Resumo final estruturado.');
+  });
+
   it('deve resetar sessão ao chamar startNewChat', async () => {
     const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
 

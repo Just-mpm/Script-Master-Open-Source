@@ -23,7 +23,7 @@ import Person from '@mui/icons-material/Person';
 import SmartToy from '@mui/icons-material/SmartToy';
 import Stop from '@mui/icons-material/Stop';
 import ReactMarkdown from 'react-markdown';
-import type { AssistantSettings, ChatMessage } from '../types';
+import type { AssistantSettings, AssistantToolEvent, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
 import {
   assistantInsetSx,
@@ -70,6 +70,7 @@ interface MessageBubbleProps {
   onApply: (settings: AssistantSettings, messageId: string) => void;
   onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
+  toolEvents?: AssistantToolEvent[];
 }
 
 // --- Memo comparator: só re-renderiza quando dados da mensagem mudam ---
@@ -84,6 +85,7 @@ function arePropsEqual(prev: MessageBubbleProps, next: MessageBubbleProps): bool
     && prev.isApplied === next.isApplied
     && prev.isSavedToMemory === next.isSavedToMemory
     && prev.isCopied === next.isCopied
+    && prev.toolEvents === next.toolEvents
     && prev.onCopy === next.onCopy
     && prev.onApply === next.onApply
     && prev.onSaveToMemory === next.onSaveToMemory
@@ -103,6 +105,7 @@ const MessageBubble = React.memo(function MessageBubble({
   onApply,
   onSaveToMemory,
   onStopGeneration,
+  toolEvents = [],
 }: MessageBubbleProps) {
   const { t } = useLocale();
   const isModel = message.role === 'model';
@@ -235,6 +238,29 @@ const MessageBubble = React.memo(function MessageBubble({
               ) : null}
             </Box>
 
+            {isModel && toolEvents.length > 0 ? (
+              <Stack direction="row" spacing={GAP_COMPACT} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                {toolEvents.slice(-6).map((event) => (
+                  <Chip
+                    key={event.id}
+                    size="small"
+                    variant="outlined"
+                    icon={event.type === 'tool_result' ? <Check /> : <AutoAwesome />}
+                    label={event.name}
+                    sx={{
+                      borderColor: APP_BORDER,
+                      color: event.type === 'tool_result' ? 'success.main' : BRAND_PRIMARY,
+                      maxWidth: 180,
+                      '& .MuiChip-icon': {
+                        fontSize: ICON_SIZE_SM,
+                        color: 'inherit',
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+            ) : null}
+
             {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming)
               ? <Divider sx={{ borderColor: isModel ? APP_BORDER : WHITE_16 }} />
               : null}
@@ -354,6 +380,7 @@ interface AssistantMessagesProps {
   onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
   onSuggestionClick?: (prompt: string) => void;
+  toolEvents?: AssistantToolEvent[];
 }
 
 export function AssistantMessages({
@@ -367,6 +394,7 @@ export function AssistantMessages({
   onSaveToMemory,
   onStopGeneration,
   onSuggestionClick,
+  toolEvents = [],
 }: AssistantMessagesProps) {
   const { t } = useLocale();
 
@@ -429,6 +457,7 @@ export function AssistantMessages({
               onApply={onApply}
               onSaveToMemory={onSaveToMemory}
               onStopGeneration={onStopGeneration}
+              toolEvents={lastModelMessage?.id === message.id ? toolEvents : []}
             />
           ))}
 

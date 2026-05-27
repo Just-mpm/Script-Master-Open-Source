@@ -38,6 +38,13 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantAttachmentChipSx: {},
   assistantActionIconButtonSx: {},
   assistantSendButtonSx: {},
+  assistantComposerInputRowSx: {},
+  assistantThinkToggleSx: vi.fn(() => ({})),
+  assistantComposerWrapperSx: {},
+  assistantCyclingPlaceholderSx: {},
+  assistantPlaceholderLetterSx: {},
+  assistantComposerControlsSx: {},
+  assistantControlButtonSx: vi.fn(() => ({})),
 }));
 
 const defaultProps = {

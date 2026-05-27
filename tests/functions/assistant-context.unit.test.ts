@@ -4,8 +4,10 @@ import {
   buildChunkingInstruction,
   buildImageInstruction,
   buildInlineAssistantInstruction,
+  buildMemoriesSummary,
   buildScenePromptsInstruction,
   buildStudioBlock,
+  buildStudioSummary,
   buildTtsInstruction,
 } from '../../functions/src/genkit/utils/assistant-context';
 
@@ -64,7 +66,7 @@ describe('buildStudioBlock', () => {
 });
 
 describe('prompt builders', () => {
-  it('monta instrução do assistente com contexto e regra de JSON aplicável', () => {
+  it('monta instrução do assistente com contexto e regra de updateStudio aplicável', () => {
     const instruction = buildAssistantSystemInstruction({
       memoriesText: '- Prefere tom direto',
       userProfileBlock: '- Perfil: criador',
@@ -75,7 +77,8 @@ describe('prompt builders', () => {
     });
 
     expect(instruction).toContain('Trate a última mensagem do usuário como a tarefa principal');
-    expect(instruction).toContain('Explique primeiro o raciocínio em linguagem natural');
+    expect(instruction).toContain('Use updateStudio apenas se houver uma mudança concreta');
+    expect(instruction).toContain('updatePlan');
     expect(instruction).toContain('ESTÚDIO: roteiro ativo');
   });
 
@@ -99,8 +102,8 @@ describe('prompt builders', () => {
   it('monta prompt de chunking com limite explícito', () => {
     const instruction = buildChunkingInstruction('Um roteiro qualquer', 500);
 
-    expect(instruction).toContain('no máximo 500 caracteres');
-    expect(instruction).toContain('Não altere, reescreva, resuma');
+    expect(instruction).toContain('MÁXIMO 500 caracteres');
+    expect(instruction).toContain('NÃO altere, reescreva, adicione ou remova palavras');
   });
 
   it('monta prompt de cena respeitando idioma visual e quantidade', () => {
@@ -145,5 +148,107 @@ describe('prompt builders', () => {
     expect(instruction).toContain('Trecho narrado final');
     expect(instruction).toContain('Narrador calmo');
     expect(instruction).toContain('Fale pausadamente');
+  });
+});
+
+describe('buildMemoriesSummary', () => {
+  it('retorna resumo com contagem quando há memórias', () => {
+    const summary = buildMemoriesSummary(15);
+
+    expect(summary).toContain('15 memória(s) salva(s)');
+    expect(summary).toContain('getUserMemories');
+    expect(summary).not.toContain('Prefere tom direto');
+  });
+
+  it('retorna mensagem de vazio quando não há memórias', () => {
+    const summary = buildMemoriesSummary(0);
+
+    expect(summary).toContain('ainda não salvou memórias');
+    expect(summary).toContain('getUserMemories');
+  });
+});
+
+describe('buildStudioSummary', () => {
+  it('retorna resumo curto com voz e roteiro quando estúdio tem dados', () => {
+    const summary = buildStudioSummary({
+      script: 'Um roteiro de teste com mais de cem caracteres para verificar o resumo',
+      selectedVoice: 'Zephyr',
+      generateScenes: true,
+    });
+
+    expect(summary).toContain('Voz: Zephyr');
+    expect(summary).toContain('Roteiro:');
+    expect(summary).toContain('caracteres');
+    expect(summary).toContain('Cenas visuais: ligado');
+    expect(summary).toContain('getStudioState');
+    expect(summary).not.toContain('Roteiro atual: "');
+  });
+
+  it('retorna mensagem de vazio quando não há estado', () => {
+    const summary = buildStudioSummary(undefined);
+
+    expect(summary).toContain('Nenhum estado do estúdio');
+  });
+});
+
+describe('buildAssistantSystemInstruction — tool-first', () => {
+  it('usa resumos em vez de contexto completo quando toolFirst é true', () => {
+    const instruction = buildAssistantSystemInstruction({
+      memoriesText: '- Prefere tom direto\n- Gosta de ritmo rápido',
+      userProfileBlock: '- Perfil: criador',
+      voicesList: '- Zephyr (Brilhante)',
+      paceList: 'normal (Normal)',
+      studioBlock: 'ESTÚDIO COMPLETO: roteiro ativo, voz Zephyr...',
+      customPromptBlock: 'DIRETRIZ CUSTOM: responda com clareza',
+      toolFirst: true,
+      memoryCount: 5,
+      studioState: { script: 'Roteiro de teste', selectedVoice: 'Zephyr' },
+    });
+
+    // Deve conter resumos (tool-first)
+    expect(instruction).toContain('5 memória(s) salva(s)');
+    expect(instruction).toContain('getUserMemories');
+    expect(instruction).toContain('getStudioState');
+
+    // NÃO deve conter o conteúdo completo das memórias ou estúdio
+    expect(instruction).not.toContain('Prefere tom direto');
+    expect(instruction).not.toContain('ESTÚDIO COMPLETO: roteiro ativo');
+    expect(instruction).not.toContain('Roteiro atual: "');
+  });
+
+  it('usa contexto completo quando toolFirst é false (comportamento legado)', () => {
+    const instruction = buildAssistantSystemInstruction({
+      memoriesText: '- Prefere tom direto',
+      userProfileBlock: '- Perfil: criador',
+      voicesList: '- Zephyr (Brilhante)',
+      paceList: 'normal (Normal)',
+      studioBlock: 'ESTÚDIO: roteiro ativo',
+      customPromptBlock: 'DIRETRIZ CUSTOM: responda com clareza',
+      toolFirst: false,
+    });
+
+    // Deve conter o conteúdo completo (legado)
+    expect(instruction).toContain('Prefere tom direto');
+    expect(instruction).toContain('ESTÚDIO: roteiro ativo');
+  });
+
+  it('inclui regras de tools e princípios de resposta em ambos os modos', () => {
+    const toolFirstInstruction = buildAssistantSystemInstruction({
+      memoriesText: '',
+      userProfileBlock: '',
+      voicesList: '- Zephyr',
+      paceList: 'normal',
+      studioBlock: '',
+      customPromptBlock: '',
+      toolFirst: true,
+      memoryCount: 0,
+      studioState: undefined,
+    });
+
+    expect(toolFirstInstruction).toContain('Trate a última mensagem do usuário como a tarefa principal');
+    expect(toolFirstInstruction).toContain('updateStudio');
+    expect(toolFirstInstruction).toContain('updatePlan');
+    expect(toolFirstInstruction).toContain('interview');
+    expect(toolFirstInstruction).toContain('respond');
   });
 });

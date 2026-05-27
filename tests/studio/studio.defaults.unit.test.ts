@@ -121,7 +121,7 @@ describe('studio.utils — persistência de padrões', () => {
       const config = getInitialStudioConfig();
       expect(config.isMultiSpeaker).toBe(false);
       expect(config.pace).toBe('normal');
-      expect(config.generateScenes).toBe(true);
+      expect(config.generateScenes).toBe(false);
       expect(config.sceneDensity).toBe(15);
       expect(config.sceneRatio).toBe('16:9');
       expect(config.visualFramework).toBe('general');

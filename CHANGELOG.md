@@ -7,6 +7,42 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.104.0] - 2026-05-27
+
+### Adicionado
+
+- **Arquitetura Tool-first no Assistente** (`functions/src/flows/assistant.ts`): system prompt reduzido — modelo agora consulta ferramentas via `ai.dynamicTool` em vez de receber estado completo no prompt. Tool loop com `maxTurns: 10` — ferramentas registradas: `updatePlan`, `webSearch`, `getStudioState`, `getMemories`, `updateStudio`, `interview`, `respond`. Créditos calculados por tokens via `calculateAssistantCreditsFromUsage()`
+- **15+ schemas Zod de orquestração** (`functions/src/genkit/schemas/common.ts`): `AssistantTaskStatusSchema`, `AssistantTaskPrioritySchema`, `AssistantSubtaskSchema`, `AssistantTaskSchema`, `AssistantPlanSchema`, `UpdatePlanInputSchema`, `WebSearchInputSchema`, `GetStudioStateInputSchema`, `GetMemoriesInputSchema`, `UpdateStudioInputSchema`, `InterviewOptionSchema`, `InterviewInputSchema`, `InterviewResumeDataSchema`, `RespondSuggestedActionSchema`, `RespondMediaSchema`, `RespondInputSchema` — validação completa do fluxo de orquestração no backend
+- **12 novos tipos no frontend** (`src/features/assistant/types.ts`): `AssistantTaskStatus`, `AssistantTaskPriority`, `AssistantSubtask`, `AssistantTask`, `AssistantPlan`, `AssistantToolEvent`, `AssistantStudioUpdate`, `InterviewOption`, `InterviewDatum`, `InterviewResumeData`, `RespondSuggestedAction`, `RespondMedia`, `RespondResult`
+- **`PlanWidget`** (`src/features/assistant/components/PlanWidget.tsx`, +229 linhas): novo componente de plano visual integrado entre mensagens e composer — exibe tarefas, prioridades e dependências
+- **Interview Interrupt/Resume**: fluxo completo de entrevista — `InterviewInputSchema`/`InterviewInput`, opções clicáveis na UI, `InterviewResumeData` para continuidade de entrevistas interrompidas
+- **Studio Settings Preview**: `settingsPreview` com `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` — exibe campos individuais antes de aplicar alterações no estúdio
+- **Tool event badges** (`AssistantMessages.tsx`): badges visuais na última mensagem do modelo indicando uso de ferramentas (`interview`, `studio_update`, `respond`)
+- **`sanitizeStudioSettingsPatch()`** (`src/features/studio/store/studioStore.ts`): validação de tipos e ranges dos settings recebidos do assistente — `isEmotionType()` como guarda de tipo
+- **`buildMemoriesSummary()` e `buildStudioSummary()`** (`functions/src/genkit/utils/assistant-context.ts`): funções de sumarização para o system prompt tool-first
+- **Namespace `plan` nos 3 locales** (`en.ts`, `es.ts`, `pt-BR.ts`): `plan.title`, `plan.tasks`, `plan.statusLabels.*` (pending, in_progress, completed, failed), `plan.priorityLabels.*` (high, medium, low)
+
+### Alterado
+
+- **`src/hooks/useAssistant.ts`** (+173/-2): `AssistantStreamMeta` type, `parseAssistantStreamMeta()` para parsing de chunks estruturados (`plan_update`, `interview`, `studio_update`, `tool_event`, `respond`); streaming de eventos de ferramentas
+- **`src/features/assistant/Assistant.tsx`** (+225/-3): integração com `PlanWidget`, `settingsPreview` com preview de configurações, UI de entrevista com opções clicáveis
+- **`src/features/assistant/components/AssistantComposer.tsx`** (+6/-2): nova prop `interviewPending` para bloquear composição durante entrevista ativa
+- **Páginas públicas**: textos de `Header` ("AI Studio" → "Estúdio de produção"), `MetricsSection`, `PublicFooter`, `UseCasesSection`, `LandingPage`, `FuncionalidadesPage` e `TestimonialsSection` refinados para pt-BR mais natural
+- **Testes**: 13 arquivos de teste atualizados para refletir novos textos, novos tipos (`AssistantTask`, `AssistantPlan`, `InterviewDatum`, `RespondResult`) e novos estilos do `assistantUi`
+
+### Removido
+
+- **Docs de auditoria/scan antigos** (8 arquivos): `docs/audits/2026-05-27-progress-timer-audit.md`, `docs/audits/audit-tts-pipeline-enhancements.md`, `docs/audits/progress-simulation-reaudit.md`, `docs/audits/undefined-null-sanitization-review.md`, `docs/scan/progresso-audio-estimado-gaps.md`, `docs/scan/reaudit-progresso-tts-gaps.md`, `docs/scan/tts-pipeline-gaps-2026-05-27.md`, `docs/scan/undefined-null-sanitization-gaps.md`
+
+### Documentado
+
+- **`docs/audits/assistant-orchestrator-static-audit-2026-05-27.md`**: auditoria estática do orquestrador do assistente (8 arquivos, 3 warnings de UX/tipagem)
+- **`docs/audits/assistant-session-audit-2026-05-27.md`**: auditoria de sessão do assistente (3 features + 4 fixes, 16 arquivos lidos)
+- **`docs/scan/orquestrador-agente-gaps-2026-05-27.md`**: scan de lacunas do orquestrador agente vs plano original
+- **`docs/scan/orquestrador-agente-gaps-sessao-2026-05-27.md`**: scan de lacunas da sessão de implementação (3 features + 4 fixes)
+
+---
+
 ## [0.103.0] - 2026-05-27
 
 ### Adicionado

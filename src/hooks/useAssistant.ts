@@ -4,7 +4,18 @@ import { functions } from '../lib/firebase';
 import { removeUndefinedFields } from '../lib/callable-utils';
 import { saveChatSession, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
+import type {
+  Attachment,
+  AssistantPlan,
+  AssistantSettings,
+  AssistantStudioState,
+  AssistantStudioUpdate,
+  AssistantToolEvent,
+  ChatMessage,
+  InterviewDatum,
+  InterviewResumeData,
+  RespondResult,
+} from '../features/assistant/types';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
@@ -64,15 +75,30 @@ interface AssistantFlowInput {
   }>;
   attachments?: Array<{ mimeType: string; data: string; name?: string }>;
   studioState?: Record<string, unknown>;
+  plan?: AssistantPlan;
   requestId: string;
   model?: 'fast' | 'specialist';
   thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
+  /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
+  resume?: { question: string; answer: string };
 }
 
 interface AssistantFlowOutput {
   text: string;
   jsonSettings?: Record<string, unknown>;
+  plan?: AssistantPlan;
+  appliedSettings?: Record<string, unknown>;
+  interview?: InterviewDatum | null;
+  respond?: RespondResult | null;
 }
+
+type AssistantStreamMeta =
+  | { type: 'plan_update'; plan: AssistantPlan }
+  | { type: 'studio_update'; settings: AssistantSettings; summary?: string }
+  | { type: 'interview'; interview: InterviewDatum }
+  | { type: 'respond_result'; respond: RespondResult }
+  | { type: 'tool_call'; name: string; input?: unknown }
+  | { type: 'tool_result'; name: string; output?: unknown };
 
 function normalizeAttachments(attachments: Attachment[] | null | undefined): Attachment[] {
   return Array.isArray(attachments) ? attachments : [];
@@ -83,6 +109,54 @@ function normalizeChatMessages(messages: ChatMessage[]): ChatMessage[] {
     ...message,
     attachments: normalizeAttachments(message.attachments),
   }));
+}
+
+function parseAssistantStreamMeta(chunkText: string): AssistantStreamMeta | null {
+  if (!chunkText.startsWith('{')) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(chunkText) as Partial<AssistantStreamMeta>;
+    if (parsed.type === 'plan_update' && Array.isArray(parsed.plan)) {
+      return parsed as AssistantStreamMeta;
+    }
+
+    if (
+      parsed.type === 'studio_update'
+      && typeof parsed.settings === 'object'
+      && parsed.settings !== null
+    ) {
+      return parsed as AssistantStreamMeta;
+    }
+
+    if (
+      parsed.type === 'interview'
+      && typeof parsed.interview === 'object'
+      && parsed.interview !== null
+    ) {
+      return parsed as AssistantStreamMeta;
+    }
+
+    if (
+      parsed.type === 'respond_result'
+      && typeof parsed.respond === 'object'
+      && parsed.respond !== null
+    ) {
+      return parsed as AssistantStreamMeta;
+    }
+
+    if (
+      (parsed.type === 'tool_call' || parsed.type === 'tool_result')
+      && typeof parsed.name === 'string'
+    ) {
+      return parsed as AssistantStreamMeta;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +184,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jsonSettings, setJsonSettings] = useState<Record<string, unknown> | null>(null);
+  const [plan, setPlan] = useState<AssistantPlan>([]);
+  const [pendingSettings, setPendingSettings] = useState<AssistantStudioUpdate | null>(null);
+  const [toolEvents, setToolEvents] = useState<AssistantToolEvent[]>([]);
+  const [interview, setInterview] = useState<InterviewDatum | null>(null);
+  const [respondResult, setRespondResult] = useState<RespondResult | null>(null);
   const [creditsExhausted, setCreditsExhausted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'fast' | 'specialist'>('fast');
   const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
@@ -121,6 +200,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const streamingTargetRef = useRef<string>('');
   const activeRequestIdRef = useRef<string | null>(null);
   const streamedContentStartedRef = useRef(false);
+  const planRef = useRef<AssistantPlan>([]);
 
   // Callable estável (a instância do SDK é memoizada)
   const assistantCallable = useMemo(
@@ -289,6 +369,12 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
+    setPlan([]);
+    setPendingSettings(null);
+    setToolEvents([]);
+    setInterview(null);
+    setRespondResult(null);
+    planRef.current = [];
   };
 
   const loadSession = (session: ChatSession) => {
@@ -302,7 +388,21 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
+    setPlan([]);
+    setPendingSettings(null);
+    setToolEvents([]);
+    setInterview(null);
+    setRespondResult(null);
+    planRef.current = [];
   };
+
+  const clearPendingSettings = useCallback(() => {
+    setPendingSettings(null);
+  }, []);
+
+  const clearInterview = useCallback(() => {
+    setInterview(null);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Envio de mensagem com streaming (backend Genkit)
@@ -312,8 +412,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
     text: string,
     attachments?: Attachment[],
     historyOverride?: ChatMessage[],
+    resume?: InterviewResumeData,
   ) => {
-    if (!text.trim() && (!attachments || attachments.length === 0)) return;
+    if (!text.trim() && (!attachments || attachments.length === 0) && !resume) return;
 
     const newUserMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -326,6 +427,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setError(null);
     setCreditsExhausted(false);
     setJsonSettings(null);
+    setPendingSettings(null);
+    setToolEvents([]);
+    setInterview(null);
+    setRespondResult(null);
 
     // Cria AbortController para esta chamada
     const abortController = new AbortController();
@@ -366,9 +471,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
           }))
           : undefined,
         studioState: currentState as Record<string, unknown> | undefined,
+        plan: planRef.current.length > 0 ? planRef.current : undefined,
         requestId,
         model: selectedModel,
         thinkingLevel: selectedThinkingLevel,
+        resume: resume ?? undefined,
       };
       const input = removeUndefinedFields(rawInput);
 
@@ -407,6 +514,46 @@ export function useAssistant(currentState?: AssistantStudioState) {
         const chunkText = typeof nextResult.value === 'string' ? nextResult.value : '';
         if (!chunkText) continue;
 
+        const meta = parseAssistantStreamMeta(chunkText);
+        if (meta?.type === 'plan_update') {
+          planRef.current = meta.plan;
+          setPlan(meta.plan);
+          continue;
+        }
+
+        if (meta?.type === 'studio_update') {
+          setPendingSettings({
+            settings: meta.settings,
+            summary: meta.summary ?? 'O assistente sugeriu ajustes para o estúdio.',
+          });
+          continue;
+        }
+
+        if (meta?.type === 'interview') {
+          setInterview(meta.interview);
+          setPendingSettings(null);
+          continue;
+        }
+
+        if (meta?.type === 'respond_result') {
+          setRespondResult(meta.respond);
+          continue;
+        }
+
+        if (meta?.type === 'tool_call' || meta?.type === 'tool_result') {
+          setToolEvents((prev) => [
+            ...prev.slice(-19),
+            {
+              id: `${Date.now()}-${prev.length}`,
+              type: meta.type,
+              name: meta.name,
+              input: meta.type === 'tool_call' ? meta.input : undefined,
+              output: meta.type === 'tool_result' ? meta.output : undefined,
+            },
+          ]);
+          continue;
+        }
+
         streamedContentStartedRef.current = true;
         chunkBufferRef.current += chunkText;
 
@@ -429,6 +576,23 @@ export function useAssistant(currentState?: AssistantStudioState) {
           const output = await finalData;
           if (output.jsonSettings) {
             setJsonSettings(output.jsonSettings);
+          }
+          if (output.plan) {
+            planRef.current = output.plan;
+            setPlan(output.plan);
+          }
+          if (output.appliedSettings) {
+            setPendingSettings({
+              settings: output.appliedSettings as AssistantSettings,
+              summary: 'O assistente sugeriu ajustes para o estúdio.',
+            });
+          }
+          if (output.interview) {
+            setInterview(output.interview);
+            setPendingSettings(null);
+          }
+          if (output.respond) {
+            setRespondResult(output.respond);
           }
         } catch (finalDataError: unknown) {
           if (!isCallableCancelledError(finalDataError)) {
@@ -561,6 +725,13 @@ export function useAssistant(currentState?: AssistantStudioState) {
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
+    plan,
+    pendingSettings,
+    toolEvents,
+    interview,
+    respondResult,
+    clearPendingSettings,
+    clearInterview,
     creditBlockedByBalance: isCreditBlocked,
     creditsExhausted: creditsExhausted || isCreditBlocked,
     selectedModel,

@@ -24,10 +24,13 @@ vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
   BRAND_SECONDARY: '#F7941E',
+  TEXT_DISABLED: 'rgba(255,255,255,0.38)',
+  TEXT_SECONDARY: 'rgba(248,250,252,0.68)',
   GAP_COMPACT: 4,
   GAP_MEDIUM: 8,
   GAP_DEFAULT: 12,
   RADIUS_XS: 8,
+  RADIUS_CHIP: 999,
 }));
 
 vi.mock('../../src/theme/surfaces', () => ({

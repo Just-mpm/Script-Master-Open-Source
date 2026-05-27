@@ -64,7 +64,7 @@ describe('LandingPage', () => {
 
   it('renderiza a barra SocialProofBar', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Tecnologia de IA avançada')).toBeDefined();
+    expect(screen.getByText('Powered by Gemini AI')).toBeDefined();
   });
 
   it('renderiza a seção de features highlights', () => {
@@ -84,8 +84,8 @@ describe('LandingPage', () => {
 
 it('renderiza os feature showcases (TTS, Vídeo, IA)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('heading', { level: 2, name: 'Voz Profissional com IA' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Vídeo Direto no Navegador' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Voz Profissional com Gemini TTS' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Vídeo Client-Side com Remotion' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'Assistente IA Integrado' })).toBeInTheDocument();
   });
 
@@ -108,9 +108,9 @@ it('renderiza os feature showcases (TTS, Vídeo, IA)', () => {
 
 it('renderiza features extras (Multi-speaker, Chunking, Dual Storage)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Múltiplos locutores')).toBeInTheDocument();
-    expect(screen.getByText('Divisão Inteligente')).toBeInTheDocument();
-    expect(screen.getByText('Armazenamento Duplo')).toBeInTheDocument();
+    expect(screen.getByText('Multi-speaker')).toBeInTheDocument();
+    expect(screen.getByText('Chunking Inteligente')).toBeInTheDocument();
+    expect(screen.getByText('Dual Storage')).toBeInTheDocument();
   });
 
   it('renderiza a CTA final', () => {
@@ -136,7 +136,7 @@ it('renderiza features extras (Multi-speaker, Chunking, Dual Storage)', () => {
   it('renderiza a seção de Casos de Uso (UseCasesSection)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     expect(screen.getByText('Vídeos para YouTube')).toBeDefined();
-    expect(screen.getByText('Podcasts e áudios')).toBeDefined();
+    expect(screen.getByText('Podcasts e audiobooks')).toBeDefined();
     expect(screen.getByText('Acessibilidade')).toBeDefined();
   });
 

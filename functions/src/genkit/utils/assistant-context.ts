@@ -18,6 +18,12 @@ interface AssistantSystemInstructionParams {
   paceList: string;
   studioBlock: string;
   customPromptBlock: string;
+  /** Quando true, usa resumos em vez de contexto completo (tool-first) */
+  toolFirst?: boolean;
+  /** Contagem de memórias para o resumo tool-first */
+  memoryCount?: number;
+  /** Estado do estúdio para o resumo tool-first */
+  studioState?: Record<string, unknown>;
 }
 
 interface InlineAssistantInstructionParams {
@@ -87,7 +93,7 @@ PRINCÍPIOS DE RESPOSTA:
 - Use o contexto real já disponível antes de pedir briefing do zero.
 - Prefira respostas úteis, naturais e objetivas.
 - Só faça listas longas quando isso realmente ajudar o usuário.
-- Quando sugerir mudanças aplicáveis no estúdio, explique primeiro em linguagem humana e depois inclua um bloco JSON apenas se houver algo concreto para aplicar.
+- Quando sugerir mudanças aplicáveis no estúdio, explique primeiro em linguagem humana e use a ferramenta updateStudio se houver algo concreto para aplicar.
 
 CONTEXTO DO PRODUTO:
 - O produto trabalha com roteiro, voz, ritmo, cena, imagens e vídeo.
@@ -102,6 +108,19 @@ export function buildMemoriesText(memories: ReadonlyArray<MemoryEntry>): string 
   }
 
   return `\nMEMÓRIAS DO USUÁRIO (Leve estas preferências em conta):\n${memories.map((memory) => `- ${memory.content}`).join('\n')}`;
+}
+
+/**
+ * Gera um resumo curto das memórias para injetar no system prompt.
+ * Em vez de injetar todo o conteúdo, indica a quantidade e instrui
+ * o modelo a usar getUserMemories quando precisar de detalhes.
+ */
+export function buildMemoriesSummary(memoryCount: number): string {
+  if (memoryCount === 0) {
+    return '\nMEMÓRIAS: O usuário ainda não salvou memórias. Use getUserMemories se precisar verificar.';
+  }
+
+  return `\nMEMÓRIAS: O usuário tem ${memoryCount} memória(s) salva(s). Use a ferramenta getUserMemories para acessá-las quando relevante para a tarefa (preferências de voz, ritmo, estilo, etc).`;
 }
 
 export function buildCustomPromptBlock(userSettings: AssistantUserSettingsDoc | null): string {
@@ -193,25 +212,35 @@ O usuário está visualizando a tela do estúdio neste exato momento e você sab
 ${referenceImage}
 ${activeProjectGuidance}
 
-Você pode sugerir configurações para o usuário baseadas no estado atual. Se você quiser que o usuário aplique uma nova configuração diretamente no estúdio, DEVE incluir um bloco JSON na sua resposta (com a tag \`\`\`json). O aplicativo irá ler esse JSON e criar um botão "Aplicar".
-
-Exemplo Completo:
-\`\`\`json
-{
-  "script": "Inscreva-se no canal! [laughs]",
-  "isMultiSpeaker": false,
-  "selectedVoice": "Zephyr",
-  "audioProfile": "Narrador de mistério",
-  "scene": "Ambiente tenso",
-  "pace": "normal",
-  "styleNotes": "Mistério, tom grave",
-  "generateScenes": true,
-  "sceneRatio": "16:9",
-  "sceneDensity": 15,
-  "visualFramework": "general"
+Você pode sugerir configurações para o usuário baseadas no estado atual. Se você quiser que o usuário aplique uma nova configuração diretamente no estúdio, use a ferramenta updateStudio para enviar uma prévia confirmável.
+Use updateStudio apenas com os campos que deseja sugerir. O usuário sempre verá uma prévia antes de aplicar. Mantenha as respostas focadas no fluxo criativo!`;
 }
-\`\`\`
-ATENÇÃO: Você não precisa preencher todos os campos, apenas os que desejar sugerir. Mantenha as respostas focadas no fluxo criativo!`;
+
+/**
+ * Gera um resumo curto do estado do estúdio para injetar no system prompt.
+ * Em vez de injetar todos os campos, indica que o estado existe e instrui
+ * o modelo a usar getStudioState quando precisar de detalhes específicos.
+ */
+export function buildStudioSummary(
+  studioState: Record<string, unknown> | undefined,
+): string {
+  if (!studioState) {
+    return '\nESTÚDIO: Nenhum estado do estúdio foi enviado. O usuário pode estar fora do estúdio.';
+  }
+
+  const script = asString(studioState.script);
+  const hasScript = script && script !== '(vazio)' && script.length > 0;
+  const voice = asString(studioState.selectedVoice) || 'padrão';
+  const scenesOn = Boolean(studioState.generateScenes);
+
+  const parts: string[] = [];
+  parts.push(`Voz: ${voice}`);
+  if (hasScript) parts.push(`Roteiro: ${script.length} caracteres`);
+  parts.push(`Cenas visuais: ${scenesOn ? 'ligado' : 'desligado'}`);
+
+  return `
+ESTÚDIO: O usuário tem um estúdio ativo com ${parts.join(', ')}. Use a ferramenta getStudioState para verificar campos específicos (voz, ritmo, emoção, cenas, etc) quando precisar responder sobre configurações ou sugerir ajustes.
+Se o usuário fizer uma saudação curta e houver roteiro, cumprimente de volta e mencione que pode trabalhar em cima do roteiro atual.`;
 }
 
 export function buildAssistantSystemInstruction(params: AssistantSystemInstructionParams): string {
@@ -222,7 +251,19 @@ export function buildAssistantSystemInstruction(params: AssistantSystemInstructi
     paceList,
     studioBlock,
     customPromptBlock,
+    toolFirst,
+    memoryCount,
+    studioState,
   } = params;
+
+  // Tool-first: usa resumos em vez de contexto completo
+  const memoriesSection = toolFirst
+    ? buildMemoriesSummary(memoryCount ?? 0)
+    : `\nMEMÓRIA E CONTEXTO PERSISTENTE:\n${memoriesText}`;
+
+  const studioSection = toolFirst
+    ? buildStudioSummary(studioState)
+    : studioBlock;
 
   return `${buildCoreProductInstruction()}
 
@@ -233,11 +274,22 @@ REGRAS ESPECÍFICAS DO CHAT:
 - Se o usuário perguntar sobre "meu script", "roteiro do estúdio" ou equivalente, analise o texto real do estúdio de forma concreta.
 - Quando você sugerir ajustes de estúdio:
   1. Explique primeiro o raciocínio em linguagem natural.
-  2. Inclua um bloco \`\`\`json apenas se houver uma mudança concreta para aplicar.
+  2. Use updateStudio apenas se houver uma mudança concreta para aplicar.
   3. Não diga que vai sugerir uma configuração sem realmente detalhar a sugestão.
+- Antes de responder, use as ferramentas necessárias para coletar informações.
+- Crie um plano com updatePlan no início de tarefas com mais de um passo e atualize o plano quando o status mudar.
+- Se faltar uma decisão essencial do usuário, use interview com uma pergunta curta e opções claras quando fizer sentido.
+- Você pode pensar em voz alta de forma breve enquanto trabalha.
 
-MEMÓRIA E CONTEXTO PERSISTENTE:
-${memoriesText}
+FERRAMENTAS DISPONÍVEIS:
+- updatePlan: gerencia a lista de tarefas visível ao usuário.
+- webSearch: busca informações atuais na web.
+- getStudioState: consulta configurações atuais do estúdio.
+- getUserMemories: acessa preferências e memórias salvas.
+- updateStudio: propõe ajustes no estúdio (prévia → confirmação).
+- interview: pergunta ao usuário quando faltar decisão essencial.
+- respond: registra resposta com ações/mídia para o frontend.
+${memoriesSection}
 
 ${userProfileBlock}
 
@@ -245,7 +297,7 @@ VOZES DISPONÍVEIS:
 ${voicesList}
 
 Ritmos disponíveis (pace): ${paceList}
-${studioBlock}${customPromptBlock}`;
+${studioSection}${customPromptBlock}`;
 }
 
 export function buildInlineAssistantInstruction(params: InlineAssistantInstructionParams): string {

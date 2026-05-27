@@ -226,14 +226,14 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts`, `functions/src/genkit/utils/callable-auth.ts`, `functions/src/genkit/schemas/common.ts` |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/components/PlanWidget.tsx`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts`, `functions/src/genkit/utils/callable-auth.ts`, `functions/src/genkit/schemas/common.ts` |
 | **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming via Cloud Function `inline-assistant` (Genkit) e `VirtualElement` para posicionamento contextual (Popover). Animações Motion com `AnimatePresence`, transições Fade e componente `KbdHint` para dicas de teclado |
 | **Backend (Genkit)** | Chat principal usa Cloud Function `assistant` via `httpsCallable`. Inline assistant usa `inline-assistant`. As instruções agora são montadas em código por `assistant-context.ts`, sem arquivos `.prompt` separados |
 | **Modelo** | `gemini-3.1-flash-lite` (modo `fast`, streaming via Genkit no backend) ou `gemini-3.5-flash` (modo `specialist`). Selecionável via `AIModeToggle` no ScriptEditor. Nível de pensamento configurável (`ThinkingLevel`: `minimal` | `low` | `medium` | `high`) |
 | **UI centralizada** | `assistantUi.ts` — 24 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button, action icon button, suggestion chip, composer wrapper, input row, cycling placeholder, think toggle, control button, controls, segmented control, selector label); componentes internos importam de `assistantUi` em vez de `tokens.ts`. `assistantActionIconButtonSx` com suporte responsivo para botões de ação; `assistantSuggestionChipSx` para chips de sugestão |
 | **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
 | **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini (via backend). Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
-| **System prompt** | Montado dinamicamente no backend por builders TypeScript em `assistant-context.ts`: identidade + estrutura TTS + memórias + vozes + pace + estado estúdio + custom settings |
+| **System prompt (tool-first)** | Montado dinamicamente no backend por builders TypeScript em `assistant-context.ts`: identidade + estrutura TTS + memórias + vozes + pace + custom settings. **Estado do estúdio e memórias completas não são mais injetados no prompt** — o modelo consulta via ferramentas (`getStudioState`, `getMemories`) quando necessário. `buildMemoriesSummary()` e `buildStudioSummary()` geram visões condensadas para contexto |
 | **Auth callable** | Flows callable do Genkit combinam `authPolicy: isSignedIn()` com `getCallableUidOrThrow(flowContext)` para validar `context.auth.uid` no servidor |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
@@ -244,13 +244,20 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Streaming batch** | Chunks acumulados via `requestAnimationFrame` — flush uma vez por frame de display (reduz re-renders durante streaming) |
 | **Créditos** | `CreditBlockedMessage` exibido no Assistant quando créditos estão esgotados |
 
+| **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 10`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
+| **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, prioridade, dependências, subtarefas) entre mensagens e composer. i18n nos 3 locales via namespace `plan` |
+| **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida |
+| **Studio settings preview** | `settingsPreview` exibe campos individuais antes de aplicar alterações. `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` mapeiam `StudioSettingsPatch` para labels i18n. Botão "Aplicar no estúdio" aplica patch validado |
+| **Tool event badges** | `AssistantMessages.tsx` renderiza badges visuais (Chip MUI) na última mensagem do modelo indicando ferramentas usadas (`interview`, `studio_update`, `respond`) |
+| **Créditos por tokens** | `calculateAssistantCreditsFromUsage()` calcula créditos baseado em `usage.totalTokens` com taxa `TOKEN_CREDIT_RATE = 1000` tokens por crédito |
+
 ### Estúdio de Produção
 
 | | |
 |---|---|
 | **Arquivos** | `src/features/studio/`, `src/features/studio/store/`, `src/pages/StudioPage.tsx`, `src/components/Inspector.tsx`, `src/components/ScriptEditor.tsx`, `src/components/ActionBar.tsx`, `src/components/VoiceCard.tsx`, `src/features/studio/components/TemplateSelector.tsx`, `src/features/studio/components/EmotionSelector.tsx`, `src/features/studio/components/AIModeToggle.tsx`, `src/data/scriptTemplates.ts`, `src/data/studioOptions.ts` |
 | **Estado** | `useStudioStore` (Zustand) com `useShallow` para seletores otimizados; `useCurrentStudioState()` deriva `StudioDraftState`; sem hook `useStudioState` (removido na 0.22.0) |
-| **Store** | `studioStore.ts` (state + setters + actions), `audioGeneratorStore.ts` (estado de geração de áudio: `isGenerating`, `scenes`, `audioSegments`, `projectId`, progress, etc. — tipos `AudioGeneratorState`, `SceneItem`, helper `getAudioDurationSeconds()`), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions` + `saveStudioDefaults`/`clearStudioDefaults`), `index.ts` (barrel exports) |
+| **Store** | `studioStore.ts` (state + setters + actions + `sanitizeStudioSettingsPatch` para validação de patches do assistente + `isEmotionType` para guarda de tipo de emoção), `audioGeneratorStore.ts` (estado de geração de áudio: `isGenerating`, `scenes`, `audioSegments`, `projectId`, progress, etc. — tipos `AudioGeneratorState`, `SceneItem`, helper `getAudioDurationSeconds()`), `studio.utils.ts` (localStorage helpers puros + `buildGenerateOptions` + `saveStudioDefaults`/`clearStudioDefaults`), `index.ts` (barrel exports) |
 | **Persistência** | 17 preferências no localStorage (prefixo `s2a_`) via `subscribe` + `PERSIST_MAP` (sem middleware persist). `referenceImage` é session-only. Quando usuário logado, `getStudioSettingsPatch()` extrai 16 campos persistíveis (`StudioConfigState` → `StudioUserSettings`), sincronizados com Firestore via `useAutoSaveStudioSettings` (App.tsx, debounce 2s) e `Configuracoes.tsx` |
 | **Layout** | Grid 2 colunas: Inspector (`xs:12, lg:4`) + ScriptEditor (`xs:12, lg:8`) |
 | **Geração** | `useAudioGenerator` hook usa `useAudioGeneratorStore` (Zustand) para estado de geração — instanciado no `App.tsx` via `AudioGenerationHandler`; StudioPage recebe `isGenerating`, `scenes`, `handleGenerate`, `isGenerateDisabled` como props |
@@ -366,7 +373,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'`; `pluralKey(baseKey, count)` seleciona chave singular/plural baseada no count; `STEP_LABEL_KEYS` mapeia nomes de etapa (`audio`, `scene_prompts`, `images`, `video`) para chaves i18n do namespace `audioPreflight.stepLabels` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
-| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `dataMigration`, `workspace`, `transcription`, `aiMode` |
+| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `dataMigration`, `workspace`, `transcription`, `aiMode`, `plan` |
 | **Cobertura** | Todas as páginas públicas + OnboardingPage + ConfiguracoesPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + Assistant (Composer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel) + App.tsx + ToastProvider + AudioGenerationHandler + AudioPreflightDialog + GuestRoute + ProtectedRoute + ErrorBoundary + ErrorToast/SuccessToast/WarningToast + LoginPage + RegisterPage + NotFoundPage + GalleryCard + UpgradeDialog + UsageIndicator + AnimationDurationSelector + ImageUpload + InlineAIWidget + CaptionEditorPanel + SceneSequence + SpeedPaintControls + ExportProgressBar + ExportQualitySelector + VoiceCard |
 
 ### Environment & COEP
@@ -422,7 +429,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.103.0`
+- **Current:** `0.104.0`
 - **Last release:** 2026-05-27
 
 ### Últimas mudanças (atualizado por /fast)
@@ -431,8 +438,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |
 | `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |
 | `0.102.0` | Chunking inteligente com fallback programático (regex expandida, merge, trailing sentence); audio tags inline no transcript (emoção, pace, continuidade); retry automático TTS (TTS_MAX_RETRIES=2); reestruturação do prompt TTS (Audio Profile + Director's Notes); thinkingConfig nos flows de IA; constantes centralizadas (EMOTION_TO_AUDIO_TAGS, PACE_TO_AUDIO_TAG, CONTINUITY_AUDIO_TAG) |
 | `0.101.0` | Seleção de modelo IA (fast/specialist) + nível de pensamento (thinking level) no assistente; novo AIModeToggle; namespace aiMode nos 3 locales; nova UI do composer com seletor de modelo; animações Motion no InlineAIWidget; removido fix_imports.js e docs de auditoria |
 | `0.100.0` | Remoção da infra Cloud Run e sistema de Jobs Assíncronos; guardas de i18n (paridade + varredura AST); reestruturação de namespaces i18n; testes de SpeedPaintScene |
-| `0.47.0` | VideoLibrary com suporte a vídeos salvos; download em lote incluindo vídeos; exibição de contagem de vídeos nos cards da biblioteca |

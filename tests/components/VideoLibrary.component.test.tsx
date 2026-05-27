@@ -3,15 +3,30 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { VideoLibrary } from '../../src/components/VideoLibrary';
+import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>;
+  return (
+    <I18nProvider>
+      <ThemeProvider theme={darkTheme}>{children}</ThemeProvider>
+    </I18nProvider>
+  );
 }
 
+const mockNavigate = vi.fn();
+const mockAuthState = {
+  user: { uid: 'u1' },
+  loading: false,
+  authError: null,
+  clearAuthError: vi.fn(),
+  login: vi.fn(),
+  logout: vi.fn(),
+};
+
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('motion/react', () => ({
@@ -25,13 +40,14 @@ vi.mock('motion/react', () => ({
 }));
 
 vi.mock('../../src/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { uid: 'u1' }, loading: false, authError: null, clearAuthError: vi.fn(), login: vi.fn(), logout: vi.fn() }),
+  useAuth: () => mockAuthState,
 }));
 
 vi.mock('../../src/lib/db', () => ({
   getProjects: vi.fn().mockResolvedValue([]),
   getGenerations: vi.fn().mockResolvedValue([]),
   getProjectsDetailsMap: vi.fn().mockResolvedValue({}),
+  deleteProject: vi.fn().mockResolvedValue(undefined),
   deleteVideoFromProject: vi.fn().mockResolvedValue(undefined),
   deleteGeneration: vi.fn().mockResolvedValue(undefined),
 }));
@@ -72,6 +88,7 @@ describe('VideoLibrary', () => {
   const onSelect = vi.fn();
 
   beforeEach(() => {
+    localStorage.setItem('s2a_locale', 'pt-BR');
     vi.clearAllMocks();
   });
 
@@ -85,7 +102,7 @@ describe('VideoLibrary', () => {
     render(<VideoLibrary onSelect={onSelect} />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Sua galeria ainda está vazia')).toBeDefined();
+      expect(screen.getByText('Sua biblioteca ainda está vazia')).toBeDefined();
     });
   });
 
@@ -93,7 +110,7 @@ describe('VideoLibrary', () => {
     render(<VideoLibrary onSelect={onSelect} />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Sua galeria ainda está vazia')).toBeDefined();
+      expect(screen.getByText('Sua biblioteca ainda está vazia')).toBeDefined();
       // O botão "Ir para o Estúdio" está no estado vazio
       expect(screen.getByRole('button', { name: /Ir para o Estúdio/i })).toBeDefined();
     }, { timeout: 5000 });

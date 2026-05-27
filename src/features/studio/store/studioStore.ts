@@ -15,9 +15,11 @@
 
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { SceneRatio, StudioDraftState, StudioSettingsPatch, EmotionType } from '../types';
+import { EMOTION_OPTIONS, type SceneRatio, type StudioDraftState, type StudioSettingsPatch, type EmotionType } from '../types';
 import type { Locale } from '../../i18n/types';
+import { isValidLocale } from '../../i18n/utils';
 import {
+  SCENE_RATIOS,
   STORAGE_KEYS,
   safeSetItem,
   getInitialStudioConfig,
@@ -117,6 +119,64 @@ function toDraftState(state: StudioConfigState): StudioDraftState {
   };
 }
 
+function isEmotionType(value: string): value is EmotionType {
+  return EMOTION_OPTIONS.some((option) => option.value === value);
+}
+
+function sanitizeStudioSettingsPatch(patch: StudioSettingsPatch): Partial<StudioConfigState> {
+  const updates: Partial<StudioConfigState> = {};
+
+  for (const [key, value] of Object.entries(patch)) {
+    switch (key) {
+      case 'script':
+      case 'selectedVoice':
+      case 'speakerAName':
+      case 'speakerBVoice':
+      case 'speakerBName':
+      case 'audioProfile':
+      case 'scene':
+      case 'pace':
+      case 'styleNotes':
+      case 'visualFramework':
+        if (typeof value === 'string') updates[key] = value;
+        break;
+      case 'isMultiSpeaker':
+      case 'generateScenes':
+        if (typeof value === 'boolean') updates[key] = value;
+        break;
+      case 'sceneDensity':
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+          updates.sceneDensity = value;
+        }
+        break;
+      case 'emotionIntensity':
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1) {
+          updates.emotionIntensity = value;
+        }
+        break;
+      case 'sceneRatio':
+        if (typeof value === 'string' && SCENE_RATIOS.includes(value as SceneRatio)) {
+          updates.sceneRatio = value as SceneRatio;
+        }
+        break;
+      case 'emotion':
+        if (typeof value === 'string' && isEmotionType(value)) {
+          updates.emotion = value;
+        }
+        break;
+      case 'imageTextLanguage':
+        if (typeof value === 'string' && isValidLocale(value)) {
+          updates.imageTextLanguage = value;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return updates;
+}
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -147,9 +207,9 @@ export const useStudioStore = create<StudioConfigState>()((set) => ({
   // --- Ações ---
   applySettings: (patch) => set((state) => {
     const updates: Partial<StudioConfigState> = {};
-    // Loop sobre chaves do patch — evita listagem manual de 14 campos
+    const sanitizedPatch = sanitizeStudioSettingsPatch(patch);
     const stateRecord = state as unknown as Record<string, unknown>;
-    for (const [key, value] of Object.entries(patch)) {
+    for (const [key, value] of Object.entries(sanitizedPatch)) {
       if (value !== undefined && value !== stateRecord[key]) {
         (updates as unknown as Record<string, unknown>)[key] = value;
       }

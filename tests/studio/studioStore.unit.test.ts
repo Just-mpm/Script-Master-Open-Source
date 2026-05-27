@@ -129,6 +129,27 @@ describe('studioStore', () => {
       useStudioStore.getState().applySettings({} as StudioSettingsPatch);
       expect(useStudioStore.getState().script).toBe(originalScript);
     });
+
+    it('ignora campos e valores inválidos vindos do assistente', () => {
+      useStudioStore.getState().applySettings({
+        script: 'válido',
+        sceneRatio: '4:3',
+        emotion: 'fearful',
+        imageTextLanguage: 'fr',
+        generateScenes: 'true',
+        unknownKey: 'valor',
+        emotionIntensity: 2,
+      } as unknown as StudioSettingsPatch);
+
+      const state = useStudioStore.getState();
+      expect(state.script).toBe('válido');
+      expect(state.sceneRatio).toBe('16:9');
+      expect(state.emotion).toBe('neutral');
+      expect(state.imageTextLanguage).toBe('pt-BR');
+      expect(state.generateScenes).toBe(false);
+      expect(state.emotionIntensity).toBe(0.5);
+      expect(state).not.toHaveProperty('unknownKey');
+    });
   });
 
   // ─── reset ──────────────────────────────────────────────

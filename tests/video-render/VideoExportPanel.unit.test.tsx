@@ -116,7 +116,7 @@ describe('VideoExportPanel', () => {
     it('exibe informações de resolução', () => {
       render(<VideoExportPanel {...defaultProps} />);
       expect(screen.getByText(/1920x1080/i)).toBeInTheDocument();
-      expect(screen.getByText(/30 quadros por segundo/i)).toBeInTheDocument();
+      expect(screen.getByText(/30 fps/i)).toBeInTheDocument();
     });
 
     it('exibe estimativa de tamanho quando durationInSeconds é fornecido', () => {
@@ -241,12 +241,12 @@ it('chama startRender ao clicar em exportar', () => {
         { text: 'Olá', startFrame: 0, endFrame: 30, bold: false },
       ];
       render(<VideoExportPanel {...defaultProps} captions={captions} />);
-      expect(screen.getByText('Legenda')).toBeInTheDocument();
+      expect(screen.getByText('Incluir legendas')).toBeInTheDocument();
     });
 
     it('não exibe toggle de legenda quando não há captions', () => {
       render(<VideoExportPanel {...defaultProps} captions={[]} />);
-      expect(screen.queryByText('Legenda')).not.toBeInTheDocument();
+      expect(screen.queryByText('Incluir legendas')).not.toBeInTheDocument();
     });
 
     it('chama onIncludeSubtitlesChange ao mudar toggle', () => {

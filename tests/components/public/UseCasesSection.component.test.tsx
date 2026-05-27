@@ -58,9 +58,9 @@ describe('UseCasesSection', () => {
   it('renderiza os títulos dos 6 casos de uso', () => {
     render(<UseCasesSection />, { wrapper: Wrapper });
     expect(screen.getByText('Vídeos para YouTube')).toBeDefined();
-    expect(screen.getByText('Podcasts e áudios')).toBeDefined();
-    expect(screen.getByText('Conteúdo educacional')).toBeDefined();
-    expect(screen.getByText('Marketing digital')).toBeDefined();
+    expect(screen.getByText('Podcasts e audiobooks')).toBeDefined();
+    expect(screen.getByText('Material educacional')).toBeDefined();
+    expect(screen.getByText('Marketing e campanhas')).toBeDefined();
     expect(screen.getByText('Storytelling e narrativas')).toBeDefined();
     expect(screen.getByText('Acessibilidade')).toBeDefined();
   });
@@ -79,12 +79,12 @@ describe('UseCasesSection', () => {
 
   it('renderiza descrições de cada caso de uso', () => {
     render(<UseCasesSection />, { wrapper: Wrapper });
-    expect(screen.getByText(/Roteiros longos divididos em cenas/)).toBeDefined();
-    expect(screen.getByText(/Multi-speaker com vozes distintas/)).toBeDefined();
-    expect(screen.getByText(/Audiodescrição, aulas narradas/)).toBeDefined();
-    expect(screen.getByText(/Escalabilidade para campanhas/)).toBeDefined();
-    expect(screen.getByText(/Do roteiro à cena/)).toBeDefined();
-    expect(screen.getByText(/Audiodescrição de qualidade profissional/)).toBeDefined();
+    expect(screen.getByText(/Roteiro longo vira cenas/)).toBeDefined();
+    expect(screen.getByText(/2 vozes distintas/)).toBeDefined();
+    expect(screen.getByText(/Aulas narradas/)).toBeDefined();
+    expect(screen.getByText(/Escala de produção com IA/)).toBeDefined();
+    expect(screen.getByText(/Do roteiro à imagem/)).toBeDefined();
+    expect(screen.getByText(/Audiodescrição profissional/)).toBeDefined();
   });
 
   it('links apontam para anchors corretos em /funcionalidades', () => {
@@ -105,9 +105,9 @@ describe('UseCasesSection', () => {
     localStorage.setItem('s2a_locale', 'en');
     render(<UseCasesSection />, { wrapper: Wrapper });
     expect(screen.getByText('YouTube Videos')).toBeDefined();
-    expect(screen.getByText('Podcasts & Audio')).toBeDefined();
+    expect(screen.getByText('Podcasts & Audiobooks')).toBeDefined();
     expect(screen.getByText('Educational Content')).toBeDefined();
-    expect(screen.getByText('Digital Marketing')).toBeDefined();
+    expect(screen.getByText('Marketing & Campaigns')).toBeDefined();
     expect(screen.getByText('Storytelling & Narratives')).toBeDefined();
     expect(screen.getByText('Accessibility')).toBeDefined();
   });

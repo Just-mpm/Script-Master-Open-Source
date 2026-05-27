@@ -74,10 +74,10 @@ describe('MetricsSection', () => {
 
   it('renderiza as descrições de cada métrica', () => {
     render(<MetricsSection />, { wrapper: Wrapper });
-    expect(screen.getByText('Roteiros transformados em conteúdo desde o lançamento')).toBeDefined();
-    expect(screen.getByText('De narração profissional gerada com IA')).toBeDefined();
-    expect(screen.getByText('Usuários criando conteúdo com o Script Master')).toBeDefined();
-    expect(screen.getByText('Avaliação média dos criadores que usam a plataforma')).toBeDefined();
+    expect(screen.getByText('Transformados em conteúdo profissional desde o lançamento')).toBeDefined();
+    expect(screen.getByText('Gerados com IA e publicados por criadores')).toBeDefined();
+    expect(screen.getByText('Criando conteúdo todos os dias com o Script Master')).toBeDefined();
+    expect(screen.getByText('Nota média dos criadores que usam a plataforma')).toBeDefined();
   });
 
   it('renderiza em inglês quando locale é "en"', () => {

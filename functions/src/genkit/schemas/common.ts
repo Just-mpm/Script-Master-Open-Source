@@ -39,21 +39,110 @@ export const AttachmentSchema = z.object({
 /** Nível de pensamento do modelo */
 export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
 
+export const AssistantTaskStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'failed', 'need_help']);
+export const AssistantTaskPrioritySchema = z.enum(['high', 'medium', 'low']);
+
+export const AssistantSubtaskSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  status: AssistantTaskStatusSchema,
+  priority: AssistantTaskPrioritySchema,
+  tools: z.array(z.string()).nullable().optional(),
+});
+
+export const AssistantTaskSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  status: AssistantTaskStatusSchema,
+  priority: AssistantTaskPrioritySchema,
+  level: z.number(),
+  dependencies: z.array(z.string()),
+  subtasks: z.array(AssistantSubtaskSchema),
+});
+
+export const AssistantPlanSchema = z.array(AssistantTaskSchema);
+
+export const UpdatePlanInputSchema = z.object({
+  plan: AssistantPlanSchema,
+});
+
+export const WebSearchInputSchema = z.object({
+  query: z.string(),
+  numResults: z.number().min(1).max(10).nullable().optional(),
+});
+
+export const GetStudioStateInputSchema = z.object({
+  fields: z.array(z.string()).nullable().optional(),
+});
+
+export const GetMemoriesInputSchema = z.object({
+  mode: z.enum(['list', 'expand']).nullable().optional(),
+  limit: z.number().min(1).max(100).nullable().optional(),
+});
+
+export const UpdateStudioInputSchema = z.object({
+  settings: z.record(z.unknown()),
+  summary: z.string().nullable().optional(),
+});
+
+export const InterviewOptionSchema = z.object({
+  label: z.string(),
+  description: z.string(),
+});
+
+export const InterviewInputSchema = z.object({
+  question: z.string(),
+  options: z.array(InterviewOptionSchema).nullable().optional(),
+});
+
+/** Dados de retomada quando o usuário responde a um interrupt de entrevista */
+export const InterviewResumeDataSchema = z.object({
+  question: z.string(),
+  answer: z.string(),
+});
+
+export const RespondSuggestedActionSchema = z.object({
+  label: z.string(),
+  action: z.string(),
+  params: z.record(z.unknown()).nullable().optional(),
+});
+
+export const RespondMediaSchema = z.object({
+  type: z.string(),
+  url: z.string(),
+  title: z.string().nullable().optional(),
+});
+
+export const RespondInputSchema = z.object({
+  text: z.string(),
+  suggestedActions: z.array(RespondSuggestedActionSchema).nullable().optional(),
+  media: z.array(RespondMediaSchema).nullable().optional(),
+});
+
 /** Input do flow de chat principal */
 export const AssistantInputSchema = z.object({
   message: z.string(),
   history: z.array(ChatMessageSchema).nullable().optional(),
   attachments: z.array(AttachmentSchema).nullable().optional(),
   studioState: z.record(z.unknown()).nullable().optional(),
+  plan: AssistantPlanSchema.nullable().optional(),
   requestId: z.string().nullable().optional(), // idempotência
   model: z.enum(['fast', 'specialist']).nullable().optional(), // qual modelo usar
   thinkingLevel: ThinkingLevelSchema.nullable().optional(), // nível de pensamento
+  /** Dados de retomada quando o usuário responde a um interrupt */
+  resume: InterviewResumeDataSchema.nullable().optional(),
 });
 
 /** Output do flow de chat */
 export const AssistantOutputSchema = z.object({
   text: z.string(),
   jsonSettings: z.record(z.unknown()).nullable().optional(),
+  plan: AssistantPlanSchema.nullable().optional(),
+  appliedSettings: z.record(z.unknown()).nullable().optional(),
+  interview: InterviewInputSchema.nullable().optional(),
+  respond: RespondInputSchema.nullable().optional(),
 });
 
 /** Stream chunk do chat */
@@ -267,6 +356,22 @@ export const FeedbackOutputSchema = z.object({
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Attachment = z.infer<typeof AttachmentSchema>;
+export type AssistantTaskStatus = z.infer<typeof AssistantTaskStatusSchema>;
+export type AssistantTaskPriority = z.infer<typeof AssistantTaskPrioritySchema>;
+export type AssistantSubtask = z.infer<typeof AssistantSubtaskSchema>;
+export type AssistantTask = z.infer<typeof AssistantTaskSchema>;
+export type AssistantPlan = z.infer<typeof AssistantPlanSchema>;
+export type UpdatePlanInput = z.infer<typeof UpdatePlanInputSchema>;
+export type WebSearchInput = z.infer<typeof WebSearchInputSchema>;
+export type GetStudioStateInput = z.infer<typeof GetStudioStateInputSchema>;
+export type GetMemoriesInput = z.infer<typeof GetMemoriesInputSchema>;
+export type UpdateStudioInput = z.infer<typeof UpdateStudioInputSchema>;
+export type InterviewOption = z.infer<typeof InterviewOptionSchema>;
+export type InterviewInput = z.infer<typeof InterviewInputSchema>;
+export type InterviewResumeData = z.infer<typeof InterviewResumeDataSchema>;
+export type RespondSuggestedAction = z.infer<typeof RespondSuggestedActionSchema>;
+export type RespondMedia = z.infer<typeof RespondMediaSchema>;
+export type RespondInput = z.infer<typeof RespondInputSchema>;
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 export type ThinkingLevel = z.infer<typeof ThinkingLevelSchema>;

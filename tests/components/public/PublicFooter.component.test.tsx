@@ -51,6 +51,7 @@ describe('PublicFooter', () => {
   it('renderiza o título de todos os grupos de links', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
     expect(screen.getByText('Produto')).toBeDefined();
+    expect(screen.getByText('Recursos')).toBeDefined();
     expect(screen.getByText('Empresa')).toBeDefined();
     expect(screen.getByText('Legal')).toBeDefined();
   });
@@ -86,6 +87,6 @@ describe('PublicFooter', () => {
 
   it('renderiza texto "Feito com IA"', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
-    expect(screen.getByText('Feito com IA')).toBeDefined();
+    expect(screen.getByText('Feito com IA e Gemini')).toBeDefined();
   });
 });
