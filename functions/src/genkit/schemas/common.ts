@@ -4,6 +4,12 @@
 //
 // Centraliza tipos de entrada/saída para evitar duplicação entre flows.
 // Cada flow pode estender ou compor estes schemas base.
+//
+// NOTA sobre .nullable().optional():
+//   O Firebase httpsCallable serializa undefined como null no JSON. Para
+//   evitar que schemas rejeitem null em campos opcionais, todos os campos
+//   .optional() têm .nullable() adicionado. Isso aceita tanto null (do JSON)
+//   quanto undefined (campo ausente).
 // ---------------------------------------------------------------------------
 
 import { z } from 'genkit';
@@ -19,15 +25,15 @@ export const ChatMessageSchema = z.object({
   attachments: z.array(z.object({
     mimeType: z.string(),
     data: z.string(),
-    name: z.string().optional(),
-  })).optional(),
+    name: z.string().nullable().optional(),
+  })).nullable().optional(),
 });
 
 /** Anexo enviado pelo usuário (imagem ou documento) */
 export const AttachmentSchema = z.object({
   mimeType: z.string(),
   data: z.string(), // base64
-  name: z.string().optional(),
+  name: z.string().nullable().optional(),
 });
 
 /** Nível de pensamento do modelo */
@@ -36,18 +42,18 @@ export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
 /** Input do flow de chat principal */
 export const AssistantInputSchema = z.object({
   message: z.string(),
-  history: z.array(ChatMessageSchema).optional(),
-  attachments: z.array(AttachmentSchema).optional(),
-  studioState: z.record(z.unknown()).optional(),
-  requestId: z.string().optional(), // idempotência
-  model: z.enum(['fast', 'specialist']).optional(), // qual modelo usar
-  thinkingLevel: ThinkingLevelSchema.optional(), // nível de pensamento
+  history: z.array(ChatMessageSchema).nullable().optional(),
+  attachments: z.array(AttachmentSchema).nullable().optional(),
+  studioState: z.record(z.unknown()).nullable().optional(),
+  requestId: z.string().nullable().optional(), // idempotência
+  model: z.enum(['fast', 'specialist']).nullable().optional(), // qual modelo usar
+  thinkingLevel: ThinkingLevelSchema.nullable().optional(), // nível de pensamento
 });
 
 /** Output do flow de chat */
 export const AssistantOutputSchema = z.object({
   text: z.string(),
-  jsonSettings: z.record(z.unknown()).optional(),
+  jsonSettings: z.record(z.unknown()).nullable().optional(),
 });
 
 /** Stream chunk do chat */
@@ -60,9 +66,9 @@ export const AssistantStreamSchema = z.string();
 export const InlineAssistantInputSchema = z.object({
   selectedText: z.string(),
   instruction: z.string(),
-  fullScript: z.string().optional(),
-  requestId: z.string().optional(),
-  thinkingLevel: ThinkingLevelSchema.optional(), // nível de pensamento
+  fullScript: z.string().nullable().optional(),
+  requestId: z.string().nullable().optional(),
+  thinkingLevel: ThinkingLevelSchema.nullable().optional(), // nível de pensamento
 });
 
 export const InlineAssistantOutputSchema = z.object({
@@ -75,44 +81,44 @@ export const InlineAssistantOutputSchema = z.object({
 
 export const VoiceConfigSchema = z.object({
   voiceId: z.string(),
-  pace: z.string().optional(),
-  emotion: z.string().optional(),
-  emotionIntensity: z.number().min(0).max(1).optional(),
+  pace: z.string().nullable().optional(),
+  emotion: z.string().nullable().optional(),
+  emotionIntensity: z.number().min(0).max(1).nullable().optional(),
 });
 
 export const MultiSpeakerConfigSchema = z.object({
-  speakerAName: z.string().optional(),
-  speakerBName: z.string().optional(),
-  speakerBVoice: z.string().optional(),
+  speakerAName: z.string().nullable().optional(),
+  speakerBName: z.string().nullable().optional(),
+  speakerBVoice: z.string().nullable().optional(),
 });
 
 export const AudioInputSchema = z.object({
   script: z.string(),
   voiceConfig: VoiceConfigSchema,
-  isMultiSpeaker: z.boolean().optional(),
-  multiSpeakerConfig: MultiSpeakerConfigSchema.optional(),
-  audioProfile: z.string().optional(),
-  scene: z.string().optional(),
-  styleNotes: z.string().optional(),
-  generateScenes: z.boolean().optional(),
-  sceneRatio: z.string().optional(),
-  sceneDensity: z.number().optional(),
-  visualFramework: z.string().optional(),
-  imageTextLanguage: z.string().optional(),
+  isMultiSpeaker: z.boolean().nullable().optional(),
+  multiSpeakerConfig: MultiSpeakerConfigSchema.nullable().optional(),
+  audioProfile: z.string().nullable().optional(),
+  scene: z.string().nullable().optional(),
+  styleNotes: z.string().nullable().optional(),
+  generateScenes: z.boolean().nullable().optional(),
+  sceneRatio: z.string().nullable().optional(),
+  sceneDensity: z.number().nullable().optional(),
+  visualFramework: z.string().nullable().optional(),
+  imageTextLanguage: z.string().nullable().optional(),
   referenceImage: z.string().nullable().optional(),
   preflight: z.object({
     availableCredits: z.number(),
     totalPlanned: z.number(),
     unlimited: z.boolean(),
-  }).optional(),
-  requestId: z.string().optional(),
+  }).nullable().optional(),
+  requestId: z.string().nullable().optional(),
 });
 
 export const AudioOutputSchema = z.object({
   /** Base64 do áudio WAV. Presente apenas para áudios menores que ~8MB. */
-  audioBase64: z.string().optional(),
+  audioBase64: z.string().nullable().optional(),
   /** URL signed do Firebase Storage para áudios grandes (>8MB). */
-  audioUrl: z.string().optional(),
+  audioUrl: z.string().nullable().optional(),
   mimeType: z.string(),
   durationInSeconds: z.number(),
   chunks: z.number(),
@@ -121,7 +127,7 @@ export const AudioOutputSchema = z.object({
     startSec: z.number(),
     endSec: z.number(),
     chunkIndex: z.number(),
-  })).optional(),
+  })).nullable().optional(),
 });
 
 export const AudioPreflightStepSchema = z.object({
@@ -148,8 +154,8 @@ export const AudioPreflightOutputSchema = z.object({
     unlimited: z.boolean(),
   }),
   canProceed: z.boolean(),
-  blockingReasonCode: z.string().optional(),
-  blockingMessage: z.string().optional(),
+  blockingReasonCode: z.string().nullable().optional(),
+  blockingMessage: z.string().nullable().optional(),
   notes: z.array(z.string()),
 });
 
@@ -171,8 +177,8 @@ export const CreditSnapshotOutputSchema = z.object({
 export const ImageInputSchema = z.object({
   prompt: z.string(),
   aspectRatio: z.string(),
-  referenceImage: z.string().optional(), // base64 data URL
-  requestId: z.string().optional(),
+  referenceImage: z.string().nullable().optional(), // base64 data URL
+  requestId: z.string().nullable().optional(),
 });
 
 export const ImageOutputSchema = z.object({
@@ -187,11 +193,11 @@ export const ImageOutputSchema = z.object({
 export const ScenePromptsInputSchema = z.object({
   script: z.string(),
   durationInSeconds: z.number(),
-  style: z.string().optional(),
-  densitySeconds: z.number().optional(),
-  visualFramework: z.string().optional(),
-  locale: z.string().optional(),
-  requestId: z.string().optional(),
+  style: z.string().nullable().optional(),
+  densitySeconds: z.number().nullable().optional(),
+  visualFramework: z.string().nullable().optional(),
+  locale: z.string().nullable().optional(),
+  requestId: z.string().nullable().optional(),
 });
 
 export const ScenePromptItemSchema = z.object({
@@ -210,8 +216,8 @@ export const ScenePromptsOutputSchema = z.object({
 
 export const ChunkingInputSchema = z.object({
   script: z.string(),
-  limit: z.number().optional(),
-  requestId: z.string().optional(),
+  limit: z.number().nullable().optional(),
+  requestId: z.string().nullable().optional(),
 });
 
 /**
@@ -227,15 +233,15 @@ export const ChunkingInputSchema = z.object({
  */
 export const ChunkItemSchema = z.object({
   text: z.string(),
-  emotionTag: z.string().optional(),
-  isContinuation: z.boolean().optional(),
-  trailingSentence: z.string().optional(),
+  emotionTag: z.string().nullable().optional(),
+  isContinuation: z.boolean().nullable().optional(),
+  trailingSentence: z.string().nullable().optional(),
 });
 
 export const ChunkingOutputSchema = z.object({
   chunks: z.array(z.string()),
   /** Chunks enriquecidos com metadados de continuidade (presente quando disponível) */
-  enrichedChunks: z.array(ChunkItemSchema).optional(),
+  enrichedChunks: z.array(ChunkItemSchema).nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -245,14 +251,14 @@ export const ChunkingOutputSchema = z.object({
 export const FeedbackInputSchema = z.object({
   category: z.string(),
   text: z.string(),
-  screenContext: z.string().optional(),
-  requestId: z.string().optional(),
+  screenContext: z.string().nullable().optional(),
+  requestId: z.string().nullable().optional(),
 });
 
 export const FeedbackOutputSchema = z.object({
   success: z.boolean(),
   bonusGranted: z.boolean(),
-  availableCredits: z.number().optional(),
+  availableCredits: z.number().nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------

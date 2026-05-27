@@ -256,6 +256,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
 
     const nextOptions: GenerateOptions = {
       ...pendingGenerateOptions,
+      estimatedChunkCount: preflight.estimatedChunkCount,
       preflight: {
         availableCredits: preflight.credits.available,
         totalPlanned: preflight.credits.totalPlanned,

@@ -114,6 +114,8 @@ export interface GenerateOptions {
   emotion?: EmotionType;
   emotionIntensity?: number;
   locale?: Locale;
+  /** Número estimado de chunks de áudio (vem do preflight, usado para simular progresso) */
+  estimatedChunkCount?: number;
   preflight?: {
     availableCredits: number;
     totalPlanned: number;
@@ -265,6 +267,7 @@ export function useAudioGenerator() {
   const cancelRef = useRef(false);
   const activeRequestIdRef = useRef<string | null>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSuccessfulStateRef = useRef<{
     audioUrl: string | null;
     audioBlob: Blob | null;
@@ -279,12 +282,16 @@ export function useAudioGenerator() {
     projectId: null,
   });
 
-  // Limpa timer de auto-dismiss do erro quando o hook desmonta
+  // Limpa timers quando o hook desmonta
   useEffect(() => {
     return () => {
       if (errorTimerRef.current) {
         clearTimeout(errorTimerRef.current);
         errorTimerRef.current = null;
+      }
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
       }
     };
   }, []);
@@ -424,12 +431,41 @@ export function useAudioGenerator() {
       storeApi.getState().setStatusText('Gerando áudio...');
       storeApi.getState().setGenerationProgress(10);
 
+      // ── Timer de progresso estimado ────────────────────────────────────
+      // Enquanto a Cloud Function processa, simula progresso de 10% até 49%
+      // baseado no número de chunks estimado (vindo do preflight).
+      // A cada 60s (estimativa de 1 chunk), incrementa o contador via ref
+      // para garantir cleanup mesmo se o hook desmontar.
+      // Teto de 49% para nunca mentir que passou da metade.
+      const estimatedChunks = options.estimatedChunkCount ?? 0;
+      let progressTicks = 0;
+
+      if (estimatedChunks > 0) {
+        progressTimerRef.current = setInterval(() => {
+          progressTicks++;
+          // Começa em 10% (valor já setado antes do timer) e vai até 49%
+          const estimated = Math.min(
+            Math.round(10 + (progressTicks / estimatedChunks) * 39),
+            49,
+          );
+          storeApi.getState().setGenerationProgress(estimated);
+        }, 60_000);
+      }
+
       const audioRequestId = crypto.randomUUID();
       activeRequestIdRef.current = audioRequestId;
       const audioInput = buildAudioFlowInput(options, audioRequestId);
 
-      const audioCallable = httpsCallable<AudioFlowInput, AudioFlowOutput>(functions, 'audio');
+      const audioCallable = httpsCallable<AudioFlowInput, AudioFlowOutput>(functions, 'audio', {
+        timeout: 1_800_000,
+      });
+
+      // Limpa o timer assim que a resposta chegar (antes de processar o áudio)
       const audioResult = await audioCallable(audioInput);
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
 
       const {
         audioBase64,
@@ -741,6 +777,12 @@ export function useAudioGenerator() {
         errorTimerRef.current = null;
       }, 8000);
     } finally {
+      // Garante que o timer de progresso estimado seja limpo
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
       activeRequestIdRef.current = null;
       storeApi.getState().setIsGenerating(false);
       storeApi.getState().setStatusText('');

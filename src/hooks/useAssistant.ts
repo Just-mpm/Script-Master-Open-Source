@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
+import { removeUndefinedFields } from '../lib/callable-utils';
 import { saveChatSession, type ChatSession } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import type { Attachment, AssistantStudioState, ChatMessage } from '../features/assistant/types';
@@ -342,7 +343,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
       activeRequestIdRef.current = requestId;
 
       const historySource = historyOverride ?? messages;
-      const input: AssistantFlowInput = {
+      const rawInput: AssistantFlowInput = {
         message: text,
         history: historySource.filter((msg) => msg.id !== 'welcome').map((msg) => ({
           role: msg.role,
@@ -369,6 +370,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         model: selectedModel,
         thinkingLevel: selectedThinkingLevel,
       };
+      const input = removeUndefinedFields(rawInput);
 
       // Adiciona mensagem vazia do assistente (texto progressivo)
       setMessages(prev => [

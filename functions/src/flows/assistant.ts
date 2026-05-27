@@ -208,7 +208,7 @@ export const assistant = onCallGenkit(
           .join(', ');
 
         // Bloco de estado do estúdio
-        const studioBlock = buildStudioBlock(input.studioState);
+        const studioBlock = buildStudioBlock(input.studioState ?? undefined);
 
         // -----------------------------------------------------------------------
         // 2. Reserva créditos via helper withCreditMetering()
@@ -283,8 +283,8 @@ export const assistant = onCallGenkit(
 
         // Resolve configuração do modelo com base na escolha do usuário
         const { model: resolvedModel, thinkingConfig } = resolveModelConfig(
-          input.model,
-          input.thinkingLevel,
+          input.model ?? undefined,
+          input.thinkingLevel ?? undefined,
         );
 
         try {

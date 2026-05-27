@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import { createLogger } from './logger';
+import { removeUndefinedFields } from './callable-utils';
 import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from './callable-errors';
 
 import type { Locale } from '../features/i18n/types';
@@ -107,12 +108,12 @@ export async function generateImageFromPrompt(
       requestId: string;
     }, ImagesFlowOutput>(functions, 'images');
 
-    const result = await callable({
+    const result = await callable(removeUndefinedFields({
       prompt,
       aspectRatio,
       referenceImage,
       requestId: requestId ?? crypto.randomUUID(),
-    });
+    }));
 
     const { imageBase64, mimeType } = result.data;
 

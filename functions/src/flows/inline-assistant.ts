@@ -207,7 +207,7 @@ export const inlineAssistant = onCallGenkit(
 
         // Resolve configuração do modelo com base na escolha do usuário
         const { model: resolvedModel, thinkingConfig } = resolveModelConfig(
-          input.thinkingLevel,
+          input.thinkingLevel ?? undefined,
         );
 
         const response = await ai.generate({

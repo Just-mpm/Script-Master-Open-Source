@@ -336,49 +336,21 @@ ${script}`;
 }
 
 export function buildChunkingInstruction(script: string, limit: number): string {
-  return `Você é um especialista em divisão de roteiros para narração profissional (TTS).
+  // Prompt enxuto — o roteiro já tem pontuação natural (pontos, parágrafos),
+  // então instruções complexas só fazem o Gemini ser conservador e dividir
+  // em partes muito menores que o limite.
+  return `Divida o roteiro abaixo em partes sequenciais para narração TTS.
 
-OBJETIVO:
-Dividir o roteiro abaixo em partes sequenciais que serão narradas por um locutor profissional.
-Cada parte será transformada em um segmento de áudio contínuo.
+REGRAS:
+- Cada parte deve ter no MÁXIMO ${limit} caracteres (tente usar o máximo possível em cada parte).
+- Quebre em pausas lógicas: fim de parágrafo, fim de frase ou troca de ideia.
+- NÃO altere, reescreva, adicione ou remova palavras. Cópia exata do original.
 
-REGRAS CRÍTICAS DE DIVISÃO:
-1. NUNCA quebre no meio de uma frase. Toda parte deve terminar com pontuação final (. ! ? ; : — ...) ou fim de parágrafo.
-2. Cada parte deve ter no máximo ${limit} caracteres.
-3. Evite partes muito curtas (menos de 80 caracteres) — agrupe frases curtas vizinhas quando possível.
-4. Priorize quebras em:
-   - Fim de parágrafo (quebra mais natural)
-   - Fim de frase com ponto final
-   - Pausas fortes (ponto e vírgula, travessão, dois pontos)
-   - Troca natural de ideia ou tópico
-5. Preserve pares lógicos inseparáveis:
-   - Pergunta e resposta imediata
-   - Causa e efeito ("porque", "portanto", "assim")
-   - Enumerações ("primeiro... segundo... terceiro...")
-6. NÃO altere, reescreva, resuma, adicione ou remova palavras. O texto de cada parte deve ser uma cópia exata do original.
-
-FORMATO DE SAÍDA OBRIGATÓRIO:
-Retorne um array JSON onde cada item é um objeto com:
-- "text": o texto exato do chunk (string)
-- "emotionTag": audio tag em inglês que melhor descreve o tom predominante deste chunk (ex: "[excitedly]", "[seriously]", "[calmly]", "[warmly]"). Use string vazia se o tom for neutro.
-- "isContinuation": true se este chunk é continuação direta da mesma ideia do chunk anterior (sem quebra de parágrafo ou troca de tópico), false caso contrário.
-- "trailingSentence": a última frase completa do chunk (para usar como âncora contextual do próximo chunk).
-
-Exemplo de saída:
-[
-  {
-    "text": "Primeira parte do roteiro com tom introdutório.",
-    "emotionTag": "[warmly]",
-    "isContinuation": false,
-    "trailingSentence": "Primeira parte do roteiro com tom introdutório."
-  },
-  {
-    "text": "Continuação da mesma ideia, aprofundando o tema.",
-    "emotionTag": "",
-    "isContinuation": true,
-    "trailingSentence": "Continuação da mesma ideia, aprofundando o tema."
-  }
-]
+Retorne um array JSON onde cada item tem:
+- "text": o texto exato da parte
+- "emotionTag": tag de emoção em inglês (ex: "[calmly]", "[seriously]") ou "" se neutro
+- "isContinuation": true se é continuação direta da parte anterior
+- "trailingSentence": última frase completa do chunk
 
 ROTEIRO:
 ${script}`;
@@ -387,13 +359,19 @@ ${script}`;
 /**
  * Monta o prompt TTS seguindo a estrutura recomendada pelo Gemini TTS:
  *
- * 1. Preâmbulo anti-read-aloud (instrução explícita para NÃO ler as instruções)
- * 2. Audio Profile — persona da voz com nome (ancora a performance)
- * 3. Scene — ambiente e vibe
- * 4. Director's Notes — orientações consolidadas (estilo, ritmo, emoção, sotaque)
- * 5. Continuity Context — para chunks subsequentes (mantém tom/energia)
- * 6. Sample Context — últimas frases do chunk anterior (âncora não falada)
- * 7. Transcript — texto a ser falado, com audio tags inline
+ * 1. Preâmbulo curto instruindo síntese de fala
+ * 2. Audio Profile — persona da voz (nome + descrição)
+ * 3. Scene — ambiente e clima
+ * 4. Director's Notes — orientações concisas (emoção, ritmo, estilo)
+ * 5. Context — ponto de partida para o chunk atual
+ * 6. Transcript — texto a ser falado (com rótulo explícito)
+ *
+ * Regras da documentação oficial seguidas:
+ * - Inglês em todas as seções (idioma recomendado para prompts TTS)
+ * - Rótulo "Transcript:" explícito (evita classifier false rejection)
+ * - Sem overspecify (regras demais pioram a performance)
+ * - Sem "não fale" (instrução contraditória confunde o classificador)
+ * - Audio tags em inglês mesmo para transcrições não-inglesas
  *
  * Referência: https://ai.google.dev/gemini-api/docs/speech-generation#prompting
  */
@@ -412,77 +390,58 @@ export function buildTtsInstruction(params: TtsInstructionParams): string {
     speakerName,
   } = params;
 
-  // Monta o transcript com audio tags inline
   const taggedTranscript = buildTaggedTranscript(chunk, emotionAudioTag, paceAudioTag);
 
-  // Audio Profile estruturado — nome + descrição ancora a performance
-  const audioProfileSection = buildAudioProfileSection(audioProfile, speakerName);
+  // ------------------------------------------------------------------
+  // Seções do prompt (todas em inglês, conforme recomendação oficial)
+  // ------------------------------------------------------------------
+  const sections: string[] = [];
 
-  // Director's Notes consolidado — unifica estilo, ritmo, emoção, notas livres
-  const directorNotesSection = buildDirectorNotesSection(directionNotes, emotionInstruction);
+  // 1. Preâmbulo curto — instrui a síntese de fala
+  sections.push(
+    'Synthesize speech for the transcript below. Follow the audio profile, scene, and director\'s notes.',
+  );
 
-  return [
-    // Preâmbulo anti-read-aloud (Fase 4.2)
-    'INSTRUÇÃO DE SÍNTESE DE FALA: Gere apenas a fala da transcrição abaixo. NUNCA leia estas instruções, notas de direção, nomes de seção ou rótulos em voz alta. Sua saída deve conter APENAS as palavras da transcrição, interpretadas conforme a direção.',
-
-    // Audio Profile (Fase 5.2)
-    audioProfileSection,
-
-    // Scene
-    scene ? `CENA:\n${scene}` : '',
-
-    // Director's Notes consolidado (Fase 5.3)
-    directorNotesSection,
-
-    // Multi-speaker
-    multiSpeakerContext,
-
-    // Continuidade entre chunks (Fase 2.1)
-    continuityContext,
-
-    // Sample Context — âncora não falada (Fase 2.3)
-    sampleContext ? `CONTEXTO ANTERIOR (não fale isto, use apenas como referência de tom):\n"${sampleContext}"` : '',
-
-    // Transcript com audio tags (Fase 3.2 + 3.3)
-    `TRANSCRIÇÃO:\n${taggedTranscript}`,
-  ].filter(Boolean).join('\n\n');
-}
-
-/**
- * Constrói a seção Audio Profile estruturada.
- * Se houver speakerName, ancora a performance com o nome do personagem.
- */
-function buildAudioProfileSection(audioProfile: string, speakerName?: string): string {
-  if (!audioProfile && !speakerName) return '';
-
-  const parts: string[] = [];
-  if (speakerName) {
-    parts.push(`Nome: ${speakerName}`);
-  }
-  if (audioProfile) {
-    parts.push(audioProfile);
+  // 2. Audio Profile — persona (nome + descrição)
+  const profileParts: string[] = [];
+  if (speakerName) profileParts.push(speakerName);
+  if (audioProfile) profileParts.push(audioProfile);
+  if (profileParts.length > 0) {
+    sections.push(`Audio Profile:\n${profileParts.join(' — ')}`);
   }
 
-  return `PERFIL DE ÁUDIO:\n${parts.join('\n')}`;
-}
-
-/**
- * Constrói a seção Director's Notes consolidada.
- * Unifica styleNotes, emotion e pace em uma única seção coesa.
- */
-function buildDirectorNotesSection(directionNotes: string, emotionInstruction: string): string {
-  const notes: string[] = [];
-
-  if (directionNotes) {
-    notes.push(directionNotes);
-  }
-  if (emotionInstruction) {
-    notes.push(emotionInstruction);
+  // 3. Scene — ambiente e clima
+  if (scene) {
+    sections.push(`Scene:\n${scene}`);
   }
 
-  if (notes.length === 0) return '';
+  // 4. Director's Notes — concisas, sem overspecify
+  const notesParts: string[] = [];
+  if (emotionInstruction) notesParts.push(`Tone: ${emotionInstruction}`);
+  if (directionNotes) notesParts.push(`Direction: ${directionNotes}`);
+  if (notesParts.length > 0) {
+    sections.push(`Director's Notes:\n${notesParts.join('\n')}`);
+  }
 
-  return `NOTAS DO DIRETOR:\n${notes.join('\n')}`;
+  // 5. Continuity — nota curta (apenas para chunks 2+)
+  if (continuityContext) {
+    sections.push(continuityContext);
+  }
+
+  // Sample Context — ponto de partida (sem "não fale")
+  if (sampleContext) {
+    sections.push(`Context:\n${sampleContext}`);
+  }
+
+  // Multi-speaker context (já em inglês no caller)
+  if (multiSpeakerContext) {
+    sections.push(multiSpeakerContext);
+  }
+
+  // 6. Transcript — rótulo explícito (evita classifier false rejection)
+  sections.push(`Transcript:\n${taggedTranscript}`);
+
+  return sections.filter(Boolean).join('\n\n');
 }
 
 /**

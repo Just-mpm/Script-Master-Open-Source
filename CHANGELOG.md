@@ -7,6 +7,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.103.0] - 2026-05-27
+
+### Adicionado
+
+- **`removeUndefinedFields()`** (`src/lib/callable-utils.ts`): novo utilitário de sanitização recursiva que remove campos `undefined` de objetos antes do envio via `httpsCallable` — previne falhas de serialização `undefined→null` nos schemas Zod do backend. Integrado em `useAssistant`, `useImageGenerator`, `gemini.ts` e `ContactPage.tsx`
+- **`estimatedChunkCount` no fluxo de geração de áudio**: propagado do preflight (`AudioPreflightSummary`) para `GenerateOptions` e `useAudioGenerator` — usado como base para simulação de progresso com timer (`progressTimerRef`) durante a chamada `audio` da Cloud Function
+
+### Corrigido
+
+- **Schemas Zod em `common.ts`**: `.nullable()` adicionado antes de `.optional()` em todos os schemas — corrige falha de serialização onde `undefined` era convertido para `null` pelo `JSON.stringify` e rejeitado pelo Zod no backend
+- **Null safety nos flows Genkit**: parâmetros opcionais em `assistant.ts`, `inline-assistant.ts` e `audio-preflight.ts` agora usam `?? undefined` para compatibilidade com schemas `.nullable().optional()`
+
+### Alterado
+
+- **`functions/src/genkit/utils/assistant-context.ts`**: removidas funções `buildAudioProfileSection` e `buildDirectorNotesSection` — simplificação do contexto montado para o assistente
+- **Flows `audio.ts` e `chunking.ts`**: `thinkingConfig` removido — ajuste na configuração de chamada ao Gemini TTS
+- **`WaveformOverlay.tsx`**: simplificação do `interpolate` de opacidade durante crossfade de cenas
+- **`functions/src/config/cors.ts`**: `APP_ALLOWED_CORS_ORIGINS` ajustado
+
+### Documentado
+
+- **`docs/audits/undefined-null-sanitization-review.md`**: auditoria de qualidade das correções de sanitização `undefined→null` em 9 arquivos
+- **`docs/audits/2026-05-27-progress-timer-audit.md`**: auditoria do timer de progresso estimado em `useAudioGenerator`
+- **`docs/audits/progress-simulation-reaudit.md`**: re-auditoria pós-correção do timer de progresso
+- **`docs/scan/progresso-audio-estimado-gaps.md`**: scan de lacunas da simulação de progresso na geração de áudio
+- **`docs/scan/reaudit-progresso-tts-gaps.md`**: re-auditoria das lacunas de progresso TTS pós-correção
+- **`docs/scan/undefined-null-sanitization-gaps.md`**: scan de lacunas na sanitização `undefined→null`
+- **`docs/plan/orquestrador-agente.md`**: plano arquitetural do orquestrador agente (Harness Engineer)
+
+---
+
 ## [0.102.0] - 2026-05-27
 
 ### Adicionado

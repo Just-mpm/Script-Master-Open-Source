@@ -20,6 +20,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import type { ReactNode } from 'react';
 import { httpsCallable } from 'firebase/functions';
+import { removeUndefinedFields } from '../../lib/callable-utils';
 import { DocumentHead } from '../../components/DocumentHead';
 import { alpha } from '@mui/material/styles';
 import { getPageSeo } from '../../lib/seo';
@@ -297,12 +298,12 @@ function FeedbackForm() {
         availableCredits?: number;
       }>(functions, 'feedback');
 
-      const result = await feedbackCall({
+      const result = await feedbackCall(removeUndefinedFields({
         category,
         text: text.trim(),
         screenContext: screenContext.trim() || undefined,
         requestId: crypto.randomUUID(),
-      });
+      }));
 
       const data = result.data;
       setFeedbackSent(true);

@@ -107,7 +107,6 @@ export const chunking = onCallGenkit(
           prompt: buildChunkingInstruction(input.script, limit),
           config: {
             temperature: 0,
-            thinkingConfig: { thinkingLevel: 'high' },
           },
           output: {
             schema: z.array(z.object({

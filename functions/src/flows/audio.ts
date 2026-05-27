@@ -100,9 +100,6 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
     const response = await ai.generate({
       model: CHUNKING_MODEL,
       prompt: buildChunkingInstruction(script, limit),
-      config: {
-        thinkingConfig: { thinkingLevel: 'high' },
-      },
       output: {
         schema: z.array(z.object({
           text: z.string(),
@@ -208,6 +205,9 @@ export const audio = onCallGenkit(
     enforceAppCheck: true,
     invoker: 'public',
     region: 'southamerica-east1',
+    // Timeout longo pois roteiros com muitos chunks (+50) exigem múltiplas
+    // chamadas TTS ao Gemini, cada uma podendo levar vários segundos.
+    timeoutSeconds: 3600,
   },
   ai.defineFlow(
     {
@@ -380,37 +380,28 @@ export const audio = onCallGenkit(
           const chunkText = enrichedChunk.text;
 
         // ------------------------------------------------------------------
-        // Continuidade enriquecida (Fase 2.1, 2.2, 2.3)
+        // Continuidade (enxuta, em inglês — idioma recomendado)
         // ------------------------------------------------------------------
         let continuityContext = '';
         let sampleContext: string | undefined;
 
         if (i > 0) {
           const prevChunk = enrichedChunks[i - 1];
-          const prevEmotionTag = prevChunk.emotionTag || globalEmotionTag;
 
-          // Contexto de continuidade com informação do chunk anterior
-          continuityContext = [
-            `[CONTINUIDADE] Esta é a parte ${i + 1} de ${enrichedChunks.length} do mesmo roteiro.`,
-            `MANTENHA estritamente o mesmo tom, energia, velocidade e volume da parte anterior.`,
-            prevEmotionTag ? `Tom da parte anterior: ${prevEmotionTag} — mantenha esta emoção.` : '',
-            enrichedChunk.isContinuation
-              ? 'Esta parte é continuação direta da anterior — NÃO use entonação de início de frase.'
-              : 'Esta parte inicia uma nova ideia — pode usar leve entonação de início.',
-          ].filter(Boolean).join('\n');
+          // Nota curta de continuidade (em vez do bloco verboso anterior)
+          continuityContext = `(Part ${i + 1} of ${enrichedChunks.length} — maintain the same tone and delivery)`;
 
-          // Sample Context — última frase do chunk anterior como âncora (Fase 2.3)
+          // Sample Context — última frase do chunk anterior como âncora (sem "não fale")
           sampleContext = prevChunk.trailingSentence;
         }
 
-        // Audio tag para este chunk específico (Fase 2.2)
-        // Prioriza emotionTag do chunk, depois tag global de emoção, depois tag de continuidade
+        // Audio tag para este chunk específico
         const chunkEmotionTag = enrichedChunk.emotionTag
           || (i > 0 && enrichedChunk.isContinuation ? CONTINUITY_AUDIO_TAG : globalEmotionTag);
 
-        // Contexto de múltiplos locutores
+        // Contexto de múltiplos locutores (em inglês)
         const multiCtx = isMultiSpeaker
-          ? `MÚLTIPLOS LOCUTORES\nAtenção: a transcrição é um diálogo. Fale o texto de "${multiSpeakerConfig?.speakerAName || 'Speaker A'}" com a Voz A e o texto de "${multiSpeakerConfig?.speakerBName || 'Speaker B'}" com a Voz B.`
+          ? `Multi-speaker:\nThis transcript is a dialogue. Speak "${multiSpeakerConfig?.speakerAName || 'Speaker A'}" lines with Voice A and "${multiSpeakerConfig?.speakerBName || 'Speaker B'}" lines with Voice B.`
           : '';
 
         // Monta o prompt completo com todas as melhorias

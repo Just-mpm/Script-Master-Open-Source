@@ -166,12 +166,14 @@ export function WaveformOverlay({
   );
 
   const overlayOpacity = sceneTime !== null
-    ? interpolate(
-        sceneTime * fps,
-        [0, fadeFrames, sceneDurationFrames - fadeFrames, sceneDurationFrames],
-        [0, opacity, opacity, 0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-      )
+    ? fadeFrames > 0
+      ? interpolate(
+          sceneTime * fps,
+          [0, fadeFrames, sceneDurationFrames - fadeFrames, sceneDurationFrames],
+          [0, opacity, opacity, 0],
+          { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+        )
+      : opacity
     : 0;
 
   // Durante exportação, pula renderização do SVG pesado (hooks já executaram por Rules of Hooks)

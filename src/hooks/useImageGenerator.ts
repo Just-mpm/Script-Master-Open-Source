@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
+import { removeUndefinedFields } from '../lib/callable-utils';
 import { base64ToBlobSync } from '../lib/audio';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
@@ -151,12 +152,12 @@ export function useImageGenerator() {
       const requestId = crypto.randomUUID();
       activeRequestIdRef.current = requestId;
 
-      const result = await callable({
+      const result = await callable(removeUndefinedFields({
         prompt: options.prompt,
         aspectRatio: options.aspectRatio,
         referenceImage: referenceBase64,
         requestId,
-      });
+      }));
 
       if (cancelRef.current) {
         throw new Error(CANCEL_ERROR_MESSAGE);

@@ -29,23 +29,24 @@ import { googleAI } from '@genkit-ai/google-genai';
 //   3. Service account com roles: Monitoring Metric Writer, Cloud Trace Agent,
 //      Logs Writer (geralmente a default compute service account do projeto)
 //
-// Localmente: visível na Developer UI do Genkit.
-// Em produção: dados exportados automaticamente via Application Default Credentials.
-//
-// Configuração programática com intervalos padrão de exportação.
-// Para override via env var: defina ENABLE_FIREBASE_MONITORING=true no ambiente.
+// A telemetria só é ativada quando ENABLE_FIREBASE_MONITORING=true no ambiente.
+// Isso evita timeout de 10s durante o deploy (a CLI carrega o código e a
+// telemetria tentaria conectar com Cloud Trace/Monitoring antes do deploy
+// ser concluído).
 // ---------------------------------------------------------------------------
 
-enableFirebaseTelemetry({
-  // Intervalo de exportação de métricas (padrão: 5 min)
-  // Deve ser >= metricExportTimeoutMillis (padrão do OTel: 30s).
-  // O exportTimeoutMillis padrão do @genkit-ai/google-cloud pode ser maior
-  // que 60s em certas versões, causando crash no deploy. Usamos 5 min para
-  // garantir compatibilidade com qualquer timeout razoável.
-  metricExportIntervalMillis: 300_000,
-  // Timeout explícito: 4 min, garantindo que interval (5 min) >= timeout (4 min)
-  metricExportTimeoutMillis: 240_000,
-});
+if (process.env.ENABLE_FIREBASE_MONITORING === 'true') {
+  enableFirebaseTelemetry({
+    // Intervalo de exportação de métricas (padrão: 5 min)
+    // Deve ser >= metricExportTimeoutMillis (padrão do OTel: 30s).
+    // O exportTimeoutMillis padrão do @genkit-ai/google-cloud pode ser maior
+    // que 60s em certas versões, causando crash no deploy. Usamos 5 min para
+    // garantir compatibilidade com qualquer timeout razoável.
+    metricExportIntervalMillis: 300_000,
+    // Timeout explícito: 4 min, garantindo que interval (5 min) >= timeout (4 min)
+    metricExportTimeoutMillis: 240_000,
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Instância única do Genkit

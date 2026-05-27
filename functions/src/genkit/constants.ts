@@ -40,34 +40,34 @@ export const VOICES: Array<{ id: string; name: string; style: string }> = [
   { id: 'Sulafat', name: 'Sulafat', style: 'Acolhedora' },
 ];
 
-/** Descrições de ritmo para o prompt do sistema */
+/** Descrições de ritmo para o prompt do sistema (inglês, idioma recomendado) */
 export const PACE_DESCRIPTIONS: Record<string, string> = {
-  very_slow: 'Muito lento e deliberado',
-  slow: 'Lento e relaxado',
+  very_slow: 'Very slow and deliberate',
+  slow: 'Slow and relaxed',
   normal: 'Normal',
-  fast: 'Rápido e energético',
-  very_fast: 'Muito rápido e veloz',
+  fast: 'Fast and energetic',
+  very_fast: 'Very fast and rapid',
 };
 
-/** Instruções de ritmo (pace) — mapeadas para texto no prompt de TTS */
+/** Instruções de ritmo (pace) — inglês (idioma recomendado para prompts TTS) */
 export const PACE_INSTRUCTIONS: Record<string, string> = {
-  'very_slow': 'Fale em um ritmo muito lento e deliberado consistentemente.',
-  'slow': 'Fale em um ritmo lento e relaxado consistentemente.',
+  'very_slow': 'Speak at a very slow, deliberate pace consistently.',
+  'slow': 'Speak at a slow, relaxed pace consistently.',
   'normal': '',
-  'fast': 'Fale em um ritmo rápido e energético consistentemente.',
-  'very_fast': 'Fale em um ritmo muito rápido e veloz consistentemente.',
+  'fast': 'Speak at a fast, energetic pace consistently.',
+  'very_fast': 'Speak at a very fast, rapid pace consistently.',
 };
 
-/** Instruções de emoção — mapeadas para texto no prompt de TTS */
+/** Instruções de emoção — inglês (idioma recomendado para prompts TTS) */
 export const EMOTION_INSTRUCTIONS: Record<string, string> = {
   'neutral': '',
-  'happy': 'Tom alegre e entusiasmado, como quem compartilha boas notícias.',
-  'sad': 'Tom melancólico e contemplativo, com pausas reflexivas.',
-  'angry': 'Tom firme e irritado, com ênfase em palavras-chave.',
-  'calm': 'Tom sereno e tranquilizador, com ritmo pausado.',
-  'energetic': 'Tom vibrante e dinâmico, com muita energia e entonação variada.',
-  'dramatic': 'Tom intenso e dramático, com variações de volume e ritmo.',
-  'friendly': 'Tom acolhedor e caloroso, como uma conversa entre amigos.',
+  'happy': 'Happy and enthusiastic tone, like sharing good news.',
+  'sad': 'Melancholic and contemplative tone, with reflective pauses.',
+  'angry': 'Firm and irritated tone, with emphasis on key words.',
+  'calm': 'Serene and reassuring tone, with a steady pace.',
+  'energetic': 'Vibrant and dynamic tone, with varied intonation.',
+  'dramatic': 'Intense and dramatic tone, with volume and pace variation.',
+  'friendly': 'Warm and welcoming tone, like a conversation between friends.',
 };
 
 /** Limite de caracteres por chunk para TTS */

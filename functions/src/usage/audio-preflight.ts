@@ -86,7 +86,7 @@ function buildSteps(input: AudioInput, durationSeconds: number): AudioPreflightS
   }
 
   if (input.generateScenes) {
-    const sceneCount = estimateSceneCount(durationSeconds, input.sceneDensity);
+    const sceneCount = estimateSceneCount(durationSeconds, input.sceneDensity ?? undefined);
     const scenePromptCredits = calculateCreditCost({
       operationType: 'scene_prompts',
       itemCount: sceneCount,
@@ -138,7 +138,7 @@ export function buildAudioPreflightPlan(
   const estimatedDurationSeconds = estimateDurationSeconds(input);
   const estimatedChunkCount = estimateChunkCount(input.script);
   const estimatedSceneCount = input.generateScenes
-    ? estimateSceneCount(estimatedDurationSeconds, input.sceneDensity)
+    ? estimateSceneCount(estimatedDurationSeconds, input.sceneDensity ?? undefined)
     : 0;
   const steps = buildSteps(input, estimatedDurationSeconds);
   const totalPlanned = steps.reduce((sum, step) => sum + step.credits, 0);

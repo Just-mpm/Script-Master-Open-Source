@@ -51,7 +51,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Modelo | Uso |
 |--------|-----|
-| `gemini-3.1-flash-tts-preview` | Text-to-speech (com `thinkingConfig: 'high'`) |
+| `gemini-3.1-flash-tts-preview` | Text-to-speech |
 | `gemini-3.1-flash-image-preview` | Geração de imagens |
 | `gemini-3.1-flash-lite` | Chunking de roteiros, prompts de cena, chat do assistente (modo `fast`) |
 | `gemini-3.5-flash` | Chat do assistente (modo `specialist`) |
@@ -147,7 +147,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 |---|---|
 | **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/features/studio/store/audioGeneratorStore.ts`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/lib/audio.ts`, `functions/src/flows/audio.ts`, `functions/src/flows/chunking.ts`, `functions/src/flows/audio-preflight.ts`, `functions/src/usage/audio-preflight.ts`, `functions/src/genkit/constants.ts`, `functions/src/genkit/schemas/common.ts` |
 | **Frontend** | `useAudioGenerator` chama Cloud Function `audio` via `httpsCallable` (Genkit). Tipos `AudioFlowInput`/`AudioFlowOutput`. Sem chamada direta ao Gemini |
-| **Backend (Genkit)** | Flow `audio.ts` — recebe script, voz, locale, emotion; faz chunking interno (se >500 chars via `chunking.ts`); chama Gemini TTS com `thinkingConfig: { thinkingLevel: 'high' }`; retorna chunks de áudio base64. Middleware `credit-metering.ts` estima/reserva/confirma créditos. Flow `audio-preflight.ts` — pré-verifica créditos antes da geração |
+| **Backend (Genkit)** | Flow `audio.ts` — recebe script, voz, locale, emotion; faz chunking interno (se >500 chars via `chunking.ts`); chama Gemini TTS com retry automático (`TTS_MAX_RETRIES=2`); retorna chunks de áudio base64. Middleware `credit-metering.ts` estima/reserva/confirma créditos. Flow `audio-preflight.ts` — pré-verifica créditos antes da geração |
 | **Chunking** | Se >500 chars, Cloud Function `chunking` divide o roteiro via Genkit com output schema `ChunkItemSchema` enriquecido (emotionTag, isContinuation, trailingSentence, paceTag) e instrução montada por `buildChunkingInstruction()`. Fallback programático em `functions/src/genkit/utils/chunking.ts` com `extractTrailingSentence()`, `isTruncatedChunk()`, `mergeOrPush()`, `splitLongSentence()`, `mergeShortChunks()` — regex expandida que nunca quebra palavras |
 | **Continuidade** | A partir do chunk 2, injeta contexto enriquecido: última frase do chunk anterior, tag de emoção ativa, sample context (frases âncora não faladas) + `CONTINUITY_AUDIO_TAG` (`[continuing]`) no transcript |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
@@ -412,7 +412,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/lib/logger.ts`, `src/lib/error-mapping.ts`, `src/lib/rate-limiter.ts`, `src/lib/callable-errors.ts` |
+| **Arquivos** | `src/lib/logger.ts`, `src/lib/error-mapping.ts`, `src/lib/rate-limiter.ts`, `src/lib/callable-errors.ts`, `src/lib/callable-utils.ts` |
 | **Logger** | `createLogger('context')` com níveis debug/info/warn/error. `debug` e `info` suprimidos em produção (`import.meta.env.PROD`) |
 | **Error mapping** | `createErrorMapper(config)` genérico com `ErrorMappingRule[]` por domínio. `sharedErrorRules` comuns (quota, API key, unavailable). `handleFirestoreError` preserva causa original via `{ cause: error }` |
 | **Rate limiter** | `withRetry<T>(fn, config?)` — genérico, reutilizável. Detecta `ApiError.status` + keywords em mensagens |
@@ -422,7 +422,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.102.0`
+- **Current:** `0.103.0`
 - **Last release:** 2026-05-27
 
 ### Últimas mudanças (atualizado por /fast)
@@ -431,8 +431,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |
 | `0.102.0` | Chunking inteligente com fallback programático (regex expandida, merge, trailing sentence); audio tags inline no transcript (emoção, pace, continuidade); retry automático TTS (TTS_MAX_RETRIES=2); reestruturação do prompt TTS (Audio Profile + Director's Notes); thinkingConfig nos flows de IA; constantes centralizadas (EMOTION_TO_AUDIO_TAGS, PACE_TO_AUDIO_TAG, CONTINUITY_AUDIO_TAG) |
 | `0.101.0` | Seleção de modelo IA (fast/specialist) + nível de pensamento (thinking level) no assistente; novo AIModeToggle; namespace aiMode nos 3 locales; nova UI do composer com seletor de modelo; animações Motion no InlineAIWidget; removido fix_imports.js e docs de auditoria |
 | `0.100.0` | Remoção da infra Cloud Run e sistema de Jobs Assíncronos; guardas de i18n (paridade + varredura AST); reestruturação de namespaces i18n; testes de SpeedPaintScene |
 | `0.47.0` | VideoLibrary com suporte a vídeos salvos; download em lote incluindo vídeos; exibição de contagem de vídeos nos cards da biblioteca |
-| `0.45.2` | Correções e ajustes internos |
