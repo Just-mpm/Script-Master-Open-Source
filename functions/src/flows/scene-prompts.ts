@@ -163,6 +163,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             prompt: instruction,
             config: {
               temperature: 0.8,
+              thinkingConfig: { thinkingLevel: 'high' },
             },
             output: {
               schema: z.array(z.object({

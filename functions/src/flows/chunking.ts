@@ -32,7 +32,7 @@ import {
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { buildChunkingInstruction } from '../genkit/utils/assistant-context.js';
-import { splitTextProgrammatically } from '../genkit/utils/chunking.js';
+import { splitTextProgrammatically, extractTrailingSentence } from '../genkit/utils/chunking.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ export const chunking = onCallGenkit(
       );
 
       // ------------------------------------------------------------------
-      // 3. Chunking via builder TypeScript + structured output
+      // 3. Chunking via builder TypeScript + structured output enriquecido
       // ------------------------------------------------------------------
       try {
         const response = await ai.generate({
@@ -107,30 +107,55 @@ export const chunking = onCallGenkit(
           prompt: buildChunkingInstruction(input.script, limit),
           config: {
             temperature: 0,
+            thinkingConfig: { thinkingLevel: 'high' },
           },
           output: {
-            schema: z.array(z.string()),
+            schema: z.array(z.object({
+              text: z.string(),
+              emotionTag: z.string().optional(),
+              isContinuation: z.boolean().optional(),
+              trailingSentence: z.string().optional(),
+            })),
           },
         });
 
-        const chunks = response.output as string[] | undefined;
+        const enrichedItems = response.output as Array<{
+          text: string;
+          emotionTag?: string;
+          isContinuation?: boolean;
+          trailingSentence?: string;
+        }> | undefined;
 
-        if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+        if (!enrichedItems || !Array.isArray(enrichedItems) || enrichedItems.length === 0) {
           throw new Error('Resposta de chunking inválida ou vazia');
         }
 
-        // Garante que nenhum chunk individual exceda o limite
-        // (o Gemini pode ocasionalmente retornar chunks maiores que o limite)
-        const validatedChunks: string[] = [];
-        for (const c of chunks) {
-          if (c.length > limit) {
-            validatedChunks.push(...splitTextProgrammatically(c, limit));
+        // Valida e re-divide chunks que excedam o limite
+        const validatedItems: typeof enrichedItems = [];
+        for (const item of enrichedItems) {
+          if (item.text.length > limit) {
+            // Re-divide o chunk excedido e marca os sub-chunks como continuação
+            const subChunks = splitTextProgrammatically(item.text, limit);
+            for (let j = 0; j < subChunks.length; j++) {
+              validatedItems.push({
+                text: subChunks[j],
+                emotionTag: j === 0 ? item.emotionTag : undefined,
+                isContinuation: j > 0 ? true : item.isContinuation,
+                trailingSentence: j === subChunks.length - 1
+                  ? (item.trailingSentence ?? extractTrailingSentence(subChunks[j]))
+                  : extractTrailingSentence(subChunks[j]),
+              });
+            }
           } else {
-            validatedChunks.push(c);
+            validatedItems.push({
+              ...item,
+              trailingSentence: item.trailingSentence ?? extractTrailingSentence(item.text),
+            });
           }
         }
 
-        const finalChunks = validatedChunks.filter((c) => c.trim().length > 0);
+        const finalItems = validatedItems.filter((item) => item.text.trim().length > 0);
+        const finalChunks = finalItems.map((item) => item.text);
 
         // ------------------------------------------------------------------
         // 4. Confirma créditos com o custo real
@@ -151,7 +176,10 @@ export const chunking = onCallGenkit(
           `scriptLen=${input.script.length} chunks=${finalChunks.length} créditos=${finalCredits}`,
         );
 
-        return { chunks: finalChunks };
+        return {
+          chunks: finalChunks,
+          enrichedChunks: finalItems,
+        };
 
       } catch (genErr) {
         const errorMessage = genErr instanceof Error ? genErr.message : 'Erro desconhecido';
@@ -169,12 +197,22 @@ export const chunking = onCallGenkit(
         // ------------------------------------------------------------------
         const fallbackChunks = splitTextProgrammatically(input.script, limit);
 
+        // Gera enrichedChunks básicos para o fallback (sem emotionTag do Gemini)
+        const fallbackEnriched = fallbackChunks.map((text, idx) => ({
+          text,
+          isContinuation: idx > 0,
+          trailingSentence: extractTrailingSentence(text),
+        }));
+
         console.log(
           `[chunking] Fallback programático: uid=${uid} ` +
           `scriptLen=${input.script.length} chunks=${fallbackChunks.length}`,
         );
 
-        return { chunks: fallbackChunks };
+        return {
+          chunks: fallbackChunks,
+          enrichedChunks: fallbackEnriched,
+        };
       }
     },
   ),

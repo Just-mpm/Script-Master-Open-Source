@@ -72,3 +72,59 @@ export const EMOTION_INSTRUCTIONS: Record<string, string> = {
 
 /** Limite de caracteres por chunk para TTS */
 export const CHUNK_LIMIT = 500;
+
+/**
+ * Mapeamento de emoções para Audio Tags do Gemini TTS.
+ * Tags são inseridas inline no transcript (em inglês, mesmo para texto em outro idioma)
+ * para controlar tom, ritmo e emoção em nível granular.
+ *
+ * Referência: https://ai.google.dev/gemini-api/docs/speech-generation#transcript-tags
+ */
+export const EMOTION_TO_AUDIO_TAGS: Record<string, string> = {
+  'neutral': '',
+  'happy': '[excitedly]',
+  'sad': '[softly]',
+  'angry': '[firmly]',
+  'calm': '[calmly]',
+  'energetic': '[energetically]',
+  'dramatic': '[dramatically]',
+  'friendly': '[warmly]',
+};
+
+/**
+ * Mapeamento de ritmo (pace) para Audio Tags inline.
+ * Usado como reforço prosódico diretamente no transcript,
+ * complementando a instrução textual do Director's Notes.
+ */
+export const PACE_TO_AUDIO_TAG: Record<string, string> = {
+  'very_slow': '[very slow]',
+  'slow': '[slowly]',
+  'normal': '',
+  'fast': '[quickly]',
+  'very_fast': '[very fast]',
+};
+
+/**
+ * Tag de continuidade — inserida no início de chunks subsequentes ao primeiro
+ * para sinalizar ao modelo que deve manter o tom/energia da parte anterior.
+ */
+export const CONTINUITY_AUDIO_TAG = '[continuing]';
+
+/**
+ * Número máximo de tentativas para gerar áudio de um chunk.
+ * O Gemini TTS ocasionalmente retorna text tokens em vez de audio tokens (erro 500).
+ * Retry automático mitiga esse comportamento aleatório.
+ */
+export const TTS_MAX_RETRIES = 2;
+
+/**
+ * Duração mínima esperada (em segundos) para um chunk de áudio gerado.
+ * Chunks com duração abaixo disso provavelmente tiveram problema na geração.
+ */
+export const MIN_CHUNK_DURATION_SECONDS = 1.5;
+
+/**
+ * Tamanho mínimo de um chunk (em caracteres) para evitar qualidade degradada.
+ * Chunks muito curtos (< 80 chars) tendem a ter prosódia ruim no TTS.
+ */
+export const MIN_CHUNK_SIZE = 80;

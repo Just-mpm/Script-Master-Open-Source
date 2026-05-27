@@ -37,9 +37,18 @@ import {
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
-import { CHUNK_LIMIT, PACE_INSTRUCTIONS, EMOTION_INSTRUCTIONS } from '../genkit/constants.js';
+import {
+  CHUNK_LIMIT,
+  PACE_INSTRUCTIONS,
+  EMOTION_INSTRUCTIONS,
+  EMOTION_TO_AUDIO_TAGS,
+  PACE_TO_AUDIO_TAG,
+  CONTINUITY_AUDIO_TAG,
+  TTS_MAX_RETRIES,
+  MIN_CHUNK_DURATION_SECONDS,
+} from '../genkit/constants.js';
 import { buildChunkingInstruction, buildTtsInstruction } from '../genkit/utils/assistant-context.js';
-import { splitTextProgrammatically } from '../genkit/utils/chunking.js';
+import { splitTextProgrammatically, extractTrailingSentence, isTruncatedChunk } from '../genkit/utils/chunking.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 interface AudioSegment {
@@ -47,6 +56,17 @@ interface AudioSegment {
   startSec: number;
   endSec: number;
   chunkIndex: number;
+}
+
+/**
+ * Chunk enriquecido com metadados de continuidade.
+ * Usado para manter consistência de tom entre chunks e injetar audio tags.
+ */
+interface EnrichedChunk {
+  text: string;
+  emotionTag?: string;
+  isContinuation?: boolean;
+  trailingSentence?: string;
 }
 
 /** Taxa de amostragem do áudio gerado (24kHz) */
@@ -63,43 +83,72 @@ const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
 // ---------------------------------------------------------------------------
 
 /**
- * Divide um script longo em chunks usando o Gemini para quebras inteligentes.
- * Se o Gemini falhar, usa fallback programático.
+ * Divide um script longo em chunks enriquecidos usando o Gemini para quebras inteligentes.
+ * Retorna EnrichedChunk[] com metadados de continuidade (emotionTag, isContinuation, trailingSentence).
+ * Se o Gemini falhar, usa fallback programático com metadados básicos.
  */
-async function chunkScript(script: string, limit: number): Promise<string[]> {
+async function chunkScript(script: string, limit: number): Promise<EnrichedChunk[]> {
   if (script.length <= limit) {
-    return [script];
+    return [{
+      text: script,
+      isContinuation: false,
+      trailingSentence: extractTrailingSentence(script),
+    }];
   }
 
   try {
     const response = await ai.generate({
       model: CHUNKING_MODEL,
       prompt: buildChunkingInstruction(script, limit),
+      config: {
+        thinkingConfig: { thinkingLevel: 'high' },
+      },
       output: {
-        schema: z.array(z.string()),
+        schema: z.array(z.object({
+          text: z.string(),
+          emotionTag: z.string().optional(),
+          isContinuation: z.boolean().optional(),
+          trailingSentence: z.string().optional(),
+        })),
       },
     });
 
-    const chunks = response.output as string[] | undefined;
-    if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+    const items = response.output as EnrichedChunk[] | undefined;
+    if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('Resposta de chunking inválida ou vazia');
     }
 
-    // Garante que nenhum chunk individual exceda o limite
-    const validatedChunks: string[] = [];
-    for (const c of chunks) {
-      if (c.length > limit) {
-        validatedChunks.push(...splitTextProgrammatically(c, limit));
+    // Valida e re-divide chunks que excedam o limite
+    const validated: EnrichedChunk[] = [];
+    for (const item of items) {
+      if (item.text.length > limit) {
+        const subChunks = splitTextProgrammatically(item.text, limit);
+        for (let j = 0; j < subChunks.length; j++) {
+          validated.push({
+            text: subChunks[j],
+            emotionTag: j === 0 ? item.emotionTag : undefined,
+            isContinuation: j > 0 ? true : item.isContinuation,
+            trailingSentence: extractTrailingSentence(subChunks[j]),
+          });
+        }
       } else {
-        validatedChunks.push(c);
+        validated.push({
+          ...item,
+          trailingSentence: item.trailingSentence ?? extractTrailingSentence(item.text),
+        });
       }
     }
 
-    return validatedChunks.filter((c) => c.trim().length > 0);
+    return validated.filter((item) => item.text.trim().length > 0);
   } catch {
     // Fallback programático quando o Gemini falha
     console.warn('[audio] Chunking via Gemini falhou, usando fallback programático');
-    return splitTextProgrammatically(script, limit);
+    const fallbackChunks = splitTextProgrammatically(script, limit);
+    return fallbackChunks.map((text, idx) => ({
+      text,
+      isContinuation: idx > 0,
+      trailingSentence: extractTrailingSentence(text),
+    }));
   }
 }
 
@@ -227,11 +276,11 @@ export const audio = onCallGenkit(
         );
 
         // ------------------------------------------------------------------
-        // 2. Divide o script em chunks
+        // 2. Divide o script em chunks enriquecidos
         // ------------------------------------------------------------------
-        let chunks: string[];
+        let enrichedChunks: EnrichedChunk[];
         try {
-          chunks = await chunkScript(input.script, CHUNK_LIMIT);
+          enrichedChunks = await chunkScript(input.script, CHUNK_LIMIT);
         } catch (chunkErr) {
           console.error(`[audio] Falha no chunking: ${chunkErr instanceof Error ? chunkErr.message : 'desconhecido'}`);
           await creditMeter.revert('CHUNKING_FAILED');
@@ -242,6 +291,16 @@ export const audio = onCallGenkit(
           );
         }
         await throwIfAiCancellationRequested(db, uid, requestId);
+
+        // Validação de chunks (Fase 1.4) — log de chunks potencialmente truncados
+        for (let v = 0; v < enrichedChunks.length; v++) {
+          if (isTruncatedChunk(enrichedChunks[v].text) && v < enrichedChunks.length - 1) {
+            console.warn(
+              `[audio] Chunk ${v + 1}/${enrichedChunks.length} parece truncado ` +
+              `(não termina com pontuação). Prosseguindo com geração.`,
+            );
+          }
+        }
 
         // ------------------------------------------------------------------
         // 3. Prepara o prompt base (instruções comuns)
@@ -262,11 +321,20 @@ export const audio = onCallGenkit(
       const paceNote = PACE_INSTRUCTIONS[pace] ?? '';
       const combinedNotes = [styleNotes, paceNote].filter(Boolean).join('\n* ');
 
-      // Instrução de emoção
+      // Instrução de emoção (textual, para Director's Notes)
       const emotionInstructionText = EMOTION_INSTRUCTIONS[emotion] ?? '';
       const emotionInstruction = emotion !== 'neutral' && emotionInstructionText
-        ? `### TOM EMOCIONAL\n* ${emotionInstructionText} Intensidade: ${(emotionIntensity * 100).toFixed(0)}%.`
+        ? `* ${emotionInstructionText} Intensidade: ${(emotionIntensity * 100).toFixed(0)}%.`
         : '';
+
+      // Audio tags globais (Fase 3.1) — emoção e ritmo mapeados para tags inline
+      const globalEmotionTag = EMOTION_TO_AUDIO_TAGS[emotion] ?? '';
+      const globalPaceTag = PACE_TO_AUDIO_TAG[pace] ?? '';
+
+      // Nome do locutor para Audio Profile estruturado (Fase 5.2)
+      const speakerName = isMultiSpeaker
+        ? (multiSpeakerConfig?.speakerAName || 'Speaker A')
+        : undefined;
 
         // ------------------------------------------------------------------
         // 4. Configura speechConfig (single ou multi-speaker)
@@ -299,28 +367,53 @@ export const audio = onCallGenkit(
           };
 
         // ------------------------------------------------------------------
-        // 5. Gera áudio para cada chunk
+        // 5. Gera áudio para cada chunk (com retry e continuidade enriquecida)
         // ------------------------------------------------------------------
         const pcmBuffers: Buffer[] = [];
         const generatedSegments: AudioSegment[] = [];
         let totalPcmLength = 0;
         let currentStartSec = 0;
 
-        for (let i = 0; i < chunks.length; i++) {
+        for (let i = 0; i < enrichedChunks.length; i++) {
           await throwIfAiCancellationRequested(db, uid, requestId);
-          const chunk = chunks[i];
+          const enrichedChunk = enrichedChunks[i];
+          const chunkText = enrichedChunk.text;
 
-        // Contexto de continuidade para chunks após o primeiro
-        const continuityContext = i > 0
-          ? `[CRÍTICO] TAKES CONTÍNUOS: Você está renderizando a parte ${i + 1} de um único roteiro. MANTENHA estritamente o mesmo tom, humor, energia, velocidade e volume da parte anterior. Evite entonações de início ou fim de frase onde não houver pontuação.`
-          : '';
+        // ------------------------------------------------------------------
+        // Continuidade enriquecida (Fase 2.1, 2.2, 2.3)
+        // ------------------------------------------------------------------
+        let continuityContext = '';
+        let sampleContext: string | undefined;
+
+        if (i > 0) {
+          const prevChunk = enrichedChunks[i - 1];
+          const prevEmotionTag = prevChunk.emotionTag || globalEmotionTag;
+
+          // Contexto de continuidade com informação do chunk anterior
+          continuityContext = [
+            `[CONTINUIDADE] Esta é a parte ${i + 1} de ${enrichedChunks.length} do mesmo roteiro.`,
+            `MANTENHA estritamente o mesmo tom, energia, velocidade e volume da parte anterior.`,
+            prevEmotionTag ? `Tom da parte anterior: ${prevEmotionTag} — mantenha esta emoção.` : '',
+            enrichedChunk.isContinuation
+              ? 'Esta parte é continuação direta da anterior — NÃO use entonação de início de frase.'
+              : 'Esta parte inicia uma nova ideia — pode usar leve entonação de início.',
+          ].filter(Boolean).join('\n');
+
+          // Sample Context — última frase do chunk anterior como âncora (Fase 2.3)
+          sampleContext = prevChunk.trailingSentence;
+        }
+
+        // Audio tag para este chunk específico (Fase 2.2)
+        // Prioriza emotionTag do chunk, depois tag global de emoção, depois tag de continuidade
+        const chunkEmotionTag = enrichedChunk.emotionTag
+          || (i > 0 && enrichedChunk.isContinuation ? CONTINUITY_AUDIO_TAG : globalEmotionTag);
 
         // Contexto de múltiplos locutores
         const multiCtx = isMultiSpeaker
-          ? `## MÚLTIPLOS LOCUTORES\nAtenção: a transcrição é um diálogo. Fale o texto de "${multiSpeakerConfig?.speakerAName || 'Speaker A'}" com a Voz A e o texto de "${multiSpeakerConfig?.speakerBName || 'Speaker B'}" com a Voz B.`
+          ? `MÚLTIPLOS LOCUTORES\nAtenção: a transcrição é um diálogo. Fale o texto de "${multiSpeakerConfig?.speakerAName || 'Speaker A'}" com a Voz A e o texto de "${multiSpeakerConfig?.speakerBName || 'Speaker B'}" com a Voz B.`
           : '';
 
-        // Monta o prompt completo (instruções + transcrição)
+        // Monta o prompt completo com todas as melhorias
         const finalPrompt = buildTtsInstruction({
           continuityContext,
           multiSpeakerContext: multiCtx,
@@ -328,50 +421,92 @@ export const audio = onCallGenkit(
           scene: scene ?? '',
           emotionInstruction,
           directionNotes: combinedNotes,
-          chunk,
+          chunk: chunkText,
+          emotionAudioTag: chunkEmotionTag || undefined,
+          paceAudioTag: globalPaceTag || undefined,
+          sampleContext,
+          speakerName,
         });
 
-        try {
-          const response = await ai.generate({
-            model: TTS_MODEL,
-            prompt: finalPrompt,
-            config: {
-              speechConfig,
-            } as Record<string, unknown>,
-          });
-          await throwIfAiCancellationRequested(db, uid, requestId);
+        // ------------------------------------------------------------------
+        // Retry automático (Fase 4.1)
+        // O Gemini TTS ocasionalmente retorna text tokens em vez de audio tokens
+        // (erro 500). Retry até TTS_MAX_RETRIES vezes antes de falhar.
+        // ------------------------------------------------------------------
+        let pcmBuffer: Buffer | null = null;
 
-          const mediaUrl = response.media?.url;
-          if (!mediaUrl) {
-            throw new Error('Resposta TTS sem dados de áudio (media.url ausente)');
+        for (let attempt = 0; attempt <= TTS_MAX_RETRIES; attempt++) {
+          try {
+            if (attempt > 0) {
+              console.log(`[audio] Retry ${attempt}/${TTS_MAX_RETRIES} para chunk ${i + 1}/${enrichedChunks.length}`);
+              // Delay incremental antes do retry (500ms, 1000ms)
+              await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+            }
+
+            await throwIfAiCancellationRequested(db, uid, requestId);
+
+            const response = await ai.generate({
+              model: TTS_MODEL,
+              prompt: finalPrompt,
+              config: {
+                speechConfig,
+              } as Record<string, unknown>,
+            });
+            await throwIfAiCancellationRequested(db, uid, requestId);
+
+            const mediaUrl = response.media?.url;
+            if (!mediaUrl) {
+              throw new Error('Resposta TTS sem dados de áudio (media.url ausente — possível text token return)');
+            }
+
+            pcmBuffer = extractPcmFromDataUrl(mediaUrl);
+
+            // Validação de duração mínima (Fase 4.3)
+            const durationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
+            if (durationSec < MIN_CHUNK_DURATION_SECONDS && chunkText.length > 100) {
+              console.warn(
+                `[audio] Chunk ${i + 1} com duração suspeita: ${durationSec.toFixed(1)}s ` +
+                `(texto: ${chunkText.length} chars). Prosseguindo.`,
+              );
+            }
+
+            break; // Sucesso — sai do loop de retry
+          } catch (retryErr) {
+            // Propaga cancelamento do usuário imediatamente (sem retry)
+            if (retryErr instanceof HttpsError && retryErr.code === 'cancelled') {
+              throw retryErr;
+            }
+
+            const errMsg = retryErr instanceof Error ? retryErr.message : 'Erro desconhecido';
+            console.error(
+              `[audio] Falha no chunk ${i + 1}/${enrichedChunks.length} ` +
+              `(tentativa ${attempt + 1}/${TTS_MAX_RETRIES + 1}): ${errMsg}`,
+            );
           }
+        }
 
-          const pcmBuffer = extractPcmFromDataUrl(mediaUrl);
-          pcmBuffers.push(pcmBuffer);
-          totalPcmLength += pcmBuffer.length;
-
-          const chunkDurationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
-          generatedSegments.push({
-            text: chunk,
-            startSec: currentStartSec,
-            endSec: currentStartSec + chunkDurationSec,
-            chunkIndex: i,
-          });
-          currentStartSec += chunkDurationSec;
-
-        } catch (chunkErr) {
-          const errorMessage = chunkErr instanceof Error ? chunkErr.message : 'Erro desconhecido';
-          console.error(`[audio] Falha no chunk ${i + 1}/${chunks.length}: ${errorMessage}`);
-
-          // Reverte créditos em caso de falha
+        if (!pcmBuffer) {
+          // Todas as tentativas falharam
           await creditMeter.revert('TTS_CHUNK_FAILED');
           creditsSettled = true;
 
           throw new HttpsError(
             'internal',
-            `Falha ao gerar áudio (parte ${i + 1} de ${chunks.length}). Tente novamente.`,
+            `Falha ao gerar áudio (parte ${i + 1} de ${enrichedChunks.length}) após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
           );
         }
+
+        pcmBuffers.push(pcmBuffer);
+        totalPcmLength += pcmBuffer.length;
+
+        const chunkDurationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
+        generatedSegments.push({
+          text: chunkText,
+          startSec: currentStartSec,
+          endSec: currentStartSec + chunkDurationSec,
+          chunkIndex: i,
+        });
+        currentStartSec += chunkDurationSec;
         }
 
         // ------------------------------------------------------------------
@@ -442,7 +577,7 @@ export const audio = onCallGenkit(
         });
 
         console.log(
-          `[audio] Geração concluída: uid=${uid} chunks=${chunks.length} ` +
+          `[audio] Geração concluída: uid=${uid} chunks=${enrichedChunks.length} ` +
           `duração=${durationInSeconds.toFixed(1)}s pcm=${totalPcmLength}bytes ` +
           `créditos=${finalCredits} viaStorage=${audioUrl ? 'sim' : 'não'}`,
         );
@@ -452,7 +587,7 @@ export const audio = onCallGenkit(
           audioUrl,
           mimeType: 'audio/wav',
           durationInSeconds: Math.round(durationInSeconds * 100) / 100,
-          chunks: chunks.length,
+          chunks: enrichedChunks.length,
           segments: generatedSegments,
         };
       } catch (error) {

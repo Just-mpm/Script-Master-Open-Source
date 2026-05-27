@@ -147,6 +147,7 @@ export const images = onCallGenkit(
             imageConfig: {
               aspectRatio: input.aspectRatio,
             },
+            thinkingConfig: { thinkingLevel: 'high' },
           } as Record<string, unknown>,
         });
         await throwIfAiCancellationRequested(db, uid, requestId);

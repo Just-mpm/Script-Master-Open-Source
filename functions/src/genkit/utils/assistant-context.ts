@@ -50,6 +50,14 @@ interface TtsInstructionParams {
   emotionInstruction: string;
   directionNotes: string;
   chunk: string;
+  /** Audio tag de emoção para injetar no início do transcript (ex: "[excitedly]") */
+  emotionAudioTag?: string;
+  /** Audio tag de ritmo para injetar no transcript (ex: "[slowly]") */
+  paceAudioTag?: string;
+  /** Últimas 1-2 frases do chunk anterior, como âncora contextual (não falado) */
+  sampleContext?: string;
+  /** Nome do locutor/persona para ancorar a performance */
+  speakerName?: string;
 }
 
 interface ImageInstructionParams {
@@ -328,18 +336,67 @@ ${script}`;
 }
 
 export function buildChunkingInstruction(script: string, limit: number): string {
-  return `Divida o roteiro abaixo em partes sequenciais.
+  return `Você é um especialista em divisão de roteiros para narração profissional (TTS).
 
-REGRAS:
-- Cada parte deve ter no máximo ${limit} caracteres.
-- Faça quebras em pausas lógicas, como fim de frase, fim de parágrafo ou troca natural de ideia.
-- Não altere, reescreva, resuma, adicione ou remova palavras.
-- Retorne apenas uma lista ordenada das partes finais.
+OBJETIVO:
+Dividir o roteiro abaixo em partes sequenciais que serão narradas por um locutor profissional.
+Cada parte será transformada em um segmento de áudio contínuo.
+
+REGRAS CRÍTICAS DE DIVISÃO:
+1. NUNCA quebre no meio de uma frase. Toda parte deve terminar com pontuação final (. ! ? ; : — ...) ou fim de parágrafo.
+2. Cada parte deve ter no máximo ${limit} caracteres.
+3. Evite partes muito curtas (menos de 80 caracteres) — agrupe frases curtas vizinhas quando possível.
+4. Priorize quebras em:
+   - Fim de parágrafo (quebra mais natural)
+   - Fim de frase com ponto final
+   - Pausas fortes (ponto e vírgula, travessão, dois pontos)
+   - Troca natural de ideia ou tópico
+5. Preserve pares lógicos inseparáveis:
+   - Pergunta e resposta imediata
+   - Causa e efeito ("porque", "portanto", "assim")
+   - Enumerações ("primeiro... segundo... terceiro...")
+6. NÃO altere, reescreva, resuma, adicione ou remova palavras. O texto de cada parte deve ser uma cópia exata do original.
+
+FORMATO DE SAÍDA OBRIGATÓRIO:
+Retorne um array JSON onde cada item é um objeto com:
+- "text": o texto exato do chunk (string)
+- "emotionTag": audio tag em inglês que melhor descreve o tom predominante deste chunk (ex: "[excitedly]", "[seriously]", "[calmly]", "[warmly]"). Use string vazia se o tom for neutro.
+- "isContinuation": true se este chunk é continuação direta da mesma ideia do chunk anterior (sem quebra de parágrafo ou troca de tópico), false caso contrário.
+- "trailingSentence": a última frase completa do chunk (para usar como âncora contextual do próximo chunk).
+
+Exemplo de saída:
+[
+  {
+    "text": "Primeira parte do roteiro com tom introdutório.",
+    "emotionTag": "[warmly]",
+    "isContinuation": false,
+    "trailingSentence": "Primeira parte do roteiro com tom introdutório."
+  },
+  {
+    "text": "Continuação da mesma ideia, aprofundando o tema.",
+    "emotionTag": "",
+    "isContinuation": true,
+    "trailingSentence": "Continuação da mesma ideia, aprofundando o tema."
+  }
+]
 
 ROTEIRO:
 ${script}`;
 }
 
+/**
+ * Monta o prompt TTS seguindo a estrutura recomendada pelo Gemini TTS:
+ *
+ * 1. Preâmbulo anti-read-aloud (instrução explícita para NÃO ler as instruções)
+ * 2. Audio Profile — persona da voz com nome (ancora a performance)
+ * 3. Scene — ambiente e vibe
+ * 4. Director's Notes — orientações consolidadas (estilo, ritmo, emoção, sotaque)
+ * 5. Continuity Context — para chunks subsequentes (mantém tom/energia)
+ * 6. Sample Context — últimas frases do chunk anterior (âncora não falada)
+ * 7. Transcript — texto a ser falado, com audio tags inline
+ *
+ * Referência: https://ai.google.dev/gemini-api/docs/speech-generation#prompting
+ */
 export function buildTtsInstruction(params: TtsInstructionParams): string {
   const {
     continuityContext,
@@ -349,18 +406,102 @@ export function buildTtsInstruction(params: TtsInstructionParams): string {
     emotionInstruction,
     directionNotes,
     chunk,
+    emotionAudioTag,
+    paceAudioTag,
+    sampleContext,
+    speakerName,
   } = params;
 
+  // Monta o transcript com audio tags inline
+  const taggedTranscript = buildTaggedTranscript(chunk, emotionAudioTag, paceAudioTag);
+
+  // Audio Profile estruturado — nome + descrição ancora a performance
+  const audioProfileSection = buildAudioProfileSection(audioProfile, speakerName);
+
+  // Director's Notes consolidado — unifica estilo, ritmo, emoção, notas livres
+  const directorNotesSection = buildDirectorNotesSection(directionNotes, emotionInstruction);
+
   return [
-    'Gere a fala da transcrição a seguir interpretando a persona, a cena e as notas de direção. Não leia as instruções em voz alta. Fale apenas a transcrição.',
-    continuityContext,
-    multiSpeakerContext,
-    audioProfile ? `PERFIL DE ÁUDIO:\n${audioProfile}` : '',
+    // Preâmbulo anti-read-aloud (Fase 4.2)
+    'INSTRUÇÃO DE SÍNTESE DE FALA: Gere apenas a fala da transcrição abaixo. NUNCA leia estas instruções, notas de direção, nomes de seção ou rótulos em voz alta. Sua saída deve conter APENAS as palavras da transcrição, interpretadas conforme a direção.',
+
+    // Audio Profile (Fase 5.2)
+    audioProfileSection,
+
+    // Scene
     scene ? `CENA:\n${scene}` : '',
-    emotionInstruction ? `TOM EMOCIONAL:\n${emotionInstruction}` : '',
-    directionNotes ? `NOTAS DE DIREÇÃO:\n${directionNotes}` : '',
-    `TRANSCRIÇÃO:\n${chunk}`,
+
+    // Director's Notes consolidado (Fase 5.3)
+    directorNotesSection,
+
+    // Multi-speaker
+    multiSpeakerContext,
+
+    // Continuidade entre chunks (Fase 2.1)
+    continuityContext,
+
+    // Sample Context — âncora não falada (Fase 2.3)
+    sampleContext ? `CONTEXTO ANTERIOR (não fale isto, use apenas como referência de tom):\n"${sampleContext}"` : '',
+
+    // Transcript com audio tags (Fase 3.2 + 3.3)
+    `TRANSCRIÇÃO:\n${taggedTranscript}`,
   ].filter(Boolean).join('\n\n');
+}
+
+/**
+ * Constrói a seção Audio Profile estruturada.
+ * Se houver speakerName, ancora a performance com o nome do personagem.
+ */
+function buildAudioProfileSection(audioProfile: string, speakerName?: string): string {
+  if (!audioProfile && !speakerName) return '';
+
+  const parts: string[] = [];
+  if (speakerName) {
+    parts.push(`Nome: ${speakerName}`);
+  }
+  if (audioProfile) {
+    parts.push(audioProfile);
+  }
+
+  return `PERFIL DE ÁUDIO:\n${parts.join('\n')}`;
+}
+
+/**
+ * Constrói a seção Director's Notes consolidada.
+ * Unifica styleNotes, emotion e pace em uma única seção coesa.
+ */
+function buildDirectorNotesSection(directionNotes: string, emotionInstruction: string): string {
+  const notes: string[] = [];
+
+  if (directionNotes) {
+    notes.push(directionNotes);
+  }
+  if (emotionInstruction) {
+    notes.push(emotionInstruction);
+  }
+
+  if (notes.length === 0) return '';
+
+  return `NOTAS DO DIRETOR:\n${notes.join('\n')}`;
+}
+
+/**
+ * Injeta audio tags inline no transcript.
+ *
+ * - emotionAudioTag: inserida no início do transcript para definir o tom emocional
+ * - paceAudioTag: inserida no início (após emotionTag) para reforçar o ritmo
+ *
+ * As tags são em inglês mesmo para texto em outro idioma (recomendação oficial).
+ */
+function buildTaggedTranscript(chunk: string, emotionAudioTag?: string, paceAudioTag?: string): string {
+  const tags: string[] = [];
+  if (emotionAudioTag) tags.push(emotionAudioTag);
+  if (paceAudioTag) tags.push(paceAudioTag);
+
+  if (tags.length === 0) return chunk;
+
+  // Insere as tags no início do transcript, separadas por espaço
+  return `${tags.join(' ')} ${chunk}`;
 }
 
 export function buildImageInstruction(params: ImageInstructionParams): string {

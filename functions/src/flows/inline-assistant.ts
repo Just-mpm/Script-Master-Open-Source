@@ -68,7 +68,11 @@ function resolveModelConfig(thinkingLevel?: string): ModelConfig {
     };
   }
 
-  return { model: MODEL_FAST };
+  // Default: thinking level high para máxima qualidade de reescrita
+  return {
+    model: MODEL_FAST,
+    thinkingConfig: { thinkingLevel: 'high' },
+  };
 }
 
 // ---------------------------------------------------------------------------

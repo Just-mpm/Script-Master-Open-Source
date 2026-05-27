@@ -214,8 +214,28 @@ export const ChunkingInputSchema = z.object({
   requestId: z.string().optional(),
 });
 
+/**
+ * Chunk enriquecido — além do texto, carrega metadados para continuidade
+ * de tom e injeção de audio tags entre chunks.
+ *
+ * - text: conteúdo textual do chunk (nunca cortado no meio de frase)
+ * - emotionTag: audio tag sugerida para o início deste chunk (ex: "[excitedly]")
+ * - isContinuation: true se o chunk é continuação direta do anterior
+ *   (sem quebra de parágrafo ou troca de ideia)
+ * - trailingSentence: última frase do chunk, usada como âncora contextual
+ *   para o próximo chunk (sample context)
+ */
+export const ChunkItemSchema = z.object({
+  text: z.string(),
+  emotionTag: z.string().optional(),
+  isContinuation: z.boolean().optional(),
+  trailingSentence: z.string().optional(),
+});
+
 export const ChunkingOutputSchema = z.object({
   chunks: z.array(z.string()),
+  /** Chunks enriquecidos com metadados de continuidade (presente quando disponível) */
+  enrichedChunks: z.array(ChunkItemSchema).optional(),
 });
 
 // ---------------------------------------------------------------------------
