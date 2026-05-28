@@ -7,6 +7,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.104.1] - 2026-05-27
+
+### Corrigido
+
+- **Schemas de orquestração flexibilizados** (`functions/src/genkit/schemas/common.ts`): campos `status` e `priority` em `AssistantSubtaskSchema`/`AssistantTaskSchema` migrados de enums (`AssistantTaskStatusSchema`/`AssistantTaskPrioritySchema`) para `z.string().describe()`; campo `mode` em `GetMemoriesInputSchema` migrado de `z.enum(['list', 'expand'])` para `z.string()` — maior liberdade para o modelo de IA nos valores de task e mode. Preservados os schemas enum para compatibilidade com clientes existentes
+
+- **Simplificação do Google Search Retrieval** (`functions/src/flows/assistant.ts`): tool `webSearch` teve `dynamicRetrievalConfig` removido — `googleSearchRetrieval` agora usa objeto vazio `{}`, mantendo grounding funcional com configuração mais simples
+
 ## [0.104.0] - 2026-05-27
 
 ### Adicionado

@@ -233,7 +233,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **UI centralizada** | `assistantUi.ts` — 24 estilos exportados (bubbles, composer, drawer, typing, history, empty state, attachment chip, send button, action icon button, suggestion chip, composer wrapper, input row, cycling placeholder, think toggle, control button, controls, segmented control, selector label); componentes internos importam de `assistantUi` em vez de `tokens.ts`. `assistantActionIconButtonSx` com suporte responsivo para botões de ação; `assistantSuggestionChipSx` para chips de sugestão |
 | **Empty state** | `EmptyChatState` no AssistantMessages — estado vazio do chat com call-to-action e chips clicáveis com prompts contextuais |
 | **Anexos** | 5 por msg. Imagem: 10MB. Documento: 5MB. Enviados como `inlineData` ao Gemini (via backend). Exibidos como `Chip` MUI com estilo premium (`assistantAttachmentChipSx`) |
-| **System prompt (tool-first)** | Montado dinamicamente no backend por builders TypeScript em `assistant-context.ts`: identidade + estrutura TTS + memórias + vozes + pace + custom settings. **Estado do estúdio e memórias completas não são mais injetados no prompt** — o modelo consulta via ferramentas (`getStudioState`, `getMemories`) quando necessário. `buildMemoriesSummary()` e `buildStudioSummary()` geram visões condensadas para contexto |
+| **System prompt (tool-first)** | Montado dinamicamente no backend por builders TypeScript em `assistant-context.ts`: identidade + estrutura TTS + memórias + vozes + pace + custom settings. **Estado do estúdio e memórias completas não são mais injetados no prompt** — o modelo consulta via ferramentas (`getStudioState`, `getUserMemories`) quando necessário. `buildMemoriesSummary()` e `buildStudioSummary()` geram visões condensadas para contexto |
 | **Auth callable** | Flows callable do Genkit combinam `authPolicy: isSignedIn()` com `getCallableUidOrThrow(flowContext)` para validar `context.auth.uid` no servidor |
 | **Modo estúdio** | Quando `currentState` fornecido, inclui estado completo + instrui modelo a sugerir alterações em bloco JSON |
 | **JSON extraction** | Bloco ` ```json ` na resposta → `extractJsonSettings()` → botão "Aplicar no estúdio" (patch parcial) |
@@ -244,7 +244,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Streaming batch** | Chunks acumulados via `requestAnimationFrame` — flush uma vez por frame de display (reduz re-renders durante streaming) |
 | **Créditos** | `CreditBlockedMessage` exibido no Assistant quando créditos estão esgotados |
 
-| **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 10`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
+| **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 10`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getUserMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
 | **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, prioridade, dependências, subtarefas) entre mensagens e composer. i18n nos 3 locales via namespace `plan` |
 | **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida |
 | **Studio settings preview** | `settingsPreview` exibe campos individuais antes de aplicar alterações. `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` mapeiam `StudioSettingsPatch` para labels i18n. Botão "Aplicar no estúdio" aplica patch validado |
@@ -429,7 +429,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.104.0`
+- **Current:** `0.104.1`
 - **Last release:** 2026-05-27
 
 ### Últimas mudanças (atualizado por /fast)
@@ -438,8 +438,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |
 | `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |
 | `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |
 | `0.102.0` | Chunking inteligente com fallback programático (regex expandida, merge, trailing sentence); audio tags inline no transcript (emoção, pace, continuidade); retry automático TTS (TTS_MAX_RETRIES=2); reestruturação do prompt TTS (Audio Profile + Director's Notes); thinkingConfig nos flows de IA; constantes centralizadas (EMOTION_TO_AUDIO_TAGS, PACE_TO_AUDIO_TAG, CONTINUITY_AUDIO_TAG) |
 | `0.101.0` | Seleção de modelo IA (fast/specialist) + nível de pensamento (thinking level) no assistente; novo AIModeToggle; namespace aiMode nos 3 locales; nova UI do composer com seletor de modelo; animações Motion no InlineAIWidget; removido fix_imports.js e docs de auditoria |
-| `0.100.0` | Remoção da infra Cloud Run e sistema de Jobs Assíncronos; guardas de i18n (paridade + varredura AST); reestruturação de namespaces i18n; testes de SpeedPaintScene |

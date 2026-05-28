@@ -514,12 +514,7 @@ export const assistant = onCallGenkit(
             model: resolvedModel,
             prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
             config: {
-              googleSearchRetrieval: {
-                dynamicRetrievalConfig: {
-                  mode: 'MODE_DYNAMIC',
-                  dynamicThreshold: 0.7,
-                },
-              },
+              googleSearchRetrieval: {},
             },
           });
           const custom = typeof response.custom === 'object' && response.custom !== null

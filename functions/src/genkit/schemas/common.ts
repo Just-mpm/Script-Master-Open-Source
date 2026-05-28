@@ -46,8 +46,8 @@ export const AssistantSubtaskSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable().optional(),
-  status: AssistantTaskStatusSchema,
-  priority: AssistantTaskPrioritySchema,
+  status: z.string().describe('Status da subtarefa: pending, in_progress, completed, failed ou need_help'),
+  priority: z.string().describe('Prioridade da subtarefa: high, medium ou low'),
   tools: z.array(z.string()).nullable().optional(),
 });
 
@@ -55,8 +55,8 @@ export const AssistantTaskSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable().optional(),
-  status: AssistantTaskStatusSchema,
-  priority: AssistantTaskPrioritySchema,
+  status: z.string().describe('Status da tarefa: pending, in_progress, completed, failed ou need_help'),
+  priority: z.string().describe('Prioridade da tarefa: high, medium ou low'),
   level: z.number(),
   dependencies: z.array(z.string()),
   subtasks: z.array(AssistantSubtaskSchema),
@@ -78,7 +78,7 @@ export const GetStudioStateInputSchema = z.object({
 });
 
 export const GetMemoriesInputSchema = z.object({
-  mode: z.enum(['list', 'expand']).nullable().optional(),
+  mode: z.string().describe('Modo de listagem: list (resumos até 180 chars) ou expand (conteúdo completo)').nullable().optional(),
   limit: z.number().min(1).max(100).nullable().optional(),
 });
 
