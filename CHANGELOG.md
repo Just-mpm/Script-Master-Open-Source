@@ -7,6 +7,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.105.2] - 2026-05-28
+
+### Adicionado
+
+- **Container scrollável no Assistente** (`Assistant.tsx`): novo wrapper `Box` com `flex: 1, overflowY: 'auto', minHeight: 0` envolvendo `AssistantMessages`, `PlanWidget`, `SettingsPreviewCard`, `respondResult` e `InterviewPanel` — resolve bug de layout mobile onde conteúdo extravasava a tela em dispositivos pequenos
+- **ReactMarkdown no respondResult**: substituição de `Typography` por `ReactMarkdown` — respostas com formatação markdown agora são renderizadas corretamente
+- **Ícone AutoAwesome no respondResult**: ícone decorativo no card de resposta sugerida do assistente
+
+### Alterado
+
+- **respondResult UI** (`Assistant.tsx`): `Alert` + `Typography` substituídos por `Card` elevado com `backdropFilter: 'blur(8px)'`, borda, sombra, ícone `AutoAwesome` e `ReactMarkdown` — visual mais premium e consistente com o design system
+- **assistantMessagesContainerSx** (`assistantUi.ts`): removidos `flex: 1`, `overflowY: 'auto'`, `scrollBehavior` (scroll delegado ao container pai); adicionados `display: flex`, `flexDirection: column` — simplificação de layout
+- **assistantEmptyStateSx** (`assistantUi.ts`): adicionado `minHeight: '100%'` para centralização vertical mais consistente
+
+### Corrigido
+
+- **Layout mobile do Assistente**: `PlanWidget`, `respondResult` e `InterviewPanel` agora estão dentro do container scrollável — corrige overflow horizontal e quebra de layout em viewports pequenas
+- **Imports não utilizados**: `Typography` removido de `Assistant.tsx` (substituído por `ReactMarkdown` + `AutoAwesome`)
+
+---
+
 ## [0.105.1] - 2026-05-28
 
 ### Adicionado

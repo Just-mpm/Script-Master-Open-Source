@@ -4,9 +4,11 @@ import { alpha } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import ReactMarkdown from 'react-markdown';
 import {
   deleteChatSession,
   deleteMemory,
@@ -32,9 +34,10 @@ import { SettingsPreviewCard } from './components/SettingsPreviewCard';
 import type { AssistantSettings, AssistantStudioState, InterviewResumeData } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
+import { assistantMarkdownSx } from './components/assistantUi';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
-import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
+import { APP_BORDER, APP_SURFACE_ELEVATED, BRAND_PRIMARY, ICON_SIZE_SM, RADIUS_XS, SHADOW_DEEP } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
 import { InterviewPanel } from './components/InterviewPanel';
 
@@ -498,84 +501,110 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null}
 
-      <AssistantMessages
-        messages={messages}
-        isLoading={isLoading}
-        isStreaming={isStreaming}
-        appliedMessageId={appliedMessageId}
-        savedToMemoryId={savedToMemoryId}
-        messagesEndRef={messagesEndRef}
-        onApply={handleApply}
-        onSaveToMemory={handleSaveMessageToMemory}
-        onStopGeneration={stopGeneration}
-        onSuggestionClick={handleSuggestionClick}
-        toolEvents={toolEvents}
-      />
-
-      <PlanWidget tasks={plan} />
-
-      {pendingSettings ? (
-        <SettingsPreviewCard
-          pendingSettings={pendingSettings}
-          onApply={handleApplyPendingSettings}
-          onDismiss={clearPendingSettings}
+      {/* Container scrollável — agrupa mensagens + widgets dinâmicos */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
+          scrollBehavior: 'smooth',
+        }}
+      >
+        <AssistantMessages
+          messages={messages}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+          appliedMessageId={appliedMessageId}
+          savedToMemoryId={savedToMemoryId}
+          messagesEndRef={messagesEndRef}
+          onApply={handleApply}
+          onSaveToMemory={handleSaveMessageToMemory}
+          onStopGeneration={stopGeneration}
+          onSuggestionClick={handleSuggestionClick}
+          toolEvents={toolEvents}
         />
-      ) : null}
 
-      {respondResult && (
-        respondResult.text || (respondResult.suggestedActions?.length ?? 0) > 0 || (respondResult.media?.length ?? 0) > 0
-      ) ? (
-        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
-          <Alert variant="outlined" severity="info" sx={{ borderRadius: 2 }}>
-            <Stack spacing={1.25}>
-              {respondResult.text ? (
-                <Typography variant="body2">{respondResult.text}</Typography>
-              ) : null}
-              {respondResult.suggestedActions && respondResult.suggestedActions.length > 0 ? (
-                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                  {respondResult.suggestedActions.map((action) => (
-                    <Button
-                      key={`${action.action}-${action.label}`}
-                      color="inherit"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleSuggestedAction(action.action, action.params)}
-                      sx={{ textTransform: 'none', borderColor: APP_BORDER }}
-                    >
-                      {action.label}
-                    </Button>
-                  ))}
-                </Stack>
-              ) : null}
+        <PlanWidget tasks={plan} />
 
-              {respondResult.media && respondResult.media.length > 0 ? (
-                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                  {respondResult.media.map((media) => (
-                    <Chip
-                      key={`${media.type}-${media.url}`}
-                      component="a"
-                      href={media.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      clickable
-                      label={media.title ?? media.url}
-                      variant="outlined"
-                      sx={{ borderColor: APP_BORDER, maxWidth: '100%' }}
-                    />
-                  ))}
-                </Stack>
-              ) : null}
-            </Stack>
-          </Alert>
-        </Box>
-      ) : null}
+        {pendingSettings ? (
+          <SettingsPreviewCard
+            pendingSettings={pendingSettings}
+            onApply={handleApplyPendingSettings}
+            onDismiss={clearPendingSettings}
+          />
+        ) : null}
 
-      {interview ? (
-        <InterviewPanel
-          interview={interview}
-          onAnswer={handleAnswerInterview}
-        />
-      ) : null}
+        {respondResult && (
+          respondResult.text || (respondResult.suggestedActions?.length ?? 0) > 0 || (respondResult.media?.length ?? 0) > 0
+        ) ? (
+          <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
+            <Card
+              elevation={0}
+              sx={{
+                width: '100%',
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 1.25, md: 1.5 },
+                borderRadius: RADIUS_XS,
+                border: `1px solid ${APP_BORDER}`,
+                backgroundColor: alpha(APP_SURFACE_ELEVATED, 0.7),
+                backgroundImage: 'none',
+                backdropFilter: 'blur(8px)',
+                boxShadow: `0 2px 12px ${alpha(SHADOW_DEEP, 0.18)}`,
+              }}
+            >
+              <Stack spacing={1.25}>
+                <AutoAwesome sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY, opacity: 0.7 }} />
+                {respondResult.text ? (
+                  <Box sx={{ ...assistantMarkdownSx, typography: 'body2' }}>
+                    <ReactMarkdown>{respondResult.text}</ReactMarkdown>
+                  </Box>
+                ) : null}
+                {respondResult.suggestedActions && respondResult.suggestedActions.length > 0 ? (
+                  <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                    {respondResult.suggestedActions.map((action) => (
+                      <Button
+                        key={`${action.action}-${action.label}`}
+                        color="inherit"
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleSuggestedAction(action.action, action.params)}
+                        sx={{ textTransform: 'none', borderColor: APP_BORDER }}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                ) : null}
+
+                {respondResult.media && respondResult.media.length > 0 ? (
+                  <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                    {respondResult.media.map((media) => (
+                      <Chip
+                        key={`${media.type}-${media.url}`}
+                        component="a"
+                        href={media.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        clickable
+                        label={media.title ?? media.url}
+                        variant="outlined"
+                        sx={{ borderColor: APP_BORDER, maxWidth: '100%' }}
+                      />
+                    ))}
+                  </Stack>
+                ) : null}
+              </Stack>
+            </Card>
+          </Box>
+        ) : null}
+
+        {interview ? (
+          <InterviewPanel
+            interview={interview}
+            onAnswer={handleAnswerInterview}
+          />
+        ) : null}
+      </Box>
 
       <AssistantComposer
         input={input}

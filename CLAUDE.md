@@ -431,7 +431,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.105.1`
+- **Current:** `0.105.2`
 - **Last release:** 2026-05-28
 
 ### Últimas mudanças (atualizado por /fast)
@@ -440,8 +440,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.105.2` | Container scrollável no Assistente (fix layout mobile); respondResult refinado com Card + ReactMarkdown + AutoAwesome; assistantUi simplificado (scroll delegado ao pai); correção de imports não utilizados |
 | `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |
 | `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
 | `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |
 | `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |
-| `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |

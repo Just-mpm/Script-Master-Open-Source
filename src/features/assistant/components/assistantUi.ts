@@ -224,15 +224,14 @@ export const assistantMarkdownSx = {
   },
 };
 
-// ─── Message List Scroll ────────────────────────────────────────
-// Área de scroll das mensagens com padding generoso
+// ─── Message List Container ────────────────────────────────────
+// Container de layout das mensagens (sem scroll — scroll está no pai)
 
 export const assistantMessagesContainerSx = {
-  flex: 1,
-  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column' as const,
   px: { xs: 2, md: 3 },
   py: { xs: 1.5, md: 2 },
-  scrollBehavior: 'smooth' as const,
 };
 
 // ─── History Item Hover ─────────────────────────────────────────
@@ -262,6 +261,7 @@ export const assistantEmptyStateSx = {
   textAlign: 'center' as const,
   px: { xs: 3, md: 4 },
   py: 4,
+  minHeight: '100%',
 };
 
 // ─── Suggestion Chip ─────────────────────────────────────────────
