@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha, keyframes } from '@mui/material/styles';
@@ -12,7 +10,6 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import Memory from '@mui/icons-material/Memory';
 import Psychology from '@mui/icons-material/Psychology';
-import Search from '@mui/icons-material/Search';
 import Settings from '@mui/icons-material/Settings';
 import SmartToy from '@mui/icons-material/SmartToy';
 import Tune from '@mui/icons-material/Tune';
@@ -22,7 +19,6 @@ import { useLocale } from '../../i18n';
 import {
   APP_BORDER,
   BRAND_PRIMARY,
-  ERROR_MAIN,
   ICON_SIZE_SM,
   RADIUS_XS,
   TEXT_DISABLED,
@@ -174,11 +170,10 @@ function PendingIndicator({ color }: { color: string }) {
 
 interface ToolErrorCardProps {
   error: string;
-  color: string;
   label: string;
 }
 
-function ToolErrorCard({ error, color, label }: ToolErrorCardProps) {
+function ToolErrorCard({ error, label }: ToolErrorCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { t } = useLocale();
 
@@ -335,7 +330,6 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
       {isError && event.output ? (
         <ToolErrorCard
           error={(event.output as { message?: string }).message ?? String(event.output)}
-          color={config.color}
           label={label}
         />
       ) : null}

@@ -44,7 +44,7 @@ import {
   type AssistantUserSettingsDoc,
 } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
-import { resolveModelConfig, MODEL_FAST } from '../genkit/utils/model-config.js';
+import { resolveModelConfig } from '../genkit/utils/model-config.js';
 import { createLogger } from '../genkit/utils/logger.js';
 
 // ---------------------------------------------------------------------------

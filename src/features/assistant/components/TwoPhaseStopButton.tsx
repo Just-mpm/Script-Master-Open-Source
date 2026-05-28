@@ -5,7 +5,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { alpha, keyframes } from '@mui/material/styles';
 import Stop from '@mui/icons-material/Stop';
-import { BRAND_PRIMARY, ICON_SIZE_MD } from '../../../theme/tokens';
+import { ICON_SIZE_MD } from '../../../theme/tokens';
 import { useLocale } from '../../i18n';
 
 const fadeKeyframes = keyframes`

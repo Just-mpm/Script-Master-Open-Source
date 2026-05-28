@@ -99,7 +99,7 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
   const customInputRef = useRef<HTMLInputElement>(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
 
-  const options = question.options ?? [];
+  const options = useMemo(() => question.options ?? [], [question.options]);
   const isMultiple = question.multiple === true;
   const hasOptions = options.length > 0;
   const customOptionIndex = hasOptions ? options.length : -1;
@@ -120,6 +120,23 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
   const updateState = useCallback((updates: Partial<QuestionState>) => {
     onStateChange({ ...state, ...updates });
   }, [state, onStateChange]);
+
+  const handleOptionToggle = useCallback((index: number) => {
+    const newSelected = new Set(state.selectedIndices);
+
+    if (isMultiple) {
+      // Toggle: adiciona ou remove
+      if (newSelected.has(index)) {
+        newSelected.delete(index);
+      } else {
+        newSelected.add(index);
+      }
+      onStateChange({ ...state, selectedIndices: newSelected, isCustomMode: false, customText: '' });
+    } else {
+      // Single select: substitui
+      onStateChange({ ...state, selectedIndices: new Set([index]), isCustomMode: false, customText: '' });
+    }
+  }, [state, isMultiple, onStateChange]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (state.isCustomMode) {
@@ -159,24 +176,7 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
         }
         break;
     }
-  }, [state, focusedIndex, totalItems, customOptionIndex, hasOptions, options, updateState, onStateChange]);
-
-  const handleOptionToggle = useCallback((index: number) => {
-    const newSelected = new Set(state.selectedIndices);
-
-    if (isMultiple) {
-      // Toggle: adiciona ou remove
-      if (newSelected.has(index)) {
-        newSelected.delete(index);
-      } else {
-        newSelected.add(index);
-      }
-      onStateChange({ ...state, selectedIndices: newSelected, isCustomMode: false, customText: '' });
-    } else {
-      // Single select: substitui
-      onStateChange({ ...state, selectedIndices: new Set([index]), isCustomMode: false, customText: '' });
-    }
-  }, [state, isMultiple, onStateChange]);
+  }, [state, focusedIndex, totalItems, customOptionIndex, hasOptions, options, updateState, onStateChange, handleOptionToggle]);
 
   const handleCustomClick = useCallback(() => {
     updateState({ isCustomMode: true });
@@ -410,7 +410,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
   useEffect(() => {
     setQuestionStates(questions.map(() => createQuestionState()));
     setActiveTab(0);
-  }, [interview.question, questions.length]);
+  }, [interview.question, questions.length, questions]);
 
   const updateQuestionState = useCallback((index: number, state: QuestionState) => {
     setQuestionStates((prev) => {
