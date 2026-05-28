@@ -7,6 +7,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.106.0] - 2026-05-28
+
+### Adicionado
+
+- **PwaUpdatePrompt** (`src/components/app/PwaUpdatePrompt.tsx`, +262 linhas): novo componente de banner de atualização PWA — detecta nova versão do service worker via `useRegisterSW` (`virtual:pwa-register/react`) com `registerType: 'prompt'`. Snackbar MUI v9 com transição Slide (up), ícone `SystemUpdateAlt`, botões "Atualizar agora" (ativa novo SW + reload) e "Ignorar" (persiste no `sessionStorage`). Toast de `onOfflineReady` via react-hot-toast com ícone 📡. Barra lateral gradiente decorativa no Paper. Espaçamento inferior ajustado para não conflitar com a ActionBar do estúdio
+- **Chaves i18n `pwaUpdate.*`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): 5 chaves — `title` ("Nova versão disponível"), `description` ("Atualize para aproveitar as melhorias mais recentes"), `update` ("Atualizar agora"), `dismiss` ("Ignorar"), `offlineReady` ("App pronto para uso offline")
+
+### Alterado
+
+- **App.tsx**: integração de `<PwaUpdatePrompt />` no shell do app — renderizado abaixo do `ActionBar`, visível em todas as rotas
+- **main.tsx**: registro manual do service worker (`import('virtual:pwa-register').then(({ registerSW }) => ...)`) removido — substituído pelo `useRegisterSW` interno do `PwaUpdatePrompt` (que gerencia registro automático + prompt de atualização). Cabeçalho NOTA adicionado explicando a mudança
+- **Backend assistant.ts**: `maxTurns` aumentado de 10 para 20 — maior profundidade de tool loop no orquestrador do assistente para fluxos multi-ferramenta complexos
+
+---
+
 ## [0.105.2] - 2026-05-28
 
 ### Adicionado

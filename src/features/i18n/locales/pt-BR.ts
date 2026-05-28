@@ -1997,5 +1997,14 @@ export const ptBR: TranslationDictionary = {
     description: 'Ocorreu um erro inesperado ao renderizar esta página. Tente recarregar para continuar.',
     retryBtn: 'Tentar novamente',
     reloadBtn: 'Recarregar página',
-  }
+  },
+
+  // ── Atualização PWA ─────────────────────────────────────────
+  pwaUpdate: {
+    title: 'Nova versão disponível',
+    description: 'Atualize para aproveitar as novidades e correções.',
+    update: 'Atualizar agora',
+    dismiss: 'Ignorar',
+    offlineReady: 'App pronto para uso offline!',
+  },
 };

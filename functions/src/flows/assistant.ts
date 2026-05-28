@@ -598,7 +598,7 @@ export const assistant = onCallGenkit(
               interviewTool,
               respondTool,
             ],
-            maxTurns: 10,
+            maxTurns: 20,
             config: thinkingConfig ? { thinkingConfig } : undefined,
           });
 

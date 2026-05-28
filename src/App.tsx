@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
+import { PwaUpdatePrompt } from './components/app/PwaUpdatePrompt';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { AppRoutes } from './router/routes';
@@ -234,6 +235,9 @@ export default function App() {
           videoExportProgress={videoExportProgress}
         />
       )}
+
+      {/* Prompt de atualização PWA — detecta nova versão após deploy */}
+      <PwaUpdatePrompt />
     </Box>
   );
 }

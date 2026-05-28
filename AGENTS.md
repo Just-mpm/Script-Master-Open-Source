@@ -112,8 +112,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
-| **App.tsx** | Shell enxuto (~190 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider` + `Toaster` (react-hot-toast). Importa e invoca `useAutoSaveStudioSettings()` para sincronização automática das preferências do estúdio com Firestore. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
+| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/app/PwaUpdatePrompt.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
+| **App.tsx** | Shell enxuto (~240 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider` + `Toaster` (react-hot-toast) + `PwaUpdatePrompt`. Importa e invoca `useAutoSaveStudioSettings()` para sincronização automática das preferências do estúdio com Firestore. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
 | **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper para rotas autenticadas, `GuestRoute` wrapper para rotas de convidado (`/`, `/login`, `/cadastro`) |
 | **GuestRoute** | `src/components/GuestRoute.tsx` — inverso do `ProtectedRoute`: exibe spinner durante `loading`, redireciona para `/app/estudio` se `user` existe, renderiza `<Outlet />` para visitantes |
 | **Redirects** | `src/router/Redirects.tsx` — 11 redirects 301 de compatibilidade |
@@ -244,7 +244,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Streaming batch** | Chunks acumulados via `requestAnimationFrame` — flush uma vez por frame de display (reduz re-renders durante streaming) |
 | **Créditos** | `CreditBlockedMessage` exibido no Assistant quando créditos estão esgotados |
 
-| **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 10`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getUserMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
+| **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 20`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getUserMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
 | **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, prioridade, dependências, subtarefas) entre mensagens e composer. i18n nos 3 locales via namespace `plan` |
 | **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida. Multi-select (`multiple` → checkboxes) e multi-question (`questions` → tabs + Confirm tab) |
 | **Studio settings preview** | `settingsPreview` exibe campos individuais antes de aplicar alterações. `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` mapeiam `StudioSettingsPatch` para labels i18n. Botão "Aplicar no estúdio" aplica patch validado |
@@ -375,7 +375,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Tipo** | `Locale` = `'pt-BR' | 'en' | 'es'`. `TranslationDictionary` com suporte a nested keys. `LocaleConfig` com `geminiPromptName` para instruções ao Gemini |
 | **Utils** | `getNestedValue(path, dict)` resolve chaves tipo `'landing.hero.title'`; `pluralKey(baseKey, count)` seleciona chave singular/plural baseada no count; `STEP_LABEL_KEYS` mapeia nomes de etapa (`audio`, `scene_prompts`, `images`, `video`) para chaves i18n do namespace `audioPreflight.stepLabels` |
 | **OG locale** | `OG_LOCALE_MAP` em `seo.ts` mapeia locale para meta tag `og:locale` |
-| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `dataMigration`, `workspace`, `transcription`, `aiMode`, `plan` |
+| **Namespaces principais** | `landing`, `features`, `pricing`, `faq`, `contact`, `about`, `legal`, `studio`, `common`, `notFound`, `errorBoundary`, `configuracoes`, `speedPaint`, `billing`, `credits`, `inlineAI`, `auth`, `wizard`, `onboarding`, `metrics`, `audioPreflight`, `voiceStyles`, `feedback`, `runtime`, `dataMigration`, `workspace`, `transcription`, `aiMode`, `plan`, `pwaUpdate` |
 | **Cobertura** | Todas as páginas públicas + OnboardingPage + ConfiguracoesPage + Header/Footer + Inspector + ActionBar + ScriptEditor + Library + ImageStudio + VideoPreview + StudioPage + SpeedPaintPage + VideoPage + Assistant (Composer/Header/HistoryPanel/MemoriesPanel/Messages/SettingsPanel) + App.tsx + ToastProvider + AudioGenerationHandler + AudioPreflightDialog + GuestRoute + ProtectedRoute + ErrorBoundary + ErrorToast/SuccessToast/WarningToast + LoginPage + RegisterPage + NotFoundPage + GalleryCard + UpgradeDialog + UsageIndicator + AnimationDurationSelector + ImageUpload + InlineAIWidget + CaptionEditorPanel + SceneSequence + SpeedPaintControls + ExportProgressBar + ExportQualitySelector + VoiceCard |
 
 ### Environment & COEP
@@ -411,11 +411,12 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `vite.config.ts` (plugin VitePWA), `src/main.tsx` (registro SW) |
+| **Arquivos** | `vite.config.ts` (plugin VitePWA), `src/components/app/PwaUpdatePrompt.tsx` (registro + update prompt) |
 | **Manifest** | Ícones 192/512, `theme_color` #0a0a0f, `display: standalone`, `orientation: portrait` |
 | **Workbox** | Runtime caching para assets estáticos (1 ano) e Google Fonts (30 dias) |
-| **Registro** | Apenas em produção (`import.meta.env.PROD`), `immediate: true` |
-| **Exceções** | `/login`, `/cadastro` e `/__/` em `navigateFallbackDenylist` (sem COEP e endpoints Firebase Hosting internos não interceptados pelo SW) |
+| **Registro** | Automático via `useRegisterSW` de `virtual:pwa-register/react` no `PwaUpdatePrompt` com `immediate: true`. Registro manual removido de `main.tsx` |
+| **Update prompt** | `PwaUpdatePrompt` detecta nova versão via `registerType: 'prompt'` no vite-plugin-pwa. Snackbar MUI v9 com transição Slide (up), botões "Atualizar agora" (ativa novo SW + reload) e "Ignorar" (persiste no `sessionStorage`). Toast de `onOfflineReady` via react-hot-toast |
+| **Exceções** | `/login`, `/cadastro` e `__/` em `navigateFallbackDenylist` (sem COEP e endpoints Firebase Hosting internos não interceptados pelo SW) |
 
 ### Logger, Error Mapping & Rate Limiter
 
@@ -431,7 +432,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.105.2`
+- **Current:** `0.106.0`
 - **Last release:** 2026-05-28
 
 ### Últimas mudanças (atualizado por /fast)
@@ -440,8 +441,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.106.0` | PwaUpdatePrompt com detecção de nova versão via useRegisterSW (registerType: prompt), Snackbar MUI v9 com Slide, sessionStorage dismiss, onOfflineReady toast; remoção do registro manual de main.tsw; maxTurns do assistente 10→20 |
 | `0.105.2` | Container scrollável no Assistente (fix layout mobile); respondResult refinado com Card + ReactMarkdown + AutoAwesome; assistantUi simplificado (scroll delegado ao pai); correção de imports não utilizados |
 | `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |
 | `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
 | `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |
-| `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |

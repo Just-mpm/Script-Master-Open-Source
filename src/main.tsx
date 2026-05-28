@@ -12,12 +12,9 @@ import { I18nProvider } from './features/i18n';
 import { getRecaptchaSiteKey } from './lib/env';
 import './index.css';
 
-// Registra o service worker apenas em produção
-if (import.meta.env.PROD) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({ immediate: true });
-  });
-}
+// NOTA: O registro do service worker agora é feito pelo hook useRegisterSW
+// dentro do componente PwaUpdatePrompt, que também gerencia o prompt de
+// atualização para o usuário (registerType: 'prompt' no vite.config.ts).
 
 // ── Validação de produção: reCAPTCHA obrigatório ─────────────────────────
 // Em produção sem VITE_RECAPTCHA_SITE_KEY, o App Check não inicializa e

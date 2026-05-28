@@ -1977,5 +1977,14 @@ export const es: TranslationDictionary = {
     description: 'Ocurrió un error inesperado al renderizar esta página. Intente recargar para continuar.',
     retryBtn: 'Intentar de nuevo',
     reloadBtn: 'Recargar página',
-  }
+  },
+
+  // ── Actualización PWA ───────────────────────────────────────
+  pwaUpdate: {
+    title: 'Nueva versión disponible',
+    description: 'Actualiza para disfrutar las novedades y correcciones.',
+    update: 'Actualizar ahora',
+    dismiss: 'Ignorar',
+    offlineReady: '¡App lista para uso sin conexión!',
+  },
 };
