@@ -48,18 +48,34 @@ export interface AssistantStudioUpdate {
 
 export interface InterviewOption {
   label: string;
-  description: string;
+  description?: string;
 }
 
-export interface InterviewDatum {
+/** Uma única pergunta com opções */
+export interface InterviewQuestion {
   question: string;
   options?: InterviewOption[] | null;
+  /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
+  multiple?: boolean;
+}
+
+/** Dados de entrevista — suporta single e multi-question */
+export interface InterviewDatum {
+  /** Pergunta única (backward compat) */
+  question: string;
+  options?: InterviewOption[] | null;
+  /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
+  multiple?: boolean;
+  /** Múltiplas perguntas — se presente, renderiza como tabs com confirmação em lote */
+  questions?: InterviewQuestion[] | null;
 }
 
 /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
 export interface InterviewResumeData {
   question: string;
   answer: string;
+  /** Respostas para múltiplas perguntas (índice → resposta) */
+  answers?: string[];
 }
 
 export interface RespondSuggestedAction {

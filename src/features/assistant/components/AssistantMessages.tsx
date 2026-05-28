@@ -10,7 +10,6 @@ import Tooltip from '@mui/material/Tooltip';
 
 import Divider from '@mui/material/Divider';
 import { useLocale } from '../../../features/i18n';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
@@ -21,7 +20,6 @@ import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
 import Person from '@mui/icons-material/Person';
 import SmartToy from '@mui/icons-material/SmartToy';
-import Stop from '@mui/icons-material/Stop';
 import ReactMarkdown from 'react-markdown';
 import type { AssistantSettings, AssistantToolEvent, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
@@ -35,6 +33,9 @@ import {
   assistantEmptyStateSx,
   assistantSuggestionChipSx,
 } from './assistantUi';
+import { ToolEventList } from './ToolEventCard';
+import { ThinkingShimmer } from './ThinkingShimmer';
+import { TwoPhaseStopButton } from './TwoPhaseStopButton';
 import {
   BRAND_PRIMARY,
   BRAND_GRADIENT,
@@ -57,6 +58,9 @@ import {
   GAP_MEDIUM,
   GAP_RELAXED,
 } from '../../../theme/tokens';
+
+// Array vazio estável — evita quebrar React.memo ao comparar referências
+const EMPTY_TOOL_EVENTS: AssistantToolEvent[] = [];
 
 // --- Props de cada bubble isolado ---
 
@@ -179,19 +183,7 @@ const MessageBubble = React.memo(function MessageBubble({
               </Stack>
 
               {isCurrentlyStreaming ? (
-                <Tooltip title={t('assistant.messages.stopGeneration')}>
-                  <IconButton
-                    onClick={onStopGeneration}
-                    size="small"
-                    aria-label={t('assistant.messages.stopGenerationAria')}
-                    sx={{
-                      color: 'error.main',
-                      '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.08)' },
-                    }}
-                  >
-                    <Stop sx={{ fontSize: ICON_SIZE_MD }} />
-                  </IconButton>
-                </Tooltip>
+                <TwoPhaseStopButton onStop={onStopGeneration} />
               ) : isModel && cleanText ? (
                 <Tooltip title={isCopied ? t('assistant.messages.copied') : t('assistant.messages.copyText')}>
                   <IconButton
@@ -239,26 +231,7 @@ const MessageBubble = React.memo(function MessageBubble({
             </Box>
 
             {isModel && toolEvents.length > 0 ? (
-              <Stack direction="row" spacing={GAP_COMPACT} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                {toolEvents.slice(-6).map((event) => (
-                  <Chip
-                    key={event.id}
-                    size="small"
-                    variant="outlined"
-                    icon={event.type === 'tool_result' ? <Check /> : <AutoAwesome />}
-                    label={event.name}
-                    sx={{
-                      borderColor: APP_BORDER,
-                      color: event.type === 'tool_result' ? 'success.main' : BRAND_PRIMARY,
-                      maxWidth: 180,
-                      '& .MuiChip-icon': {
-                        fontSize: ICON_SIZE_SM,
-                        color: 'inherit',
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
+              <ToolEventList events={toolEvents} isStreaming={isCurrentlyStreaming} />
             ) : null}
 
             {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming)
@@ -457,7 +430,7 @@ export function AssistantMessages({
               onApply={onApply}
               onSaveToMemory={onSaveToMemory}
               onStopGeneration={onStopGeneration}
-              toolEvents={lastModelMessage?.id === message.id ? toolEvents : []}
+              toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
             />
           ))}
 
@@ -480,9 +453,7 @@ export function AssistantMessages({
                     <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                     <Typography variant="caption" sx={{ fontWeight: 700, color: TEXT_SECONDARY }}>{t('assistant.messages.assistant')}</Typography>
                   </Stack>
-                  <Skeleton variant="rounded" animation="wave" height={16} width="92%" />
-                  <Skeleton variant="rounded" animation="wave" height={16} width="80%" />
-                  <Skeleton variant="rounded" animation="wave" height={16} width="64%" />
+                  <ThinkingShimmer text={t('assistant.messages.thinking')} />
                   <Box sx={assistantTypingIndicatorSx}>
                     <Box className="typing-dot" />
                     <Box className="typing-dot" />

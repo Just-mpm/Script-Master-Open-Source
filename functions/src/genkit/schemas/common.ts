@@ -89,18 +89,34 @@ export const UpdateStudioInputSchema = z.object({
 
 export const InterviewOptionSchema = z.object({
   label: z.string(),
-  description: z.string(),
+  description: z.string().nullable().optional(),
 });
 
-export const InterviewInputSchema = z.object({
+/** Uma única pergunta com opções */
+export const InterviewQuestionSchema = z.object({
   question: z.string(),
   options: z.array(InterviewOptionSchema).nullable().optional(),
+  /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
+  multiple: z.boolean().nullable().optional(),
+});
+
+/** Input do tool de entrevista — suporta single e multi-question */
+export const InterviewInputSchema = z.object({
+  /** Pergunta única (backward compat) */
+  question: z.string(),
+  options: z.array(InterviewOptionSchema).nullable().optional(),
+  /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
+  multiple: z.boolean().nullable().optional(),
+  /** Múltiplas perguntas — se presente, renderiza como tabs com confirmação em lote */
+  questions: z.array(InterviewQuestionSchema).nullable().optional(),
 });
 
 /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
 export const InterviewResumeDataSchema = z.object({
   question: z.string(),
   answer: z.string(),
+  /** Respostas para múltiplas perguntas (índice → resposta) */
+  answers: z.array(z.string()).nullable().optional(),
 });
 
 export const RespondSuggestedActionSchema = z.object({
@@ -367,6 +383,7 @@ export type GetStudioStateInput = z.infer<typeof GetStudioStateInputSchema>;
 export type GetMemoriesInput = z.infer<typeof GetMemoriesInputSchema>;
 export type UpdateStudioInput = z.infer<typeof UpdateStudioInputSchema>;
 export type InterviewOption = z.infer<typeof InterviewOptionSchema>;
+export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
 export type InterviewInput = z.infer<typeof InterviewInputSchema>;
 export type InterviewResumeData = z.infer<typeof InterviewResumeDataSchema>;
 export type RespondSuggestedAction = z.infer<typeof RespondSuggestedActionSchema>;

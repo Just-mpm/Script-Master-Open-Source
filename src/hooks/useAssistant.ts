@@ -189,6 +189,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [toolEvents, setToolEvents] = useState<AssistantToolEvent[]>([]);
   const [interview, setInterview] = useState<InterviewDatum | null>(null);
   const [respondResult, setRespondResult] = useState<RespondResult | null>(null);
+
+  // Sincroniza ref com estado para acesso sem stale closure
+  useEffect(() => { interviewRef.current = interview; }, [interview]);
   const [creditsExhausted, setCreditsExhausted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'fast' | 'specialist'>('fast');
   const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
@@ -201,6 +204,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const activeRequestIdRef = useRef<string | null>(null);
   const streamedContentStartedRef = useRef(false);
   const planRef = useRef<AssistantPlan>([]);
+  const interviewRef = useRef<InterviewDatum | null>(null);
 
   // Callable estável (a instância do SDK é memoizada)
   const assistantCallable = useMemo(
@@ -275,7 +279,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
         userId: user?.uid,
         title,
         messages: normalizeChatMessages(messages),
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
+        // Persiste plano e entrevista para resiliência a reload
+        activePlan: planRef.current.length > 0 ? planRef.current : undefined,
+        pendingInterview: interviewRef.current ?? undefined,
       };
 
       void Promise.resolve(saveChatSession(session, user?.uid))
@@ -388,12 +395,16 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
-    setPlan([]);
+
+    // Restaura plano e entrevista do session (resiliência a reload)
+    const restoredPlan = session.activePlan ?? [];
+    setPlan(restoredPlan);
+    planRef.current = restoredPlan;
+    setInterview(session.pendingInterview ?? null);
+
     setPendingSettings(null);
     setToolEvents([]);
-    setInterview(null);
     setRespondResult(null);
-    planRef.current = [];
   };
 
   const clearPendingSettings = useCallback(() => {

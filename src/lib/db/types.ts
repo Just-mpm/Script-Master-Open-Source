@@ -127,6 +127,10 @@ export interface ChatSession {
   title: string;
   messages: ChatMessageRecord[];
   updatedAt: number;
+  /** Plano de tarefas ativo (persistido para resiliência a reload) */
+  activePlan?: import('../../features/assistant/types').AssistantPlan;
+  /** Entrevista pendente (persistida para resiliência a reload) */
+  pendingInterview?: import('../../features/assistant/types').InterviewDatum;
 }
 
 /** Segmento de áudio gerado a partir de um chunk do roteiro.

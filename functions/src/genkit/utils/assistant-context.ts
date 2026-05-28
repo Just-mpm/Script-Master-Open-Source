@@ -257,13 +257,14 @@ export function buildAssistantSystemInstruction(params: AssistantSystemInstructi
   } = params;
 
   // Tool-first: usa resumos em vez de contexto completo
+  // Evita montar o bloco completo quando o modelo vai consultar via tools
   const memoriesSection = toolFirst
     ? buildMemoriesSummary(memoryCount ?? 0)
     : `\nMEMÓRIA E CONTEXTO PERSISTENTE:\n${memoriesText}`;
 
   const studioSection = toolFirst
     ? buildStudioSummary(studioState)
-    : studioBlock;
+    : studioBlock ?? buildStudioBlock(studioState);
 
   return `${buildCoreProductInstruction()}
 

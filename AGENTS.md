@@ -246,9 +246,11 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 10`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getUserMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
 | **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, prioridade, dependências, subtarefas) entre mensagens e composer. i18n nos 3 locales via namespace `plan` |
-| **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida |
+| **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida. Multi-select (`multiple` → checkboxes) e multi-question (`questions` → tabs + Confirm tab) |
 | **Studio settings preview** | `settingsPreview` exibe campos individuais antes de aplicar alterações. `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` mapeiam `StudioSettingsPatch` para labels i18n. Botão "Aplicar no estúdio" aplica patch validado |
-| **Tool event badges** | `AssistantMessages.tsx` renderiza badges visuais (Chip MUI) na última mensagem do modelo indicando ferramentas usadas (`interview`, `studio_update`, `respond`) |
+| **Tool event badges** | `ToolEventList` (`ToolEventCard.tsx`) renderiza eventos de ferramentas com ícones por tool, estados pending (shimmer), completed (check inline) e error (card colapsável). Máximo 8 eventos visíveis. `EMPTY_TOOL_EVENTS` constante estável para preservar `React.memo` |
+| **ThinkingShimmer** | `ThinkingShimmer.tsx` — shimmer animation para estado "Pensando" (substitui Skeleton wave) |
+| **TwoPhaseStopButton** | `TwoPhaseStopButton.tsx` — two-phase cancellation: primeiro clique mostra "Clique novamente para interromper" (4s timeout), segundo clique executa cancelamento |
 | **Créditos por tokens** | `calculateAssistantCreditsFromUsage()` calcula créditos baseado em `usage.totalTokens` com taxa `TOKEN_CREDIT_RATE = 1000` tokens por crédito |
 
 ### Estúdio de Produção
@@ -429,8 +431,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.104.1`
-- **Last release:** 2026-05-27
+- **Current:** `0.105.0`
+- **Last release:** 2026-05-28
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -438,8 +440,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
 | `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |
 | `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |
 | `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |
 | `0.102.0` | Chunking inteligente com fallback programático (regex expandida, merge, trailing sentence); audio tags inline no transcript (emoção, pace, continuidade); retry automático TTS (TTS_MAX_RETRIES=2); reestruturação do prompt TTS (Audio Profile + Director's Notes); thinkingConfig nos flows de IA; constantes centralizadas (EMOTION_TO_AUDIO_TAGS, PACE_TO_AUDIO_TAG, CONTINUITY_AUDIO_TAG) |
-| `0.101.0` | Seleção de modelo IA (fast/specialist) + nível de pensamento (thinking level) no assistente; novo AIModeToggle; namespace aiMode nos 3 locales; nova UI do composer com seletor de modelo; animações Motion no InlineAIWidget; removido fix_imports.js e docs de auditoria |

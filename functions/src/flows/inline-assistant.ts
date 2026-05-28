@@ -44,36 +44,14 @@ import {
   type AssistantUserSettingsDoc,
 } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { resolveModelConfig, MODEL_FAST } from '../genkit/utils/model-config.js';
+import { createLogger } from '../genkit/utils/logger.js';
 
 // ---------------------------------------------------------------------------
-// Constantes de Modelo
+// Constantes
 // ---------------------------------------------------------------------------
 
-const MODEL_FAST = 'googleai/gemini-3.1-flash-lite';
-
-interface ModelConfig {
-  model: string;
-  thinkingConfig?: Record<string, unknown>;
-}
-
-/**
- * Determina a configuração do modelo com base na escolha do usuário.
- * Inline assistant sempre usa o modelo rápido por padrão.
- */
-function resolveModelConfig(thinkingLevel?: string): ModelConfig {
-  if (thinkingLevel && ['minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
-    return {
-      model: MODEL_FAST,
-      thinkingConfig: { thinkingLevel },
-    };
-  }
-
-  // Default: thinking level high para máxima qualidade de reescrita
-  return {
-    model: MODEL_FAST,
-    thinkingConfig: { thinkingLevel: 'high' },
-  };
-}
+const log = createLogger('inlineAssistant');
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -139,6 +117,8 @@ export const inlineAssistant = onCallGenkit(
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
       }
       const requestId = input.requestId || crypto.randomUUID();
+
+      // startAiRequest antes do try — se falhar, o HttpsError propaga diretamente
       await startAiRequest(db, uid, requestId, 'inline_assistant');
 
       // -----------------------------------------------------------------------
@@ -205,9 +185,10 @@ export const inlineAssistant = onCallGenkit(
           fullScript: input.fullScript ?? '',
         });
 
-        // Resolve configuração do modelo com base na escolha do usuário
+        // Resolve configuração do modelo — inline sempre usa fast
         const { model: resolvedModel, thinkingConfig } = resolveModelConfig(
-          input.thinkingLevel ?? undefined,
+          undefined,
+          input.thinkingLevel ?? 'high', // Default high para máxima qualidade de reescrita
         );
 
         const response = await ai.generate({
@@ -248,10 +229,9 @@ export const inlineAssistant = onCallGenkit(
           model: resolvedModel,
         });
 
-        console.log(
-          `[inlineAssistant] Texto reescrito: uid=${uid} requestId=${requestId} ` +
-          `inputChars=${inputChars} outputChars=${outputChars} credits=${finalCredits}`,
-        );
+        log.info('Texto reescrito', {
+          uid, requestId, inputChars, outputChars, credits: finalCredits,
+        });
         await finishAiRequest(db, uid, requestId, 'completed');
 
         return { rewrittenText };
@@ -263,15 +243,16 @@ export const inlineAssistant = onCallGenkit(
 
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
 
-        await creditMeter.revert(errorCode);
+        // creditMeter pode não existir se o erro aconteceu antes da reserva
+        if (typeof creditMeter !== 'undefined' && creditMeter !== null) {
+          await (creditMeter as { revert: (code: string) => Promise<void> }).revert(errorCode).catch(() => {});
+        }
         const finalStatus = error instanceof HttpsError && error.code === 'cancelled'
           ? 'cancelled'
           : 'failed';
-        await finishAiRequest(db, uid, requestId, finalStatus, errorCode);
+        await finishAiRequest(db, uid, requestId, finalStatus, errorCode).catch(() => {});
 
-        console.error(
-          `[inlineAssistant] Erro na geração: uid=${uid} requestId=${requestId} erro=${errorCode}`,
-        );
+        log.error('Erro na geração', { uid, requestId, error: errorCode });
 
         throw error;
       }

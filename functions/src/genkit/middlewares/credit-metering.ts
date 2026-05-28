@@ -44,6 +44,9 @@ import {
   calculateCreditCost,
   type OperationType,
 } from '../../usage/index.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('credit-metering');
 
 function createReserveError(error?: string): HttpsError {
   if (error === 'Saldo insuficiente') {
@@ -310,10 +313,9 @@ export const creditMeteringMiddleware = generateMiddleware(
           // Reversão é best-effort
         });
 
-        console.error(
-          `[credit-metering] Erro na geração — créditos revertidos: ` +
-            `uid=${uid} requestId=${requestId} erro=${errorCode}`,
-        );
+        log.error('Erro na geração — créditos revertidos', {
+          uid, requestId, error: errorCode,
+        });
 
         throw error;
       }

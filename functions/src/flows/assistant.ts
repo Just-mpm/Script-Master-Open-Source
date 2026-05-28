@@ -58,40 +58,17 @@ import {
   type AssistantUserSettingsDoc,
 } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { resolveModelConfig } from '../genkit/utils/model-config.js';
+import { createLogger } from '../genkit/utils/logger.js';
 
 // ---------------------------------------------------------------------------
-// Constantes de Modelo
+// Constantes
 // ---------------------------------------------------------------------------
 
-const MODEL_FAST = 'googleai/gemini-3.1-flash-lite';
-const MODEL_SPECIALIST = 'googleai/gemini-3.5-flash';
 const TOKEN_CREDIT_RATE = 1000;
+const MAX_HISTORY_MESSAGES_FOR_ESTIMATION = 10;
 
-interface ModelConfig {
-  model: string;
-  thinkingConfig?: Record<string, unknown>;
-}
-
-/**
- * Determina a configuração do modelo com base na escolha do usuário.
- * Se nenhum modelo for especificado, usa o rápido por padrão.
- */
-function resolveModelConfig(
-  model?: 'fast' | 'specialist',
-  thinkingLevel?: string,
-): ModelConfig {
-  const resolvedModel = model === 'specialist' ? MODEL_SPECIALIST : MODEL_FAST;
-
-  // Se nível de pensamento for especificado, inclui no config
-  if (thinkingLevel && ['minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
-    return {
-      model: resolvedModel,
-      thinkingConfig: { thinkingLevel },
-    };
-  }
-
-  return { model: resolvedModel };
-}
+const log = createLogger('assistant');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -123,9 +100,21 @@ function extractJsonSettings(text: string): Record<string, unknown> | undefined 
   }
 }
 
+/**
+ * Remove o bloco ```json ... ``` do texto antes de retornar ao frontend.
+ * Evita que o usuário veja JSON cru na mensagem do assistente.
+ */
+function stripJsonSettingsBlock(text: string): string {
+  return text.replace(/```json\s*[\s\S]*?```\s*/gi, '').trim();
+}
+
 function buildMeteringHistoryText(input: AssistantInput): string {
+  // Trunca histórico para estimativa — últimas N mensagens são suficientes
+  const history = input.history ?? [];
+  const truncated = history.slice(-MAX_HISTORY_MESSAGES_FOR_ESTIMATION);
+
   return JSON.stringify(
-    (input.history ?? []).map((message) => ({
+    truncated.map((message) => ({
       role: message.role,
       text: message.text,
       attachments: (message.attachments ?? []).map((attachment) => ({
@@ -343,13 +332,27 @@ export const assistant = onCallGenkit(
         // Se há resume (resposta a um interrupt de entrevista), injeta o contexto
         // da pergunta anterior e a resposta do usuário no histórico
         if (input.resume) {
+          // Pergunta do modelo
           historyMessages.push({
             role: 'model' as const,
             content: [{ text: input.resume.question }],
           });
+
+          // Resposta do usuário — inclui todas as respostas se for multi-question
+          const answerParts: string[] = [];
+          if (input.resume.answers && input.resume.answers.length > 0) {
+            // Multi-question: formata cada resposta
+            answerParts.push('Respostas do usuário:');
+            input.resume.answers.forEach((answer, index) => {
+              answerParts.push(`${index + 1}. ${answer}`);
+            });
+          } else {
+            answerParts.push(input.resume.answer);
+          }
+
           historyMessages.push({
             role: 'user' as const,
-            content: [{ text: input.resume.answer }],
+            content: [{ text: answerParts.join('\n') }],
           });
         }
 
@@ -401,12 +404,21 @@ export const assistant = onCallGenkit(
           }
         };
 
+        // Helper: serializa erro como resultado para o modelo se auto-corrigir
+        // em vez de propagar exceção e quebrar o tool loop
+        const toolErrorResponse = (toolName: string, error: unknown): { error: true; tool: string; message: string } => {
+          const message = error instanceof Error ? error.message.slice(0, 300) : 'Erro desconhecido';
+          log.warn(`Tool ${toolName} falhou — modelo receberá erro como resultado`, { error: message });
+          return { error: true, tool: toolName, message };
+        };
+
         const updatePlanTool = ai.dynamicTool({
           name: 'updatePlan',
           description: 'Cria ou atualiza a lista de tarefas (TODO list) que o usuário vê como indicador de progresso. Use no início de tarefas com mais de um passo e sempre que o status de uma tarefa mudar (concluída, falhou, precisa de ajuda). Cada tarefa pode ter subtarefas, prioridade e dependências. Não use para tarefas triviais de uma etapa só.',
           inputSchema: UpdatePlanInputSchema,
           outputSchema: z.object({ ok: z.boolean(), taskCount: z.number() }),
         }, async (toolInput) => {
+          await throwIfAiCancellationRequested(db, uid, requestId);
           currentPlan = toolInput.plan;
           sendMetaChunk('plan_update', { plan: currentPlan });
           return { ok: true, taskCount: currentPlan.length };
@@ -418,19 +430,24 @@ export const assistant = onCallGenkit(
           inputSchema: GetStudioStateInputSchema,
           outputSchema: z.record(z.unknown()),
         }, async (toolInput) => {
-          const state = input.studioState ?? {};
-          const fields = toolInput.fields ?? [];
+          await throwIfAiCancellationRequested(db, uid, requestId);
+          try {
+            const state = input.studioState ?? {};
+            const fields = toolInput.fields ?? [];
 
-          if (fields.length === 0) {
-            return state;
-          }
-
-          return fields.reduce<Record<string, unknown>>((accumulator, field) => {
-            if (field in state) {
-              accumulator[field] = state[field];
+            if (fields.length === 0) {
+              return state;
             }
-            return accumulator;
-          }, {});
+
+            return fields.reduce<Record<string, unknown>>((accumulator, field) => {
+              if (field in state) {
+                accumulator[field] = state[field];
+              }
+              return accumulator;
+            }, {});
+          } catch (err) {
+            return toolErrorResponse('getStudioState', err);
+          }
         });
 
         const getUserMemoriesTool = ai.dynamicTool({
@@ -438,41 +455,61 @@ export const assistant = onCallGenkit(
           description: 'Acessa as memórias e preferências salvas pelo usuário (ex: "prefiro voz Clara", "ritmo rápido", "estilo cinematográfico"). Use quando a tarefa depender de preferências pessoais, histórico de decisões ou diretrizes salvas. Modo \'list\' retorna resumos (até 180 chars). Modo \'expand\' retorna conteúdo completo. Se a pergunta do usuário já trouxer contexto suficiente, não é necessário consultar.',
           inputSchema: GetMemoriesInputSchema,
           outputSchema: z.object({
-            memories: z.array(z.object({ content: z.string() })),
-            mode: z.string(),
+            memories: z.array(z.object({ content: z.string() })).optional(),
+            mode: z.string().optional(),
+            error: z.boolean().optional(),
+            tool: z.string().optional(),
+            message: z.string().optional(),
           }),
         }, async (toolInput) => {
-          const limit = toolInput.limit ?? 20;
-          const mode = toolInput.mode ?? 'list';
-          const snapshot = await db
-            .collection('memories')
-            .where('userId', '==', uid)
-            .limit(limit)
-            .get();
+          await throwIfAiCancellationRequested(db, uid, requestId);
+          try {
+            const limit = toolInput.limit ?? 20;
+            const mode = toolInput.mode ?? 'list';
+            const snapshot = await db
+              .collection('memories')
+              .where('userId', '==', uid)
+              .limit(limit)
+              .get();
 
-          const memoryItems = snapshot.docs.map((doc) => {
-            const data = doc.data() as { content?: unknown };
-            const content = typeof data.content === 'string' ? data.content : '';
-            return {
-              content: mode === 'list' && content.length > 180
-                ? `${content.slice(0, 180)}...`
-                : content,
-            };
-          }).filter((memory) => memory.content.length > 0);
+            const memoryItems = snapshot.docs.map((doc) => {
+              const data = doc.data() as { content?: unknown };
+              const content = typeof data.content === 'string' ? data.content : '';
+              return {
+                content: mode === 'list' && content.length > 180
+                  ? `${content.slice(0, 180)}...`
+                  : content,
+              };
+            }).filter((memory) => memory.content.length > 0);
 
-          return { memories: memoryItems, mode };
+            return { memories: memoryItems, mode };
+          } catch (err) {
+            return toolErrorResponse('getUserMemories', err);
+          }
         });
 
         const updateStudioTool = ai.dynamicTool({
           name: 'updateStudio',
           description: 'Propõe alterações em campos do estúdio (voz, ritmo, emoção, cenas, roteiro, etc). O frontend exibe uma prévia com os campos e valores que serão alterados. O usuário confirma ou rejeita antes de aplicar. Envie apenas os campos que deseja alterar — campos omitidos não são afetados. Use APÓS explicar o raciocínio em linguagem natural. Não envie sem detalhar o que está sugerindo e por quê. Campos válidos: selectedVoice, pace, emotion, emotionIntensity, audioProfile, scene, styleNotes, generateScenes, sceneDensity, sceneRatio, visualFramework, imageTextLanguage, isMultiSpeaker, speakerAName, speakerBName, speakerBVoice, script.',
           inputSchema: UpdateStudioInputSchema,
-          outputSchema: z.object({ ok: z.boolean(), settings: z.record(z.unknown()), summary: z.string() }),
+          outputSchema: z.object({
+            ok: z.boolean().optional(),
+            settings: z.record(z.unknown()).optional(),
+            summary: z.string().optional(),
+            error: z.boolean().optional(),
+            tool: z.string().optional(),
+            message: z.string().optional(),
+          }),
         }, async (toolInput) => {
-          pendingStudioSettings = toolInput.settings;
-          const summary = toolInput.summary ?? 'O assistente sugeriu ajustes para o estúdio.';
-          sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
-          return { ok: true, settings: toolInput.settings, summary };
+          await throwIfAiCancellationRequested(db, uid, requestId);
+          try {
+            pendingStudioSettings = toolInput.settings;
+            const summary = toolInput.summary ?? 'O assistente sugeriu ajustes para o estúdio.';
+            sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
+            return { ok: true, settings: toolInput.settings, summary };
+          } catch (err) {
+            return toolErrorResponse('updateStudio', err);
+          }
         });
 
         const interviewTool = ai.dynamicTool({
@@ -484,6 +521,7 @@ export const assistant = onCallGenkit(
             question: z.string(),
           }),
         }, async (toolInput) => {
+          await throwIfAiCancellationRequested(db, uid, requestId);
           currentInterview = toolInput;
           sendMetaChunk('interview', { interview: toolInput });
           return { status: 'awaiting_input' as const, question: toolInput.question };
@@ -495,6 +533,7 @@ export const assistant = onCallGenkit(
           inputSchema: RespondInputSchema,
           outputSchema: z.object({ ok: z.boolean() }),
         }, async (toolInput) => {
+          await throwIfAiCancellationRequested(db, uid, requestId);
           currentRespond = toolInput;
           sendMetaChunk('respond_result', { respond: toolInput });
           return { ok: true };
@@ -505,27 +544,35 @@ export const assistant = onCallGenkit(
           description: 'Pesquisa informações na web usando Google Search Grounding. Use quando precisar de dados atuais que não estão no contexto da conversa (ex: preços, notícias, documentação recente, tendências). Retorna um resumo da pesquisa com fontes. \'numResults\' controla quantas fontes (padrão: 5). Não use para informações que já estão disponíveis no estúdio, memórias ou system prompt.',
           inputSchema: WebSearchInputSchema,
           outputSchema: z.object({
-            query: z.string(),
-            text: z.string(),
-            sources: z.array(z.record(z.unknown())),
+            query: z.string().optional(),
+            text: z.string().optional(),
+            sources: z.array(z.record(z.unknown())).optional(),
+            error: z.boolean().optional(),
+            tool: z.string().optional(),
+            message: z.string().optional(),
           }),
         }, async (toolInput) => {
-          const response = await ai.generate({
-            model: resolvedModel,
-            prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
-            config: {
-              googleSearchRetrieval: {},
-            },
-          });
-          const custom = typeof response.custom === 'object' && response.custom !== null
-            ? response.custom as { candidates?: Array<{ groundingMetadata?: { groundingChunks?: Array<Record<string, unknown>> } }> }
-            : {};
-          const sources = custom.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-          return {
-            query: toolInput.query,
-            text: response.text,
-            sources: sources.slice(0, toolInput.numResults ?? 5),
-          };
+          await throwIfAiCancellationRequested(db, uid, requestId);
+          try {
+            const response = await ai.generate({
+              model: resolvedModel,
+              prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
+              config: {
+                googleSearchRetrieval: {},
+              },
+            });
+            const custom = typeof response.custom === 'object' && response.custom !== null
+              ? response.custom as { candidates?: Array<{ groundingMetadata?: { groundingChunks?: Array<Record<string, unknown>> } }> }
+              : {};
+            const sources = custom.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+            return {
+              query: toolInput.query,
+              text: response.text,
+              sources: sources.slice(0, toolInput.numResults ?? 5),
+            };
+          } catch (err) {
+            return toolErrorResponse('webSearch', err);
+          }
         });
 
         try {
@@ -617,10 +664,9 @@ export const assistant = onCallGenkit(
               });
               creditsSettled = true;
 
-              console.log(
-                `[assistant] Streaming abortado por desconexão do cliente: ` +
-                `uid=${uid} requestId=${requestId} chars=${outputChars} credits=${partialCredits}`,
-              );
+              log.info('Streaming abortado por desconexão do cliente', {
+                uid, requestId, chars: outputChars, credits: partialCredits,
+              });
             } else {
               // Nada foi gerado — reverte reserva
               await creditMeter.revert('CLIENT_DISCONNECTED');
@@ -630,14 +676,13 @@ export const assistant = onCallGenkit(
             // Retorna o texto parcial (cliente já desconectado, mas mantém consistência)
             const jsonSettings = extractJsonSettings(fullText);
             await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
-              console.error(
-                `[assistant] Falha ao finalizar ai_request após desconexão: ` +
-                `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-              );
+              log.error('Falha ao finalizar ai_request após desconexão', {
+                error: finishError instanceof Error ? finishError.message : 'desconhecido',
+              });
             });
             requestFinished = true;
             return {
-              text: fullText,
+              text: stripJsonSettingsBlock(fullText),
               jsonSettings,
               plan: currentPlan,
               appliedSettings: pendingStudioSettings,
@@ -707,20 +752,18 @@ export const assistant = onCallGenkit(
           });
           creditsSettled = true;
 
-          console.log(
-            `[assistant] Resposta gerada: uid=${uid} requestId=${requestId} ` +
-            `chars=${outputChars} credits=${finalCredits}`,
-          );
+          log.info('Resposta gerada', {
+            uid, requestId, chars: outputChars, credits: finalCredits,
+          });
 
           await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
-            console.error(
-              `[assistant] Falha ao finalizar ai_request com sucesso: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com sucesso', {
+              error: finishError instanceof Error ? finishError.message : 'desconhecido',
+            });
           });
           requestFinished = true;
           return {
-            text: fullText,
+            text: stripJsonSettingsBlock(fullText),
             jsonSettings,
             plan: currentPlan,
             appliedSettings: pendingStudioSettings,
@@ -746,16 +789,13 @@ export const assistant = onCallGenkit(
             error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
             errorCode,
           ).catch((finishError: unknown) => {
-            console.error(
-              `[assistant] Falha ao finalizar ai_request com erro interno: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com erro interno', {
+              error: finishError instanceof Error ? finishError.message : 'desconhecido',
+            });
           });
           requestFinished = true;
 
-          console.error(
-            `[assistant] Erro na geração: uid=${uid} requestId=${requestId} erro=${errorCode}`,
-          );
+          log.error('Erro na geração', { uid, requestId, error: errorCode });
 
           throw error;
         }
@@ -774,10 +814,9 @@ export const assistant = onCallGenkit(
             error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
             errorCode,
           ).catch((finishError: unknown) => {
-            console.error(
-              `[assistant] Falha ao finalizar ai_request no catch externo: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request no catch externo', {
+              error: finishError instanceof Error ? finishError.message : 'desconhecido',
+            });
           });
         }
 

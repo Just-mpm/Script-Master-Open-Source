@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
   deleteChatSession,
@@ -29,7 +28,7 @@ import { AssistantMemoriesPanel } from './components/AssistantMemoriesPanel';
 import { AssistantMessages } from './components/AssistantMessages';
 import { AssistantSettingsPanel } from './components/AssistantSettingsPanel';
 import { PlanWidget } from './components/PlanWidget';
-import type { AssistantSettings, AssistantStudioState } from './types';
+import type { AssistantSettings, AssistantStudioState, InterviewResumeData } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
@@ -37,6 +36,7 @@ import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
 import type { StudioSettingsPatch } from '../studio/types';
+import { InterviewPanel } from './components/InterviewPanel';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -120,7 +120,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   }, [pendingSettings, t, formatSettingValue]);
 
   const [input, setInput] = useState('');
-  const [interviewAnswer, setInterviewAnswer] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
   const [savedToMemoryId, setSavedToMemoryId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -396,18 +395,22 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     clearPendingSettings();
   }, [clearPendingSettings, onApplySettings, pendingSettings]);
 
-  const handleAnswerInterview = useCallback((answer: string) => {
+  const handleAnswerInterview = useCallback((answer: string, answers?: string[]) => {
     const trimmedAnswer = answer.trim();
     if (!interview || !trimmedAnswer) {
       return;
     }
 
     clearInterview();
-    setInterviewAnswer('');
-    void sendMessage(trimmedAnswer, undefined, undefined, {
+
+    // Envia resposta com dados de resume
+    const resumeData: InterviewResumeData = {
       question: interview.question,
       answer: trimmedAnswer,
-    });
+      answers: answers && answers.length > 0 ? answers : undefined,
+    };
+
+    void sendMessage(trimmedAnswer, undefined, undefined, resumeData);
   }, [clearInterview, interview, sendMessage]);
 
   const handleSuggestedAction = useCallback((action: string, params?: Record<string, unknown> | null) => {
@@ -633,58 +636,10 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       ) : null}
 
       {interview ? (
-        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
-          <Alert
-            variant="outlined"
-            severity="info"
-            sx={{ borderRadius: 2 }}
-          >
-            <Stack spacing={1.5}>
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {interview.question}
-              </Typography>
-
-              {interview.options && interview.options.length > 0 ? (
-                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                  {interview.options.map((option) => (
-                    <Button
-                      key={option.label}
-                      color="inherit"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleAnswerInterview(option.label)}
-                      sx={{ textTransform: 'none', borderColor: APP_BORDER, flexDirection: 'column', alignItems: 'flex-start', py: 0.75 }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{option.label}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
-                        {option.description}
-                      </Typography>
-                    </Button>
-                  ))}
-                </Stack>
-              ) : null}
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <TextField
-                  value={interviewAnswer}
-                  onChange={(event) => setInterviewAnswer(event.target.value)}
-                  size="small"
-                  fullWidth
-                  placeholder={t('assistant.messages.interviewPlaceholder')}
-                  aria-label={t('assistant.messages.interviewPlaceholder')}
-                />
-                <Button
-                  variant="contained"
-                  onClick={() => handleAnswerInterview(interviewAnswer)}
-                  disabled={!interviewAnswer.trim()}
-                  sx={{ flexShrink: 0 }}
-                >
-                  {t('assistant.messages.interviewSend')}
-                </Button>
-              </Stack>
-            </Stack>
-          </Alert>
-        </Box>
+        <InterviewPanel
+          interview={interview}
+          onAnswer={handleAnswerInterview}
+        />
       ) : null}
 
       <AssistantComposer
