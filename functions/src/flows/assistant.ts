@@ -396,9 +396,18 @@ export const assistant = onCallGenkit(
           input.thinkingLevel ?? undefined,
         );
 
-        const sendMetaChunk = (type: string, payload: Record<string, unknown>) => {
+        /**
+         * Yield para o event loop do Node.js — força o flush do buffer HTTP
+         * entre chunks de streaming. Sem isso, múltiplos sendChunk() em
+         * sequência rápida (tool_call → tool_result → texto) são agrupados
+         * pelo runtime e entregues ao cliente como um único bloco.
+         */
+        const forceFlush = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+        const sendMetaChunk = async (type: string, payload: Record<string, unknown>) => {
           try {
             sendChunk(serializeAssistantMeta(type, payload));
+            await forceFlush();
           } catch {
             sendFailed = true;
           }
@@ -420,7 +429,7 @@ export const assistant = onCallGenkit(
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
           currentPlan = toolInput.plan;
-          sendMetaChunk('plan_update', { plan: currentPlan });
+          await sendMetaChunk('plan_update', { plan: currentPlan });
           return { ok: true, taskCount: currentPlan.length };
         });
 
@@ -505,7 +514,7 @@ export const assistant = onCallGenkit(
           try {
             pendingStudioSettings = toolInput.settings;
             const summary = toolInput.summary ?? 'O assistente sugeriu ajustes para o estúdio.';
-            sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
+            await sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
             return { ok: true, settings: toolInput.settings, summary };
           } catch (err) {
             return toolErrorResponse('updateStudio', err);
@@ -523,7 +532,7 @@ export const assistant = onCallGenkit(
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
           currentInterview = toolInput;
-          sendMetaChunk('interview', { interview: toolInput });
+          await sendMetaChunk('interview', { interview: toolInput });
           return { status: 'awaiting_input' as const, question: toolInput.question };
         });
 
@@ -535,7 +544,7 @@ export const assistant = onCallGenkit(
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
           currentRespond = toolInput;
-          sendMetaChunk('respond_result', { respond: toolInput });
+          await sendMetaChunk('respond_result', { respond: toolInput });
           return { ok: true };
         });
 
@@ -602,7 +611,7 @@ export const assistant = onCallGenkit(
             for (const part of getChunkParts(chunk)) {
               const toolRequest = getToolRequestFromPart(part);
               if (toolRequest) {
-                sendMetaChunk('tool_call', {
+                await sendMetaChunk('tool_call', {
                   name: toolRequest.name,
                   input: toolRequest.input,
                 });
@@ -616,7 +625,7 @@ export const assistant = onCallGenkit(
 
               const toolResponse = getToolResponseFromPart(part);
               if (toolResponse) {
-                sendMetaChunk('tool_result', {
+                await sendMetaChunk('tool_result', {
                   name: toolResponse.name,
                   output: toolResponse.output,
                 });
@@ -628,6 +637,7 @@ export const assistant = onCallGenkit(
                 fullText += chunkText;
                 try {
                   sendChunk(chunkText);
+                  await forceFlush();
                 } catch {
                   // Cliente desconectou — aborta o streaming localmente,
                   // mas confirma créditos parciais pelo texto já gerado

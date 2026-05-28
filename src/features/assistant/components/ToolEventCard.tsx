@@ -337,6 +337,15 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
   );
 }
 
+// ─── Merged Tool Event (tool_call + tool_result → 1 item) ────────
+
+interface MergedToolEvent {
+  name: string;
+  callEvent: AssistantToolEvent;
+  resultEvent?: AssistantToolEvent;
+  isPending: boolean;
+}
+
 // ─── Tool Event List ─────────────────────────────────────────────
 
 interface ToolEventListProps {
@@ -347,36 +356,53 @@ interface ToolEventListProps {
 export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
   const { t } = useLocale();
 
-  // Agrupa eventos: último tool_call sem tool_result correspondente = pending
-  const { displayEvents, pendingNames } = useMemo(() => {
-    const resultNames = new Set(
-      events.filter((e) => e.type === 'tool_result').map((e) => e.name),
-    );
+  // Mescla tool_call e tool_result em um único item por tool
+  const { mergedEvents, hasPending } = useMemo(() => {
+    // Mapa: tool name → último tool_call e último tool_result
+    const callMap = new Map<string, AssistantToolEvent>();
+    const resultMap = new Map<string, AssistantToolEvent>();
 
-    // Último tool_call de cada tool que ainda não tem resultado
-    const pendingToolCalls = new Map<string, AssistantToolEvent>();
-    for (let i = events.length - 1; i >= 0; i--) {
-      const event = events[i];
-      if (event.type === 'tool_call' && !resultNames.has(event.name) && !pendingToolCalls.has(event.name)) {
-        pendingToolCalls.set(event.name, event);
+    for (const event of events) {
+      if (event.type === 'tool_call') {
+        callMap.set(event.name, event);
+      } else if (event.type === 'tool_result') {
+        resultMap.set(event.name, event);
       }
     }
 
-    // Mostra: todos os eventos que não são pending, + os pending no final
-    const nonPending = events.filter((e) => !pendingToolCalls.has(e.name) || e.type === 'tool_result');
-    const pending = Array.from(pendingToolCalls.values()).reverse();
+    // Preserva ordem de aparição (primeira ocorrência de cada tool)
+    const seen = new Set<string>();
+    const ordered: MergedToolEvent[] = [];
+
+    for (const event of events) {
+      if (seen.has(event.name)) continue;
+      seen.add(event.name);
+
+      const call = callMap.get(event.name);
+      const result = resultMap.get(event.name);
+
+      // Sempre cria um merged event (com ou sem call)
+      if (call || result) {
+        ordered.push({
+          name: event.name,
+          callEvent: call ?? result!,
+          resultEvent: result,
+          isPending: Boolean(call && !result),
+        });
+      }
+    }
 
     return {
-      displayEvents: [...nonPending, ...pending],
-      pendingNames: new Set(pendingToolCalls.keys()),
+      mergedEvents: ordered,
+      hasPending: ordered.some((e) => e.isPending),
     };
   }, [events]);
 
-  if (displayEvents.length === 0) return null;
+  if (mergedEvents.length === 0) return null;
 
   // Mostra no máximo 8 eventos (últimos)
-  const visibleEvents = displayEvents.slice(-8);
-  const hiddenCount = displayEvents.length - visibleEvents.length;
+  const visibleEvents = mergedEvents.slice(-8);
+  const hiddenCount = mergedEvents.length - visibleEvents.length;
 
   return (
     <Box
@@ -404,7 +430,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
         <Typography variant="caption" sx={{ fontSize: '0.65rem', color: TEXT_DISABLED, fontWeight: 600 }}>
           {t('assistant.toolEvents.title')}
         </Typography>
-        {isStreaming && pendingNames.size > 0 ? (
+        {isStreaming && hasPending ? (
           <Box
             sx={{
               width: 6,
@@ -418,18 +444,18 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
         ) : null}
       </Stack>
 
-      {/* Event list */}
+      {/* Event list — um item por tool */}
       <Stack spacing={0} sx={{ py: 0.25 }}>
         {hiddenCount > 0 ? (
           <Typography variant="caption" sx={{ px: 1, py: 0.25, fontSize: '0.6rem', color: TEXT_DISABLED }}>
             +{hiddenCount} {t('assistant.toolEvents.more')}
           </Typography>
         ) : null}
-        {visibleEvents.map((event) => (
+        {visibleEvents.map((merged) => (
           <ToolEventItem
-            key={event.id}
-            event={event}
-            isPending={pendingNames.has(event.name) && event.type === 'tool_call'}
+            key={merged.name}
+            event={merged.resultEvent ?? merged.callEvent}
+            isPending={merged.isPending}
           />
         ))}
       </Stack>

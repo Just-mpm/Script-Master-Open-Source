@@ -1205,6 +1205,7 @@ export const es: TranslationDictionary = {
     plan: {
       title: 'Plan del asistente',
       tasksCompleted: '{completed} de {total} tareas completadas',
+      tasksCompletedLabel: 'tareas completadas',
       dependsOn: 'Depende de {dependency}',
       statusLabels: {
         pending: 'Pendiente',

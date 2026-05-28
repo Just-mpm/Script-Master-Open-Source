@@ -226,7 +226,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/components/PlanWidget.tsx`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts`, `functions/src/genkit/utils/callable-auth.ts`, `functions/src/genkit/schemas/common.ts` |
+| **Arquivos** | `src/features/assistant/`, `src/features/assistant/components/assistantUi.ts`, `src/features/assistant/components/PlanWidget.tsx`, `src/features/assistant/components/SettingsPreviewCard.tsx`, `src/features/assistant/components/ToolEventCard.tsx`, `src/hooks/useAssistant.ts`, `src/features/studio/components/InlineAIWidget.tsx`, `src/hooks/useInlineAssistant.ts`, `functions/src/flows/assistant.ts`, `functions/src/flows/inline-assistant.ts`, `functions/src/genkit/utils/assistant-context.ts`, `functions/src/genkit/utils/callable-auth.ts`, `functions/src/genkit/schemas/common.ts` |
 | **Inline AI Widget** | `InlineAIWidget` integrado ao `ScriptEditor` — permite refatorar (IA rewrite), expandir ou resumir trechos selecionados. Usa `useInlineAssistant` para streaming via Cloud Function `inline-assistant` (Genkit) e `VirtualElement` para posicionamento contextual (Popover). Animações Motion com `AnimatePresence`, transições Fade e componente `KbdHint` para dicas de teclado |
 | **Backend (Genkit)** | Chat principal usa Cloud Function `assistant` via `httpsCallable`. Inline assistant usa `inline-assistant`. As instruções agora são montadas em código por `assistant-context.ts`, sem arquivos `.prompt` separados |
 | **Modelo** | `gemini-3.1-flash-lite` (modo `fast`, streaming via Genkit no backend) ou `gemini-3.5-flash` (modo `specialist`). Selecionável via `AIModeToggle` no ScriptEditor. Nível de pensamento configurável (`ThinkingLevel`: `minimal` | `low` | `medium` | `high`) |
@@ -431,7 +431,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.105.0`
+- **Current:** `0.105.1`
 - **Last release:** 2026-05-28
 
 ### Últimas mudanças (atualizado por /fast)
@@ -440,8 +440,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |
 | `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
 | `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |
 | `0.104.0` | Arquitetura tool-first no assistente (ai.dynamicTool, tool loop 10 turns, interview/resume, studio settings preview, PlanWidget); sanitizeStudioSettingsPatch; 15+ schemas Zod de orquestração; remoção de 8 docs de auditoria antigos; textos de UI pública refinados |
 | `0.103.0` | Sanitização undefined→null (removeUndefinedFields, schemas Zod .nullable().optional()); simulação de progresso na geração de áudio (estimatedChunkCount + progressTimerRef); remoção de thinkingConfig dos flows TTS/chunking; docs de auditoria e plano do orquestrador agente |
-| `0.102.0` | Chunking inteligente com fallback programático (regex expandida, merge, trailing sentence); audio tags inline no transcript (emoção, pace, continuidade); retry automático TTS (TTS_MAX_RETRIES=2); reestruturação do prompt TTS (Audio Profile + Director's Notes); thinkingConfig nos flows de IA; constantes centralizadas (EMOTION_TO_AUDIO_TAGS, PACE_TO_AUDIO_TAG, CONTINUITY_AUDIO_TAG) |

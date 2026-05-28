@@ -1221,6 +1221,7 @@ export const ptBR: TranslationDictionary = {
     plan: {
       title: 'Plano do assistente',
       tasksCompleted: '{completed} de {total} tarefas concluídas',
+      tasksCompletedLabel: 'tarefas concluídas',
       dependsOn: 'Depende de {dependency}',
       statusLabels: {
         pending: 'Pendente',

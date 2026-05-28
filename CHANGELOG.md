@@ -7,6 +7,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.105.1] - 2026-05-28
+
+### Adicionado
+
+- **Chave i18n** `plan.tasksCompletedLabel` nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): label para contagem de tarefas concluídas no PlanWidget
+
+### Alterado
+
+- **SettingsPreviewCard** (`src/features/assistant/components/SettingsPreviewCard.tsx`, +157 linhas): novo componente extraído do `Assistant.tsx` — encapsula preview visual de configurações do assistente com `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS`. `Assistant.tsx` simplificado (–76 linhas)
+- **AssistantComposer.tsx**: substituição de `ListItemIcon`/`Lightbulb`/`KeyboardArrowUp` por `ToggleButton`/`ToggleButtonGroup`/`AutoAwesome` — UI de seleção de modelo realinhada
+- **ToolEventCard.tsx**: nova interface `MergedToolEvent` para consolidação de eventos de ferramenta; removida prop `displayEvents` (lógica incorporada no componente)
+- **PlanWidget.tsx**: novo tipo `StatusIconSize` (`'sm' | 'md'`); ajustes responsivos (`display: { xs: 'none', sm: 'flex' }`); `SubtaskStatusIcon` removido (incorporado em `StatusIcon`)
+- **assistantUi.ts**: estilos `assistantToolEventItemSx` e `assistantToolEventIconSx` com `alignItems: 'center'`, `height: 32` — padronização visual de tool events
+- **useAssistant.ts**: estado inicial simplificado — `messages` inicializado como array vazio (welcome message gerenciado pelo componente); parâmetro `thinkingLevel` removido da chamada da Cloud Function
+
+### Corrigido
+
+- **AssistantMessages.tsx**: condicionais de exibição simplificadas — removido `isCurrentId` redundante, garantindo que settings e tool events apareçam corretamente durante e após streaming
+- **Testes**: `AssistantMessages.component.test.tsx` e `useAssistant.unit.test.tsx` atualizados — remoção de asserções sobre welcome message e Skeletons; novos asserts para `MergedToolEvent`
+- **Backend assistant.ts**: assinatura de `sendMetaChunk` ajustada — remoção de campos obsoletos nos chunks tool_event
+
+---
+
 ## [0.105.0] - 2026-05-28
 
 ### Adicionado

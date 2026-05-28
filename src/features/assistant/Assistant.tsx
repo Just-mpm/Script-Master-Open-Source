@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import { alpha } from '@mui/material/styles';
 import Alert from '@mui/material/Alert';
@@ -28,6 +28,7 @@ import { AssistantMemoriesPanel } from './components/AssistantMemoriesPanel';
 import { AssistantMessages } from './components/AssistantMessages';
 import { AssistantSettingsPanel } from './components/AssistantSettingsPanel';
 import { PlanWidget } from './components/PlanWidget';
+import { SettingsPreviewCard } from './components/SettingsPreviewCard';
 import type { AssistantSettings, AssistantStudioState, InterviewResumeData } from './types';
 import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
@@ -35,34 +36,12 @@ import { DeleteConfirmationDialog } from '../../components/video-library/DeleteC
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { APP_BORDER, BRAND_PRIMARY } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
-import type { StudioSettingsPatch } from '../studio/types';
 import { InterviewPanel } from './components/InterviewPanel';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
   currentState?: AssistantStudioState;
 }
-
-/** Mapeamento de chaves de settings para chaves i18n de labels */
-const SETTINGS_LABEL_KEYS: Record<keyof StudioSettingsPatch, string> = {
-  script: 'studio.header.scriptTab',
-  selectedVoice: 'configuracoes.voiceLabel',
-  isMultiSpeaker: 'configuracoes.multiSpeakerLabel',
-  speakerAName: 'configuracoes.personaNameLabel',
-  speakerBName: 'configuracoes.speakerBNameLabel',
-  speakerBVoice: 'configuracoes.speakerBVoiceLabel',
-  audioProfile: 'configuracoes.profileLabel',
-  scene: 'configuracoes.sceneLabel',
-  pace: 'configuracoes.paceLabel',
-  styleNotes: 'configuracoes.styleNotesLabel',
-  generateScenes: 'configuracoes.generateScenesLabel',
-  sceneDensity: 'configuracoes.sceneDensityLabel',
-  sceneRatio: 'configuracoes.sceneRatioLabel',
-  visualFramework: 'configuracoes.visualFrameworkLabel',
-  emotion: 'configuracoes.emotionLabel',
-  emotionIntensity: 'studio.emotion.intensity',
-  imageTextLanguage: 'configuracoes.imageTextLanguageLabel',
-};
 
 const MAX_DOCUMENT_SIZE = 500 * 1024;
 const MAX_MEMORY_DOCUMENT_TEXT = 490000;
@@ -90,6 +69,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     setSelectedModel,
     selectedThinkingLevel,
     setSelectedThinkingLevel,
+    thinkingEnabled,
+    setThinkingEnabled,
     plan,
     pendingSettings,
     toolEvents,
@@ -99,31 +80,10 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     clearInterview,
   } = useAssistant(currentState);
 
-  /** Formata um valor de setting para exibição amigável */
-  const formatSettingValue = useCallback((key: string, value: unknown): string => {
-    if (typeof value === 'boolean') return value ? t('common.confirm') : t('common.cancel');
-    if (key === 'emotion') return t(`studio.emotion.options.${String(value)}`) ?? String(value);
-    if (key === 'imageTextLanguage') return String(value).toUpperCase();
-    if (typeof value === 'number') return String(value);
-    return String(value);
-  }, [t]);
-
-  /** Gera lista de { label, value } para preview dos settings pendentes */
-  const settingsPreview = useMemo(() => {
-    if (!pendingSettings) return [];
-    return Object.entries(pendingSettings.settings)
-      .filter(([key, value]) => key in SETTINGS_LABEL_KEYS && value !== undefined && value !== null && value !== '')
-      .map(([key, value]) => ({
-        label: t(SETTINGS_LABEL_KEYS[key as keyof StudioSettingsPatch]),
-        value: formatSettingValue(key, value),
-      }));
-  }, [pendingSettings, t, formatSettingValue]);
-
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
   const [savedToMemoryId, setSavedToMemoryId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [isThinkActive, setIsThinkActive] = useState(false);
   const [showMemories, setShowMemories] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -555,36 +515,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       <PlanWidget tasks={plan} />
 
       {pendingSettings ? (
-        <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
-          <Alert
-            variant="outlined"
-            severity="info"
-            sx={{ borderRadius: 2 }}
-            action={
-              <Stack direction="row" spacing={1}>
-                <Button color="inherit" size="small" onClick={handleApplyPendingSettings}>
-                  {t('assistant.messages.applyToStudio')}
-                </Button>
-                <Button color="inherit" size="small" onClick={clearPendingSettings}>
-                  {t('assistant.messages.ignore')}
-                </Button>
-              </Stack>
-            }
-          >
-            <Stack spacing={0.5}>
-              <Typography variant="body2">{pendingSettings.summary}</Typography>
-              {settingsPreview.length > 0 ? (
-                <Stack component="ul" spacing={0.25} sx={{ m: 0, pl: 2 }}>
-                  {settingsPreview.map(({ label, value }) => (
-                    <Typography key={label} component="li" variant="caption" sx={{ color: 'text.secondary' }}>
-                      <strong>{label}:</strong> {value}
-                    </Typography>
-                  ))}
-                </Stack>
-              ) : null}
-            </Stack>
-          </Alert>
-        </Box>
+        <SettingsPreviewCard
+          pendingSettings={pendingSettings}
+          onApply={handleApplyPendingSettings}
+          onDismiss={clearPendingSettings}
+        />
       ) : null}
 
       {respondResult && (
@@ -646,7 +581,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         input={input}
         pendingFiles={pendingFiles}
         isLoading={isLoading}
-        isThinkActive={isThinkActive}
+        isThinkActive={thinkingEnabled}
         creditsBlocked={creditBlockedByBalance}
         interviewPending={!!interview}
         fileInputRef={fileInputRef}
@@ -657,7 +592,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         onFileChange={handleFileChange}
         onRemoveFile={handleRemoveFile}
         onStopGeneration={stopGeneration}
-        onThinkToggle={() => setIsThinkActive((prev) => !prev)}
+        onThinkToggle={() => setThinkingEnabled((prev) => !prev)}
         onModelChange={setSelectedModel}
         onThinkingLevelChange={setSelectedThinkingLevel}
       />

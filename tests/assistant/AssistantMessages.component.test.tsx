@@ -232,8 +232,8 @@ describe('AssistantMessages', () => {
       { wrapper: Wrapper },
     );
 
-    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
-    expect(skeletons.length).toBeGreaterThan(0);
+    // ThinkingShimmer substitui Skeleton — verifica texto "Pensando" ou shimmer
+    expect(screen.getByText('Pensando')).toBeDefined();
   });
 
   it('NÃO mostra skeleton quando isLoading mas isStreaming', () => {
@@ -270,27 +270,19 @@ describe('AssistantMessages', () => {
         messages={messages}
         toolEvents={[
           { id: 'tool-1', type: 'tool_call', name: 'updatePlan' },
-          { id: 'tool-2', type: 'tool_result', name: 'getStudioState' },
+          { id: 'tool-2', type: 'tool_result', name: 'updatePlan' },
+          { id: 'tool-3', type: 'tool_call', name: 'getStudioState' },
         ]}
       />,
       { wrapper: Wrapper },
     );
 
-    expect(screen.getByText('updatePlan')).toBeDefined();
-    expect(screen.getByText('getStudioState')).toBeDefined();
-  });
-
-  it('NÃO mostra "Salvar insight" para mensagem welcome', () => {
-    const messages = [
-      createMessage({ id: 'welcome', role: 'model', text: 'Bem-vindo!' }),
-    ];
-
-    render(
-      <AssistantMessages {...defaultProps} messages={messages} />,
-      { wrapper: Wrapper },
-    );
-
-    expect(screen.queryByText('Salvar insight')).toBeNull();
+    // Header do ToolEventList
+    expect(screen.getByText('Ferramentas')).toBeDefined();
+    // updatePlan: call + result → label concluído
+    expect(screen.getByText('Atualizando plano')).toBeDefined();
+    // getStudioState: call sem result → pending com reticências
+    expect(screen.getByText((content) => content.includes('Lendo configurações'))).toBeDefined();
   });
 
   it('mostra "Salvo na memória" quando memória já foi salva', () => {
@@ -476,8 +468,13 @@ describe('AssistantMessages', () => {
       { wrapper: Wrapper },
     );
 
+    // TwoPhaseStopButton exige 2 cliques: primeiro ativa confirmação, segundo executa
     const stopBtn = screen.getByLabelText('Parar geração de resposta');
     fireEvent.click(stopBtn);
+
+    // Após primeiro clique, botão muda para "Confirmar interrupção"
+    const confirmBtn = screen.getByLabelText('Confirmar interrupção da geração');
+    fireEvent.click(confirmBtn);
 
     expect(defaultProps.onStopGeneration).toHaveBeenCalledTimes(1);
   });

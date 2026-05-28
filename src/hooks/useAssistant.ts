@@ -177,9 +177,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const streamFallbackText = `${t('assistantStrings.errors.stream')} ${retryDetectionMarker}`;
 
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 'welcome', role: 'model', text: t('assistantStrings.welcome') },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,6 +193,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [creditsExhausted, setCreditsExhausted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'fast' | 'specialist'>('fast');
   const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
+  const [thinkingEnabled, setThinkingEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamActiveRef = useRef(false);
@@ -372,7 +371,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     streamActiveRef.current = false;
 
     setCurrentSessionId(crypto.randomUUID());
-    setMessages([{ id: 'welcome', role: 'model', text: t('assistantStrings.welcome') }]);
+    setMessages([]);
     setIsLoading(false);
     setIsStreaming(false);
     setError(null);
@@ -485,7 +484,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         plan: planRef.current.length > 0 ? planRef.current : undefined,
         requestId,
         model: selectedModel,
-        thinkingLevel: selectedThinkingLevel,
+        thinkingLevel: thinkingEnabled ? selectedThinkingLevel : undefined,
         resume: resume ?? undefined,
       };
       const input = removeUndefinedFields(rawInput);
@@ -592,15 +591,17 @@ export function useAssistant(currentState?: AssistantStudioState) {
             planRef.current = output.plan;
             setPlan(output.plan);
           }
+          // Interview primeiro — pode limpar pendingSettings
+          if (output.interview) {
+            setInterview(output.interview);
+            setPendingSettings(null);
+          }
+          // appliedSettings DEPOIS de interview para não ser sobrescrito
           if (output.appliedSettings) {
             setPendingSettings({
               settings: output.appliedSettings as AssistantSettings,
               summary: 'O assistente sugeriu ajustes para o estúdio.',
             });
-          }
-          if (output.interview) {
-            setInterview(output.interview);
-            setPendingSettings(null);
           }
           if (output.respond) {
             setRespondResult(output.respond);
@@ -675,6 +676,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     toUserFriendlyAssistantError,
     selectedModel,
     selectedThinkingLevel,
+    thinkingEnabled,
   ]);
 
   /** Interrompe a geração em andamento via AbortController. */
@@ -749,6 +751,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setSelectedModel,
     selectedThinkingLevel,
     setSelectedThinkingLevel,
+    thinkingEnabled,
+    setThinkingEnabled,
   };
 }
 

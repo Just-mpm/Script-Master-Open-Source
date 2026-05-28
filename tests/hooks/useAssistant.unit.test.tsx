@@ -175,12 +175,10 @@ describe('useAssistant', () => {
     vi.unstubAllGlobals();
   });
 
-  it('deve inicializar com mensagem de boas-vindas', () => {
+  it('deve inicializar vazio (sem mensagem de boas-vindas)', () => {
     const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
 
-    expect(result.current.messages).toHaveLength(1);
-    expect(result.current.messages[0].role).toBe('model');
-    expect(result.current.messages[0].text).toBeTruthy();
+    expect(result.current.messages).toHaveLength(0);
   });
 
   it('deve ter isLoading false e isStreaming false inicialmente', () => {
@@ -288,7 +286,7 @@ describe('useAssistant', () => {
       await result.current.sendMessage('Stream test');
     });
 
-    const assistantMsg = result.current.messages.find((m) => m.role === 'model' && m.id !== 'welcome');
+    const assistantMsg = result.current.messages.find((m) => m.role === 'model');
     expect(assistantMsg).toBeDefined();
     // O texto acumulado deve conter todos os chunks
     expect(assistantMsg?.text).toContain('Parte 1');
@@ -345,7 +343,7 @@ describe('useAssistant', () => {
       await result.current.sendMessage('Planeje ajustes');
     });
 
-    const assistantMsg = result.current.messages.find((m) => m.role === 'model' && m.id !== 'welcome');
+    const assistantMsg = result.current.messages.find((m) => m.role === 'model');
     expect(assistantMsg?.text).toBe('Texto final');
     expect(result.current.plan).toHaveLength(1);
     expect(result.current.pendingSettings?.settings).toEqual({ pace: 'lento' });
@@ -364,8 +362,7 @@ describe('useAssistant', () => {
       result.current.startNewChat();
     });
 
-    expect(result.current.messages).toHaveLength(1);
-    expect(result.current.messages[0].role).toBe('model');
+    expect(result.current.messages).toHaveLength(0);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isStreaming).toBe(false);
     expect(result.current.error).toBeNull();
@@ -431,7 +428,7 @@ describe('useAssistant', () => {
       await result.current.sendMessage('');
     });
 
-    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.messages).toHaveLength(0);
   });
 
   it('deve aceitar sendMessage com texto e anexos', async () => {
@@ -632,7 +629,7 @@ describe('useAssistant', () => {
     });
 
     const transientAssistantMessages = result.current.messages.filter(
-      (message) => message.role === 'model' && message.id !== 'welcome',
+      (message) => message.role === 'model',
     );
     expect(transientAssistantMessages).toHaveLength(0);
   });

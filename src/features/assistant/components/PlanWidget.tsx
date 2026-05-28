@@ -21,7 +21,6 @@ import {
   APP_BORDER,
   BRAND_PRIMARY,
   GAP_COMPACT,
-  GAP_DEFAULT,
   ICON_SIZE_SM,
   RADIUS_XS,
   TEXT_DISABLED,
@@ -41,18 +40,25 @@ interface PlanWidgetProps {
   onToggle?: () => void;
 }
 
+type StatusIconSize = 'sm' | 'md';
+
 /**
- * Ícone de status com animação condicional.
+ * Ícone de status unificado com tamanho configurável.
  * - completed: check verde
  * - in_progress: ponto pulsante azul
  * - failed: X vermelho
  * - need_help: alerta amarelo
  * - pending: circulo cinza
+ *
+ * size 'md' = tarefas principais, 'sm' = subtarefas
  */
-function StatusIcon({ status }: { status: AssistantTaskStatus }) {
+function StatusIcon({ status, size = 'md' }: { status: AssistantTaskStatus; size?: StatusIconSize }) {
+  const isSmall = size === 'sm';
+  const iconSize = isSmall ? ICON_SIZE_SM : ICON_SIZE_SM + 2;
+  const dotSize = isSmall ? 7 : 10;
+
   const iconSx = {
-    fontSize: ICON_SIZE_SM + 2,
-    mt: 0.25,
+    fontSize: iconSize,
     transition: 'color 220ms cubic-bezier(0.22, 1, 0.36, 1)',
   };
 
@@ -67,15 +73,14 @@ function StatusIcon({ status }: { status: AssistantTaskStatus }) {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: ICON_SIZE_SM + 2,
-            height: ICON_SIZE_SM + 2,
-            mt: 0.25,
+            width: iconSize,
+            height: iconSize,
           }}
         >
           <Box
             sx={{
-              width: 10,
-              height: 10,
+              width: dotSize,
+              height: dotSize,
               borderRadius: '50%',
               bgcolor: 'info.main',
               animation: `${pulseAnimation} 1.5s ease-in-out infinite`,
@@ -89,49 +94,7 @@ function StatusIcon({ status }: { status: AssistantTaskStatus }) {
       return <ErrorOutline sx={{ ...iconSx, color: 'warning.main' }} />;
     case 'pending':
     default:
-      return <Circle sx={{ ...iconSx, color: 'text.disabled', opacity: 0.6 }} />;
-  }
-}
-
-/**
- * Ícone compacto para subtarefas (menor, sem animação).
- */
-function SubtaskStatusIcon({ status }: { status: AssistantTaskStatus }) {
-  const sx = { fontSize: ICON_SIZE_SM, transition: 'color 220ms ease' };
-
-  switch (status) {
-    case 'completed':
-      return <CheckCircle sx={{ ...sx, color: 'success.main' }} />;
-    case 'in_progress':
-      return (
-        <Box
-          component="span"
-          sx={{
-            display: 'inline-flex',
-            width: ICON_SIZE_SM,
-            height: ICON_SIZE_SM,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Box
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              bgcolor: 'info.main',
-              animation: `${pulseAnimation} 1.5s ease-in-out infinite`,
-            }}
-          />
-        </Box>
-      );
-    case 'failed':
-      return <HighlightOff sx={{ ...sx, color: 'error.main' }} />;
-    case 'need_help':
-      return <ErrorOutline sx={{ ...sx, color: 'warning.main' }} />;
-    case 'pending':
-    default:
-      return <Circle sx={{ ...sx, color: 'text.disabled', opacity: 0.5 }} />;
+      return <Circle sx={{ ...iconSx, color: 'text.disabled', opacity: isSmall ? 0.5 : 0.6 }} />;
   }
 }
 
@@ -216,11 +179,11 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
   };
 
   return (
-    <Box sx={{ px: { xs: 2, md: 3 }, pb: 1 }}>
+    <Box sx={{ px: { xs: 1.5, md: 3 }, pb: 0.75 }}>
       <Box
         sx={(theme) => ({
           ...assistantInsetSx(theme),
-          p: { xs: 1.25, md: 1.5 },
+          p: { xs: 1, md: 1.5 },
           borderColor: alpha(BRAND_PRIMARY, 0.24),
         })}
       >
@@ -235,13 +198,13 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
             textAlign: 'left',
           }}
         >
-          <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', minWidth: 0 }}>
+          <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center', minWidth: 0 }}>
             <RadioButtonChecked sx={{ color: BRAND_PRIMARY, fontSize: ICON_SIZE_SM + 2 }} />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: TEXT_SECONDARY, fontWeight: 700 }}>
                 {t('assistant.plan.title')}
               </Typography>
-              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'baseline' }}>
                 <Typography
                   variant="body2"
                   sx={{
@@ -250,10 +213,10 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                     transition: 'color 300ms ease',
                   }}
                 >
-                  {progress.completed}
+                  {progress.completed}/{progress.total}
                 </Typography>
                 <Typography variant="body2" sx={{ color: TEXT_DISABLED }}>
-                  / {progress.total} {t('assistant.plan.tasksCompleted', { completed: progress.completed, total: progress.total }).split('·')[0]?.trim() || ''}
+                  {t('assistant.plan.tasksCompletedLabel')}
                 </Typography>
                 {progress.inProgress > 0 ? (
                   <Chip
@@ -275,15 +238,15 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
         </ButtonBase>
 
         <Collapse in={expanded} timeout={180}>
-          <Stack spacing={GAP_COMPACT} sx={{ mt: 1.25 }}>
+          <Stack spacing={GAP_COMPACT * 0.75} sx={{ mt: 1 }}>
             {tasks.map((task) => (
               <Box
                 key={task.id}
                 sx={(theme) => ({
                   border: `1px solid ${APP_BORDER}`,
                   borderRadius: RADIUS_XS,
-                  px: 1.25,
-                  py: 1,
+                  px: { xs: 1, md: 1.25 },
+                  py: { xs: 0.75, md: 1 },
                   backgroundColor: alpha(theme.palette.background.default, 0.34),
                   transition: 'border-color 220ms ease, background-color 220ms ease',
                   ...(task.status === 'in_progress' && {
@@ -295,56 +258,89 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                   }),
                 })}
               >
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
-                  <Tooltip title={statusLabels[task.status]}>
-                    <Box component="span">
-                      <StatusIcon status={task.status} />
+                {/* Layout mobile: ícone + título em cima, chips embaixo */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Stack direction="row" spacing={0.75} sx={{ alignItems: 'flex-start', minWidth: 0 }}>
+                    <Tooltip title={statusLabels[task.status]}>
+                      <Box component="span" sx={{ mt: 0.15 }}>
+                        <StatusIcon status={task.status} />
+                      </Box>
+                    </Tooltip>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <TaskTitle status={task.status}>{task.title}</TaskTitle>
+                      {task.description ? (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: task.status === 'completed' || task.status === 'failed' ? 'text.disabled' : TEXT_SECONDARY,
+                            transition: 'color 220ms ease',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {task.description}
+                        </Typography>
+                      ) : null}
+                      {task.subtasks.length > 0 ? (
+                        <Stack spacing={0.25} sx={{ mt: 0.5 }}>
+                          {task.subtasks.map((subtask) => (
+                            <Stack
+                              key={subtask.id}
+                              direction="row"
+                              spacing={0.5}
+                              sx={{ alignItems: 'center', minWidth: 0 }}
+                            >
+                              <StatusIcon status={subtask.status} size="sm" />
+                              <SubtaskTitle status={subtask.status}>{subtask.title}</SubtaskTitle>
+                            </Stack>
+                          ))}
+                        </Stack>
+                      ) : null}
                     </Box>
-                  </Tooltip>
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <TaskTitle status={task.status}>{task.title}</TaskTitle>
-                    {task.description ? (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: task.status === 'completed' || task.status === 'failed' ? 'text.disabled' : TEXT_SECONDARY,
-                          transition: 'color 220ms ease',
-                        }}
-                      >
-                        {task.description}
-                      </Typography>
-                    ) : null}
-                    {task.subtasks.length > 0 ? (
-                      <Stack spacing={0.5} sx={{ mt: 0.75 }}>
-                        {task.subtasks.map((subtask) => (
-                          <Stack
-                            key={subtask.id}
-                            direction="row"
-                            spacing={0.75}
-                            sx={{ alignItems: 'center', minWidth: 0 }}
-                          >
-                            <SubtaskStatusIcon status={subtask.status} />
-                            <SubtaskTitle status={subtask.status}>{subtask.title}</SubtaskTitle>
-                          </Stack>
-                        ))}
-                      </Stack>
-                    ) : null}
-                  </Box>
-                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <Chip label={statusLabels[task.status]} size="small" variant="outlined" sx={{ height: 22 }} />
-                    <Chip label={priorityLabels[task.priority]} size="small" variant="outlined" sx={{ height: 22 }} />
+                    {/* Chips de status/prioridade — quebram para baixo em mobile */}
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      useFlexGap
+                      sx={{
+                        flexWrap: 'wrap',
+                        justifyContent: 'flex-end',
+                        // Em mobile, esconde as chips da linha principal (vão para baixo)
+                        display: { xs: 'none', sm: 'flex' },
+                      }}
+                    >
+                      <Chip label={statusLabels[task.status]} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.625rem' }} />
+                      <Chip label={priorityLabels[task.priority]} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.625rem' }} />
+                    </Stack>
                   </Stack>
-                </Stack>
+
+                  {/* Chips mobile — abaixo do conteúdo em telas pequenas */}
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    useFlexGap
+                    sx={{
+                      flexWrap: 'wrap',
+                      display: { xs: 'flex', sm: 'none' },
+                      ml: 3.5,
+                    }}
+                  >
+                    <Chip label={statusLabels[task.status]} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
+                    <Chip label={priorityLabels[task.priority]} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
+                  </Stack>
+                </Box>
 
                 {task.dependencies.length > 0 || task.subtasks.some((subtask) => (subtask.tools?.length ?? 0) > 0) ? (
-                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.75, ml: 3.25 }}>
+                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5, ml: { xs: 3, sm: 3.25 } }}>
                     {task.dependencies.map((dependency) => (
                       <Chip
                         key={dependency}
                         label={t('assistant.plan.dependsOn', { dependency })}
                         size="small"
                         variant="outlined"
-                        sx={{ height: 22, color: TEXT_SECONDARY }}
+                        sx={{ height: 20, fontSize: '0.625rem', color: TEXT_SECONDARY }}
                       />
                     ))}
                     {task.subtasks.flatMap((subtask) => (
@@ -355,7 +351,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                         label={tool}
                         size="small"
                         variant="outlined"
-                        sx={{ height: 22, color: BRAND_PRIMARY }}
+                        sx={{ height: 20, fontSize: '0.625rem', color: BRAND_PRIMARY }}
                       />
                     ))}
                   </Stack>

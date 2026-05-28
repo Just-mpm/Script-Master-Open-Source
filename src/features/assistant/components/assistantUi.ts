@@ -465,6 +465,7 @@ export const assistantControlButtonSx = (accentColor: string) => ({
 
 export const assistantComposerControlsSx = {
   display: 'flex',
+  alignItems: 'center',
   justifyContent: 'flex-start',
   px: 1.75,
   pb: 0.5,
@@ -478,15 +479,18 @@ export const assistantSegmentedControlSx = (theme: Theme) => ({
   backgroundColor: alpha(theme.palette.common.white, 0.04),
   p: 0.5,
   borderRadius: RADIUS_CHIP,
+  height: 32,
   '& .MuiToggleButtonGroup-grouped': {
     margin: 0,
     border: 0,
     borderRadius: RADIUS_CHIP - 1,
     textTransform: 'none' as const,
     fontWeight: 500,
-    fontSize: '0.75rem',
-    lineHeight: 1.2,
-    py: 0.625,
+    fontSize: '0.8125rem',
+    lineHeight: 1,
+    height: 24,
+    minHeight: 24,
+    py: 0,
     px: 1.25,
     transition: 'background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
     '&:not(:first-of-type)': {

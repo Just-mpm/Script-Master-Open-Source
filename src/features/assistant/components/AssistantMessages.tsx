@@ -234,7 +234,7 @@ const MessageBubble = React.memo(function MessageBubble({
               <ToolEventList events={toolEvents} isStreaming={isCurrentlyStreaming} />
             ) : null}
 
-            {settings || (isModel && message.id !== 'welcome' && !isCurrentlyStreaming)
+            {settings || (isModel && !isCurrentlyStreaming)
               ? <Divider sx={{ borderColor: isModel ? APP_BORDER : WHITE_16 }} />
               : null}
 
@@ -251,7 +251,7 @@ const MessageBubble = React.memo(function MessageBubble({
                 </Button>
               ) : null}
 
-              {isModel && message.id !== 'welcome' && !isCurrentlyStreaming ? (
+              {isModel && !isCurrentlyStreaming ? (
                 <Button
                   onClick={() => onSaveToMemory(cleanText, message.id)}
                   variant="outlined"
@@ -410,7 +410,7 @@ export function AssistantMessages({
   }, []);
 
   // Se não há mensagens e não está carregando, mostra empty state
-  const isEmptyChat = messages.length === 1 && messages[0].id === 'welcome' && !isLoading;
+  const isEmptyChat = messages.length === 0 && !isLoading;
 
   return (
     <Box sx={assistantMessagesContainerSx}>
