@@ -82,6 +82,7 @@ function createMessage(overrides: Partial<ChatMessageRecord> = {}): ChatMessageR
 }
 
 const messagesEndRef = { current: null } as RefObject<HTMLDivElement | null>;
+const streamingMessageRef = { current: null } as RefObject<HTMLDivElement | null>;
 
 const defaultProps = {
   messages: [] as ChatMessageRecord[],
@@ -90,6 +91,7 @@ const defaultProps = {
   appliedMessageId: null,
   savedToMemoryId: null,
   messagesEndRef,
+  streamingMessageRef,
   onApply: vi.fn(),
   onSaveToMemory: vi.fn(),
   onStopGeneration: vi.fn(),

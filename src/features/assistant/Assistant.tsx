@@ -66,6 +66,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
+    streamingMessageRef,
     creditsExhausted,
     creditBlockedByBalance,
     selectedModel,
@@ -517,6 +518,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           appliedMessageId={appliedMessageId}
           savedToMemoryId={savedToMemoryId}
           messagesEndRef={messagesEndRef}
+          streamingMessageRef={streamingMessageRef}
           onApply={handleApply}
           onSaveToMemory={handleSaveMessageToMemory}
           onStopGeneration={stopGeneration}

@@ -7,6 +7,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.107.0] - 2026-05-29
+
+### Alterado
+
+- **Scroll do Assistente durante streaming**: novo comportamento de scroll inteligente — quando a IA começa a responder, o scroll é posicionado **uma única vez no início da mensagem** do modelo e depois liberado para o usuário manusear livremente. Removido o `setInterval` de 200ms que forçava scroll contínuo para o final durante o streaming. Agora só rola para o final quando o **usuário** envia uma mensagem nova. Envolve 4 arquivos (`useAssistant.ts`, `AssistantMessages.tsx`, `Assistant.tsx`, `AssistantMessages.component.test.tsx`)
+- **PlanWidget**: estado inicial alterado de expandido (`true`) para recolhido (`false`) — a TODO List (plano de tarefas) do assistente agora aparece fechada por padrão, evitando poluição visual no chat (`PlanWidget.tsx`)
+
+---
+
 ## [0.106.0] - 2026-05-28
 
 ### Adicionado

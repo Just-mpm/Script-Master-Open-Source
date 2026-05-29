@@ -349,6 +349,7 @@ interface AssistantMessagesProps {
   appliedMessageId: string | null;
   savedToMemoryId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  streamingMessageRef: RefObject<HTMLDivElement | null>;
   onApply: (settings: AssistantSettings, messageId: string) => void;
   onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
@@ -363,6 +364,7 @@ export function AssistantMessages({
   appliedMessageId,
   savedToMemoryId,
   messagesEndRef,
+  streamingMessageRef,
   onApply,
   onSaveToMemory,
   onStopGeneration,
@@ -418,21 +420,30 @@ export function AssistantMessages({
         <EmptyChatState onSuggestionClick={onSuggestionClick || (() => {})} />
       ) : (
         <Stack spacing={GAP_RELAXED}>
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isCurrentlyStreaming={isStreaming && lastModelMessage?.id === message.id}
-              isApplied={appliedMessageId === message.id}
-              isSavedToMemory={savedToMemoryId === message.id}
-              isCopied={copiedMessageId === message.id}
-              onCopy={handleCopyMessage}
-              onApply={onApply}
-              onSaveToMemory={onSaveToMemory}
-              onStopGeneration={onStopGeneration}
-              toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
-            />
-          ))}
+          {messages.map((message) => {
+            const isCurrentlyStreamingMessage = isStreaming && lastModelMessage?.id === message.id;
+            const bubble = (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isCurrentlyStreaming={isCurrentlyStreamingMessage}
+                isApplied={appliedMessageId === message.id}
+                isSavedToMemory={savedToMemoryId === message.id}
+                isCopied={copiedMessageId === message.id}
+                onCopy={handleCopyMessage}
+                onApply={onApply}
+                onSaveToMemory={onSaveToMemory}
+                onStopGeneration={onStopGeneration}
+                toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
+              />
+            );
+
+            // Âncora de scroll: início da mensagem em streaming
+            if (isCurrentlyStreamingMessage) {
+              return <div key={message.id} ref={streamingMessageRef}>{bubble}</div>;
+            }
+            return bubble;
+          })}
 
           {showSkeleton ? (
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>

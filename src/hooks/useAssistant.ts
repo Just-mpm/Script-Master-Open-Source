@@ -195,6 +195,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
   const [thinkingEnabled, setThinkingEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingMessageRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamActiveRef = useRef(false);
   const chunkBufferRef = useRef<string>('');
@@ -231,19 +232,33 @@ export function useAssistant(currentState?: AssistantStudioState) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Rola para o final apenas quando uma mensagem do USUÁRIO é enviada
+  // (não durante streaming do modelo — para não forçar scroll)
+  const prevMessagesLenRef = useRef(0);
   useEffect(() => {
-    scrollToBottom();
+    const lastMessage = messages[messages.length - 1];
+    const isNewUserMessage = messages.length > prevMessagesLenRef.current && lastMessage?.role === 'user';
+    prevMessagesLenRef.current = messages.length;
+
+    if (isNewUserMessage) {
+      scrollToBottom();
+    }
   }, [messages]);
 
-  // Rola suavemente durante streaming a cada novo token
+  // Rola UMA VEZ para o início da mensagem do modelo quando o streaming começa
+  // Depois libera o scroll para o usuário
+  const hasScrolledToStreamStartRef = useRef(false);
   useEffect(() => {
-    if (!isStreaming) return;
-
-    const interval = setInterval(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 200);
-
-    return () => clearInterval(interval);
+    if (isStreaming && !hasScrolledToStreamStartRef.current) {
+      hasScrolledToStreamStartRef.current = true;
+      // Pequeno delay para garantir que o DOM já renderizou a mensagem
+      requestAnimationFrame(() => {
+        streamingMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    if (!isStreaming) {
+      hasScrolledToStreamStartRef.current = false;
+    }
   }, [isStreaming]);
 
   // ---------------------------------------------------------------------------
@@ -738,6 +753,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     stopGeneration,
     retryLastMessage,
     messagesEndRef,
+    streamingMessageRef,
     plan,
     pendingSettings,
     toolEvents,

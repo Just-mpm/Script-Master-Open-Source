@@ -141,7 +141,7 @@ function SubtaskTitle({ status, children }: { status: AssistantTaskStatus; child
 
 export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
   const { t } = useLocale();
-  const [internalExpanded, setInternalExpanded] = useState(true);
+  const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = isExpanded ?? internalExpanded;
 
   const statusLabels: Record<AssistantTaskStatus, string> = {
