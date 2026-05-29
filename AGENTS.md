@@ -42,7 +42,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 - **Firebase Cloud Functions v2** — backend serverless com Genkit quando necessário + Stripe em `functions/`
 - **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions); desconectado por flag `VITE_BILLING_ENABLED` durante beta aberto
 - **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
-- **Zustand** (estado) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
+- **Zustand** (estado) | **Motion** (animações, swipe/drag) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
@@ -269,6 +269,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Inspector** | Lê estado diretamente do `useStudioStore` com `useShallow` — recebe apenas `isGenerating` como prop (22→1 prop desde 0.24.5). Usa `VoiceCard` para seleção de voz e `studioOptions.ts` para opções DRY (pace, visual framework, scene ratio, density) |
 | **ScriptEditor** | Fonte serifada (Georgia), Ctrl+Enter para gerar, highlight de cena ativa no background |
 | **Keyboard shortcuts** | `useKeyboardShortcuts`: Ctrl+Enter (gerar), Space (play/pause vídeo e toggle áudio), proteção contra inputs/blocos editáveis focados |
+| **Swipe visual (mobile)** | `useSwipeTabs` em `src/hooks/useSwipeTabs.ts` (+114 linhas) — hook de swipe horizontal com feedback visual via `drag="x"` do Motion. Fornece variants de animação para `AnimatePresence` (slide + fade + blur), handler `onDragEnd` com thresholds de distância (50px) e velocidade (300px/s), `constraintRef` para limitar arrasto. Integrado no `StudioPage.tsx` — substitui `TabPanel` por `motion.div` com `touchAction: 'pan-y'` para scroll vertical nativo. Segurança: ignora gestos em elementos interativos (inputs, sliders, tabs, contenteditable). Testes: `tests/hooks/useSwipeTabs.test.ts` (+342) |
 | **Templates** | `TemplateSelector` (collapsible no Inspector), `TemplateGallery`, `TemplateCard`, `TemplatePreviewDialog` — templates categorizados em `src/data/scriptTemplates.ts` com `TemplateCategory`; StudioPage tem aba dedicada para templates |
 | **Emoções** | `EmotionType` (10 emoções), `EmotionSelector` com slider de intensidade, validação `isValidEmotion`, persistência `getStoredEmotion` — integrado no Inspector e pipeline de geração de áudio via `EMOTION_OPTIONS`. `EMOTION_LABEL_KEYS` mapeia `EmotionType` para chaves i18n |
 | **Idioma das imagens** | `imageTextLanguage` (tipo `Locale`) — controla o idioma dos textos nas imagens/cenas geradas. Persistido em localStorage via `getStoredImageTextLanguage()`. Propagado até `generateScenePrompts()` via `LOCALE_LANGUAGE_MAP` (em `gemini.ts`). `LOCALE_CONFIGS` estendido com `geminiPromptName` |
@@ -434,7 +435,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.108.0`
+- **Current:** `0.108.1`
 - **Last release:** 2026-05-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -443,9 +444,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
-| `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); docs de auditoria e scan do mobile |
+| `0.108.1` | AssistantComposer refatorado (ToggleButton → Menu/Chip para seleção de modelo); InterviewPanel simplificado (isCustomMode removido); ToolEventCard com tokens de tema; AssistantHeader com WHITE unificado; MobileBottomNav reordenado; limpeza de imports; chave i18n swipeRegion |
+| `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); swipe visual com drag + AnimatePresence no StudioPage (useSwipeTabs); docs de auditoria e scan do mobile |
 | `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |
 | `0.107.0` | Scroll inteligente do Assistente — posiciona uma vez no início da mensagem da IA e libera (sem `setInterval` forçado); PlanWidget inicia recolhido por padrão |
 | `0.106.0` | PwaUpdatePrompt com detecção de nova versão via useRegisterSW (registerType: prompt), Snackbar MUI v9 com Slide, sessionStorage dismiss, onOfflineReady toast; remoção do registro manual de main.tsw; maxTurns do assistente 10→20 |
-| `0.105.2` | Container scrollável no Assistente (fix layout mobile); respondResult refinado com Card + ReactMarkdown + AutoAwesome; assistantUi simplificado (scroll delegado ao pai); correção de imports não utilizados |
-| `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |

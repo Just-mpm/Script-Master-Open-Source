@@ -139,18 +139,6 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
   }, [state, isMultiple, onStateChange]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (state.isCustomMode) {
-      if (event.key === 'Enter' && !event.shiftKey && state.customText.trim()) {
-        event.preventDefault();
-        // Em modo custom, seleciona o texto como resposta
-        onStateChange({ ...state, selectedIndices: new Set() });
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        updateState({ isCustomMode: false, customText: '' });
-      }
-      return;
-    }
-
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault();
@@ -176,17 +164,11 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
         }
         break;
     }
-  }, [state, focusedIndex, totalItems, customOptionIndex, hasOptions, options, updateState, onStateChange, handleOptionToggle]);
+  }, [focusedIndex, totalItems, customOptionIndex, hasOptions, options, updateState, handleOptionToggle]);
 
   const handleCustomClick = useCallback(() => {
     updateState({ isCustomMode: true });
   }, [updateState]);
-
-  const handleCustomSubmit = useCallback(() => {
-    if (state.customText.trim()) {
-      onStateChange({ ...state, selectedIndices: new Set() });
-    }
-  }, [state, onStateChange]);
 
   // Renderiza campo custom quando não há opções ou em modo custom
   if (!hasOptions || state.isCustomMode) {
@@ -212,36 +194,38 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
             {t('assistant.interview.backToOptions')}
           </Button>
         ) : null}
-        <Stack direction="row" spacing={1}>
-          <TextField
-            inputRef={(el) => {
-              customInputRef.current = el;
-              if (state.isCustomMode && el) {
-                requestAnimationFrame(() => el.focus());
-              }
-            }}
-            value={state.customText}
-            onChange={(e) => updateState({ customText: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && state.customText.trim()) {
-                e.preventDefault();
-                handleCustomSubmit();
-              }
-            }}
-            size="small"
-            fullWidth
-            placeholder={t('assistant.interview.placeholder')}
-            aria-label={t('assistant.interview.placeholder')}
-          />
-          <Button
-            variant="contained"
-            onClick={handleCustomSubmit}
-            disabled={!state.customText.trim()}
-            sx={{ flexShrink: 0, minWidth: 40, px: 1.5 }}
-          >
-            <Send sx={{ fontSize: ICON_SIZE_SM }} />
-          </Button>
-        </Stack>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = customInputRef.current?.value?.trim() ?? '';
+            if (value) {
+              onStateChange({ ...state, customText: value, isCustomMode: true, selectedIndices: new Set() });
+            }
+          }}
+        >
+          <Stack direction="row" spacing={1}>
+            <TextField
+              inputRef={(el) => {
+                customInputRef.current = el;
+                if (state.isCustomMode && el) {
+                  requestAnimationFrame(() => el.focus());
+                }
+              }}
+              defaultValue=""
+              size="small"
+              fullWidth
+              placeholder={t('assistant.interview.placeholder')}
+              aria-label={t('assistant.interview.placeholder')}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{ flexShrink: 0, minWidth: 40, px: 1.5 }}
+            >
+              <Send sx={{ fontSize: ICON_SIZE_SM }} />
+            </Button>
+          </Stack>
+        </form>
       </Stack>
     );
   }
@@ -468,7 +452,9 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
 
     // Envio imediato APENAS para single-question + single-select
     // Multi-select e multi-question exigem confirmação explícita
-    if (!question.multiple && !isMultiQuestion && state.selectedIndices.size > 0) {
+    const hasAnswer = state.selectedIndices.size > 0
+      || (state.isCustomMode && state.customText.trim().length > 0);
+    if (!question.multiple && !isMultiQuestion && hasAnswer) {
       const answer = buildAnswerForQuestion(question, state);
       if (answer) {
         onAnswer(answer);

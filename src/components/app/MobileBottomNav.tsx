@@ -72,10 +72,10 @@ export function MobileBottomNav() {
 
   // ── 4 destinos principais ──
   const navItems = useMemo<BottomNavItem[]>(() => [
-    { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
+    { to: '/app/biblioteca', label: t('studio.header.nav.library'), icon: LocalLibrary },
     { to: '/app/video', label: t('studio.header.nav.video'), icon: PlayCircle },
     { to: '/app/assistente', label: t('studio.header.nav.ai'), icon: Sparkles, accent: true },
-    { to: '/app/biblioteca', label: t('studio.header.nav.library'), icon: LocalLibrary },
+    { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
   ], [t]);
 
   // ── Itens do drawer (secundários + conta) ──

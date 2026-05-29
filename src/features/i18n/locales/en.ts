@@ -880,6 +880,7 @@ export const en: TranslationDictionary = {
       subtitle: 'Fine-tune every detail of your script before generating audio, images, and video.',
       settingsTab: 'Settings',
       scriptTab: 'Script',
+      swipeRegion: 'Studio content with swipe',
     },
     templates: {
       title: 'Templates',

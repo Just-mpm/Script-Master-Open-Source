@@ -7,12 +7,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.108.1] - 2026-05-29
+
+### Adicionado
+
+- **Chave i18n `studio.swipeRegion`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): label de acessibilidade ARIA para a região de swipe do estúdio
+
+### Alterado
+
+- **AssistantComposer.tsx** (+69/-27): refatoração da UI de seleção de modelo e nível de pensamento — `ToggleButton`/`ToggleButtonGroup` substituídos por `Menu` + `Chip` (modelo e thinking level agora abrem menus suspensos). Estilos `paper` dos menus unificados com callback `(theme) => ({...})` para acesso ao `theme.palette.background.paper`. Código do composer simplificado em ~27 linhas
+- **InterviewPanel.tsx** (+36/-50): modo `isCustomMode` removido — simplificação do fluxo de entrevista, eliminando ramo condicional de resposta customizada com Enter. Fluxo de multi-select e multi-question mantido intacto
+- **ToolEventCard.tsx**: cores de erro migradas de valores hardcoded (`'ERROR_MAIN'` string) para tokens do tema (`ERROR_MAIN` de `tokens.ts`) — consistência com o design system
+- **AssistantHeader.tsx**: cor do ícone `AutoAwesome` alterada para `WHITE` — padronização visual com os demais ícones do header
+- **MobileBottomNav.tsx**: reordenação dos itens de navegação — `Biblioteca` movido para antes de `Estúdio` na ordem do BottomNavigation
+- **assistantUi.ts**: estilos de `paper` refinados para menus do composer — temificação via callback para suporte a dark mode
+
+### Corrigido
+
+- **Assistant.tsx**: bordas do container simplificadas — `borderTopLeftRadius: 0` e `borderTopRightRadius: 0` substituídos por `borderRadius: 0` único, eliminando redundância
+- **AssistantPage.tsx**: imports não utilizados removidos (`Box`, `Container`, `tokens`) — limpeza de dependências mortas
+- **useSwipeTabs.test.ts**: testes ajustados para refletir mudanças na implementação do hook
+
+---
+
 ## [0.108.0] - 2026-05-29
 
 ### Adicionado
 
 - **MobileBottomNav** (`src/components/app/MobileBottomNav.tsx`, +421 linhas): novo componente de navegação inferior mobile com `BottomNavigation` MUI v9 — 4 destinos principais (Estúdio, Vídeo, Assistente, Biblioteca) + Drawer para itens secundários (Imagens, Speed Paint, Configurações, Sair). Suporte a `safe-area-inset-bottom`, `z-index: 1200` (abaixo do Drawer 1300 e ActionBar 1400), exibição condicional via `useMediaQuery` (mdDown). Drawer com backdrop blur, avatar do usuário, link de logout com confirmação. i18n completo nos 3 locales via namespace `mobileBottomNav`
 - **Chaves i18n `mobileBottomNav.*`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): 4 chaves — `estudio` ("Estúdio"), `video` ("Vídeo"), `assistant` ("Assistente"), `biblioteca` ("Biblioteca")
+- **useSwipeTabs** (`src/hooks/useSwipeTabs.ts`, +114 linhas): novo hook de swipe horizontal com feedback visual em tempo real — detecta gestos via `drag="x"` do Motion (framer-motion), fornece variants de animação para `AnimatePresence` (slide + fade + blur), handler `onDragEnd` com thresholds de distância (50px) e velocidade (300px/s), `constraintRef` para limitar arrasto, segurança integrada que ignora gestos originados em elementos interativos (inputs, sliders, tabs, contenteditable). Tipos exportados: `UseSwipeTabsOptions`, `UseSwipeTabsReturn`
+- **Testes unitários do useSwipeTabs** (`tests/hooks/useSwipeTabs.test.ts`, +342 linhas): cobertura completa — troca de aba via swipe (esquerda/direita), thresholds de distância e velocidade, ignorar gestos em elementos interativos, limites de aba (primeira/última), variants de animação
 
 ### Alterado
 
@@ -22,6 +47,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **AssistantHeader.tsx**: layout mobile compacto — avatar responsivo (`width/height: { xs: 30, md: AVATAR_SIZE_MD }`), paddings reduzidos (`px: { xs: 1.5, md: 2 }`, `py: { xs: 1, md: 1.5 }`), subtítulo agora visível em sm+ (antes md+), fonte do título reduzida no mobile (`{ xs: '0.875rem', md: '1.5rem' }`). Layout reorganizado com `Box` para melhor responsividade
 - **AssistantMessages.tsx**: avatar do empty state responsivo — dimensões adaptadas para mobile (`width/height: { xs: AVATAR_SIZE_MD * 1.8, md: AVATAR_SIZE_MD * 2.5 }`, `mb: { xs: 2, md: 3 }`)
 - **assistantUi.ts**: gap responsivo no header/composer (`{ xs: 0.5, md: 1 }`), ajustes de padding para mobile
+- **StudioPage.tsx**: integração de swipe visual com drag — `TabPanel` substituído por `AnimatePresence` + `motion.div` com `drag="x"`, `touchAction: 'pan-y'` para scroll vertical nativo, container com `constraintRef` para limitar arrasto, state `direction` para orientação da animação. Tabs agora propagam direção via `setDirection` no onChange. Importados `motion`, `AnimatePresence` (Motion) e `useSwipeTabs`
 
 ### Documentado
 

@@ -880,6 +880,7 @@ export const es: TranslationDictionary = {
       subtitle: 'Ajusta cada detalle de tu guion antes de generar audio, imágenes y video.',
       settingsTab: 'Configuraciones',
       scriptTab: 'Guion',
+      swipeRegion: 'Contenido del estudio con swipe',
     },
     templates: {
       title: 'Plantillas',

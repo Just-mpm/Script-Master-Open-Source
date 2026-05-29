@@ -22,6 +22,7 @@ import {
   AVATAR_SIZE_MD,
   RADIUS_XS,
   TEXT_SECONDARY,
+  WHITE,
 } from '../../../theme/tokens';
 
 interface AssistantHeaderProps {
@@ -68,7 +69,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
             flexShrink: 0,
           }}
         >
-          <AutoAwesome sx={{ fontSize: { xs: ICON_SIZE_MD, md: ICON_SIZE_LG } }} />
+          <AutoAwesome sx={{ fontSize: { xs: ICON_SIZE_MD, md: ICON_SIZE_LG }, color: WHITE }} />
         </Avatar>
 
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>

@@ -894,6 +894,7 @@ export const ptBR: TranslationDictionary = {
       subtitle: 'Ajuste cada detalhe do seu roteiro antes de gerar áudio, imagens e vídeo.',
       settingsTab: 'Configurações',
       scriptTab: 'Roteiro',
+      swipeRegion: 'Conteúdo do estúdio com swipe',
     },
     templates: {
       title: 'Templates',

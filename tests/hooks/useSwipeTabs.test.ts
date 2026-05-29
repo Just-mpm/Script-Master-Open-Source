@@ -9,7 +9,7 @@
  * - Variants de animacao
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSwipeTabs } from '../../src/hooks/useSwipeTabs';
 
@@ -34,7 +34,7 @@ function createDragEvent(targetOverrides?: Partial<HTMLElement>) {
 }
 
 describe('useSwipeTabs', () => {
-  let setActiveTab: ReturnType<typeof vi.fn>;
+  let setActiveTab: Mock<(index: number) => void>;
 
   beforeEach(() => {
     setActiveTab = vi.fn();

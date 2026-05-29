@@ -408,8 +408,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         width: '100%',
         overflow: 'hidden',
         position: 'relative',
-        borderTopLeftRadius: 0,
-        borderTopRightRadius: 0,
+        borderRadius: 0,
       })}
     >
       {documentTruncationWarning ? (

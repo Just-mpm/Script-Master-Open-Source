@@ -19,6 +19,7 @@ import { useLocale } from '../../i18n';
 import {
   APP_BORDER,
   BRAND_PRIMARY,
+  ERROR_MAIN,
   ICON_SIZE_SM,
   RADIUS_XS,
   TEXT_DISABLED,
@@ -102,7 +103,7 @@ const TOOL_REGISTRY: Record<string, ToolConfig> = {
   interview: {
     icon: <SmartToy sx={{ fontSize: ICON_SIZE_SM }} />,
     labelKey: 'assistant.toolEvents.interview',
-    color: 'ERROR_MAIN',
+    color: ERROR_MAIN,
   },
   respond: {
     icon: <SmartToy sx={{ fontSize: ICON_SIZE_SM }} />,
@@ -182,8 +183,8 @@ function ToolErrorCard({ error, label }: ToolErrorCardProps) {
       sx={{
         mt: 0.5,
         borderRadius: RADIUS_XS,
-        border: `1px solid ${alpha('ERROR_MAIN', 0.3)}`,
-        bgcolor: alpha('ERROR_MAIN', 0.04),
+        border: `1px solid ${alpha(ERROR_MAIN, 0.3)}`,
+        bgcolor: alpha(ERROR_MAIN, 0.04),
         overflow: 'hidden',
       }}
     >
@@ -205,12 +206,12 @@ function ToolErrorCard({ error, label }: ToolErrorCardProps) {
           px: 1,
           py: 0.5,
           cursor: 'pointer',
-          '&:hover': { bgcolor: alpha('ERROR_MAIN', 0.06) },
+          '&:hover': { bgcolor: alpha(ERROR_MAIN, 0.06) },
           transition: 'background-color 150ms ease',
         }}
       >
-        <ErrorOutline sx={{ fontSize: ICON_SIZE_SM, color: 'ERROR_MAIN' }} />
-        <Typography variant="caption" sx={{ color: 'ERROR_MAIN', fontWeight: 600, flex: 1 }}>
+        <ErrorOutline sx={{ fontSize: ICON_SIZE_SM, color: ERROR_MAIN }} />
+        <Typography variant="caption" sx={{ color: ERROR_MAIN, fontWeight: 600, flex: 1 }}>
           {label}: {t('assistant.toolEvents.failed')}
         </Typography>
         {expanded ? (
@@ -288,7 +289,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
         }}
       >
         {/* Ícone da tool */}
-        <Box sx={{ color: isPending ? config.color : isError ? 'ERROR_MAIN' : config.color, display: 'flex' }}>
+        <Box sx={{ color: isPending ? config.color : isError ? ERROR_MAIN : config.color, display: 'flex' }}>
           {isPending ? <PendingIndicator color={config.color} /> : config.icon}
         </Box>
 
@@ -302,7 +303,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  color: isError ? 'ERROR_MAIN' : config.color,
+                  color: isError ? ERROR_MAIN : config.color,
                   transition: 'color 200ms ease',
                 }}
               >
@@ -314,7 +315,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
                 </Typography>
               ) : null}
               {isError ? (
-                <Typography variant="caption" sx={{ color: 'ERROR_MAIN' }}>
+                <Typography variant="caption" sx={{ color: ERROR_MAIN }}>
                   — {t('assistant.toolEvents.failed')}
                 </Typography>
               ) : null}

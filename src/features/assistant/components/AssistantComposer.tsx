@@ -18,8 +18,6 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { alpha } from '@mui/material/styles';
 import { AnimatePresence, motion } from 'motion/react';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
@@ -52,7 +50,6 @@ import {
   assistantCyclingPlaceholderSx,
   assistantPlaceholderLetterSx,
   assistantComposerControlsSx,
-  assistantSegmentedControlSx,
 } from './assistantUi';
 
 // Placeholders que cycling a cada 3s — sem tradução (prompts de exemplo)
@@ -110,6 +107,7 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [thinkingMenuAnchor, setThinkingMenuAnchor] = useState<HTMLElement | null>(null);
+  const [modelMenuAnchor, setModelMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Cycling placeholder quando input está inativo — intervalo de 3.5s para ritmo mais calmo
   useEffect(() => {
@@ -177,12 +175,6 @@ export const AssistantComposer = React.memo(function AssistantComposer({
     visible: { opacity: 1, y: 0, pointerEvents: 'auto' as const, transition: { duration: 0.3, delay: 0.06 } },
   };
 
-  const handleModelChange = (_event: React.MouseEvent<HTMLElement>, newModel: 'fast' | 'specialist' | null) => {
-    if (newModel !== null) {
-      onModelChange(newModel);
-    }
-  };
-
   const handleThinkingMenuOpen = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     setThinkingMenuAnchor(event.currentTarget);
@@ -200,6 +192,23 @@ export const AssistantComposer = React.memo(function AssistantComposer({
     low: t('assistant.composer.thinkingLow'),
     medium: t('assistant.composer.thinkingMedium'),
     high: t('assistant.composer.thinkingHigh'),
+  };
+
+  const modelLabels: Record<'fast' | 'specialist', string> = {
+    fast: t('assistant.composer.modelFast'),
+    specialist: t('assistant.composer.modelSpecialist'),
+  };
+
+  const handleModelMenuOpen = (event: MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setModelMenuAnchor(event.currentTarget);
+  };
+
+  const handleModelMenuClose = () => setModelMenuAnchor(null);
+
+  const handleModelSelect = (model: 'fast' | 'specialist') => {
+    onModelChange(model);
+    handleModelMenuClose();
   };
 
   return (
@@ -389,24 +398,24 @@ export const AssistantComposer = React.memo(function AssistantComposer({
           animate={isExpanded ? 'visible' : 'hidden'}
           sx={assistantComposerControlsSx}
         >
-          {/* Model Toggle Group */}
-          <ToggleButtonGroup
-            value={selectedModel}
-            exclusive
-            onChange={handleModelChange}
-            aria-label={t('assistant.composer.modelSelectorLabel')}
-            size="small"
-            sx={(theme) => assistantSegmentedControlSx(theme)}
-          >
-            <ToggleButton value="fast" aria-label={t('assistant.composer.modelFast')}>
-              <Bolt sx={{ fontSize: ICON_SIZE_SM, mr: 0.5 }} />
-              <Box component="span" sx={{ pb: '2px' }}>{t('assistant.composer.modelFast')}</Box>
-            </ToggleButton>
-            <ToggleButton value="specialist" aria-label={t('assistant.composer.modelSpecialist')}>
-              <Psychology sx={{ fontSize: ICON_SIZE_SM, mr: 0.5 }} />
-              <Box component="span" sx={{ pb: '2px' }}>{t('assistant.composer.modelSpecialist')}</Box>
-            </ToggleButton>
-          </ToggleButtonGroup>
+          {/* Model Selector Chip */}
+           <Chip
+             icon={selectedModel === 'fast'
+               ? <Bolt sx={{ fontSize: ICON_SIZE_SM }} />
+               : <Psychology sx={{ fontSize: ICON_SIZE_SM }} />}
+             label={modelLabels[selectedModel]}
+             onClick={handleModelMenuOpen}
+             variant="outlined"
+             size="small"
+             title={t('assistant.composer.modelSelectorLabel')}
+             sx={{
+               fontWeight: 500,
+               fontSize: '0.8125rem',
+               '& .MuiChip-icon': {
+                 color: selectedModel === 'fast' ? '#f59e0b' : '#60a5fa',
+               },
+             }}
+           />
 
           {/* Thinking Level Chip */}
           <Chip
@@ -469,6 +478,39 @@ export const AssistantComposer = React.memo(function AssistantComposer({
             >
               <ListItemText primary={thinkingLabels[level]} />
               {selectedThinkingLevel === level && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
+            </MenuItem>
+          ))}
+        </Menu>
+
+        {/* Model Selector Menu */}
+        <Menu
+          anchorEl={modelMenuAnchor}
+          open={Boolean(modelMenuAnchor)}
+          onClose={handleModelMenuClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: (theme) => ({
+                mt: 1,
+                minWidth: 140,
+                borderRadius: 2,
+                backgroundColor: alpha(theme.palette.background.paper, 0.96),
+                backdropFilter: 'blur(20px)',
+                border: `1px solid ${alpha(BRAND_PRIMARY, 0.15)}`,
+                boxShadow: `0 8px 32px ${alpha(SHADOW_DEEP, 0.24)}`,
+              }),
+            },
+          }}
+        >
+          {(['fast', 'specialist'] as const).map((model) => (
+            <MenuItem
+              key={model}
+              onClick={() => handleModelSelect(model)}
+              selected={selectedModel === model}
+            >
+              <ListItemText primary={modelLabels[model]} />
+              {selectedModel === model && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
             </MenuItem>
           ))}
         </Menu>
