@@ -14,7 +14,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import HighlightOff from '@mui/icons-material/HighlightOff';
 import RadioButtonChecked from '@mui/icons-material/RadioButtonChecked';
-import type { AssistantTask, AssistantTaskPriority, AssistantTaskStatus } from '../types';
+import type { AssistantTask, AssistantTaskStatus } from '../types';
 import { assistantInsetSx } from './assistantUi';
 import { useLocale } from '../../i18n';
 import {
@@ -150,12 +150,6 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
     completed: t('assistant.plan.statusLabels.completed'),
     failed: t('assistant.plan.statusLabels.failed'),
     need_help: t('assistant.plan.statusLabels.need_help'),
-  };
-
-  const priorityLabels: Record<AssistantTaskPriority, string> = {
-    high: t('assistant.plan.priorityLabels.high'),
-    medium: t('assistant.plan.priorityLabels.medium'),
-    low: t('assistant.plan.priorityLabels.low'),
   };
 
   const progress = useMemo(() => {
@@ -299,7 +293,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                         </Stack>
                       ) : null}
                     </Box>
-                    {/* Chips de status/prioridade — quebram para baixo em mobile */}
+                    {/* Chips de status — quebram para baixo em mobile */}
                     <Stack
                       direction="row"
                       spacing={0.5}
@@ -312,7 +306,6 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                       }}
                     >
                       <Chip label={statusLabels[task.status]} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.625rem' }} />
-                      <Chip label={priorityLabels[task.priority]} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.625rem' }} />
                     </Stack>
                   </Stack>
 
@@ -328,34 +321,8 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                     }}
                   >
                     <Chip label={statusLabels[task.status]} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
-                    <Chip label={priorityLabels[task.priority]} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
                   </Stack>
                 </Box>
-
-                {task.dependencies.length > 0 || task.subtasks.some((subtask) => (subtask.tools?.length ?? 0) > 0) ? (
-                  <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5, ml: { xs: 3, sm: 3.25 } }}>
-                    {task.dependencies.map((dependency) => (
-                      <Chip
-                        key={dependency}
-                        label={t('assistant.plan.dependsOn', { dependency })}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: '0.625rem', color: TEXT_SECONDARY }}
-                      />
-                    ))}
-                    {task.subtasks.flatMap((subtask) => (
-                      (subtask.tools ?? []).map((tool) => ({ id: `${subtask.id}-${tool}`, tool }))
-                    )).map(({ id, tool }) => (
-                      <Chip
-                        key={`${task.id}-${id}`}
-                        label={tool}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 20, fontSize: '0.625rem', color: BRAND_PRIMARY }}
-                      />
-                    ))}
-                  </Stack>
-                ) : null}
               </Box>
             ))}
           </Stack>

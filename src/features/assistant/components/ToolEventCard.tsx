@@ -398,10 +398,14 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
     };
   }, [events]);
 
-  if (mergedEvents.length === 0) return null;
+  // Filtra tools silenciosas que não devem aparecer na UI
+  const SILENT_TOOLS = new Set(['updatePlan']);
+  const filteredEvents = mergedEvents.filter((e) => !SILENT_TOOLS.has(e.name));
+
+  if (filteredEvents.length === 0) return null;
 
   // Mostra no máximo 8 eventos (últimos)
-  const visibleEvents = mergedEvents.slice(-8);
+  const visibleEvents = filteredEvents.slice(-8);
   const hiddenCount = mergedEvents.length - visibleEvents.length;
 
   return (

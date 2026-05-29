@@ -40,15 +40,12 @@ export const AttachmentSchema = z.object({
 export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
 
 export const AssistantTaskStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'failed', 'need_help']);
-export const AssistantTaskPrioritySchema = z.enum(['high', 'medium', 'low']);
 
 export const AssistantSubtaskSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable().optional(),
   status: z.string().describe('Status da subtarefa: pending, in_progress, completed, failed ou need_help'),
-  priority: z.string().describe('Prioridade da subtarefa: high, medium ou low'),
-  tools: z.array(z.string()).nullable().optional(),
 });
 
 export const AssistantTaskSchema = z.object({
@@ -56,9 +53,6 @@ export const AssistantTaskSchema = z.object({
   title: z.string(),
   description: z.string().nullable().optional(),
   status: z.string().describe('Status da tarefa: pending, in_progress, completed, failed ou need_help'),
-  priority: z.string().describe('Prioridade da tarefa: high, medium ou low'),
-  level: z.number(),
-  dependencies: z.array(z.string()),
   subtasks: z.array(AssistantSubtaskSchema),
 });
 
@@ -373,7 +367,6 @@ export const FeedbackOutputSchema = z.object({
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Attachment = z.infer<typeof AttachmentSchema>;
 export type AssistantTaskStatus = z.infer<typeof AssistantTaskStatusSchema>;
-export type AssistantTaskPriority = z.infer<typeof AssistantTaskPrioritySchema>;
 export type AssistantSubtask = z.infer<typeof AssistantSubtaskSchema>;
 export type AssistantTask = z.infer<typeof AssistantTaskSchema>;
 export type AssistantPlan = z.infer<typeof AssistantPlanSchema>;

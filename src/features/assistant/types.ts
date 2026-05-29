@@ -9,15 +9,12 @@ export type Attachment = AttachmentRecord;
 export type ChatMessage = ChatMessageRecord;
 
 export type AssistantTaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'need_help';
-export type AssistantTaskPriority = 'high' | 'medium' | 'low';
 
 export interface AssistantSubtask {
   id: string;
   title: string;
   description?: string | null;
   status: AssistantTaskStatus;
-  priority: AssistantTaskPriority;
-  tools?: string[] | null;
 }
 
 export interface AssistantTask {
@@ -25,9 +22,6 @@ export interface AssistantTask {
   title: string;
   description?: string | null;
   status: AssistantTaskStatus;
-  priority: AssistantTaskPriority;
-  level: number;
-  dependencies: string[];
   subtasks: AssistantSubtask[];
 }
 

@@ -45,6 +45,7 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
   assistantPlaceholderLetterSx: {},
   assistantComposerControlsSx: {},
   assistantControlButtonSx: vi.fn(() => ({})),
+  assistantSegmentedControlSx: vi.fn(() => ({})),
 }));
 
 const defaultProps = {
@@ -72,7 +73,7 @@ describe('AssistantComposer', () => {
   it('renderiza o campo de texto com placeholder', () => {
     render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
 
-    const textarea = screen.getByPlaceholderText(/Peça ajustes/i);
+    const textarea = screen.getByLabelText(/Peça ajustes/i);
     expect(textarea).toBeDefined();
   });
 
@@ -124,7 +125,7 @@ describe('AssistantComposer', () => {
     const user = userEvent.setup();
     render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
 
-    const textarea = screen.getByPlaceholderText(/Peça ajustes/i);
+    const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, 'a');
 
     expect(defaultProps.onInputChange).toHaveBeenCalledWith('a');
@@ -150,7 +151,7 @@ describe('AssistantComposer', () => {
       { wrapper: Wrapper },
     );
 
-    const textarea = screen.getByPlaceholderText(/Peça ajustes/i);
+    const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, '{Enter}');
 
     expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
@@ -163,7 +164,7 @@ describe('AssistantComposer', () => {
       { wrapper: Wrapper },
     );
 
-    const textarea = screen.getByPlaceholderText(/Peça ajustes/i);
+    const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, '{Shift>}{Enter}{/Shift}');
 
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();

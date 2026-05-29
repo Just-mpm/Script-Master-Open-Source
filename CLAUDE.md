@@ -245,7 +245,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Créditos** | `CreditBlockedMessage` exibido no Assistant quando créditos estão esgotados |
 
 | **Orquestração (tool-first)** | `assistant.ts` usa `ai.generate()` com `tools` array de `ai.dynamicTool` (tool loop, `maxTurns: 20`). Ferramentas registradas: `updatePlan` (plano de tarefas), `webSearch` (pesquisa na web com Google Search Retrieval), `getStudioState` (estado atual do estúdio), `getUserMemories` (memórias do usuário), `updateStudio` (aplicar ajustes no estúdio), `interview` (entrevista com opções de múltipla escolha) e `respond` (resposta estruturada com ações sugeridas e mídia). Chunks estruturados emitidos via `sendMetaChunk()` com tipos `plan_update`, `studio_update`, `interview`, `tool_event`, `respond` |
-| **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, prioridade, dependências, subtarefas) entre mensagens e composer. Estado inicial **recolhido** (colapsável via `aria-expanded`). i18n nos 3 locales via namespace `plan` |
+| **PlanWidget** | `PlanWidget.tsx` — componente UI que exibe plano de tarefas (título, status, dependências, subtarefas) entre mensagens e composer. Estado inicial **recolhido** (colapsável via `aria-expanded`). i18n nos 3 locales via namespace `plan` |
 | **Scroll dinâmico** | Durante streaming da IA, scroll posiciona **uma vez no início da mensagem** do modelo (`streamingMessageRef`) e depois libera o usuário. Scroll para o final só ocorre quando o usuário envia nova mensagem. Sem `setInterval` forçado — `hasScrolledToStreamStartRef` garante execução única por sessão de streaming |
 | **Interview** | Fluxo interrupt/resume: `InterviewInputSchema` com opções (`optionId`, `label`, `description`). Resposta do usuário vira mensagem normal no histórico. `InterviewResumeData` permite continuar entrevista interrompida. Multi-select (`multiple` → checkboxes) e multi-question (`questions` → tabs + Confirm tab) |
 | **Studio settings preview** | `settingsPreview` exibe campos individuais antes de aplicar alterações. `formatSettingsPreview()` e `SETTINGS_LABEL_KEYS` mapeiam `StudioSettingsPatch` para labels i18n. Botão "Aplicar no estúdio" aplica patch validado |
@@ -433,8 +433,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.106.0`
-- **Last release:** 2026-05-28
+- **Current:** `0.107.1`
+- **Last release:** 2026-05-29
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -442,9 +442,9 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |
 | `0.107.0` | Scroll inteligente do Assistente — posiciona uma vez no início da mensagem da IA e libera (sem `setInterval` forçado); PlanWidget inicia recolhido por padrão |
 | `0.106.0` | PwaUpdatePrompt com detecção de nova versão via useRegisterSW (registerType: prompt), Snackbar MUI v9 com Slide, sessionStorage dismiss, onOfflineReady toast; remoção do registro manual de main.tsw; maxTurns do assistente 10→20 |
 | `0.105.2` | Container scrollável no Assistente (fix layout mobile); respondResult refinado com Card + ReactMarkdown + AutoAwesome; assistantUi simplificado (scroll delegado ao pai); correção de imports não utilizados |
 | `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |
 | `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
-| `0.104.1` | Schemas de orquestração flexibilizados para maior liberdade do modelo (status/priority em z.string()); simplificação do Google Search Retrieval no webSearch; correção de nome da tool getUserMemories |

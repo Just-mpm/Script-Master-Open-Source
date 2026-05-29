@@ -281,8 +281,8 @@ describe('AssistantMessages', () => {
 
     // Header do ToolEventList
     expect(screen.getByText('Ferramentas')).toBeDefined();
-    // updatePlan: call + result → label concluído
-    expect(screen.getByText('Atualizando plano')).toBeDefined();
+    // updatePlan é silencioso — não aparece na UI
+    expect(screen.queryByText('Atualizando plano')).toBeNull();
     // getStudioState: call sem result → pending com reticências
     expect(screen.getByText((content) => content.includes('Lendo configurações'))).toBeDefined();
   });

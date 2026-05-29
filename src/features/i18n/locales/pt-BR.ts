@@ -1222,18 +1222,12 @@ export const ptBR: TranslationDictionary = {
       title: 'Plano do assistente',
       tasksCompleted: '{completed} de {total} tarefas concluídas',
       tasksCompletedLabel: 'tarefas concluídas',
-      dependsOn: 'Depende de {dependency}',
       statusLabels: {
         pending: 'Pendente',
         in_progress: 'Em andamento',
         completed: 'Concluída',
         failed: 'Falhou',
         need_help: 'Precisa de ajuda',
-      },
-      priorityLabels: {
-        high: 'Alta',
-        medium: 'Média',
-        low: 'Baixa',
       },
     },
   },

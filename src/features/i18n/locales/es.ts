@@ -1206,18 +1206,12 @@ export const es: TranslationDictionary = {
       title: 'Plan del asistente',
       tasksCompleted: '{completed} de {total} tareas completadas',
       tasksCompletedLabel: 'tareas completadas',
-      dependsOn: 'Depende de {dependency}',
       statusLabels: {
         pending: 'Pendiente',
         in_progress: 'En progreso',
         completed: 'Completada',
         failed: 'Fallida',
         need_help: 'Necesita ayuda',
-      },
-      priorityLabels: {
-        high: 'Alta',
-        medium: 'Media',
-        low: 'Baja',
       },
     },
   },

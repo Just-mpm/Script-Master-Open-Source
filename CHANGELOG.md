@@ -7,6 +7,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.107.1] - 2026-05-29
+
+### Alterado
+
+- **ToolEventCard**: `updatePlan` tornado silencioso — adicionado `SILENT_TOOLS` set (`ToolEventCard.tsx`) que suprime a exibição de eventos de ferramenta `updatePlan` na UI do chat, reduzindo ruído visual durante o tool loop do assistente. Testes atualizados (`AssistantMessages.component.test.tsx`)
+- **Regras do `updatePlan` no backend**: instrução do system prompt reforçada em `assistant-context.ts` — "NUNCA recria o plano do zero — sempre envie o array completo com os status atuais" — evita que o modelo resete o plano de tarefas durante execução multi-turno
+- **PlanWidget**: simplificado — removida dependência de `AssistantTaskPriority`; exibição de tarefas mais enxuta (sem labels de prioridade). Redução de ~33 linhas
+
+### Removido
+
+- **Tipo `AssistantTaskPriority`**: removido de `functions/src/genkit/schemas/common.ts` e `src/features/assistant/types.ts` — prioridades de tarefas não são mais validadas/expostas como enum, dando maior liberdade ao modelo (consistente com flexibilização feita no 0.104.1)
+- **Chaves i18n `plan.priorityLabels.*`**: removidas dos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`) — não mais utilizadas após simplificação do PlanWidget
+
+---
+
 ## [0.107.0] - 2026-05-29
 
 ### Alterado
