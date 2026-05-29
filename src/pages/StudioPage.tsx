@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -6,7 +7,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { motion, AnimatePresence } from 'motion/react';
 import { Inspector } from '../components/Inspector';
 import { ScriptEditor } from '../components/ScriptEditor';
 import { useAudioCurrentTime } from '../contexts/AudioContext';
@@ -14,8 +16,7 @@ import { DocumentHead } from '../components/DocumentHead';
 import { getPageSeo } from '../lib/seo';
 import { useLocale } from '../features/i18n';
 import { useStudioStore } from '../features/studio/store';
-
-import { useShallow } from 'zustand/react/shallow';
+import { useSwipeTabs } from '../hooks/useSwipeTabs';
 
 interface StudioPageProps {
   isGenerating: boolean;
@@ -31,19 +32,6 @@ function a11yProps(index: number) {
   };
 }
 
-function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
-  return (
-    <Box
-      role="tabpanel"
-      hidden={value !== index}
-      id={`studio-tabpanel-${index}`}
-      aria-labelledby={`studio-tab-${index}`}
-    >
-      {value === index ? children : null}
-    </Box>
-  );
-}
-
 export function StudioPage({
   isGenerating,
   scenes,
@@ -55,6 +43,17 @@ export function StudioPage({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [activeTab, setActiveTab] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  // Hook de swipe com feedback visual (drag) para mobile
+  const { constraintRef, swipeVariants, handleDragEnd, dragElastic } = useSwipeTabs({
+    activeTab,
+    tabCount: 2,
+    setActiveTab: (index: number) => {
+      setDirection(index > activeTab ? 1 : -1);
+      setActiveTab(index);
+    },
+  });
 
   const seo = getPageSeo({
     title: 'Estúdio',
@@ -102,7 +101,10 @@ export function StudioPage({
           >
             <Tabs
               value={activeTab}
-              onChange={(_event, newValue: number) => setActiveTab(newValue)}
+              onChange={(_event, newValue: number) => {
+                setDirection(newValue > activeTab ? 1 : -1);
+                setActiveTab(newValue);
+              }}
               variant="fullWidth"
               sx={{
                 minHeight: 46,
@@ -128,21 +130,44 @@ export function StudioPage({
             </Tabs>
           </Box>
 
-          <TabPanel value={activeTab} index={0}>
-            <Inspector isGenerating={isGenerating} />
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={1}>
-            <ScriptEditor
-              script={script}
-              setScript={setScript}
-              isGenerating={isGenerating}
-              handleGenerate={handleGenerate}
-              isGenerateDisabled={isGenerateDisabled}
-              scenes={scenes}
-              currentTime={currentTime}
-            />
-          </TabPanel>
+          {/* Container de constraints para limitar arrasto */}
+          <Box
+            ref={constraintRef}
+            role="region"
+            aria-label={t('studio.studioPage.swipeRegion', { defaultValue: 'Conteúdo do estúdio com swipe' })}
+            sx={{ position: 'relative', overflow: 'hidden' }}
+          >
+            <AnimatePresence mode="popLayout" custom={direction}>
+              <motion.div
+                key={`studio-tab-${activeTab}`}
+                custom={direction}
+                variants={swipeVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                drag="x"
+                dragConstraints={constraintRef}
+                dragElastic={dragElastic}
+                dragMomentum={false}
+                onDragEnd={handleDragEnd}
+                style={{ touchAction: 'pan-y' }}
+              >
+                {activeTab === 0 ? (
+                  <Inspector isGenerating={isGenerating} />
+                ) : (
+                  <ScriptEditor
+                    script={script}
+                    setScript={setScript}
+                    isGenerating={isGenerating}
+                    handleGenerate={handleGenerate}
+                    isGenerateDisabled={isGenerateDisabled}
+                    scenes={scenes}
+                    currentTime={currentTime}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </Box>
         </Stack>
     );
   }
