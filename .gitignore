@@ -14,3 +14,7 @@ public/voice-previews/*.wav
 
 # Firebase CLI (cache local e logs de debug)
 .firebase/
+
+# Service account keys (nunca versionar)
+service-account.json
+*-service-account*.json

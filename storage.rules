@@ -12,9 +12,9 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Helper: Admin
+    // Helper: Admin — custom claim no token de autenticação
     function isAdmin() {
-      return isAuthenticated() && (request.auth.token.email.lower() == "kurosaki.mpm@gmail.com" && request.auth.token.email_verified == true);
+      return isAuthenticated() && request.auth.token.admin == true;
     }
 
     // Regras para a pasta de áudios

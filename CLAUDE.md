@@ -31,6 +31,13 @@ bun run emulators:functions # inicia apenas o emulador de functions
 bun run emulators:ui     # inicia apenas a UI dos emuladores
 ```
 
+**Admin scripts (dentro de `functions/`):**
+
+```bash
+cd functions
+npm run grant-access     # script interativo para conceder admin e/ou créditos ilimitados
+```
+
 **Sem formatter e sem CI/CD.**
 
 ## Stack
@@ -218,8 +225,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | **Chat fallback** | Se doc >900KB ou erro Firestore, salva no IndexedDB (retorna `true`); `getChatSessions` busca Firestore + IndexedDB e deduplica por `updatedAt`; filtrado por `userId` no merge |
 | **Transcriptions** | Apenas IndexedDB (dados temporários por projeto) |
 | **Audio segments** | Apenas IndexedDB, campo `audioSegments` dentro de `AudioSource` existente |
-| **Admin (Firestore)** | Role-based (`users/{uid}` com `role=='admin'`) OU email hardcoded. Rules para `/users/{userId}` + subcoleções `/subscription/{docId}`, `/beta_access/{docId}`, `/credit_months/{docId}`, `/credit_events/{docId}`, `/feedback_rewards/{docId}`: leitura pelo próprio usuário, escrita apenas por admin |
-| **Admin (Storage)** | Apenas email hardcoded (leitura + deleção, sem escrita) |
+| **Admin (Firestore)** | Custom claim `admin: true` no token de autenticação (`request.auth.token.admin == true`). Rules para `/users/{userId}` + subcoleções `/subscription/{docId}`, `/beta_access/{docId}`, `/credit_months/{docId}`, `/credit_events/{docId}`, `/feedback_rewards/{docId}`: leitura pelo próprio usuário, escrita apenas por admin. Script `grant-access` concede o claim |
+| **Admin (Storage)** | Custom claim `admin: true` (leitura + deleção, sem escrita). Script `grant-access` concede o claim |
 | **Limites Storage** | Áudio 150MB, imagem 10MB, vídeo 200MB. Previews: público (leitura), admin (escrita) |
 | **Converter** | `createFirestoreConverter<T>()` genérico remove `undefined` na serialização |
 
@@ -435,7 +442,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.108.1`
+- **Current:** `0.108.2`
 - **Last release:** 2026-05-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -444,8 +451,8 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.108.2` | Admin auth migrado de role-based + email hardcoded para custom claim `admin: true` em Firestore/Storage Rules; script `grant-access` adicionado em functions; .gitignore com exclusão de service-account keys; limpeza de 5 docs de auditoria mobile; novo doc de auditoria unificada áudio/imagem (001-audio-image-audit.md) |
 | `0.108.1` | AssistantComposer refatorado (ToggleButton → Menu/Chip para seleção de modelo); InterviewPanel simplificado (isCustomMode removido); ToolEventCard com tokens de tema; AssistantHeader com WHITE unificado; MobileBottomNav reordenado; limpeza de imports; chave i18n swipeRegion |
 | `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); swipe visual com drag + AnimatePresence no StudioPage (useSwipeTabs); docs de auditoria e scan do mobile |
 | `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |
 | `0.107.0` | Scroll inteligente do Assistente — posiciona uma vez no início da mensagem da IA e libera (sem `setInterval` forçado); PlanWidget inicia recolhido por padrão |
-| `0.106.0` | PwaUpdatePrompt com detecção de nova versão via useRegisterSW (registerType: prompt), Snackbar MUI v9 com Slide, sessionStorage dismiss, onOfflineReady toast; remoção do registro manual de main.tsw; maxTurns do assistente 10→20 |

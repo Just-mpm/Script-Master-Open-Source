@@ -7,6 +7,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.108.2] - 2026-05-29
+
+### Alterado
+
+- **Sistema de Admin Auth**: migração de role-based (`users/{uid}.role == 'admin'`) + email hardcoded para **custom claim** `admin: true` no token de autenticação (`request.auth.token.admin == true`). Aplicado em `firestore.rules` (+1/-3) e `storage.rules` (+2/-2) — elimina dependência de leitura do Firestore para verificação de admin e remove email hardcoded como fallback, reduzindo superfície de segurança
+- **Script `grant-access`** em `functions/package.json`: novo script Node para conceder custom claim `admin: true` e/ou créditos ilimitados via Firebase Admin SDK — substitui manipulação manual de claims
+- **`.gitignore`**: adicionada exclusão de `service-account.json` e `*-service-account*.json` — prevenção contra versionamento acidental de chaves de serviço
+
+### Removido
+
+- **Docs de auditoria/scan do mobile** (5 arquivos): `docs/audits/assistant-mobile-compact-layout.md`, `docs/audits/bottom-navigation-mobile.md`, `docs/audits/mobile-bottom-nav-audit.md`, `docs/scan/assistant-mobile-layout-gaps.md`, `docs/scan/bottom-nav-mobile-gaps.md` — documentação de conclusão das auditorias mobile, agora incorporadas ao histórico
+
+### Adicionado
+
+- **`docs/audits/001-audio-image-audit.md`** (+266 linhas): auditoria unificada de geração de áudio e imagem com IA — 6 achados priorizados (P1-P3) incluindo PII em logs de erro do frontend, validação de comprimento ausente nos schemas Zod do backend, bloqueio de main thread com `base64ToBlobSync`, exposição de chave Pexels no client-side, e ausência de `.max()` nos schemas de input
+
+---
+
 ## [0.108.1] - 2026-05-29
 
 ### Adicionado
