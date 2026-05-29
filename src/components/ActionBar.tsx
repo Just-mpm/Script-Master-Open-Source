@@ -26,7 +26,9 @@ import { useVideoRenderBridge } from '../features/video-render/store/videoRender
 import { useLocale } from '../features/i18n';
 import { APP_ACTION_BAR_BOTTOM, BRAND_GRADIENT, BRAND_GRADIENT_HOVER, BRAND_GLOW, BRAND_GLOW_FOCUS, WHITE_08, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, RADIUS_SM, RADIUS_CHIP,   BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { BOTTOM_NAV_HEIGHT } from './app/MobileBottomNav';
 
 interface ActionBarProps {
   isGenerating: boolean;
@@ -70,6 +72,8 @@ export function ActionBar({
   videoExportProgress = 0,
 }: ActionBarProps) {
   const { t } = useLocale();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [downloadAnchorEl, setDownloadAnchorEl] = React.useState<HTMLElement | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
@@ -231,7 +235,7 @@ export function ActionBar({
       sx={{
         position: 'fixed',
         left: '50%',
-        bottom: APP_ACTION_BAR_BOTTOM,
+        bottom: isMobile ? APP_ACTION_BAR_BOTTOM + BOTTOM_NAV_HEIGHT : APP_ACTION_BAR_BOTTOM,
         transform: 'translateX(-50%)',
         zIndex: 1400,
         width: '100%',

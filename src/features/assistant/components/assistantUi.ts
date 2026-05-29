@@ -134,7 +134,7 @@ export const assistantComposerContainerSx = (theme: Theme) => ({
   bottom: 0,
   zIndex: 2,
   px: { xs: 2, md: 3 },
-  py: { xs: 1.5, md: 2 },
+  py: { xs: 1, md: 2 },
   borderTop: `1px solid ${APP_BORDER}`,
   background: `linear-gradient(180deg, ${alpha(theme.palette.background.default, 0)} 0%, ${alpha(theme.palette.background.paper, 0.94)} 24%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`,
   backdropFilter: 'blur(20px)',
@@ -231,7 +231,7 @@ export const assistantMessagesContainerSx = {
   display: 'flex',
   flexDirection: 'column' as const,
   px: { xs: 2, md: 3 },
-  py: { xs: 1.5, md: 2 },
+  py: { xs: 1, md: 2 },
 };
 
 // ─── History Item Hover ─────────────────────────────────────────
@@ -259,8 +259,8 @@ export const assistantEmptyStateSx = {
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center' as const,
-  px: { xs: 3, md: 4 },
-  py: 4,
+  px: { xs: 2, md: 4 },
+  py: { xs: 3, md: 4 },
   minHeight: '100%',
 };
 
@@ -467,9 +467,9 @@ export const assistantComposerControlsSx = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-start',
-  px: 1.75,
+  px: { xs: 1.25, md: 1.75 },
   pb: 0.5,
-  gap: 1,
+  gap: { xs: 0.5, md: 1 },
 };
 
 // ─── Segmented Control (ToggleButtonGroup) ────────────────────

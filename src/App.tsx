@@ -3,6 +3,8 @@ import { useLocale } from './features/i18n';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ActionBar } from './components/ActionBar';
@@ -13,6 +15,7 @@ import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
 import { PwaUpdatePrompt } from './components/app/PwaUpdatePrompt';
+import { MobileBottomNav, BOTTOM_NAV_HEIGHT } from './components/app/MobileBottomNav';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { AppRoutes } from './router/routes';
@@ -24,6 +27,8 @@ export default function App() {
   const { t } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // ─── Auto-save de settings do estúdio no Firestore ────────
   useAutoSaveStudioSettings();
@@ -176,7 +181,7 @@ export default function App() {
         {showContainerLayout ? (
           routesElement
         ) : isAssistantRoute ? (
-          <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
+          <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px${isMobile ? ` - ${BOTTOM_NAV_HEIGHT}px` : ''})`, overflow: 'hidden' }}>
             {routesElement}
           </Box>
         ) : (
@@ -238,6 +243,9 @@ export default function App() {
 
       {/* Prompt de atualização PWA — detecta nova versão após deploy */}
       <PwaUpdatePrompt />
+
+      {/* Bottom Nav mobile — apenas em rotas /app/* (não onboarding) */}
+      {showAppLayout && <MobileBottomNav />}
     </Box>
   );
 }

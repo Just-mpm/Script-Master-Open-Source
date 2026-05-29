@@ -1,5 +1,6 @@
 import React from 'react';
 import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
@@ -16,7 +17,6 @@ import {
   BRAND_GRADIENT,
   BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
-  GAP_MEDIUM,
   ICON_SIZE_MD,
   ICON_SIZE_LG,
   AVATAR_SIZE_MD,
@@ -41,36 +41,45 @@ export const AssistantHeader = React.memo(function AssistantHeader({
 
   return (
     <Stack
-      direction={{ xs: 'column', md: 'row' }}
-      spacing={{ xs: GAP_MEDIUM, md: 0 }}
+      direction="row"
+      spacing={{ xs: 1, md: 0 }}
+      useFlexGap
       sx={{
-        px: { xs: 2, md: 2.5 },
-        py: { xs: 1.5, md: 2 },
+        px: { xs: 1.5, md: 2.5 },
+        py: { xs: 1, md: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.48),
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        alignItems: { xs: 'flex-start', md: 'center' },
+        alignItems: 'center',
         justifyContent: 'space-between',
       }}
     >
-      <Stack direction="row" spacing={GAP_MEDIUM} sx={{ minWidth: 0, alignItems: 'center' }}>
+      <Stack direction="row" spacing={{ xs: 1, md: 1.5 }} sx={{ minWidth: 0, alignItems: 'center' }}>
         <Avatar
           variant="rounded"
           sx={{
-            width: AVATAR_SIZE_MD,
-            height: AVATAR_SIZE_MD,
+            width: { xs: 30, md: AVATAR_SIZE_MD },
+            height: { xs: 30, md: AVATAR_SIZE_MD },
             borderRadius: RADIUS_XS,
             background: BRAND_GRADIENT,
             boxShadow: `0 8px 24px ${alpha(BRAND_PRIMARY, 0.2)}`,
+            flexShrink: 0,
           }}
         >
-          <AutoAwesome sx={{ fontSize: ICON_SIZE_LG }} />
+          <AutoAwesome sx={{ fontSize: { xs: ICON_SIZE_MD, md: ICON_SIZE_LG } }} />
         </Avatar>
 
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-          <Typography variant="h5" sx={{ letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h5"
+            noWrap
+            sx={{
+              letterSpacing: '-0.02em',
+              fontSize: { xs: '0.875rem', md: '1.5rem' },
+            }}
+          >
             {t('assistant.header.title')}
           </Typography>
 
@@ -79,7 +88,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
             sx={{
               color: TEXT_SECONDARY,
               maxWidth: 560,
-              display: { xs: 'block', md: 'none' },
+              display: { xs: 'none', sm: 'block' },
               lineHeight: 1.4,
             }}
           >
@@ -90,24 +99,31 @@ export const AssistantHeader = React.memo(function AssistantHeader({
 
       <Stack
         direction="row"
-        spacing={0.75}
+        spacing={{ xs: 0.5, md: 0.75 }}
         useFlexGap
         sx={{
-          flexWrap: 'wrap',
-          width: { xs: '100%', md: 'auto' },
           alignItems: 'center',
+          flexShrink: 0,
         }}
       >
-        <Button
-          onClick={onStartNewChat}
-          variant="contained"
-          startIcon={<Forum sx={{ fontSize: ICON_SIZE_MD }} />}
-          sx={{
-            minWidth: { xs: '100%', sm: 'auto' },
-          }}
-        >
-          {t('assistant.header.newChat')}
-        </Button>
+        <Tooltip title={t('assistant.header.newChat')}>
+          <Button
+            onClick={onStartNewChat}
+            variant="contained"
+            size="small"
+            aria-label={t('assistant.header.newChat')}
+            startIcon={<Forum sx={{ fontSize: ICON_SIZE_MD }} />}
+            sx={{
+              minWidth: { xs: 40, sm: 'auto' },
+              px: { xs: 0, sm: 1.5 },
+              '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.5 } },
+            }}
+          >
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              {t('assistant.header.newChat')}
+            </Box>
+          </Button>
+        </Tooltip>
 
         <Tooltip title={t('assistant.header.openHistory')}>
           <IconButton

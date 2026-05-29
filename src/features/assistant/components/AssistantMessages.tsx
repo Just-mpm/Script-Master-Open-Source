@@ -297,18 +297,18 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
     <Box sx={assistantEmptyStateSx}>
       <Box
         sx={{
-          width: AVATAR_SIZE_MD * 2.5,
-          height: AVATAR_SIZE_MD * 2.5,
+          width: { xs: AVATAR_SIZE_MD * 1.8, md: AVATAR_SIZE_MD * 2.5 },
+          height: { xs: AVATAR_SIZE_MD * 1.8, md: AVATAR_SIZE_MD * 2.5 },
           borderRadius: '50%',
           background: BRAND_GRADIENT,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          mb: 3,
+          mb: { xs: 2, md: 3 },
           boxShadow: `0 12px 40px ${alpha(BRAND_PRIMARY, 0.2)}`,
         }}
       >
-        <AutoAwesome sx={{ fontSize: ICON_SIZE_LG * 1.8 }} />
+        <AutoAwesome sx={{ fontSize: { xs: ICON_SIZE_LG * 1.4, md: ICON_SIZE_LG * 1.8 } }} />
       </Box>
 
       <Typography variant="h6" sx={{ mb: 0.75, letterSpacing: '-0.02em' }}>
@@ -323,7 +323,7 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         direction="row"
         spacing={GAP_COMPACT}
         useFlexGap
-        sx={{ flexWrap: 'wrap', mt: 3, justifyContent: 'center' }}
+        sx={{ flexWrap: 'wrap', mt: { xs: 2, md: 3 }, justifyContent: 'center' }}
       >
         {(['adjustPace', 'suggestScene', 'reviewText', 'analyzeAudio'] as const).map((key) => (
           <Chip

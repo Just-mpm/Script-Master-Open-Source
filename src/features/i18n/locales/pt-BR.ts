@@ -2001,4 +2001,12 @@ export const ptBR: TranslationDictionary = {
     dismiss: 'Ignorar',
     offlineReady: 'App pronto para uso offline!',
   },
+
+  // ── Bottom Nav Mobile ──────────────────────────────────────
+  mobileBottomNav: {
+    ariaLabel: 'Navegação principal',
+    ariaDrawer: 'Menu secundário',
+    more: 'Mais',
+    openMenu: 'Abrir menu',
+  },
 };

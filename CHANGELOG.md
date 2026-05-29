@@ -7,18 +7,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [0.107.1] - 2026-05-29
+## [0.108.0] - 2026-05-29
+
+### Adicionado
+
+- **MobileBottomNav** (`src/components/app/MobileBottomNav.tsx`, +421 linhas): novo componente de navegação inferior mobile com `BottomNavigation` MUI v9 — 4 destinos principais (Estúdio, Vídeo, Assistente, Biblioteca) + Drawer para itens secundários (Imagens, Speed Paint, Configurações, Sair). Suporte a `safe-area-inset-bottom`, `z-index: 1200` (abaixo do Drawer 1300 e ActionBar 1400), exibição condicional via `useMediaQuery` (mdDown). Drawer com backdrop blur, avatar do usuário, link de logout com confirmação. i18n completo nos 3 locales via namespace `mobileBottomNav`
+- **Chaves i18n `mobileBottomNav.*`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): 4 chaves — `estudio` ("Estúdio"), `video` ("Vídeo"), `assistant` ("Assistente"), `biblioteca` ("Biblioteca")
 
 ### Alterado
 
-- **ToolEventCard**: `updatePlan` tornado silencioso — adicionado `SILENT_TOOLS` set (`ToolEventCard.tsx`) que suprime a exibição de eventos de ferramenta `updatePlan` na UI do chat, reduzindo ruído visual durante o tool loop do assistente. Testes atualizados (`AssistantMessages.component.test.tsx`)
-- **Regras do `updatePlan` no backend**: instrução do system prompt reforçada em `assistant-context.ts` — "NUNCA recria o plano do zero — sempre envie o array completo com os status atuais" — evita que o modelo resete o plano de tarefas durante execução multi-turno
-- **PlanWidget**: simplificado — removida dependência de `AssistantTaskPriority`; exibição de tarefas mais enxuta (sem labels de prioridade). Redução de ~33 linhas
+- **App.tsx**: integração de `MobileBottomNav`, `BOTTOM_NAV_HEIGHT` — mobile nav renderizada abaixo do ActionBar, visível em mdDown em rotas autenticadas. Adicionados imports `useMediaQuery`, `useTheme`
+- **ActionBar.tsx**: posicionamento responsivo — `bottom: 24` (desktop) → `bottom: 24 + 56 = 80px` (mobile) quando bottom nav está visível. Adicionado `useMediaQuery` para detecção de breakpoint
+- **Header.tsx**: ajustes para coexistência com bottom nav em mobile — itens de navegação duplicados agora são gerenciados via MobileBottomNav
+- **AssistantHeader.tsx**: layout mobile compacto — avatar responsivo (`width/height: { xs: 30, md: AVATAR_SIZE_MD }`), paddings reduzidos (`px: { xs: 1.5, md: 2 }`, `py: { xs: 1, md: 1.5 }`), subtítulo agora visível em sm+ (antes md+), fonte do título reduzida no mobile (`{ xs: '0.875rem', md: '1.5rem' }`). Layout reorganizado com `Box` para melhor responsividade
+- **AssistantMessages.tsx**: avatar do empty state responsivo — dimensões adaptadas para mobile (`width/height: { xs: AVATAR_SIZE_MD * 1.8, md: AVATAR_SIZE_MD * 2.5 }`, `mb: { xs: 2, md: 3 }`)
+- **assistantUi.ts**: gap responsivo no header/composer (`{ xs: 0.5, md: 1 }`), ajustes de padding para mobile
 
-### Removido
+### Documentado
 
-- **Tipo `AssistantTaskPriority`**: removido de `functions/src/genkit/schemas/common.ts` e `src/features/assistant/types.ts` — prioridades de tarefas não são mais validadas/expostas como enum, dando maior liberdade ao modelo (consistente com flexibilização feita no 0.104.1)
-- **Chaves i18n `plan.priorityLabels.*`**: removidas dos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`) — não mais utilizadas após simplificação do PlanWidget
+- **`docs/audits/assistant-mobile-compact-layout.md`**: auditoria do layout mobile compacto do Assistente IA (AssistantHeader, assistantUi, AssistantMessages) — veredito sem problemas relevantes, 2 sugestões de polimento (token de avatar, visibilidade do subtítulo em desktop)
+- **`docs/audits/bottom-navigation-mobile.md`**: auditoria estática completa da Bottom Navigation Mobile (MobileBottomNav, Header, App.tsx, ActionBar, i18n) — imports não utilizados identificados, acoplamento arquitetural documentado
+- **`docs/audits/mobile-bottom-nav-audit.md`**: auditoria focada do MobileBottomNav.tsx (420 linhas) — showLabels com 5 itens contradiz Material Design, navItems como dependência desnecessária no useMemo
+- **`docs/scan/assistant-mobile-layout-gaps.md`**: scan de lacunas do layout mobile do Assistente — 9 gaps identificados (acessibilidade do "Novo Chat", touch targets, safe-area top)
+- **`docs/scan/bottom-nav-mobile-gaps.md`**: scan de lacunas da Bottom Navigation Mobile — 6 gaps priorizados (padding no Assistente, z-index Drawer vs ActionBar, labels contra MD)
 
 ---
 

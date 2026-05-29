@@ -1981,4 +1981,12 @@ export const en: TranslationDictionary = {
     dismiss: 'Dismiss',
     offlineReady: 'App ready for offline use!',
   },
+
+  // ── Mobile Bottom Nav ──────────────────────────────────────
+  mobileBottomNav: {
+    ariaLabel: 'Main navigation',
+    ariaDrawer: 'Secondary menu',
+    more: 'More',
+    openMenu: 'Open menu',
+  },
 };

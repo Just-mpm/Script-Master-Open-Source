@@ -19,7 +19,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
 import { useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useState, useMemo, type ElementType } from 'react';
+import { useState, useMemo, useEffect, type ElementType } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -84,6 +84,16 @@ export function Header() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Escuta evento do MobileBottomNav para abrir dialog de exclusão
+  useEffect(() => {
+    const handleOpenDeleteDialog = () => {
+      setDeleteConfirmText('');
+      setDeleteDialogOpen(true);
+    };
+    window.addEventListener('open-delete-account-dialog', handleOpenDeleteDialog);
+    return () => window.removeEventListener('open-delete-account-dialog', handleOpenDeleteDialog);
+  }, []);
 
   // Billing — badge do plano no header
 
@@ -252,8 +262,8 @@ export function Header() {
           <Stack direction="row" spacing={GAP_MEDIUM} sx={{ flexShrink: 0, alignItems: 'center' }}>
             {!loading && (user ? (
               <>
-                {/* Botão menu mobile — visível apenas em telas pequenas */}
-                {isMobile && (
+                {/* Botão menu mobile — visível apenas para visitantes (autenticados usam bottom nav) */}
+                {isMobile && !user && (
                   <Tooltip title={t('nav.ariaMenu')}>
                     <IconButton
                       color="inherit"

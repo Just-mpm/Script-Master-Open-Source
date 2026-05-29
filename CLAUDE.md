@@ -112,13 +112,14 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | | |
 |---|---|
-| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/app/PwaUpdatePrompt.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
-| **App.tsx** | Shell enxuto (~240 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider` + `Toaster` (react-hot-toast) + `PwaUpdatePrompt`. Importa e invoca `useAutoSaveStudioSettings()` para sincronização automática das preferências do estúdio com Firestore. `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
+| **Arquivos** | `src/App.tsx`, `src/router/routes.tsx`, `src/router/Redirects.tsx`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/components/app/PwaUpdatePrompt.tsx`, `src/components/app/MobileBottomNav.tsx`, `src/components/toast/ToastProvider.tsx`, `src/components/GuestRoute.tsx`, `src/hooks/useAutoSaveStudioSettings.ts` |
+| **App.tsx** | Shell enxuto (~247 linhas) — instancia providers (Router, Auth, I18n, AudioContext), renderiza `AppRoutes` + `VideoPreview` + `ToastProvider` + `Toaster` (react-hot-toast) + `PwaUpdatePrompt`. Importa e invoca `useAutoSaveStudioSettings()` para sincronização automática das preferências do estúdio com Firestore. Renderiza `MobileBottomNav` condicionalmente (mdDown + rotas autenticadas). `isOnboardingRoute` controla ocultação do Header na página de onboarding. Não contém lógica de negócio |
 | **Router** | `src/router/routes.tsx` — lazy loading por rota, `Suspense` com fallback, `ProtectedRoute` wrapper para rotas autenticadas, `GuestRoute` wrapper para rotas de convidado (`/`, `/login`, `/cadastro`) |
 | **GuestRoute** | `src/components/GuestRoute.tsx` — inverso do `ProtectedRoute`: exibe spinner durante `loading`, redireciona para `/app/estudio` se `user` existe, renderiza `<Outlet />` para visitantes |
 | **Redirects** | `src/router/Redirects.tsx` — 11 redirects 301 de compatibilidade |
 | **AudioGenerationHandler** | Componente extraído de App.tsx — encapsula `useAudioGenerator` + lógica de geração + integração com `AudioPreflightDialog` para pré-verificação de créditos |
 | **ToastProvider** | Componente extraído de App.tsx — gerencia ErrorToast/SuccessToast/WarningToast |
+| **MobileBottomNav** | `src/components/app/MobileBottomNav.tsx` (+421 linhas) — navegação inferior mobile com `BottomNavigation` MUI v9. 4 destinos principais + Drawer secundário (Imagens, Speed Paint, Configurações, Sair). Safe-area-inset-bottom, z-index 1200, i18n nos 3 locales. Exibição condicional via `useMediaQuery` (mdDown). Integrado em App.tsx e ActionBar.tsx (posicionamento responsivo: `bottom` 80px no mobile) |
 
 ### Páginas Públicas
 
@@ -433,7 +434,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 ## Version
 
-- **Current:** `0.107.1`
+- **Current:** `0.108.0`
 - **Last release:** 2026-05-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -442,9 +443,9 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 
 | Versão | Resumo |
 |--------|--------|
+| `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); docs de auditoria e scan do mobile |
 | `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |
 | `0.107.0` | Scroll inteligente do Assistente — posiciona uma vez no início da mensagem da IA e libera (sem `setInterval` forçado); PlanWidget inicia recolhido por padrão |
 | `0.106.0` | PwaUpdatePrompt com detecção de nova versão via useRegisterSW (registerType: prompt), Snackbar MUI v9 com Slide, sessionStorage dismiss, onOfflineReady toast; remoção do registro manual de main.tsw; maxTurns do assistente 10→20 |
 | `0.105.2` | Container scrollável no Assistente (fix layout mobile); respondResult refinado com Card + ReactMarkdown + AutoAwesome; assistantUi simplificado (scroll delegado ao pai); correção de imports não utilizados |
 | `0.105.1` | SettingsPreviewCard extraído; AssistantComposer com ToggleButton; MergedToolEvent consolidado; PlanWidget responsivo; assistantUi padronizado; chave i18n tasksCompletedLabel; correções em AssistantMessages, testes e backend |
-| `0.105.0` | Tool execution feedback com ícones por tool, estados pending/complete/error, error cards colapsáveis; ThinkingShimmer para "Pensando"; TwoPhaseStopButton com two-phase cancellation; Interview multi-select + multi-question (checkboxes, tabs, confirmação); correções de acessibilidade e memoização |
