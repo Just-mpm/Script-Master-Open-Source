@@ -446,7 +446,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 ## Version
 
-- **Current:** `0.110.0`
+- **Current:** `0.110.1`
 - **Last release:** 2026-05-30
 
 ### Últimas mudanças (atualizado por /fast)
@@ -455,8 +455,8 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 | Versão | Resumo |
 |--------|--------|
+| `0.110.1` | Unmount/remount loop no VideoComposition (SceneItem movido para escopo de módulo); `allowHtmlInCanvas: true` desabilitado (causava flashs pretos no Speed Paint); gerenciamento de recursos do SpeedPaintScene migrado de estado React para ref booleana; backgroundColor condicional readicionado no SpeedPaintScene; avisos HTML-in-canvas removidos dos painéis de exportação; SceneItemProps extraída para interface estável |
 | `0.110.0` | `detectHtmlInCanvasSupport()` em useCodecSupport; avisos HTML-in-canvas no SpeedPaintExportPanel e VideoExportPanel; `allowHtmlInCanvas: true` nos exporters; `@remotion/preload` removido; flash branco corrigido no SpeedPaintScene (backgroundColor removido); `opacity` removido do speedPaintRenderer; firestore.rules com isAssetUrl(); chave i18n htmlInCanvasWarning nos 3 locales |
 | `0.109.1` | EncodingError fix multicamada no Remotion Player: `loadImageElement` com `img.decode()` pós-onload no speedPaintRenderer; `animateScenes=false` no VideoPage. Novo helper `validateImageIsDecodable()` com timeout. Cancelamento seguro com `signal?.aborted` no imageProcessing. Logger estruturado no Genkit. 2 docs de auditoria/scan. |
 | `0.109.0` | Emuladores seletivos (flags VITE_EMULATOR_*, script scripts/emulators.mjs); validação de timestamps de cena (validateSceneTimestamps/buildUniformTimestamps); detecção de silêncio no backend TTS (isSilentPcm, responseModalities); extractPcmFromDataUrl reescrito (MIME multi-parâmetro); emotionTag removido dos schemas de chunking; densitySeconds removido do schema de cenas; integração de teclado com AudioContext; refatoração useSwipeTabs; mock PWA para testes; 5 docs de auditoria/scan; keyframe spin no CSS |
 | `0.108.3` | Correções de segurança P1/P2 do audit #001 (PII removido de logs Firestore, validação de schemas Zod com min/max, base64ToBlobSync substituído por async); validação de imagem de referência (15MB, content-types); content-type validation no Pexels StockMedia; createLogger nos flows backend de áudio/imagens/chunking; chave i18n searchError; limpeza do doc de auditoria 001-audio-image-audit.md |
-| `0.108.2` | Admin auth migrado de role-based + email hardcoded para custom claim `admin: true` em Firestore/Storage Rules; script `grant-access` adicionado em functions; .gitignore com exclusão de service-account keys; limpeza de 5 docs de auditoria mobile; novo doc de auditoria unificada áudio/imagem (001-audio-image-audit.md) |

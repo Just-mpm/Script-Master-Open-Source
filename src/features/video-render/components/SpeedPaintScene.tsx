@@ -145,8 +145,6 @@ interface SpeedPaintSceneProps {
   timingMode?: SpeedPaintTimingMode;
 }
 
-type SpeedPaintResourcesStatus = 'loading' | 'ready';
-
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
@@ -184,34 +182,35 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const bufferRef = useRef<HTMLCanvasElement | null>(null);
-  const hasContinuedRenderRef = useRef(false);
+  const resourcesReadyRef = useRef(false);
 
   // Ref para rastrear o último progress desenhado — evita redesenho duplicado
   // durante o hold (progress=1) quando o frame continua mudando
   const lastDrawnProgressRef = useRef<number>(-1);
   const lastDrawnOpacityRef = useRef<number>(-1);
 
-  // Bloqueia a renderização até que a imagem carregue
-  const [handle] = useState(() => delayRender('Carregando imagem do speed paint'));
-  const [resourcesStatus, setResourcesStatus] = useState<SpeedPaintResourcesStatus>('loading');
+  // Guarda animation em ref para evitar que mudança de referência dispare reload
+  const animationRef = useRef(animation);
+  animationRef.current = animation;
 
-  // Carrega a imagem e cria o buffer canvas uma vez
+  // Bloqueia a renderização até que a imagem carregue
+  const [loadHandle] = useState(() => delayRender('Carregando imagem do speed paint'));
+
+  // Carrega a imagem e cria o buffer canvas — só depende de imageSource (string estável)
   useEffect(() => {
     let cancelled = false;
-    setResourcesStatus('loading');
+    resourcesReadyRef.current = false;
     imageRef.current = null;
     bufferRef.current = null;
-    lastDrawnProgressRef.current = -1;
-    lastDrawnOpacityRef.current = -1;
-    hasContinuedRenderRef.current = false;
 
     const init = async () => {
       try {
         const img = await loadImageElement(imageSource);
         if (cancelled) return;
         imageRef.current = img;
-        bufferRef.current = createBufferCanvas(animation);
-        setResourcesStatus('ready');
+        bufferRef.current = createBufferCanvas(animationRef.current);
+        resourcesReadyRef.current = true;
+        continueRender(loadHandle);
       } catch (err) {
         if (!cancelled) {
           cancelRender(err instanceof Error ? err : new Error('Falha ao carregar imagem do speed paint'));
@@ -223,11 +222,9 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
     return () => {
       cancelled = true;
-      // Failsafe: libera o lock caso desmonte antes do carregamento.
-      // Se continueRender já foi chamado, esta chamada é um no-op seguro.
-      continueRender(handle);
+      continueRender(loadHandle);
     };
-  }, [imageSource, animation, handle]);
+  }, [imageSource, loadHandle]);
 
   // ── Cálculo das 4 zonas: fade in → animação → hold → fade out ──
 
@@ -319,7 +316,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     return { progress: Math.max(0, Math.min(1, p)), opacity: Math.max(0, Math.min(1, o)) };
   }, [animation.revealThreshold, animationFrames, durationInFrames, fadeFrames, fadeOutStart, frame, timingMode]);
 
-  // ── Desenho do frame — TUDO síncrono, sem requestAnimationFrame ──
+  // ── Desenho do frame — sincronizado com Remotion via delayRender/continueRender ──
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -327,17 +324,12 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     const img = imageRef.current;
     const buffer = bufferRef.current;
 
-    if (resourcesStatus !== 'ready') return;
-    if (!canvas || !ctx || !img || !buffer) return;
+    // Recursos ainda não carregados — nada a desenhar
+    if (!resourcesReadyRef.current || !canvas || !ctx || !img || !buffer) return;
 
     // Early return: durante o hold (progress=1, opacity=1) e o último frame
     // já foi desenhado com os mesmos valores, não redesenha nada.
-    // Isso elimina o trabalho pesado de stroke rendering durante os 3s de hold.
     if (progress === lastDrawnProgressRef.current && opacity === lastDrawnOpacityRef.current) {
-      if (!hasContinuedRenderRef.current) {
-        hasContinuedRenderRef.current = true;
-        continueRender(handle);
-      }
       return;
     }
 
@@ -358,8 +350,6 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
     });
 
     // Desenha a ferramenta (lápis/pincel) na ponta do último stroke visível.
-    // O badge continua exclusivo do preview, mas a ferramenta pode aparecer
-    // também na exportação final quando esse for o comportamento padrão.
     if (showDrawTool && progress > 0 && progress < 1) {
       const visibleCount = getVisibleStrokeCount(animation, progress, resolvedSpeedMultiplier);
       const totalStrokes = animation.strokes.length;
@@ -372,24 +362,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
         drawTool(ctx, x, y, toolType);
       }
     }
-
-    if (!hasContinuedRenderRef.current) {
-      hasContinuedRenderRef.current = true;
-      continueRender(handle);
-    }
-  }, [
-    frame,
-    animation,
-    progress,
-    opacity,
-    drawSpeed,
-    paintSpeed,
-    speedMultiplier,
-    showDrawTool,
-    isExporting,
-    resourcesStatus,
-    handle,
-  ]);
+  }, [frame, animation, progress, opacity, drawSpeed, paintSpeed, speedMultiplier, showDrawTool, isExporting]);
 
   // Dimensões do canvas — usa as dimensões da animação para pixel-perfect rendering
   const canvasWidth = animation.canvasWidth;
@@ -406,9 +379,8 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
   return (
     <AbsoluteFill
-      // Sem backgroundColor — o canvas já preenche com canvasColor via renderSpeedPaintFrame.
-      // Remover evita flash branco durante crossfade (SceneSequence também não usa backgroundColor).
       style={{
+        backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000',
         opacity,
         alignItems: 'center',
         justifyContent: 'center',

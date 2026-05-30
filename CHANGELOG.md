@@ -7,6 +7,25 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.110.1] - 2026-05-30
+
+### Corrigido
+
+- **Unmount/remount loop no VideoComposition** (`VideoComposition.tsx`): `SceneItem` movido do escopo interno (onde era recriado a cada frame por causa de `useCurrentFrame`) para o escopo de módulo — a referência do componente agora é estável, eliminando o ciclo de unmount/remount de todos os `SpeedPaintScene` a cada frame que impedia o carregamento de imagens durante preview e exportação
+- **Flashs pretos no Speed Paint durante exportação** (`useSpeedPaintExporter.tsx`, `useVideoExporter.tsx`): `allowHtmlInCanvas: true` desabilitado — `drawElementImage` (Chromium experimental) não captura canvas 2D de forma confiável, causando quadros pretos. A exportação volta ao software renderer padrão (`drawImage(canvas, ...)`), síncrono e estável
+- **`SpeedPaintScene.tsx`**: gerenciamento de recursos migrado de estado React (`SpeedPaintResourcesStatus`) para ref booleana (`resourcesReadyRef`) — elimina re-renders desnecessários durante carregamento de imagem; `delayRender`/`continueRender` simplificado com handle único; linting de dependências do `useLayoutEffect` reduzido de 13 para 10 entradas
+
+### Alterado
+
+- **`VideoComposition.tsx`**: `nextHasSpeedPaint` pré-computado via `useMemo` em vez de acesso direto a `scenes[index + 1]` dentro do componente filho; `globalFrame` passado como prop explícita para `SceneItem` (elimina dependência de closure); nova interface `SceneItemProps` no escopo de módulo para tipagem estável. Redução de ~73 linhas no componente principal
+- **`SpeedPaintScene.tsx`**: `backgroundColor` readicionado no `AbsoluteFill` com valor condicional (`canvasColor === 'white' ? '#fff' : '#000'`) — a remoção completa em v0.110.0 causava flash branco em temas escuros durante crossfade entre cenas
+
+### Removido
+
+- **Avisos HTML-in-canvas** (`SpeedPaintExportPanel.tsx`, `VideoExportPanel.tsx`): Alert warning `htmlInCanvasWarning` removido dos painéis de exportação — o aviso era prematuro (baseado em detecção experimental com falsos positivos) e agora que `allowHtmlInCanvas` está desabilitado, perdeu o sentido
+
+---
+
 ## [0.110.0] - 2026-05-30
 
 ### Adicionado

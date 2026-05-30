@@ -364,11 +364,11 @@ export function useVideoExporter() {
         container: resolvedContainerRef.current as 'mp4' | 'webm',
         licenseKey: 'free-license',
         signal: abortController.signal,
-        // Habilita captura real de frames via HTML-in-canvas (drawElementImage).
-        // Necessário para serializar canvas 2D nativo (speed paint) corretamente.
-        // Requer Chromium com chrome://flags/#canvas-draw-element habilitado.
-        // Se o browser não suportar, faz fallback para o mecanismo padrão (DOM→SVG).
-        allowHtmlInCanvas: true,
+        // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
+        // O drawElementImage (Chromium experimental) não captura canvas 2D de
+        // forma confiável. O software renderer (DOM tree walker) lê pixels do
+        // canvas via drawImage(canvas, ...) — síncrono e estável.
+        // allowHtmlInCanvas: true,
         onProgress: (progress: RenderMediaOnWebProgress) => {
           // Progresso acumulado: speed paint ocupa [0, speedPaintOffset], render ocupa o restante
           const percent = speedPaintOffset + Math.round(progress.progress * remainingWeight);

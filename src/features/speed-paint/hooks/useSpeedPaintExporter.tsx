@@ -397,12 +397,12 @@ export function useSpeedPaintExporter() {
         container: resolvedContainerRef.current as 'mp4' | 'webm',
         licenseKey: 'free-license',
         signal: abortController.signal,
-        // Habilita captura real de frames via HTML-in-canvas (drawElementImage).
-        // Necessário para serializar canvas 2D nativo (speed paint) corretamente.
-        // Requer Chromium com chrome://flags/#canvas-draw-element habilitado.
-        allowHtmlInCanvas: true,
+        // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
+        // O drawElementImage (Chromium experimental) não captura canvas 2D de
+        // forma confiável. O software renderer lê pixels via drawImage(canvas).
+        // allowHtmlInCanvas: true,
         onProgress: (progress: RenderMediaOnWebProgress) => {
-          const percent = Math.round(progress.progress * 100);
+        const percent = Math.round(progress.progress * 100);
           // Throttle: só atualiza estado quando o percentual inteiro mudar
           if (percent === lastReportedPercentRef.current) return;
           lastReportedPercentRef.current = percent;
@@ -584,12 +584,12 @@ export function useSpeedPaintExporter() {
         container: resolvedContainerRef.current as 'mp4' | 'webm',
         licenseKey: 'free-license',
         signal: abortController.signal,
-        // Habilita captura real de frames via HTML-in-canvas (drawElementImage).
-        // Necessário para serializar canvas 2D nativo (speed paint) corretamente.
-        // Requer Chromium com chrome://flags/#canvas-draw-element habilitado.
-        allowHtmlInCanvas: true,
+        // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
+        // O drawElementImage (Chromium experimental) não captura canvas 2D de
+        // forma confiável. O software renderer lê pixels via drawImage(canvas).
+        // allowHtmlInCanvas: true,
         onProgress: (progress: RenderMediaOnWebProgress) => {
-          const percent = generationWeight + Math.round(progress.progress * (100 - generationWeight));
+        const percent = generationWeight + Math.round(progress.progress * (100 - generationWeight));
           if (percent === lastReportedPercentRef.current) return;
           lastReportedPercentRef.current = percent;
           setState(prev => ({

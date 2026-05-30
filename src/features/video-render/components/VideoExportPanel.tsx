@@ -265,15 +265,6 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               sx={{ mr: 0 }}
             />
 
-            {/* Aviso: browser sem suporte a HTML-in-canvas quando speed paint está ativo */}
-            {animateScenes && !exporter.supportsHtmlInCanvas && (
-              <Alert severity="warning" variant="outlined" sx={{ py: 0 }}>
-                <Typography variant="caption" sx={{ lineHeight: 1.6 }}>
-                  {t('video.htmlInCanvasWarning')}
-                </Typography>
-              </Alert>
-            )}
-
             {/* Seletor de qualidade */}
             <ExportQualitySelector
               quality={quality}

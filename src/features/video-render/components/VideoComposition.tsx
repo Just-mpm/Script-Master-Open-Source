@@ -16,6 +16,116 @@ const FADE_FRAMES = 12;
 /** Duração do fade em ms para cenas estáticas (usado para calcular overlap) */
 const FADE_DURATION_MS = 400;
 
+// ---------------------------------------------------------------------------
+// Props do SceneItem — definido no escopo de módulo para referência estável
+// ---------------------------------------------------------------------------
+
+interface SceneItemProps {
+  scene: VideoScene;
+  index: number;
+  totalScenes: number;
+  fps: number;
+  sceneCaptions: CaptionWord[];
+  audioUrl?: string;
+  subtitleStyle?: VideoCompositionProps['subtitleStyle'];
+  isExporting?: boolean;
+  speedPaintOverlapFrames: number;
+  globalSpeedMultiplier: number;
+  showDrawTool?: boolean;
+  speedPaintMultipliers?: SpeedPaintMultipliers;
+  /** Se a cena seguinte tem speed paint — pré-computado pelo pai */
+  nextHasSpeedPaint: boolean;
+  /** Frame global do composition — para WaveformOverlay */
+  globalFrame: number;
+}
+
+/**
+ * Componente memoizado por cena — DEVE estar no escopo de módulo.
+ *
+ * Se definido dentro de VideoComposition, a referência muda a cada frame
+ * (pois VideoComposition usa useCurrentFrame), causando unmount/remount
+ * de todos os SpeedPaintScene a cada frame. Isso impede o carregamento
+ * da imagem e resulta em frames em branco na exportação.
+ */
+const SceneItem = React.memo(function SceneItem({
+  scene,
+  index,
+  totalScenes,
+  fps,
+  sceneCaptions,
+  audioUrl,
+  subtitleStyle,
+  isExporting,
+  speedPaintOverlapFrames,
+  globalSpeedMultiplier,
+  showDrawTool,
+  speedPaintMultipliers,
+  nextHasSpeedPaint,
+  globalFrame,
+}: SceneItemProps) {
+  const startFrame = msToFrames(scene.timestamp * 1000, fps);
+  const thisHasSpeedPaint = !!scene.strokeAnimation;
+  const sceneOverlapFrames = (thisHasSpeedPaint || nextHasSpeedPaint)
+    ? speedPaintOverlapFrames
+    : msToFrames(FADE_DURATION_MS, fps);
+  const adjustedFrom = Math.max(0, startFrame - sceneOverlapFrames);
+  const adjustedDuration = scene.durationInFrames + sceneOverlapFrames;
+  const isLastScene = index === totalScenes - 1;
+
+  return (
+    <Sequence
+      key={`${scene.imageUrl}-${scene.timestamp}`}
+      from={adjustedFrom}
+      durationInFrames={adjustedDuration}
+    >
+      {scene.strokeAnimation ? (
+        <SpeedPaintScene
+          animation={scene.strokeAnimation}
+          imageSource={scene.imageUrl}
+          durationInFrames={adjustedDuration}
+          isLastScene={isLastScene}
+          speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier}
+          drawSpeed={speedPaintMultipliers?.sketch}
+          paintSpeed={speedPaintMultipliers?.reveal}
+          isExporting={isExporting}
+          showDrawTool={showDrawTool}
+        />
+      ) : (
+        <SceneSequence
+          imageUrl={scene.imageUrl}
+          durationInFrames={adjustedDuration}
+          fadeFrames={FADE_FRAMES}
+          isLastScene={isLastScene}
+        />
+      )}
+      {(sceneCaptions.length > 0 || scene.subtitle) && (
+        <SubtitleOverlay
+          captions={sceneCaptions.length > 0 ? sceneCaptions : undefined}
+          text={sceneCaptions.length === 0 ? scene.subtitle : undefined}
+          durationInFrames={adjustedDuration}
+          subtitleStyle={subtitleStyle}
+          position={subtitleStyle?.position ?? 'bottom'}
+        />
+      )}
+      {audioUrl && !isExporting && (
+        <WaveformOverlay
+          audioUrl={audioUrl}
+          frame={globalFrame}
+          sceneStartTime={scene.timestamp}
+          sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
+          fps={fps}
+          opacity={0.3}
+          isExporting={isExporting}
+        />
+      )}
+    </Sequence>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Composition principal
+// ---------------------------------------------------------------------------
+
 /**
  * Composition principal Remotion para o vídeo de roteiro.
  * Recebe VideoCompositionProps como inputProps do Player e renderiza:
@@ -73,93 +183,14 @@ export const VideoComposition = React.memo(function VideoComposition({
     return map;
   }, [captions, scenes, fps, speedPaintOverlapFrames]);
 
-  // ── Componente memoizado por cena ──────────────────────────────────────────
-  const SceneItem = React.memo(function SceneItem({
-    scene,
-    index,
-    totalScenes,
-    fps,
-    sceneCaptions,
-    audioUrl,
-    subtitleStyle,
-    isExporting,
-    speedPaintOverlapFrames,
-    globalSpeedMultiplier,
-    showDrawTool,
-    speedPaintMultipliers,
-  }: {
-    scene: VideoScene;
-    index: number;
-    totalScenes: number;
-    fps: number;
-    sceneCaptions: CaptionWord[];
-    audioUrl?: string;
-    subtitleStyle?: VideoCompositionProps['subtitleStyle'];
-    isExporting?: boolean;
-    speedPaintOverlapFrames: number;
-    globalSpeedMultiplier: number;
-    showDrawTool?: boolean;
-    speedPaintMultipliers?: SpeedPaintMultipliers;
-  }) {
-    const startFrame = msToFrames(scene.timestamp * 1000, fps);
-    const nextHasSpeedPaint = index < totalScenes - 1 && !!scenes[index + 1].strokeAnimation;
-    const thisHasSpeedPaint = !!scene.strokeAnimation;
-    const sceneOverlapFrames = (thisHasSpeedPaint || nextHasSpeedPaint)
-      ? speedPaintOverlapFrames
-      : msToFrames(FADE_DURATION_MS, fps);
-    const adjustedFrom = Math.max(0, startFrame - sceneOverlapFrames);
-    const adjustedDuration = scene.durationInFrames + sceneOverlapFrames;
-    const isLastScene = index === totalScenes - 1;
-
-    return (
-      <Sequence
-        key={`${scene.imageUrl}-${scene.timestamp}`}
-        from={adjustedFrom}
-        durationInFrames={adjustedDuration}
-      >
-        {scene.strokeAnimation ? (
-          <SpeedPaintScene
-            animation={scene.strokeAnimation}
-            imageSource={scene.imageUrl}
-            durationInFrames={adjustedDuration}
-            isLastScene={isLastScene}
-            speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier}
-            drawSpeed={speedPaintMultipliers?.sketch}
-            paintSpeed={speedPaintMultipliers?.reveal}
-            isExporting={isExporting}
-            showDrawTool={showDrawTool}
-          />
-        ) : (
-          <SceneSequence
-            imageUrl={scene.imageUrl}
-            durationInFrames={adjustedDuration}
-            fadeFrames={FADE_FRAMES}
-            isLastScene={isLastScene}
-          />
-        )}
-        {(sceneCaptions.length > 0 || scene.subtitle) && (
-          <SubtitleOverlay
-            captions={sceneCaptions.length > 0 ? sceneCaptions : undefined}
-            text={sceneCaptions.length === 0 ? scene.subtitle : undefined}
-            durationInFrames={adjustedDuration}
-            subtitleStyle={subtitleStyle}
-            position={subtitleStyle?.position ?? 'bottom'}
-          />
-        )}
-        {audioUrl && !isExporting && (
-          <WaveformOverlay
-            audioUrl={audioUrl}
-            frame={frame}
-            sceneStartTime={scene.timestamp}
-            sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
-            fps={fps}
-            opacity={0.3}
-            isExporting={isExporting}
-          />
-        )}
-      </Sequence>
-    );
-  });
+  // Pré-computa se cada cena seguinte tem speed paint — evita acesso ao array scenes no SceneItem
+  const nextHasSpeedPaintMap = useMemo(() => {
+    const map = new Map<number, boolean>();
+    for (let i = 0; i < scenes.length; i++) {
+      map.set(i, i < scenes.length - 1 && !!scenes[i + 1].strokeAnimation);
+    }
+    return map;
+  }, [scenes]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -182,6 +213,8 @@ export const VideoComposition = React.memo(function VideoComposition({
           globalSpeedMultiplier={(SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal) / 4}
           showDrawTool={showDrawTool}
           speedPaintMultipliers={speedPaintMultipliers}
+          nextHasSpeedPaint={nextHasSpeedPaintMap.get(index) ?? false}
+          globalFrame={frame}
         />
       ))}
     </AbsoluteFill>
