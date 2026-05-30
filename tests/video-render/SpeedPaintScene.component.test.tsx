@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StrokeAnimation } from '../../src/features/speed-paint/types';
 import type { SpeedPaintFrameOptions } from '../../src/features/video-render/lib/speedPaintRenderer';
@@ -90,10 +90,10 @@ describe('SpeedPaintScene', () => {
     );
   });
 
-  it('desenha o primeiro frame antes de liberar a renderização do Remotion', async () => {
+  it('desenha o primeiro frame após carregar a imagem e liberar a renderização do Remotion', async () => {
     const { SpeedPaintScene } = await import('../../src/features/video-render/components/SpeedPaintScene');
 
-    render(
+    const { rerender } = render(
       <SpeedPaintScene
         animation={createAnimation()}
         imageSource="data:image/png;base64,test"
@@ -102,11 +102,29 @@ describe('SpeedPaintScene', () => {
       />,
     );
 
+    // Aguarda o useEffect de carregamento completar (loadImageElement + continueRender)
     await waitFor(() => {
-      expect(testState.mockRenderSpeedPaintFrame).toHaveBeenCalledTimes(1);
       expect(testState.mockContinueRender).toHaveBeenCalledWith('speed-paint-handle');
     });
 
-    expect(testState.calls).toEqual(['draw', 'continue']);
+    // Após continueRender, o Remotion aciona um novo frame.
+    // No ambiente de teste, simulamos isso com rerender.
+    await act(async () => {
+      rerender(
+        <SpeedPaintScene
+          animation={createAnimation()}
+          imageSource="data:image/png;base64,test"
+          durationInFrames={90}
+          isExporting
+        />,
+      );
+    });
+
+    // Agora o useLayoutEffect deve ter desenhado o primeiro frame
+    await waitFor(() => {
+      expect(testState.mockRenderSpeedPaintFrame).toHaveBeenCalledTimes(1);
+    });
+
+    expect(testState.calls).toEqual(['continue', 'draw']);
   });
 });

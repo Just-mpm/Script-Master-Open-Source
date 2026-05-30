@@ -7,6 +7,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.111.0] - 2026-05-30
+
+### Adicionado
+
+- **`VideoExportPanel.tsx`**: Novas props opcionais `animateScenes` e `onAnimateScenesChange` — permite sincronizar o toggle de animação Speed Paint entre preview e painel de exportação, eliminando estado duplicado e inconsistência
+
+### Alterado
+
+- **`VideoPage.tsx`**: `animateScenes` movido de valor fixo `false` para estado controlado por toggle (`useState(true)`) — compartilhado entre preview e exportação; default `true` (cenas animadas com Speed Paint por padrão)
+- **`VideoComposition.tsx`**: `globalSpeedMultiplier` simplificado — removido divisor `/ 4` que distorcia a progressão; a velocidade do Speed Paint no contexto de vídeo agora é governada exclusivamente pela duração da cena (`animationFrames`), sem multiplicador arbitrário externo
+- **`speedPaintRenderer.ts`**: `adjustSpeedPaintProgress` simplificado de power curve para progressão linear — `Math.min(1, clamped * speed)` substitui o antigo comportamento condicional (power curve para speed < 1, linear para speed >= 1). A duração da animação é controlada por `animationFrames` em `SpeedPaintScene`, não por curvas de easing
+
+### Corrigido
+
+- **Testes**: `SpeedPaintScene.component.test.ts` e `speedPaintRenderer.unit.test.ts` atualizados para refletir a progressão linear do Speed Paint — ordem de chamadas corrigida (`continue` antes de `draw`) e expectativas de stroke count ajustadas
+
+---
+
 ## [0.110.1] - 2026-05-30
 
 ### Corrigido

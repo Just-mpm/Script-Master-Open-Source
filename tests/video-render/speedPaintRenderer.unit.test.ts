@@ -306,7 +306,7 @@ describe('speedPaintRenderer', () => {
       }).not.toThrow();
     });
 
-    it('speedMultiplier 0.5 desacelera progress — progress 0.8 → curva lenta', () => {
+    it('speedMultiplier 0.5 desacelera progress — progress 0.8, speed linear', () => {
       const { ctx } = createMockCtx();
       const buffer = createBufferCanvas(createMinimalAnimation());
       const image = createMockImage();
@@ -322,7 +322,7 @@ describe('speedPaintRenderer', () => {
       }).not.toThrow();
     });
 
-    it('speedMultiplier 0.25 com progress 1.0 completa todos os strokes (antes: ficava em 25%)', () => {
+    it('speedMultiplier 0.25 com progress 1.0 — linear, completa 25% dos strokes', () => {
       const { ctx } = createMockCtx();
       const strokes = [];
       for (let i = 0; i < 10; i++) {
@@ -342,8 +342,10 @@ describe('speedPaintRenderer', () => {
       const buffer = createBufferCanvas(animation);
       const image = createMockImage();
 
-      // Bug fix: antes, progress * 0.25 = 0.25 → apenas 2 strokes.
-      // Agora usa Math.pow(progress, 1/0.25) = Math.pow(1, 4) = 1.0 → todos os 10 strokes.
+      // Progressão linear: progress 1.0 * speed 0.25 = 0.25 → 25% dos strokes (2 de 10).
+      // No contexto de vídeo, speed será 1.0 (linear completo), então este cenário
+      // de speed < 1 indica "menos strokes no tempo disponível" — o restante aparece
+      // durante o hold phase. Sem power curve, sem distorção de velocidade.
       expect(() => {
         renderSpeedPaintFrame(ctx, buffer, {
           animation,

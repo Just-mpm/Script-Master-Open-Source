@@ -13,7 +13,7 @@ import { createLogger } from '../../../lib/logger';
 // Constantes
 // ---------------------------------------------------------------------------
 
-/** Fator de lentidão para a fase de reveal — torna o 1x do reveal 2x mais lento que linear */
+/** Fator de lentidão para a fase de reveal — torna o reveal 2x mais lento que o sketch */
 const REVEAL_SPEED_SCALE = 0.5;
 
 // ---------------------------------------------------------------------------
@@ -38,12 +38,20 @@ export interface GenerateSpeedPaintOptions {
   useWorker?: boolean;
 }
 
+/**
+ * Ajusta o progresso normalizado (0-1) pelo multiplicador de velocidade.
+ *
+ * Progressão linear para todas as velocidades — sem power curve.
+ * - speed = 1.0 → identidade (progresso linear, completa no tempo da cena)
+ * - speed < 1   → completa menos strokes (restante aparece durante o hold)
+ * - speed > 1   → completa antes (hold mais longo)
+ *
+ * A duração real da animação é controlada por `animationFrames` em SpeedPaintScene,
+ * não por curvas de easing nesta função.
+ */
 function adjustSpeedPaintProgress(normalized: number, speed: number): number {
   const clamped = Math.max(0, Math.min(1, normalized));
-
-  return speed >= 1
-    ? Math.min(1, clamped * speed)
-    : Math.pow(clamped, 1 / speed);
+  return Math.min(1, clamped * speed);
 }
 
 export function getVisibleStrokeCount(

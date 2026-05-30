@@ -210,7 +210,12 @@ export const VideoComposition = React.memo(function VideoComposition({
           subtitleStyle={subtitleStyle}
           isExporting={isExporting}
           speedPaintOverlapFrames={speedPaintOverlapFrames}
-          globalSpeedMultiplier={(SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal) / 4}
+          // No contexto de vídeo, a velocidade do speed paint é governada pela
+          // duração da cena (animationFrames em SpeedPaintScene), não por um
+          // multiplicador arbitrário. speed=1.0 → progressão linear, completa
+          // no tempo certo. Para velocidade diferente, o slider da SpeedPaintPage
+          // controla a duração total via AnimationDurationSelector.
+          globalSpeedMultiplier={SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal}
           showDrawTool={showDrawTool}
           speedPaintMultipliers={speedPaintMultipliers}
           nextHasSpeedPaint={nextHasSpeedPaintMap.get(index) ?? false}

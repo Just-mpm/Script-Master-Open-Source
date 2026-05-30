@@ -135,6 +135,9 @@ export function VideoPage({
   const [captionVisible, setCaptionVisible] = useState(true);
   const [libraryExpanded, setLibraryExpanded] = useState(false);
 
+  // Toggle: animar cenas com Speed Paint — compartilhado entre preview e exportação
+  const [animateScenes, setAnimateScenes] = useState(true);
+
   // Posição vertical da legenda — persistido no localStorage
   const [subtitlePosition, setSubtitlePosition] = useState<SubtitlePosition>(() => {
     try {
@@ -290,11 +293,11 @@ export function VideoPage({
         showCaptionToggle={true}
         captionVisible={captionVisible}
         onCaptionToggle={handleCaptionToggle}
-        animateScenes={false}
+        animateScenes={animateScenes}
         showDrawTool={true}
       />
     ),
-    [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, captionVisible, handleCaptionToggle, videoPlayerRef],
+    [scenes, audioUrl, videoFps, durationInFrames, sceneRatio, captions, mergedSubtitleStyle, captionVisible, handleCaptionToggle, videoPlayerRef, animateScenes],
   );
 
   // SEO data para a página — usa getPageSeo para incluir OG/Twitter tags
@@ -522,6 +525,8 @@ export function VideoPage({
                     includeSubtitles={includeSubtitles}
                     onIncludeSubtitlesChange={setIncludeSubtitles}
                     durationInSeconds={durationInSeconds}
+                    animateScenes={animateScenes}
+                    onAnimateScenesChange={setAnimateScenes}
                   />
                 </>
               )}

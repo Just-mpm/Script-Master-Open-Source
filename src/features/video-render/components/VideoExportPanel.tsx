@@ -76,6 +76,10 @@ interface VideoExportPanelProps {
   onIncludeSubtitlesChange?: (value: boolean) => void;
   /** Duração total em segundos (para estimativa de tamanho) */
   durationInSeconds?: number;
+  /** Animar cenas com Speed Paint — controlado pela VideoPage (preview + exportação) */
+  animateScenes?: boolean;
+  /** Callback quando o toggle de speed paint muda */
+  onAnimateScenesChange?: (value: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,13 +100,18 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   includeSubtitles = true,
   onIncludeSubtitlesChange,
   durationInSeconds,
+  animateScenes: animateScenesProp = true,
+  onAnimateScenesChange,
 }: VideoExportPanelProps) {
   const { t } = useLocale();
 
   // --- State local de opções de exportação (elimina re-renders em cascata no pai) ---
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
-  const [animateScenes, setAnimateScenes] = useState(true);
+
+  // Speed paint: prop controlada pela VideoPage (compartilhado com preview)
+  const animateScenes = animateScenesProp;
+  const setAnimateScenes = onAnimateScenesChange ?? (() => {});
 
   const resolution = useMemo(() => getResolutionFromQuality(ratio, quality), [ratio, quality]);
   const checkSupportRef = useRef(exporter.checkSupport);
