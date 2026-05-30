@@ -37,6 +37,9 @@ import {
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { buildImageInstruction } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('images');
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -44,6 +47,16 @@ import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 
 /** Modelo de geração de imagens */
 const IMAGE_MODEL = 'googleai/gemini-3.1-flash-image-preview';
+
+/** Tamanho máximo do data URL de referência (~10MB em base64) */
+const MAX_REFERENCE_IMAGE_DATA_URL_LENGTH = 15_000_000;
+
+/** Content types aceitos para imagem de referência */
+const ALLOWED_REFERENCE_CONTENT_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -93,6 +106,25 @@ export const images = onCallGenkit(
       }
       const requestId = input.requestId ?? randomUUID();
       const hasReference = !!(input.referenceImage && input.referenceImage.trim().length > 0);
+
+      // Validação server-side da imagem de referência
+      if (hasReference && input.referenceImage) {
+        if (input.referenceImage.length > MAX_REFERENCE_IMAGE_DATA_URL_LENGTH) {
+          throw new HttpsError(
+            'invalid-argument',
+            'Imagem de referência excede o tamanho máximo permitido.',
+          );
+        }
+
+        const refContentType = getDataUrlContentType(input.referenceImage);
+        if (!ALLOWED_REFERENCE_CONTENT_TYPES.has(refContentType)) {
+          throw new HttpsError(
+            'invalid-argument',
+            `Content type da imagem de referência não suportado: ${refContentType}. Aceitos: jpeg, png, webp.`,
+          );
+        }
+      }
+
       let requestStarted = false;
       let creditsSettled = false;
       let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
@@ -181,20 +213,21 @@ export const images = onCallGenkit(
         });
         creditsSettled = true;
         await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
-          console.error(
-            `[images] Falha ao finalizar ai_request com sucesso: ` +
-            `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-          );
+          log.error('Falha ao finalizar ai_request com sucesso', {
+            error: finishError instanceof Error ? finishError.message : 'desconhecido',
+          });
         });
 
-        console.log(
-          `[images] Geração concluída: uid=${uid} ratio=${input.aspectRatio} ` +
-          `tamanho=${imageBase64.length}chars hasRef=${hasReference}`,
-        );
+        log.info('Geração concluída', {
+          uid,
+          ratio: input.aspectRatio,
+          tamanho: imageBase64.length,
+          hasRef: hasReference,
+        });
 
         return {
           imageBase64,
-          mimeType: 'image/png',
+          mimeType: getDataUrlContentType(mediaUrl),
         };
       } catch (error) {
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
@@ -211,10 +244,9 @@ export const images = onCallGenkit(
             error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
             errorCode,
           ).catch((finishError: unknown) => {
-            console.error(
-              `[images] Falha ao finalizar ai_request com erro: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com erro', {
+              error: finishError instanceof Error ? finishError.message : 'desconhecido',
+            });
           });
         }
 

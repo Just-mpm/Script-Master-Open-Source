@@ -160,7 +160,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 | **Continuidade** | A partir do chunk 2, injeta contexto enriquecido: última frase do chunk anterior, tag de emoção ativa, sample context (frases âncora não faladas) + `CONTINUITY_AUDIO_TAG` (`[continuing]`) no transcript |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
 | **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
-| **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS), `MAX_TTS_CHUNKS=24` (chunks máximos), `MIN_TTS_PCM_BYTES=1024` (PCM mínimo válido) |
+| **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS), `MIN_TTS_PCM_BYTES=1024` (PCM mínimo válido) |
 | **Segmentos** | `AudioSegment` persiste chunk→timestamp no IndexedDB (fire-and-forget). Duração: `pcm.length / 48000` |
 | **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef`. State values espelhados via refs para evitar stale closure |
 | **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
@@ -176,10 +176,10 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 | **Arquivos** | `src/hooks/useImageGenerator.ts`, `src/lib/gemini.ts`, `src/components/ImageStudio.tsx`, `src/features/studio/components/StockMediaPicker.tsx`, `src/lib/stockMedia.ts`, `functions/src/flows/images.ts` |
 | **Cancelamento** | `cancelRef` checado antes de cada retry; cancelamento silencioso (sem erro para o usuário) |
 | **Aspect ratios** | Estúdio de Imagem aceita 8 ratios (via string). Pipeline de cenas aceita 5. Estúdio de Vídeo restringe a 3 (`SceneRatio`) |
-| **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage` |
+| **Referência** | Estúdio: `File` via FileReader. Pipeline: `string` (data URL ou base64) via `parseReferenceImage`. Validação: data URL limitada a 15MB, tipos permitidos: `image/jpeg`, `image/png`, `image/webp` |
 | **Prompts de cena** | `generateScenePrompts()` chama Cloud Function `scene-prompts` via `httpsCallable` (Genkit com instrução gerada por `buildScenePromptsInstruction()` + output schema em código). Gera descrições textuais (JSON), não imagens. Fallback genérico se API falhar |
 | **Frameworks visuais** | `general` (cinema/fotografia) ou `whiteboard` (ilustrações + texto integrado) |
-| **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels) |
+| **Stock Media** | `StockMediaPicker` com busca via Pexels API (`src/lib/pexelsApi.ts`) quando `VITE_PEXELS_API_KEY` disponível; fallback para array fixo de placeholder. Rate limit: 200 req/hora (plano free Pexels). Validação de content-type em respostas — não-imagens rejeitadas com erro descritivo. Tratamento de erro de busca com `Alert` MUI + `createLogger` + chave i18n `searchError` |
 | **Créditos** | `CreditBlockedMessage` exibido no ImageStudio quando créditos estão esgotados |
 
 ### Vídeo (Remotion)
@@ -442,7 +442,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 ## Version
 
-- **Current:** `0.108.2`
+- **Current:** `0.108.3`
 - **Last release:** 2026-05-29
 
 ### Últimas mudanças (atualizado por /fast)
@@ -451,8 +451,8 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 | Versão | Resumo |
 |--------|--------|
+| `0.108.3` | Correções de segurança P1/P2 do audit #001 (PII removido de logs Firestore, validação de schemas Zod com min/max, base64ToBlobSync substituído por async); validação de imagem de referência (15MB, content-types); content-type validation no Pexels StockMedia; createLogger nos flows backend de áudio/imagens/chunking; chave i18n searchError; limpeza do doc de auditoria 001-audio-image-audit.md |
 | `0.108.2` | Admin auth migrado de role-based + email hardcoded para custom claim `admin: true` em Firestore/Storage Rules; script `grant-access` adicionado em functions; .gitignore com exclusão de service-account keys; limpeza de 5 docs de auditoria mobile; novo doc de auditoria unificada áudio/imagem (001-audio-image-audit.md) |
 | `0.108.1` | AssistantComposer refatorado (ToggleButton → Menu/Chip para seleção de modelo); InterviewPanel simplificado (isCustomMode removido); ToolEventCard com tokens de tema; AssistantHeader com WHITE unificado; MobileBottomNav reordenado; limpeza de imports; chave i18n swipeRegion |
 | `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); swipe visual com drag + AnimatePresence no StudioPage (useSwipeTabs); docs de auditoria e scan do mobile |
 | `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |
-| `0.107.0` | Scroll inteligente do Assistente — posiciona uma vez no início da mensagem da IA e libera (sem `setInterval` forçado); PlanWidget inicia recolhido por padrão |

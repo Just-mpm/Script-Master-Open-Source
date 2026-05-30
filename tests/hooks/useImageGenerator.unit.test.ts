@@ -40,7 +40,7 @@ vi.mock('../../src/lib/env', () => ({
 }));
 
 vi.mock('../../src/lib/audio', () => ({
-  base64ToBlobSync: vi.fn().mockReturnValue(new Blob(['image-data'], { type: 'image/png' })),
+  base64ToBlob: vi.fn().mockResolvedValue(new Blob(['image-data'], { type: 'image/png' })),
 }));
 
 vi.mock('../../src/lib/rate-limiter', () => ({

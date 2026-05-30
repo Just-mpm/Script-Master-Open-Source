@@ -46,10 +46,14 @@ import {
   CONTINUITY_AUDIO_TAG,
   TTS_MAX_RETRIES,
   MIN_CHUNK_DURATION_SECONDS,
+  MIN_TTS_PCM_BYTES,
 } from '../genkit/constants.js';
 import { buildChunkingInstruction, buildTtsInstruction } from '../genkit/utils/assistant-context.js';
 import { splitTextProgrammatically, extractTrailingSentence, isTruncatedChunk } from '../genkit/utils/chunking.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('audio');
 
 interface AudioSegment {
   text: string;
@@ -139,7 +143,7 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
     return validated.filter((item) => item.text.trim().length > 0);
   } catch {
     // Fallback programático quando o Gemini falha
-    console.warn('[audio] Chunking via Gemini falhou, usando fallback programático');
+    log.warn('Chunking via Gemini falhou, usando fallback programático');
     const fallbackChunks = splitTextProgrammatically(script, limit);
     return fallbackChunks.map((text, idx) => ({
       text,
@@ -153,6 +157,8 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
 // Helpers de áudio (WAV)
 // ---------------------------------------------------------------------------
 
+// ⚠️ DUPLICADO: Esta lógica também existe em src/lib/audio.ts (createWavBlob).
+// Qualquer mudança no formato WAV deve ser sincronizada entre ambos.
 /**
  * Cria um buffer WAV a partir de dados PCM brutos.
  * Formato: 24kHz mono 16-bit PCM.
@@ -282,7 +288,7 @@ export const audio = onCallGenkit(
         try {
           enrichedChunks = await chunkScript(input.script, CHUNK_LIMIT);
         } catch (chunkErr) {
-          console.error(`[audio] Falha no chunking: ${chunkErr instanceof Error ? chunkErr.message : 'desconhecido'}`);
+          log.error('Falha no chunking', { error: chunkErr instanceof Error ? chunkErr.message : 'desconhecido' });
           await creditMeter.revert('CHUNKING_FAILED');
           creditsSettled = true;
           throw new HttpsError(
@@ -295,9 +301,9 @@ export const audio = onCallGenkit(
         // Validação de chunks (Fase 1.4) — log de chunks potencialmente truncados
         for (let v = 0; v < enrichedChunks.length; v++) {
           if (isTruncatedChunk(enrichedChunks[v].text) && v < enrichedChunks.length - 1) {
-            console.warn(
-              `[audio] Chunk ${v + 1}/${enrichedChunks.length} parece truncado ` +
-              `(não termina com pontuação). Prosseguindo com geração.`,
+            log.warn(
+              `Chunk ${v + 1}/${enrichedChunks.length} parece truncado ` +
+              '(não termina com pontuação). Prosseguindo com geração.',
             );
           }
         }
@@ -429,9 +435,10 @@ export const audio = onCallGenkit(
         for (let attempt = 0; attempt <= TTS_MAX_RETRIES; attempt++) {
           try {
             if (attempt > 0) {
-              console.log(`[audio] Retry ${attempt}/${TTS_MAX_RETRIES} para chunk ${i + 1}/${enrichedChunks.length}`);
-              // Delay incremental antes do retry (500ms, 1000ms)
-              await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+              log.info(`Retry ${attempt}/${TTS_MAX_RETRIES} para chunk ${i + 1}/${enrichedChunks.length}`);
+              // Exponential backoff com jitter (500ms base, máx 5s)
+              const backoffMs = Math.min(500 * Math.pow(2, attempt) + Math.random() * 500, 5000);
+              await new Promise((resolve) => setTimeout(resolve, backoffMs));
             }
 
             await throwIfAiCancellationRequested(db, uid, requestId);
@@ -455,8 +462,8 @@ export const audio = onCallGenkit(
             // Validação de duração mínima (Fase 4.3)
             const durationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
             if (durationSec < MIN_CHUNK_DURATION_SECONDS && chunkText.length > 100) {
-              console.warn(
-                `[audio] Chunk ${i + 1} com duração suspeita: ${durationSec.toFixed(1)}s ` +
+              log.warn(
+                `Chunk ${i + 1} com duração suspeita: ${durationSec.toFixed(1)}s ` +
                 `(texto: ${chunkText.length} chars). Prosseguindo.`,
               );
             }
@@ -469,8 +476,8 @@ export const audio = onCallGenkit(
             }
 
             const errMsg = retryErr instanceof Error ? retryErr.message : 'Erro desconhecido';
-            console.error(
-              `[audio] Falha no chunk ${i + 1}/${enrichedChunks.length} ` +
+            log.error(
+              `Falha no chunk ${i + 1}/${enrichedChunks.length} ` +
               `(tentativa ${attempt + 1}/${TTS_MAX_RETRIES + 1}): ${errMsg}`,
             );
           }
@@ -484,6 +491,18 @@ export const audio = onCallGenkit(
           throw new HttpsError(
             'internal',
             `Falha ao gerar áudio (parte ${i + 1} de ${enrichedChunks.length}) após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
+          );
+        }
+
+        // Validação de PCM mínima — rejeita chunks corrompidos
+        // (ex: Gemini retornou text tokens em vez de audio tokens)
+        if (pcmBuffer.length < MIN_TTS_PCM_BYTES) {
+          await creditMeter.revert('PCM_TOO_SHORT');
+          creditsSettled = true;
+
+          throw new HttpsError(
+            'internal',
+            `Chunk ${i + 1}/${enrichedChunks.length} gerou PCM inválido (${pcmBuffer.length} bytes, mínimo ${MIN_TTS_PCM_BYTES}). Tente novamente.`,
           );
         }
 
@@ -538,10 +557,10 @@ export const audio = onCallGenkit(
           });
 
           audioUrl = signedUrl;
-          console.log(
-            `[audio] Áudio grande — upload para Storage: ` +
-            `path=${storagePath} size=${(wavBuffer.length / 1024 / 1024).toFixed(1)}MB`,
-          );
+          log.info('Áudio grande — upload para Storage', {
+            path: storagePath,
+            sizeMB: (wavBuffer.length / 1024 / 1024).toFixed(1),
+          });
         } else {
           audioBase64 = wavBuffer.toString('base64');
         }
@@ -561,17 +580,19 @@ export const audio = onCallGenkit(
         });
         creditsSettled = true;
         await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
-          console.error(
-            `[audio] Falha ao finalizar ai_request com sucesso: ` +
-            `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-          );
+          log.error('Falha ao finalizar ai_request com sucesso', {
+            error: finishError instanceof Error ? finishError.message : 'desconhecido',
+          });
         });
 
-        console.log(
-          `[audio] Geração concluída: uid=${uid} chunks=${enrichedChunks.length} ` +
-          `duração=${durationInSeconds.toFixed(1)}s pcm=${totalPcmLength}bytes ` +
-          `créditos=${finalCredits} viaStorage=${audioUrl ? 'sim' : 'não'}`,
-        );
+        log.info('Geração concluída', {
+          uid,
+          chunks: enrichedChunks.length,
+          durationSec: durationInSeconds.toFixed(1),
+          pcmBytes: totalPcmLength,
+          credits: finalCredits,
+          viaStorage: audioUrl ? 'sim' : 'não',
+        });
 
         return {
           audioBase64,
@@ -596,10 +617,9 @@ export const audio = onCallGenkit(
             error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
             errorCode,
           ).catch((finishError: unknown) => {
-            console.error(
-              `[audio] Falha ao finalizar ai_request com erro: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com erro', {
+              error: finishError instanceof Error ? finishError.message : 'desconhecido',
+            });
           });
         }
 

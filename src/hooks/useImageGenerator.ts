@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import { removeUndefinedFields } from '../lib/callable-utils';
-import { base64ToBlobSync } from '../lib/audio';
+import { base64ToBlob } from '../lib/audio';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
@@ -169,7 +169,7 @@ export function useImageGenerator() {
         throw new Error('Nenhuma imagem foi retornada.');
       }
 
-      const blob = base64ToBlobSync(imageBase64, mimeType);
+      const blob = await base64ToBlob(imageBase64, mimeType);
       const blobUrl = URL.createObjectURL(blob);
 
       setImageBlob(blob);

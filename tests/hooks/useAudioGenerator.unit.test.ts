@@ -20,7 +20,7 @@ vi.mock('../../src/lib/audio', () => ({
   createWavBlob: vi.fn().mockReturnValue(new Blob(['wav'], { type: 'audio/wav' })),
   base64ToUint8Array: vi.fn().mockResolvedValue(new Uint8Array([0])),
   extractPcmFromData: vi.fn().mockReturnValue(new Uint8Array([0, 1, 2, 3])),
-  base64ToBlobSync: vi.fn().mockReturnValue(new Blob(['img'], { type: 'image/png' })),
+  base64ToBlob: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
 }));
 
 vi.mock('../../src/lib/constants', () => ({

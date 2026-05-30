@@ -3,7 +3,7 @@ import {
   isWavFormat,
   extractPcmFromData,
   createWavBlob,
-  base64ToBlobSync,
+  base64ToBlob,
 } from '../../src/lib/audio';
 
 describe('audio', () => {
@@ -219,29 +219,29 @@ describe('audio', () => {
   });
 
   // -------------------------------------------------------------------------
-  // base64ToBlobSync
+  // base64ToBlob
   // -------------------------------------------------------------------------
-  describe('base64ToBlobSync', () => {
-    it('converte base64 para Blob com mimeType correto', () => {
+  describe('base64ToBlob', () => {
+    it('converte base64 para Blob com mimeType correto', async () => {
       // "Hello" em ASCII = [72, 101, 108, 108, 111] → base64 = "SGVsbG8="
-      const blob = base64ToBlobSync('SGVsbG8=', 'text/plain');
+      const blob = await base64ToBlob('SGVsbG8=', 'text/plain');
       expect(blob.type).toBe('text/plain');
       expect(blob.size).toBe(5);
     });
 
-    it('usa mimeType padrão image/png quando não informado', () => {
-      const blob = base64ToBlobSync('SGVsbG8=');
-      expect(blob.type).toBe('image/png');
+    it('usa mimeType padrão audio/pcm quando não informado', async () => {
+      const blob = await base64ToBlob('SGVsbG8=');
+      expect(blob.type).toBe('audio/pcm');
     });
 
     it('produz bytes corretos a partir do base64', async () => {
-      const blob = base64ToBlobSync('SGVsbG8=', 'text/plain');
+      const blob = await base64ToBlob('SGVsbG8=', 'text/plain');
       const text = await blob.text();
       expect(text).toBe('Hello');
     });
 
-    it('lida com base64 vazio (string vazia)', () => {
-      const blob = base64ToBlobSync('', 'application/octet-stream');
+    it('lida com base64 vazio (string vazia)', async () => {
+      const blob = await base64ToBlob('', 'application/octet-stream');
       expect(blob.size).toBe(0);
     });
   });

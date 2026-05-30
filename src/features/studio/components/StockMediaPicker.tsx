@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
@@ -17,6 +18,7 @@ import { glassPanelSx, searchFieldSx } from '../../../theme/surfaces';
 import { RADIUS_SM, ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT } from '../../../theme/tokens';
 import type { StockImage, StockSearchParams } from '../../../lib/stockMedia';
 import { searchStockImages } from '../../../lib/stockMedia';
+import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -26,6 +28,12 @@ interface StockMediaPickerProps {
   onSelect: (image: StockImage) => void;
   orientation?: 'landscape' | 'portrait' | 'square';
 }
+
+// ---------------------------------------------------------------------------
+// Logger
+// ---------------------------------------------------------------------------
+
+const log = createLogger('StockMediaPicker');
 
 // ---------------------------------------------------------------------------
 // Componente
@@ -39,6 +47,7 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
   const [isSearching, setIsSearching] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleSearch = useCallback(async () => {
     const trimmedQuery = query.trim();
@@ -49,6 +58,7 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
 
     setIsSearching(true);
     setHasSearched(true);
+    setSearchError(null);
 
     try {
       const params: StockSearchParams = {
@@ -60,12 +70,14 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
 
       const images = await searchStockImages(params);
       setResults(images);
-    } catch {
+    } catch (error) {
+      log.error('Falha ao buscar imagens stock', { error: error instanceof Error ? error.message : String(error) });
+      setSearchError(t('studio.stockMedia.searchError'));
       setResults([]);
     } finally {
       setIsSearching(false);
     }
-  }, [query, orientation, hasSearched]);
+  }, [query, orientation, hasSearched, t]);
 
   const handleSelect = useCallback((image: StockImage) => {
     setSelectedId(image.id);
@@ -123,6 +135,11 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
         />
 
         {/* Resultados */}
+        {searchError && (
+          <Alert severity="error" onClose={() => setSearchError(null)}>
+            {searchError}
+          </Alert>
+        )}
         {isSearching ? (
           <Grid container spacing={1}>
             {Array.from({ length: 6 }).map((_, index) => (

@@ -939,6 +939,7 @@ export const es: TranslationDictionary = {
       noResults: 'Ninguna imagen encontrada. Intenta con otro término de búsqueda.',
       emptyState: 'Ingresa un término y busca para encontrar imágenes.',
       selectImage: 'Seleccionar {alt}',
+      searchError: 'No se pudieron buscar imágenes. Verifica tu conexión e intenta de nuevo.',
     },
   },
 

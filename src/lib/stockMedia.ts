@@ -198,5 +198,10 @@ export async function downloadStockImage(image: StockImage): Promise<Blob> {
     throw new Error(`Falha ao baixar imagem stock: ${response.status}`);
   }
 
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.startsWith('image/')) {
+    throw new Error(`Resposta não é uma imagem (content-type: ${contentType ?? 'ausente'})`);
+  }
+
   return response.blob();
 }

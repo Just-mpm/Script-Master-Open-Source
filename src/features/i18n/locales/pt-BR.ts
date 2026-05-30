@@ -953,6 +953,7 @@ export const ptBR: TranslationDictionary = {
       noResults: 'Nenhuma imagem encontrada. Tente outro termo de busca.',
       emptyState: 'Digite um termo e busque para encontrar imagens.',
       selectImage: 'Selecionar {alt}',
+      searchError: 'Não foi possível buscar imagens. Verifique sua conexão e tente novamente.',
     },
   },
 

@@ -161,7 +161,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Constantes de TTS** (`functions/src/genkit/constants.ts`): `MAX_TTS_CHUNKS=24`, `MIN_TTS_PCM_BYTES=1024`
+- **Constantes de TTS** (`functions/src/genkit/constants.ts`): `MIN_TTS_PCM_BYTES=1024`
 - **`assertValidPcmChunk`** no flow `audio.ts`: validação de chunks PCM com `responseModalities: ['AUDIO']`
 - **Suporte a `video_render`** em `credit-estimator.ts` e `credit-policy.ts` — estimativa de créditos baseada em duração + resolução
 - **`video_render`** adicionado ao tipo `AiRequestFlow` em `ai-requests.ts`
@@ -169,7 +169,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 ### Alterado
 
 - **`firebase.ts` (frontend)**: adicionada função `isLocalBrowserHost()` para detecção de ambiente local
-- **`audio-preflight.ts` (backend)**: importa `CHUNK_LIMIT` e `MAX_TTS_CHUNKS` de `genkit/constants.js`
+- **`audio-preflight.ts` (backend)**: importa `CHUNK_LIMIT` de `genkit/constants.js`
 - **`credit-estimator.ts`**: adicionada estimativa para `video_render` com `durationSeconds` e resolução
 - **`credit-policy.ts`**: adicionada política de créditos para `video_render`
 - **`ai-requests.ts`**: `video_render` adicionado ao union type de flows

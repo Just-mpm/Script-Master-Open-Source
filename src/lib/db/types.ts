@@ -133,6 +133,8 @@ export interface ChatSession {
   pendingInterview?: import('../../features/assistant/types').InterviewDatum;
 }
 
+// ⚠️ DUPLICADO: Esta interface também existe em functions/src/flows/audio.ts (AudioSegment local).
+// Qualquer mudança nos campos deve ser sincronizada entre ambos.
 /** Segmento de áudio gerado a partir de um chunk do roteiro.
  *  Permite reconstruir o mapeamento texto→tempo sem depender de Whisper. */
 export interface AudioSegment {

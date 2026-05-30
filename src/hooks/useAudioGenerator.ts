@@ -1,7 +1,7 @@
 import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
-import { base64ToBlobSync } from '../lib/audio';
+import { base64ToBlob } from '../lib/audio';
 import { MAX_CHARS } from '../lib/constants';
 import type { EmotionType } from '../features/studio/types';
 import { generateScenePrompts, generateImageFromPrompt, type ScenePromptResult } from '../lib/gemini';
@@ -478,7 +478,7 @@ export function useAudioGenerator() {
 
       let wavBlob: Blob;
       if (audioBase64) {
-        wavBlob = base64ToBlobSync(audioBase64, mimeType);
+        wavBlob = await base64ToBlob(audioBase64, mimeType);
       } else if (remoteAudioUrl) {
         const remoteAudioResponse = await fetch(remoteAudioUrl);
         if (!remoteAudioResponse.ok) {
@@ -538,12 +538,8 @@ export function useAudioGenerator() {
         });
       } catch (saveError) {
         log.warn('Erro no auto-save do áudio', { error: saveError });
-        storeApi.getState().setError('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
-        if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-        errorTimerRef.current = setTimeout(() => {
-          storeApi.getState().setError('');
-          errorTimerRef.current = null;
-        }, 8000);
+        // Usa warning separada para não conflitar com erros de geração
+        storeApi.getState().setSceneGenerationWarning('O áudio foi gerado, mas houve um erro ao salvar na nuvem. Tente salvar manualmente.');
       }
 
       // --- Geração de cenas visuais ---

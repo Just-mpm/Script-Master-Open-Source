@@ -128,3 +128,10 @@ export const MIN_CHUNK_DURATION_SECONDS = 1.5;
  * Chunks muito curtos (< 80 chars) tendem a ter prosódia ruim no TTS.
  */
 export const MIN_CHUNK_SIZE = 80;
+
+/**
+ * Tamanho mínimo (em bytes) dos dados PCM brutos de um chunk TTS.
+ * Chunks abaixo disso provavelmente são corrompidos ou incompletos
+ * (ex: Gemini retornou text tokens em vez de audio tokens).
+ */
+export const MIN_TTS_PCM_BYTES = 1024;

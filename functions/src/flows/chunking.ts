@@ -34,6 +34,9 @@ import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { buildChunkingInstruction } from '../genkit/utils/assistant-context.js';
 import { splitTextProgrammatically, extractTrailingSentence } from '../genkit/utils/chunking.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('chunking');
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -170,10 +173,12 @@ export const chunking = onCallGenkit(
           model: CHUNKING_MODEL,
         });
 
-        console.log(
-          `[chunking] Divisão concluída via Gemini: uid=${uid} ` +
-          `scriptLen=${input.script.length} chunks=${finalChunks.length} créditos=${finalCredits}`,
-        );
+        log.info('Divisão concluída via Gemini', {
+          uid,
+          scriptLen: input.script.length,
+          chunks: finalChunks.length,
+          credits: finalCredits,
+        });
 
         return {
           chunks: finalChunks,
@@ -182,7 +187,7 @@ export const chunking = onCallGenkit(
 
       } catch (genErr) {
         const errorMessage = genErr instanceof Error ? genErr.message : 'Erro desconhecido';
-        console.error(`[chunking] Falha no chunking via Gemini: ${errorMessage}`);
+        log.error('Falha no chunking via Gemini', { error: errorMessage });
 
         // Reverte créditos em caso de falha
         await creditMeter.revert('CHUNKING_FAILED');
@@ -203,10 +208,11 @@ export const chunking = onCallGenkit(
           trailingSentence: extractTrailingSentence(text),
         }));
 
-        console.log(
-          `[chunking] Fallback programático: uid=${uid} ` +
-          `scriptLen=${input.script.length} chunks=${fallbackChunks.length}`,
-        );
+        log.info('Fallback programático', {
+          uid,
+          scriptLen: input.script.length,
+          chunks: fallbackChunks.length,
+        });
 
         return {
           chunks: fallbackChunks,

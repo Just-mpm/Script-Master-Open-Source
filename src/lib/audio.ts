@@ -23,6 +23,8 @@ export function extractPcmFromData(data: Uint8Array): Uint8Array {
   return data.slice(44);
 }
 
+// ⚠️ DUPLICADO: Esta lógica também existe em functions/src/flows/audio.ts (createWavBuffer).
+// Qualquer mudança no formato WAV deve ser sincronizada entre ambos.
 export function createWavBlob(pcmData: Uint8Array, sampleRate: number = 24000): Blob {
   // Validate if the pcmData ALREADY has a WAV header to prevent double headers
   if (isWavFormat(pcmData)) {
@@ -73,15 +75,4 @@ export async function base64ToUint8Array(base64: string): Promise<Uint8Array> {
   return new Uint8Array(arrayBuffer);
 }
 
-/**
- * Converte uma string Base64 para Blob diretamente, sem intermediário Uint8Array.
- * Útil quando o destino final é um Blob (download, upload, exibição como src).
- */
-export function base64ToBlobSync(base64: string, mimeType: string = 'image/png'): Blob {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return new Blob([bytes], { type: mimeType });
-}
+

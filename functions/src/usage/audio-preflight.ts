@@ -1,4 +1,5 @@
 import type { AudioInput, AudioPreflightOutput } from '../genkit/schemas/common.js';
+import { CHUNK_LIMIT } from '../genkit/constants.js';
 import { calculateCreditCost } from './credit-policy.js';
 
 export interface CreditSnapshot {
@@ -13,8 +14,6 @@ interface AudioPreflightStep {
   credits: number;
   details: string[];
 }
-
-const CHUNK_LIMIT = 500;
 
 const PACE_CHARS_PER_SECOND: Record<string, number> = {
   slow: 11,

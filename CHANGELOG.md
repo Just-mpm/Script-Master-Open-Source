@@ -7,6 +7,32 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.108.3] - 2026-05-29
+
+### Corrigido
+
+- **Exposição de PII em logs de erro do Firestore** (`src/lib/db/shared.ts`): `authInfo` e `providerInfo` removidos — elimina vazamento de `email`, `displayName`, `providerInfo` em logs de erro do frontend (P1 do audit #001)
+- **Validação de comprimento nos schemas Zod do backend** (`functions/src/genkit/schemas/common.ts`): `script` limitado a `z.string().min(1).max(50_000)` no `AudioInputSchema` e `prompt` limitado a `z.string().min(1).max(5_000)` no `ImageInputSchema` — previne envio de payloads arbitrários (P2 do audit #001)
+- **Bloqueio de main thread com `base64ToBlobSync`** (`src/lib/audio.ts`, `useAudioGenerator.ts`, `useImageGenerator.ts`): função síncrona removida e substituída por `base64ToBlob` assíncrona — elimina freeze de UI de ~50-200ms (imagens) a 5-10s (áudios grandes) (P2 do audit #001)
+- **Respostas não-imagem do Pexels** (`src/lib/stockMedia.ts`): validação de `content-type` adicionada — respostas que não são `image/*` são rejeitadas com erro descritivo, evitando falhas silenciosas no StockMediaPicker
+
+### Alterado
+
+- **Logging estruturado nos flows backend**: `createLogger` integrado em `audio.ts`, `chunking.ts` e `images.ts` (`functions/src/flows/`) — substitui logs genéricos por logger com contexto
+- **StockMediaPicker**: tratamento de erro de busca com `Alert` MUI e `createLogger` — erros da Pexels API agora exibem mensagem amigável ao usuário (`searchError` i18n)
+
+### Adicionado
+
+- **Validação de imagem de referência** (`functions/src/flows/images.ts`): `MAX_REFERENCE_IMAGE_DATA_URL_LENGTH = 15_000_000` (15MB) e `ALLOWED_REFERENCE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp']` — validação defensiva de tamanho e tipo de conteúdo no pipeline de geração de imagens
+- **Constante `MIN_TTS_PCM_BYTES = 1024`** (`functions/src/genkit/constants.ts`): threshold mínimo de PCM válido para chunks de áudio
+- **Chave i18n `stockMedia.searchError`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): mensagem de erro amigável para falhas na busca de imagens do StockMediaPicker
+
+### Removido
+
+- **`docs/audits/001-audio-image-audit.md`**: documento de auditoria unificada removido — todos os 6 achados (P1-P3) foram endereçados nesta versão
+
+---
+
 ## [0.108.2] - 2026-05-29
 
 ### Alterado

@@ -192,7 +192,7 @@ export const MultiSpeakerConfigSchema = z.object({
 });
 
 export const AudioInputSchema = z.object({
-  script: z.string(),
+  script: z.string().min(1).max(50_000),
   voiceConfig: VoiceConfigSchema,
   isMultiSpeaker: z.boolean().nullable().optional(),
   multiSpeakerConfig: MultiSpeakerConfigSchema.nullable().optional(),
@@ -274,8 +274,8 @@ export const CreditSnapshotOutputSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const ImageInputSchema = z.object({
-  prompt: z.string(),
-  aspectRatio: z.string(),
+  prompt: z.string().min(1).max(5_000),
+  aspectRatio: z.enum(['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '21:9']),
   referenceImage: z.string().nullable().optional(), // base64 data URL
   requestId: z.string().nullable().optional(),
 });
