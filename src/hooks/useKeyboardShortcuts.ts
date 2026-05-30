@@ -16,6 +16,12 @@ interface UseKeyboardShortcutsOptions {
   isGenerateDisabled: boolean;
   /** Alterna play/pause do player de áudio */
   toggleAudioPlayer?: (source: 'studio') => void;
+  /** Carrega URL e toca áudio no elemento global */
+  playAudio?: (url: string, id: string) => void;
+  /** ID do áudio ativo no AudioContext */
+  activeAudioId?: string | null;
+  /** URL do áudio gerado no estúdio */
+  audioUrl?: string | null;
 }
 
 /**
@@ -31,6 +37,9 @@ export function useKeyboardShortcuts({
   isGenerating,
   isGenerateDisabled,
   toggleAudioPlayer,
+  playAudio,
+  activeAudioId,
+  audioUrl,
 }: UseKeyboardShortcutsOptions): void {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,6 +83,9 @@ export function useKeyboardShortcuts({
           } else {
             player.play();
           }
+        } else if (!activeAudioId && audioUrl && playAudio) {
+          // Carrega URL no elemento <audio> antes de tocar
+          playAudio(audioUrl, 'studio-audio');
         } else {
           toggleAudioPlayer?.('studio');
         }
@@ -90,5 +102,8 @@ export function useKeyboardShortcuts({
     isVideoRoute,
     toggleAudioPlayer,
     videoPlayerRef,
+    playAudio,
+    activeAudioId,
+    audioUrl,
   ]);
 }

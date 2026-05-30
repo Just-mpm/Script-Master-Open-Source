@@ -293,7 +293,7 @@ export const ScenePromptsInputSchema = z.object({
   script: z.string(),
   durationInSeconds: z.number(),
   style: z.string().nullable().optional(),
-  densitySeconds: z.number().nullable().optional(),
+  densitySeconds: z.number().min(1).nullable().optional(),
   visualFramework: z.string().nullable().optional(),
   locale: z.string().nullable().optional(),
   requestId: z.string().nullable().optional(),
@@ -321,18 +321,16 @@ export const ChunkingInputSchema = z.object({
 
 /**
  * Chunk enriquecido — além do texto, carrega metadados para continuidade
- * de tom e injeção de audio tags entre chunks.
+ * de tom entre chunks.
  *
- * - text: conteúdo textual do chunk (nunca cortado no meio de frase)
- * - emotionTag: audio tag sugerida para o início deste chunk (ex: "[excitedly]")
+ * - text: conteúdo textual do chunk (sempre termina com pontuação final)
  * - isContinuation: true se o chunk é continuação direta do anterior
  *   (sem quebra de parágrafo ou troca de ideia)
  * - trailingSentence: última frase do chunk, usada como âncora contextual
- *   para o próximo chunk (sample context)
+ *   para o próximo chunk (sample context) — computada programaticamente
  */
 export const ChunkItemSchema = z.object({
   text: z.string(),
-  emotionTag: z.string().nullable().optional(),
   isContinuation: z.boolean().nullable().optional(),
   trailingSentence: z.string().nullable().optional(),
 });

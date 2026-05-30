@@ -64,8 +64,13 @@ export async function saveProject(project: Project, userId?: string): Promise<vo
         ...project,
         userId,
       });
+      log.debug('Projeto salvo no Firestore', { projectId: project.id, name: project.name });
       return;
     } catch (error: unknown) {
+      log.warn('saveProject falhou no Firestore, caindo para IndexedDB', {
+        error: error instanceof Error ? error.message : String(error),
+        projectId: project.id,
+      });
       handleFirestoreError(error, OperationType.WRITE, `projects/${project.id}`);
     }
   }
@@ -128,6 +133,14 @@ export async function saveImageToProject(image: ProjectImage, userId?: string): 
         userId,
         imageUrl,
       };
+
+      log.debug('Tentando salvar imagem no Firestore', {
+        path: `projects/${image.projectId}/images/${image.id}`,
+        fields: Object.keys(firestoreItem),
+        imageUrlType: typeof imageUrl,
+        imageUrlPrefix: imageUrl.slice(0, 20),
+        hasUserId: !!firestoreItem.userId,
+      });
 
       await setDoc(doc(projectImagesCollection(image.projectId), image.id), firestoreItem);
       return imageUrl;

@@ -74,11 +74,14 @@ export const EMOTION_INSTRUCTIONS: Record<string, string> = {
 export const CHUNK_LIMIT = 500;
 
 /**
- * Mapeamento de emoções para Audio Tags do Gemini TTS.
- * Tags são inseridas inline no transcript (em inglês, mesmo para texto em outro idioma)
- * para controlar tom, ritmo e emoção em nível granular.
+ * Mapeamento de emoção para Audio Tags inline.
+ *
+ * O Gemini TTS interpreta linguagem natural — não há lista fixa de tags.
+ * Tags como [softly], [warmly], [calmly] são válidas porque o modelo
+ * entende descritores em inglês.
  *
  * Referência: https://ai.google.dev/gemini-api/docs/speech-generation#transcript-tags
+ * "There is no exhaustive list on what tags do and don't work"
  */
 export const EMOTION_TO_AUDIO_TAGS: Record<string, string> = {
   'neutral': '',
@@ -93,8 +96,12 @@ export const EMOTION_TO_AUDIO_TAGS: Record<string, string> = {
 
 /**
  * Mapeamento de ritmo (pace) para Audio Tags inline.
- * Usado como reforço prosódico diretamente no transcript,
- * complementando a instrução textual do Director's Notes.
+ *
+ * O Gemini TTS interpreta linguagem natural — tags como [slowly] e [quickly]
+ * são válidas e produzem resultado diferente de [very slow] e [very fast].
+ *
+ * Referência: https://ai.google.dev/gemini-api/docs/speech-generation#transcript-tags
+ * "There is no exhaustive list on what tags do and don't work"
  */
 export const PACE_TO_AUDIO_TAG: Record<string, string> = {
   'very_slow': '[very slow]',
@@ -105,10 +112,14 @@ export const PACE_TO_AUDIO_TAG: Record<string, string> = {
 };
 
 /**
- * Tag de continuidade — inserida no início de chunks subsequentes ao primeiro
- * para sinalizar ao modelo que deve manter o tom/energia da parte anterior.
+ * Tag de continuidade — DESABILITADA.
+ *
+ * Tags inline como [continuing] não são documentadas pelo Gemini TTS
+ * e podem confundir o modelo. A continuidade é garantida por:
+ * 1. continuityContext textual: "(Part 2 of 5 — maintain the same tone)"
+ * 2. sampleContext: última frase do chunk anterior como âncora
  */
-export const CONTINUITY_AUDIO_TAG = '[continuing]';
+export const CONTINUITY_AUDIO_TAG = '';
 
 /**
  * Número máximo de tentativas para gerar áudio de um chunk.

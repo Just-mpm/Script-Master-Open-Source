@@ -175,3 +175,61 @@ export async function detectSceneBoundaries(
   // Nenhum silêncio detectado — retorna apenas o início
   return [0];
 }
+
+// ---------------------------------------------------------------------------
+// Validação e fallback de timestamps de cena
+// ---------------------------------------------------------------------------
+
+/** Gap mínimo entre timestamps consecutivos (em segundos) */
+const MIN_TIMESTAMP_GAP_SEC = 2;
+
+/**
+ * Valida se timestamps de cena são utilizáveis.
+ *
+ * Critérios:
+ *  - Array não-vazio
+ *  - Todos são números finitos e não-negativos
+ *  - Nenhum excede a duração total do áudio
+ *  - Estão em ordem crescente estrita
+ *  - Gap mínimo entre consecutivos ≥ 2s
+ *
+ * @param timestamps - Array de timestamps em segundos
+ * @param durationInSeconds - Duração total do áudio em segundos
+ */
+export function validateSceneTimestamps(
+  timestamps: readonly number[],
+  durationInSeconds: number,
+): boolean {
+  if (timestamps.length === 0) return false;
+
+  for (let i = 0; i < timestamps.length; i++) {
+    const ts = timestamps[i];
+    if (!Number.isFinite(ts) || ts < 0 || ts > durationInSeconds) return false;
+    if (i > 0 && ts - timestamps[i - 1] < MIN_TIMESTAMP_GAP_SEC) return false;
+  }
+  return true;
+}
+
+/**
+ * Gera timestamps uniformemente distribuídos ao longo da duração.
+ *
+ * - 1 cena → [0]
+ * - 2 cenas, 52s → [0, 26]
+ * - 4 cenas, 60s → [0, 15, 30, 45]
+ *
+ * Último timestamp NÃO é gerado — a última cena se estende até o fim do áudio
+ * (comportamento já existente em mapScenesToVideoScenes).
+ *
+ * @param sceneCount - Número de cenas
+ * @param durationInSeconds - Duração total do áudio em segundos
+ */
+export function buildUniformTimestamps(
+  sceneCount: number,
+  durationInSeconds: number,
+): number[] {
+  if (sceneCount <= 1) return [0];
+  const step = durationInSeconds / sceneCount;
+  return Array.from({ length: sceneCount }, (_, i) =>
+    Math.round(i * step * 10) / 10,
+  );
+}

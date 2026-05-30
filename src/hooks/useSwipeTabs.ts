@@ -10,9 +10,52 @@
  */
 
 import { useRef, useCallback } from 'react';
-import type { PanInfo, Variants } from 'motion/react';
+import type { PanInfo, Variants, Transition } from 'motion/react';
 
-/** Seletores CSS de elementos interativos que devem ignorar swipe */
+// ── Thresholds de gesto ──────────────────────────────────────────────
+
+/** Distancia minima (px) para considerar swipe valido */
+const DISTANCE_THRESHOLD = 50;
+
+/** Velocidade minima (px/s) para considerar swipe rapido */
+const VELOCITY_THRESHOLD = 300;
+
+/** Elasticidade do drag (0-1) */
+const DRAG_ELASTIC = 0.2;
+
+// ── Animacao ─────────────────────────────────────────────────────────
+
+const SPRING_TRANSITION: Transition = {
+  type: 'spring',
+  stiffness: 400,
+  damping: 35,
+};
+
+const BLUR_INVISIBLE = 'blur(4px)';
+const BLUR_VISIBLE = 'blur(0px)';
+
+const SWIPE_VARIANTS: Variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? '50%' : '-50%',
+    opacity: 0,
+    filter: BLUR_INVISIBLE,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    filter: BLUR_VISIBLE,
+    transition: SPRING_TRANSITION,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? '50%' : '-50%',
+    opacity: 0,
+    filter: BLUR_INVISIBLE,
+    transition: SPRING_TRANSITION,
+  }),
+};
+
+// ── Elementos interativos ────────────────────────────────────────────
+
 const INTERACTIVE_SELECTORS = [
   'input',
   'select',
@@ -26,35 +69,13 @@ const INTERACTIVE_SELECTORS = [
   '[contenteditable="true"]',
 ].join(', ');
 
-/** Threshold de distancia (px) para considerar swipe valido */
-const SWIPE_DISTANCE_THRESHOLD = 50;
+/** Verifica se o alvo do gesto e um elemento interativo (input, slider, etc.) */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  return element?.closest?.(INTERACTIVE_SELECTORS) != null;
+}
 
-/** Threshold de velocidade (px/s) para swipe rapido */
-const SWIPE_VELOCITY_THRESHOLD = 300;
-
-/** Elasticidade do drag (0-1, quanto o conteudo "estica" alem do limite) */
-const DRAG_ELASTIC = 0.2;
-
-/** Variants de animacao para transicao entre abas (slide + fade + blur) */
-const SWIPE_VARIANTS: Variants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? '50%' : '-50%',
-    opacity: 0,
-    filter: 'blur(4px)',
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    filter: 'blur(0px)',
-    transition: { type: 'spring', stiffness: 400, damping: 35 },
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? '50%' : '-50%',
-    opacity: 0,
-    filter: 'blur(4px)',
-    transition: { type: 'spring', stiffness: 400, damping: 35 },
-  }),
-};
+// ── Tipos da API publica ─────────────────────────────────────────────
 
 interface UseSwipeTabsOptions {
   /** Indice da aba ativa */
@@ -76,6 +97,8 @@ interface UseSwipeTabsReturn {
   dragElastic: number;
 }
 
+// ── Hook ─────────────────────────────────────────────────────────────
+
 export function useSwipeTabs({
   activeTab,
   tabCount,
@@ -85,20 +108,15 @@ export function useSwipeTabs({
 
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      if (isInteractiveTarget(event.target)) return;
+
       const { offset, velocity } = info;
+      const swipeLeft = offset.x < -DISTANCE_THRESHOLD || velocity.x < -VELOCITY_THRESHOLD;
+      const swipeRight = offset.x > DISTANCE_THRESHOLD || velocity.x > VELOCITY_THRESHOLD;
 
-      // Verifica se o gesto comecou em um elemento interativo
-      const target = event.target as HTMLElement;
-      if (target?.closest?.(INTERACTIVE_SELECTORS)) {
-        return;
-      }
-
-      const isSwipeLeft = offset.x < -SWIPE_DISTANCE_THRESHOLD || velocity.x < -SWIPE_VELOCITY_THRESHOLD;
-      const isSwipeRight = offset.x > SWIPE_DISTANCE_THRESHOLD || velocity.x > SWIPE_VELOCITY_THRESHOLD;
-
-      if (isSwipeLeft && activeTab < tabCount - 1) {
+      if (swipeLeft && activeTab < tabCount - 1) {
         setActiveTab(activeTab + 1);
-      } else if (isSwipeRight && activeTab > 0) {
+      } else if (swipeRight && activeTab > 0) {
         setActiveTab(activeTab - 1);
       }
     },

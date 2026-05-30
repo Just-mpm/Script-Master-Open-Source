@@ -145,7 +145,7 @@ function sanitizeStudioSettingsPatch(patch: StudioSettingsPatch): Partial<Studio
         if (typeof value === 'boolean') updates[key] = value;
         break;
       case 'sceneDensity':
-        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+        if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
           updates.sceneDensity = value;
         }
         break;

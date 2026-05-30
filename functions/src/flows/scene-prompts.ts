@@ -111,7 +111,7 @@ export const scenePrompts = onCallGenkit(
         // ------------------------------------------------------------------
         // 1. Reserva créditos via helper withCreditMetering()
         // ------------------------------------------------------------------
-        const densitySeconds = input.densitySeconds ?? DEFAULT_DENSITY_SECONDS;
+        const densitySeconds = Math.max(1, input.densitySeconds ?? DEFAULT_DENSITY_SECONDS);
         const imageCount = Math.max(1, Math.ceil(input.durationInSeconds / densitySeconds));
 
         creditMeter = await withCreditMetering(
@@ -129,6 +129,12 @@ export const scenePrompts = onCallGenkit(
         const locale = input.locale ?? 'pt-BR';
         const languageName = LOCALE_LANGUAGE_MAP[locale] ?? locale;
         const style = input.style ?? 'Nenhum específico';
+
+        // Timestamps pré-calculados pelo código (determinístico, nunca falha)
+        const step = input.durationInSeconds / imageCount;
+        const codeTimestamps = Array.from({ length: imageCount }, (_, i) =>
+          Math.round(i * step * 10) / 10,
+        );
 
         const frameworkInstructions = visualFramework === 'whiteboard'
           ? `
@@ -156,6 +162,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             languageName,
             languageNameUpper: languageName.toUpperCase(),
             script: input.script,
+            timestamps: codeTimestamps,
           });
 
           const response = await ai.generate({
@@ -167,17 +174,28 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             },
             output: {
               schema: z.array(z.object({
-                timestamp: z.number(),
                 prompt: z.string(),
               })),
             },
           });
           await throwIfAiCancellationRequested(db, uid, requestId);
 
-          const prompts = response.output as Array<{ timestamp: number; prompt: string }> | undefined;
+          const geminiOutput = response.output as Array<{ prompt: string }> | undefined;
 
-          if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+          if (!geminiOutput || !Array.isArray(geminiOutput) || geminiOutput.length === 0) {
             throw new Error('Resposta de prompts de cena inválida ou vazia');
+          }
+
+          // Combina timestamps do código com prompts do Gemini
+          // Se Gemini retornou menos prompts que o esperado, preenche com genéricos
+          const prompts: Array<{ timestamp: number; prompt: string }> = [];
+          for (let i = 0; i < imageCount; i++) {
+            const geminiItem = geminiOutput[i];
+            prompts.push({
+              timestamp: codeTimestamps[i],
+              prompt: geminiItem?.prompt
+                ?? `A scene for the script at ${codeTimestamps[i]}s. Style: ${style}`,
+            });
           }
 
           // ------------------------------------------------------------------
@@ -227,10 +245,10 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
           // ------------------------------------------------------------------
           // 5. Fallback genérico como último recurso
           // ------------------------------------------------------------------
-          const fallbackPrompts = [{
-            timestamp: 0,
-            prompt: `A captivating scene about: ${input.script.substring(0, 100)}... Style: ${style}`,
-          }];
+          const fallbackPrompts = codeTimestamps.map((ts, i) => ({
+            timestamp: ts,
+            prompt: `Scene ${i + 1} at ${ts}s: A captivating scene about: ${input.script.substring(0, 100)}... Style: ${style}`,
+          }));
 
           console.log(
             `[scene-prompts] Retornando fallback genérico: uid=${uid} ` +

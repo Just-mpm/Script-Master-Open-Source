@@ -22,6 +22,7 @@ import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
 import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
+import { useGlobalAudioActions, useAudioActiveId } from './contexts/AudioContext';
 
 export default function App() {
   const { t } = useLocale();
@@ -32,6 +33,10 @@ export default function App() {
 
   // ─── Auto-save de settings do estúdio no Firestore ────────
   useAutoSaveStudioSettings();
+
+  // ─── AudioContext — play e activeId para atalhos de teclado ─
+  const { play: playGlobalAudio } = useGlobalAudioActions();
+  const activeAudioId = useAudioActiveId();
 
   // ─── Handler de geração de áudio (hook centralizado) ─────
   const {
@@ -96,6 +101,9 @@ export default function App() {
     isGenerating,
     isGenerateDisabled,
     toggleAudioPlayer,
+    playAudio: playGlobalAudio,
+    activeAudioId,
+    audioUrl,
   });
 
   // ─── Renderização ────────────────────────────────────────

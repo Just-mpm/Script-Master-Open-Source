@@ -102,7 +102,7 @@ describe('prompt builders', () => {
   it('monta prompt de chunking com limite explícito', () => {
     const instruction = buildChunkingInstruction('Um roteiro qualquer', 500);
 
-    expect(instruction).toContain('MÁXIMO 500 caracteres');
+    expect(instruction).toContain('Máximo 500 caracteres');
     expect(instruction).toContain('NÃO altere, reescreva, adicione ou remova palavras');
   });
 
@@ -116,11 +116,14 @@ describe('prompt builders', () => {
       languageName: 'português brasileiro',
       languageNameUpper: 'PORTUGUÊS BRASILEIRO',
       script: 'Roteiro narrado',
+      timestamps: [0, 15, 30, 45, 60, 75, 90, 105],
     });
 
-    expect(instruction).toContain('Gerar exatamente 8 descrições de cenas');
+    expect(instruction).toContain('exatamente 8 cenas');
     expect(instruction).toContain('texto renderizado na imagem deve estar em português brasileiro');
     expect(instruction).toContain('FRAMEWORK WHITEBOARD');
+    expect(instruction).toContain('Cena 1: 0s');
+    expect(instruction).toContain('Cena 8: 105s');
   });
 
   it('monta prompt de imagem com contexto de referência', () => {

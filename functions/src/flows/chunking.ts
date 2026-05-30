@@ -114,18 +114,14 @@ export const chunking = onCallGenkit(
           output: {
             schema: z.array(z.object({
               text: z.string(),
-              emotionTag: z.string().optional(),
               isContinuation: z.boolean().optional(),
-              trailingSentence: z.string().optional(),
             })),
           },
         });
 
         const enrichedItems = response.output as Array<{
           text: string;
-          emotionTag?: string;
           isContinuation?: boolean;
-          trailingSentence?: string;
         }> | undefined;
 
         if (!enrichedItems || !Array.isArray(enrichedItems) || enrichedItems.length === 0) {
@@ -133,7 +129,11 @@ export const chunking = onCallGenkit(
         }
 
         // Valida e re-divide chunks que excedam o limite
-        const validatedItems: typeof enrichedItems = [];
+        const validatedItems: Array<{
+          text: string;
+          isContinuation?: boolean;
+          trailingSentence?: string;
+        }> = [];
         for (const item of enrichedItems) {
           if (item.text.length > limit) {
             // Re-divide o chunk excedido e marca os sub-chunks como continuação
@@ -141,17 +141,15 @@ export const chunking = onCallGenkit(
             for (let j = 0; j < subChunks.length; j++) {
               validatedItems.push({
                 text: subChunks[j],
-                emotionTag: j === 0 ? item.emotionTag : undefined,
                 isContinuation: j > 0 ? true : item.isContinuation,
-                trailingSentence: j === subChunks.length - 1
-                  ? (item.trailingSentence ?? extractTrailingSentence(subChunks[j]))
-                  : extractTrailingSentence(subChunks[j]),
+                trailingSentence: extractTrailingSentence(subChunks[j]),
               });
             }
           } else {
             validatedItems.push({
-              ...item,
-              trailingSentence: item.trailingSentence ?? extractTrailingSentence(item.text),
+              text: item.text,
+              isContinuation: item.isContinuation,
+              trailingSentence: extractTrailingSentence(item.text),
             });
           }
         }

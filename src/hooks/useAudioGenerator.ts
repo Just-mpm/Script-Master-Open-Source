@@ -9,7 +9,7 @@ import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSour
 import type { Locale } from '../features/i18n/types';
 import type { AudioSegment } from '../lib/db/types';
 import { saveAudioSegments } from '../lib/db/audio-segments';
-import { detectSceneBoundaries } from '../lib/audio-analysis';
+import { validateSceneTimestamps, buildUniformTimestamps } from '../lib/audio-analysis';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
@@ -626,16 +626,23 @@ export function useAudioGenerator() {
           }
 
           if (generatedScenes.length > 0) {
-            try {
-              const detectedBoundaries = await detectSceneBoundaries(wavBlob, prompts.length);
+            // Valida timestamps vindos do Gemini (ou do backend com timestamps calculados)
+            const geminiTimestamps = generatedScenes.map((s) => s.timestamp);
+            const geminiValid = validateSceneTimestamps(geminiTimestamps, audioDurationSec);
 
-              if (detectedBoundaries.length >= generatedScenes.length) {
-                for (let i = 0; i < generatedScenes.length; i++) {
-                  generatedScenes[i].timestamp = detectedBoundaries[i];
-                }
+            if (!geminiValid) {
+              // Fallback: distribuição uniforme (determinística, nunca falha)
+              const uniformTimestamps = buildUniformTimestamps(
+                generatedScenes.length,
+                audioDurationSec,
+              );
+              for (let i = 0; i < generatedScenes.length; i++) {
+                generatedScenes[i].timestamp = uniformTimestamps[i];
               }
-            } catch (err) {
-              log.warn('Falha na detecção de silêncio, mantendo timestamps do Gemini', { error: err });
+              log.warn('Timestamps do Gemini inválidos — usando distribuição uniforme', {
+                original: geminiTimestamps,
+                uniform: uniformTimestamps,
+              });
             }
           }
 

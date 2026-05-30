@@ -27,7 +27,13 @@ type OptionalEnvName =
   | 'VITE_BILLING_ENABLED'
   | 'VITE_OPEN_BETA_ENABLED'
   | 'VITE_APP_CHECK_DEBUG_TOKEN'
-  | 'VITE_USE_EMULATORS';
+  | 'VITE_USE_EMULATORS'
+  | 'VITE_EMULATOR_AUTH'
+  | 'VITE_EMULATOR_FIRESTORE'
+  | 'VITE_EMULATOR_STORAGE'
+  | 'VITE_EMULATOR_FUNCTIONS'
+  | 'VITE_EMULATOR_HOSTING'
+  | 'VITE_EMULATOR_UI';
 
 function readRequiredEnv(name: RequiredEnvName): string {
   const value = import.meta.env[name];
@@ -74,6 +80,38 @@ export function isOpenBetaEnabled(): boolean {
 /** Token de depuração do App Check (desenvolvimento apenas — nunca em produção) */
 export function getAppCheckDebugToken(): string | undefined {
   return readOptionalEnv('VITE_APP_CHECK_DEBUG_TOKEN');
+}
+
+// ── Emuladores Firebase (seletivos) ─────────────────────────────────────────
+
+/** Tipo que representa os emuladores Firebase disponíveis */
+export type EmulatorName = 'auth' | 'firestore' | 'storage' | 'functions' | 'hosting' | 'ui';
+
+/** Mapa de nome do emulador → chave VITE no .env */
+const EMULATOR_ENV_MAP: Record<EmulatorName, OptionalEnvName> = {
+  auth: 'VITE_EMULATOR_AUTH',
+  firestore: 'VITE_EMULATOR_FIRESTORE',
+  storage: 'VITE_EMULATOR_STORAGE',
+  functions: 'VITE_EMULATOR_FUNCTIONS',
+  hosting: 'VITE_EMULATOR_HOSTING',
+  ui: 'VITE_EMULATOR_UI',
+};
+
+/**
+ * Verifica se um emulador específico está habilitado via .env.
+ * Retorna `true` se a flag VITE_EMULATOR_* for 'true'.
+ */
+export function isEmulatorEnabled(emulator: EmulatorName): boolean {
+  return import.meta.env[EMULATOR_ENV_MAP[emulator]] === 'true';
+}
+
+/**
+ * Retorna a lista de emuladores ativos no .env.
+ * Útil para lógica condicional no frontend (ex: conectar apenas alguns SDKs).
+ */
+export function getActiveEmulators(): EmulatorName[] {
+  const names: EmulatorName[] = ['auth', 'firestore', 'storage', 'functions', 'hosting', 'ui'];
+  return names.filter((name) => isEmulatorEnabled(name));
 }
 
 export function getFirebaseEnvConfig(): FirebaseEnvConfig {

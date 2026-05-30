@@ -7,6 +7,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.109.0] - 2026-05-30
+
+### Adicionado
+
+- **Emuladores seletivos** (`src/lib/env.ts`, `scripts/emulators.mjs`): novos helpers `isEmulatorEnabled()` e `getActiveEmulators()` com flags `VITE_EMULATOR_AUTH`, `VITE_EMULATOR_FIRESTORE`, `VITE_EMULATOR_STORAGE`, `VITE_EMULATOR_FUNCTIONS`, `VITE_EMULATOR_HOSTING`, `VITE_EMULATOR_UI` — permite iniciar apenas os emuladores necessários, economizando recursos localmente. Script inteligente `scripts/emulators.mjs` substitui chamadas diretas ao Firebase CLI. Comando `bun run emulators:all` para forçar todos (ignora .env)
+- **Validação de timestamps de cena** (`src/lib/audio-analysis.ts`): `validateSceneTimestamps()` e `buildUniformTimestamps()` substituem a detecção de silêncio via RMS — agora os timestamps são calculados de forma determinística baseados na duração total do áudio, eliminando o bug onde cenas com áudio longo tinham duração incorreta. Testes unitários em `tests/lib/audio-analysis.unit.test.ts` (+129 linhas)
+- **Detecção de silêncio no backend TTS** (`functions/src/flows/audio.ts`): `isSilentPcm()` com threshold RMS e `responseModalities: ['AUDIO']` na chamada Gemini — previne chunks de silêncio puro (até 1.8MB de zeros) de chegarem ao frontend
+- **Integração de teclado com AudioContext** (`src/hooks/useKeyboardShortcuts.ts`): tecla `Space` agora controla play/pause do áudio global no estúdio via `playAudio`/`activeAudioId`
+- **Mock de PWA para testes** (`tests/__mocks__/pwa-register.ts`): `useRegisterSW` mockado para `virtual:pwa-register/react` — viabiliza testes do `PwaUpdatePrompt` sem service worker real
+- **5 documentos de auditoria/scan**: `docs/audits/002-chunking-emotionTag-removal.md`, `docs/audits/003-audio-tags-extractpcm-silent-audit.md`, `docs/audits/timestamp-validation.md`, `docs/scan/scene-timestamps-scan.md`, `docs/scan/tts-pipeline-audit.md`
+- **Keyframe `spin`** em `src/index.css`: utilitário de rotação para indicadores de loading
+
+### Corrigido
+
+- **Pipeline TTS — `extractPcmFromDataUrl`** (`functions/src/flows/audio.ts`): regex reescrita para suportar MIME type com parâmetros (ex: `audio/wav; codec=pcm; rate=24000`) — antes falhava e chunks de áudio válidos não eram extraídos (bug P0 do audit TTS)
+- **Timestamps de cena** (`src/hooks/useAudioGenerator.ts`): substituição de `detectSceneBoundaries()` por `validateSceneTimestamps()` + `buildUniformTimestamps()` — elimina o bug de alocação errada de cenas em áudios longos (2 imagens em 52s geravam timestamps com intervalo incorreto)
+- **Chunking — `emotionTag` removido dos schemas** (`functions/src/genkit/schemas/common.ts`, `functions/src/flows/chunking.ts`): tags de áudio obsoletas removidas do `ChunkItemSchema` e da função `buildChunkingInstruction()` — 8 das 9 tags não estavam na lista oficial do Gemini, causando ruído no transcript
+- **`densitySeconds` removido do schema de cenas** (`functions/src/genkit/schemas/common.ts`, `functions/src/flows/scene-prompts.ts`): parâmetro removido do input schema — o backend agora calcula timestamps uniformes baseados na duração total, eliminando risco de `Infinity` quando o valor era 0
+
+### Alterado
+
+- **`src/hooks/useSwipeTabs.ts`**: refatoração com extração de constantes (`DISTANCE_THRESHOLD`, `VELOCITY_THRESHOLD`, `SPRING_TRANSITION`, etc.) e função `isInteractiveTarget()` — melhora legibilidade e testabilidade sem mudança de comportamento
+- **`src/lib/db/projects.ts`**: logging estruturado adicionado ao `saveProject()` — logs de debug no sucesso e warning no fallback para IndexedDB
+- **`package.json`**: scripts de emulador refatorados para usar `scripts/emulators.mjs`
+- **`.env.example`**: adicionadas 6 flags `VITE_EMULATOR_*` para emuladores seletivos
+
+---
+
 ## [0.108.3] - 2026-05-29
 
 ### Corrigido

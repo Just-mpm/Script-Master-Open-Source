@@ -3,6 +3,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Tooltip from '@mui/material/Tooltip';
 import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
 import WarningAmber from '@mui/icons-material/WarningAmber';
+import Sync from '@mui/icons-material/Sync';
 import { useCredits } from '../hooks/useCredits';
 import { useLocale } from '../features/i18n';
 
@@ -58,18 +59,18 @@ export function CreditIndicator() {
     return (
       <Tooltip title={t('studio.header.credits.syncing')}>
         <Chip
-          icon={<WarningAmber sx={{ fontSize: 14 }} />}
+          icon={<Sync sx={{ fontSize: 14, animation: 'spin 1.5s linear infinite' }} />}
           size="small"
           aria-label={t('studio.header.credits.syncing')}
           sx={{
             fontWeight: 600,
             fontSize: '0.7rem',
             letterSpacing: '0.04em',
-            backgroundColor: 'rgba(245, 158, 11, 0.12)',
-            color: 'warning.light',
-            border: '1px solid rgba(245, 158, 11, 0.28)',
+            backgroundColor: 'rgba(59, 130, 246, 0.12)',
+            color: 'info.light',
+            border: '1px solid rgba(59, 130, 246, 0.28)',
             '& .MuiChip-label': { px: 1 },
-            '& .MuiChip-icon': { color: 'warning.light', ml: 0.5 },
+            '& .MuiChip-icon': { color: 'info.light', ml: 0.5 },
           }}
         />
       </Tooltip>

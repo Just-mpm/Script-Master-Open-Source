@@ -26,7 +26,8 @@ bun run deploy:firestore # deploy apenas das regras e indexes do Firestore
 bun run deploy:storage   # deploy apenas das regras do Storage
 bun run deploy:functions # build functions + deploy das Cloud Functions
 bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:deploy preview
-bun run emulators        # inicia todos os emuladores Firebase localmente
+bun run emulators        # inicia emuladores conforme flags VITE_EMULATOR_* no .env
+bun run emulators:all    # força TODOS os emuladores (ignora .env)
 bun run emulators:functions # inicia apenas o emulador de functions
 bun run emulators:ui     # inicia apenas a UI dos emuladores
 ```
@@ -156,14 +157,14 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 | **Arquivos** | `src/hooks/useAudioGenerator.ts`, `src/features/studio/store/audioGeneratorStore.ts`, `src/components/app/AudioGenerationHandler.tsx`, `src/components/app/AudioPreflightDialog.tsx`, `src/lib/audio.ts`, `functions/src/flows/audio.ts`, `functions/src/flows/chunking.ts`, `functions/src/flows/audio-preflight.ts`, `functions/src/usage/audio-preflight.ts`, `functions/src/genkit/constants.ts`, `functions/src/genkit/schemas/common.ts` |
 | **Frontend** | `useAudioGenerator` chama Cloud Function `audio` via `httpsCallable` (Genkit). Tipos `AudioFlowInput`/`AudioFlowOutput`. Sem chamada direta ao Gemini |
 | **Backend (Genkit)** | Flow `audio.ts` — recebe script, voz, locale, emotion; faz chunking interno (se >500 chars via `chunking.ts`); chama Gemini TTS com retry automático (`TTS_MAX_RETRIES=2`); retorna chunks de áudio base64. Middleware `credit-metering.ts` estima/reserva/confirma créditos. Flow `audio-preflight.ts` — pré-verifica créditos antes da geração |
-| **Chunking** | Se >500 chars, Cloud Function `chunking` divide o roteiro via Genkit com output schema `ChunkItemSchema` enriquecido (emotionTag, isContinuation, trailingSentence, paceTag) e instrução montada por `buildChunkingInstruction()`. Fallback programático em `functions/src/genkit/utils/chunking.ts` com `extractTrailingSentence()`, `isTruncatedChunk()`, `mergeOrPush()`, `splitLongSentence()`, `mergeShortChunks()` — regex expandida que nunca quebra palavras |
+| **Chunking** | Se >500 chars, Cloud Function `chunking` divide o roteiro via Genkit com output schema `ChunkItemSchema` (isContinuation, paceTag) e instrução montada por `buildChunkingInstruction()`. `emotionTag` e `trailingSentence` removidos do schema (v0.109.0) — tags de áudio agora são gerenciadas pelo backend via `EMOTION_TO_AUDIO_TAGS`. Fallback programático em `functions/src/genkit/utils/chunking.ts` com `extractTrailingSentence()`, `isTruncatedChunk()`, `mergeOrPush()`, `splitLongSentence()`, `mergeShortChunks()` — regex expandida que nunca quebra palavras |
 | **Continuidade** | A partir do chunk 2, injeta contexto enriquecido: última frase do chunk anterior, tag de emoção ativa, sample context (frases âncora não faladas) + `CONTINUITY_AUDIO_TAG` (`[continuing]`) no transcript |
 | **Multi-speaker** | Quando ativo, `speechConfig` usa `multiSpeakerVoiceConfig` com 2 locutores (Speaker A + B) |
 | **WAV** | 24kHz mono 16-bit PCM, header 44 bytes. PCM extraído se Gemini retornar com header embutido |
 | **Limites** | `MAX_CHARS=50000` (roteiro), `CHUNK_LIMIT=500` (por chamada TTS), `MIN_TTS_PCM_BYTES=1024` (PCM mínimo válido) |
 | **Segmentos** | `AudioSegment` persiste chunk→timestamp no IndexedDB (fire-and-forget). Duração: `pcm.length / 48000` |
 | **Cancelamento** | `cancelRef` checado antes de cada chunk; estado anterior restaurado via `lastSuccessfulStateRef`. State values espelhados via refs para evitar stale closure |
-| **Detecção de silêncio** | `detectSceneBoundaries()` via RMS no áudio real. Calibra threshold em até 3 iterações |
+| **Detecção de silêncio (backend)** | `isSilentPcm()` em `functions/src/flows/audio.ts` — detecta chunks de silêncio puro via RMS threshold. `responseModalities: ['AUDIO']` na chamada Gemini explicita resposta de áudio. **Timestamps de cena (frontend):** `validateSceneTimestamps()` e `buildUniformTimestamps()` em `src/lib/audio-analysis.ts` calculam timposts de forma determinística por duração total, substituindo a antiga `detectSceneBoundaries()` via RMS |
 | **Voice previews** | Arquivos WAV estáticos em `/voice-previews/{voiceId}.wav`. Hook: `useVoicePreviews` |
 | **AudioContext selectors** | `useAudioIsPlaying()`, `useAudioCurrentTime()`, `useAudioDuration()`, `useAudioProgress()`, `useAudioActiveId()` — hooks seletivos para re-render otimizado |
 | **Emoções** | `emotion` e `emotionIntensity` (0-1) nas options de geração; persistidos nos tipos de db (`db/types.ts`) |
@@ -393,8 +394,9 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 | | |
 |---|---|
 | **Arquivos** | `src/lib/env.ts`, `src/lib/firebase.ts`, `vite.config.ts`, `firebase.json` |
-| **Env vars** | 7 `VITE_FIREBASE_*` (required) + 9 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `VITE_APP_CHECK_DEBUG_TOKEN`, `VITE_BILLING_ENABLED`, `VITE_OPEN_BETA_ENABLED`, `VITE_USE_EMULATORS`). `VITE_GEMINI_API_KEY` removido do frontend (uso apenas no backend via `GOOGLE_GENAI_API_KEY` nas Functions) |
-| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()`, `getRecaptchaSiteKey()`, `getAppCheckDebugToken()`, `isBillingEnabled()`, `isOpenBetaEnabled()` |
+| **Env vars** | 7 `VITE_FIREBASE_*` (required) + 15 opcionais (`VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_PEXELS_API_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `VITE_APP_CHECK_DEBUG_TOKEN`, `VITE_BILLING_ENABLED`, `VITE_OPEN_BETA_ENABLED`, `VITE_USE_EMULATORS`, `VITE_EMULATOR_AUTH`, `VITE_EMULATOR_FIRESTORE`, `VITE_EMULATOR_STORAGE`, `VITE_EMULATOR_FUNCTIONS`, `VITE_EMULATOR_HOSTING`, `VITE_EMULATOR_UI`, `VITE_CLOUD_RUN_VIDEO_ENABLED`, `VITE_CLOUD_RUN_URL`). `VITE_GEMINI_API_KEY` removido do frontend (uso apenas no backend via `GOOGLE_GENAI_API_KEY` nas Functions) |
+| **Helpers** | `readRequiredEnv()` (lança se ausente), `readOptionalEnv()` (undefined se ausente), `getFirebaseEnvConfig()`, `getStripePublishableKey()`, `getPexelsApiKey()`, `getRecaptchaSiteKey()`, `getAppCheckDebugToken()`, `isBillingEnabled()`, `isOpenBetaEnabled()`, `isEmulatorEnabled(emulator)`, `getActiveEmulators()` |
+| **Emuladores seletivos** | Flags `VITE_EMULATOR_AUTH`, `VITE_EMULATOR_FIRESTORE`, `VITE_EMULATOR_STORAGE`, `VITE_EMULATOR_FUNCTIONS`, `VITE_EMULATOR_HOSTING`, `VITE_EMULATOR_UI` controlam CLI (`scripts/emulators.mjs`) e frontend (`firebase.ts`). `VITE_USE_EMULATORS` é o gate mestre. Se nenhuma flag individual existir, conecta todos (backward compat) |
 | **COEP** | Rotas autenticadas `/app/**`: COOP/COEP habilitados. `/login`, `/cadastro` e `/onboarding`: SEM COEP (popup Firebase) |
 | **Offline** | `initializeFirestore` com `persistentLocalCache` + `persistentMultipleTabManager` (API moderna, suporte nativo a múltiplas abas) |
 | **Dev** | `coepPlugin()` via middleware Vite — exceção `/login`, `/cadastro`, `/onboarding` e todas as rotas públicas (`/funcionalidades`, `/precos`, `/perguntas-frequentes`, `/sobre`, `/termos`, `/privacidade`, `/contato`) |
@@ -414,7 +416,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 | **Surfaces** | `glassPanelSx` (blur+gradiente+shadow), `insetPanelSx` (recessado), `glassSurfaceSx` (blur fixo), `searchFieldSx` (campo de busca) — todas em `surfaces.ts` |
 | **Component overrides** | AppBar (glass/blur), Button (radius 14, no elevation), Card (surface elevated), Alert (semirtransparente) |
 | **Links** | `LinkBehavior` auto-via `defaultProps` em `MuiLink` e `MuiButtonBase` |
-| **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient`, keyframes `pulse` |
+| **CSS global** | Apenas `index.css`: scrollbar custom (4px), utilities `.no-scrollbar`, `.glass-panel`, `.text-gradient`, `.accent-gradient`, keyframes `pulse`, `spin` |
 | **Layout** | Container `maxWidth: 1600px`. Padding responsivo. `/assistant`, `/login` e `/cadastro` sem Container |
 
 ### PWA
@@ -442,8 +444,8 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 ## Version
 
-- **Current:** `0.108.3`
-- **Last release:** 2026-05-29
+- **Current:** `0.109.0`
+- **Last release:** 2026-05-30
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -451,8 +453,8 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 | Versão | Resumo |
 |--------|--------|
+| `0.109.0` | Emuladores seletivos (flags VITE_EMULATOR_*, script scripts/emulators.mjs); validação de timestamps de cena (validateSceneTimestamps/buildUniformTimestamps); detecção de silêncio no backend TTS (isSilentPcm, responseModalities); extractPcmFromDataUrl reescrito (MIME multi-parâmetro); emotionTag removido dos schemas de chunking; densitySeconds removido do schema de cenas; integração de teclado com AudioContext; refatoração useSwipeTabs; mock PWA para testes; 5 docs de auditoria/scan; keyframe spin no CSS |
 | `0.108.3` | Correções de segurança P1/P2 do audit #001 (PII removido de logs Firestore, validação de schemas Zod com min/max, base64ToBlobSync substituído por async); validação de imagem de referência (15MB, content-types); content-type validation no Pexels StockMedia; createLogger nos flows backend de áudio/imagens/chunking; chave i18n searchError; limpeza do doc de auditoria 001-audio-image-audit.md |
 | `0.108.2` | Admin auth migrado de role-based + email hardcoded para custom claim `admin: true` em Firestore/Storage Rules; script `grant-access` adicionado em functions; .gitignore com exclusão de service-account keys; limpeza de 5 docs de auditoria mobile; novo doc de auditoria unificada áudio/imagem (001-audio-image-audit.md) |
 | `0.108.1` | AssistantComposer refatorado (ToggleButton → Menu/Chip para seleção de modelo); InterviewPanel simplificado (isCustomMode removido); ToolEventCard com tokens de tema; AssistantHeader com WHITE unificado; MobileBottomNav reordenado; limpeza de imports; chave i18n swipeRegion |
 | `0.108.0` | MobileBottomNav com navegação inferior mobile (BottomNavigation MUI v9, Drawer secundário, safe-area, i18n); layout compacto do Assistente no mobile (avatar, paddings, fontes responsivos); ActionBar com posicionamento adaptativo (80px no mobile); swipe visual com drag + AnimatePresence no StudioPage (useSwipeTabs); docs de auditoria e scan do mobile |
-| `0.107.1` | updatePlan tornado silencioso na UI (SILENT_TOOLS); regras mais rígidas do updatePlan no backend; remoção do tipo AssistantTaskPriority e chaves i18n priorityLabels; PlanWidget simplificado |

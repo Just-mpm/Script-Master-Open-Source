@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
@@ -29,12 +29,10 @@ vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Permite sobrescrever useMediaQuery em testes específicos
-let mockIsMobile = false;
+import useMediaQuery from '@mui/material/useMediaQuery';
+
 vi.mock('@mui/material/useMediaQuery', () => ({
-  __esModule: true,
-  default: () => mockIsMobile,
-  useMediaQuery: () => mockIsMobile,
+  default: vi.fn(),
 }));
 
 vi.mock('../../src/hooks/useOnlineStatus', () => ({
@@ -137,24 +135,21 @@ describe('Header — Features atualizadas', () => {
     expect(screen.getAllByText('Conta').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('abre dialog de exclusão de conta ao clicar em Excluir conta no drawer mobile', async () => {
-    mockIsMobile = true;
+  it('abre dialog de exclusão de conta via evento do MobileBottomNav', async () => {
+    vi.mocked(useMediaQuery).mockReturnValue(true);
 
-    const user = userEvent.setup();
     render(<Header />, { wrapper: Wrapper });
 
-    // Abre o drawer — aria-label real é "Abrir menu de navegação"
-    const menuButton = screen.getByLabelText(/Abrir menu de navegação/i);
-    await user.click(menuButton);
-
-    // Clica em Excluir conta
-    await user.click(screen.getByText('Excluir conta'));
+    // MobileBottomNav dispara evento para Header abrir o dialog de exclusão
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+    });
 
     // Dialog deve aparecer
-    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(await screen.findByRole('dialog')).toBeDefined();
     expect(screen.getByText('Excluir conta permanentemente')).toBeDefined();
 
-    mockIsMobile = false;
+    vi.mocked(useMediaQuery).mockReturnValue(false);
   });
 
   it('não chama deleteAccount se texto de confirmação não for EXCLUIR', async () => {
@@ -169,20 +164,20 @@ describe('Header — Features atualizadas', () => {
       deleteAccount: mockDeleteAccount,
     });
 
-    mockIsMobile = true;
+    vi.mocked(useMediaQuery).mockReturnValue(true);
 
-    const user = userEvent.setup();
     render(<Header />, { wrapper: Wrapper });
 
-    // Abre drawer e clica em Excluir conta
-    await user.click(screen.getByLabelText(/Abrir menu de navegação/i));
-    await user.click(screen.getByText('Excluir conta'));
+    // MobileBottomNav dispara evento para Header abrir o dialog
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+    });
 
     // O botão de confirmar exclusão deve estar desabilitado (texto vazio != EXCLUIR)
-    const confirmButton = screen.getByRole('button', { name: /Excluir conta$/ });
+    const confirmButton = await screen.findByRole('button', { name: /Excluir conta$/ });
     expect(confirmButton).toBeDisabled();
     expect(mockDeleteAccount).not.toHaveBeenCalled();
 
-    mockIsMobile = false;
+    vi.mocked(useMediaQuery).mockReturnValue(false);
   });
 });

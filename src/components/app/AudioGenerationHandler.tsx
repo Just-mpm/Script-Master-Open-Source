@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../contexts/AuthContext';
-import { useGlobalAudioActions } from '../../contexts/AudioContext';
+import { useGlobalAudioActions, useAudioActiveId } from '../../contexts/AudioContext';
 import { buildAudioFlowInput, useAudioGenerator } from '../../hooks/useAudioGenerator';
 import type { GenerateOptions } from '../../hooks/useAudioGenerator';
 import { MAX_CHARS } from '../../lib/constants';
@@ -106,7 +106,8 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const { authError, clearAuthError, user } = useAuth();
   const { t, locale } = useLocale();
   const userId = user?.uid;
-  const { toggle, setDurationOverride } = useGlobalAudioActions();
+  const { toggle, play, setDurationOverride } = useGlobalAudioActions();
+  const audioActiveId = useAudioActiveId();
 
   // ─── Estado de geração de áudio (hook) ────────────────────
   const {
@@ -341,6 +342,15 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     if (isGenerating) setIsSaved(false);
   }, [isGenerating]);
 
+  // Toggle inteligente: carrega URL no <audio> se não há áudio ativo
+  const toggleAudioPlayerCallback = useCallback(() => {
+    if (!audioActiveId && audioUrl) {
+      play(audioUrl, 'studio-audio');
+    } else {
+      toggle();
+    }
+  }, [audioActiveId, audioUrl, play, toggle]);
+
   return {
     isGenerating,
     statusText,
@@ -365,7 +375,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     dismissSuccess,
     isExportingVideo,
     videoExportProgress,
-    toggleAudioPlayer: toggle,
+    toggleAudioPlayer: toggleAudioPlayerCallback,
     isSaved,
     creditsExhausted,
     isPreparingPreflight,

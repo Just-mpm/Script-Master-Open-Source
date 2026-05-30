@@ -46,6 +46,8 @@ interface ScenePromptsInstructionParams {
   languageName: string;
   languageNameUpper: string;
   script: string;
+  /** Timestamps pré-calculados pelo código (em segundos) */
+  timestamps: readonly number[];
 }
 
 interface TtsInstructionParams {
@@ -58,7 +60,7 @@ interface TtsInstructionParams {
   chunk: string;
   /** Audio tag de emoção para injetar no início do transcript (ex: "[excitedly]") */
   emotionAudioTag?: string;
-  /** Audio tag de ritmo para injetar no transcript (ex: "[slowly]") */
+  /** Audio tag de ritmo para injetar no transcript (ex: "[very slow]") */
   paceAudioTag?: string;
   /** Últimas 1-2 frases do chunk anterior, como âncora contextual (não falado) */
   sampleContext?: string;
@@ -362,20 +364,25 @@ export function buildScenePromptsInstruction(params: ScenePromptsInstructionPara
   const {
     durationLabel,
     imageCount,
-    densitySeconds,
     frameworkInstructions,
     style,
     languageName,
     languageNameUpper,
     script,
+    timestamps,
   } = params;
+
+  const timestampList = timestamps.map((t, i) => `  Cena ${i + 1}: ${t}s`).join('\n');
 
   return `Você é um diretor de arte responsável por criar a linha visual de um vídeo narrado.
 
 OBJETIVO:
-- Gerar exatamente ${imageCount} descrições de cenas para acompanhar um áudio com ${durationLabel} segundos.
-- As cenas devem distribuir a narrativa aproximadamente a cada ${densitySeconds} segundos.
+- Descreva exatamente ${imageCount} cenas para acompanhar um áudio de ${durationLabel} segundos.
+- Os momentos de cada cena já estão definidos — sua tarefa é criar a descrição visual de cada uma.
 - O resultado deve ser consistente, específico e pronto para geração de imagem.
+
+MOMENTOS PRÉ-DEFINIDOS (NÃO ALTERE):
+${timestampList}
 
 ${frameworkInstructions}
 
@@ -384,10 +391,10 @@ DIREÇÃO DE ARTE BASE:
 - Se houver conflito entre o estilo livre e o framework visual, o framework tem prioridade.
 
 FORMATO OBRIGATÓRIO DE SAÍDA:
-- Retorne um array JSON.
-- Cada item deve ter:
-  - "timestamp": número em segundos, e o primeiro deve ser 0.
+- Retorne um array JSON com exatamente ${imageCount} objetos.
+- Cada item deve ter apenas:
   - "prompt": prompt extremamente detalhado em inglês para gerador de imagens.
+- NÃO inclua timestamp no output — os momentos já estão definidos.
 
 REGRA CRÍTICA DE IDIOMA VISUAL:
 - Sempre que a imagem precisar de texto visível, o texto renderizado na imagem deve estar em ${languageName}.
@@ -399,24 +406,26 @@ ${script}`;
 }
 
 export function buildChunkingInstruction(script: string, limit: number): string {
-  // Prompt enxuto — o roteiro já tem pontuação natural (pontos, parágrafos),
-  // então instruções complexas só fazem o Gemini ser conservador e dividir
-  // em partes muito menores que o limite.
   return `Divida o roteiro abaixo em partes sequenciais para narração TTS.
 
-REGRAS:
-- Cada parte deve ter no MÁXIMO ${limit} caracteres (tente usar o máximo possível em cada parte).
-- Quebre em pausas lógicas: fim de parágrafo, fim de frase ou troca de ideia.
+<rules>
+- Máximo ${limit} caracteres por parte.
+- Use 80-100% do limite sempre que possível. Evite partes muito curtas (menos de 200 caracteres).
+- Cada parte DEVE terminar com pontuação final de sentença (. ! ? ... — :).
+- NUNCA divida no meio de uma palavra ou de uma frase.
 - NÃO altere, reescreva, adicione ou remova palavras. Cópia exata do original.
+- Quebre em pausas lógicas: fim de parágrafo, fim de frase ou troca de ideia.
+</rules>
 
+<output>
 Retorne um array JSON onde cada item tem:
 - "text": o texto exato da parte
-- "emotionTag": tag de emoção em inglês (ex: "[calmly]", "[seriously]") ou "" se neutro
-- "isContinuation": true se é continuação direta da parte anterior
-- "trailingSentence": última frase completa do chunk
+- "isContinuation": true se é continuação direta da parte anterior (false para a primeira)
+</output>
 
-ROTEIRO:
-${script}`;
+<script>
+${script}
+</script>`;
 }
 
 /**

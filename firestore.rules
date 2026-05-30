@@ -101,7 +101,7 @@ service cloud.firestore {
              data.id is string &&
              data.projectId is string &&
              data.userId == request.auth.uid &&
-             data.imageUrl is string && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*")) &&
+             data.imageUrl is string && (isAssetUrl(data.imageUrl) || data.imageUrl.matches("^data:image/.*")) &&
              data.timestamp is number &&
              data.createdAt is number;
     }

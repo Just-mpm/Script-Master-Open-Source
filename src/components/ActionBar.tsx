@@ -20,7 +20,7 @@ import PlayArrow from '@mui/icons-material/PlayArrow';
 import Stop from '@mui/icons-material/Stop';
 import VideoFile from '@mui/icons-material/VideoFile';
 import { downloadFile } from '../lib/download';
-import { useGlobalAudioActions, useAudioIsPlaying, useAudioCurrentTime, useAudioDuration } from '../contexts/AudioContext';
+import { useGlobalAudioActions, useAudioIsPlaying, useAudioCurrentTime, useAudioDuration, useAudioActiveId } from '../contexts/AudioContext';
 import type { VideoPreviewHandle } from './VideoPreview';
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import { useLocale } from '../features/i18n';
@@ -85,6 +85,7 @@ export function ActionBar({
   const audioIsPlaying = useAudioIsPlaying();
   const audioCurrentTime = useAudioCurrentTime();
   const audioDuration = useAudioDuration();
+  const audioActiveId = useAudioActiveId();
   const audioActions = useGlobalAudioActions();
 
   // Frame e estado de reprodução do Remotion Player via bridge store
@@ -164,6 +165,9 @@ export function ActionBar({
       } else {
         player.play();
       }
+    } else if (!audioActiveId && audioUrl) {
+      // Carrega a URL no elemento <audio> antes de tocar — toggle() não seta audio.src
+      audioActions.play(audioUrl, 'studio-audio');
     } else {
       audioActions.toggle();
     }

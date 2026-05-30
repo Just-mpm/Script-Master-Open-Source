@@ -64,11 +64,10 @@ interface AudioSegment {
 
 /**
  * Chunk enriquecido com metadados de continuidade.
- * Usado para manter consistência de tom entre chunks e injetar audio tags.
+ * Usado para manter consistência de tom entre chunks.
  */
 interface EnrichedChunk {
   text: string;
-  emotionTag?: string;
   isContinuation?: boolean;
   trailingSentence?: string;
 }
@@ -88,7 +87,8 @@ const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 /**
  * Divide um script longo em chunks enriquecidos usando o Gemini para quebras inteligentes.
- * Retorna EnrichedChunk[] com metadados de continuidade (emotionTag, isContinuation, trailingSentence).
+ * Retorna EnrichedChunk[] com metadados de continuidade (isContinuation, trailingSentence).
+ * trailingSentence é sempre computado programaticamente via extractTrailingSentence().
  * Se o Gemini falhar, usa fallback programático com metadados básicos.
  */
 async function chunkScript(script: string, limit: number): Promise<EnrichedChunk[]> {
@@ -104,17 +104,18 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
     const response = await ai.generate({
       model: CHUNKING_MODEL,
       prompt: buildChunkingInstruction(script, limit),
+      config: {
+        temperature: 0,
+      },
       output: {
         schema: z.array(z.object({
           text: z.string(),
-          emotionTag: z.string().optional(),
           isContinuation: z.boolean().optional(),
-          trailingSentence: z.string().optional(),
         })),
       },
     });
 
-    const items = response.output as EnrichedChunk[] | undefined;
+    const items = response.output as Array<{ text: string; isContinuation?: boolean }> | undefined;
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('Resposta de chunking inválida ou vazia');
     }
@@ -127,15 +128,15 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
         for (let j = 0; j < subChunks.length; j++) {
           validated.push({
             text: subChunks[j],
-            emotionTag: j === 0 ? item.emotionTag : undefined,
             isContinuation: j > 0 ? true : item.isContinuation,
             trailingSentence: extractTrailingSentence(subChunks[j]),
           });
         }
       } else {
         validated.push({
-          ...item,
-          trailingSentence: item.trailingSentence ?? extractTrailingSentence(item.text),
+          text: item.text,
+          isContinuation: item.isContinuation,
+          trailingSentence: extractTrailingSentence(item.text),
         });
       }
     }
@@ -194,10 +195,47 @@ function createWavBuffer(pcmData: Buffer, sampleRate: number): Buffer {
  * Extrai os dados PCM do Data URL retornado pelo Genkit.
  * O Genkit retorna o áudio como Data URL (data:audio/wav;base64,... ou data:;base64,...).
  */
+/**
+ * Extrai bytes PCM de uma Data URL de áudio.
+ *
+ * O Gemini TTS retorna Data URLs com MIME type multi-parâmetro:
+ *   data:audio/l16; rate=24000; channels=1;base64,AAA...
+ *
+ * O separador entre header e payload é SEMPRE a primeira vírgula.
+ */
 function extractPcmFromDataUrl(dataUrl: string): Buffer {
-  // Remove o prefixo do Data URL para obter apenas o base64
-  const base64Data = dataUrl.replace(/^data:[^;]*;base64,/, '');
+  const commaIndex = dataUrl.indexOf(',');
+  if (commaIndex === -1) {
+    throw new Error('Data URL inválida: vírgula separadora não encontrada');
+  }
+  const base64Data = dataUrl.substring(commaIndex + 1);
   return Buffer.from(base64Data, 'base64');
+}
+
+/**
+ * Detecta se um buffer PCM contém apenas silêncio (zeros).
+ *
+ * O Gemini TTS às vezes retorna 1.8 MB de zeros com finishReason: stop.
+ * Esta função verifica se há algum conteúdo real no áudio.
+ *
+ * @param pcm - Buffer PCM 16-bit mono
+ * @param threshold - Fração mínima de samples não-zero (default 1%)
+ * @returns true se o áudio é considerado silêncio
+ */
+function isSilentPcm(pcm: Buffer, threshold = 0.01): boolean {
+  if (pcm.length < 2) return true;
+
+  const samples = new Int16Array(pcm.buffer, pcm.byteOffset, pcm.length / 2);
+  const noiseFloor = 100; // ~-54 dBFS para 16-bit
+  let nonZeroCount = 0;
+
+  for (let i = 0; i < samples.length; i++) {
+    if (Math.abs(samples[i]) > noiseFloor) {
+      nonZeroCount++;
+    }
+  }
+
+  return nonZeroCount / samples.length < threshold;
 }
 
 // ---------------------------------------------------------------------------
@@ -402,8 +440,9 @@ export const audio = onCallGenkit(
         }
 
         // Audio tag para este chunk específico
-        const chunkEmotionTag = enrichedChunk.emotionTag
-          || (i > 0 && enrichedChunk.isContinuation ? CONTINUITY_AUDIO_TAG : globalEmotionTag);
+        const chunkEmotionTag = i > 0 && enrichedChunk.isContinuation
+          ? CONTINUITY_AUDIO_TAG
+          : globalEmotionTag;
 
         // Contexto de múltiplos locutores (em inglês)
         const multiCtx = isMultiSpeaker
@@ -428,7 +467,8 @@ export const audio = onCallGenkit(
         // ------------------------------------------------------------------
         // Retry automático (Fase 4.1)
         // O Gemini TTS ocasionalmente retorna text tokens em vez de audio tokens
-        // (erro 500). Retry até TTS_MAX_RETRIES vezes antes de falhar.
+        // (erro 500), áudio quase vazio (PCM muito curto) ou silêncio puro.
+        // Retry até TTS_MAX_RETRIES vezes antes de falhar.
         // ------------------------------------------------------------------
         let pcmBuffer: Buffer | null = null;
 
@@ -448,6 +488,7 @@ export const audio = onCallGenkit(
               prompt: finalPrompt,
               config: {
                 speechConfig,
+                responseModalities: ['AUDIO'],
               } as Record<string, unknown>,
             });
             await throwIfAiCancellationRequested(db, uid, requestId);
@@ -459,7 +500,38 @@ export const audio = onCallGenkit(
 
             pcmBuffer = extractPcmFromDataUrl(mediaUrl);
 
-            // Validação de duração mínima (Fase 4.3)
+            // Validação de PCM mínima — DENTRO do retry loop
+            // Se o PCM for muito curto (< 1024 bytes), o modelo retornou áudio
+            // vazio/corrompido. Retry com backoff em vez de falhar imediatamente.
+            if (pcmBuffer.length < MIN_TTS_PCM_BYTES) {
+              const isLastAttempt = attempt === TTS_MAX_RETRIES;
+              log.warn(
+                `Chunk ${i + 1}/${enrichedChunks.length} com PCM muito curto: ` +
+                `${pcmBuffer.length} bytes (tentativa ${attempt + 1}/${TTS_MAX_RETRIES + 1})` +
+                (isLastAttempt ? ' — esgotadas as tentativas' : ' — retentando...'),
+              );
+
+              if (isLastAttempt) break;
+              pcmBuffer = null;
+              continue;
+            }
+
+            // Detecção de silêncio puro — o Gemini TTS às vezes retorna
+            // 1.8 MB de zeros com finishReason: stop (known issue)
+            if (isSilentPcm(pcmBuffer)) {
+              const isLastAttempt = attempt === TTS_MAX_RETRIES;
+              log.warn(
+                `Chunk ${i + 1}/${enrichedChunks.length} retornou áudio silencioso: ` +
+                `${pcmBuffer.length} bytes de zeros (tentativa ${attempt + 1}/${TTS_MAX_RETRIES + 1})` +
+                (isLastAttempt ? ' — esgotadas as tentativas' : ' — retentando...'),
+              );
+
+              if (isLastAttempt) break;
+              pcmBuffer = null;
+              continue;
+            }
+
+            // Validação de duração mínima (apenas warning, não bloqueia)
             const durationSec = pcmBuffer.length / (SAMPLE_RATE * 2);
             if (durationSec < MIN_CHUNK_DURATION_SECONDS && chunkText.length > 100) {
               log.warn(
@@ -484,7 +556,7 @@ export const audio = onCallGenkit(
         }
 
         if (!pcmBuffer) {
-          // Todas as tentativas falharam
+          // Todas as tentativas falharam (sem media.url em nenhuma)
           await creditMeter.revert('TTS_CHUNK_FAILED');
           creditsSettled = true;
 
@@ -494,15 +566,14 @@ export const audio = onCallGenkit(
           );
         }
 
-        // Validação de PCM mínima — rejeita chunks corrompidos
-        // (ex: Gemini retornou text tokens em vez de audio tokens)
+        // PCM validado — rejeita apenas se ficou curto e esgotou retries
         if (pcmBuffer.length < MIN_TTS_PCM_BYTES) {
           await creditMeter.revert('PCM_TOO_SHORT');
           creditsSettled = true;
 
           throw new HttpsError(
             'internal',
-            `Chunk ${i + 1}/${enrichedChunks.length} gerou PCM inválido (${pcmBuffer.length} bytes, mínimo ${MIN_TTS_PCM_BYTES}). Tente novamente.`,
+            `Chunk ${i + 1}/${enrichedChunks.length} gerou PCM inválido (${pcmBuffer.length} bytes, mínimo ${MIN_TTS_PCM_BYTES}) após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
           );
         }
 

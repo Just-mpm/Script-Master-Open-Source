@@ -38,6 +38,7 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_DEFAULT: 12,
   GAP_MEDIUM: 8,
   GAP_RELAXED: 16,
+  ERROR_MAIN: '#ef4444',
 }));
 
 // Mock do assistantUi

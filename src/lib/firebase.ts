@@ -17,7 +17,7 @@ import {
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
-import { getFirebaseEnvConfig, getRecaptchaSiteKey, getAppCheckDebugToken } from './env';
+import { getFirebaseEnvConfig, getRecaptchaSiteKey, getAppCheckDebugToken, getActiveEmulators } from './env';
 
 const appletConfig = getFirebaseEnvConfig();
 
@@ -80,16 +80,30 @@ export const functions = getFunctions(app, 'southamerica-east1');
 export const googleProvider = new GoogleAuthProvider();
 
 // ── Emuladores Firebase (desenvolvimento local) ─────────────────────────────
-// Quando VITE_USE_EMULATORS=true, conecta todos os SDKs aos emuladores locais.
+// Quando VITE_USE_EMULATORS=true, conecta SDKs aos emuladores locais.
+// Flags individuais (VITE_EMULATOR_AUTH, VITE_EMULATOR_FIRESTORE, etc.)
+// permitem selecionar quais emuladores conectar no frontend.
+// Se nenhuma flag individual existir, conecta todos (backward compat).
 // As Cloud Functions emuladas setam automaticamente as variáveis de ambiente
 // FIRESTORE_EMULATOR_HOST, STORAGE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST
 // para o firebase-admin (backend).
 
 if (import.meta.env.VITE_USE_EMULATORS === 'true') {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  const active = getActiveEmulators();
+  const connectAll = active.length === 0; // backward compat: sem flags → todos
+
+  if (connectAll || active.includes('auth')) {
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  }
+  if (connectAll || active.includes('firestore')) {
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  }
+  if (connectAll || active.includes('storage')) {
+    connectStorageEmulator(storage, '127.0.0.1', 9199);
+  }
+  if (connectAll || active.includes('functions')) {
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  }
 }
 
 export { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged };

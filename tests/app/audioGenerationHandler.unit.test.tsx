@@ -7,6 +7,8 @@ const {
   mockAuthState,
   mockClearAuthError,
   mockToggle,
+  mockPlay,
+  mockAudioActiveId,
   mockSetDurationOverride,
   mockStudioState,
   mockBridgeState,
@@ -24,6 +26,8 @@ const {
   },
   mockClearAuthError: vi.fn(),
   mockToggle: vi.fn(),
+  mockPlay: vi.fn(),
+  mockAudioActiveId: null as string | null,
   mockSetDurationOverride: vi.fn(),
   mockStudioState: {
     script: 'Roteiro de teste para áudio',
@@ -81,8 +85,10 @@ vi.mock('../../src/contexts/AuthContext', () => ({
 vi.mock('../../src/contexts/AudioContext', () => ({
   useGlobalAudioActions: () => ({
     toggle: mockToggle,
+    play: mockPlay,
     setDurationOverride: mockSetDurationOverride,
   }),
+  useAudioActiveId: () => mockAudioActiveId,
 }));
 
 vi.mock('../../src/hooks/useAudioGenerator', () => ({

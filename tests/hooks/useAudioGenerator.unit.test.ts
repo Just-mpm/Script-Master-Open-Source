@@ -56,6 +56,8 @@ vi.mock('../../src/lib/env', () => ({
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
   isBillingEnabled: vi.fn().mockReturnValue(false),
   isOpenBetaEnabled: vi.fn().mockReturnValue(true),
+  isEmulatorEnabled: vi.fn().mockReturnValue(false),
+  getActiveEmulators: vi.fn().mockReturnValue([]),
   getFirebaseEnvConfig: vi.fn().mockReturnValue({
     apiKey: 'mock-api-key',
     authDomain: 'mock.firebaseapp.com',
@@ -77,7 +79,8 @@ vi.mock('../../src/lib/rate-limiter', () => ({
 }));
 
 vi.mock('../../src/lib/audio-analysis', () => ({
-  detectSceneBoundaries: vi.fn().mockResolvedValue([0, 30, 60]),
+  validateSceneTimestamps: vi.fn().mockReturnValue(true),
+  buildUniformTimestamps: vi.fn().mockReturnValue([0, 30, 60]),
 }));
 
 vi.mock('../../src/lib/logger', () => ({
