@@ -17,7 +17,6 @@ import { createLogger } from '../lib/logger';
 import { useLocale } from '../features/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
-import { preloadImage } from '@remotion/preload';
 import { VideoComposition } from '../features/video-render';
 import type { CaptionWord, SubtitleStyle } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
@@ -224,22 +223,6 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const { enhancedScenes } = useSpeedPaintEnhancer(mappedScenes, {
       enabled: animateScenes,
     });
-
-    // Pré-carrega todas as imagens das cenas para evitar race condition
-    // na transição entre Sequences (EncodingError em Chromium)
-    useEffect(() => {
-      const imageUrls = enhancedScenes
-        .map((s) => s.imageUrl)
-        .filter(Boolean);
-
-      if (imageUrls.length === 0) return;
-
-      const cancelFns = imageUrls.map((url) => preloadImage(url));
-
-      return () => {
-        cancelFns.forEach((cancel) => cancel());
-      };
-    }, [enhancedScenes]);
 
     // Expose handle imperativo para o pai controlar play/pause/seek
     useImperativeHandle(ref, () => ({

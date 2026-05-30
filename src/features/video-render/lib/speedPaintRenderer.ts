@@ -28,8 +28,6 @@ export interface SpeedPaintFrameOptions {
   imageElement: HTMLImageElement;
   /** Progresso da animação 0-1 */
   progress: number;
-  /** Opacidade geral do frame 0-1 (usada para fade in/out) */
-  opacity: number;
   /** Multiplicador de velocidade — number para global, SpeedPaintMultipliers para sketch/reveal separados */
   speedMultiplier?: number | SpeedPaintMultipliers;
 }
@@ -117,13 +115,14 @@ export function renderSpeedPaintFrame(
   buffer: HTMLCanvasElement,
   options: SpeedPaintFrameOptions,
 ): void {
-  const { animation, imageElement, progress, opacity, speedMultiplier } = options;
+  const { animation, imageElement, progress, speedMultiplier } = options;
   const { canvasWidth, canvasHeight, canvasColor, strokes } = animation;
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-  // 1. Desenhar imagem original como base (com opacidade do fade)
-  ctx.globalAlpha = opacity;
+  // 1. Desenhar imagem original como base
+  // Opacidade é controlada exclusivamente via CSS no AbsoluteFill (sem dupla aplicação)
+  ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(imageElement, 0, 0, canvasWidth, canvasHeight);
 
@@ -190,7 +189,7 @@ export function renderSpeedPaintFrame(
 
   // 4. Compor buffer sobre a imagem (revela a imagem por baixo do whiteboard)
   ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = opacity;
+  ctx.globalAlpha = 1;
   ctx.drawImage(buffer, 0, 0);
 }
 

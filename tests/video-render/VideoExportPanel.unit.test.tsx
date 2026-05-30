@@ -66,6 +66,7 @@ function makeExporter(overrides: Record<string, unknown> = {}) {
     handleDownload: vi.fn(),
     saveWarning: null as string | null,
     dismissSaveWarning: vi.fn(),
+    supportsHtmlInCanvas: true,
     ...overrides,
   };
 }

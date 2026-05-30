@@ -161,7 +161,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -176,7 +176,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.5,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -191,37 +191,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 1,
-          opacity: 1,
-        });
-      }).not.toThrow();
-    });
 
-    it('não crasha com opacidade parcial (fade)', () => {
-      const { ctx } = createMockCtx();
-      const buffer = createBufferCanvas(createMinimalAnimation());
-      const image = createMockImage();
-
-      expect(() => {
-        renderSpeedPaintFrame(ctx, buffer, {
-          animation: createMinimalAnimation(),
-          imageElement: image,
-          progress: 0.7,
-          opacity: 0.5,
-        });
-      }).not.toThrow();
-    });
-
-    it('não crasha com opacidade 0 (totalmente transparente)', () => {
-      const { ctx } = createMockCtx();
-      const buffer = createBufferCanvas(createMinimalAnimation());
-      const image = createMockImage();
-
-      expect(() => {
-        renderSpeedPaintFrame(ctx, buffer, {
-          animation: createMinimalAnimation(),
-          imageElement: image,
-          progress: 0.5,
-          opacity: 0,
         });
       }).not.toThrow();
     });
@@ -236,7 +206,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: -0.5,
-          opacity: 1,
+
         });
       }).not.toThrow();
 
@@ -245,7 +215,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 2.0,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -274,7 +244,7 @@ describe('speedPaintRenderer', () => {
           }),
           imageElement: image,
           progress: 1,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -289,7 +259,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation({ canvasColor: 'black' }),
           imageElement: image,
           progress: 1,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -304,7 +274,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation({ strokes: [] }),
           imageElement: image,
           progress: 1,
-          opacity: 1,
+
         });
       }).not.toThrow();
     });
@@ -319,7 +289,6 @@ describe('speedPaintRenderer', () => {
         animation: createMinimalAnimation(),
         imageElement: image,
         progress: 0.5,
-        opacity: 1,
       });
 
       // Com speedMultiplier 2.0, progress 0.5 se torna 1.0 → mostra todos os 2 strokes
@@ -331,7 +300,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.5,
-          opacity: 1,
+
           speedMultiplier: 2.0,
         });
       }).not.toThrow();
@@ -347,7 +316,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.8,
-          opacity: 1,
+
           speedMultiplier: 0.5,
         });
       }).not.toThrow();
@@ -380,7 +349,7 @@ describe('speedPaintRenderer', () => {
           animation,
           imageElement: image,
           progress: 1.0,
-          opacity: 1,
+
           speedMultiplier: 0.25,
         });
       }).not.toThrow();
@@ -399,7 +368,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.7,
-          opacity: 1,
+
           // sem speedMultiplier
         });
       }).not.toThrow();
@@ -409,7 +378,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.7,
-          opacity: 1,
+
           speedMultiplier: 1.0,
         });
       }).not.toThrow();
@@ -425,7 +394,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 2.0,
-          opacity: 1,
+
           speedMultiplier: 1.0,
         });
       }).not.toThrow();
@@ -487,7 +456,7 @@ describe('speedPaintRenderer', () => {
           animation,
           imageElement: image,
           progress: 0.25,
-          opacity: 1,
+
           speedMultiplier: { sketch: 2.0, reveal: 1.0 },
         });
       }).not.toThrow();
@@ -509,7 +478,7 @@ describe('speedPaintRenderer', () => {
           animation,
           imageElement: image,
           progress: 0.25,
-          opacity: 1,
+
           speedMultiplier: { sketch: 1.0, reveal: 1.0 },
         });
       }).not.toThrow();
@@ -557,7 +526,7 @@ describe('speedPaintRenderer', () => {
           animation,
           imageElement: image,
           progress: 0.75,
-          opacity: 1,
+
           speedMultiplier: { sketch: 1.0, reveal: 2.0 },
         });
       }).not.toThrow();
@@ -574,7 +543,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.5,
-          opacity: 1,
+
           speedMultiplier: 2.0,
         });
       }).not.toThrow();
@@ -590,7 +559,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0.5,
-          opacity: 1,
+
           // speedMultiplier undefined — branch else
         });
       }).not.toThrow();
@@ -607,7 +576,7 @@ describe('speedPaintRenderer', () => {
           animation: createMinimalAnimation(),
           imageElement: image,
           progress: 0,
-          opacity: 1,
+
           speedMultiplier: { sketch: 4.0, reveal: 4.0 },
         });
       }).not.toThrow();
@@ -654,7 +623,7 @@ describe('speedPaintRenderer', () => {
           animation,
           imageElement: image,
           progress: 1,
-          opacity: 1,
+
           speedMultiplier: { sketch: 0.5, reveal: 0.5 },
         });
       }).not.toThrow();
@@ -703,7 +672,7 @@ describe('speedPaintRenderer', () => {
           animation: animationSingle,
           imageElement: image,
           progress: 0.7,
-          opacity: 1,
+
           speedMultiplier: { sketch: 2.0, reveal: 1.0 },
         });
       }).not.toThrow();

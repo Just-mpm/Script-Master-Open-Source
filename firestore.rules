@@ -71,7 +71,7 @@ service cloud.firestore {
              data.userId == request.auth.uid &&
              data.name is string && data.name.size() > 0 &&
              data.prompt is string && data.prompt.size() > 0 &&
-             data.imageUrl is string && (data.imageUrl.matches("^https://.*") || data.imageUrl.matches("^data:image/.*")) &&
+              data.imageUrl is string && (isAssetUrl(data.imageUrl) || data.imageUrl.matches("^data:image/.*")) &&
              data.createdAt is number;
     }
 
@@ -112,7 +112,7 @@ service cloud.firestore {
              data.id is string &&
              data.projectId is string &&
              data.userId == request.auth.uid &&
-             data.videoUrl is string && (data.videoUrl.matches("^https://.*") || data.videoUrl.matches("^blob:.*")) &&
+              data.videoUrl is string && isAssetUrl(data.videoUrl) &&
               (data.format == 'mp4' || data.format == 'webm') &&
              data.width is number &&
              data.height is number &&

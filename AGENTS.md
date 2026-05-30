@@ -49,7 +49,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 - **Firebase** — Auth + Firestore + Storage + IndexedDB (dual storage) + App Check (reCAPTCHA v3) | `firebase-tools` ^15.3.0 (deploy)
 - **Firebase Cloud Functions v2** — backend serverless com Genkit quando necessário + Stripe em `functions/`
 - **Stripe** — `@stripe/stripe-js` ^9.3 (client-side) + `stripe` ^22.1 (server-side nas Functions); desconectado por flag `VITE_BILLING_ENABLED` durante beta aberto
-- **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas); `@remotion/preload` para pré-carregamento de assets
+- **Remotion 4.0.448** — renderização de vídeo client-side (WebCodecs, Whisper WASM para legendas)
 - **Zustand** (estado) | **Motion** (animações, swipe/drag) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
 - **React 19 native** — SEO per-page via `<title>`, `<meta>`, `<link>` com hoisting automático; componente `DocumentHead` em `src/components/DocumentHead.tsx`
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes (jsdom + fake-indexeddb)
@@ -187,29 +187,29 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 | | |
 |---|---|
-| **Arquivos** | `src/features/video-render/` (inclui `src/features/video-render/lib/speedPaintTimings.ts` — timings centralizados do Speed Paint), `src/components/VideoPreview.tsx` |
+| **Arquivos** | `src/features/video-render/` (inclui `src/features/video-render/lib/speedPaintTimings.ts` — timings centralizados do Speed Paint, `useCodecSupport.ts` — detecção de codec e compatibilidade), `src/components/VideoPreview.tsx` |
 | **Renderização** | Client-side via WebCodecs. Sem backend |
-| **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário) |
+| **Codec fallback** | 1) H.264+AAC+MP4 → 2) H.264 sem áudio → 3) VP8+Opus+WebM (exibe aviso ao usuário). Detecção de suporte via `useCodecSupport()` que expõe `supportsHtmlInCanvas` — verifica se o navegador suporta `drawElementImage` (API HTML-in-canvas necessária para capturar canvas 2D nativo no `@remotion/web-renderer`) |
 | **Crossfade** | Overlap dinâmico por cena: speed paint usa 1s (`getSpeedPaintOverlapFrames`), cenas estáticas usam 400ms. Fade = 12 frames para cenas estáticas, spring `{damping:26, stiffness:100, mass:1}` |
 | **Legendas** | Pipeline 3 fontes (prioridade): `segment-timing` > `whisper-aligned` > `proportional` |
 | **Estilo de legendas** | `SubtitleStyle` + `DEFAULT_SUBTITLE_STYLE`. `SubtitleInlineEditor` editor inline via portal. Subcomponentes em `subtitle-editor/` (EditorToolbar, FontSizeControls, PositionToggle, StyleSlider, ToolbarActions, SubtitlePreview, DragOverlay, EditorButton) |
 | **VoiceStyleKey** | `src/lib/types.ts` — tipo union `VoiceStyleKey` padroniza chaves de estilo de voz (`'casual' | 'bright' | 'animated' | 'informative' | 'firm'`). As 5 vozes em `constants.ts` usam `styleKey` em vez de `style` |
 | **Export quality** | `VideoExportQuality` type (`720p` | `1080p` | `1440p` | `4k`) com `getResolutionFromQuality()` e `DEFAULT_EXPORT_QUALITY`. `estimateFileSize()` calcula tamanho por duração, resolução e codec |
 | **Timing centralizado** | `src/features/video-render/lib/speedPaintTimings.ts` — módulo que consolida constantes de temporização do Speed Paint: tipos `SpeedPaintTimingMode` (`'default'` \| `'duration-based'` \| `'sequenced-batch'`), `SpeedPaintSequenceTiming` (`overlapFrames`, `sceneStepFrames`, `totalDurationInFrames`); constantes `DEFAULT_SPEED_PAINT_HOLD_SECONDS` (3s), `DEFAULT_SPEED_PAINT_FADE_SECONDS` (1s), `DURATION_BASED_SKETCH_RATIO` (0.8); funções `getSpeedPaintTimingConfig()`, `getSpeedPaintOverlapFrames()`, `getSpeedPaintSequenceTiming()`. Consumido por `SpeedPaintScene`, `VideoComposition`, `useSpeedPaintExporter`, `SpeedPaintPage`, `SpeedPaintComposition` e `SpeedPaintPlayer` |
-| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s) no modo `default`, ou animação pura sem overhead no modo `duration-based`. Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Controle de duração via `AnimationDurationSelector` com opções predefinidas (substitui `SpeedPaintControls`). `DURATION_BASED_SKETCH_RATIO=0.8` define proporção automática sketch/reveal baseada na duração total. `SpeedPaintSpeed` type (`slow` \| `normal` \| `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) applied no renderer (`{ sketch: 1.0, reveal: 1.0 }`) |
+| **Speed Paint** | `SpeedPaintScene` (canvas nativo Remotion) com sistema de 4 zonas: fade in (1s) → animação → hold (3s) → fade out (1s) no modo `default`, ou animação pura sem overhead no modo `duration-based`. Opacidade via CSS no `<AbsoluteFill>` (crossfade real entre cenas). `interpolate` do Remotion para transições suaves. `SceneSequence` (fallback para cenas estáticas). Controle de duração via `AnimationDurationSelector` com opções predefinidas (substitui `SpeedPaintControls`). `DURATION_BASED_SKETCH_RATIO=0.8` define proporção automática sketch/reveal baseada na duração total. `SpeedPaintSpeed` type (`slow` \| `normal` \| `fast`). `SpeedPaintMultipliers` interface para controle granular por fase. `DEFAULT_SPEED_PAINT_MULTIPLIERS` sketch em velocidade real, reveal com `REVEAL_SPEED_SCALE` (0.5) applied no renderer (`{ sketch: 1.0, reveal: 1.0 }`). Sem `backgroundColor` fixo no componente — canvas controla a cor via `renderSpeedPaintFrame()`, prevenindo flash branco no crossfade |
 | **Speed Paint pipeline** | `generateScenesWithSpeedPaint()` com `{ useWorker: true }`. Web Worker inline (Blob URL + OffscreenCanvas) para >5 cenas. Fallback automático para main thread. Cache LRU (20 entradas) via SHA-256 |
-| **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `REVEAL_SPEED_SCALE = 0.5` torna reveal 2x mais lento que linear. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` — agora chama `img.decode()` após `onload` para garantir decodificação completa antes de desenhar no canvas |
+| **Speed Paint renderer** | `renderSpeedPaintFrame()` aceita `SpeedPaintMultipliers` (`{ sketch, reveal }`) para progresso separado por fase. `REVEAL_SPEED_SCALE = 0.5` torna reveal 2x mais lento que linear. `adjustProgress()` com curva de potência para velocidades <1x (garante completude 100%). Backward compat com `number` como `speedMultiplier`. `createBufferCanvas()`, `loadImageElement(crossOrigin='anonymous')` — chama `img.decode()` após `onload` para garantir decodificação completa antes de desenhar no canvas. `opacity` removido de `SpeedPaintFrameOptions` — opacidade controlada exclusivamente via CSS no `SpeedPaintScene` |
 | **Stroke cache** | `strokeCache.ts` — LRU com max 20, chave SHA-256, `getStrokeAnimation()`, `setStrokeAnimation()`, `clearStrokeCache()`, `getStrokeCacheStats()` |
 | **Stroke worker** | `strokeWorker.ts` — `createStrokeWorker()`, `terminateStrokeWorker()`, `processSceneInWorker()`, `supportsStrokeWorker()` |
 | **Staleness** | Hash SHA-256 do roteiro detecta quando legendas ficam desatualizadas após edição |
 | **ScrollingPhrase** | Texto contínuo com variantes `active` (fade in + translateY) e `previous` (opacidade 1.0→0.5). Suporte a **bold** via markdown |
 | **Whisper** | Modelo `tiny` (~39MB). Filtros de tokens inválidos. Resample para 16kHz. Apenas IndexedDB |
 | **Bridge** | `videoRenderBridge` (Zustand) sincroniza estado de exportação/transcrição/reprodução (currentFrame, isPlaying) entre VideoPage e App |
-| **Pré-carregamento de imagens** | `VideoPreview.tsx` usa `preloadImage()` do `@remotion/preload` com `useEffect` + `cancelFns` para pré-carregar todas as imagens de cena — resolve race condition na transição entre `Sequence`s de cenas estáticas. `animateScenes={false}` no `VideoPage.tsx` para evitar concorrência com decodificação |
+| **Pré-carregamento de imagens** | `animateScenes={false}` no `VideoPage.tsx` evita concorrência com decodificação de imagens. `<Img>` do Remotion já lida com carregamento + decode + retry automaticamente via `delayRender()` |
 
 **Canvas patch** | `canvasFontStretchPatch` corrige bug `%→keyword` na Canvas API do Remotion. Suporta canvas regular e OffscreenCanvas via `patchPrototype()`. Usa `createLogger` |
 | **Resoluções** | `16:9` → 1920x1080, `9:16` → 1080x1920, `1:1` → 1080x1080 |
-| **Exportação** | `isExporting` em CompositionConfig desabilita overlays pesados (WaveformOverlay) durante renderização |
+| **Exportação** | `isExporting` em CompositionConfig desabilita overlays pesados (WaveformOverlay) durante renderização. `allowHtmlInCanvas: true` nos exporters (useSpeedPaintExporter/useVideoExporter) — habilita captura real de frames via drawElementImage, necessário para serializar canvas 2D nativo. Se o browser não suportar (Firefox/Safari), fallback para mecanismo padrão com aviso ao usuário |
 | **Lápis animado** | `showDrawTool` prop controla exibição do lápis/pincel seguindo o último stroke visível durante preview e exportação. Default `true`. Propagado via `CompositionInputProps` → `useVideoExporter` → `VideoComposition` → `SpeedPaintScene`. `VideoPreview` também suporta a prop |
 
 
@@ -446,7 +446,7 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 ## Version
 
-- **Current:** `0.109.1`
+- **Current:** `0.110.0`
 - **Last release:** 2026-05-30
 
 ### Últimas mudanças (atualizado por /fast)
@@ -455,8 +455,8 @@ npm run grant-access     # script interativo para conceder admin e/ou créditos 
 
 | Versão | Resumo |
 |--------|--------|
-| `0.109.1` | EncodingError fix multicamada no Remotion Player: `loadImageElement` com `img.decode()` pós-onload no speedPaintRenderer; `preloadImage` do `@remotion/preload` no VideoPreview; `animateScenes=false` no VideoPage. Novo helper `validateImageIsDecodable()` com timeout. Cancelamento seguro com `signal?.aborted` no imageProcessing. `@remotion/preload` como dependência. Logger estruturado no Genkit. 2 docs de auditoria/scan. |
+| `0.110.0` | `detectHtmlInCanvasSupport()` em useCodecSupport; avisos HTML-in-canvas no SpeedPaintExportPanel e VideoExportPanel; `allowHtmlInCanvas: true` nos exporters; `@remotion/preload` removido; flash branco corrigido no SpeedPaintScene (backgroundColor removido); `opacity` removido do speedPaintRenderer; firestore.rules com isAssetUrl(); chave i18n htmlInCanvasWarning nos 3 locales |
+| `0.109.1` | EncodingError fix multicamada no Remotion Player: `loadImageElement` com `img.decode()` pós-onload no speedPaintRenderer; `animateScenes=false` no VideoPage. Novo helper `validateImageIsDecodable()` com timeout. Cancelamento seguro com `signal?.aborted` no imageProcessing. Logger estruturado no Genkit. 2 docs de auditoria/scan. |
 | `0.109.0` | Emuladores seletivos (flags VITE_EMULATOR_*, script scripts/emulators.mjs); validação de timestamps de cena (validateSceneTimestamps/buildUniformTimestamps); detecção de silêncio no backend TTS (isSilentPcm, responseModalities); extractPcmFromDataUrl reescrito (MIME multi-parâmetro); emotionTag removido dos schemas de chunking; densitySeconds removido do schema de cenas; integração de teclado com AudioContext; refatoração useSwipeTabs; mock PWA para testes; 5 docs de auditoria/scan; keyframe spin no CSS |
 | `0.108.3` | Correções de segurança P1/P2 do audit #001 (PII removido de logs Firestore, validação de schemas Zod com min/max, base64ToBlobSync substituído por async); validação de imagem de referência (15MB, content-types); content-type validation no Pexels StockMedia; createLogger nos flows backend de áudio/imagens/chunking; chave i18n searchError; limpeza do doc de auditoria 001-audio-image-audit.md |
 | `0.108.2` | Admin auth migrado de role-based + email hardcoded para custom claim `admin: true` em Firestore/Storage Rules; script `grant-access` adicionado em functions; .gitignore com exclusão de service-account keys; limpeza de 5 docs de auditoria mobile; novo doc de auditoria unificada áudio/imagem (001-audio-image-audit.md) |
-| `0.108.1` | AssistantComposer refatorado (ToggleButton → Menu/Chip para seleção de modelo); InterviewPanel simplificado (isCustomMode removido); ToolEventCard com tokens de tema; AssistantHeader com WHITE unificado; MobileBottomNav reordenado; limpeza de imports; chave i18n swipeRegion |

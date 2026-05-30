@@ -354,7 +354,6 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
       animation,
       imageElement: img,
       progress,
-      opacity: 1,
       speedMultiplier: resolvedSpeedMultiplier,
     });
 
@@ -407,8 +406,9 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
 
   return (
     <AbsoluteFill
+      // Sem backgroundColor — o canvas já preenche com canvasColor via renderSpeedPaintFrame.
+      // Remover evita flash branco durante crossfade (SceneSequence também não usa backgroundColor).
       style={{
-        backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000',
         opacity,
         alignItems: 'center',
         justifyContent: 'center',

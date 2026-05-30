@@ -3,11 +3,35 @@
  * Unifica a lógica de checkSupport antes duplicada entre useSpeedPaintExporter e useVideoExporter.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { canRenderMediaOnWeb } from '@remotion/web-renderer';
 import { createLogger } from '../../../lib/logger';
 
 const log = createLogger('useCodecSupport');
+
+// ---------------------------------------------------------------------------
+// Detecção de HTML-in-canvas
+// ---------------------------------------------------------------------------
+
+/**
+ * Detecta se o browser suporta a API HTML-in-canvas (drawElementImage + requestPaint).
+ * Necessário para capturar canvas 2D nativo no @remotion/web-renderer.
+ * Requer Chromium com a flag chrome://flags/#canvas-draw-element habilitada.
+ *
+ * A função supportsNativeHtmlInCanvas() existe no @remotion/web-renderer mas
+ * NÃO é exportada do barrel — fazemos a detecção manual equivalente.
+ */
+function detectHtmlInCanvasSupport(): boolean {
+  // drawElementImage é a API principal — verifica se existe no CanvasRenderingContext2D
+  const ctx = typeof document !== 'undefined'
+    ? document.createElement('canvas').getContext('2d')
+    : null;
+  if (!ctx) return false;
+
+  // requestPaint é necessário para sincronizar a captura
+  const canvas = ctx.canvas;
+  return typeof (canvas as HTMLCanvasElement & { requestPaint?: unknown }).requestPaint === 'function';
+}
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -33,6 +57,8 @@ export interface CodecSupportResult {
   codecWarning: string | null;
   /** Mensagem de erro quando nenhum codec funciona */
   supportError: string | null;
+  /** Se o browser suporta HTML-in-canvas (drawElementImage) — necessário para canvas 2D no web-renderer */
+  supportsHtmlInCanvas: boolean;
   /** Verifica suporte do browser para a resolução dada */
   checkSupport: (width: number, height: number) => Promise<boolean>;
   /** Reseta estado de suporte */
@@ -69,6 +95,11 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
   const { muted } = options;
 
   const [state, setState] = useState<CodecSupportState>(INITIAL_CODEC_STATE);
+
+  // Detecção síncrona de HTML-in-canvas (drawElementImage do Chromium).
+  // Necessário para capturar canvas 2D nativo no @remotion/web-renderer.
+  // Retorna false em Firefox/Safari ou Chrome sem a flag habilitada.
+  const htmlInCanvasSupported = useMemo(() => detectHtmlInCanvasSupport(), []);
 
   // Refs sincronizadas para leitura em callbacks sem stale closure
   const resolvedVideoCodecRef = useRef('h264');
@@ -293,6 +324,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
     resolvedAudioCodec: state.resolvedAudioCodec,
     codecWarning: state.codecWarning,
     supportError: state.supportError,
+    supportsHtmlInCanvas: htmlInCanvasSupported,
     checkSupport,
     resetSupport,
   };

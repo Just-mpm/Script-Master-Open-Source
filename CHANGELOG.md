@@ -7,6 +7,32 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.110.0] - 2026-05-30
+
+### Adicionado
+
+- **`detectHtmlInCanvasSupport()`** em `src/features/video-render/hooks/useCodecSupport.ts`: nova função de detecção síncrona de suporte a `HTML-in-canvas` (drawElementImage + requestPaint) — verifica se o navegador Chromium tem a flag `chrome://flags/#canvas-draw-element` habilitada, necessária para capturar canvas 2D nativo no `@remotion/web-renderer`. Exposta como campo `supportsHtmlInCanvas` no retorno de `useCodecSupport()`
+- **Avisos HTML-in-canvas** em `SpeedPaintExportPanel.tsx` e `VideoExportPanel.tsx`: `Alert` warning exibido quando o navegador não suporta `drawElementImage` — informa o usuário sobre limitações de compatibilidade durante exportação de Speed Paint
+- **Chave i18n `htmlInCanvasWarning`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): mensagem de aviso sobre captura de canvas não suportada
+
+### Alterado
+
+- **`useSpeedPaintExporter.tsx`**: `allowHtmlInCanvas: true` adicionado na configuração do `@remotion/web-renderer` — permite captura real de frames via drawElementImage para canvas 2D nativo (Speed Paint)
+- **`useVideoExporter.tsx`**: `allowHtmlInCanvas: true` adicionado — mesma configuração para exportação de vídeo com cenas Speed Paint
+- **`SpeedPaintScene.tsx`**: `backgroundColor` removido do `<AbsoluteFill>` — o canvas já preenche via `renderSpeedPaintFrame()` com a cor definida em `canvasColor`. A remoção elimina o flash branco durante crossfade entre cenas (o CSS do AbsoluteFill sobrepunha a renderização do canvas)
+- **`speedPaintRenderer.ts`**: prop `opacity` removida de `SpeedPaintFrameOptions` — opacidade agora controlada exclusivamente via CSS no componente `SpeedPaintScene` (sem dupla aplicação que causava inconsistência visual). `renderSpeedPaintFrame()` sempre usa `ctx.globalAlpha = 1`
+- **`firestore.rules`**: validação de `imageUrl` e `videoUrl` migrada de regex `matches("^https://.*")` para `isAssetUrl()` — regra de segurança mais flexível que aceita URLs de asset do Firebase Storage
+
+### Removido
+
+- **`@remotion/preload`** do `package.json` e `bun.lock` — dependência não mais utilizada; o pré-carregamento de imagens de cena agora é feito pelo `<Img>` do Remotion com `delayRender()` automático (desde v0.109.0). Import removido de `VideoPreview.tsx`
+
+### Corrigido
+
+- **Flash branco no crossfade do Speed Paint** (`SpeedPaintScene.tsx`): `backgroundColor` fixo no `<AbsoluteFill>` causava flash entre transições de cena — removido, deixando o canvas controlar a cor de fundo via `renderSpeedPaintFrame()`
+
+---
+
 ## [0.109.1] - 2026-05-30
 
 ### Corrigido

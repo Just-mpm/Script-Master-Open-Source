@@ -195,6 +195,15 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
              {t('speedPaint.exportInfo', { width: resolution.width, height: resolution.height, fps: resolvedFps })}
            </Typography>
 
+          {/* Aviso: browser sem suporte a HTML-in-canvas para Speed Paint */}
+          {!exporter.supportsHtmlInCanvas && (
+            <Alert severity="warning" variant="outlined" sx={{ py: 0 }}>
+              <Typography variant="caption" sx={{ lineHeight: 1.6 }}>
+                {t('speedPaint.htmlInCanvasWarning')}
+              </Typography>
+            </Alert>
+          )}
+
           <AnimationDurationSelector
             duration={animationDuration}
             onDurationChange={onAnimationDurationChange}

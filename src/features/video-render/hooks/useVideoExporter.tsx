@@ -364,6 +364,11 @@ export function useVideoExporter() {
         container: resolvedContainerRef.current as 'mp4' | 'webm',
         licenseKey: 'free-license',
         signal: abortController.signal,
+        // Habilita captura real de frames via HTML-in-canvas (drawElementImage).
+        // Necessário para serializar canvas 2D nativo (speed paint) corretamente.
+        // Requer Chromium com chrome://flags/#canvas-draw-element habilitado.
+        // Se o browser não suportar, faz fallback para o mecanismo padrão (DOM→SVG).
+        allowHtmlInCanvas: true,
         onProgress: (progress: RenderMediaOnWebProgress) => {
           // Progresso acumulado: speed paint ocupa [0, speedPaintOffset], render ocupa o restante
           const percent = speedPaintOffset + Math.round(progress.progress * remainingWeight);
@@ -483,13 +488,14 @@ export function useVideoExporter() {
 
   return useMemo(() => ({
     ...state,
+    supportsHtmlInCanvas: codecSupport.supportsHtmlInCanvas,
     checkSupport,
     startRender,
     handleCancel,
     handleDownload,
     dismissSaveWarning,
     reset,
-  }), [state, checkSupport, startRender, handleCancel, handleDownload, dismissSaveWarning, reset]);
+  }), [state, codecSupport.supportsHtmlInCanvas, checkSupport, startRender, handleCancel, handleDownload, dismissSaveWarning, reset]);
 }
 
 /** Tipo do retorno do hook useVideoExporter — útil para passar via props */
