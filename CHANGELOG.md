@@ -7,6 +7,36 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.109.1] - 2026-05-30
+
+### Corrigido
+
+- **EncodingError no Remotion Player** — fix multicamada para `EncodingError: The source image cannot be decoded`:
+  - `speedPaintRenderer.ts`: `loadImageElement()` agora chama `img.decode()` após `onload` — garante que os pixels da imagem estão totalmente decodificados antes de desenhar no canvas, eliminando a race condition que causava o EncodingError durante preview e exportação no Speed Paint
+  - `VideoPreview.tsx`: import de `preloadImage()` do `@remotion/preload` + `useEffect` que pré-carrega todas as imagens de cena com cleanup via `cancelFns` — resolve race condition na transição entre `Sequence`s de cenas estáticas
+  - `VideoPage.tsx`: `animateScenes` alterado de `true` para `false` — desativa animações de cena que concorriam com a decodificação de imagens
+- **Validação de imagem antes da geração de cenas** (`useAudioGenerator.ts`): integração com `validateImageIsDecodable()` — verifica se a imagem é decodificável antes de adicioná-la às cenas, prevenindo falhas silenciosas em lote
+- **Cancelamento seguro no imageProcessing** (`src/features/speed-paint/lib/imageProcessing.ts`): `img.onload` tornado `async` com verificação de `signal?.aborted` — evita processamento de imagens após cancelamento do usuário
+- **Timeout na validação de imagem** (`src/lib/validateImage.ts`): `IMAGE_DECODE_TIMEOUT_MS` (30s) adicionado via `AbortSignal.timeout` — previne Promise pendente indefinidamente se a URL da imagem não responder (rede instável, URL morta, CORS bloqueado)
+
+### Adicionado
+
+- **`@remotion/preload` ^4.0.448** como dependência (`package.json`): lib oficial do Remotion para pré-carregamento de assets (imagens, áudio, vídeo) antes da renderização
+- **`src/lib/validateImage.ts`**: novo helper `validateImageIsDecodable(src)` com timeout de 30s — valida se uma imagem pode ser decodificada pelo navegador (`new Image()` + `img.decode()`) antes de uso no pipeline de geração de cenas
+- **Logger estruturado no Genkit** (`functions/src/genkit/genkit.ts`): import de `logger` do `genkit/logging` — permite logs com contexto nos flows Genkit (backwards-compatible)
+
+### Alterado
+
+- **`AudioGenerationHandler.tsx`**: constante `AUDIO_PREFLIGHT_TIMEOUT_MS` ajustada para alinhamento com novos tempos de preflight
+- **Testes do speedPaintRenderer** (`tests/video-render/speedPaintRenderer.unit.test.ts`): mock de `async decode()` adicionado no objeto `Image` — compatibilidade com a nova implementação assíncrona de `loadImageElement`
+
+### Documentado
+
+- **`docs/audits/002-encoding-error-fix-audit.md`** (+204 linhas): auditoria completa do fix do EncodingError — 4 arquivos revisados, veredito "Ajustes recomendados" (2 warnings, 3 sugestões, nenhum bloqueador)
+- **`docs/scan/encoding-error-verification.md`** (+58 linhas): scan de lacunas pós-fix — 3 recomendações implementadas e verificadas, 3 gaps identificados (G1-MÉDIA para `imageProcessing.ts`, G2/G3-BAIXA para `loadImageDimensions` e `projectQueueAdapter.ts`)
+
+---
+
 ## [0.109.0] - 2026-05-30
 
 ### Adicionado

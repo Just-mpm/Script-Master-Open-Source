@@ -10,6 +10,7 @@ import type { Locale } from '../features/i18n/types';
 import type { AudioSegment } from '../lib/db/types';
 import { saveAudioSegments } from '../lib/db/audio-segments';
 import { validateSceneTimestamps, buildUniformTimestamps } from '../lib/audio-analysis';
+import { validateImageIsDecodable } from '../lib/validateImage';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
@@ -597,20 +598,27 @@ export function useAudioGenerator() {
             }
 
             if (imageUrl) {
-              generatedScenes.push({
-                imageUrl,
-                timestamp: prompts[i].timestamp,
-              });
-
-              try {
-                const res = await fetch(imageUrl);
-                const blob = await res.blob();
-                sceneAssets.push({
-                  blob,
-                  prompt: prompts[i].prompt,
+              // Valida se a imagem decodifica antes de adicionar às cenas
+              const isDecodable = await validateImageIsDecodable(imageUrl).catch(() => false);
+              if (!isDecodable) {
+                log.warn('Imagem inválida descartada — falha na decodificação', { index: i });
+                failedSceneCount++;
+              } else {
+                generatedScenes.push({
+                  imageUrl,
+                  timestamp: prompts[i].timestamp,
                 });
-              } catch (imageSaveErr) {
-                log.warn('Erro no auto-save da imagem', { error: imageSaveErr });
+
+                try {
+                  const res = await fetch(imageUrl);
+                  const blob = await res.blob();
+                  sceneAssets.push({
+                    blob,
+                    prompt: prompts[i].prompt,
+                  });
+                } catch (imageSaveErr) {
+                  log.warn('Erro no auto-save da imagem', { error: imageSaveErr });
+                }
               }
             } else {
               failedSceneCount++;

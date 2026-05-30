@@ -333,7 +333,19 @@ export async function generateStrokesFromImage(
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
+    img.onload = async () => {
+      if (signal?.aborted) {
+        rejectOnce(createAbortError());
+        return;
+      }
+
+      try {
+        await img.decode();
+      } catch {
+        rejectOnce(new Error('Falha ao decodificar imagem para speed paint'));
+        return;
+      }
+
       if (signal?.aborted) {
         rejectOnce(createAbortError());
         return;

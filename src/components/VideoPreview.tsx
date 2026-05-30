@@ -17,6 +17,7 @@ import { createLogger } from '../lib/logger';
 import { useLocale } from '../features/i18n';
 import { useNavigate } from 'react-router-dom';
 import { Player, type PlayerRef } from '@remotion/player';
+import { preloadImage } from '@remotion/preload';
 import { VideoComposition } from '../features/video-render';
 import type { CaptionWord, SubtitleStyle } from '../features/video-render';
 import { mapScenesToVideoScenes, getResolutionFromRatio } from '../features/video-render';
@@ -224,6 +225,22 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       enabled: animateScenes,
     });
 
+    // Pré-carrega todas as imagens das cenas para evitar race condition
+    // na transição entre Sequences (EncodingError em Chromium)
+    useEffect(() => {
+      const imageUrls = enhancedScenes
+        .map((s) => s.imageUrl)
+        .filter(Boolean);
+
+      if (imageUrls.length === 0) return;
+
+      const cancelFns = imageUrls.map((url) => preloadImage(url));
+
+      return () => {
+        cancelFns.forEach((cancel) => cancel());
+      };
+    }, [enhancedScenes]);
+
     // Expose handle imperativo para o pai controlar play/pause/seek
     useImperativeHandle(ref, () => ({
       play: () => internalRef.current?.play(),
@@ -305,7 +322,12 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           borderRadius: { xs: 3, md: 4 },
           border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
           backgroundColor: alpha(theme.palette.common.black, 0.9),
-          lineHeight: 0,
+          aspectRatio: `${resolution.width} / ${resolution.height}`,
+          maxHeight: { xs: '70vh', md: '80vh' },
+          maxWidth: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         })}
       >
         <VideoPlayerErrorBoundary errorStrings={{
@@ -321,7 +343,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             fps={fps}
             compositionWidth={resolution.width}
             compositionHeight={resolution.height}
-            style={{ width: '100%', display: 'block' }}
+            style={{ width: '100%', height: '100%' }}
             acknowledgeRemotionLicense
           />
         </VideoPlayerErrorBoundary>

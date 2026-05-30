@@ -740,6 +740,10 @@ describe('loadImageElement', () => {
       constructor() {
         imageInstances.push(this as unknown as { src: string; onload: (() => void) | null; onerror: (() => void) | null });
       }
+
+      async decode() {
+        // Mock necessário pois loadImageElement chama img.decode() após onload
+      }
     });
   });
 

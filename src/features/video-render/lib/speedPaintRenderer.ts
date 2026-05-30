@@ -210,15 +210,26 @@ export function createBufferCanvas(animation: StrokeAnimation): HTMLCanvasElemen
 }
 
 /**
- * Carrega uma imagem de forma assíncrona.
+ * Carrega e decodifica uma imagem de forma assíncrona.
  * Retorna o elemento HTMLImageElement pronto para desenho.
+ *
  * Usa crossOrigin anonymous para compatibilidade com blob URLs.
+ * Chama img.decode() após onload para garantir que os pixels estão
+ * prontos para renderização em canvas (previne EncodingError em
+ * navegadores Chromium que fazem decodificação lazy).
  */
 export function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
+    img.onload = async () => {
+      try {
+        await img.decode();
+        resolve(img);
+      } catch {
+        reject(new Error(`Falha ao decodificar imagem: ${src.substring(0, 100)}`));
+      }
+    };
     img.onerror = () => reject(new Error(`Falha ao carregar imagem: ${src.substring(0, 100)}`));
     img.src = src;
   });

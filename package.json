@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.109.0",
+  "version": "0.109.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -39,6 +39,7 @@
     "@remotion/media": "4.0.448",
     "@remotion/media-utils": "4.0.448",
     "@remotion/player": "4.0.448",
+    "@remotion/preload": "4.0.448",
     "@remotion/transitions": "4.0.448",
     "@remotion/web-renderer": "4.0.448",
     "@remotion/whisper-web": "4.0.448",

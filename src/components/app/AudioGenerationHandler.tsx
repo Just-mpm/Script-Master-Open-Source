@@ -16,7 +16,7 @@ import type { AudioPreflightSummary } from './AudioPreflightDialog';
 import { useLocale } from '../../features/i18n';
 
 const log = createLogger('AudioGenerationHandler');
-const AUDIO_PREFLIGHT_TIMEOUT_MS = 15_000;
+const AUDIO_PREFLIGHT_TIMEOUT_MS = 30_000;
 const SHOULD_SKIP_BROKEN_PREFLIGHT_IN_DEV =
   import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true';
 

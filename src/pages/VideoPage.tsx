@@ -290,7 +290,7 @@ export function VideoPage({
         showCaptionToggle={true}
         captionVisible={captionVisible}
         onCaptionToggle={handleCaptionToggle}
-        animateScenes={true}
+        animateScenes={false}
         showDrawTool={true}
       />
     ),

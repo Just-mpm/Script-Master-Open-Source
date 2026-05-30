@@ -15,6 +15,7 @@
 import { genkit, generateMiddleware } from 'genkit';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
+import { logger } from 'genkit/logging';
 
 // ---------------------------------------------------------------------------
 // Telemetria Firebase — OpenTelemetry para tracing, logging e métricas
@@ -56,6 +57,21 @@ if (process.env.ENABLE_FIREBASE_MONITORING === 'true') {
 export const ai = genkit({
   plugins: [googleAI()],
 });
+
+// ---------------------------------------------------------------------------
+// Nível de log do Genkit — suprime falsos positivos de DEBUG
+// ---------------------------------------------------------------------------
+//
+// O Genkit emite logs DEBUG para cada flow que não usa `defineSecret` com
+// Cloud Secret Manager. Como usamos variáveis de ambiente diretamente
+// (via .env local e env vars nas Cloud Functions), esses avisos são
+// falsos positivos — a API key já está disponível em process.env.
+//
+// Subindo o nível para 'warn', os DEBUGs e INFOs internos são suprimidos,
+// mantendo apenas warnings e erros reais.
+// ---------------------------------------------------------------------------
+
+logger.setLogLevel('warn');
 
 // ---------------------------------------------------------------------------
 // Validação de variáveis de ambiente na inicialização
