@@ -7,6 +7,28 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.115.0] - 2026-05-31
+
+### Adicionado
+
+- **FounderMessageDialog no onboarding** (`src/features/onboarding-wizard/components/FounderMessageDialog.tsx`, +210 linhas): dialog com mensagem pessoal do criador exibida na conclusão do wizard, apenas na primeira vez. Usa `localStorage` para persistir se já foi visto (`isFounderMessageSeen()`). Componente MUI Dialog com animações Motion (fade/scale), tokens de tema (`BRAND_GRADIENT`, `BRAND_SECONDARY`) e ícones (`FavoriteBorder`, `ArrowForward`)
+- **Integração no CompletionStep** (`CompletionStep.tsx`, +28/-2): lógica condicional — se `isFounderMessageSeen()`, conclui wizard e navega direto; se primeira vez, abre `FounderMessageDialog` antes de completar. `complete()` só é chamado após fechar o dialog (evita unmount prematuro via `<Navigate>`)
+- **Exportação pública** (`onboarding-wizard/index.ts`): `FounderMessageDialog` e `isFounderMessageSeen` exportados do barrel
+
+### Removido
+
+- **Página de Status** (`/status`): `StatusPage.tsx` (-328 linhas) removida inteiramente — incluindo `GlobalStatusBanner`, `ServiceCard`, `IncidentHistory`, configs de serviços e incidentes. Decisão de produto (página não essencial no beta)
+- **Testes da StatusPage** (`tests/pages/public/StatusPage.component.test.tsx`, -110 linhas): removidos junto com a página
+- **Rota `/status`** removida de `routes.tsx` (lazy import + `<Route>` excluídos)
+- **Link "Status"** removido do `PublicFooter.tsx`
+- **Rota de prerender** `/status` removida de `scripts/prerender.mjs`
+- **Entrada de sitemap** `/status` removida de `public/sitemap.xml`
+- **COEP config** `/status` removida de `vite.config.ts`
+- **Namespace `status.*`** removido dos 3 locales (pt-BR, en, es) — ~180 chaves de tradução (hero, incidents, services, statusLabels, etc.)
+- **Testes de i18n** atualizados: removido teste de chaves de status em `i18n.unit.test.ts`, removido `'status'` da lista de páginas em `locales.completeness.unit.test.ts`, removido teste de interpolação de FAQ em `context.unit.test.tsx`
+
+---
+
 ## [0.114.0] - 2026-05-31
 
 ### Adicionado

@@ -25,7 +25,6 @@ export function PublicFooter() {
         { label: t('footer.links.features'), href: '/funcionalidades' },
         { label: t('footer.links.pricing'), href: '/precos' },
         { label: t('footer.links.faq'), href: '/perguntas-frequentes' },
-        { label: t('footer.links.status'), href: '/status' },
       ],
     },
     {

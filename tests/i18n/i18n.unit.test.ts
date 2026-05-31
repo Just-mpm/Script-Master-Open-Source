@@ -204,14 +204,6 @@ describe('dicionários', () => {
     }
   });
 
-  it('possui chaves de status em todos os locales', () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      expect(
-        getNestedValue(dictionaries[locale], 'status.statusLabels.operational'),
-      ).toBeDefined();
-    }
-  });
-
   it('DEFAULT_LOCALE é pt-BR', () => {
     expect(DEFAULT_LOCALE).toBe('pt-BR');
   });

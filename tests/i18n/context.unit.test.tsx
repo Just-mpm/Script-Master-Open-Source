@@ -146,15 +146,6 @@ describe('I18nProvider', () => {
       );
     });
 
-    it('traduz chave de FAQ com interpolação', () => {
-      const { result } = renderHook(() => useLocale(), {
-        wrapper: createWrapper('pt-BR'),
-      });
-      expect(
-        result.current.t('status.lastCheck', { date: '2026-04-28' }),
-      ).toBe('Última atualização: build 2026-04-28 (dados informativos)');
-    });
-
     it('traduz chave de erro com interpolação de progresso', () => {
       const { result } = renderHook(() => useLocale(), {
         wrapper: createWrapper('pt-BR'),

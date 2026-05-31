@@ -64,11 +64,6 @@ const CookiesPage = lazy(async () => {
   return { default: module.default };
 });
 
-const StatusPage = lazy(async () => {
-  const module = await import('../pages/public/StatusPage');
-  return { default: module.default };
-});
-
 // ─── Páginas auth (lazy) — export nomeado ─────────────────
 
 const LoginPage = lazy(async () => {
@@ -246,7 +241,6 @@ export function AppRoutes({
         <Route path="/termos" element={<TermsPage />} />
         <Route path="/privacidade" element={<PrivacyPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
-        <Route path="/status" element={<StatusPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
 
         {/* Redirects de compatibilidade (rotas públicas antigas) */}

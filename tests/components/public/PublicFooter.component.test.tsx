@@ -61,7 +61,6 @@ describe('PublicFooter', () => {
     expect(screen.getByText('Funcionalidades')).toBeDefined();
     expect(screen.getByText('Beta')).toBeDefined();
     expect(screen.getByText('Perguntas Frequentes')).toBeDefined();
-    expect(screen.getByText('Status')).toBeDefined();
   });
 
   it('renderiza links do grupo Empresa', () => {

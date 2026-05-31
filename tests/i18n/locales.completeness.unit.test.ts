@@ -74,7 +74,6 @@ describe('dicionários — chaves obrigatórias por seção', () => {
     'faq',
     'contact',
     'about',
-    'status',
     'studio',
     'video',
     'assistant',
@@ -115,7 +114,7 @@ describe('dicionários — chaves de navegação completas', () => {
 });
 
 describe('dicionários — chaves de páginas públicas', () => {
-  const pages = ['landing', 'features', 'pricing', 'faq', 'contact', 'about', 'status'];
+  const pages = ['landing', 'features', 'pricing', 'faq', 'contact', 'about'];
 
   for (const page of pages) {
     it(`${page}.hero.title existe em todos os locales`, () => {

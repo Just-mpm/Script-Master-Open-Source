@@ -92,7 +92,6 @@ export const ptBR: TranslationDictionary = {
       features: 'Funcionalidades',
       pricing: 'Beta',
       faq: 'Perguntas Frequentes',
-      status: 'Status',
       roadmap: 'Roadmap',
       changelog: 'Changelog',
       community: 'Comunidade',
@@ -622,62 +621,6 @@ export const ptBR: TranslationDictionary = {
       subtitle:
         'Comece a criar conteúdo profissional com IA. Gratuito, sem cartão de crédito.',
       button: 'Começar agora',
-    },
-  },
-
-  // ── Status ─────────────────────────────────────────────────────────────
-  status: {
-    hero: {
-      title: 'Status dos Serviços',
-      subtitle:
-        'Status informativo dos serviços do Script Master. Dados atualizados manualmente.',
-    },
-    disclaimer:
-      'Os dados exibidos nesta página são informativos e não representam monitoramento em tempo real. O status real dos serviços depende de terceiros (Google Gemini, Firebase).',
-    globalStatus: 'Todos os sistemas operacionais',
-    lastCheck: 'Última atualização: build {date} (dados informativos)',
-    incidents: {
-      title: 'Últimos 90 dias',
-      resolved: 'Resolvido',
-      degraded: 'Degradado',
-      items: {
-        0: {
-          title: 'Instabilidade na geração de áudio',
-          description: 'A API Gemini apresentou latência elevada por aproximadamente 2 horas, afetando a geração de áudio TTS. O serviço foi normalizado automaticamente.',
-        },
-        1: {
-          title: 'Degradation no Firebase Storage',
-          description: 'Uploads de imagens apresentaram lentidão por 45 minutos. O impacto foi limitado ao estúdio de imagens.',
-        },
-      },
-    },
-    services: {
-      api: {
-        name: 'API Gemini (IA)',
-        description: 'Geração de áudio, imagens e assistente conversacional',
-      },
-      auth: {
-        name: 'Firebase Auth',
-        description: 'Autenticação e gerenciamento de contas',
-      },
-      firestore: {
-        name: 'Firebase Firestore',
-        description: 'Banco de dados e sincronização de projetos',
-      },
-      storage: {
-        name: 'Firebase Storage',
-        description: 'Armazenamento de áudios, imagens e vídeos',
-      },
-      video: {
-        name: 'Renderização de Vídeo',
-        description: 'Processamento client-side via WebCodecs',
-      },
-    },
-    statusLabels: {
-      operational: 'Operacional',
-      degraded: 'Degradado',
-      outage: 'Indisponível',
-      maintenance: 'Manutenção',
     },
   },
 
@@ -1545,6 +1488,11 @@ export const ptBR: TranslationDictionary = {
       completionTitle: 'Tudo pronto',
       completionMessage: 'Sua área de trabalho foi configurada e perfeitamente adaptada para você.',
       completionButton: 'Acessar Plataforma',
+      founderTitle: 'Uma mensagem do criador',
+      founderGreeting: 'Oi, tudo bem? Meu nome é Matheus e estou desenvolvendo o Script Master sozinho, do zero. Essa plataforma nasceu da minha vontade de ajudar criadores de conteúdo a produzirem mais e melhor com inteligência artificial.',
+      founderBody: 'Como sou uma pessoa só no projeto, seu feedback é ouro — realmente faz toda a diferença. Se algo te agradar, se algo irritar, ou se tiver uma ideia maluca que poderia ser incrível aqui dentro... me conta!',
+      founderFeedback: 'Você pode enviar sugestões, críticas ou elogios pela página de Contato em script-master.pro/contato. Eu mesmo leio tudo. Bem-vindo(a) a bordo — vamos criar algo incrível juntos!',
+      founderButton: 'Vamos lá!',
     },
   },
 
@@ -1573,10 +1521,6 @@ export const ptBR: TranslationDictionary = {
     pricing: {
       title: 'Beta Aberto | Script Master',
       description: 'O Script Master está em beta aberto. Acesse gratuitamente com 1.000 créditos mensais.',
-    },
-    status: {
-      title: 'Status dos Serviços | Script Master',
-      description: 'Status informativo dos serviços do Script Master. Dados atualizados manualmente.',
     },
     onboarding: {
       title: 'Configuração Inicial | Script Master',

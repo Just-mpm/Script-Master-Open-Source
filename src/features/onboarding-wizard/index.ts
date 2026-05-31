@@ -9,6 +9,7 @@ export { WelcomeStep } from './components/WelcomeStep';
 export { ProfileStep } from './components/ProfileStep';
 export { GoalsStep } from './components/GoalsStep';
 export { CompletionStep } from './components/CompletionStep';
+export { FounderMessageDialog, isFounderMessageSeen } from './components/FounderMessageDialog';
 export { StepNavigation } from './components/StepNavigation';
 export { SelectionCard } from './components/SelectionCard';
 export type { WizardData, WizardRole, WizardGoal } from './types';

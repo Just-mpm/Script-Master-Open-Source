@@ -86,7 +86,6 @@ export const en: TranslationDictionary = {
       features: 'Features',
       pricing: 'Beta',
       faq: 'FAQ',
-      status: 'Status',
       roadmap: 'Roadmap',
       changelog: 'Changelog',
       community: 'Community',
@@ -611,61 +610,6 @@ export const en: TranslationDictionary = {
       subtitle:
         'Start creating professional content with AI. Free, no credit card required.',
       button: 'Get started',
-    },
-  },
-
-  status: {
-    hero: {
-      title: 'Service Status',
-      subtitle:
-        'Informational status of Script Master services. Manually updated data.',
-    },
-    disclaimer:
-      'The data displayed on this page is informational and does not represent real-time monitoring. Actual service status depends on third parties (Google Gemini, Firebase).',
-    globalStatus: 'All systems operational',
-    lastCheck: 'Last update: build {date} (informational data)',
-    incidents: {
-      title: 'Last 90 days',
-      resolved: 'Resolved',
-      degraded: 'Degraded',
-      items: {
-        0: {
-          title: 'Audio generation instability',
-          description: 'The Gemini API experienced high latency for approximately 2 hours, affecting TTS audio generation. The service was automatically normalized.',
-        },
-        1: {
-          title: 'Firebase Storage degradation',
-          description: 'Image uploads experienced slowness for 45 minutes. The impact was limited to the image studio.',
-        },
-      },
-    },
-    services: {
-      api: {
-        name: 'Gemini API (AI)',
-        description: 'Audio generation, images, and conversational assistant',
-      },
-      auth: {
-        name: 'Firebase Auth',
-        description: 'Authentication and account management',
-      },
-      firestore: {
-        name: 'Firebase Firestore',
-        description: 'Database and project synchronization',
-      },
-      storage: {
-        name: 'Firebase Storage',
-        description: 'Audio, image, and video storage',
-      },
-      video: {
-        name: 'Video Rendering',
-        description: 'Client-side processing via WebCodecs',
-      },
-    },
-    statusLabels: {
-      operational: 'Operational',
-      degraded: 'Degraded',
-      outage: 'Unavailable',
-      maintenance: 'Maintenance',
     },
   },
 
@@ -1525,6 +1469,11 @@ export const en: TranslationDictionary = {
       completionTitle: 'All set',
       completionMessage: 'Your workspace has been configured and perfectly tailored for you.',
       completionButton: 'Access Platform',
+      founderTitle: 'A message from the creator',
+      founderGreeting: "Hey, how's it going? My name is Matheus and I'm developing Script Master on my own, from scratch. This platform was born from my desire to help content creators produce more and better with artificial intelligence.",
+      founderBody: "Since it's just me working on this project, your feedback is gold — it truly makes all the difference. If something pleases you, if something bugs you, or if you have a wild idea that could be amazing here... let me know!",
+      founderFeedback: 'You can send suggestions, criticism, or praise through the Contact page at script-master.pro/contato. I read everything myself. Welcome aboard — let\'s create something amazing together!',
+      founderButton: "Let's go!",
     },
   },
 
@@ -1553,10 +1502,6 @@ export const en: TranslationDictionary = {
     pricing: {
       title: 'Open Beta | Script Master',
       description: 'Script Master is in open beta. Access for free with 1,000 monthly credits.',
-    },
-    status: {
-      title: 'Service Status | Script Master',
-      description: 'Informational status of Script Master services. Manually updated data.',
     },
     onboarding: {
       title: 'Initial Setup | Script Master',

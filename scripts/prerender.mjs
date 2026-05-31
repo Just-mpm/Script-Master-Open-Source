@@ -28,7 +28,6 @@ const ROUTES = [
   '/termos',
   '/privacidade',
   '/cookies',
-  '/status',
 ];
 
 const MIME_TYPES = {

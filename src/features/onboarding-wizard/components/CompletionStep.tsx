@@ -21,6 +21,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { saveUserSettings } from '../../../lib/db/user-settings';
 import { useNavigate } from 'react-router-dom';
 import { createLogger } from '../../../lib/logger';
+import { FounderMessageDialog, isFounderMessageSeen } from './FounderMessageDialog';
 
 const log = createLogger('completionStep');
 
@@ -33,6 +34,7 @@ export function CompletionStep() {
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showFounderMessage, setShowFounderMessage] = useState(false);
   const firstName = data.name.split(' ')[0];
 
   const handleAccess = async () => {
@@ -47,14 +49,32 @@ export function CompletionStep() {
           goals: data.goals,
         });
       }
-      complete();
-      navigate('/app/estudio');
+
+      // Salva o perfil no localStorage antes de decidir o proximo passo.
+      // NAO chama complete() aqui — isso setaria isCompleted=true no store,
+      // que faria o OnboardingPage redirecionar imediatamente via <Navigate>,
+      // unmountando o FounderMessageDialog antes de ele aparecer.
+      if (isFounderMessageSeen()) {
+        // Ja viu a mensagem — conclui wizard e navega direto
+        complete();
+        navigate('/app/estudio');
+      } else {
+        // Primeira vez — abre dialog. So conclui o wizard ao fechar o dialog.
+        setShowFounderMessage(true);
+      }
     } catch (error) {
       log.error('Falha ao salvar perfil do wizard', { cause: error as Error });
       setSaveError(true);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleFounderMessageClose = () => {
+    // Marca wizard como concluido e navega para o estudio
+    complete();
+    setShowFounderMessage(false);
+    navigate('/app/estudio');
   };
 
   return (
@@ -200,6 +220,12 @@ export function CompletionStep() {
           {t('onboarding.wizard.completionButton')}
         </Button>
       </Box>
+
+      {/* Dialog com mensagem pessoal do criador — exibido apenas na primeira vez */}
+      <FounderMessageDialog
+        open={showFounderMessage}
+        onClose={handleFounderMessageClose}
+      />
     </Stack>
   );
 }
