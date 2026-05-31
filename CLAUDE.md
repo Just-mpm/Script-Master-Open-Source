@@ -151,7 +151,7 @@ Library (`/biblioteca`): projetos expansíveis com áudios, cenas, roteiro, víd
 3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader. `TranslationDictionary` com nested keys e pluralização.
 
 ### Environment & COEP
-COEP ativo em `/app/**` (SharedArrayBuffer p/ Whisper + Remotion). Rotas públicas, `/login`, `/cadastro`, `/onboarding` sem COEP. App Check com reCAPTCHA v3. Emuladores seletivos via flags `VITE_EMULATOR_*`. **PWA:** vite-plugin-pwa com runtime caching (1 ano assets), update prompt via `PwaUpdatePrompt` (Snackbar MUI + SW reload). Manifest: standalone, portrait, `theme_color: #0a0a0f`.
+COEP ativo em `/app/**` (SharedArrayBuffer p/ Whisper + Remotion). Rotas públicas, `/login`, `/cadastro`, `/onboarding` sem COEP. **App Check com lazy loading:** `ensureAppCheck()` em `src/lib/app-check.ts` só inicializa reCAPTCHA v3 (~729 KiB, ~720ms) quando `AuthContext` detecta usuário autenticado — eliminando o custo em rotas públicas visitadas por anônimos. Emuladores seletivos via flags `VITE_EMULATOR_*`. **PWA:** vite-plugin-pwa com runtime caching (1 ano assets), update prompt via `PwaUpdatePrompt` (Snackbar MUI + SW reload). Manifest: standalone, portrait, `theme_color: #0a0a0f`.
 
 ### UI & Theme
 MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes: Inter (sans), JetBrains Mono (mono), Playfair Display (serif). Tokens: brand (blue/orange), semantic, glow (3 níveis), gradients, surfaces (5 níveis). Component overrides: AppBar glass, Button radius 14, Card elevated, Alert semitransparente. Container `maxWidth: 1600px`.
@@ -166,7 +166,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.115.0`
+- **Current:** `0.115.1`
 - **Last release:** 2026-05-31
 
 ### Últimas mudanças (atualizado por /fast)
@@ -175,8 +175,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.115.1` | App Check extraído para `src/lib/app-check.ts` com lazy loading via `ensureAppCheck()` — reCAPTCHA v3 (~729 KiB) só carrega para usuários autenticados; fontes Google otimizadas com preload assíncrono; `AuthContext` delega ao novo módulo; 8 docs de auditoria/planos removidos; testes atualizados |
 | `0.115.0` | `FounderMessageDialog` no onboarding — dialog com mensagem pessoal do criador exibida apenas na primeira conclusão do wizard (persistido via localStorage); remoção completa da página `/status` (StatusPage, rota, footer link, sitemap, prerender, COEP config, ~180 traduções em 3 locales, testes) |
 | `0.114.0` | SEO/AEO/GEO completo: pre-renderização das 9 rotas públicas via puppeteer-core (`scripts/prerender.mjs`); JSON-LD centralizado (`buildJsonLd` com 3 tipos: SoftwareApplication, WebPage, BreadcrumbList); `llms.txt` + `llms-full.txt` para visibilidade em LLMs; favicon `.ico` + `apple-touch-icon.png` + meta tags Apple; robots.txt com directive `Llms-txt`; deploy scripts agora usam `build:full`; plano completo em `docs/plan/seo-aeo-geo-plano-final.md` |
 | `0.113.1` | `interviewInterrupt` movido para antes do primeiro uso em `assistant.ts` (corrige ReferenceError); novo `ToolRequestPartZodSchema` para serialização precisa de interrupts Genkit no round-trip frontend-backend; `interruptToolRequest` migrado do schema customizado para o schema nativo Genkit |
 | `0.113.0` | Preservação completa de tool context via `fullHistory` (schemas, hooks, backend, persistência); compactação automática de histórico por tokens (`assistant-compaction.ts`); 3 novos componentes de UX (CodeBlock, ImageLightbox, ScrollToBottomFab); suporte a `genkit/beta`; animações Motion no chat (AnimatePresence); botão de regenerar resposta; 6 novos docs de auditoria/scan |
-| `0.112.0` | `fullHistory` preservação de tool context no Assistente IA (schemas, hook useAssistant, ChatSession, backend); refatoração useSwipeTabs (`dragConstraints` substitui `constraintRef`, `dragDirectionLock`, thresholds ajustados); testes atualizados; docs/audits/swipe-tabs-bugfix.md e docs/plan/tool-context-preservation.md |

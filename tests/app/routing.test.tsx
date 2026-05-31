@@ -25,6 +25,10 @@ vi.mock('../../src/lib/firebase', () => ({
   }),
 }));
 
+vi.mock('../../src/lib/app-check', () => ({
+  ensureAppCheck: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('firebase/functions', () => ({
   httpsCallable: vi.fn().mockReturnValue(vi.fn().mockResolvedValue({
     data: {

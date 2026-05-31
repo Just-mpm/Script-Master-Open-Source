@@ -7,6 +7,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.115.1] - 2026-05-31
+
+### Alterado
+
+- **App Check extraído para lazy loading** (`src/lib/app-check.ts`, +67 linhas): módulo dedicado com `ensureAppCheck()` idempotente — só carrega reCAPTCHA v3 (~729 KiB, ~720ms) quando usuário autenticado é detectado. Visitantes anônimos (landing page, rotas públicas) não acionam mais o reCAPTCHA. `firebase.ts` simplificado (-40 linhas) com import delegado ao novo módulo
+- **Fontes Google otimizadas** (`index.html`): carregamento assíncrono com `<link rel="preload" as="style">` + `media="print" onload="this.media='all'"` + fallback `<noscript>` — fontes não bloqueiam mais a renderização inicial
+- **AuthContext**: importa `ensureAppCheck` do novo módulo `src/lib/app-check` em vez de `src/lib/firebase`
+
+### Removido
+
+- **8 documentos de auditoria/plano/scan** (`docs/audits/`, `docs/plan/`, `docs/scan/`): limpeza de documentos de trabalho já consumidos ou substituídos por versões mais recentes no código
+
+### Corrigido
+
+- **Testes**: 5 suítes atualizadas com `vi.mock('../../src/lib/app-check')` para cobrir o novo módulo; `OnboardingPage.component.test.tsx` recebeu tokens de tema faltantes (`BRAND_GRADIENT_HOVER`, `BRAND_SECONDARY`, `WHITE_06`)
+
+---
+
 ## [0.115.0] - 2026-05-31
 
 ### Adicionado

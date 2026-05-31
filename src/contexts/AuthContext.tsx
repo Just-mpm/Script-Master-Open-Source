@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged, type User } from '../lib/firebase';
+import { ensureAppCheck } from '../lib/app-check';
 import { createLogger } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useBillingInit(billingEnabled ? !loading : false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
 
       if (authUser) {
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Login ativo recém-concluído: full reload para ativar COEP
         if (wasLoginRequested.current) {
           wasLoginRequested.current = false;
+          try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
           if (onboardingCompleted) {
             window.location.href = '/app/estudio';
           } else {
@@ -99,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Sessão restaurada: verifica localStorage + Firestore antes de decidir
         if (!onboardingCompleted) {
+          try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
           getUserSettings(authUser.uid).then((settings) => {
             const actuallyCompleted = settings && (settings.name || settings.goals?.length);
             if (actuallyCompleted) {
@@ -142,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Onboarding já concluído — carregar settings do estúdio do Firestore antes de liberar a UI
+        try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
         getUserSettings(authUser.uid).then((settings) => {
           if (settings) {
             const studioFields: Record<string, unknown> = {};

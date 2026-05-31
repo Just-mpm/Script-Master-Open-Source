@@ -31,6 +31,10 @@ vi.mock('../../src/lib/firebase', () => ({
   }),
 }));
 
+vi.mock('../../src/lib/app-check', () => ({
+  ensureAppCheck: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../src/lib/logger', () => ({
   createLogger: () => ({
     info: vi.fn(),

@@ -1,5 +1,4 @@
 import { initializeApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import {
   getAuth,
   connectAuthEmulator,
@@ -17,50 +16,16 @@ import {
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
-import { getFirebaseEnvConfig, getRecaptchaSiteKey, getAppCheckDebugToken, getActiveEmulators } from './env';
+import { getFirebaseEnvConfig, getActiveEmulators } from './env';
 
 const appletConfig = getFirebaseEnvConfig();
 
 const app = initializeApp(appletConfig);
 
-// ── App Check (protege funções Genkit contra abuso) ────────────────────────
-
-/**
- * Chave de teste pública do Google reCAPTCHA v3 para desenvolvimento local.
- * Fornecida oficialmente pelo Google para testes automatizados.
- * Ref: https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
- *
- * Esta chave NUNCA deve ser usada em produção — ela sempre retorna tokens válidos.
- * Em produção, a chave real vem de VITE_RECAPTCHA_SITE_KEY no .env.
- */
-const GOOGLE_RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
-
-const recaptchaKey = getRecaptchaSiteKey();
-const debugToken = getAppCheckDebugToken();
-const shouldUseDebugAppCheck =
-  import.meta.env.DEV &&
-  (
-    import.meta.env.VITE_USE_EMULATORS === 'true' ||
-    debugToken !== undefined
-  );
-
-if (shouldUseDebugAppCheck) {
-  // Desenvolvimento local: App Check em modo debug evita falhas de reCAPTCHA
-  // em localhost e mantém o fluxo compatível com os emuladores.
-  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken ?? true;
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(GOOGLE_RECAPTCHA_TEST_SITE_KEY),
-    isTokenAutoRefreshEnabled: true,
-  });
-} else if (recaptchaKey) {
-  // Produção: App Check com reCAPTCHA v3
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(recaptchaKey),
-    isTokenAutoRefreshEnabled: true,
-  });
-}
-// Se não for DEV e não tiver chave, App Check fica desabilitado.
-// As Cloud Functions vão rejeitar requests sem token válido nesse caso.
+// ── App Check movido para src/lib/app-check.ts (lazy loading) ─────────────
+// Inicializado via ensureAppCheck() apenas quando um usuário autenticado é
+// detectado pelo AuthProvider. Isso elimina o carregamento do reCAPTCHA v3
+// (~729 KiB, ~720ms) em rotas públicas visitadas por usuários anônimos.
 
 export const auth = getAuth(app);
 export const db = appletConfig.firestoreDatabaseId

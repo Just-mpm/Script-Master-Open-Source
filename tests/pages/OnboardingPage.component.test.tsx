@@ -49,11 +49,14 @@ vi.mock('../../src/theme/surfaces', () => ({
 
 vi.mock('../../src/theme/tokens', () => ({
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+  BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #2563a0 0%, #e08520 100%)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
+  BRAND_SECONDARY: '#F7941E',
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   SUCCESS_MAIN: '#10b981',
   WHITE_04: 'rgba(255, 255, 255, 0.04)',
+  WHITE_06: 'rgba(255, 255, 255, 0.06)',
 }));
 
 vi.mock('../../src/theme/authStyles', () => ({
