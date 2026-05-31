@@ -21,20 +21,56 @@ import { z } from 'genkit';
 /** Mensagem individual no histórico do chat */
 export const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
-  text: z.string(),
+  text: z.string().max(500_000),
   attachments: z.array(z.object({
     mimeType: z.string(),
-    data: z.string(),
+    data: z.string().max(15_000_000).nullable().optional(),
     name: z.string().nullable().optional(),
-  })).nullable().optional(),
+    processed: z.boolean().nullable().optional(),
+  })).max(5).nullable().optional(),
 });
 
 /** Anexo enviado pelo usuário (imagem ou documento) */
 export const AttachmentSchema = z.object({
   mimeType: z.string(),
-  data: z.string(), // base64
+  data: z.string().max(15_000_000), // base64
   name: z.string().nullable().optional(),
 });
+
+export const AssistantHistoryInlineDataSchema = z.object({
+  mimeType: z.string(),
+  data: z.string().max(15_000_000),
+});
+
+export const AssistantHistoryMediaSchema = z.object({
+  url: z.string().max(20_000_000),
+  contentType: z.string().nullable().optional(),
+});
+
+export const AssistantHistoryToolRequestSchema = z.object({
+  name: z.string(),
+  ref: z.string().nullable().optional(),
+  input: z.unknown().nullable().optional(),
+}).passthrough();
+
+export const AssistantHistoryToolResponseSchema = z.object({
+  name: z.string(),
+  ref: z.string().nullable().optional(),
+  output: z.unknown().nullable().optional(),
+}).passthrough();
+
+export const AssistantHistoryPartSchema = z.object({
+  text: z.string().max(500_000).nullable().optional(),
+  inlineData: AssistantHistoryInlineDataSchema.nullable().optional(),
+  media: AssistantHistoryMediaSchema.nullable().optional(),
+  toolRequest: AssistantHistoryToolRequestSchema.nullable().optional(),
+  toolResponse: AssistantHistoryToolResponseSchema.nullable().optional(),
+}).passthrough();
+
+export const AssistantHistoryMessageSchema = z.object({
+  role: z.enum(['system', 'user', 'model', 'tool']),
+  content: z.array(AssistantHistoryPartSchema).max(200),
+}).passthrough();
 
 /** Nível de pensamento do modelo */
 export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
@@ -135,7 +171,7 @@ export const RespondInputSchema = z.object({
 export const AssistantInputSchema = z.object({
   message: z.string(),
   history: z.array(ChatMessageSchema).nullable().optional(),
-  attachments: z.array(AttachmentSchema).nullable().optional(),
+  attachments: z.array(AttachmentSchema).max(5).nullable().optional(),
   studioState: z.record(z.unknown()).nullable().optional(),
   plan: AssistantPlanSchema.nullable().optional(),
   requestId: z.string().nullable().optional(), // idempotência
@@ -143,8 +179,17 @@ export const AssistantInputSchema = z.object({
   thinkingLevel: ThinkingLevelSchema.nullable().optional(), // nível de pensamento
   /** Dados de retomada quando o usuário responde a um interrupt */
   resume: InterviewResumeDataSchema.nullable().optional(),
+  /**
+   * Tool request do interrupt pendente (ToolRequestPart do Genkit).
+   * Necessário para retomar corretamente via Genkit resume API,
+   * preservando thought signatures e function call IDs do Gemini 3.
+   */
+  interruptToolRequest: AssistantHistoryToolRequestSchema.nullable().optional(),
   /** Histórico completo do Genkit (MessageData[]) com tool calls/responses — preserva contexto entre mensagens */
-  fullHistory: z.array(z.any()).nullable().optional(),
+  fullHistory: z.array(AssistantHistoryMessageSchema).max(2_000).nullable().optional(),
+  contextSummary: z.string().max(20_000).nullable().optional(),
+  compactionCount: z.number().int().min(0).nullable().optional(),
+  estimatedContextTokens: z.number().int().min(0).nullable().optional(),
 });
 
 /** Output do flow de chat */
@@ -155,8 +200,16 @@ export const AssistantOutputSchema = z.object({
   appliedSettings: z.record(z.unknown()).nullable().optional(),
   interview: InterviewInputSchema.nullable().optional(),
   respond: RespondInputSchema.nullable().optional(),
+  /**
+   * Tool request do interrupt pendente (para Genkit resume API).
+   * Preserva function call ID e thought signatures do Gemini 3.
+   */
+  interruptToolRequest: AssistantHistoryToolRequestSchema.nullable().optional(),
   /** Histórico completo do Genkit (MessageData[]) para preservar tool context entre mensagens */
-  fullHistory: z.array(z.any()).nullable().optional(),
+  fullHistory: z.array(AssistantHistoryMessageSchema).max(2_000).nullable().optional(),
+  contextSummary: z.string().max(20_000).nullable().optional(),
+  compactionCount: z.number().int().min(0).nullable().optional(),
+  estimatedContextTokens: z.number().int().min(0).nullable().optional(),
 });
 
 /** Stream chunk do chat */
@@ -368,6 +421,8 @@ export const FeedbackOutputSchema = z.object({
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Attachment = z.infer<typeof AttachmentSchema>;
+export type AssistantHistoryPart = z.infer<typeof AssistantHistoryPartSchema>;
+export type AssistantHistoryMessage = z.infer<typeof AssistantHistoryMessageSchema>;
 export type AssistantTaskStatus = z.infer<typeof AssistantTaskStatusSchema>;
 export type AssistantSubtask = z.infer<typeof AssistantSubtaskSchema>;
 export type AssistantTask = z.infer<typeof AssistantTaskSchema>;

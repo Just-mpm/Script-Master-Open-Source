@@ -95,6 +95,8 @@ function createImageMock(imgWidth: number, imgHeight: number) {
     }
     get onerror() { return this._onerror; }
 
+    crossOrigin = '';
+    decode() { return Promise.resolve(); }
     addEventListener() {}
     removeEventListener() {}
   });

@@ -126,7 +126,7 @@ Renderização client-side via WebCodecs com fallback de codec (H.264+AAC → H.
 Dual automático: Firestore + Storage (logado) / IndexedDB (visitante). Offline: `persistentLocalCache` + `multipleTabManager`. Chat fallback p/ IndexedDB se >900KB. Admin via custom claim (`admin: true`) — script `grant-access`. Converter genérico `createFirestoreConverter<T>()`. Limites Storage: áudio 150MB, imagem 10MB, vídeo 200MB.
 
 ### Assistente IA
-Tool-first com Genkit: `ai.generate()` com `maxTurns: 20` e 7 ferramentas (`updatePlan`, `webSearch`, `getStudioState`, `getUserMemories`, `updateStudio`, `interview`, `respond`). Dois modos de IA: `fast` (gemini-3.1-flash-lite) e `specialist` (gemini-3.5-flash). Streaming com batching via `requestAnimationFrame`. InlineAIWidget no ScriptEditor para refatorar/expandir trechos. EmptyChatState com sugestões contextuais. TwoPhaseStopButton, ThinkingShimmer, PlanWidget.
+Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 20` e 7 ferramentas (`updatePlan`, `webSearch`, `getStudioState`, `getUserMemories`, `updateStudio`, `interview`, `respond`). Preservação de tool context via `fullHistory` (`MessageData[]` do Genkit com tool calls/responses transportados entre mensagens — modelo não precisa re-chamar ferramentas). Compactação automática de histórico por threshold de tokens (`assistant-compaction.ts`). Dois modos de IA: `fast` (gemini-3.1-flash-lite) e `specialist` (gemini-3.5-flash). Streaming com batching via `requestAnimationFrame`. Componentes de UX: CodeBlock (syntax highlight com cópia), ImageLightbox (zoom de imagens), ScrollToBottomFab (scroll automático com indicador de streaming), botão de regenerar resposta, animações Motion (AnimatePresence). InlineAIWidget no ScriptEditor para refatorar/expandir trechos. EmptyChatState com sugestões contextuais. TwoPhaseStopButton, ThinkingShimmer, PlanWidget.
 
 ### Estúdio de Produção
 Zustand (`useStudioStore`) com `useShallow` para seletores otimizados. Persistência localStorage (17 prefs, prefixo `s2a_*`) + Firestore via `useAutoSaveStudioSettings` (debounce 2s). Layout Grid: Inspector (lg:4) + ScriptEditor (lg:8). EmotionSelector (10 emoções + intensidade), TemplateSelector, VoiceCard. Keyboard shortcuts: Ctrl+Enter (gerar), Space (play/pause). Swipe horizontal mobile via `useSwipeTabs`.
@@ -156,7 +156,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.112.0`
+- **Current:** `0.113.0`
 - **Last release:** 2026-05-31
 
 ### Últimas mudanças (atualizado por /fast)
@@ -165,8 +165,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.113.0` | Preservação completa de tool context via `fullHistory` (schemas, hooks, backend, persistência); compactação automática de histórico por tokens (`assistant-compaction.ts`); 3 novos componentes de UX (CodeBlock, ImageLightbox, ScrollToBottomFab); suporte a `genkit/beta`; animações Motion no chat (AnimatePresence); botão de regenerar resposta; 6 novos docs de auditoria/scan |
 | `0.112.0` | `fullHistory` preservação de tool context no Assistente IA (schemas, hook useAssistant, ChatSession, backend); refatoração useSwipeTabs (`dragConstraints` substitui `constraintRef`, `dragDirectionLock`, thresholds ajustados); testes atualizados; docs/audits/swipe-tabs-bugfix.md e docs/plan/tool-context-preservation.md |
 | `0.111.0` | `animateScenes` toggle compartilhado entre preview e exportação no VideoPage (default `true`); `adjustSpeedPaintProgress` simplificado para progressão linear (sem power curve); novas props opcionais `animateScenes`/`onAnimateScenesChange` no VideoExportPanel; `globalSpeedMultiplier` simplificado no VideoComposition (divisor `/4` removido); testes atualizados para progressão linear |
 | `0.110.1` | Unmount/remount loop no VideoComposition (SceneItem movido para escopo de módulo); `allowHtmlInCanvas: true` desabilitado (causava flashs pretos no Speed Paint); gerenciamento de recursos do SpeedPaintScene migrado de estado React para ref booleana; backgroundColor condicional readicionado no SpeedPaintScene; avisos HTML-in-canvas removidos dos painéis de exportação; SceneItemProps extraída para interface estável |
 | `0.110.0` | `detectHtmlInCanvasSupport()` em useCodecSupport; avisos HTML-in-canvas no SpeedPaintExportPanel e VideoExportPanel; `allowHtmlInCanvas: true` nos exporters; `@remotion/preload` removido; flash branco corrigido no SpeedPaintScene (backgroundColor removido); `opacity` removido do speedPaintRenderer; firestore.rules com isAssetUrl(); chave i18n htmlInCanvasWarning nos 3 locales |
-| `0.109.1` | EncodingError fix multicamada no Remotion Player: `loadImageElement` com `img.decode()` pós-onload no speedPaintRenderer; `animateScenes=false` no VideoPage. Novo helper `validateImageIsDecodable()` com timeout. Cancelamento seguro com `signal?.aborted` no imageProcessing. Logger estruturado no Genkit. 2 docs de auditoria/scan. |

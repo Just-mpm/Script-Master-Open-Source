@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { I18nProvider } from '../../src/features/i18n';
 
@@ -66,6 +66,7 @@ vi.mock('../../src/lib/db', () => ({
   getMemories: vi.fn().mockResolvedValue([]),
   saveChatSession: vi.fn().mockResolvedValue(undefined),
   getUserSettings: vi.fn().mockResolvedValue(null),
+  sanitizeAssistantHistoryAttachments: (history: unknown) => history,
 }));
 
 vi.mock('../../src/lib/env', () => ({
@@ -391,7 +392,7 @@ describe('useAssistant', () => {
     expect(result.current.messages[1].text).toBe('Olá!');
   });
 
-  it('deve normalizar attachments nulos ao carregar sessão e reenviar histórico', async () => {
+  it('deve normalizar attachments nulos e reenviar histórico sem anexos antigos', async () => {
     const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
 
     act(() => {
@@ -417,8 +418,8 @@ describe('useAssistant', () => {
     const history = callInput?.history as Array<{ attachments?: unknown[] }> | undefined;
 
     expect(Array.isArray(history)).toBe(true);
-    expect(Array.isArray(history?.[0]?.attachments)).toBe(true);
-    expect(Array.isArray(history?.[1]?.attachments)).toBe(true);
+    expect(history?.[0]?.attachments).toBeUndefined();
+    expect(history?.[1]?.attachments).toBeUndefined();
   });
 
   it('deve ignorar sendMessage com texto vazio e sem anexos', async () => {
@@ -445,14 +446,52 @@ describe('useAssistant', () => {
     const userMsg = result.current.messages.find((m) => m.role === 'user');
     expect(userMsg).toBeDefined();
     expect(userMsg?.attachments).toHaveLength(1);
+    expect(userMsg?.attachments?.[0]).not.toHaveProperty('data');
+
+    const callInput = mockStreamFn.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
+    expect(callInput?.attachments).toEqual([
+      { mimeType: 'image/png', data: 'base64data' },
+    ]);
+  });
+
+  it('deve ativar e desativar isCompacting conforme eventos do stream', async () => {
+    let continueStream: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      continueStream = resolve;
+    });
+    async function* compactionStream(): AsyncGenerator<string> {
+      yield JSON.stringify({ type: 'compaction_started' });
+      await gate;
+      yield JSON.stringify({ type: 'compaction_completed', estimatedTokensAfter: 8000 });
+      yield 'Resposta';
+    }
+    mockStreamFn.mockResolvedValue({
+      stream: compactionStream(),
+      data: Promise.resolve({ text: 'Resposta' }),
+    });
+
+    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
+    let sending: Promise<void> | undefined;
+
+    act(() => {
+      sending = result.current.sendMessage('Continue');
+    });
+
+    await waitFor(() => expect(result.current.isCompacting).toBe(true));
+    continueStream?.();
+
+    await act(async () => {
+      await sending;
+    });
+    expect(result.current.isCompacting).toBe(false);
   });
 
   // ─── retryLastMessage ──────────────────────────────────────
 
-  it('deve remover mensagem de erro com retry marker via retryLastMessage', () => {
+  it('deve remover mensagem de erro com canRetry via retryLastMessage', () => {
     const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
 
-    // Carrega sessão com erro contendo o marker de retry
+    // Carrega sessão com erro contendo canRetry
     act(() => {
       result.current.loadSession({
         id: 'retry-session',
@@ -460,7 +499,7 @@ describe('useAssistant', () => {
         title: 'Sessão com erro',
         messages: [
           { id: '1', role: 'user' as const, text: 'Crie um roteiro', attachments: [] },
-          { id: '2', role: 'model' as const, text: '__RETRY_DETECTED__ Erro de streaming', attachments: [] },
+          { id: '2', role: 'model' as const, text: 'Erro de streaming', canRetry: true, attachments: [] },
         ],
         updatedAt: Date.now(),
       });
@@ -474,7 +513,7 @@ describe('useAssistant', () => {
 
     // A mensagem de erro deve ter sido removida
     const errorMessages = result.current.messages.filter(
-      (m) => m.role === 'model' && m.text.includes('__RETRY_DETECTED__'),
+      (m) => m.role === 'model' && m.canRetry === true,
     );
     expect(errorMessages).toHaveLength(0);
   });
@@ -491,7 +530,7 @@ describe('useAssistant', () => {
           { id: '1', role: 'user' as const, text: 'Primeira mensagem', attachments: [] },
           { id: '2', role: 'model' as const, text: 'Resposta ok', attachments: [] },
           { id: '3', role: 'user' as const, text: 'Segunda mensagem', attachments: [] },
-          { id: '4', role: 'model' as const, text: '__RETRY_DETECTED__ Falha temporária', attachments: [] },
+          { id: '4', role: 'model' as const, text: 'Falha temporária', canRetry: true, attachments: [] },
         ],
         updatedAt: Date.now(),
       });
@@ -507,7 +546,9 @@ describe('useAssistant', () => {
     const retryInput = mockStreamFn.mock.calls.at(-1)?.[0] as Record<string, unknown> | undefined;
     const retryHistory = retryInput?.history as Array<{ text: string }> | undefined;
 
-    expect(retryHistory?.some((message) => message.text.includes('__RETRY_DETECTED__'))).toBe(false);
+    expect(retryHistory?.some((message) => message.text.includes('Falha temporária'))).toBe(false);
+    expect(retryHistory?.filter((message) => message.text === 'Segunda mensagem')).toHaveLength(0);
+    expect(result.current.messages.filter((message) => message.text === 'Segunda mensagem')).toHaveLength(1);
   });
 
   it('não deve alterar mensagens via retryLastMessage quando não há erro com marker', () => {
@@ -533,7 +574,7 @@ describe('useAssistant', () => {
         userId: 'test-uid',
         title: 'Sem user',
         messages: [
-          { id: '2', role: 'model' as const, text: '__RETRY_DETECTED__ Erro', attachments: [] },
+          { id: '2', role: 'model' as const, text: 'Erro de streaming', canRetry: true, attachments: [] },
         ],
         updatedAt: Date.now(),
       });
@@ -575,11 +616,13 @@ describe('useAssistant', () => {
     const userMsg = result.current.messages.find((m) => m.role === 'user');
     expect(userMsg).toBeDefined();
 
-    // Deve ter mensagem de fallback do assistente com o marker de retry
+    // Deve ter mensagem de fallback do assistente com canRetry
     const fallbackMsg = result.current.messages.find(
-      (m) => m.role === 'model' && m.text.includes('__RETRY_DETECTED__'),
+      (m) => m.role === 'model' && m.canRetry === true,
     );
     expect(fallbackMsg).toBeDefined();
+    // A mensagem não deve conter o marcador técnico visível
+    expect(fallbackMsg?.text).not.toContain('RETRY_DETECTED');
   });
 
   it('deve abortar streaming via stopGeneration e não exibir erro', async () => {

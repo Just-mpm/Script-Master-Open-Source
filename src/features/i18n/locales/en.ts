@@ -676,6 +676,7 @@ export const en: TranslationDictionary = {
   studio: {
     header: {
       subtitle: 'Production Studio',
+      scriptTab: 'Script',
       nav: {
         studio: 'Studio',
         image: 'Image',
@@ -1086,17 +1087,25 @@ export const en: TranslationDictionary = {
       copied: 'Copied!',
       copyText: 'Copy text',
       copyTextAria: 'Copy message text',
+      regenerate: 'Regenerate response',
+      goToStudio: 'Go to Studio →',
+      codeCopied: 'Copied!',
+      codeCopy: 'Copy code',
+      codeCopyAria: 'Copy code block',
+      scrollToBottom: 'Go to bottom of conversation',
+      closePreview: 'Close image preview',
+      now: 'now',
+      minAgo: 'min',
       malformedJson: 'The assistant suggested adjustments, but the format could not be interpreted.',
       applied: 'Applied',
       applyToStudio: 'Apply in studio',
       ignore: 'Ignore',
       interviewPlaceholder: 'Respond with details',
       interviewSend: 'Send',
-      savedToMemory: 'Saved to memory',
-      saveInsight: 'Save insight',
       emptyTitle: 'How can I help?',
       emptyDescription: 'Ask about script adjustments, voice suggestions, scene ideas, or send attachments for creative analysis.',
       thinking: 'Thinking',
+      compacting: 'Compacting conversation...',
       suggestions: {
         adjustPace: 'Adjust pace',
         suggestScene: 'Suggest scene',
@@ -1755,7 +1764,6 @@ export const en: TranslationDictionary = {
     },
     welcome: 'How can I help?',
     defaultChatTitle: 'New conversation',
-    retryDetection: '__RETRY_DETECTED__',
   },
 
   // ── Settings ─────────────────────────────────────────────────────────────

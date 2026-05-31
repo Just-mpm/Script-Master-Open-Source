@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import React, { useCallback, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -14,11 +15,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
-import BookmarkAdd from '@mui/icons-material/BookmarkAdd';
 import Check from '@mui/icons-material/Check';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
 import Person from '@mui/icons-material/Person';
+import Refresh from '@mui/icons-material/Refresh';
 import SmartToy from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
 import type { AssistantSettings, AssistantToolEvent, ChatMessage } from '../types';
@@ -36,13 +37,14 @@ import {
 import { ToolEventList } from './ToolEventCard';
 import { ThinkingShimmer } from './ThinkingShimmer';
 import { TwoPhaseStopButton } from './TwoPhaseStopButton';
+import { PreBlock } from './CodeBlock';
+import { ImageLightbox } from './ImageLightbox';
 import {
   BRAND_PRIMARY,
   BRAND_GRADIENT,
   APP_BORDER,
   BRAND_PRIMARY_GLOW_SOFT,
   WHITE_06,
-  WHITE_08,
   WHITE_16,
   WHITE_82,
   TEXT_DISABLED,
@@ -62,19 +64,82 @@ import {
 // Array vazio estável — evita quebrar React.memo ao comparar referências
 const EMPTY_TOOL_EVENTS: AssistantToolEvent[] = [];
 
+// --- Formatação de timestamp ---
+
+const LOCALE_MAP: Record<string, string> = {
+  'pt-BR': 'pt-BR',
+  'en': 'en-US',
+  'es': 'es-ES',
+};
+
+/**
+ * Formata timestamp relativo (ex: "agora", "5 min", "14:32", "31/05").
+ * Usa Intl.RelativeTimeFormat quando disponível, com fallback manual.
+ * Trata timestamps futuros (clock skew) retornando null.
+ */
+function formatTimestamp(ms?: number, locale?: string, t?: (key: string) => string): string | null {
+  if (!ms) return null;
+  const resolvedLocale = LOCALE_MAP[locale ?? 'pt-BR'] ?? 'pt-BR';
+  const now = Date.now();
+  const diff = now - ms;
+
+  // Timestamp futuro (clock skew ou dados corrompidos)
+  if (diff < 0) return null;
+
+  if (diff < 60_000) return t?.('assistant.messages.now') ?? 'agora';
+
+  // Tenta Intl.RelativeTimeFormat para pluralização correta
+  if (typeof Intl !== 'undefined' && 'RelativeTimeFormat' in Intl) {
+    const rtf = new Intl.RelativeTimeFormat(resolvedLocale, { numeric: 'auto' });
+    if (diff < 3_600_000) {
+      const minutes = Math.floor(diff / 60_000);
+      return rtf.format(-minutes, 'minute');
+    }
+    if (diff < 86_400_000) {
+      return new Date(ms).toLocaleTimeString(resolvedLocale, { hour: '2-digit', minute: '2-digit' });
+    }
+    return new Date(ms).toLocaleDateString(resolvedLocale, { day: '2-digit', month: '2-digit' });
+  }
+
+  // Fallback manual
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} ${t?.('assistant.messages.minAgo') ?? 'min'}`;
+  if (diff < 86_400_000) {
+    return new Date(ms).toLocaleTimeString(resolvedLocale, { hour: '2-digit', minute: '2-digit' });
+  }
+  return new Date(ms).toLocaleDateString(resolvedLocale, { day: '2-digit', month: '2-digit' });
+}
+
 // --- Props de cada bubble isolado ---
 
 interface MessageBubbleProps {
   message: ChatMessage;
   isCurrentlyStreaming: boolean;
   isApplied: boolean;
-  isSavedToMemory: boolean;
   isCopied: boolean;
+  isLastModelMessage: boolean;
   onCopy: (text: string, messageId: string) => void;
   onApply: (settings: AssistantSettings, messageId: string) => void;
-  onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
+  onRegenerate?: () => void;
   toolEvents?: AssistantToolEvent[];
+}
+
+// --- Shallow compare para arrays de attachments ---
+
+function shallowEqualAttachments(
+  prev: ChatMessage['attachments'],
+  next: ChatMessage['attachments'],
+): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return prev === next;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i++) {
+    // Compara campos comuns (mimeType, name) — suficiente para detecção de mudança no memo
+    if (prev[i].mimeType !== next[i].mimeType || prev[i].name !== next[i].name) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // --- Memo comparator: só re-renderiza quando dados da mensagem mudam ---
@@ -84,16 +149,17 @@ function arePropsEqual(prev: MessageBubbleProps, next: MessageBubbleProps): bool
     prev.message.id === next.message.id
     && prev.message.text === next.message.text
     && prev.message.role === next.message.role
-    && prev.message.attachments === next.message.attachments
+    && shallowEqualAttachments(prev.message.attachments, next.message.attachments)
+    && prev.message.createdAt === next.message.createdAt
     && prev.isCurrentlyStreaming === next.isCurrentlyStreaming
     && prev.isApplied === next.isApplied
-    && prev.isSavedToMemory === next.isSavedToMemory
     && prev.isCopied === next.isCopied
+    && prev.isLastModelMessage === next.isLastModelMessage
     && prev.toolEvents === next.toolEvents
     && prev.onCopy === next.onCopy
     && prev.onApply === next.onApply
-    && prev.onSaveToMemory === next.onSaveToMemory
     && prev.onStopGeneration === next.onStopGeneration
+    && prev.onRegenerate === next.onRegenerate
   );
 }
 
@@ -103,15 +169,15 @@ const MessageBubble = React.memo(function MessageBubble({
   message,
   isCurrentlyStreaming,
   isApplied,
-  isSavedToMemory,
   isCopied,
+  isLastModelMessage,
   onCopy,
   onApply,
-  onSaveToMemory,
   onStopGeneration,
+  onRegenerate,
   toolEvents = [],
 }: MessageBubbleProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const isModel = message.role === 'model';
   const extracted = isModel && !isCurrentlyStreaming ? extractJsonSettings(message.text) : null;
   const settings: AssistantSettings | null = extracted && !extracted.parseError ? extracted.settings : null;
@@ -119,27 +185,8 @@ const MessageBubble = React.memo(function MessageBubble({
   const cleanText = stripJsonSettingsBlock(message.text);
 
   return (
-    <Stack
-      direction="row"
-      spacing={GAP_MEDIUM}
-      sx={{ width: '100%', justifyContent: isModel ? 'flex-start' : 'flex-end', alignItems: 'flex-start' }}
-    >
-      {isModel ? (
-        <Avatar
-          sx={{
-            bgcolor: WHITE_06,
-            border: `1px solid ${APP_BORDER}`,
-            width: AVATAR_SIZE_SM,
-            height: AVATAR_SIZE_SM,
-            flexShrink: 0,
-          }}
-        >
-          <SmartToy sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />
-        </Avatar>
-      ) : null}
-
-      <Stack spacing={GAP_COMPACT} sx={{ width: '100%', maxWidth: { xs: '100%', md: '82%' }, alignItems: isModel ? 'flex-start' : 'flex-end' }}>
-        {message.attachments && message.attachments.length > 0 ? (
+    <Stack spacing={GAP_COMPACT} sx={{ width: '100%', alignItems: isModel ? 'flex-start' : 'flex-end' }}>
+      {message.attachments && message.attachments.length > 0 ? (
           <Stack direction="row" spacing={GAP_COMPACT} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: isModel ? 'flex-start' : 'flex-end' }}>
             {message.attachments.map((attachment, index) => {
               const isImage = attachment.mimeType.startsWith('image/');
@@ -147,12 +194,11 @@ const MessageBubble = React.memo(function MessageBubble({
               return (
                 <Box key={`${message.id}-${index}`} sx={(theme) => ({ ...assistantInsetSx(theme), px: 1.25, py: 1 })}>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    {isImage ? (
-                      <Box
-                        component="img"
+                    {isImage && 'data' in attachment ? (
+                      <ImageLightbox
                         src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                        alt={attachment.name}
-                        sx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: RADIUS_XS }}
+                        alt={attachment.name ?? 'Imagem'}
+                        thumbnailSx={{ width: 44, height: 44, objectFit: 'cover', borderRadius: RADIUS_XS }}
                       />
                     ) : (
                       <Description sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
@@ -180,29 +226,51 @@ const MessageBubble = React.memo(function MessageBubble({
                 <Typography variant="caption" sx={{ fontWeight: 700, color: isModel ? TEXT_SECONDARY : WHITE_82 }}>
                   {isModel ? t('assistant.messages.assistant') : t('assistant.messages.you')}
                 </Typography>
+                {message.createdAt ? (
+                  <Typography variant="caption" sx={{ color: TEXT_DISABLED, fontSize: '0.65rem' }}>
+                    {formatTimestamp(message.createdAt, locale, t)}
+                  </Typography>
+                ) : null}
               </Stack>
 
               {isCurrentlyStreaming ? (
                 <TwoPhaseStopButton onStop={onStopGeneration} />
-              ) : isModel && cleanText ? (
-                <Tooltip title={isCopied ? t('assistant.messages.copied') : t('assistant.messages.copyText')}>
-                  <IconButton
-                    onClick={() => void onCopy(cleanText, message.id)}
-                    size="small"
-                    aria-label={t('assistant.messages.copyTextAria')}
-                    sx={{
-                      color: isCopied ? 'success.main' : TEXT_DISABLED,
-                      '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT, color: 'text.secondary' },
-                    }}
-                  >
-                    {isCopied ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
-                  </IconButton>
-                </Tooltip>
+              ) : cleanText ? (
+                <Stack direction="row" spacing={0.5}>
+                  <Tooltip title={isCopied ? t('assistant.messages.copied') : t('assistant.messages.copyText')}>
+                    <IconButton
+                      onClick={() => void onCopy(cleanText, message.id)}
+                      size="small"
+                      aria-label={t('assistant.messages.copyTextAria')}
+                      sx={{
+                        color: isCopied ? 'success.main' : TEXT_DISABLED,
+                        '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT, color: 'text.secondary' },
+                      }}
+                    >
+                      {isCopied ? <Check sx={{ fontSize: ICON_SIZE_SM }} /> : <ContentCopy sx={{ fontSize: ICON_SIZE_SM }} />}
+                    </IconButton>
+                  </Tooltip>
+                  {isLastModelMessage && onRegenerate ? (
+                    <Tooltip title={t('assistant.messages.regenerate')}>
+                      <IconButton
+                        onClick={onRegenerate}
+                        size="small"
+                        aria-label={t('assistant.messages.regenerate')}
+                        sx={{
+                          color: TEXT_DISABLED,
+                          '&:hover': { backgroundColor: BRAND_PRIMARY_GLOW_SOFT, color: 'text.secondary' },
+                        }}
+                      >
+                        <Refresh sx={{ fontSize: ICON_SIZE_SM }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : null}
+                </Stack>
               ) : null}
             </Stack>
 
             <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>
-              {cleanText ? <ReactMarkdown>{cleanText}</ReactMarkdown> : null}
+              {cleanText ? <ReactMarkdown components={{ pre: PreBlock }}>{cleanText}</ReactMarkdown> : null}
               {isCurrentlyStreaming ? (
                 <Box
                   component="span"
@@ -234,11 +302,11 @@ const MessageBubble = React.memo(function MessageBubble({
               <ToolEventList events={toolEvents} isStreaming={isCurrentlyStreaming} />
             ) : null}
 
-            {settings || (isModel && !isCurrentlyStreaming)
+            {settings
               ? <Divider sx={{ borderColor: isModel ? APP_BORDER : WHITE_16 }} />
               : null}
 
-            <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
+            <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               {!isCurrentlyStreaming && settings ? (
                 <Button
                   onClick={() => onApply(settings, message.id)}
@@ -251,39 +319,28 @@ const MessageBubble = React.memo(function MessageBubble({
                 </Button>
               ) : null}
 
-              {isModel && !isCurrentlyStreaming ? (
-                <Button
-                  onClick={() => onSaveToMemory(cleanText, message.id)}
-                  variant="outlined"
-                  color="inherit"
+              {isApplied ? (
+                <Chip
+                  component="a"
+                  href="/app/estudio"
+                  label={t('assistant.messages.goToStudio')}
                   size="small"
-                  startIcon={isSavedToMemory ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : <BookmarkAdd sx={{ fontSize: ICON_SIZE_MD }} />}
+                  clickable
                   sx={{
-                    borderColor: isModel ? APP_BORDER : 'action.hover',
-                    '&:hover': { borderColor: APP_BORDER, backgroundColor: alpha(WHITE_08, 0.3) },
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderColor: BRAND_PRIMARY,
+                    color: BRAND_PRIMARY,
+                    '&:hover': {
+                      bgcolor: BRAND_PRIMARY_GLOW_SOFT,
+                    },
                   }}
-                >
-                  {isSavedToMemory ? t('assistant.messages.savedToMemory') : t('assistant.messages.saveInsight')}
-                </Button>
+                  variant="outlined"
+                />
               ) : null}
             </Stack>
           </Stack>
         </Card>
-      </Stack>
-
-      {!isModel ? (
-        <Avatar
-          sx={{
-            background: BRAND_GRADIENT,
-            width: AVATAR_SIZE_SM,
-            height: AVATAR_SIZE_SM,
-            flexShrink: 0,
-            boxShadow: `0 4px 12px ${alpha(BRAND_PRIMARY, 0.16)}`,
-          }}
-        >
-          <Person sx={{ fontSize: ICON_SIZE_SM }} />
-        </Avatar>
-      ) : null}
     </Stack>
   );
 }, arePropsEqual);
@@ -346,13 +403,13 @@ interface AssistantMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
   isStreaming: boolean;
+  isCompacting?: boolean;
   appliedMessageId: string | null;
-  savedToMemoryId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   streamingMessageRef: RefObject<HTMLDivElement | null>;
   onApply: (settings: AssistantSettings, messageId: string) => void;
-  onSaveToMemory: (text: string, messageId: string) => void;
   onStopGeneration: () => void;
+  onRegenerate?: () => void;
   onSuggestionClick?: (prompt: string) => void;
   toolEvents?: AssistantToolEvent[];
 }
@@ -361,13 +418,13 @@ export function AssistantMessages({
   messages,
   isLoading,
   isStreaming,
+  isCompacting = false,
   appliedMessageId,
-  savedToMemoryId,
   messagesEndRef,
   streamingMessageRef,
   onApply,
-  onSaveToMemory,
   onStopGeneration,
+  onRegenerate,
   onSuggestionClick,
   toolEvents = [],
 }: AssistantMessagesProps) {
@@ -382,7 +439,7 @@ export function AssistantMessages({
   }, [messages]);
 
   // Oculta skeleton quando o primeiro token já chegou
-  const showSkeleton = isLoading && !isStreaming;
+  const showSkeleton = isLoading && (!isStreaming || isCompacting);
 
   // Estado para feedback de "copiado" no clipboard
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -420,30 +477,57 @@ export function AssistantMessages({
         <EmptyChatState onSuggestionClick={onSuggestionClick || (() => {})} />
       ) : (
         <Stack spacing={GAP_RELAXED}>
-          {messages.map((message) => {
-            const isCurrentlyStreamingMessage = isStreaming && lastModelMessage?.id === message.id;
-            const bubble = (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isCurrentlyStreaming={isCurrentlyStreamingMessage}
-                isApplied={appliedMessageId === message.id}
-                isSavedToMemory={savedToMemoryId === message.id}
-                isCopied={copiedMessageId === message.id}
-                onCopy={handleCopyMessage}
-                onApply={onApply}
-                onSaveToMemory={onSaveToMemory}
-                onStopGeneration={onStopGeneration}
-                toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
-              />
-            );
+          <AnimatePresence mode="popLayout">
+            {messages.map((message) => {
+              const isCurrentlyStreamingMessage = isStreaming && lastModelMessage?.id === message.id;
+              const isLastModel = !isCurrentlyStreamingMessage && lastModelMessage?.id === message.id && !isLoading;
+              const bubble = (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isCurrentlyStreaming={isCurrentlyStreamingMessage}
+                  isApplied={appliedMessageId === message.id}
+                  isCopied={copiedMessageId === message.id}
+                  isLastModelMessage={isLastModel}
+                  onCopy={handleCopyMessage}
+                  onApply={onApply}
+                  onStopGeneration={onStopGeneration}
+                  onRegenerate={onRegenerate}
+                  toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
+                />
+              );
 
-            // Âncora de scroll: início da mensagem em streaming
-            if (isCurrentlyStreamingMessage) {
-              return <div key={message.id} ref={streamingMessageRef}>{bubble}</div>;
-            }
-            return bubble;
-          })}
+              // Âncora de scroll: início da mensagem em streaming
+              if (isCurrentlyStreamingMessage) {
+                return (
+                  <div key={message.id} ref={streamingMessageRef}>
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
+                      transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }}
+                    >
+                      {bubble}
+                    </motion.div>
+                  </div>
+                );
+              }
+
+              return (
+                <motion.div
+                  key={message.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
+                  transition={{ type: 'spring', bounce: 0.15, duration: 0.35 }}
+                >
+                  {bubble}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
           {showSkeleton ? (
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'flex-start' }}>
@@ -464,7 +548,7 @@ export function AssistantMessages({
                     <AutoAwesome sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
                     <Typography variant="caption" sx={{ fontWeight: 700, color: TEXT_SECONDARY }}>{t('assistant.messages.assistant')}</Typography>
                   </Stack>
-                  <ThinkingShimmer text={t('assistant.messages.thinking')} />
+                  <ThinkingShimmer text={t(isCompacting ? 'assistant.messages.compacting' : 'assistant.messages.thinking')} />
                   <Box sx={assistantTypingIndicatorSx}>
                     <Box className="typing-dot" />
                     <Box className="typing-dot" />

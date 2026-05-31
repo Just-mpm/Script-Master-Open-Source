@@ -1,7 +1,14 @@
 import { collection, deleteDoc, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { createLogger } from '../logger';
-import type { AttachmentRecord, ChatSession } from './types';
+import type {
+  AssistantHistoryMessage,
+  AssistantHistoryPart,
+  AttachmentRecord,
+  ChatMessageRecord,
+  ChatSession,
+  StoredAttachment,
+} from './types';
 import {
   CHAT_STORE,
   OperationType,
@@ -30,50 +37,99 @@ export function estimateDocumentSize(session: ChatSession, userId: string): numb
   return JSON.stringify(docData).length;
 }
 
+function sanitizeStoredAttachments(message: ChatMessageRecord): ChatMessageRecord {
+  const attachments = message.attachments?.map<StoredAttachment>((attachment) => ({
+    mimeType: attachment.mimeType,
+    name: attachment.name,
+    processed: true,
+  }));
+
+  return { ...message, attachments };
+}
+
+function sanitizeHistoryPart(part: AssistantHistoryPart): AssistantHistoryPart | null {
+  const hasInlineData = Boolean(part.inlineData);
+  const hasEmbeddedMedia = part.media?.url.startsWith('data:') ?? false;
+
+  if (!hasInlineData && !hasEmbeddedMedia) {
+    return part;
+  }
+
+  const sanitizedPart = { ...part };
+  delete sanitizedPart.inlineData;
+  if (hasEmbeddedMedia) {
+    delete sanitizedPart.media;
+  }
+  return Object.keys(sanitizedPart).length > 0 ? sanitizedPart : null;
+}
+
+/** Remove dados binários antigos antes de persistir ou reutilizar uma sessão. */
+export function sanitizeAssistantHistoryAttachments(
+  history: AssistantHistoryMessage[] | undefined,
+): AssistantHistoryMessage[] | undefined {
+  return history?.map((message) => ({
+    ...message,
+    content: message.content
+      .map(sanitizeHistoryPart)
+      .filter((part): part is AssistantHistoryPart => part !== null),
+  }));
+}
+
+/** Mantém somente cartões leves dos anexos na persistência. */
+export function sanitizeChatSessionForPersistence(session: ChatSession): ChatSession {
+  return {
+    ...session,
+    messages: session.messages.map(sanitizeStoredAttachments),
+    fullHistory: sanitizeAssistantHistoryAttachments(session.fullHistory),
+  };
+}
+
 /** Soma o tamanho dos anexos base64 de todas as mensagens. */
 function sumAttachmentSize(messages: ChatSession['messages']): number {
   return messages.reduce((total: number, message) => {
     const attachments: AttachmentRecord[] = message.attachments ?? [];
     for (const attachment of attachments) {
-      total += attachment.data.length;
+      total += 'data' in attachment ? attachment.data.length : 0;
     }
     return total;
   }, 0);
 }
 
 export async function saveChatSession(session: ChatSession, userId?: string): Promise<boolean> {
+  const sanitizedSession = sanitizeChatSessionForPersistence(session);
+
   if (userId) {
     // Valida tamanho do documento antes de tentar salvar no Firestore
-    const estimatedSize = estimateDocumentSize(session, userId);
+    const estimatedSize = estimateDocumentSize(sanitizedSession, userId);
     if (estimatedSize > FIRESTORE_MAX_DOC_SIZE_BYTES) {
-      const totalAttachmentSize = sumAttachmentSize(session.messages);
+      const totalAttachmentSize = sumAttachmentSize(sanitizedSession.messages);
       log.warn('Sessão excede limite do Firestore — salvamento no IndexedDB', {
-        sessionId: session.id,
+        sessionId: sanitizedSession.id,
         estimatedSizeBytes: estimatedSize,
         attachmentSizeBytes: totalAttachmentSize,
         maxAllowedBytes: FIRESTORE_MAX_DOC_SIZE_BYTES,
       });
-      await putIndexedDbItem(CHAT_STORE, session);
+      await putIndexedDbItem(CHAT_STORE, sanitizedSession);
       return true; // fallback para IndexedDB
     } else {
       try {
-        await setDoc(doc(chatsCollection, session.id), {
-          ...session,
+        await setDoc(doc(chatsCollection, sanitizedSession.id), {
+          ...sanitizedSession,
           userId,
         });
         return false;
       } catch (firestoreError: unknown) {
         log.warn('Falha ao salvar chat no Firestore — fallback para IndexedDB', {
-          sessionId: session.id,
+          sessionId: sanitizedSession.id,
           error: firestoreError instanceof Error ? firestoreError.message : String(firestoreError),
         });
-        await putIndexedDbItem(CHAT_STORE, session);
+        await putIndexedDbItem(CHAT_STORE, sanitizedSession);
         return true; // fallback para IndexedDB
       }
     }
   }
 
-  await putIndexedDbItem(CHAT_STORE, session);
+  await putIndexedDbItem(CHAT_STORE, sanitizedSession);
   return false; // sem userId, comportamento normal
 }
 

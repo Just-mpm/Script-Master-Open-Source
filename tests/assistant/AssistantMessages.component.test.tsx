@@ -90,11 +90,9 @@ const defaultProps = {
   isLoading: false,
   isStreaming: false,
   appliedMessageId: null,
-  savedToMemoryId: null,
   messagesEndRef,
   streamingMessageRef,
   onApply: vi.fn(),
-  onSaveToMemory: vi.fn(),
   onStopGeneration: vi.fn(),
 };
 
@@ -249,17 +247,13 @@ describe('AssistantMessages', () => {
     expect(skeletons.length).toBe(0);
   });
 
-  it('mostra botão "Salvar insight" para mensagens do modelo (exceto welcome)', () => {
-    const messages = [
-      createMessage({ id: 'm1', role: 'model', text: 'Alguma dica útil' }),
-    ];
-
+  it('mostra animação informativa enquanto compacta a conversa', () => {
     render(
-      <AssistantMessages {...defaultProps} messages={messages} />,
+      <AssistantMessages {...defaultProps} isLoading={true} isStreaming={true} isCompacting={true} />,
       { wrapper: Wrapper },
     );
 
-    expect(screen.getByText('Salvar insight')).toBeDefined();
+    expect(screen.getByText('Compactando conversa...')).toBeDefined();
   });
 
   it('mostra badges de ferramentas na última mensagem do modelo', () => {
@@ -286,39 +280,6 @@ describe('AssistantMessages', () => {
     expect(screen.queryByText('Atualizando plano')).toBeNull();
     // getStudioState: call sem result → pending com reticências
     expect(screen.getByText((content) => content.includes('Lendo configurações'))).toBeDefined();
-  });
-
-  it('mostra "Salvo na memória" quando memória já foi salva', () => {
-    const messages = [
-      createMessage({ id: 'm1', role: 'model', text: 'Alguma dica' }),
-    ];
-
-    render(
-      <AssistantMessages
-        {...defaultProps}
-        messages={messages}
-        savedToMemoryId="m1"
-      />,
-      { wrapper: Wrapper },
-    );
-
-    expect(screen.getByText('Salvo na memória')).toBeDefined();
-  });
-
-  it('chama onSaveToMemory ao clicar em "Salvar insight"', () => {
-    const messages = [
-      createMessage({ id: 'm1', role: 'model', text: 'Dica útil sobre voz' }),
-    ];
-
-    render(
-      <AssistantMessages {...defaultProps} messages={messages} />,
-      { wrapper: Wrapper },
-    );
-
-    const saveBtn = screen.getByText('Salvar insight');
-    fireEvent.click(saveBtn);
-
-    expect(defaultProps.onSaveToMemory).toHaveBeenCalledWith('Dica útil sobre voz', 'm1');
   });
 
   it('renderiza anexos de imagem na mensagem', () => {
@@ -549,34 +510,6 @@ describe('AssistantMessages', () => {
       // arePropsEqual compara isApplied — quando muda, deve re-renderizar
       expect(screen.getByText('Aplicado')).toBeDefined();
       expect(screen.queryByText('Aplicar no estúdio')).toBeNull();
-    });
-
-    it('deve atualizar "Salvar insight" para "Salvo na memória" quando savedToMemoryId muda', () => {
-      const messages = [
-        createMessage({ id: 'm1', role: 'model', text: 'Dica útil' }),
-      ];
-
-      const { rerender } = render(
-        <AssistantMessages
-          {...defaultProps}
-          messages={messages}
-          savedToMemoryId={null}
-        />,
-        { wrapper: Wrapper },
-      );
-
-      expect(screen.getByText('Salvar insight')).toBeDefined();
-
-      rerender(
-        <AssistantMessages
-          {...defaultProps}
-          messages={messages}
-          savedToMemoryId="m1"
-        />,
-      );
-
-      expect(screen.getByText('Salvo na memória')).toBeDefined();
-      expect(screen.queryByText('Salvar insight')).toBeNull();
     });
 
     it('deve atualizar label de streaming quando isStreaming muda para a última mensagem do modelo', () => {

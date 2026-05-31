@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import { removeUndefinedFields } from '../lib/callable-utils';
-import { saveChatSession, type ChatSession } from '../lib/db';
+import {
+  sanitizeAssistantHistoryAttachments,
+  saveChatSession,
+  type AssistantHistoryMessage,
+  type ChatSession,
+} from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import type {
   Attachment,
@@ -24,6 +29,9 @@ import { useCredits } from './useCredits';
 
 const log = createLogger('useAssistant');
 const STREAM_ABORTED = Symbol('assistant-stream-aborted');
+
+/** Marcador para detectar mensagens de erro de streaming em dados legados (salvos antes de existir o campo canRetry). */
+const STREAM_ERROR_MARKER = '__RETRY_DETECTED__';
 
 export type { Attachment, AssistantSettings, ChatMessage } from '../features/assistant/types';
 
@@ -81,8 +89,13 @@ interface AssistantFlowInput {
   thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
   /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
   resume?: { question: string; answer: string };
+  /** Tool request do interrupt pendente (ToolRequestPart do Genkit) */
+  interruptToolRequest?: { toolRequest: { name: string; ref?: string; input?: unknown } };
   /** Histórico completo do Genkit (MessageData[]) com tool calls/responses */
-  fullHistory?: unknown[];
+  fullHistory?: AssistantHistoryMessage[];
+  contextSummary?: string;
+  compactionCount?: number;
+  estimatedContextTokens?: number;
 }
 
 interface AssistantFlowOutput {
@@ -92,11 +105,19 @@ interface AssistantFlowOutput {
   appliedSettings?: Record<string, unknown>;
   interview?: InterviewDatum | null;
   respond?: RespondResult | null;
+  /** Tool request do interrupt pendente (ToolRequestPart do Genkit) */
+  interruptToolRequest?: { toolRequest: { name: string; ref?: string; input?: unknown } } | null;
   /** Histórico completo do Genkit (MessageData[]) para preservar tool context entre mensagens */
-  fullHistory?: unknown[];
+  fullHistory?: AssistantHistoryMessage[];
+  contextSummary?: string;
+  compactionCount?: number;
+  estimatedContextTokens?: number;
 }
 
 type AssistantStreamMeta =
+  | { type: 'compaction_started' }
+  | { type: 'compaction_completed'; estimatedTokensAfter: number }
+  | { type: 'compaction_failed' }
   | { type: 'plan_update'; plan: AssistantPlan }
   | { type: 'studio_update'; settings: AssistantSettings; summary?: string }
   | { type: 'interview'; interview: InterviewDatum }
@@ -108,10 +129,25 @@ function normalizeAttachments(attachments: Attachment[] | null | undefined): Att
   return Array.isArray(attachments) ? attachments : [];
 }
 
+function hasAttachmentData(attachment: Attachment): attachment is Attachment & { data: string } {
+  return 'data' in attachment && attachment.data.length > 0;
+}
+
 function normalizeChatMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     ...message,
     attachments: normalizeAttachments(message.attachments),
+  }));
+}
+
+function sanitizeChatMessageAttachments(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    attachments: normalizeAttachments(message.attachments).map((attachment) => ({
+      mimeType: attachment.mimeType,
+      name: attachment.name,
+      processed: true,
+    })),
   }));
 }
 
@@ -156,6 +192,14 @@ function parseAssistantStreamMeta(chunkText: string): AssistantStreamMeta | null
     ) {
       return parsed as AssistantStreamMeta;
     }
+
+    if (
+      parsed.type === 'compaction_started'
+      || parsed.type === 'compaction_failed'
+      || (parsed.type === 'compaction_completed' && typeof parsed.estimatedTokensAfter === 'number')
+    ) {
+      return parsed as AssistantStreamMeta;
+    }
   } catch {
     return null;
   }
@@ -175,15 +219,14 @@ export function useAssistant(currentState?: AssistantStudioState) {
   // Mapeador de erros recriado quando locale muda
   const toUserFriendlyAssistantError = useMemo(() => buildErrorMapper(t), [t]);
 
-  // Marker para detecção de retry (não traduzível)
-  const retryDetectionMarker = t('assistantStrings.retryDetection');
-  // Mensagem de fallback para erros de streaming (inclui marker invisível para retry detection)
-  const streamFallbackText = `${t('assistantStrings.errors.stream')} ${retryDetectionMarker}`;
+  // Mensagem de fallback para erros de streaming
+  const streamFallbackText = t('assistantStrings.errors.stream');
 
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isCompacting, setIsCompacting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jsonSettings, setJsonSettings] = useState<Record<string, unknown> | null>(null);
   const [plan, setPlan] = useState<AssistantPlan>([]);
@@ -210,7 +253,13 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const planRef = useRef<AssistantPlan>([]);
   const interviewRef = useRef<InterviewDatum | null>(null);
   /** Histórico completo do Genkit — preserva tool calls/responses entre mensagens */
-  const fullHistoryRef = useRef<unknown[]>([]);
+  const fullHistoryRef = useRef<AssistantHistoryMessage[]>([]);
+  const contextSummaryRef = useRef('');
+  const compactionCountRef = useRef(0);
+  const estimatedContextTokensRef = useRef(0);
+  const retryAttachmentsRef = useRef<Attachment[] | undefined>(undefined);
+  /** Tool request do interrupt pendente — necessário para Genkit resume API */
+  const interruptToolRequestRef = useRef<{ toolRequest: { name: string; ref?: string; input?: unknown } } | null>(null);
 
   // Callable estável (a instância do SDK é memoizada)
   const assistantCallable = useMemo(
@@ -305,6 +354,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
         pendingInterview: interviewRef.current ?? undefined,
         // Persiste histórico completo do Genkit (tool context)
         fullHistory: fullHistoryRef.current.length > 0 ? fullHistoryRef.current : undefined,
+        contextSummary: contextSummaryRef.current || undefined,
+        compactionCount: compactionCountRef.current || undefined,
+        estimatedContextTokens: estimatedContextTokensRef.current || undefined,
       };
 
       void Promise.resolve(saveChatSession(session, user?.uid))
@@ -397,6 +449,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setMessages([]);
     setIsLoading(false);
     setIsStreaming(false);
+    setIsCompacting(false);
     setError(null);
     setPlan([]);
     setPendingSettings(null);
@@ -405,6 +458,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setRespondResult(null);
     planRef.current = [];
     fullHistoryRef.current = [];
+    contextSummaryRef.current = '';
+    compactionCountRef.current = 0;
+    estimatedContextTokensRef.current = 0;
+    retryAttachmentsRef.current = undefined;
   };
 
   const loadSession = (session: ChatSession) => {
@@ -417,6 +474,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setMessages(normalizeChatMessages(session.messages));
     setIsLoading(false);
     setIsStreaming(false);
+    setIsCompacting(false);
     setError(null);
 
     // Restaura plano e entrevista do session (resiliência a reload)
@@ -426,7 +484,11 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setInterview(session.pendingInterview ?? null);
 
     // Restaura histórico completo do Genkit (tool context)
-    fullHistoryRef.current = session.fullHistory ?? [];
+    fullHistoryRef.current = sanitizeAssistantHistoryAttachments(session.fullHistory) ?? [];
+    contextSummaryRef.current = session.contextSummary ?? '';
+    compactionCountRef.current = session.compactionCount ?? 0;
+    estimatedContextTokensRef.current = session.estimatedContextTokens ?? 0;
+    retryAttachmentsRef.current = undefined;
 
     setPendingSettings(null);
     setToolEvents([]);
@@ -439,6 +501,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
   const clearInterview = useCallback(() => {
     setInterview(null);
+    interruptToolRequestRef.current = null;
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -458,8 +521,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
       role: 'user',
       text,
       attachments,
+      createdAt: Date.now(),
     };
-    setMessages(prev => [...prev, newUserMsg]);
+    retryAttachmentsRef.current = attachments;
+    setMessages(prev => [...sanitizeChatMessageAttachments(prev), newUserMsg]);
     setIsLoading(true);
     setError(null);
     setCreditsExhausted(false);
@@ -490,20 +555,13 @@ export function useAssistant(currentState?: AssistantStudioState) {
         history: historySource.filter((msg) => msg.id !== 'welcome').map((msg) => ({
           role: msg.role,
           text: msg.text,
-          attachments: normalizeAttachments(msg.attachments)
-            ?.filter((attachment) => !!attachment.data)
-            .map((attachment) => ({
-              mimeType: attachment.mimeType,
-              data: attachment.data,
-              name: attachment.name,
-            })),
         })),
         attachments: attachments
           ? normalizeAttachments(attachments)
-          ?.filter((att) => !!att.data)
+          .filter(hasAttachmentData)
           .map((att) => ({
             mimeType: att.mimeType,
-            data: att.data!,
+            data: att.data,
             name: att.name,
           }))
           : undefined,
@@ -513,15 +571,22 @@ export function useAssistant(currentState?: AssistantStudioState) {
         model: selectedModel,
         thinkingLevel: thinkingEnabled ? selectedThinkingLevel : undefined,
         resume: resume ?? undefined,
+        // Envia o tool request do interrupt para o Genkit construir o resume corretamente
+        interruptToolRequest: resume ? interruptToolRequestRef.current ?? undefined : undefined,
         // Envia histórico completo do Genkit para preservar tool context
-        fullHistory: fullHistoryRef.current.length > 0 ? fullHistoryRef.current : undefined,
+        fullHistory: fullHistoryRef.current.length > 0
+          ? sanitizeAssistantHistoryAttachments(fullHistoryRef.current)
+          : undefined,
+        contextSummary: contextSummaryRef.current || undefined,
+        compactionCount: compactionCountRef.current || undefined,
+        estimatedContextTokens: estimatedContextTokensRef.current || undefined,
       };
       const input = removeUndefinedFields(rawInput);
 
       // Adiciona mensagem vazia do assistente (texto progressivo)
       setMessages(prev => [
         ...prev,
-        { id: assistantMsgId, role: 'model', text: '' },
+        { id: assistantMsgId, role: 'model', text: '', createdAt: Date.now() },
       ]);
       setIsStreaming(true);
 
@@ -554,6 +619,16 @@ export function useAssistant(currentState?: AssistantStudioState) {
         if (!chunkText) continue;
 
         const meta = parseAssistantStreamMeta(chunkText);
+        if (meta?.type === 'compaction_started') {
+          setIsCompacting(true);
+          continue;
+        }
+
+        if (meta?.type === 'compaction_completed' || meta?.type === 'compaction_failed') {
+          setIsCompacting(false);
+          continue;
+        }
+
         if (meta?.type === 'plan_update') {
           planRef.current = meta.plan;
           setPlan(meta.plan);
@@ -594,6 +669,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         }
 
         streamedContentStartedRef.current = true;
+        setIsCompacting(false);
         chunkBufferRef.current += chunkText;
 
         // Agenda flush para o próximo frame de display (se não houver um pendente)
@@ -624,6 +700,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
           if (output.interview) {
             setInterview(output.interview);
             setPendingSettings(null);
+            // Armazena o tool request para retomada via Genkit resume API
+            interruptToolRequestRef.current = output.interruptToolRequest ?? null;
           }
           // appliedSettings DEPOIS de interview para não ser sobrescrito
           if (output.appliedSettings) {
@@ -637,8 +715,13 @@ export function useAssistant(currentState?: AssistantStudioState) {
           }
           // Armazena histórico completo do Genkit para a próxima mensagem
           if (output.fullHistory && Array.isArray(output.fullHistory)) {
-            fullHistoryRef.current = output.fullHistory;
+            fullHistoryRef.current = sanitizeAssistantHistoryAttachments(output.fullHistory) ?? [];
           }
+          contextSummaryRef.current = output.contextSummary ?? contextSummaryRef.current;
+          compactionCountRef.current = output.compactionCount ?? compactionCountRef.current;
+          estimatedContextTokensRef.current = output.estimatedContextTokens ?? estimatedContextTokensRef.current;
+    retryAttachmentsRef.current = undefined;
+    interruptToolRequestRef.current = null;
         } catch (finalDataError: unknown) {
           if (!isCallableCancelledError(finalDataError)) {
             const errorInfo = getCallableErrorInfo(finalDataError);
@@ -680,7 +763,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         const withoutEmpty = prev.filter(m => !(m.id === assistantMsgId && m.text === ''));
         return [
           ...withoutEmpty,
-          { id: assistantMsgId, role: 'model', text: streamFallbackText },
+          { id: assistantMsgId, role: 'model', text: streamFallbackText, canRetry: true },
         ];
       });
 
@@ -699,6 +782,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
       }
       setIsLoading(false);
       setIsStreaming(false);
+      setIsCompacting(false);
+      setMessages(sanitizeChatMessageAttachments);
     }
   }, [
     messages,
@@ -731,6 +816,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     chunkBufferRef.current = '';
     setIsLoading(false);
     setIsStreaming(false);
+    setIsCompacting(false);
   };
 
   /**
@@ -739,30 +825,54 @@ export function useAssistant(currentState?: AssistantStudioState) {
    */
   const retryLastMessage = useCallback(() => {
     // Encontra a última mensagem de erro do modelo (fallback)
+    // Usa canRetry (campo explícito) com fallback para marker textual em dados legados
     const lastErrorIdx = messages.findLastIndex(
-      (m) => m.role === 'model' && m.text.includes(retryDetectionMarker),
+      (m) => m.role === 'model' && (m.canRetry === true || m.text.includes(STREAM_ERROR_MARKER)),
     );
     if (lastErrorIdx === -1) return;
 
     // Encontra a última mensagem do usuário antes do erro
-    const lastUserMsg = [...messages]
-      .slice(0, lastErrorIdx)
-      .reverse()
-      .find((m) => m.role === 'user');
+    const lastUserIdx = messages.findLastIndex(
+      (message, index) => index < lastErrorIdx && message.role === 'user',
+    );
+    const lastUserMsg = messages[lastUserIdx];
 
     if (!lastUserMsg) return;
 
     // Remove a mensagem de fallback e reenvia usando o histórico já limpo,
     // evitando mandar o fallback técnico de volta para o backend.
-    const sanitizedMessages = messages.filter((_, idx) => idx !== lastErrorIdx);
+    const sanitizedMessages = messages.filter((_, index) => index !== lastErrorIdx && index !== lastUserIdx);
     setMessages(sanitizedMessages);
+    void sendMessage(lastUserMsg.text, retryAttachmentsRef.current ?? lastUserMsg.attachments, sanitizedMessages);
+  }, [messages, sendMessage]);
+
+  /**
+   * Regenera a última resposta do modelo.
+   * Remove a última mensagem do modelo e reenvia a última mensagem do usuário.
+   */
+  const regenerateLastResponse = useCallback(() => {
+    if (isLoading || isStreaming) return;
+
+    // Encontra a última mensagem do modelo
+    const lastModelIdx = messages.findLastIndex((m) => m.role === 'model');
+    if (lastModelIdx === -1) return;
+
+    // Remove a última mensagem do modelo
+    const sanitizedMessages = messages.filter((_, idx) => idx !== lastModelIdx);
+    setMessages(sanitizedMessages);
+
+    // Encontra a última mensagem do usuário antes dela
+    const lastUserMsg = sanitizedMessages.findLast((m) => m.role === 'user');
+    if (!lastUserMsg) return;
+
     void sendMessage(lastUserMsg.text, lastUserMsg.attachments, sanitizedMessages);
-  }, [messages, sendMessage, retryDetectionMarker]);
+  }, [messages, sendMessage, isLoading, isStreaming]);
 
   return {
     messages,
     isLoading,
     isStreaming,
+    isCompacting,
     error,
     jsonSettings,
     sendMessage,
@@ -770,6 +880,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     loadSession,
     stopGeneration,
     retryLastMessage,
+    regenerateLastResponse,
     messagesEndRef,
     streamingMessageRef,
     plan,

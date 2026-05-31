@@ -208,6 +208,41 @@ describe('db/chats', () => {
     expect(mockSetDoc).toHaveBeenCalled();
   });
 
+  it('saveChatSession remove base64 de anexos e inlineData antes de persistir', async () => {
+    const { saveChatSession, getChatSessions } = await import('../../src/lib/db/chats');
+    const id = uid();
+
+    await saveChatSession({
+      id,
+      title: 'Sanitizado',
+      messages: [{
+        id: 'm1',
+        role: 'user',
+        text: 'Veja o arquivo',
+        attachments: [{ mimeType: 'image/png', data: 'base64-antigo', name: 'foto.png' }],
+      }],
+      fullHistory: [{
+        role: 'user',
+        content: [
+          { text: 'Veja o arquivo' },
+          { inlineData: { mimeType: 'image/png', data: 'base64-antigo' } },
+          { media: { contentType: 'image/png', url: 'data:image/png;base64,base64-antigo' } },
+          { media: { contentType: 'image/png', url: 'https://example.com/foto.png' } },
+        ],
+      }],
+      updatedAt: Date.now(),
+    });
+
+    const session = (await getChatSessions()).find((chat) => chat.id === id);
+    expect(session?.messages[0].attachments).toEqual([
+      { mimeType: 'image/png', name: 'foto.png', processed: true },
+    ]);
+    expect(session?.fullHistory?.[0].content).toEqual([
+      { text: 'Veja o arquivo' },
+      { media: { contentType: 'image/png', url: 'https://example.com/foto.png' } },
+    ]);
+  });
+
   it('deleteChatSession chama deleteDoc do Firestore quando userId presente', async () => {
     const { deleteChatSession } = await import('../../src/lib/db/chats');
     await deleteChatSession(uid(), 'user-123');

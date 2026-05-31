@@ -108,10 +108,56 @@ export interface UserSetting {
   imageTextLanguage?: string;
 }
 
-export interface AttachmentRecord {
+export interface UploadAttachment {
   mimeType: string;
   data: string;
   name?: string;
+  processed?: false;
+}
+
+export interface StoredAttachment {
+  mimeType: string;
+  name?: string;
+  processed: true;
+}
+
+export type AttachmentRecord = UploadAttachment | StoredAttachment;
+
+export interface AssistantHistoryInlineData {
+  mimeType: string;
+  data: string;
+}
+
+export interface AssistantHistoryMedia {
+  url: string;
+  contentType?: string;
+}
+
+export interface AssistantHistoryToolRequest {
+  name: string;
+  ref?: string;
+  input?: unknown;
+}
+
+export interface AssistantHistoryToolResponse {
+  name: string;
+  ref?: string;
+  output?: unknown;
+}
+
+export interface AssistantHistoryPart {
+  text?: string;
+  inlineData?: AssistantHistoryInlineData;
+  media?: AssistantHistoryMedia;
+  toolRequest?: AssistantHistoryToolRequest;
+  toolResponse?: AssistantHistoryToolResponse;
+  [key: string]: unknown;
+}
+
+export interface AssistantHistoryMessage {
+  role: 'system' | 'user' | 'model' | 'tool';
+  content: AssistantHistoryPart[];
+  [key: string]: unknown;
 }
 
 export interface ChatMessageRecord {
@@ -119,6 +165,10 @@ export interface ChatMessageRecord {
   role: 'user' | 'model';
   text: string;
   attachments?: AttachmentRecord[];
+  /** Epoch ms — quando a mensagem foi criada. Opcional para compatibilidade com dados legados. */
+  createdAt?: number;
+  /** Se true, é uma mensagem de erro de streaming que pode ser reenviada via retry. */
+  canRetry?: boolean;
 }
 
 export interface ChatSession {
@@ -132,7 +182,13 @@ export interface ChatSession {
   /** Entrevista pendente (persistida para resiliência a reload) */
   pendingInterview?: import('../../features/assistant/types').InterviewDatum;
   /** Histórico completo do Genkit (MessageData[]) — preserva tool calls/responses entre mensagens */
-  fullHistory?: unknown[];
+  fullHistory?: AssistantHistoryMessage[];
+  /** Resumo Markdown do contexto antigo após compactação automática. */
+  contextSummary?: string;
+  /** Quantidade de compactações aplicadas nesta sessão. */
+  compactionCount?: number;
+  /** Estimativa local do contexto enviado ao modelo na última chamada. */
+  estimatedContextTokens?: number;
 }
 
 // ⚠️ DUPLICADO: Esta interface também existe em functions/src/flows/audio.ts (AudioSegment local).

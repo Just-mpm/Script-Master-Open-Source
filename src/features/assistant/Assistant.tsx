@@ -40,6 +40,7 @@ import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { APP_BORDER, APP_SURFACE_ELEVATED, BRAND_PRIMARY, ICON_SIZE_SM, RADIUS_XS, SHADOW_DEEP } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
 import { InterviewPanel } from './components/InterviewPanel';
+import { ScrollToBottomFab } from './components/ScrollToBottomFab';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -59,12 +60,14 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     messages,
     isLoading,
     isStreaming,
+    isCompacting,
     error,
     sendMessage,
     startNewChat,
     loadSession,
     stopGeneration,
     retryLastMessage,
+    regenerateLastResponse,
     messagesEndRef,
     streamingMessageRef,
     creditsExhausted,
@@ -86,7 +89,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
   const [input, setInput] = useState('');
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
-  const [savedToMemoryId, setSavedToMemoryId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showMemories, setShowMemories] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -111,6 +113,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const loadSettings = useCallback(async () => {
     const data = await getUserSettings(user?.uid);
@@ -269,12 +272,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       setDeletingConfirm(false);
     }
   };
-
-  const handleSaveMessageToMemory = useCallback(async (text: string, messageId: string) => {
-    await saveMemory(text, user?.uid);
-    setSavedToMemoryId(messageId);
-    window.setTimeout(() => setSavedToMemoryId(null), 3000);
-  }, [user?.uid]);
 
   const handleSelectSession = useCallback((session: ChatSession) => {
     loadSession(session);
@@ -503,24 +500,26 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       {/* Container scrollável — agrupa mensagens + widgets dinâmicos */}
       <Box
+        ref={scrollContainerRef}
         sx={{
           flex: 1,
           overflowY: 'auto',
           minHeight: 0,
           scrollBehavior: 'smooth',
+          position: 'relative',
         }}
       >
         <AssistantMessages
           messages={messages}
           isLoading={isLoading}
           isStreaming={isStreaming}
+          isCompacting={isCompacting}
           appliedMessageId={appliedMessageId}
-          savedToMemoryId={savedToMemoryId}
           messagesEndRef={messagesEndRef}
           streamingMessageRef={streamingMessageRef}
           onApply={handleApply}
-          onSaveToMemory={handleSaveMessageToMemory}
           onStopGeneration={stopGeneration}
+          onRegenerate={regenerateLastResponse}
           onSuggestionClick={handleSuggestionClick}
           toolEvents={toolEvents}
         />
@@ -605,6 +604,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             onAnswer={handleAnswerInterview}
           />
         ) : null}
+
+        <ScrollToBottomFab containerRef={scrollContainerRef} isStreaming={isStreaming} />
       </Box>
 
       <AssistantComposer

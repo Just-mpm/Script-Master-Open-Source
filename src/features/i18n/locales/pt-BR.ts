@@ -690,6 +690,7 @@ export const ptBR: TranslationDictionary = {
   studio: {
     header: {
       subtitle: 'Estúdio de produção',
+      scriptTab: 'Roteiro',
       nav: {
         studio: 'Estúdio',
         image: 'Imagem',
@@ -1102,17 +1103,25 @@ export const ptBR: TranslationDictionary = {
       copied: 'Copiado!',
       copyText: 'Copiar texto',
       copyTextAria: 'Copiar texto da mensagem',
+      regenerate: 'Regenerar resposta',
+      goToStudio: 'Ver no estúdio →',
+      codeCopied: 'Copiado!',
+      codeCopy: 'Copiar código',
+      codeCopyAria: 'Copiar bloco de código',
+      scrollToBottom: 'Ir para o final da conversa',
+      closePreview: 'Fechar preview da imagem',
+      now: 'agora',
+      minAgo: 'min',
       malformedJson: 'O assistente sugeriu ajustes, mas o formato não pôde ser interpretado.',
       applied: 'Aplicado',
       applyToStudio: 'Aplicar no estúdio',
       ignore: 'Ignorar',
       interviewPlaceholder: 'Responder com detalhes',
       interviewSend: 'Enviar',
-      savedToMemory: 'Salvo na memória',
-      saveInsight: 'Salvar insight',
       emptyTitle: 'Como posso ajudar?',
       emptyDescription: 'Pergunte sobre ajustes de roteiro, sugestões de voz, ideias de cena, ou envie anexos para análise criativa.',
       thinking: 'Pensando',
+      compacting: 'Compactando conversa...',
       suggestions: {
         adjustPace: 'Ajustar ritmo',
         suggestScene: 'Sugerir cena',
@@ -1775,7 +1784,6 @@ export const ptBR: TranslationDictionary = {
     },
     welcome: 'Como posso ajudar?',
     defaultChatTitle: 'Nova conversa',
-    retryDetection: '__RETRY_DETECTED__',
   },
 
   // ── Configurações ────────────────────────────────────────────────────────

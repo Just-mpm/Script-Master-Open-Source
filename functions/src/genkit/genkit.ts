@@ -12,7 +12,7 @@
 // Consumido por todos os flows e utilitários de IA no backend.
 // ---------------------------------------------------------------------------
 
-import { genkit, generateMiddleware } from 'genkit';
+import { genkit, generateMiddleware } from 'genkit/beta';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
 import { logger } from 'genkit/logging';

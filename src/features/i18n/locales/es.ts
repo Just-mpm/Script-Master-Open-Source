@@ -676,6 +676,7 @@ export const es: TranslationDictionary = {
   studio: {
     header: {
       subtitle: 'Estudio de producción',
+      scriptTab: 'Guion',
       nav: {
         studio: 'Estudio',
         image: 'Imagen',
@@ -1086,17 +1087,25 @@ export const es: TranslationDictionary = {
       copied: '¡Copiado!',
       copyText: 'Copiar texto',
       copyTextAria: 'Copiar texto del mensaje',
+      regenerate: 'Regenerar respuesta',
+      goToStudio: 'Ir al Estudio →',
+      codeCopied: '¡Copiado!',
+      codeCopy: 'Copiar código',
+      codeCopyAria: 'Copiar bloque de código',
+      scrollToBottom: 'Ir al final de la conversación',
+      closePreview: 'Cerrar vista previa de la imagen',
+      now: 'ahora',
+      minAgo: 'min',
       malformedJson: 'El asistente sugirió ajustes, pero el formato no pudo ser interpretado.',
       applied: 'Aplicado',
       applyToStudio: 'Aplicar en el estudio',
       ignore: 'Ignorar',
       interviewPlaceholder: 'Responder con detalles',
       interviewSend: 'Enviar',
-      savedToMemory: 'Guardado en memoria',
-      saveInsight: 'Guardar insight',
       emptyTitle: '¿Cómo puedo ayudar?',
       emptyDescription: 'Pregunta sobre ajustes de guion, sugerencias de voz, ideas de escena, o envía adjuntos para análisis creativo.',
       thinking: 'Pensando',
+      compacting: 'Compactando conversación...',
       suggestions: {
         adjustPace: 'Ajustar ritmo',
         suggestScene: 'Sugerir escena',
@@ -1755,7 +1764,6 @@ export const es: TranslationDictionary = {
     },
     welcome: '¿Cómo puedo ayudar?',
     defaultChatTitle: 'Nueva conversación',
-    retryDetection: '__RETRY_DETECTED__',
   },
 
   // ── Configuración ────────────────────────────────────────────────────────

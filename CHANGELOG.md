@@ -7,6 +7,58 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.113.0] - 2026-05-31
+
+### Adicionado
+
+- **Preservação de tool context no Assistente IA — fullHistory**: Novo campo `fullHistory` transporta o histórico completo do Genkit (`MessageData[]` com tool calls/responses) entre mensagens — o modelo não precisa mais re-chamar ferramentas para recuperar informações de rodadas anteriores:
+  - `functions/src/genkit/schemas/common.ts`: 6 novos schemas Zod (`AssistantHistoryInlineDataSchema`, `AssistantHistoryMediaSchema`, `AssistantHistoryToolRequestSchema`, `AssistantHistoryToolResponseSchema`, `AssistantHistoryPartSchema`, `AssistantHistoryMessageSchema`) com tipagens inferidas
+  - `src/hooks/useAssistant.ts`: `fullHistoryRef` (`useRef<unknown[]>`) armazena o histórico entre mensagens; enviado no input da Cloud Function e recebido no output; persistido no `ChatSession`
+  - `src/lib/db/types.ts`: novas interfaces `AssistantHistoryInlineData`, `AssistantHistoryMedia`, `AssistantHistoryToolRequest`, `AssistantHistoryToolResponse`, `AssistantHistoryPart`, `AssistantHistoryMessage`, `UploadAttachment`, `StoredAttachment`
+  - `functions/src/flows/assistant.ts`: backend usa `fullHistory` como base do histórico (com fallback para `historyMessages` tradicional); `parseGenkitMessages()` e `appendContextSummary()` para tratamento do histórico tool-aware; `assertAssistantPayloadSize()` com guard de 500k tokens
+  - `src/lib/db/chats.ts`: `sanitizeAssistantHistoryAttachments()` e `sanitizeChatSessionForPersistence()` — sanitização de attachments no histórico completo antes da persistência
+
+- **Compactação automática de histórico do Assistente** (`functions/src/genkit/utils/assistant-compaction.ts`, +216 linhas): novo utilitário que aciona sumarização automática quando o histórico excede threshold de tokens — preserva cauda de mensagens recentes, usa `MODEL_FAST` para sumarização, expõe eventos `compaction_started`/`compaction_completed`/`compaction_failed` no streaming. Testes unitários em `tests/functions/assistant-compaction.unit.test.ts`
+
+- **Syntax highlighting com CodeBlock** (`src/features/assistant/components/CodeBlock.tsx`, +215 linhas): novo componente com `react-syntax-highlighter` — suporte a JS, TS, JSX, TSX, JSON, CSS com botão de cópia (check animado), tooltip i18n, tema escuro compatível com o design system. Dependências: `react-syntax-highlighter` ^16.1.1 e `@types/react-syntax-highlighter` ^15.5.13
+
+- **ImageLightbox** (`src/features/assistant/components/ImageLightbox.tsx`, +97 linhas): lightbox para visualização ampliada de imagens no chat — Dialog MUI com Zoom transition, backdrop escuro, botão de fechar, dimensões responsivas (90vw/90vh)
+
+- **ScrollToBottomFab** (`src/features/assistant/components/ScrollToBottomFab.tsx`, +106 linhas): FAB de scroll ao final da conversa — visível quando scroll não está no final, indicador de streaming com pulso, animação Zoom, translateZ para GPU acceleration
+
+- **Suporte a `genkit/beta`** (`functions/src/genkit/genkit.ts`): import migrado para `genkit/beta` — acesso a APIs beta como `defineInterrupt` e `generateMiddleware`
+
+- **Chave i18n `regenerate` e `scriptTab`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): substituem chaves `savedToMemory`/`saveInsight` removidas
+
+### Alterado
+
+- **`useAssistant.ts`** (+141/-30): refatoração com `fullHistoryRef` para preservação de tool context; `regenerateLastResponse()` com `STREAM_ERROR_MARKER` para detecção de erros de streaming; sanitização de attachments via `sanitizeChatMessageAttachments()` e `hasAttachmentData()`; import de tipos `AssistantHistoryMessage` e `ChatSession`
+- **`functions/src/flows/assistant.ts`** (+199/-69): `fullHistory` como fonte principal de histórico; `buildMeteringMessagesText()` para cálculo de créditos com base no histórico tool-aware; migração de `inlineData` para `media` no formato de parts; `assertAssistantPayloadSize()` com `MAX_ASSISTANT_PAYLOAD_CHARS` (20M); `appendContextSummary()` para sumarização de contexto persistente
+- **`AssistantMessages.tsx`** (+193/-109): animações Motion com `AnimatePresence mode="popLayout"` e `layout` para transições suaves; botão de regenerar resposta com `Refresh` icon; `PreBlock` wrapper para CodeBlock; `ImageLightbox` integrado com clique em imagens; `ScrollToBottomFab` com `shallowEqualAttachments` para evitar re-renders; timestamps via `formatTimestamp()` com locale mapping
+- **`Assistant.tsx`** (+10/-9): integração de `ScrollToBottomFab` no layout do chat
+- **`assistant/utils.ts`** (+4/-3): import de `UploadAttachment` do `../../lib/db`
+- **`src/lib/db/types.ts`** (+58/-2): `AttachmentRecord` modificado com novos campos; 8 novas interfaces para suporte a fullHistory e upload attachments
+- **`src/lib/db/chats.ts`** (+67/-11): `sanitizeStoredAttachments()`, `sanitizeHistoryPart()`, `sanitizeAssistantHistoryAttachments()`, `sanitizeChatSessionForPersistence()` — pipeline de sanitização para persistência segura do histórico completo
+- **`package.json`**: `react-syntax-highlighter` ^16.1.1 adicionado em dependencies; `@types/react-syntax-highlighter` ^15.5.13 e `firebase-tools` ^15.3.0 em devDependencies; reordenação de entradas
+- **Testes**: `AssistantMessages.component.test.tsx` — remoção de testes do botão "Salvar insight" (7 asserts) e adaptação para novos props; `useAssistant.unit.test.tsx` — setup de teste atualizado para novos schemas de fullHistory; `persistence.dual-storage.test.ts` — novo teste de sanitização de fullHistory com attachments; `imageProcessing.unit.test.ts` — mock `decode()` adicionado para compatibilidade
+
+### Removido
+
+- **`docs/audits/swipe-tabs-bugfix.md`** (67 linhas): documento de auditoria do bugfix useSwipeTabs — conteúdo incorporado ao histórico de versões
+- **`docs/audits/tool-context-preservation.md`** (269 linhas): plano de tool context preservation — implementação concluída nesta versão
+
+### Documentado
+
+- **`docs/audits/assistant-chat-ux-improvements.md`** (+204 linhas): auditoria de UX do chat do assistente — 11 arquivos revisados, veredito "Ajustes recomendados" (2 warnings)
+- **`docs/audits/defineInterrupt-migration.md`** (+306 linhas): auditoria da migração interviewTool → defineInterrupt — 4 arquivos revisados, veredito "Bloqueadores de merge" (3 erros de compilação, 4 bugs)
+- **`docs/plan/assistant-chat-ux-improvements.md`** (+729 linhas): plano de 10 melhorias de UX no chat do assistente — 9 implementadas, 1 deferida
+- **`docs/scan/1.md`** (+66 linhas): scan de lacunas do projeto inteiro — 9 gaps priorizados
+- **`docs/scan/2.md`** (+57 linhas): scan de lacunas da compactação do assistente — 5 gaps priorizados
+- **`docs/scan/2026-05-31-interrupt-migration.md`** (+78 linhas): scan de lacunas da migração defineInterrupt — 6 gaps priorizados
+- **`docs/scan/assistant-chat-ux-verification.md`** (+97 linhas): scan de verificação de implementação das melhorias de UX — 9/10 implementados
+
+---
+
 ## [0.112.0] - 2026-05-31
 
 ### Adicionado

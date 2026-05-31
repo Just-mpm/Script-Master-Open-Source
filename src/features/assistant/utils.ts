@@ -1,4 +1,5 @@
-import type { AssistantSettings, Attachment } from './types';
+import type { UploadAttachment } from '../../lib/db';
+import type { AssistantSettings } from './types';
 
 /** Retorno discriminado de extractJsonSettings — distingue "não encontrado" de "malformado" */
 export interface ExtractedSettings {
@@ -13,8 +14,8 @@ export interface ExtractedSettingsError {
 
 export type ExtractedSettingsResult = ExtractedSettings | ExtractedSettingsError;
 
-export async function fileToAttachment(file: File): Promise<Attachment> {
-  return new Promise<Attachment>((resolve, reject) => {
+export async function fileToAttachment(file: File): Promise<UploadAttachment> {
+  return new Promise<UploadAttachment>((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onloadend = () => {
