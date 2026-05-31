@@ -69,7 +69,7 @@ describe('PricingPage', () => {
 
   it('renderiza a seção de créditos com 3 cards', () => {
     render(<PricingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('1.000 créditos mensais gratuitos')).toBeDefined();
+    expect(screen.getByText('500 créditos mensais gratuitos')).toBeDefined();
     expect(screen.getByText('+250 créditos ao enviar feedback')).toBeDefined();
     expect(screen.getByText('Sem pagamento')).toBeDefined();
   });

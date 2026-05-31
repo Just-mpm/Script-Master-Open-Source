@@ -15,7 +15,7 @@ interface SeoMeta {
 interface SeoLink {
   rel: string;
   href: string;
-  hreflang?: string;
+  hrefLang?: string;
 }
 
 /** Dados de SEO para o DocumentHead (hoisting nativo do React 19) */
@@ -220,10 +220,10 @@ export function getPageSeo({
     link: [
       { rel: 'canonical', href: url },
       // hreflang alternates para i18n
-      { rel: 'alternate', hreflang: 'pt-BR', href: url },
-      { rel: 'alternate', hreflang: 'en', href: url },
-      { rel: 'alternate', hreflang: 'es', href: url },
-      { rel: 'alternate', hreflang: 'x-default', href: url },
+      { rel: 'alternate', hrefLang: 'pt-BR', href: url },
+      { rel: 'alternate', hrefLang: 'en', href: url },
+      { rel: 'alternate', hrefLang: 'es', href: url },
+      { rel: 'alternate', hrefLang: 'x-default', href: url },
     ],
   };
 }

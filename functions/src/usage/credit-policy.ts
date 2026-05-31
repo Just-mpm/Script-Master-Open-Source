@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 
 /** Créditos mensais concedidos a todo usuário do beta */
-export const MONTHLY_BASE_CREDITS = 1000;
+export const MONTHLY_BASE_CREDITS = 500;
 
 /** Bônus único concedido ao enviar feedback */
 export const FEEDBACK_BONUS_CREDITS = 250;

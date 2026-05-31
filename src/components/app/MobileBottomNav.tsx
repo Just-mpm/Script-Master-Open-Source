@@ -16,6 +16,7 @@ import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import ImageIcon from '@mui/icons-material/Image';
+import logos from '../../assets/logos';
 import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import Logout from '@mui/icons-material/Logout';
 import DeleteForever from '@mui/icons-material/DeleteForever';
@@ -29,8 +30,6 @@ import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../features/i18n';
 import {
-  BRAND_GRADIENT,
-  BRAND_PRIMARY_GLOW,
   BRAND_PRIMARY_GLOW_SOFT,
   ICON_SIZE_MD,
   ICON_SIZE_SM,
@@ -275,20 +274,11 @@ export function MobileBottomNav() {
           <Stack spacing={1.5}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Box
-                aria-hidden="true"
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: 'common.white',
-                  background: BRAND_GRADIENT,
-                  boxShadow: `0 12px 28px ${BRAND_PRIMARY_GLOW}`,
-                }}
-              >
-                <Mic sx={{ fontSize: ICON_SIZE_MD }} />
-              </Box>
+                component="img"
+                src={logos.mark.transparent}
+                alt="Script Master"
+                sx={{ width: 32, height: 32, objectFit: 'contain' }}
+              />
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                 Script Master
               </Typography>

@@ -7,6 +7,32 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.116.0] - 2026-05-31
+
+### Alterado
+
+- **Créditos gratuitos reduzidos** (`src/data/pricingFaq.ts`): gratuito era 1.000 créditos/mês → 500 créditos/mês. FAQs de billing atualizados nos 3 locales (pt-BR, en, es). Teste `PricingPage.component.test.tsx` atualizado para refletir novo valor
+- **hreflang removido do SEO** (`src/lib/seo.ts`): campos `hreflang` e construção de links alternates removidos —简化 SEO output, hreflang agora gerenciado via `public/sitemap.xml` apenas
+
+### Removido
+
+- **Sistema de Templates do Estúdio** (~1000 linhas): arquivos e componentes de template de roteiro removidos — não há mais TemplateSelector, TemplateGallery, TemplatePreviewDialog, TemplateCard, templateUtils, scriptTemplates.ts, templates.ts, nem imports em Inspector.tsx
+  - `src/data/scriptTemplates.ts` (262 linhas)
+  - `src/features/studio/types/templates.ts` (8 linhas)
+  - `src/features/studio/utils/templateUtils.ts` (69 linhas)
+  - `src/features/studio/components/TemplateCard.tsx` (159 linhas)
+  - `src/features/studio/components/TemplateGallery.tsx` (112 linhas)
+  - `src/features/studio/components/TemplatePreviewDialog.tsx` (238 linhas)
+  - `src/features/studio/components/TemplateSelector.tsx` (134 linhas)
+  - `tests/studio/template*.test.tsx` (5 arquivos de teste removidos)
+  - `templates` e `patchLabels` removidos dos 3 arquivos de locale (pt-BR, en, es)
+
+### Corrigido
+
+- **Meta tag Apple** (`index.html`): `apple-mobile-web-app-capable` corrigido para `mobile-web-app-capable` — valor correto para Progressive Web Apps
+
+---
+
 ## [0.115.1] - 2026-05-31
 
 ### Alterado

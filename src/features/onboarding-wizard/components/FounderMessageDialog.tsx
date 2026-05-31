@@ -157,6 +157,10 @@ export function FounderMessageDialog({ open, onClose }: FounderMessageDialogProp
             </Typography>
 
             <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary' }}>
+              {t('onboarding.wizard.founderCredits')}
+            </Typography>
+
+            <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.secondary' }}>
               {t('onboarding.wizard.founderFeedback')}
             </Typography>
 

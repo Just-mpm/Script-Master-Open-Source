@@ -33,7 +33,6 @@ import Warning from '@mui/icons-material/Warning';
 import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import { useStudioStore } from '../features/studio/store';
-import { TemplateSelector } from '../features/studio/components/TemplateSelector';
 import { EmotionSelector } from '../features/studio/components/EmotionSelector';
 import type { EmotionType } from '../features/studio/types';
 import { useShallow } from 'zustand/react/shallow';
@@ -330,8 +329,6 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
       aria-label={t('studio.inspector.ariaLabel')}
       id="inspector-panel"
     >
-      <TemplateSelector />
-
       <Paper elevation={0} sx={glassPanelSx}>
         <ButtonBase
           component="button"
