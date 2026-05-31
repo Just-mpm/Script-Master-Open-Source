@@ -143,6 +143,8 @@ export const AssistantInputSchema = z.object({
   thinkingLevel: ThinkingLevelSchema.nullable().optional(), // nível de pensamento
   /** Dados de retomada quando o usuário responde a um interrupt */
   resume: InterviewResumeDataSchema.nullable().optional(),
+  /** Histórico completo do Genkit (MessageData[]) com tool calls/responses — preserva contexto entre mensagens */
+  fullHistory: z.array(z.any()).nullable().optional(),
 });
 
 /** Output do flow de chat */
@@ -153,6 +155,8 @@ export const AssistantOutputSchema = z.object({
   appliedSettings: z.record(z.unknown()).nullable().optional(),
   interview: InterviewInputSchema.nullable().optional(),
   respond: RespondInputSchema.nullable().optional(),
+  /** Histórico completo do Genkit (MessageData[]) para preservar tool context entre mensagens */
+  fullHistory: z.array(z.any()).nullable().optional(),
 });
 
 /** Stream chunk do chat */

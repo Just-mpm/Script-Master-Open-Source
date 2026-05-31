@@ -46,7 +46,7 @@ export function StudioPage({
   const [direction, setDirection] = useState(0);
 
   // Hook de swipe com feedback visual (drag) para mobile
-  const { constraintRef, swipeVariants, handleDragEnd, dragElastic } = useSwipeTabs({
+  const { dragConstraints, swipeVariants, handleDragEnd, dragElastic, dragDirectionLock } = useSwipeTabs({
     activeTab,
     tabCount: 2,
     setActiveTab: (index: number) => {
@@ -132,7 +132,6 @@ export function StudioPage({
 
           {/* Container de constraints para limitar arrasto */}
           <Box
-            ref={constraintRef}
             role="region"
             aria-label={t('studio.studioPage.swipeRegion', { defaultValue: 'Conteúdo do estúdio com swipe' })}
             sx={{ position: 'relative', overflow: 'hidden' }}
@@ -146,9 +145,10 @@ export function StudioPage({
                 animate="center"
                 exit="exit"
                 drag="x"
-                dragConstraints={constraintRef}
+                dragConstraints={dragConstraints}
                 dragElastic={dragElastic}
                 dragMomentum={false}
+                dragDirectionLock={dragDirectionLock}
                 onDragEnd={handleDragEnd}
                 style={{ touchAction: 'pan-y' }}
               >

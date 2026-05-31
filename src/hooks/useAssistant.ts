@@ -81,6 +81,8 @@ interface AssistantFlowInput {
   thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
   /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
   resume?: { question: string; answer: string };
+  /** Histórico completo do Genkit (MessageData[]) com tool calls/responses */
+  fullHistory?: unknown[];
 }
 
 interface AssistantFlowOutput {
@@ -90,6 +92,8 @@ interface AssistantFlowOutput {
   appliedSettings?: Record<string, unknown>;
   interview?: InterviewDatum | null;
   respond?: RespondResult | null;
+  /** Histórico completo do Genkit (MessageData[]) para preservar tool context entre mensagens */
+  fullHistory?: unknown[];
 }
 
 type AssistantStreamMeta =
@@ -205,6 +209,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const streamedContentStartedRef = useRef(false);
   const planRef = useRef<AssistantPlan>([]);
   const interviewRef = useRef<InterviewDatum | null>(null);
+  /** Histórico completo do Genkit — preserva tool calls/responses entre mensagens */
+  const fullHistoryRef = useRef<unknown[]>([]);
 
   // Callable estável (a instância do SDK é memoizada)
   const assistantCallable = useMemo(
@@ -297,6 +303,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
         // Persiste plano e entrevista para resiliência a reload
         activePlan: planRef.current.length > 0 ? planRef.current : undefined,
         pendingInterview: interviewRef.current ?? undefined,
+        // Persiste histórico completo do Genkit (tool context)
+        fullHistory: fullHistoryRef.current.length > 0 ? fullHistoryRef.current : undefined,
       };
 
       void Promise.resolve(saveChatSession(session, user?.uid))
@@ -396,6 +404,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setInterview(null);
     setRespondResult(null);
     planRef.current = [];
+    fullHistoryRef.current = [];
   };
 
   const loadSession = (session: ChatSession) => {
@@ -415,6 +424,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setPlan(restoredPlan);
     planRef.current = restoredPlan;
     setInterview(session.pendingInterview ?? null);
+
+    // Restaura histórico completo do Genkit (tool context)
+    fullHistoryRef.current = session.fullHistory ?? [];
 
     setPendingSettings(null);
     setToolEvents([]);
@@ -501,6 +513,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
         model: selectedModel,
         thinkingLevel: thinkingEnabled ? selectedThinkingLevel : undefined,
         resume: resume ?? undefined,
+        // Envia histórico completo do Genkit para preservar tool context
+        fullHistory: fullHistoryRef.current.length > 0 ? fullHistoryRef.current : undefined,
       };
       const input = removeUndefinedFields(rawInput);
 
@@ -620,6 +634,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
           }
           if (output.respond) {
             setRespondResult(output.respond);
+          }
+          // Armazena histórico completo do Genkit para a próxima mensagem
+          if (output.fullHistory && Array.isArray(output.fullHistory)) {
+            fullHistoryRef.current = output.fullHistory;
           }
         } catch (finalDataError: unknown) {
           if (!isCallableCancelledError(finalDataError)) {

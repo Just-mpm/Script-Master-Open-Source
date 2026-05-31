@@ -131,6 +131,8 @@ export interface ChatSession {
   activePlan?: import('../../features/assistant/types').AssistantPlan;
   /** Entrevista pendente (persistida para resiliência a reload) */
   pendingInterview?: import('../../features/assistant/types').InterviewDatum;
+  /** Histórico completo do Genkit (MessageData[]) — preserva tool calls/responses entre mensagens */
+  fullHistory?: unknown[];
 }
 
 // ⚠️ DUPLICADO: Esta interface também existe em functions/src/flows/audio.ts (AudioSegment local).

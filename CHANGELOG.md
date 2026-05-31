@@ -7,6 +7,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.112.0] - 2026-05-31
+
+### Adicionado
+
+- **Preservação de tool context no Assistente IA**: Novo campo `fullHistory` transporta o histórico completo do Genkit (`MessageData[]` com tool calls/responses) entre mensagens — o modelo não precisa mais re-chamar ferramentas para recuperar informações de rodadas anteriores:
+  - `functions/src/genkit/schemas/common.ts`: `fullHistory` adicionado em `AssistantInputSchema` e `AssistantOutputSchema` (`z.array(z.any()).nullable().optional()`)
+  - `src/hooks/useAssistant.ts`: `fullHistoryRef` (`useRef<unknown[]>`) armazena o histórico entre mensagens; enviado no input da Cloud Function e recebido no output; persistido no `ChatSession`
+  - `src/lib/db/types.ts`: campo `fullHistory` adicionado na interface `ChatSession`
+  - `functions/src/flows/assistant.ts`: backend usa `fullHistory` como base do histórico (com fallback para `historyMessages` tradicional); `resumeMessages` extraído para array separado; `fullHistory: response.messages` retornado no output
+
+### Alterado
+
+- **`useSwipeTabs.ts`**: Refatoração do hook de swipe — `constraintRef` (Ref) substituído por `dragConstraints` estático (`{ left: 0, right: 0 }`), eliminando a necessidade de `useRef` no hook. `dragDirectionLock: true` adicionado para travar direção ao primeiro gesto (evita conflito com scroll vertical). Thresholds ajustados: `DISTANCE_THRESHOLD` 50→40px, `DRAG_ELASTIC` 0.2→1 (tracking 1:1 natural do dedo)
+- **`StudioPage.tsx`**: Adaptado à nova API do `useSwipeTabs` — `dragConstraints` substitui `constraintRef` em props do `motion.div`; `ref={constraintRef}` removido do container Box; `dragDirectionLock` propagado
+- **Testes do `useSwipeTabs`**: Testes atualizados para refletir a nova API — `dragConstraints` e `dragDirectionLock` substituem `constraintRef`; `dragElastic` testado com valor exato (1) em vez de faixa
+
+### Documentado
+
+- **`docs/audits/swipe-tabs-bugfix.md`** (+68 linhas): auditoria completa do bugfix do useSwipeTabs — 3 arquivos revisados (hook, StudioPage, testes), veredito sem problemas relevantes, 1 sugestão de documentação que foi endereçada nesta versão
+- **`docs/plan/tool-context-preservation.md`** (+270 linhas): plano de preservação de contexto de tool calls no chat do assistente — escopo, decisões de arquitetura (MDE), schemas, implementação e critérios de aceite
+
+---
+
 ## [0.111.0] - 2026-05-30
 
 ### Adicionado

@@ -4,24 +4,27 @@
  * Detecta gestos de swipe usando drag="x" do Motion e fornece:
  * - Variants de animacao para AnimatePresence (slide + fade + blur)
  * - Handler de onDragEnd para decidir se troca de aba
- * - ConstraintRef para limitar arrasto
+ * - Constraints estáticos que ancoram o elemento no centro
  *
  * Seguranca: ignora gestos originados em elementos interativos.
  */
 
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { PanInfo, Variants, Transition } from 'motion/react';
 
 // ── Thresholds de gesto ──────────────────────────────────────────────
 
-/** Distancia minima (px) para considerar swipe valido */
-const DISTANCE_THRESHOLD = 50;
+/** Distância mínima (px) para considerar swipe válido */
+const DISTANCE_THRESHOLD = 40;
 
 /** Velocidade minima (px/s) para considerar swipe rapido */
 const VELOCITY_THRESHOLD = 300;
 
-/** Elasticidade do drag (0-1) */
-const DRAG_ELASTIC = 0.2;
+/** Elasticidade do drag — 1:1 para tracking natural do dedo */
+const DRAG_ELASTIC = 1;
+
+/** Constraints estáticos — ancora o elemento no centro exato */
+const DRAG_CONSTRAINTS = { left: 0, right: 0 } as const;
 
 // ── Animacao ─────────────────────────────────────────────────────────
 
@@ -87,14 +90,16 @@ interface UseSwipeTabsOptions {
 }
 
 interface UseSwipeTabsReturn {
-  /** Ref para o container de constraints do drag */
-  constraintRef: React.RefObject<HTMLDivElement | null>;
+  /** Constraints estáticos que ancoram o elemento no centro */
+  dragConstraints: { left: number; right: number };
   /** Variants para AnimatePresence (slide + fade + blur) */
   swipeVariants: Variants;
   /** Handler para onDragEnd do motion.div */
   handleDragEnd: (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
-  /** Elasticidade do drag */
+  /** Elasticidade do drag (1 = tracking 1:1 natural) */
   dragElastic: number;
+  /** Trava direção ao primeiro movimento — evita conflito com scroll vertical */
+  dragDirectionLock: boolean;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────
@@ -104,8 +109,6 @@ export function useSwipeTabs({
   tabCount,
   setActiveTab,
 }: UseSwipeTabsOptions): UseSwipeTabsReturn {
-  const constraintRef = useRef<HTMLDivElement>(null);
-
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       if (isInteractiveTarget(event.target)) return;
@@ -124,9 +127,10 @@ export function useSwipeTabs({
   );
 
   return {
-    constraintRef,
+    dragConstraints: DRAG_CONSTRAINTS,
     swipeVariants: SWIPE_VARIANTS,
     handleDragEnd,
     dragElastic: DRAG_ELASTIC,
+    dragDirectionLock: true,
   };
 }

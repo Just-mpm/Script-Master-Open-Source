@@ -313,7 +313,7 @@ export const assistant = onCallGenkit(
             },
           }));
 
-        // Histórico de mensagens
+        // Histórico simplificado (fallback quando fullHistory não está disponível)
         const historyMessages = (input.history ?? []).map((msg) => ({
           role: msg.role as 'user' | 'model',
           content: [
@@ -331,9 +331,10 @@ export const assistant = onCallGenkit(
 
         // Se há resume (resposta a um interrupt de entrevista), injeta o contexto
         // da pergunta anterior e a resposta do usuário no histórico
+        const resumeMessages: Array<{ role: 'user' | 'model'; content: Array<{ text: string }> }> = [];
         if (input.resume) {
           // Pergunta do modelo
-          historyMessages.push({
+          resumeMessages.push({
             role: 'model' as const,
             content: [{ text: input.resume.question }],
           });
@@ -350,7 +351,7 @@ export const assistant = onCallGenkit(
             answerParts.push(input.resume.answer);
           }
 
-          historyMessages.push({
+          resumeMessages.push({
             role: 'user' as const,
             content: [{ text: answerParts.join('\n') }],
           });
@@ -365,7 +366,12 @@ export const assistant = onCallGenkit(
           ],
         };
 
-        const messages = [...historyMessages, currentMessage];
+        // Base do histórico: fullHistory (com tool context preservado) ou history simplificado (backward compat)
+        const historyBase = (input.fullHistory && input.fullHistory.length > 0)
+          ? input.fullHistory
+          : historyMessages;
+
+        const messages = [...historyBase, ...resumeMessages, currentMessage];
 
         // -----------------------------------------------------------------------
         // 4. Geração com streaming via instrução em código
@@ -779,6 +785,7 @@ export const assistant = onCallGenkit(
             appliedSettings: pendingStudioSettings,
             interview: currentInterview,
             respond: currentRespond,
+            fullHistory: response.messages,
           };
 
         } catch (error) {

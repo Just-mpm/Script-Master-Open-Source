@@ -216,13 +216,20 @@ describe('useSwipeTabs', () => {
   });
 
   describe('valores de retorno', () => {
-    it('retorna constraintRef como ref', () => {
+    it('retorna dragConstraints ancorando ao centro', () => {
       const { result } = renderHook(() =>
         useSwipeTabs({ activeTab: 0, tabCount: 2, setActiveTab }),
       );
 
-      expect(result.current.constraintRef).toBeDefined();
-      expect(result.current.constraintRef.current).toBeNull();
+      expect(result.current.dragConstraints).toEqual({ left: 0, right: 0 });
+    });
+
+    it('retorna dragDirectionLock como true', () => {
+      const { result } = renderHook(() =>
+        useSwipeTabs({ activeTab: 0, tabCount: 2, setActiveTab }),
+      );
+
+      expect(result.current.dragDirectionLock).toBe(true);
     });
 
     it('retorna dragElastic como numero', () => {
@@ -230,9 +237,7 @@ describe('useSwipeTabs', () => {
         useSwipeTabs({ activeTab: 0, tabCount: 2, setActiveTab }),
       );
 
-      expect(typeof result.current.dragElastic).toBe('number');
-      expect(result.current.dragElastic).toBeGreaterThan(0);
-      expect(result.current.dragElastic).toBeLessThanOrEqual(1);
+      expect(result.current.dragElastic).toBe(1);
     });
 
     it('retorna swipeVariants com enter, center e exit', () => {
