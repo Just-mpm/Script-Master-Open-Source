@@ -7,6 +7,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.113.1] - 2026-05-31
+
+### Corrigido
+
+- **`functions/src/flows/assistant.ts`**: `interviewInterrupt` movido de depois do `respondTool` (linha ~634) para antes do seu primeiro uso em `genkitResume` (linha ~368) — corrige potencial `ReferenceError` onde o interrupt era usado antes de ser definido no escopo. Cast `as Parameters<typeof interviewInterrupt.respond>[0]` removido (desnecessário após a correção de ordem)
+
+### Alterado
+
+- **`functions/src/genkit/schemas/common.ts`** (+22/-5): Novo schema `ToolRequestPartZodSchema` (`z.ZodType<ToolRequestPart>`) que espelha o formato nativo do Genkit (`ToolRequestPartSchema` não é re-exportado pelo pacote `genkit`). Os campos `interruptToolRequest` em `AssistantInputSchema` e `AssistantOutputSchema` migrados do schema customizado `AssistantHistoryToolRequestSchema` para o novo `ToolRequestPartZodSchema` — serialização/desserialização mais precisa de interrupts no round-trip frontend-backend
+
+---
+
 ## [0.113.0] - 2026-05-31
 
 ### Adicionado

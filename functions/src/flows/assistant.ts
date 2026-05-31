@@ -368,6 +368,19 @@ export const assistant = onCallGenkit(
           ],
         }));
 
+        const interviewInterrupt = ai.defineInterrupt({
+          name: 'interview',
+          description: 'Faz uma pergunta ao usuário quando você precisa de uma decisão que não pode tomar sozinho. Use quando: faltar informação essencial (ex: qual voz usar), houver ambiguidade que depende de preferência pessoal, ou a tarefa exigir uma escolha do usuário para prosseguir. Cada opção DEVE ter \'label\' (curto) e \'description\' (explica o que a opção significa). Faça uma pergunta por vez. Não use para saudações, confirmações triviais ou quando já tiver informação suficiente. O fluxo de execução pausa até o usuário responder.',
+          inputSchema: InterviewInputSchema,
+          outputSchema: z.object({
+            status: z.literal('awaiting_input'),
+            question: z.string(),
+          }),
+          requestMetadata: (input) => ({
+            interview: input,
+          }),
+        });
+
         // Se há resume (resposta a um interrupt de entrevista), constrói o payload
         // de retomada usando a API oficial do Genkit (preserva thought signatures)
         let genkitResume: ReturnType<typeof interviewInterrupt.respond> | undefined;
@@ -387,7 +400,7 @@ export const assistant = onCallGenkit(
               };
 
           genkitResume = interviewInterrupt.respond(
-            input.interruptToolRequest as Parameters<typeof interviewInterrupt.respond>[0],
+            input.interruptToolRequest,
             outputData,
           );
         }
@@ -632,19 +645,6 @@ export const assistant = onCallGenkit(
           } catch (err) {
             return toolErrorResponse('updateStudio', err);
           }
-        });
-
-        const interviewInterrupt = ai.defineInterrupt({
-          name: 'interview',
-          description: 'Faz uma pergunta ao usuário quando você precisa de uma decisão que não pode tomar sozinho. Use quando: faltar informação essencial (ex: qual voz usar), houver ambiguidade que depende de preferência pessoal, ou a tarefa exigir uma escolha do usuário para prosseguir. Cada opção DEVE ter \'label\' (curto) e \'description\' (explica o que a opção significa). Faça uma pergunta por vez. Não use para saudações, confirmações triviais ou quando já tiver informação suficiente. O fluxo de execução pausa até o usuário responder.',
-          inputSchema: InterviewInputSchema,
-          outputSchema: z.object({
-            status: z.literal('awaiting_input'),
-            question: z.string(),
-          }),
-          requestMetadata: (input) => ({
-            interview: input,
-          }),
         });
 
         const respondTool = ai.dynamicTool({

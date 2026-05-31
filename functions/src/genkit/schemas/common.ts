@@ -12,7 +12,24 @@
 //   quanto undefined (campo ausente).
 // ---------------------------------------------------------------------------
 
-import { z } from 'genkit';
+import { type ToolRequestPart, z } from 'genkit';
+
+// ---------------------------------------------------------------------------
+// ToolRequestPart — Schema que espelha o formato nativo do Genkit
+// (ToolRequestPartSchema não é re-exportado pelo pacote 'genkit').
+// Usado para serializar/desserializar interrupts no round-trip frontend.
+// O passthrough() aceita campos extras (text, media, etc.) do tipo original.
+// ---------------------------------------------------------------------------
+const ToolRequestPartZodSchema: z.ZodType<ToolRequestPart> = z.object({
+  toolRequest: z.object({
+    name: z.string(),
+    ref: z.string().optional(),
+    input: z.unknown().optional(),
+    partial: z.boolean().optional(),
+  }),
+  metadata: z.record(z.unknown()).optional(),
+  custom: z.record(z.unknown()).optional(),
+}).passthrough();
 
 // ---------------------------------------------------------------------------
 // Chat / Assistant
@@ -184,7 +201,7 @@ export const AssistantInputSchema = z.object({
    * Necessário para retomar corretamente via Genkit resume API,
    * preservando thought signatures e function call IDs do Gemini 3.
    */
-  interruptToolRequest: AssistantHistoryToolRequestSchema.nullable().optional(),
+  interruptToolRequest: ToolRequestPartZodSchema.nullable().optional(),
   /** Histórico completo do Genkit (MessageData[]) com tool calls/responses — preserva contexto entre mensagens */
   fullHistory: z.array(AssistantHistoryMessageSchema).max(2_000).nullable().optional(),
   contextSummary: z.string().max(20_000).nullable().optional(),
@@ -201,11 +218,11 @@ export const AssistantOutputSchema = z.object({
   interview: InterviewInputSchema.nullable().optional(),
   respond: RespondInputSchema.nullable().optional(),
   /**
-   * Tool request do interrupt pendente (para Genkit resume API).
+   * Tool request do interrupt pendente (ToolRequestPart do Genkit).
    * Preserva function call ID e thought signatures do Gemini 3.
    */
-  interruptToolRequest: AssistantHistoryToolRequestSchema.nullable().optional(),
-  /** Histórico completo do Genkit (MessageData[]) para preservar tool context entre mensagens */
+  interruptToolRequest: ToolRequestPartZodSchema.nullable().optional(),
+  /** Histórico completo do Genkit (MessageData[]) com tool calls/responses — preserva contexto entre mensagens */
   fullHistory: z.array(AssistantHistoryMessageSchema).max(2_000).nullable().optional(),
   contextSummary: z.string().max(20_000).nullable().optional(),
   compactionCount: z.number().int().min(0).nullable().optional(),

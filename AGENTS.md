@@ -156,7 +156,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.113.0`
+- **Current:** `0.113.1`
 - **Last release:** 2026-05-31
 
 ### Últimas mudanças (atualizado por /fast)
@@ -165,8 +165,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.113.1` | `interviewInterrupt` movido para antes do primeiro uso em `assistant.ts` (corrige ReferenceError); novo `ToolRequestPartZodSchema` para serialização precisa de interrupts Genkit no round-trip frontend-backend; `interruptToolRequest` migrado do schema customizado para o schema nativo Genkit |
 | `0.113.0` | Preservação completa de tool context via `fullHistory` (schemas, hooks, backend, persistência); compactação automática de histórico por tokens (`assistant-compaction.ts`); 3 novos componentes de UX (CodeBlock, ImageLightbox, ScrollToBottomFab); suporte a `genkit/beta`; animações Motion no chat (AnimatePresence); botão de regenerar resposta; 6 novos docs de auditoria/scan |
 | `0.112.0` | `fullHistory` preservação de tool context no Assistente IA (schemas, hook useAssistant, ChatSession, backend); refatoração useSwipeTabs (`dragConstraints` substitui `constraintRef`, `dragDirectionLock`, thresholds ajustados); testes atualizados; docs/audits/swipe-tabs-bugfix.md e docs/plan/tool-context-preservation.md |
 | `0.111.0` | `animateScenes` toggle compartilhado entre preview e exportação no VideoPage (default `true`); `adjustSpeedPaintProgress` simplificado para progressão linear (sem power curve); novas props opcionais `animateScenes`/`onAnimateScenesChange` no VideoExportPanel; `globalSpeedMultiplier` simplificado no VideoComposition (divisor `/4` removido); testes atualizados para progressão linear |
 | `0.110.1` | Unmount/remount loop no VideoComposition (SceneItem movido para escopo de módulo); `allowHtmlInCanvas: true` desabilitado (causava flashs pretos no Speed Paint); gerenciamento de recursos do SpeedPaintScene migrado de estado React para ref booleana; backgroundColor condicional readicionado no SpeedPaintScene; avisos HTML-in-canvas removidos dos painéis de exportação; SceneItemProps extraída para interface estável |
-| `0.110.0` | `detectHtmlInCanvasSupport()` em useCodecSupport; avisos HTML-in-canvas no SpeedPaintExportPanel e VideoExportPanel; `allowHtmlInCanvas: true` nos exporters; `@remotion/preload` removido; flash branco corrigido no SpeedPaintScene (backgroundColor removido); `opacity` removido do speedPaintRenderer; firestore.rules com isAssetUrl(); chave i18n htmlInCanvasWarning nos 3 locales |
