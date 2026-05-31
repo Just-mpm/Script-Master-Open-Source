@@ -28,6 +28,9 @@ const logos = {
     roundedSquare: `/logo-quadrado-arredondado.webp?${v}`,
   },
   favicon: `/favicon.webp?${v}`,
+  faviconIco: `/favicon.ico?${v}`,
+  appleTouchIcon: `/apple-touch-icon.png?${v}`,
+  ogImage: `/og-image.webp?${v}`,
 } as const;
 
 export default logos;

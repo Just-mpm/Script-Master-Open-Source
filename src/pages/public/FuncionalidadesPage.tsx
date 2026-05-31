@@ -86,6 +86,7 @@ export default function FuncionalidadesPage() {
     title: t('seo.features.title'),
     description: t('seo.features.description'),
     path: '/funcionalidades',
+    jsonLdType: 'software',
   });
 
   return (

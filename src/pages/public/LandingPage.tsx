@@ -107,6 +107,7 @@ export default function LandingPage() {
     title: t('seo.landing.title'),
     description: t('seo.landing.description'),
     path: '/',
+    jsonLdType: 'software',
   });
 
   return (

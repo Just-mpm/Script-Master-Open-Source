@@ -1,0 +1,36 @@
+# Script Master
+
+> Plataforma SaaS que transforma roteiros de vídeo em áudio profissional usando inteligência artificial (Gemini TTS). Oferece geração de voz multi-locutor, criação de cenas com IA, Speed Paint, renderização de vídeo com Remotion e assistente conversacional.
+
+Script Master é uma ferramenta web para criadores de conteúdo que precisam transformar textos em produções audiovisuais completas. Funciona inteiramente no navegador, sem instalação.
+
+## Funcionalidades Principais
+
+- [Estúdio de Voz (TTS)](https://script-master.pro/funcionalidades): Conversão de roteiro em áudio com 30+ vozes via Gemini, suporte multi-locutor, preview de vozes e emotions
+- [Geração de Imagens e Cenas](https://script-master.pro/funcionalidades): Imagens geradas por IA para cada cena do roteiro, com frameworks visuais (general, whiteboard)
+- [Speed Paint](https://script-master.pro/funcionalidades): Animação automatizada de imagens com efeito de pintura progressiva, edge detection e renderização via Remotion
+- [Renderização de Vídeo](https://script-master.pro/funcionalidades): Composição de vídeo client-side com WebCodecs, legendas automáticas (Whisper WASM), exportação até 4K
+- [Assistente IA](https://script-master.pro/funcionalidades): Chat com IA para refinar roteiros, gerar planos de produção e editar conteúdo, com ferramentas integradas
+- [Biblioteca de Projetos](https://script-master.pro/funcionalidades): Gerenciamento de projetos com áudios, cenas, vídeos e roteiros organizados
+
+## Preços
+
+- [Planos e Preços](https://script-master.pro/precos): Beta aberto gratuito — planos futuros: Free, Pro (R$49,90/mês), Business (R$149,90/mês)
+
+## Empresa
+
+- [Sobre](https://script-master.pro/sobre): Desenvolvido pela Koda AI Studio, empresa brasileira de IA criativa
+- [Contato](https://script-master.pro/contato): Suporte e contato
+
+## Stack Técnica
+
+- React 19 + Vite 8 + Firebase (Auth, Firestore, Storage, Cloud Functions, Hosting)
+- Gemini 3.1 Flash (TTS e imagens) + Gemini 3.5 Flash (assistente)
+- Remotion 4 (renderização de vídeo) + WebCodecs
+- 3 idiomas: pt-BR, en, es
+
+## Optional
+
+- [Termos de Uso](https://script-master.pro/termos)
+- [Política de Privacidade](https://script-master.pro/privacidade)
+- [Cookies](https://script-master.pro/cookies)

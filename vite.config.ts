@@ -46,6 +46,8 @@ function coepPlugin(): PluginOption {
   };
 }
 
+/** Rotas públicas para pre-renderização (gera HTML estático para crawlers sociais e LLMs). Definidas aqui e em scripts/prerender.mjs. */
+
 export default defineConfig(() => {
   return {
     plugins: [
@@ -53,7 +55,7 @@ export default defineConfig(() => {
       coepPlugin(),
       VitePWA({
         registerType: 'prompt',
-        includeAssets: ['favicon.webp', 'logo-transparente.webp'],
+        includeAssets: ['favicon.webp', 'favicon.ico', 'apple-touch-icon.png', 'logo-transparente.webp'],
         manifest: {
           name: 'Script Master',
           short_name: 'ScriptMaster',

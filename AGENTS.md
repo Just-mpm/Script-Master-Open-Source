@@ -12,7 +12,8 @@ Firebase Hosting (frontend) + Firebase Cloud Functions v2 (backend serverless qu
 
 ```bash
 bun run dev              # Vite em http://localhost:3000
-bun run build            # lint + typecheck + build de produção
+bun run build            # lint + typecheck + build de produção (~1s, sem pre-render)
+bun run build:full       # build + pre-render das 10 rotas públicas (~25s, para deploy)
 bun run lint             # ESLint 10 (flat config)
 bun run lint:fix         # ESLint com autocorreção
 bun run typecheck        # tsc -b
@@ -20,12 +21,12 @@ bun run test             # Vitest (execução única)
 bun run test:watch       # Vitest (watch mode)
 bun run preview          # serve build localmente
 bun run clean            # remove dist/
-bun run deploy           # lint + typecheck + build + firebase deploy (completo)
-bun run deploy:hosting   # deploy apenas do hosting
+bun run deploy           # build:full + functions build + firebase deploy (completo)
+bun run deploy:hosting   # build:full + firebase deploy --only hosting
 bun run deploy:firestore # deploy apenas das regras e indexes do Firestore
 bun run deploy:storage   # deploy apenas das regras do Storage
 bun run deploy:functions # build functions + deploy das Cloud Functions
-bun run deploy:preview   # lint + typecheck + build + firebase hosting:channel:deploy preview
+bun run deploy:preview   # build:full + firebase hosting:channel:deploy preview
 bun run emulators        # inicia emuladores conforme flags VITE_EMULATOR_* no .env
 bun run emulators:all    # força TODOS os emuladores (ignora .env)
 bun run emulators:functions # inicia apenas o emulador de functions
@@ -48,6 +49,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 - **Zustand** (estado) | **Motion** (animações, swipe/drag) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
+- **puppeteer-core** — pre-renderização das 10 rotas públicas via Chrome do sistema (`scripts/prerender.mjs`)
 
 ## Modelos Gemini
 
@@ -113,6 +115,9 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 ### Páginas Públicas
 9 páginas em `src/pages/public/` (Landing, Funcionalidades, Pricing, FAQ, Contato, Sobre, Termos, Privacidade, Cookies, Status). 17 componentes em `src/components/public/`. SEO via React 19 nativo: `DocumentHead` + `seo.ts` (OG, Twitter Cards, canonical, sitemap.xml, robots.txt). Logos em `src/assets/logos.ts`. Domínio prod: `script-master.pro`.
 
+### SEO / AEO / GEO
+Pre-renderização das 10 rotas públicas via `scripts/prerender.mjs` (puppeteer-core + Chrome do sistema). Dispara em `bun run build:full` após vite build — gera HTML estático com tags SEO completas em `dist/{route}/index.html`. `DocumentHead` dispara flag `window.__PRERENDER_READY` para sinalizar quando capturar. `seo.ts` gera: title, meta description, canonical, hreflang (pt-BR, en, es, x-default), Open Graph completo (image 1200x630, width/height/alt, locale, locale:alternate), Twitter Cards, JSON-LD (SoftwareApplication com offers, WebPage, BreadcrumbList). Arquivos estáticos: `public/llms.txt` + `public/llms-full.txt` (para ChatGPT/Claude/Perplexity), `public/robots.txt` (Allow llms.txt, Llms-txt directive), `public/sitemap.xml`. Favicon: `.ico` (16+32+48) + `.webp` + `apple-touch-icon.png` (180x180).
+
 ### Áudio & TTS
 TTS via Genkit flow `audio.ts` — chunking automático (>500 chars), multi-speaker (2 vozes), detecção de silêncio, voice previews WAV estáticos. Hook frontend: `useAudioGenerator`. Créditos via middleware `credit-metering.ts`. Limites: 50K chars/roteiro, 500 chars/chamada TTS.
 
@@ -154,9 +159,15 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ---
 
+## Pendências
+
+- **OG Image (`public/og-image.webp`):** Arquivo 1200x630 com logo + tagline ainda precisa ser criado manualmente (design). O código já referencia `og-image.webp` em `seo.ts` e `logos.ts`. Sem este arquivo, OG image retorna 404 (restante do SEO funciona normalmente).
+
+---
+
 ## Version
 
-- **Current:** `0.113.1`
+- **Current:** `0.114.0`
 - **Last release:** 2026-05-31
 
 ### Últimas mudanças (atualizado por /fast)
@@ -165,8 +176,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.114.0` | SEO/AEO/GEO completo: pre-renderização das 10 rotas públicas via puppeteer-core (`scripts/prerender.mjs`); JSON-LD centralizado (`buildJsonLd` com 3 tipos: SoftwareApplication, WebPage, BreadcrumbList); `llms.txt` + `llms-full.txt` para visibilidade em LLMs; favicon `.ico` + `apple-touch-icon.png` + meta tags Apple; robots.txt com directive `Llms-txt`; deploy scripts agora usam `build:full`; plano completo em `docs/plan/seo-aeo-geo-plano-final.md` |
 | `0.113.1` | `interviewInterrupt` movido para antes do primeiro uso em `assistant.ts` (corrige ReferenceError); novo `ToolRequestPartZodSchema` para serialização precisa de interrupts Genkit no round-trip frontend-backend; `interruptToolRequest` migrado do schema customizado para o schema nativo Genkit |
 | `0.113.0` | Preservação completa de tool context via `fullHistory` (schemas, hooks, backend, persistência); compactação automática de histórico por tokens (`assistant-compaction.ts`); 3 novos componentes de UX (CodeBlock, ImageLightbox, ScrollToBottomFab); suporte a `genkit/beta`; animações Motion no chat (AnimatePresence); botão de regenerar resposta; 6 novos docs de auditoria/scan |
 | `0.112.0` | `fullHistory` preservação de tool context no Assistente IA (schemas, hook useAssistant, ChatSession, backend); refatoração useSwipeTabs (`dragConstraints` substitui `constraintRef`, `dragDirectionLock`, thresholds ajustados); testes atualizados; docs/audits/swipe-tabs-bugfix.md e docs/plan/tool-context-preservation.md |
 | `0.111.0` | `animateScenes` toggle compartilhado entre preview e exportação no VideoPage (default `true`); `adjustSpeedPaintProgress` simplificado para progressão linear (sem power curve); novas props opcionais `animateScenes`/`onAnimateScenesChange` no VideoExportPanel; `globalSpeedMultiplier` simplificado no VideoComposition (divisor `/4` removido); testes atualizados para progressão linear |
-| `0.110.1` | Unmount/remount loop no VideoComposition (SceneItem movido para escopo de módulo); `allowHtmlInCanvas: true` desabilitado (causava flashs pretos no Speed Paint); gerenciamento de recursos do SpeedPaintScene migrado de estado React para ref booleana; backgroundColor condicional readicionado no SpeedPaintScene; avisos HTML-in-canvas removidos dos painéis de exportação; SceneItemProps extraída para interface estável |

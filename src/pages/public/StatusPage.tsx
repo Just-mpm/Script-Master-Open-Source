@@ -238,7 +238,7 @@ export default function StatusPage() {
     title: t('seo.status.title'),
     description: t('seo.status.description'),
     path: '/status',
-    locale,
+    jsonLdType: 'webpage',
   });
 
   // ── Serviços monitorados — dentro do componente para acessar t() ──

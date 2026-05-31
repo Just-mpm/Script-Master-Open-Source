@@ -587,6 +587,7 @@ export default function ContactPage() {
     title: t('seo.contact.title'),
     description: t('seo.contact.description'),
     path: '/contato',
+    jsonLdType: 'webpage',
   });
 
   return (

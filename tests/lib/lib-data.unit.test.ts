@@ -174,7 +174,7 @@ describe('getPageSeo — estrutura', () => {
 
     const ogImage = seo.meta.find((m) => m.property === 'og:image');
     expect(ogImage).toBeDefined();
-    expect(ogImage!.content).toContain('logo-transparente');
+    expect(ogImage!.content).toContain('og-image.webp');
   });
 
   it('contém twitter:card summary_large_image', () => {
@@ -196,9 +196,13 @@ describe('getPageSeo — estrutura', () => {
       path: '/precos',
     });
 
-    expect(seo.link).toHaveLength(1);
+    expect(seo.link.length).toBeGreaterThanOrEqual(1);
     expect(seo.link[0].rel).toBe('canonical');
     expect(seo.link[0].href).toBe('https://script-master.pro/precos');
+
+    // hreflang alternates para i18n
+    const hreflangs = seo.link.filter((l) => l.rel === 'alternate');
+    expect(hreflangs.length).toBe(4); // pt-BR, en, es, x-default
   });
 
   it('contém article:published_time quando type=article', () => {

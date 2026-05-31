@@ -175,27 +175,12 @@ export default function PricingPage() {
     title: t('seo.pricing.title'),
     description: t('seo.pricing.description'),
     path: '/precos',
+    jsonLdType: 'software-with-offers',
   });
-
-  const betaJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'Script Master',
-    applicationCategory: 'MultimediaApplication',
-    operatingSystem: 'Web',
-    description: t('seo.pricing.description'),
-    offers: {
-      '@type': 'Offer',
-      name: 'Beta Aberto',
-      price: '0',
-      priceCurrency: 'BRL',
-    },
-  };
 
   return (
     <>
       <DocumentHead {...seo} locale={locale} />
-      <script type="application/ld+json">{JSON.stringify(betaJsonLd)}</script>
       <PageLayout>
         {/* Hero — H1 + subtítulo + CTAs */}
         <HeroSection

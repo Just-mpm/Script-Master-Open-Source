@@ -125,27 +125,12 @@ export default function FaqPage() {
     title: t('seo.faq.title'),
     description: t('seo.faq.description'),
     path: '/perguntas-frequentes',
+    jsonLdType: 'webpage',
   });
-
-  const faqJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: FAQ_CATEGORIES.flatMap((cat) =>
-      cat.items.map((item) => ({
-        '@type': 'Question',
-        name: item.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.answer,
-        },
-      })),
-    ),
-  };
 
   return (
     <>
       <DocumentHead {...seo} locale={locale} />
-      <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       <PageLayout>
       {/* Hero — H1 + subtitulo */}
       <HeroSection

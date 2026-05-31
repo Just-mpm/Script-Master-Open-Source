@@ -14,6 +14,7 @@ export default function PrivacyPage(): ReactNode {
     description: data.description,
     path: '/privacidade',
     locale,
+    jsonLdType: 'webpage',
   });
 
   return (

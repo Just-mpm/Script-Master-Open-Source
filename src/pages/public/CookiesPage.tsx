@@ -14,6 +14,7 @@ export default function CookiesPage(): ReactNode {
     description: data.description,
     path: '/cookies',
     locale,
+    jsonLdType: 'webpage',
   });
 
   return (

@@ -7,6 +7,44 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.114.0] - 2026-05-31
+
+### Adicionado
+
+- **SEO / AEO / GEO completo**: Pre-renderização das 10 rotas públicas para HTML estático com tags SEO completas — crawlers sociais e LLMs recebem conteúdo renderizado sem executar JS:
+  - `scripts/prerender.mjs` (+156 linhas): script Node com puppeteer-core que navega cada rota pública, aguarda `window.__PRERENDER_READY` e sobrescreve `dist/{route}/index.html` com HTML completo
+  - `DocumentHead.tsx`: sinaliza `window.__PRERENDER_READY = true` após renderizar meta tags
+  - `seo.ts` (+142/-4): `buildJsonLd()` centralizado com 3 tipos (`software`, `software-with-offers`, `webpage`); `buildSoftwareAppSchema()`, `buildWebPageSchema()`, `buildBreadcrumbSchema()`; `OG_IMAGE_URL` constante; `ALTERNATE_LOCALES` para hreflang; removido `DEFAULT_IMAGE` (substituído por `OG_IMAGE_URL`)
+  - Cada página pública passa `jsonLdType` ao `DocumentHead`: `software` (Landing, Funcionalidades), `webpage` (About, Contact, Cookies, Privacy, Terms, Status)
+
+- **Arquivos estáticos para visibilidade em LLMs**:
+  - `public/llms.txt` (+37 linhas): resumo conciso do produto com links para funcionalidades, preços e empresa — para ChatGPT, Claude, Perplexity
+  - `public/llms-full.txt` (+60 linhas): documentação completa com descrição detalhada de cada feature e stack técnica
+
+- **Favicon otimizado e meta tags Apple**:
+  - `public/favicon.ico` (16+32+48px): formato .ico para Safari e browsers legados
+  - `public/apple-touch-icon.png` (180x180): ícone para iOS home screen
+  - `index.html`: `<link rel="icon" type="image/x-icon">`, `<link rel="apple-touch-icon">`, `<meta name="apple-mobile-web-app-capable">`, `<meta name="apple-mobile-web-app-status-bar-style">`
+
+- **OG Image references**: `logos.ts` expõe `faviconIco`, `appleTouchIcon`, `ogImage` com cache-busting via `APP_VERSION`
+
+- **robots.txt atualizado**: `Allow: /llms.txt`, `Allow: /llms-full.txt`, `Llms-txt: https://script-master.pro/llms.txt` directive
+
+- **sitemap.xml**: `lastmod` atualizado para 2026-05-31 em todas as 10 rotas
+
+### Alterado
+
+- **`package.json`**: `puppeteer-core` ^25.1.0 adicionado em devDependencies; novo script `build:full` (lint + typecheck + vite build + prerender); scripts `deploy`, `deploy:hosting`, `deploy:preview` agora usam `build:full` em vez de `build`
+- **`tsconfig.json`**: `scripts/**` adicionado à lista de exclusões
+- **`vite.config.ts`**: `includeAssets` atualizado para incluir novos favicons
+- **Testes**: `lib-data.unit.test.ts` — assertions atualizadas para `og-image.webp` e hreflang alternates
+
+### Documentado
+
+- **`docs/plan/seo-aeo-geo-plano-final.md`** (+419 linhas): plano completo de SEO/AEO/GEO com decisões de arquitetura (MDE), escopo, trade-offs e referências
+
+---
+
 ## [0.113.1] - 2026-05-31
 
 ### Corrigido

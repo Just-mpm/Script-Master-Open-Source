@@ -14,6 +14,7 @@ export default function TermsPage(): ReactNode {
     description: data.description,
     path: '/termos',
     locale,
+    jsonLdType: 'webpage',
   });
 
   return (
