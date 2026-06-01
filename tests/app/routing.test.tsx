@@ -233,7 +233,7 @@ describe('Rotas — Redirects de Compatibilidade', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('redireciona /app para /app/estudio', () => {
+  it('redireciona /app para /app/assistente', () => {
     render(<App />, { wrapper: createWrapper('/app') });
     expect(document.body).toBeTruthy();
   });

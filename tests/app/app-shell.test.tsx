@@ -230,7 +230,7 @@ describe('App Shell — Smoke Tests', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('renderiza sem crash ao redirecionar /app para /app/estudio', () => {
+  it('renderiza sem crash ao redirecionar /app para /app/assistente', () => {
     render(<App />, { wrapper: createWrapper('/app') });
     expect(document.body).toBeTruthy();
   });

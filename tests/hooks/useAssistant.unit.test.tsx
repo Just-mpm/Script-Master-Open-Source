@@ -65,6 +65,7 @@ vi.mock('../../src/lib/constants', () => ({
 vi.mock('../../src/lib/db', () => ({
   getMemories: vi.fn().mockResolvedValue([]),
   saveChatSession: vi.fn().mockResolvedValue(undefined),
+  getChatSessions: vi.fn().mockResolvedValue([]),
   getUserSettings: vi.fn().mockResolvedValue(null),
   sanitizeAssistantHistoryAttachments: (history: unknown) => history,
 }));
@@ -172,6 +173,10 @@ describe('useAssistant', () => {
   });
 
   afterEach(() => {
+    // Limpa timers pendentes do tour de boas-vindas (setTimeout de 1500ms)
+    // para que não disparem após o teste e causem act() warnings.
+    // Usa clearAllTimers (compatível com timers reais e fake).
+    vi.clearAllTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });

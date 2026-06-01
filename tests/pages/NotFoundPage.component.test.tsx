@@ -77,10 +77,10 @@ describe('NotFoundPage', () => {
     expect(screen.getByText('Voltar ao início')).toBeTruthy();
   });
 
-  it('deve exibir link para "/" quando usuário não está logado', () => {
+  it('deve exibir botão com destino "/" quando usuário não está logado', () => {
     renderWithRouter(<NotFoundPage />);
 
-    // Como o mock seta user=null, o link deve ser para "/"
+    // Como o mock seta user=null, o botão navega para "/"
     const button = screen.getByText('Voltar ao início');
     expect(button).toBeTruthy();
   });

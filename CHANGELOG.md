@@ -7,6 +7,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.119.0] - 2026-06-01
+
+### Adicionado
+
+- **Chat persistente no Assistente** (`src/hooks/useAssistant.ts`, +129/-2): nova constante `ACTIVE_SESSION_KEY` (`s2a_active_chat_session_id`) para salvar/restaurar a sessão ativa do chat no `localStorage` — o assistente agora retoma automaticamente a conversa anterior ao montar o hook, eliminando a perda de contexto entre navegações
+- **Tour de boas-vindas do Assistente** (`src/hooks/useAssistant.ts`, `src/lib/db/user-settings.ts`, `src/lib/db/types.ts`): nova constante `TOUR_SEEN_KEY` (`s2a_assistant_tour_seen`) + flag `tourSeen` no tipo `UserSettings` + funções `markTourSeen()` e `hasTourSeen()` com suporte a dual storage (Firestore + IndexedDB). Ao primeiro acesso, o assistente envia uma mensagem de boas-vindas automática após 1.5s; visitas subsequentes não repetem o tour
+- **Chaves i18n `tourAutoMessage`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): mensagem de boas-vindas automática do assistente em inglês, espanhol e português
+- **Skill: Tour da Plataforma** (`functions/src/skills/tour-da-plataforma/SKILL.md`, +144 linhas): nova skill que guia novos usuários pela plataforma com instruções passo-a-passo, referências a posições reais da UI e personalização por perfil (nome, papel, metas)
+- **OG Image para SEO** (`public/og-image.webp`, 1200x630): imagem Open Graph com logo + marca do produto — referenciada por `seo.ts` como `OG_IMAGE_URL` para previews em redes sociais e LLMs
+
+### Alterado
+
+- **Redirecionamento padrão unificado para `/app/assistente`** (7 arquivos): todas as rotas de destino pós-autenticação agora apontam para o Assistente em vez do Estúdio — `GuestRoute.tsx`, `AuthContext.tsx` (2 ocorrências), `CompletionStep.tsx` (onboarding), `NotFoundPage.tsx`, `OnboardingPage.tsx`, `routes.tsx` (redirect `/app`). O Assistente é agora a landing page pós-login, consolidando-o como hub principal da plataforma
+- **`PublicHeader.tsx`**: link "Abrir App" alterado de `/app/estudio` para `/app/assistente`
+- **`useAssistant.ts`**: `fullHistoryRef` mantido; novo cleanup com `vi.clearAllTimers()` nos testes para evitar warnings de act() com timers do tour
+- **`AGENTS.md` / `CLAUDE.md`**: seção "Pendências" sobre OG Image removida (arquivo `public/og-image.webp` agora existe)
+
+### Documentado
+
+- **`docs/audits/2026-06-01-chat-persistente-tour-audit.md`** (+187 linhas): auditoria estática do chat persistente + tour de boas-vindas — 28 arquivos revisados, 1 bug real (timeout sem cleanup) documentado
+- **`docs/qa-loop/rotas-autenticadas-ux-leigo.md`** (+52 linhas): relatório de QA UX nas 8 rotas autenticadas — veredito funcional e consistente, 8 recomendações de melhoria
+- **`docs/scan/2026-06-01-diff-chat-persistente-tour.md`** (+280 linhas): scan de lacunas — 3 gaps priorizados (GAP-01: `AGENTS.md`/`CLAUDE.md` desatualizados resolvido nesta versão)
+- **`docs/test/2026-06-01-assistant-persistent-chat-vitest.md`** (+134 linhas): relatório de testes — 18 testes criados, 17/18 passaram, 1 bug real (BUG-001: closure do timeout)
+- **`docs/test/2026-06-01-user-settings-vitest.md`** (+67 linhas): relatório de testes — 10 testes unitários para `markTourSeen`/`hasTourSeen`, 10/10 passaram
+
+### Corrigido
+
+- **Testes**: 3 novos arquivos de teste adicionados (`useAssistant.persistent-chat.unit.test.tsx` +612 linhas, `user-settings.unit.test.ts` +231 linhas, `NotFoundPage.auth-redirect.component.test.tsx` +88 linhas). 4 arquivos de teste atualizados para refletir o novo destino `/app/assistente` (routing, GuestRoute, PublicHeader, OnboardingPage)
+
+---
+
 ## [0.118.0] - 2026-06-01
 
 ### Adicionado

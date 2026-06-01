@@ -99,9 +99,9 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 | `/app/assistente` | AssistantPage | Autenticado |
 | `/app/biblioteca` | LibraryPage | Autenticado |
 | `/app/configuracoes` | ConfiguracoesPage | Autenticado |
-| `/app` | Redirect → `/app/estudio` | — |
+| `/app` | Redirect → `/app/assistente` | — |
 
-**Visitante** = GuestRoute: visitantes veem, logados redirecionam para `/app/estudio`.
+**Visitante** = GuestRoute: visitantes veem, logados redirecionam para `/app/assistente`.
 **Público** = sem restrição. **Autenticado** = ProtectedRoute.
 
 ---
@@ -130,7 +130,7 @@ Renderização client-side via WebCodecs com fallback de codec (H.264+AAC → H.
 Dual automático: Firestore + Storage (logado) / IndexedDB (visitante). Offline: `persistentLocalCache` + `multipleTabManager`. Chat fallback p/ IndexedDB se >900KB. Admin via custom claim (`admin: true`) — script `grant-access`. Converter genérico `createFirestoreConverter<T>()`. Limites Storage: áudio 150MB, imagem 10MB, vídeo 200MB.
 
 ### Assistente IA
-Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 20` e 7 ferramentas (`updatePlan`, `webSearch`, `getStudioState`, `getUserMemories`, `updateStudio`, `interview`, `respond`). Preservação de tool context via `fullHistory` (`MessageData[]` do Genkit com tool calls/responses transportados entre mensagens — modelo não precisa re-chamar ferramentas). Compactação automática de histórico por threshold de tokens (`assistant-compaction.ts`). Dois modos de IA: `fast` (gemini-3.1-flash-lite) e `specialist` (gemini-3.5-flash). Streaming com batching via `requestAnimationFrame`. Componentes de UX: CodeBlock (syntax highlight com cópia), ImageLightbox (zoom de imagens), ScrollToBottomFab (scroll automático com indicador de streaming), botão de regenerar resposta, animações Motion (AnimatePresence). InlineAIWidget no ScriptEditor para refatorar/expandir trechos. EmptyChatState com sugestões contextuais. TwoPhaseStopButton, ThinkingShimmer, PlanWidget.
+Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 20` e 7 ferramentas (`updatePlan`, `webSearch`, `getStudioState`, `getUserMemories`, `updateStudio`, `interview`, `respond`). **Chat persistente:** sessão ativa salva/restaurada do `localStorage` via `ACTIVE_SESSION_KEY` — o assistente retoma automaticamente a conversa anterior ao montar. **Tour de boas-vindas:** ao primeiro acesso, envia mensagem de boas-vindas automática após 1.5s; flag `tourSeen` persistido em `UserSettings` (dual storage Firestore/IndexedDB). Preservação de tool context via `fullHistory` (`MessageData[]` do Genkit com tool calls/responses transportados entre mensagens — modelo não precisa re-chamar ferramentas). Compactação automática de histórico por threshold de tokens (`assistant-compaction.ts`). Dois modos de IA: `fast` (gemini-3.1-flash-lite) e `specialist` (gemini-3.5-flash). Streaming com batching via `requestAnimationFrame`. Componentes de UX: CodeBlock (syntax highlight com cópia), ImageLightbox (zoom de imagens), ScrollToBottomFab (scroll automático com indicador de streaming), botão de regenerar resposta, animações Motion (AnimatePresence). InlineAIWidget no ScriptEditor para refatorar/expandir trechos. EmptyChatState com sugestões contextuais. TwoPhaseStopButton, ThinkingShimmer, PlanWidget.
 
 **Sistema de Skills:** Middleware Genkit (`skills.ts`) que escaneia diretórios de `SKILL.md`, mantém cache em memória e injeta dinamicamente a ferramenta `use_skill` no assistente. Skills fornecem instruções e workflows especializados para tarefas específicas (ex: guia de vozes, melhores práticas TTS). O prompt do assistente foi simplificado — `voicesList`/`paceList` removidos do contexto fixo e agora gerenciados via skills carregadas sob demanda. Script `copy-skills.mjs` copia skills durante o build das Cloud Functions.
 
@@ -147,7 +147,7 @@ Beta aberto (`VITE_OPEN_BETA_ENABLED=true`). Planos: Free / Pro (R$49,90/mês) /
 Library (`/biblioteca`): projetos expansíveis com áudios, cenas, roteiro, vídeos — botão "Levar ao Speed Paint". VideoLibrary: galeria horizontal no player com busca, batch download. Projetos em subcoleções Firestore (`audios`, `images`, `videos`). Blob cleanup com revogação seletiva de URLs.
 
 ### Autenticação
-`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/estudio`. Login/logout/delete fazem full reload (COEP conflict).
+`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
 
 ### Internacionalização (i18n)
 3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader. `TranslationDictionary` com nested keys e pluralização.
@@ -160,15 +160,9 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ---
 
-## Pendências
-
-- **OG Image (`public/og-image.webp`):** Arquivo 1200x630 com logo + tagline ainda precisa ser criado manualmente (design). O código já referencia `og-image.webp` em `seo.ts` e `logos.ts`. Sem este arquivo, OG image retorna 404 (restante do SEO funciona normalmente).
-
----
-
 ## Version
 
-- **Current:** `0.118.0`
+- **Current:** `0.119.0`
 - **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
@@ -177,8 +171,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.119.0` | Redirecionamento padrão unificado para `/app/assistente` (7 arquivos); chat persistente no Assistente com restauração de sessão (`ACTIVE_SESSION_KEY`); tour de boas-vindas com flag `tourSeen` em UserSettings (dual storage); skill `tour-da-plataforma` (+144 linhas); OG Image (`public/og-image.webp`); docs de auditoria/QA/testes (5 novos); seção "Pendências" removida de AGENTS.md/CLAUDE.md |
 | `0.118.0` | AssistantComposer com forwardRef pattern: nova interface `AssistantComposerHandle` e componente `AssistantComposerInner` para controle programático via ref; `extractSkillName()` no ToolEventCard para exibição contextual de skills; remoção de mocks obsoletos do TemplateSelector em testes |
 | `0.117.1` | Limpeza de arquivos obsoletos: `firebase-blueprint.json` e `metadata.json` removidos; teste `assistant-context.unit.test.ts` atualizado (remoção de voicesList/paceList do contexto) para alinhamento com o sistema de Skills |
 | `0.117.0` | Sistema de Skills para o Assistente IA: novo middleware Genkit (`skills.ts`) com scan/cache de `SKILL.md` e ferramenta `use_skill`; 2 skills iniciais (Guia de Vozes, Melhores Práticas TTS); script `copy-skills.mjs` para build; `ToolEventCard` com suporte a `use_skill`; i18n dos labels de skill em 3 locales; prompt do assistente simplificado (remoção de voicesList/paceList, agora gerenciado via skills) |
 | `0.116.0` | Sistema de Templates removido (~1.000 linhas): TemplateSelector, TemplateGallery, TemplatePreviewDialog, TemplateCard, scriptTemplates, templateUtils e tipos relacionados; créditos gratuitos reduzidos de 1.000 para 500/mês; hreflang removido do SEO (sitemap.xml only); meta tag Apple `mobile-web-app-capable` corrigida |
-| `0.115.1` | App Check extraído para `src/lib/app-check.ts` com lazy loading via `ensureAppCheck()` — reCAPTCHA v3 (~729 KiB) só carrega para usuários autenticados; fontes Google otimizadas com preload assíncrono; `AuthContext` delega ao novo módulo; 8 docs de auditoria/planos removidos; testes atualizados |

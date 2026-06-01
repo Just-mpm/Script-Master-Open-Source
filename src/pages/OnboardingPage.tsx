@@ -16,7 +16,7 @@ export function OnboardingPage() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (isCompleted) return <Navigate to="/app/estudio" replace />;
+  if (isCompleted) return <Navigate to="/app/assistente" replace />;
 
   const seo = getPageSeo({
     title: t('seo.onboarding.title'),

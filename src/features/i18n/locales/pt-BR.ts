@@ -1698,6 +1698,7 @@ export const ptBR: TranslationDictionary = {
     },
     welcome: 'Como posso ajudar?',
     defaultChatTitle: 'Nova conversa',
+    tourAutoMessage: 'Oi! Sou novo por aqui, pode me mostrar como funciona a plataforma?',
   },
 
   // ── Configurações ────────────────────────────────────────────────────────

@@ -25,7 +25,7 @@ export function NotFoundPage() {
   const { t } = useLocale();
 
   // Usuário autenticado -> redireciona para o app; visitante -> landing
-  const homePath = user ? '/app/estudio' : '/';
+  const homePath = user ? '/app/assistente' : '/';
 
   return (
     <>

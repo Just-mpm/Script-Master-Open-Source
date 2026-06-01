@@ -67,7 +67,7 @@ describe('GuestRoute', () => {
 
   // --- Usuario autenticado (redirect) ---
 
-  it('deve redirecionar para /app/estudio quando usuario esta autenticado', () => {
+  it('deve redirecionar para /app/assistente quando usuario esta autenticado', () => {
     mockUseAuth.mockReturnValue({
       ...defaultAuth,
       user: { uid: 'abc123', email: 'user@test.com', providerData: [] },
@@ -78,14 +78,14 @@ describe('GuestRoute', () => {
         <Route element={<GuestRoute />}>
           <Route path="/login" element={<div data-testid="login-page">Login</div>} />
         </Route>
-        <Route path="/app/estudio" element={<div data-testid="studio-page">Studio</div>} />
+        <Route path="/app/assistente" element={<div data-testid="assistant-page">Assistant</div>} />
       </Routes>,
       ['/login']
     );
 
-    // Navigate deve redirecionar para o estudio — pagina de login nao renderiza
+    // Navigate deve redirecionar para o assistente — pagina de login nao renderiza
     expect(screen.queryByTestId('login-page')).toBeNull();
-    expect(screen.getByTestId('studio-page')).toBeTruthy();
+    expect(screen.getByTestId('assistant-page')).toBeTruthy();
   });
 });
 

@@ -81,14 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           wasLoginRequested.current = false;
           try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
           if (onboardingCompleted) {
-            window.location.href = '/app/estudio';
+            window.location.href = '/app/assistente';
           } else {
             // Verifica Firestore antes de redirecionar (localStorage pode ter sido limpo entre sessões)
             getUserSettings(authUser.uid).then((settings) => {
               const actuallyCompleted = settings && (settings.name || settings.goals?.length);
               if (actuallyCompleted) {
                 localStorage.setItem('s2a_onboarding_completed', 'true');
-                window.location.href = '/app/estudio';
+                window.location.href = '/app/assistente';
               } else {
                 window.location.href = '/onboarding';
               }

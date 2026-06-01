@@ -1679,6 +1679,7 @@ export const es: TranslationDictionary = {
     },
     welcome: '¿Cómo puedo ayudar?',
     defaultChatTitle: 'Nueva conversación',
+    tourAutoMessage: '¡Hola! Soy nuevo aquí, ¿me puedes mostrar cómo funciona la plataforma?',
   },
 
   // ── Configuración ────────────────────────────────────────────────────────

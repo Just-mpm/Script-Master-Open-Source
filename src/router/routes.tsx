@@ -225,7 +225,7 @@ export function AppRoutes({
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        {/* Rotas para visitantes — logados são redirecionados para /app/estudio */}
+        {/* Rotas para visitantes — logados são redirecionados para /app/assistente */}
         <Route element={<GuestRoute />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -282,7 +282,7 @@ export function AppRoutes({
         </Route>
 
         {/* Redirect raiz do app */}
-        <Route path="/app" element={<Navigate to="/app/estudio" replace />} />
+        <Route path="/app" element={<Navigate to="/app/assistente" replace />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

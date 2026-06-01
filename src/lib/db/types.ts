@@ -89,6 +89,8 @@ export interface UserSetting {
   goals?: string[];
   customSystemPrompt: string;
   updatedAt: number;
+  /** Flag persistente por usuário — tour de boas-vindas do assistente já foi exibido */
+  tourSeen?: boolean;
   // Preferências do estúdio (opcionais — sincronizadas via Firestore)
   selectedVoice?: string;
   isMultiSpeaker?: boolean;

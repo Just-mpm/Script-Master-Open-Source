@@ -208,7 +208,7 @@ export function PublicHeader() {
               {user ? (
                 <Button
                   component={Link}
-                  to="/app/estudio"
+                  to="/app/assistente"
                   variant="contained"
                   startIcon={<AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
                   size="small"

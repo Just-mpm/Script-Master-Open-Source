@@ -30,7 +30,7 @@ export function GuestRoute() {
   }
 
   if (user) {
-    return <Navigate to="/app/estudio" replace />;
+    return <Navigate to="/app/assistente" replace />;
   }
 
   return <Outlet />;

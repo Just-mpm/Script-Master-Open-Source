@@ -119,6 +119,14 @@ describe('PublicHeader', () => {
     expect(screen.getByRole('link', { name: /Abrir App/i })).toBeDefined();
   });
 
+  it('link "Abrir App" aponta para /app/assistente quando autenticado', () => {
+    mockUseAuth.mockReturnValue(authenticatedUser);
+    render(<PublicHeader />, { wrapper: Wrapper });
+    // O destino padrão do app após login/onboarding é o Assistente
+    const openAppLink = screen.getByRole('link', { name: /Abrir App/i });
+    expect(openAppLink.getAttribute('href')).toBe('/app/assistente');
+  });
+
   it('oculta CTAs durante loading de autenticação', () => {
     mockUseAuth.mockReturnValue({ ...anonymousUser, loading: true });
     render(<PublicHeader />, { wrapper: Wrapper });

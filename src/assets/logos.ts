@@ -27,7 +27,7 @@ const logos = {
     /** Logo completa com texto, quadrado arredondado */
     roundedSquare: `/logo-quadrado-arredondado.webp?${v}`,
   },
-  favicon: `/favicon.webp?${v}`,
+  favicon: `/favicon-32.webp?${v}`,
   faviconIco: `/favicon.ico?${v}`,
   appleTouchIcon: `/apple-touch-icon.png?${v}`,
   ogImage: `/og-image.webp?${v}`,

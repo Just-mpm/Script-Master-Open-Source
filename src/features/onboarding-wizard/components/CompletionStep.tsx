@@ -57,7 +57,7 @@ export function CompletionStep() {
       if (isFounderMessageSeen()) {
         // Ja viu a mensagem — conclui wizard e navega direto
         complete();
-        navigate('/app/estudio');
+        navigate('/app/assistente');
       } else {
         // Primeira vez — abre dialog. So conclui o wizard ao fechar o dialog.
         setShowFounderMessage(true);
@@ -71,10 +71,10 @@ export function CompletionStep() {
   };
 
   const handleFounderMessageClose = () => {
-    // Marca wizard como concluido e navega para o estudio
+    // Marca wizard como concluido e navega para o assistente
     complete();
     setShowFounderMessage(false);
-    navigate('/app/estudio');
+    navigate('/app/assistente');
   };
 
   return (

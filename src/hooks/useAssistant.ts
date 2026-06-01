@@ -3,6 +3,9 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import { removeUndefinedFields } from '../lib/callable-utils';
 import {
+  getChatSessions,
+  hasTourSeen,
+  markTourSeen,
   sanitizeAssistantHistoryAttachments,
   saveChatSession,
   type AssistantHistoryMessage,
@@ -29,6 +32,12 @@ import { useCredits } from './useCredits';
 
 const log = createLogger('useAssistant');
 const STREAM_ABORTED = Symbol('assistant-stream-aborted');
+
+/** Chave do localStorage para a sessão ativa do chat — sobrevive a remontagem do componente */
+const ACTIVE_SESSION_KEY = 's2a_active_chat_session_id';
+
+/** Chave do localStorage para marcar que o tour de boas-vindas já foi exibido */
+const TOUR_SEEN_KEY = 's2a_assistant_tour_seen';
 
 /** Marcador para detectar mensagens de erro de streaming em dados legados (salvos antes de existir o campo canRetry). */
 const STREAM_ERROR_MARKER = '__RETRY_DETECTED__';
@@ -317,6 +326,108 @@ export function useAssistant(currentState?: AssistantStudioState) {
   }, [isStreaming]);
 
   // ---------------------------------------------------------------------------
+  // Restauração de sessão ativa (sobrevive a remontagem do componente)
+  // ---------------------------------------------------------------------------
+
+  const loadSessionRef = useRef<(session: ChatSession) => void>(() => {});
+  const sendMessageRef = useRef<(text: string, attachments?: Attachment[]) => Promise<void>>(() => Promise.resolve());
+  /** Ref do tamanho de messages — usado dentro de setTimeout para evitar closure obsoleta */
+  const messagesLengthRef = useRef(0);
+
+  // Sincroniza ref com messages.length para acesso dentro de timers sem stale closure
+  useEffect(() => { messagesLengthRef.current = messages.length; }, [messages.length]);
+
+  // Restaura sessão ativa do localStorage ao montar
+  useEffect(() => {
+    const activeSessionId = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!activeSessionId || !user) return;
+
+    // Evita restaurar se já tem mensagens (ex: loadSession manual)
+    if (messages.length > 0) return;
+
+    let cancelled = false;
+
+    getChatSessions(user.uid)
+      .then((sessions) => {
+        if (cancelled) return;
+        const activeSession = sessions.find((s) => s.id === activeSessionId);
+        if (activeSession && activeSession.messages.length > 0) {
+          log.debug('Restaurando sessão ativa do localStorage', { sessionId: activeSessionId });
+          loadSessionRef.current(activeSession);
+        }
+      })
+      .catch((error: unknown) => {
+        log.warn('Falha ao restaurar sessão ativa', { error });
+      });
+
+    return () => { cancelled = true; };
+    // Executa apenas na montagem — dependências intencionalmente vazias
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
+  // Auto-message de boas-vindas para novos usuários
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    let tourTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Verifica flag no Firestore (fonte da verdade por usuário/sincronizada entre dispositivos).
+    // localStorage é usado como cache rápido para evitar chamada de rede em montagens repetidas.
+    const checkAndMaybeSendTour = async () => {
+      // 1) Cache local rápido
+      try {
+        if (localStorage.getItem(TOUR_SEEN_KEY) === 'true') return;
+      } catch { /* ignore */ }
+
+      // 2) Fonte da verdade: Firestore (ou IndexedDB para visitantes sem uid)
+      let alreadySeen = false;
+      try {
+        alreadySeen = await hasTourSeen(user.uid);
+      } catch (error: unknown) {
+        log.warn('Falha ao verificar tourSeen no Firestore', { error });
+      }
+
+      if (cancelled) return;
+      if (alreadySeen) {
+        // Sincroniza cache local
+        try { localStorage.setItem(TOUR_SEEN_KEY, 'true'); } catch { /* ignore */ }
+        return;
+      }
+
+      // 3) Espera sessão ativa ser restaurada antes de decidir
+      tourTimer = setTimeout(() => {
+        if (cancelled) return;
+
+        // Se já tem mensagens (sessão restaurada), não envia auto-message.
+        // Usa ref para evitar closure obsoleta do `messages` no setTimeout.
+        if (messagesLengthRef.current > 0) return;
+
+        // Envia mensagem automática de boas-vindas
+        const tourMessage = t('assistantStrings.tourAutoMessage');
+        sendMessageRef.current(tourMessage).catch((error: unknown) => {
+          log.warn('Falha ao enviar mensagem automática de tour', { error });
+        });
+
+        // Persiste no Firestore (fonte da verdade) + cache local
+        try { localStorage.setItem(TOUR_SEEN_KEY, 'true'); } catch { /* ignore */ }
+        markTourSeen(user.uid).catch((error: unknown) => {
+          log.warn('Falha ao persistir tourSeen no Firestore', { error });
+        });
+      }, 1500); // Delay para garantir que sessão ativa foi restaurada
+    };
+
+    void checkAndMaybeSendTour();
+
+    return () => {
+      cancelled = true;
+      if (tourTimer) clearTimeout(tourTimer);
+    };
+    // Executa apenas quando user muda (login) — messagesLengthRef é sincronizado separadamente
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
+
+  // ---------------------------------------------------------------------------
   // Lifecycle e persistência
   // ---------------------------------------------------------------------------
 
@@ -370,6 +481,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
         .catch((sessionError: unknown) => {
           log.error('Erro ao salvar sessão do assistente', { error: sessionError });
         });
+
+      // Persiste ID da sessão ativa para restaurar após remontagem do componente
+      try { localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId); } catch { /* ignore */ }
     }
   }, [messages, currentSessionId, user, isStreaming, t]);
 
@@ -447,6 +561,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
     setCurrentSessionId(crypto.randomUUID());
     setMessages([]);
+
+    // Limpa sessão ativa — novo chat não tem ID persistido ainda
+    try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch { /* ignore */ }
     setIsLoading(false);
     setIsStreaming(false);
     setIsCompacting(false);
@@ -472,6 +589,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
     setCurrentSessionId(session.id);
     setMessages(normalizeChatMessages(session.messages));
+
+    // Persiste sessão ativa para sobreviver a remontagem do componente
+    try { localStorage.setItem(ACTIVE_SESSION_KEY, session.id); } catch { /* ignore */ }
     setIsLoading(false);
     setIsStreaming(false);
     setIsCompacting(false);
@@ -494,6 +614,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setToolEvents([]);
     setRespondResult(null);
   };
+
+  // Atualiza ref com referência estável de loadSession (deve vir após declaração)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadSessionRef.current = loadSession; }, []);
 
   const clearPendingSettings = useCallback(() => {
     setPendingSettings(null);
@@ -720,8 +844,8 @@ export function useAssistant(currentState?: AssistantStudioState) {
           contextSummaryRef.current = output.contextSummary ?? contextSummaryRef.current;
           compactionCountRef.current = output.compactionCount ?? compactionCountRef.current;
           estimatedContextTokensRef.current = output.estimatedContextTokens ?? estimatedContextTokensRef.current;
-    retryAttachmentsRef.current = undefined;
-    interruptToolRequestRef.current = null;
+          retryAttachmentsRef.current = undefined;
+          interruptToolRequestRef.current = null;
         } catch (finalDataError: unknown) {
           if (!isCallableCancelledError(finalDataError)) {
             const errorInfo = getCallableErrorInfo(finalDataError);
@@ -796,6 +920,9 @@ export function useAssistant(currentState?: AssistantStudioState) {
     selectedThinkingLevel,
     thinkingEnabled,
   ]);
+
+  // Sincroniza ref com sendMessage para uso em auto-message (evita stale closure)
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {

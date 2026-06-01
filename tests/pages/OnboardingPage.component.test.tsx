@@ -154,6 +154,32 @@ describe('OnboardingPage — Renderizacao', () => {
     expect(screen.queryByText('Começar')).toBeNull();
   });
 
+  it('redireciona para /app/assistente quando isCompleted=true no store', () => {
+    mockUseAuth.mockReturnValue({ ...defaultAuth, user: authenticatedUser });
+    useWizardStore.setState({ isCompleted: true });
+
+    renderWithProviders(<OnboardingPage />);
+
+    // <Navigate to="/app/assistente" /> não renderiza conteúdo do wizard
+    expect(screen.queryByText('Desbloqueie seu potencial criativo.')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Começar/i })).toBeNull();
+  });
+
+  it('redireciona para /app/assistente quando localStorage s2a_onboarding_completed=true', () => {
+    mockUseAuth.mockReturnValue({ ...defaultAuth, user: authenticatedUser });
+    useWizardStore.setState({ isCompleted: false });
+    localStorage.setItem('s2a_onboarding_completed', 'true');
+
+    renderWithProviders(<OnboardingPage />);
+
+    // <Navigate to="/app/assistente" /> não renderiza conteúdo do wizard
+    expect(screen.queryByText('Desbloqueie seu potencial criativo.')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Começar/i })).toBeNull();
+
+    // Cleanup
+    localStorage.removeItem('s2a_onboarding_completed');
+  });
+
   it('renderiza o wizard quando usuario esta logado', () => {
     mockUseAuth.mockReturnValue({ ...defaultAuth, user: authenticatedUser });
 
