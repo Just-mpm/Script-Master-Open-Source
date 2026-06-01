@@ -12,6 +12,7 @@ import Memory from '@mui/icons-material/Memory';
 import Psychology from '@mui/icons-material/Psychology';
 import Settings from '@mui/icons-material/Settings';
 import SmartToy from '@mui/icons-material/SmartToy';
+import Star from '@mui/icons-material/Star';
 import Tune from '@mui/icons-material/Tune';
 import Web from '@mui/icons-material/Web';
 import type { AssistantToolEvent } from '../types';
@@ -109,6 +110,18 @@ const TOOL_REGISTRY: Record<string, ToolConfig> = {
     icon: <SmartToy sx={{ fontSize: ICON_SIZE_SM }} />,
     labelKey: 'assistant.toolEvents.respond',
     color: '#26c6da',
+  },
+  use_skill: {
+    icon: <Star sx={{ fontSize: ICON_SIZE_SM }} />,
+    labelKey: 'assistant.toolEvents.useSkill',
+    color: '#ffd54f',
+    extractResult: (output) => {
+      // Output é o conteúdo completo da skill — mostra confirmação genérica
+      if (typeof output === 'string' && output.length > 0) {
+        return 'Habilidade carregada';
+      }
+      return null;
+    },
   },
 };
 
@@ -256,6 +269,31 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
   const config = useMemo(() => getToolConfig(event.name), [event.name]);
   const label = t(config.labelKey) || event.name;
 
+  // Extrai nome da skill para use_skill
+  const skillName = useMemo(() => {
+    if (event.name !== 'use_skill') return null;
+    if (event.type === 'tool_call' && event.input && typeof event.input === 'object') {
+      return (event.input as { skillName?: string }).skillName ?? null;
+    }
+    return null;
+  }, [event]);
+
+  // Label customizado para use_skill — mostra "Carregando habilidade: {nome}"
+  const displayLabel = useMemo(() => {
+    if (event.name !== 'use_skill') return label;
+    if (skillName) {
+      // Converte kebab-case para título legível
+      const friendlyName = skillName
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      return isPending
+        ? `${t('assistant.toolEvents.loadingSkill')} ${friendlyName}…`
+        : `${friendlyName}`;
+    }
+    return label;
+  }, [event.name, label, skillName, isPending, t]);
+
   // Verifica se é erro
   const isError = event.type === 'tool_result'
     && event.output
@@ -296,7 +334,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
         {/* Label + resultado */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {isPending ? (
-            <ShimmerText text={`${label}…`} color={config.color} />
+            <ShimmerText text={displayLabel} color={config.color} />
           ) : (
             <Stack direction="row" spacing={0.5} sx={{ alignItems: 'baseline' }}>
               <Typography
@@ -307,7 +345,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
                   transition: 'color 200ms ease',
                 }}
               >
-                {label}
+                {displayLabel}
               </Typography>
               {resultText ? (
                 <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
@@ -331,7 +369,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
       {isError && event.output ? (
         <ToolErrorCard
           error={(event.output as { message?: string }).message ?? String(event.output)}
-          label={label}
+          label={displayLabel}
         />
       ) : null}
     </Box>
@@ -347,6 +385,19 @@ interface MergedToolEvent {
   isPending: boolean;
 }
 
+/**
+ * Gera chave única para merge de tool events.
+ * Para use_skill, inclui o skillName do input para diferenciar
+ * múltiplas chamadas com skills diferentes no mesmo turno.
+ */
+function getEventKey(event: AssistantToolEvent): string {
+  if (event.name === 'use_skill' && event.input && typeof event.input === 'object') {
+    const skillName = (event.input as { skillName?: string }).skillName;
+    if (skillName) return `use_skill:${skillName}`;
+  }
+  return event.name;
+}
+
 // ─── Tool Event List ─────────────────────────────────────────────
 
 interface ToolEventListProps {
@@ -357,30 +408,32 @@ interface ToolEventListProps {
 export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
   const { t } = useLocale();
 
-  // Mescla tool_call e tool_result em um único item por tool
+  // Mescla tool_call e tool_result em um único item por tool (ou por skill para use_skill)
   const { mergedEvents, hasPending } = useMemo(() => {
-    // Mapa: tool name → último tool_call e último tool_result
+    // Mapa: eventKey → último tool_call e último tool_result
     const callMap = new Map<string, AssistantToolEvent>();
     const resultMap = new Map<string, AssistantToolEvent>();
 
     for (const event of events) {
+      const key = getEventKey(event);
       if (event.type === 'tool_call') {
-        callMap.set(event.name, event);
+        callMap.set(key, event);
       } else if (event.type === 'tool_result') {
-        resultMap.set(event.name, event);
+        resultMap.set(key, event);
       }
     }
 
-    // Preserva ordem de aparição (primeira ocorrência de cada tool)
+    // Preserva ordem de aparição (primeira ocorrência de cada tool/skill)
     const seen = new Set<string>();
     const ordered: MergedToolEvent[] = [];
 
     for (const event of events) {
-      if (seen.has(event.name)) continue;
-      seen.add(event.name);
+      const key = getEventKey(event);
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-      const call = callMap.get(event.name);
-      const result = resultMap.get(event.name);
+      const call = callMap.get(key);
+      const result = resultMap.get(key);
 
       // Sempre cria um merged event (com ou sem call)
       if (call || result) {
@@ -458,7 +511,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
         ) : null}
         {visibleEvents.map((merged) => (
           <ToolEventItem
-            key={merged.name}
+            key={getEventKey(merged.resultEvent ?? merged.callEvent)}
             event={merged.resultEvent ?? merged.callEvent}
             isPending={merged.isPending}
           />

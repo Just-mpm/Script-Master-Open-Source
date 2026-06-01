@@ -1074,6 +1074,8 @@ export const ptBR: TranslationDictionary = {
       updatePlan: 'Atualizando plano',
       interview: 'Entrevista',
       respond: 'Respondendo',
+      useSkill: 'Carregando habilidade',
+      loadingSkill: 'Carregando habilidade:',
     },
     stop: {
       tooltip: 'Parar geração',

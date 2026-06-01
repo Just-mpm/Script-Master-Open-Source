@@ -7,6 +7,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.117.0] - 2026-06-01
+
+### Adicionado
+
+- **Sistema de Skills para o Assistente IA** (`functions/src/genkit/middlewares/skills.ts`, +307 linhas): novo middleware Genkit que escaneia diretórios de `SKILL.md`, mantém cache em memória e injeta a ferramenta `use_skill` no assistente. O assistente pode consultar conhecimento especializado (guia de vozes, melhores práticas TTS) durante a conversa
+- **Script de build para skills** (`functions/scripts/copy-skills.mjs`, +33 linhas): copia arquivos `SKILL.md` do diretório `functions/src/skills/` para o diretório de build durante `npm run build` nas Cloud Functions
+- **Skill: Guia de Vozes** (`functions/src/skills/guia-de-vozes/SKILL.md`, +103 linhas): catálogo completo das 30 vozes Gemini TTS com características, estilos e recomendações de uso
+- **Skill: Melhores Práticas TTS** (`functions/src/skills/melhores-praticas-tts/SKILL.md`, +181 linhas): guia de otimização de roteiros para síntese de voz — pontuação, audio tags, emoções e técnicas avançadas
+- **ToolEventCard — suporte a `use_skill`** (`src/features/assistant/components/ToolEventCard.tsx`): novo tipo de evento `use_skill` no chat do assistente com ícone Star (`@mui/icons-material/Star`) e formatação visual dedicada
+- **i18n — labels de skill** (3 locales): chaves `useSkill` e `loadingSkill` adicionadas em pt-BR, en e es para exibição do status de carregamento de skills
+
+### Alterado
+
+- **Fluxo do assistente** (`functions/src/flows/assistant.ts`): adicionado `skillsMiddleware` com caminho de skills (`skillPaths`) e registro no Genkit flow via `use: [skillsMiddleware]`
+- **Fluxo inline-assistant** (`functions/src/flows/inline-assistant.ts`): removido import do `constants.js` (não mais necessário com novo sistema de skills)
+- **Prompt de contexto do assistente** (`functions/src/genkit/utils/assistant-context.ts`): simplificado — removidos campos `voicesList`/`paceList` do retorno e texto do prompt reduzido (agora gerenciado via skills)
+- **Build das Functions** (`functions/package.json`): script `build` agora executa `node scripts/copy-skills.mjs` após o `tsc` para garantir que skills sejam copiadas para a build
+
+---
+
 ## [0.116.0] - 2026-05-31
 
 ### Alterado

@@ -20,8 +20,11 @@
 
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { MessageSchema, z, type MessageData } from 'genkit';
 import { ai } from '../genkit/genkit.js';
+import { createSkillsMiddleware } from '../genkit/middlewares/skills.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import {
   AssistantInputSchema,
@@ -49,7 +52,6 @@ import {
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
-import { VOICES, PACE_DESCRIPTIONS } from '../genkit/constants.js';
 import {
   buildAssistantSystemInstruction,
   buildCustomPromptBlock,
@@ -79,6 +81,18 @@ const MAX_HISTORY_MESSAGES_FOR_ESTIMATION = 10;
 const MAX_ASSISTANT_PAYLOAD_CHARS = 20_000_000;
 
 const log = createLogger('assistant');
+
+// ---------------------------------------------------------------------------
+// Middleware de skills — instanciado uma vez na inicialização (não por request)
+// ---------------------------------------------------------------------------
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Skills ficam em src/skills/ (dev) ou dist/skills/ (deploy) —
+// path relativo ao próprio arquivo funciona em ambos os ambientes.
+const skillsMiddleware = createSkillsMiddleware({
+  skillPaths: [path.resolve(__dirname, '../skills')],
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -315,12 +329,6 @@ export const assistant = onCallGenkit(
         const customPromptBlock = buildCustomPromptBlock(userSettings);
         const userProfileBlock = buildUserProfileBlock(userSettings);
 
-        // Listas de vozes e ritmos
-        const voicesList = VOICES.map((v) => `- ${v.name} (${v.style})`).join('\n');
-        const paceList = Object.entries(PACE_DESCRIPTIONS)
-          .map(([key, desc]) => `${key} (${desc})`)
-          .join(', ');
-
         // Bloco de estado do estúdio
         const studioBlock = buildStudioBlock(input.studioState ?? undefined);
 
@@ -432,8 +440,6 @@ export const assistant = onCallGenkit(
         const baseSystemInstruction = buildAssistantSystemInstruction({
           memoriesText,
           userProfileBlock,
-          voicesList,
-          paceList,
           studioBlock,
           customPromptBlock,
           toolFirst: true,
@@ -709,6 +715,7 @@ export const assistant = onCallGenkit(
               interviewInterrupt,
               respondTool,
             ],
+            use: [skillsMiddleware],
             maxTurns: 20,
             resume: genkitResume,
             config: thinkingConfig ? { thinkingConfig } : undefined,

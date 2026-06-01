@@ -35,7 +35,6 @@ import {
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
-import { VOICES, PACE_DESCRIPTIONS } from '../genkit/constants.js';
 import {
   buildInlineAssistantInstruction,
   buildCustomPromptBlock,
@@ -151,11 +150,6 @@ export const inlineAssistant = onCallGenkit(
       const customPromptBlock = buildCustomPromptBlock(userSettings);
       const userProfileBlock = buildUserProfileBlock(userSettings);
 
-      const voicesList = VOICES.map((v) => `- ${v.name} (${v.style})`).join('\n');
-      const paceList = Object.entries(PACE_DESCRIPTIONS)
-        .map(([key, desc]) => `${key} (${desc})`)
-        .join(', ');
-
       // -----------------------------------------------------------------------
       // 2. Reserva créditos via helper withCreditMetering()
       // -----------------------------------------------------------------------
@@ -177,8 +171,6 @@ export const inlineAssistant = onCallGenkit(
         const instruction = buildInlineAssistantInstruction({
           memoriesText,
           userProfileBlock,
-          voicesList,
-          paceList,
           customPromptBlock,
           selectedText: input.selectedText,
           instruction: input.instruction,

@@ -14,8 +14,6 @@ export interface AssistantUserSettingsDoc {
 interface AssistantSystemInstructionParams {
   memoriesText: string;
   userProfileBlock: string;
-  voicesList: string;
-  paceList: string;
   studioBlock: string;
   customPromptBlock: string;
   /** Quando true, usa resumos em vez de contexto completo (tool-first) */
@@ -29,8 +27,6 @@ interface AssistantSystemInstructionParams {
 interface InlineAssistantInstructionParams {
   memoriesText: string;
   userProfileBlock: string;
-  voicesList: string;
-  paceList: string;
   customPromptBlock: string;
   selectedText: string;
   instruction: string;
@@ -84,7 +80,7 @@ function formatEmotionIntensity(value: unknown): string {
 }
 
 function buildCoreProductInstruction(): string {
-  return `Você é o Assistente Criativo do Gemini Voice Studio, especialista em criação de roteiros, direção de áudio com Gemini TTS e produção visual para vídeos narrados.
+  return `Você é o Assistente Criativo do Script Master, especialista em criação de roteiros, direção de áudio com Gemini TTS e produção visual para vídeos narrados.
 
 OBJETIVO CENTRAL:
 - Ajudar o usuário a transformar ideias e roteiros em resultados práticos dentro do produto.
@@ -249,8 +245,6 @@ export function buildAssistantSystemInstruction(params: AssistantSystemInstructi
   const {
     memoriesText,
     userProfileBlock,
-    voicesList,
-    paceList,
     studioBlock,
     customPromptBlock,
     toolFirst,
@@ -294,22 +288,10 @@ REGRAS DO updatePlan (OBRIGATÓRIAS):
 - Preserve títulos e IDs existentes ao atualizar — não renomeie tarefas sem necessidade.
 - Quando o usuário disser "continue" ou "retome", localize a próxima tarefa incompleta no plano existente e continue de lá.
 
-FERRAMENTAS DISPONÍVEIS:
-- updatePlan: gerencia a lista de tarefas visível ao usuário.
-- webSearch: busca informações atuais na web.
-- getStudioState: consulta configurações atuais do estúdio.
-- getUserMemories: acessa preferências e memórias salvas.
-- updateStudio: propõe ajustes no estúdio (prévia → confirmação).
-- interview: pergunta ao usuário quando faltar decisão essencial.
-- respond: registra resposta com ações/mídia para o frontend.
 ${memoriesSection}
 
 ${userProfileBlock}
 
-VOZES DISPONÍVEIS:
-${voicesList}
-
-Ritmos disponíveis (pace): ${paceList}
 ${studioSection}${customPromptBlock}`;
 }
 
@@ -317,8 +299,6 @@ export function buildInlineAssistantInstruction(params: InlineAssistantInstructi
   const {
     memoriesText,
     userProfileBlock,
-    voicesList,
-    paceList,
     customPromptBlock,
     selectedText,
     instruction,
@@ -337,11 +317,6 @@ MEMÓRIA E CONTEXTO PERSISTENTE:
 ${memoriesText}
 
 ${userProfileBlock}
-
-VOZES DISPONÍVEIS:
-${voicesList}
-
-Ritmos disponíveis (pace): ${paceList}
 ${customPromptBlock}
 
 ROTEIRO COMPLETO PARA CONTEXTO:

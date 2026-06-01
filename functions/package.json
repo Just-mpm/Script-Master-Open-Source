@@ -8,7 +8,7 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "build": "eslint src/ && tsc",
+    "build": "eslint src/ && tsc && node scripts/copy-skills.mjs",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "serve": "npm run build && firebase emulators:start --only functions",

@@ -132,6 +132,8 @@ Dual automático: Firestore + Storage (logado) / IndexedDB (visitante). Offline:
 ### Assistente IA
 Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 20` e 7 ferramentas (`updatePlan`, `webSearch`, `getStudioState`, `getUserMemories`, `updateStudio`, `interview`, `respond`). Preservação de tool context via `fullHistory` (`MessageData[]` do Genkit com tool calls/responses transportados entre mensagens — modelo não precisa re-chamar ferramentas). Compactação automática de histórico por threshold de tokens (`assistant-compaction.ts`). Dois modos de IA: `fast` (gemini-3.1-flash-lite) e `specialist` (gemini-3.5-flash). Streaming com batching via `requestAnimationFrame`. Componentes de UX: CodeBlock (syntax highlight com cópia), ImageLightbox (zoom de imagens), ScrollToBottomFab (scroll automático com indicador de streaming), botão de regenerar resposta, animações Motion (AnimatePresence). InlineAIWidget no ScriptEditor para refatorar/expandir trechos. EmptyChatState com sugestões contextuais. TwoPhaseStopButton, ThinkingShimmer, PlanWidget.
 
+**Sistema de Skills:** Middleware Genkit (`skills.ts`) que escaneia diretórios de `SKILL.md`, mantém cache em memória e injeta dinamicamente a ferramenta `use_skill` no assistente. Skills fornecem instruções e workflows especializados para tarefas específicas (ex: guia de vozes, melhores práticas TTS). O prompt do assistente foi simplificado — `voicesList`/`paceList` removidos do contexto fixo e agora gerenciados via skills carregadas sob demanda. Script `copy-skills.mjs` copia skills durante o build das Cloud Functions.
+
 ### Estúdio de Produção
 Zustand (`useStudioStore`) com `useShallow` para seletores otimizados. Persistência localStorage (17 prefs, prefixo `s2a_*`) + Firestore via `useAutoSaveStudioSettings` (debounce 2s). Layout Grid: Inspector (lg:4) + ScriptEditor (lg:8). EmotionSelector (10 emoções + intensidade), VoiceCard. Keyboard shortcuts: Ctrl+Enter (gerar), Space (play/pause). Swipe horizontal mobile via `useSwipeTabs`.
 
@@ -166,8 +168,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.116.0`
-- **Last release:** 2026-05-31
+- **Current:** `0.117.0`
+- **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -175,8 +177,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.117.0` | Sistema de Skills para o Assistente IA: novo middleware Genkit (`skills.ts`) com scan/cache de `SKILL.md` e ferramenta `use_skill`; 2 skills iniciais (Guia de Vozes, Melhores Práticas TTS); script `copy-skills.mjs` para build; `ToolEventCard` com suporte a `use_skill`; i18n dos labels de skill em 3 locales; prompt do assistente simplificado (remoção de voicesList/paceList, agora gerenciado via skills) |
 | `0.116.0` | Sistema de Templates removido (~1.000 linhas): TemplateSelector, TemplateGallery, TemplatePreviewDialog, TemplateCard, scriptTemplates, templateUtils e tipos relacionados; créditos gratuitos reduzidos de 1.000 para 500/mês; hreflang removido do SEO (sitemap.xml only); meta tag Apple `mobile-web-app-capable` corrigida |
 | `0.115.1` | App Check extraído para `src/lib/app-check.ts` com lazy loading via `ensureAppCheck()` — reCAPTCHA v3 (~729 KiB) só carrega para usuários autenticados; fontes Google otimizadas com preload assíncrono; `AuthContext` delega ao novo módulo; 8 docs de auditoria/planos removidos; testes atualizados |
 | `0.115.0` | `FounderMessageDialog` no onboarding — dialog com mensagem pessoal do criador exibida apenas na primeira conclusão do wizard (persistido via localStorage); remoção completa da página `/status` (StatusPage, rota, footer link, sitemap, prerender, COEP config, ~180 traduções em 3 locales, testes) |
 | `0.114.0` | SEO/AEO/GEO completo: pre-renderização das 9 rotas públicas via puppeteer-core (`scripts/prerender.mjs`); JSON-LD centralizado (`buildJsonLd` com 3 tipos: SoftwareApplication, WebPage, BreadcrumbList); `llms.txt` + `llms-full.txt` para visibilidade em LLMs; favicon `.ico` + `apple-touch-icon.png` + meta tags Apple; robots.txt com directive `Llms-txt`; deploy scripts agora usam `build:full`; plano completo em `docs/plan/seo-aeo-geo-plano-final.md` |
-| `0.113.1` | `interviewInterrupt` movido para antes do primeiro uso em `assistant.ts` (corrige ReferenceError); novo `ToolRequestPartZodSchema` para serialização precisa de interrupts Genkit no round-trip frontend-backend; `interruptToolRequest` migrado do schema customizado para o schema nativo Genkit |

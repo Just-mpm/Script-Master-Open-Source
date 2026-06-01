@@ -1059,6 +1059,8 @@ export const en: TranslationDictionary = {
       updatePlan: 'Updating plan',
       interview: 'Interview',
       respond: 'Responding',
+      useSkill: 'Loading skill',
+      loadingSkill: 'Loading skill:',
     },
     stop: {
       tooltip: 'Stop generation',
