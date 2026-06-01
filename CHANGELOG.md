@@ -7,9 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [0.117.1] - 2026-06-01
+## [0.118.0] - 2026-06-01
 
-### Removido
+### Adicionado
+
+- **AssistantComposerHandle — forwardRef pattern** (`src/features/assistant/components/AssistantComposer.tsx`, +83/-23): nova interface exportada `AssistantComposerHandle` com `forwardRef` + `useImperativeHandle` — permite que componentes pais (ex: `Assistant.tsx`) controlem o composer programaticamente via ref. O componente interno foi renomeado para `AssistantComposerInner` com tipagem via `ForwardedRef<AssistantComposerHandle>`. Mantém compatibilidade total com props existentes
+- **`extractSkillName()`** (`src/features/assistant/components/ToolEventCard.tsx`, +36/-6): nova função utilitária que extrai o nome de uma skill a partir de eventos de ferramenta do assistente — usada para exibição contextual de skills carregadas
+
+### Alterado
+
+- **`Assistant.tsx`** (+10/-10): adaptação para usar o novo `ref` com `AssistantComposerHandle` — integração do forwardRef pattern no layout do chat
+- **`functions/src/flows/assistant.ts`** (+18/-14): modificações internas no fluxo do assistente para suportar o novo pattern de comunicação entre frontend e backend
+
+### Corrigido
+
+- **`tests/components/Inspector.features.test.tsx`** (-9 linhas): removidos 3 mocks obsoletos do `TemplateSelector` (componente removido na v0.116.0) — eliminando warnings de mock de dependência inexistente
+
+---
 
 - **`firebase-blueprint.json`** (109 linhas): blueprint de entidades Firestore (Memory, Project, AudioSource, ProjectImage) removido — arquivo de documentação de schema que não é mais utilizado pela aplicação
 - **`metadata.json`** (6 linhas): metadados de projeto (nome, descrição, permissões, capacidades) removidos — arquivo obsoleto que não tem função no ecossistema atual

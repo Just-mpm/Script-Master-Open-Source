@@ -23,7 +23,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useAssistant } from '../../hooks/useAssistant';
 import { ErrorToast } from '../../components/ErrorToast';
-import { AssistantComposer } from './components/AssistantComposer';
+import { AssistantComposer, type AssistantComposerHandle } from './components/AssistantComposer';
 import { AssistantHeader } from './components/AssistantHeader';
 import { AssistantHistoryPanel } from './components/AssistantHistoryPanel';
 import { AssistantMemoriesPanel } from './components/AssistantMemoriesPanel';
@@ -87,7 +87,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     clearInterview,
   } = useAssistant(currentState);
 
-  const [input, setInput] = useState('');
+  const composerRef = useRef<AssistantComposerHandle>(null);
   const [appliedMessageId, setAppliedMessageId] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showMemories, setShowMemories] = useState(false);
@@ -279,19 +279,20 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   }, [loadSession]);
 
   const handleSubmit = useCallback(async () => {
-    if ((!input.trim() && pendingFiles.length === 0) || isLoading) {
+    const currentInput = composerRef.current?.getValue() ?? '';
+    if ((!currentInput.trim() && pendingFiles.length === 0) || isLoading) {
       return;
     }
 
-    const nextInput = input;
+    const nextInput = currentInput;
     const nextFiles = pendingFiles;
-    setInput('');
+    composerRef.current?.clear();
     setPendingFiles([]);
 
     const attachments = await Promise.all(nextFiles.map((file) => fileToAttachment(file)));
 
     await sendMessage(nextInput, attachments);
-  }, [input, pendingFiles, isLoading, sendMessage]);
+  }, [pendingFiles, isLoading, sendMessage]);
 
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -375,11 +376,11 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
   }, [clearInterview, interview, sendMessage]);
 
   const handleSuggestedAction = useCallback((action: string, params?: Record<string, unknown> | null) => {
-    setInput(params ? `${action}\n${JSON.stringify(params, null, 2)}` : action);
+    composerRef.current?.setValue(params ? `${action}\n${JSON.stringify(params, null, 2)}` : action);
   }, []);
 
   const handleSuggestionClick = useCallback((prompt: string) => {
-    setInput(prompt);
+    composerRef.current?.setValue(prompt);
   }, []);
 
   const handleCloseMemories = useCallback(() => setShowMemories(false), []);
@@ -609,7 +610,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
       </Box>
 
       <AssistantComposer
-        input={input}
+        ref={composerRef}
         pendingFiles={pendingFiles}
         isLoading={isLoading}
         isThinkActive={thinkingEnabled}
@@ -618,7 +619,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         fileInputRef={fileInputRef}
         selectedModel={selectedModel}
         selectedThinkingLevel={selectedThinkingLevel}
-        onInputChange={setInput}
         onSubmit={handleSubmit}
         onFileChange={handleFileChange}
         onRemoveFile={handleRemoveFile}

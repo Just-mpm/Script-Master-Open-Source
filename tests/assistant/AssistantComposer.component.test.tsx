@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { createRef } from 'react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
-import { AssistantComposer } from '../../src/features/assistant/components/AssistantComposer';
+import { AssistantComposer, type AssistantComposerHandle } from '../../src/features/assistant/components/AssistantComposer';
 import { I18nProvider } from '../../src/features/i18n';
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
@@ -49,20 +50,25 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
 }));
 
 const defaultProps = {
-  input: '',
   pendingFiles: [] as File[],
   isLoading: false,
   isThinkActive: false,
   fileInputRef: { current: null } as React.RefObject<HTMLInputElement | null>,
   selectedModel: 'fast' as const,
   selectedThinkingLevel: 'minimal' as const,
-  onInputChange: vi.fn(),
   onSubmit: vi.fn(),
   onFileChange: vi.fn(),
   onRemoveFile: vi.fn(),
   onModelChange: vi.fn(),
   onThinkingLevelChange: vi.fn(),
 };
+
+/** Helper: renderiza o Composer com uma ref e retorna a ref. */
+function renderWithRef() {
+  const ref = createRef<AssistantComposerHandle>();
+  const utils = render(<AssistantComposer {...defaultProps} ref={ref} />, { wrapper: Wrapper });
+  return { ref, ...utils };
+}
 
 describe('AssistantComposer', () => {
   beforeEach(() => {
@@ -71,27 +77,30 @@ describe('AssistantComposer', () => {
   });
 
   it('renderiza o campo de texto com placeholder', () => {
-    render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
+    renderWithRef();
 
     const textarea = screen.getByLabelText(/Peça ajustes/i);
     expect(textarea).toBeDefined();
   });
 
   it('renderiza o botão Enviar', () => {
-    render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
+    renderWithRef();
 
     expect(screen.getByRole('button', { name: /Enviar/i })).toBeDefined();
   });
 
   it('desabilita o botão Enviar quando input está vazio e sem arquivos', () => {
-    render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
+    renderWithRef();
 
     const btn = screen.getByRole('button', { name: /Enviar/i });
     expect(btn.hasAttribute('disabled')).toBe(true);
   });
 
-  it('habilita o botão Enviar quando input tem texto', () => {
-    render(<AssistantComposer {...defaultProps} input='texto qualquer' />, { wrapper: Wrapper });
+  it('habilita o botão Enviar quando input tem texto (via setValue do ref)', () => {
+    const { ref } = renderWithRef();
+    act(() => {
+      ref.current?.setValue('texto qualquer');
+    });
 
     const btn = screen.getByRole('button', { name: /Enviar/i });
     expect(btn.hasAttribute('disabled')).toBe(false);
@@ -99,10 +108,7 @@ describe('AssistantComposer', () => {
 
   it('habilita o botão Enviar quando há arquivos pendentes', () => {
     const file = new File(['data'], 'img.png', { type: 'image/png' });
-    render(
-      <AssistantComposer {...defaultProps} pendingFiles={[file]} />,
-      { wrapper: Wrapper },
-    );
+    render(<AssistantComposer {...defaultProps} pendingFiles={[file]} />, { wrapper: Wrapper });
 
     const btn = screen.getByRole('button', { name: /Enviar/i });
     expect(btn.hasAttribute('disabled')).toBe(false);
@@ -110,7 +116,7 @@ describe('AssistantComposer', () => {
 
   it('mostra botão de parar geração quando isLoading é true', () => {
     render(
-      <AssistantComposer {...defaultProps} input='texto' isLoading={true} />,
+      <AssistantComposer {...defaultProps} isLoading={true} />,
       { wrapper: Wrapper },
     );
 
@@ -121,22 +127,21 @@ describe('AssistantComposer', () => {
     expect(stopBtn.hasAttribute('disabled')).toBe(false);
   });
 
-  it('chama onInputChange ao digitar no campo de texto', async () => {
+  it('atualiza o input ao digitar no campo de texto', async () => {
     const user = userEvent.setup();
-    render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
+    const { ref } = renderWithRef();
 
     const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, 'a');
 
-    expect(defaultProps.onInputChange).toHaveBeenCalledWith('a');
+    // O estado interno do Composer reflete a digitação
+    expect(ref.current?.getValue()).toBe('a');
   });
 
   it('chama onSubmit ao clicar no botão Enviar', async () => {
     const user = userEvent.setup();
-    render(
-      <AssistantComposer {...defaultProps} input='mensagem de teste' />,
-      { wrapper: Wrapper },
-    );
+    const { ref } = renderWithRef();
+    ref.current?.setValue('mensagem de teste');
 
     const btn = screen.getByRole('button', { name: /Enviar/i });
     await user.click(btn);
@@ -146,10 +151,8 @@ describe('AssistantComposer', () => {
 
   it('chama onSubmit ao pressionar Enter sem Shift', async () => {
     const user = userEvent.setup();
-    render(
-      <AssistantComposer {...defaultProps} input='mensagem' />,
-      { wrapper: Wrapper },
-    );
+    const { ref } = renderWithRef();
+    ref.current?.setValue('mensagem');
 
     const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, '{Enter}');
@@ -159,15 +162,21 @@ describe('AssistantComposer', () => {
 
   it('NÃO chama onSubmit ao pressionar Shift+Enter', async () => {
     const user = userEvent.setup();
-    render(
-      <AssistantComposer {...defaultProps} input='mensagem' />,
-      { wrapper: Wrapper },
-    );
+    const { ref } = renderWithRef();
+    ref.current?.setValue('mensagem');
 
     const textarea = screen.getByLabelText(/Peça ajustes/i);
     await user.type(textarea, '{Shift>}{Enter}{/Shift}');
 
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('clear() zera o input via ref', () => {
+    const { ref } = renderWithRef();
+    ref.current?.setValue('algo digitado');
+    expect(ref.current?.getValue()).toBe('algo digitado');
+    ref.current?.clear();
+    expect(ref.current?.getValue()).toBe('');
   });
 
   it('mostra chips para arquivos pendentes', () => {
@@ -218,7 +227,7 @@ describe('AssistantComposer', () => {
 
   it('mostra estado de loading no botão quando isLoading é true', () => {
     render(
-      <AssistantComposer {...defaultProps} input='texto' isLoading={true} />,
+      <AssistantComposer {...defaultProps} isLoading={true} />,
       { wrapper: Wrapper },
     );
 
@@ -228,7 +237,7 @@ describe('AssistantComposer', () => {
   });
 
   it('renderiza input de arquivo hidden', () => {
-    const { container } = render(<AssistantComposer {...defaultProps} />, { wrapper: Wrapper });
+    const { container } = renderWithRef();
 
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     expect(fileInput).toBeDefined();

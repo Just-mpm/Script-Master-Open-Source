@@ -83,10 +83,6 @@ vi.mock('../../src/features/studio/store', () => ({
   useStudioStore: (selector: (state: typeof storeMock) => unknown) => selector(storeMock),
 }));
 
-vi.mock('../../src/features/studio/components/TemplateSelector', () => ({
-  TemplateSelector: () => <div data-testid="template-selector">TemplateSelector</div>,
-}));
-
 vi.mock('../../src/features/studio/components/EmotionSelector', () => ({
   EmotionSelector: ({ value, intensity, onChange, disabled }: { value: string; intensity: number; onChange: (e: string, i: number) => void; disabled?: boolean }) => (
     <div data-testid="emotion-selector" data-value={value} data-intensity={intensity} data-disabled={String(disabled ?? false)}>
@@ -107,11 +103,6 @@ describe('Inspector — Features atualizadas', () => {
     storeMock.emotion = 'neutral';
     storeMock.emotionIntensity = 0.5;
     storeMock.generateScenes = false;
-  });
-
-  it('renderiza TemplateSelector no topo do Inspector', () => {
-    render(<Inspector isGenerating={false} />, { wrapper: Wrapper });
-    expect(screen.getByTestId('template-selector')).toBeDefined();
   });
 
   it('renderiza EmotionSelector na seção de direção de arte quando expandida', async () => {

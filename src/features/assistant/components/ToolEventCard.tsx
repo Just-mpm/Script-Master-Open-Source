@@ -386,13 +386,43 @@ interface MergedToolEvent {
 }
 
 /**
+ * Extrai o skillName de um evento use_skill.
+ * Para tool_call, vem do input. Para tool_result, procura o tool_call
+ * correspondente no array (o result não carrega input).
+ */
+function extractSkillName(event: AssistantToolEvent, allEvents: AssistantToolEvent[]): string | null {
+  // Caso 1: evento já tem skillName no input (tool_call)
+  if (event.input && typeof event.input === 'object') {
+    const skillName = (event.input as { skillName?: string }).skillName;
+    if (skillName) return skillName;
+  }
+  // Caso 2: tool_result sem input — procura o tool_call mais recente com mesmo name
+  if (event.type === 'tool_result') {
+    for (let i = allEvents.length - 1; i >= 0; i--) {
+      const e = allEvents[i];
+      if (e.name === 'use_skill' && e.type === 'tool_call') {
+        if (e.input && typeof e.input === 'object') {
+          const skillName = (e.input as { skillName?: string }).skillName;
+          if (skillName) return skillName;
+        }
+        break;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Gera chave única para merge de tool events.
  * Para use_skill, inclui o skillName do input para diferenciar
  * múltiplas chamadas com skills diferentes no mesmo turno.
+ * Para tool_result de use_skill, procura o tool_call correspondente
+ * no array para gerar a mesma chave (sem isso, call e result ficam
+ * em chaves separadas e duplicam visualmente).
  */
-function getEventKey(event: AssistantToolEvent): string {
-  if (event.name === 'use_skill' && event.input && typeof event.input === 'object') {
-    const skillName = (event.input as { skillName?: string }).skillName;
+function getEventKey(event: AssistantToolEvent, allEvents: AssistantToolEvent[] = []): string {
+  if (event.name === 'use_skill') {
+    const skillName = extractSkillName(event, allEvents);
     if (skillName) return `use_skill:${skillName}`;
   }
   return event.name;
@@ -415,7 +445,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
     const resultMap = new Map<string, AssistantToolEvent>();
 
     for (const event of events) {
-      const key = getEventKey(event);
+      const key = getEventKey(event, events);
       if (event.type === 'tool_call') {
         callMap.set(key, event);
       } else if (event.type === 'tool_result') {
@@ -428,7 +458,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
     const ordered: MergedToolEvent[] = [];
 
     for (const event of events) {
-      const key = getEventKey(event);
+      const key = getEventKey(event, events);
       if (seen.has(key)) continue;
       seen.add(key);
 
@@ -511,7 +541,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
         ) : null}
         {visibleEvents.map((merged) => (
           <ToolEventItem
-            key={getEventKey(merged.resultEvent ?? merged.callEvent)}
+            key={getEventKey(merged.resultEvent ?? merged.callEvent, events)}
             event={merged.resultEvent ?? merged.callEvent}
             isPending={merged.isPending}
           />

@@ -1,10 +1,14 @@
 import {
   type ChangeEvent,
   type FormEvent,
+  type ForwardedRef,
   type KeyboardEvent,
   type MouseEvent,
   type RefObject,
+  forwardRef,
+  useCallback,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
 } from 'react';
@@ -63,7 +67,6 @@ const PLACEHOLDERS = [
 ];
 
 interface AssistantComposerProps {
-  input: string;
   pendingFiles: File[];
   isLoading: boolean;
   isThinkActive: boolean;
@@ -72,7 +75,6 @@ interface AssistantComposerProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   selectedModel: 'fast' | 'specialist';
   selectedThinkingLevel: 'minimal' | 'low' | 'medium' | 'high';
-  onInputChange: (value: string) => void;
   onSubmit: () => void;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (index: number) => void;
@@ -82,32 +84,79 @@ interface AssistantComposerProps {
   onThinkingLevelChange: (level: 'minimal' | 'low' | 'medium' | 'high') => void;
 }
 
-export const AssistantComposer = React.memo(function AssistantComposer({
-  input,
-  pendingFiles,
-  isLoading,
-  isThinkActive,
-  creditsBlocked = false,
-  interviewPending = false,
-  fileInputRef,
-  selectedModel,
-  selectedThinkingLevel,
-  onInputChange,
-  onSubmit,
-  onFileChange,
-  onRemoveFile,
-  onStopGeneration,
-  onThinkToggle,
-  onModelChange,
-  onThinkingLevelChange,
-}: AssistantComposerProps) {
+/**
+ * Handle imperativo do Composer — permite ao pai:
+ * - Definir o texto do input (sugestões, ações)
+ * - Ler o valor atual
+ * - Focar o textarea
+ * - Limpar o input (após submit)
+ *
+ * Movido para dentro do componente via useState local para evitar
+ * re-render do componente raiz a cada keystroke (recomendação React
+ * "move state down").
+ */
+export interface AssistantComposerHandle {
+  setValue: (value: string) => void;
+  getValue: () => string;
+  focus: () => void;
+  clear: () => void;
+}
+
+function AssistantComposerInner(
+  {
+    pendingFiles,
+    isLoading,
+    isThinkActive,
+    creditsBlocked = false,
+    interviewPending = false,
+    fileInputRef,
+    selectedModel,
+    selectedThinkingLevel,
+    onSubmit,
+    onFileChange,
+    onRemoveFile,
+    onStopGeneration,
+    onThinkToggle,
+    onModelChange,
+    onThinkingLevelChange,
+  }: AssistantComposerProps,
+  ref: ForwardedRef<AssistantComposerHandle>,
+) {
   const { t } = useLocale();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Ref paralela ao state para leitura síncrona fora do ciclo de render
+  // (necessário porque useImperativeHandle com closure no getValue
+  // retornaria valor stale até o próximo render)
+  const inputValueRef = useRef('');
+  const [input, setInput] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [thinkingMenuAnchor, setThinkingMenuAnchor] = useState<HTMLElement | null>(null);
   const [modelMenuAnchor, setModelMenuAnchor] = useState<HTMLElement | null>(null);
+
+  // Expõe API imperativa para o pai controlar o input (sugestões, ações).
+  // Mantém identidade estável (sem deps) — usa ref para leitura síncrona.
+  useImperativeHandle(ref, () => ({
+    setValue: (value: string) => {
+      inputValueRef.current = value;
+      setInput(value);
+      // Foca e posiciona o cursor no final — UX esperada quando o app
+      // preenche o input via sugestão
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+        const len = value.length;
+        textareaRef.current?.setSelectionRange(len, len);
+      });
+    },
+    getValue: () => inputValueRef.current,
+    focus: () => textareaRef.current?.focus(),
+    clear: () => {
+      inputValueRef.current = '';
+      setInput('');
+    },
+  }), []);
 
   // Cycling placeholder quando input está inativo — intervalo de 3.5s para ritmo mais calmo
   useEffect(() => {
@@ -125,6 +174,12 @@ export const AssistantComposer = React.memo(function AssistantComposer({
   }, [isFocused, input]);
 
   const isExpanded = isFocused || input.length > 0 || Boolean(thinkingMenuAnchor);
+
+  const handleInputChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    inputValueRef.current = value;
+    setInput(value);
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -317,8 +372,9 @@ export const AssistantComposer = React.memo(function AssistantComposer({
               placeholder={interviewPending ? t('assistant.composer.interviewPending') : undefined}
               aria-label={interviewPending ? t('assistant.composer.interviewPending') : t('assistant.composer.placeholder')}
               value={input}
-              onChange={(event) => onInputChange(event.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              ref={textareaRef}
               onFocus={() => setIsFocused(true)}
               onBlur={(e) => {
                 // Não perde foco se o relatedTarget está dentro do wrapper
@@ -517,4 +573,8 @@ export const AssistantComposer = React.memo(function AssistantComposer({
       </Box>
     </Box>
   );
-});
+}
+
+export const AssistantComposer = React.memo(forwardRef<AssistantComposerHandle, AssistantComposerProps>(
+  AssistantComposerInner,
+));
