@@ -103,8 +103,9 @@ export async function getStrokeAnimation(imageUrl: string): Promise<StrokeAnimat
 
     log.debug('Cache miss', { imageUrl: imageUrl.substring(0, 60) });
     return null;
-  } catch {
+  } catch (err: unknown) {
     // crypto.subtle indisponível (contexto inseguro) — ignora cache
+    log.warn('Falha ao ler cache de strokes', { error: String(err) });
     return null;
   }
 }
@@ -128,8 +129,9 @@ export async function setStrokeAnimation(imageUrl: string, animation: StrokeAnim
 
     cache.set(key, { animation, timestamp: Date.now() });
     log.debug('Cache set', { imageUrl: imageUrl.substring(0, 60), cacheSize: cache.size });
-  } catch {
+  } catch (err: unknown) {
     // crypto.subtle indisponível — falha silenciosa, sem cache
+    log.warn('Falha ao escrever cache de strokes', { error: String(err) });
   }
 }
 

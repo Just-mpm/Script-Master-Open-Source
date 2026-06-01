@@ -38,7 +38,8 @@ function readProfile(): WizardData | null {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     return raw ? (JSON.parse(raw) as WizardData) : null;
-  } catch {
+  } catch (err: unknown) {
+    log.warn('Falha ao ler perfil do onboarding', { error: String(err) });
     return null;
   }
 }

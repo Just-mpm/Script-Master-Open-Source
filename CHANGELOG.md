@@ -7,6 +7,39 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.121.0] - 2026-06-01
+
+### Adicionado
+
+- **Sistema de logging modular com error tracking** (`src/lib/logger/`, 8 módulos: `types`, `config`, `console`, `filters`, `sanitization`, `interceptor`, `batch-processor`, `index` — ~1300 linhas no total): substitui o arquivo único `src/lib/logger.ts` por uma arquitetura modular com rastreamento de erros em produção via Firestore (`errorLogs` collection). 26 exports públicos — `createLogger()` (compatível com API anterior), `initErrorTracking()` (chamada em `main.tsx` na inicialização), `setLoggerUserId()` (vincula logs ao usuário autenticado via `AuthContext`), `flushLogs()` (envio forçado de pendentes), sanitização automática de dados sensíveis (tokens, emails, senhas), batch processor para envio em lote ao Firestore, interceptação global de erros (`window.onerror`, `unhandledrejection`). Configurado via 3 env vars: `VITE_LOGGER_ENABLED`, `VITE_LOGGER_MIN_LEVEL`, `VITE_LOGGER_SEND_IN_DEV`
+- **LogoutConfirmDialog** (`src/components/LogoutConfirmDialog.tsx`, +56 linhas): novo componente reutilizável de confirmação de logout com Dialog MUI e i18n completo (4 chaves `studio.header.logout.*` nos 3 locales). Integrado em `Header.tsx`, `PublicHeader.tsx` e `MobileBottomNav.tsx`
+- **Seção "Idioma da interface" nas Configurações** (`Configuracoes.tsx`): novo seletor de locale da UI persistido em `UserSettings` via dual storage (Firestore + IndexedDB). Import de `Language` icon e `LOCALE_CONFIGS` do módulo i18n
+- **MobileBottomNav expandido** (`MobileBottomNav.tsx`, +100/-5 linhas): menu mobile com seletor de idioma (`Menu`/`MenuItem` MUI), gerenciamento de cookies (analytics consent via `openAnalyticsConsentDialog`) e dialog de confirmação de logout. Novos imports: `Language`, `Cookie`, `Menu`, `MenuItem`, `Locale`, `AnalyticsConsentPrompt`, `LogoutConfirmDialog`
+- **Script de exportação de error logs** (`scripts/export-error-logs.ts`, +459 linhas): ferramenta CLI para exportar e analisar logs de erros do Firestore com filtros por data, nível e categoria. Script registrado em `package.json` como `export-error-logs`
+- **Regras Firestore para `errorLogs`** (`firestore.rules`, +29 linhas): collection com validação estrita — apenas `create` por usuários autenticados, campos obrigatórios validados (`id`, `level`, `category`, `context`, `message`, `payload`, `userId`, `sessionId`, `pageUrl`, `userAgent`, `viewport`, `stackTrace`, `occurrenceCount`, `environment`). Leitura/atualização/exclusão bloqueadas para clientes
+- **Variáveis de ambiente do logger** em `.env.example`: `VITE_LOGGER_ENABLED`, `VITE_LOGGER_MIN_LEVEL`, `VITE_LOGGER_SEND_IN_DEV`
+- **Chaves i18n** nos 3 locales: `studio.header.logout.*` (dialogTitle, dialogDescription, dialogCancel, dialogConfirm), `configuracoes.interfaceLocaleLabel`, quick actions renomeadas (`howItWorks`, `createScript`, `whichVoice`)
+
+### Alterado
+
+- **Logger**: `src/lib/logger.ts` (arquivo único, ~142 linhas) → `src/lib/logger/` (8 módulos, ~1300 linhas). API pública `createLogger()` mantida totalmente compatível via re-export do `index.ts`. Novo `initErrorTracking()` chamado em `main.tsx` na inicialização
+- **ErrorBoundary**: movido de `main.tsx` (inline) para `src/components/ErrorBoundary.tsx` — integrado com o novo logger e importado em `routes.tsx`
+- **Header.tsx** (+32/-4): `LogoutConfirmDialog` substitui logout direto — botão "Sair" agora abre dialog de confirmação antes de efetuar logout
+- **PublicHeader.tsx** (+22/-1): `LogoutConfirmDialog` integrado para logout de usuários autenticados pela área pública
+- **Quick actions do assistente** (3 locales): `adjustPace`/`suggestScene` → `howItWorks`/`createScript`/`whichVoice` — sugestões contextuais mais relevantes para novos usuários
+- **Brand**: "Estúdio de Produção" → "AI Studio" em `ProductDemoSection.tsx` e chaves i18n dos 3 locales (`studio.header.subtitle`, `studio.header.title`)
+- **LocaleSelector.tsx**: refatorado para usar theme tokens (`ICON_SIZE_LG`, `APP_BORDER`, `WHITE_05`, `WHITE_015`) em vez de valores inline
+- **Error handling consistente** (~15+ arquivos): `catch {}` → `catch (err: unknown)` com `log.warn()` incluindo contexto e `String(err)`. Arquivos: `useProjectGallery.ts`, `useTranscription.ts`, `strokeCache.ts`, `analytics.ts`, `account-cleanup.ts`, `chats.ts`, `user-settings.ts`, `wizardStore.ts`, `audio.ts` (backend), `assistant.ts` (backend), `credit-service.ts` (backend)
+- **Backend (Cloud Functions)**: todos os 8 flows migrados para `createLogger` de `genkit/utils/logger.js` — `credit-snapshot.ts`, `feedback.ts`, `ping.ts`, `scene-prompts.ts`, `genkit.ts`, `index.ts`, `ai-requests.ts`, `credit-service.ts`. Tratamento de erros com `err: unknown` e logging contextual
+- **`main.tsx`** (+16/-24): `ErrorBoundary` movido para arquivo próprio; novo `initErrorTracking()` na inicialização; remoção do import `RoutableErrorBoundary`
+- **`routes.tsx`** (+10/-4): `ErrorBoundary` importado de `../components/ErrorBoundary` e aplicado como wrapper das rotas autenticadas
+
+### Corrigido
+
+- **Testes** (30+ arquivos): `setLoggerUserId: vi.fn()` adicionado ao mock do logger em todos os testes. Testes de `Header` atualizados para refletir dialog de logout (não mais logout direto). Testes de `ProductDemoSection` e `LandingPage` atualizados para novo brand "AI Studio". Teste de `Configuracoes` atualizado para múltiplos selects de locale. Novos mocks de Firebase em `imageProcessing.unit.test.ts` e `speedPaintRenderer.unit.test.ts`. Novo teste `imageTextLanguage.unit.test.ts` (+40 linhas)
+
+---
+
 ## [0.120.0] - 2026-06-01
 
 ### Adicionado

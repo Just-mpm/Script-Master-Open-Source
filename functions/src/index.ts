@@ -18,6 +18,9 @@ import { getAuth } from 'firebase-admin/auth';
 import express from 'express';
 import Stripe from 'stripe';
 import { APP_ALLOWED_CORS_ORIGINS } from './config/cors.js';
+import { createLogger } from './genkit/utils/logger.js';
+
+const log = createLogger('index');
 
 // Inicialização explícita do Firebase Admin SDK (necessário para Genkit flows)
 initializeApp();
@@ -35,18 +38,10 @@ initializeApp();
 // ---------------------------------------------------------------------------
 
 if (process.env.FUNCTIONS_EMULATOR !== 'true') {
-  console.log(
-    '[index] 🛡️  Ambiente de produção detectado. Verifique:',
-  );
-  console.log(
-    '[index]    → App Check habilitado no Console do Firebase?',
-  );
-  console.log(
-    '[index]    → VITE_RECAPTCHA_SITE_KEY configurada no frontend?',
-  );
-  console.log(
-    '[index]    → Sem App Check, todos os flows (audio, images, assistant, etc.) serão rejeitados.',
-  );
+  log.info('Ambiente de produção detectado. Verifique:');
+  log.info('   → App Check habilitado no Console do Firebase?');
+  log.info('   → VITE_RECAPTCHA_SITE_KEY configurada no frontend?');
+  log.info('   → Sem App Check, todos os flows (audio, images, assistant, etc.) serão rejeitados.');
 }
 
 // ---------------------------------------------------------------------------
@@ -72,9 +67,7 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const OPEN_BETA_ENABLED = process.env.OPEN_BETA_ENABLED === 'true';
 
 if (!OPEN_BETA_ENABLED) {
-  console.warn(
-    '[index] OPEN_BETA_ENABLED !== "true" — os flows de IA devem ser protegidos pelo middleware openBetaGuard',
-  );
+  log.warn('OPEN_BETA_ENABLED !== "true" — os flows de IA devem ser protegidos pelo middleware openBetaGuard');
 }
 
 function getStripeClient(): Stripe {
@@ -217,7 +210,7 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error(`[stripeWebhook] Verificação de assinatura falhou: ${message}`);
+    log.error('Verificação de assinatura falhou', { error: message });
     res.status(400).send(`Webhook Error: ${message}`);
     return;
   }
@@ -231,7 +224,7 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
         const userId = session.client_reference_id;
 
         if (!userId) {
-          console.error('[stripeWebhook] checkout.session.completed sem client_reference_id');
+          log.error('checkout.session.completed sem client_reference_id');
           break;
         }
 
@@ -243,7 +236,7 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
           : session.subscription?.id;
 
         if (!stripeSubscriptionId) {
-          console.error('[stripeWebhook] checkout.session.completed sem subscription');
+          log.error('checkout.session.completed sem subscription');
           break;
         }
 
@@ -264,7 +257,7 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
           updatedAt: Date.now(),
         }, { merge: true });
 
-        console.log(`[stripeWebhook] Assinatura criada para ${userId}: plano ${subscriptionData.planId}`);
+        log.info('Assinatura criada', { userId, plan: subscriptionData.planId });
         break;
       }
 
@@ -275,21 +268,21 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
           : subscription.customer?.id;
 
         if (!stripeCustomerId) {
-          console.error('[stripeWebhook] subscription.updated sem customer');
+          log.error('subscription.updated sem customer');
           break;
         }
 
         const userId = await findUserByStripeCustomerId(db, stripeCustomerId);
 
         if (!userId) {
-          console.error(`[stripeWebhook] Nenhum usuário encontrado com stripeCustomerId=${stripeCustomerId}`);
+          log.error('Nenhum usuário encontrado para subscription.updated', { stripeCustomerId });
           break;
         }
 
         const subscriptionData = buildSubscriptionData(subscription);
 
         await db.doc(`users/${userId}/subscription/current`).set(subscriptionData, { merge: true });
-        console.log(`[stripeWebhook] Assinatura atualizada para ${userId}: plano ${subscriptionData.planId}, status ${subscription.status}`);
+        log.info('Assinatura atualizada', { userId, plan: subscriptionData.planId, status: subscription.status });
         break;
       }
 
@@ -300,14 +293,14 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
           : subscription.customer?.id;
 
         if (!stripeCustomerId) {
-          console.error('[stripeWebhook] subscription.deleted sem customer');
+          log.error('subscription.deleted sem customer');
           break;
         }
 
         const userId = await findUserByStripeCustomerId(db, stripeCustomerId);
 
         if (!userId) {
-          console.error(`[stripeWebhook] Nenhum usuário encontrado com stripeCustomerId=${stripeCustomerId}`);
+          log.error('Nenhum usuário encontrado para subscription.deleted', { stripeCustomerId });
           break;
         }
 
@@ -322,17 +315,17 @@ async function handleWebhook(req: express.Request, res: express.Response): Promi
         });
 
         await db.doc(`users/${userId}/subscription/current`).set(subscriptionData, { merge: true });
-        console.log(`[stripeWebhook] Assinatura cancelada para ${userId}: reverted para free`);
+        log.info('Assinatura cancelada, reverted para free', { userId });
         break;
       }
 
       default:
-        console.log(`[stripeWebhook] Evento não tratado: ${event.type}`);
+        log.info('Evento não tratado', { type: event.type });
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('[stripeWebhook] Erro ao processar evento:', error);
+    log.error('Erro ao processar evento', { error: String(error) });
     res.status(500).send('Internal Server Error');
   }
 }
@@ -353,7 +346,8 @@ async function handleCreateCheckout(req: express.Request, res: express.Response)
   try {
     const auth = getAuth();
     decodedToken = await auth.verifyIdToken(authHeader.slice(7));
-  } catch {
+  } catch (err: unknown) {
+    log.error('Verificação de token falhou no createCheckout', { error: String(err) });
     res.status(401).send('Invalid token');
     return;
   }
@@ -378,10 +372,11 @@ async function handleCreateCheckout(req: express.Request, res: express.Response)
   let customerEmail: string | undefined;
   try {
     const userRecord = await getAuth().getUser(decodedToken.uid);
-    customerEmail = userRecord.email ?? undefined;
-  } catch {
-    // Se não conseguir buscar, continua sem email
-  }
+      customerEmail = userRecord.email ?? undefined;
+    } catch (err: unknown) {
+      // Se não conseguir buscar, continua sem email
+      log.warn('Falha ao buscar email do usuário no createCheckout', { uid: decodedToken.uid, error: String(err) });
+    }
 
   const origin = req.headers.origin ?? 'https://script-master.pro';
 
@@ -400,7 +395,7 @@ async function handleCreateCheckout(req: express.Request, res: express.Response)
 
     res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('[createCheckout] Erro ao criar sessão:', error);
+    log.error('Erro ao criar sessão de checkout', { error: String(error) });
     res.status(500).send('Failed to create checkout session');
   }
 }
@@ -420,7 +415,8 @@ async function handleCreatePortal(req: express.Request, res: express.Response): 
   try {
     const auth = getAuth();
     decodedToken = await auth.verifyIdToken(authHeader.slice(7));
-  } catch {
+  } catch (err: unknown) {
+    log.error('Verificação de token falhou no createPortal', { error: String(err) });
     res.status(401).send('Invalid token');
     return;
   }
@@ -452,7 +448,7 @@ async function handleCreatePortal(req: express.Request, res: express.Response): 
 
     res.status(200).json({ url: portalSession.url });
   } catch (error) {
-    console.error('[createPortal] Erro ao criar sessão do portal:', error);
+    log.error('Erro ao criar sessão do portal', { error: String(error) });
     res.status(500).send('Failed to create portal session');
   }
 }

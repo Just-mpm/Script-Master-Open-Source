@@ -257,7 +257,8 @@ describe('useAssistant — chat persistente e tour de boas-vindas', () => {
     mockStreamFn.mockResolvedValue({
       stream: createMockStream(['Olá!', ' Como posso ajudar?']),
       data: Promise.resolve({ text: 'Olá! Como posso ajudar?' }),
-    });
+  setLoggerUserId: vi.fn(),
+});
   });
 
   afterEach(() => {

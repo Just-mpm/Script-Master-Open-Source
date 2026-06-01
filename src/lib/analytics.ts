@@ -99,7 +99,8 @@ export function getAnalyticsConsent(): AnalyticsConsent {
   try {
     const consent = localStorage.getItem(ANALYTICS_CONSENT_KEY);
     return consent === 'granted' || consent === 'denied' ? consent : 'unknown';
-  } catch {
+  } catch (err: unknown) {
+    log.warn('Falha ao ler consentimento de analytics do localStorage', { error: String(err) });
     return 'unknown';
   }
 }

@@ -7,6 +7,9 @@ import { VOICES } from '../../../lib/constants';
 import type { Locale } from '../../i18n/types';
 import { isValidLocale } from '../../i18n/utils';
 import type { SceneRatio, StudioDraftState, EmotionType, StudioSettingsPatch } from '../types';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('studio-utils');
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -45,17 +48,19 @@ export const VIDEO_FPS = 30;
 export function safeSetItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
-  } catch {
+  } catch (err: unknown) {
     // Safari Private Browsing lança SecurityError; quota cheia lança QuotaExceededError
     // Preferências não são críticas — falha silenciosa
+    log.debug('Falha ao acessar localStorage', { key, error: String(err) });
   }
 }
 
 export function getStoredValue(key: string, fallbackValue: string): string {
   try {
     return localStorage.getItem(key) ?? fallbackValue;
-  } catch {
+  } catch (err: unknown) {
     // Safari Private Browsing / storage desabilitado — fallback silencioso
+    log.debug('Falha ao acessar localStorage', { key, error: String(err) });
     return fallbackValue;
   }
 }
@@ -64,7 +69,8 @@ export function getStoredBoolean(key: string, fallbackValue = false): boolean {
   try {
     const storedValue = localStorage.getItem(key);
     return storedValue === null ? fallbackValue : storedValue === 'true';
-  } catch {
+  } catch (err: unknown) {
+    log.debug('Falha ao acessar localStorage', { key, error: String(err) });
     return fallbackValue;
   }
 }
@@ -75,7 +81,8 @@ export function getStoredNumber(key: string, fallbackValue: number): number {
     if (raw === null) return fallbackValue;
     const storedValue = Number(raw);
     return Number.isFinite(storedValue) && storedValue >= 0 ? storedValue : fallbackValue;
-  } catch {
+  } catch (err: unknown) {
+    log.debug('Falha ao acessar localStorage', { key, error: String(err) });
     return fallbackValue;
   }
 }
@@ -88,7 +95,8 @@ export function getStoredSceneRatio(): SceneRatio {
   try {
     const storedValue = localStorage.getItem(STORAGE_KEYS.sceneRatio);
     return isSceneRatio(storedValue) ? storedValue : '16:9';
-  } catch {
+  } catch (err: unknown) {
+    log.debug('Falha ao acessar localStorage', { key: STORAGE_KEYS.sceneRatio, error: String(err) });
     return '16:9';
   }
 }
@@ -105,7 +113,8 @@ export function getStoredEmotion(): EmotionType {
   try {
     const storedValue = localStorage.getItem(STORAGE_KEYS.emotion);
     return isValidEmotion(storedValue) ? storedValue : 'neutral';
-  } catch {
+  } catch (err: unknown) {
+    log.debug('Falha ao acessar localStorage', { key: STORAGE_KEYS.emotion, error: String(err) });
     return 'neutral';
   }
 }
@@ -114,7 +123,8 @@ export function getStoredImageTextLanguage(): Locale {
   try {
     const storedValue = localStorage.getItem(STORAGE_KEYS.imageTextLanguage);
     return storedValue !== null && isValidLocale(storedValue) ? storedValue : 'pt-BR';
-  } catch {
+  } catch (err: unknown) {
+    log.debug('Falha ao acessar localStorage', { key: STORAGE_KEYS.imageTextLanguage, error: String(err) });
     return 'pt-BR';
   }
 }
@@ -230,8 +240,9 @@ export function clearStudioDefaults(): void {
   for (const key of DEFAULTS_KEYS) {
     try {
       localStorage.removeItem(STORAGE_KEYS[key]);
-    } catch {
+    } catch (err: unknown) {
       // Safari Private Browsing — silencioso
+      log.debug('Falha ao acessar localStorage', { key: STORAGE_KEYS[key], error: String(err) });
     }
   }
 }

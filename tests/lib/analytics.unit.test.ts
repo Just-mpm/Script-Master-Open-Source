@@ -27,6 +27,7 @@ vi.mock('../../src/lib/env', () => ({
 }));
 vi.mock('../../src/lib/logger', () => ({
   createLogger: () => ({ warn: vi.fn(), info: vi.fn(), debug: vi.fn(), error: vi.fn() }),
+  setLoggerUserId: vi.fn(),
 }));
 
 async function flushPromises(): Promise<void> {

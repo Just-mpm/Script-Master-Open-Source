@@ -205,8 +205,9 @@ async function deleteProjectsAndSubcollections(userId: string): Promise<void> {
     // Deletar transcrição do projeto
     try {
       await deleteDoc(doc(db, 'transcriptions', projectId));
-    } catch {
+    } catch (err: unknown) {
       // Transcrição pode não existir — ignorar
+      log.warn('Falha ao deletar transcrição durante cleanup', { error: String(err) });
     }
 
     // Deletar o documento do projeto

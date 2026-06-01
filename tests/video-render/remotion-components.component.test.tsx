@@ -103,6 +103,7 @@ vi.mock('../../src/lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 import { ScrollingPhrase } from '../../src/features/video-render/components/ScrollingPhrase';

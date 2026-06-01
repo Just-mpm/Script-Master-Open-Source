@@ -32,6 +32,9 @@ import {
   isRequestIdValid,
 } from '../usage/index.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('feedback');
 
 /** Comprimento mínimo do texto de feedback para evitar abuso trivial */
 const MIN_TEXT_LENGTH = 10;
@@ -88,11 +91,7 @@ export const feedback = onCallGenkit(
       // Busca o saldo atualizado de créditos para retornar ao cliente
       const betaAccess = await getOrCreateBetaAccess(db, uid);
 
-      console.log(
-        `[feedback] uid=${uid}, category=${input.category}, ` +
-        `bonusGranted=${bonusResult.bonusGranted}, ` +
-        `availableCredits=${betaAccess.availableCredits}`,
-      );
+      log.info('Feedback recebido', { uid, category: input.category, bonusGranted: bonusResult.bonusGranted, availableCredits: betaAccess.availableCredits });
 
       return {
         success: true,

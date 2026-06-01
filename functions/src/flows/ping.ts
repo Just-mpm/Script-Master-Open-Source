@@ -18,6 +18,9 @@ import { onCallGenkit, isSignedIn } from 'firebase-functions/v2/https';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('ping');
 
 export const ping = onCallGenkit(
   {
@@ -46,7 +49,7 @@ export const ping = onCallGenkit(
     async (input, flowContext) => {
       const uid = getCallableUidOrThrow(flowContext);
 
-      console.log(`[ping] Chamado por uid=${uid}, message=${input.message ?? '(vazia)'}`);
+      log.info('Ping chamado', { uid, message: input.message ?? '(vazia)' });
 
       return {
         status: 'ok' as const,

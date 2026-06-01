@@ -633,7 +633,7 @@ export const es: TranslationDictionary = {
 
   studio: {
     header: {
-      subtitle: 'Estudio de producción',
+      subtitle: 'AI Studio',
       scriptTab: 'Guion',
       nav: {
         studio: 'Estudio',
@@ -656,6 +656,10 @@ export const es: TranslationDictionary = {
         tooltip: 'Cerrar sesión',
         ariaLabel: 'Cerrar sesión',
         drawerLabel: 'Cerrar sesión',
+        dialogTitle: 'Cerrar sesión',
+        dialogDescription: '¿Está seguro de que desea cerrar sesión en su cuenta?',
+        dialogCancel: 'Cancelar',
+        dialogConfirm: 'Cerrar sesión',
       },
       deleteAccount: {
         drawerLabel: 'Eliminar cuenta',
@@ -835,7 +839,7 @@ export const es: TranslationDictionary = {
       clearConfirm: 'El guion será eliminado permanentemente. ¿Deseas continuar?',
     },
     studioPage: {
-      title: 'Estudio de Producción',
+      title: 'Estudio IA',
       subtitle: 'Ajusta cada detalle de tu guion antes de generar audio, imágenes y video.',
       settingsTab: 'Configuraciones',
       scriptTab: 'Guion',
@@ -1032,16 +1036,16 @@ export const es: TranslationDictionary = {
       thinking: 'Pensando',
       compacting: 'Compactando conversación...',
       suggestions: {
-        adjustPace: 'Ajustar ritmo',
-        suggestScene: 'Sugerir escena',
-        reviewText: 'Revisar texto',
-        analyzeAudio: 'Analizar audio',
+        howItWorks: '¿Cómo funciona la plataforma?',
+        createScript: 'Crear un guion',
+        reviewText: 'Revisar mi guion',
+        whichVoice: '¿Qué voz usar?',
       },
       suggestionPrompts: {
-        adjustPace: 'Sugiere un ritmo de narración más dinámico para mi guion, con variaciones de velocidad para destacar momentos importantes.',
-        suggestScene: 'Crea una descripción visual detallada de una escena cinematográfica que combine con un guion de documental.',
+        howItWorks: 'Ayúdame a entender cómo usar Script Master. Explica de forma simple qué puedo hacer aquí, por dónde empezar y cuáles son los principales recursos.',
+        createScript: 'Ayúdame a crear un guion desde cero. Empecemos por la idea central y quiero tu ayuda para estructurar la historia.',
         reviewText: 'Revisa mi guion y sugiere mejoras de claridad, fluidez e impacto narrativo.',
-        analyzeAudio: 'Analiza las características de audio de mi guion y sugiere el perfil de voz ideal para cada parte.',
+        whichVoice: 'Analiza mi guion y dime qué tipo de voz, tono y ritmo de narración combinan mejor con cada parte.',
       },
     },
     interview: {
@@ -1708,6 +1712,9 @@ export const es: TranslationDictionary = {
     sectionPersona: 'Persona y Dirección',
     sectionScenes: 'Escenas e imágenes',
     sectionMultiSpeaker: 'Dos locutores',
+    sectionLanguage: 'Idioma de la Interfaz',
+    languageDescription: 'Cambia el idioma de visualización de Script Master. El cambio se aplica inmediatamente.',
+    interfaceLocaleLabel: 'Idioma',
     voiceLabel: 'Voz predeterminada',
     personaNameLabel: 'Nombre del locutor',
     profileLabel: 'Perfil de voz',

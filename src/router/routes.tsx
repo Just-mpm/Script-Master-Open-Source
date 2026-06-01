@@ -6,12 +6,12 @@ import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
 import type { RefObject } from 'react';
-import { useLocation } from 'react-router-dom';
 import type { VideoPreviewHandle } from '../components/VideoPreview';
 
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GuestRoute } from '../components/GuestRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useLocale } from '../features/i18n';
@@ -222,9 +222,14 @@ export function AppRoutes({
   isGenerateDisabled,
   videoPlayerRef,
 }: AppRoutesProps): ReactNode {
+  // key={pathname} no ErrorBoundary reseta o estado de erro ao navegar,
+  // mas NÃO afeta providers (Auth, I18n, Audio) que estão acima na árvore.
+  const location = useLocation();
+
   return (
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
+    <ErrorBoundary key={location.pathname}>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
         {/* Rotas para visitantes — logados são redirecionados para /app/assistente */}
         <Route element={<GuestRoute />}>
           <Route path="/" element={<LandingPage />} />
@@ -288,5 +293,6 @@ export function AppRoutes({
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
+  </ErrorBoundary>
   );
 }

@@ -1,5 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// ─── Mock do Firebase para evitar re-inicialização após vi.resetModules() ──
+// Cadeia de imports: imageProcessing → logger → batch-processor → firebase
+vi.mock('firebase/firestore', () => ({
+  initializeFirestore: vi.fn(),
+  persistentLocalCache: vi.fn(),
+  persistentMultipleTabManager: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
+  serverTimestamp: vi.fn(() => new Date()),
+  collection: vi.fn().mockReturnValue({}),
+  addDoc: vi.fn().mockResolvedValue({}),
+  doc: vi.fn().mockReturnValue({}),
+  setDoc: vi.fn().mockResolvedValue(undefined),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+  getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => null }),
+}));
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: { currentUser: null },
+  db: {},
+  storage: {},
+  functions: {},
+}));
+
 // ─── Mock do Canvas API e Image para jsdom ────────────────────────
 
 class MockImageData {
@@ -113,18 +136,17 @@ function createImageMock(imgWidth: number, imgHeight: number) {
 }
 
 // ─── Canvas mock no document.createElement ─────────────────────────
-
+// vi.spyOn intercepta a referência real do jsdom, ao contrário de vi.stubGlobal
+// que substitui o objeto global mas pode não afetar referências internas do jsdom.
 const origCreateElement = document.createElement.bind(document);
+let createElementSpy: ReturnType<typeof vi.spyOn>;
 
 function setupCanvasMock() {
-  vi.stubGlobal('document', {
-    ...document,
-    createElement(tag: string): HTMLElement {
-      if (tag === 'canvas') {
-        return new MockCanvas() as unknown as HTMLCanvasElement;
-      }
-      return origCreateElement(tag);
-    },
+  createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+    if (tag === 'canvas') {
+      return new MockCanvas() as unknown as HTMLCanvasElement;
+    }
+    return origCreateElement(tag);
   });
 }
 

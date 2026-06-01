@@ -95,7 +95,9 @@ export function useImageGenerator() {
     return () => {
       const activeRequestId = activeRequestIdRef.current;
       if (activeRequestId) {
-        void cancelAiRequestCallable({ requestId: activeRequestId }).catch(() => {});
+        void cancelAiRequestCallable({ requestId: activeRequestId }).catch((err: unknown) => {
+          log.warn('Falha ao cancelar requisição de imagem', { requestId: activeRequestId, error: String(err) });
+        });
       }
       if (imageUrlRef.current) {
         URL.revokeObjectURL(imageUrlRef.current);

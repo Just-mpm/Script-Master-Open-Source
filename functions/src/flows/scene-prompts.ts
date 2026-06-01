@@ -40,6 +40,9 @@ import {
 import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
 import { buildScenePromptsInstruction } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('scene-prompts');
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -213,16 +216,10 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
           });
           creditsSettled = true;
 
-          console.log(
-            `[scene-prompts] Geração concluída: uid=${uid} prompts=${prompts.length} ` +
-            `framework=${visualFramework} locale=${locale} créditos=${finalCredits}`,
-          );
+          log.info('Geração concluída', { uid, prompts: prompts.length, framework: visualFramework, locale, credits: finalCredits });
 
           await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
-            console.error(
-              `[scene-prompts] Falha ao finalizar ai_request com sucesso: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com sucesso', { error: finishError instanceof Error ? finishError.message : 'desconhecido' });
           });
 
           return {
@@ -236,7 +233,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
           }
 
           const errorMessage = genErr instanceof Error ? genErr.message : 'Erro desconhecido';
-          console.error(`[scene-prompts] Falha na geração: ${errorMessage}`);
+          log.error('Falha na geração', { error: errorMessage });
 
           // Reverte créditos em caso de falha
           await creditMeter.revert('SCENE_PROMPTS_FAILED');
@@ -250,15 +247,9 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             prompt: `Scene ${i + 1} at ${ts}s: A captivating scene about: ${input.script.substring(0, 100)}... Style: ${style}`,
           }));
 
-          console.log(
-            `[scene-prompts] Retornando fallback genérico: uid=${uid} ` +
-            `scriptLen=${input.script.length}`,
-          );
+          log.info('Retornando fallback genérico', { uid, scriptLen: input.script.length });
           await finishAiRequest(db, uid, requestId, 'completed', 'FALLBACK_RETURNED').catch((finishError: unknown) => {
-            console.error(
-              `[scene-prompts] Falha ao finalizar ai_request com fallback: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com fallback', { error: finishError instanceof Error ? finishError.message : 'desconhecido' });
           });
 
           return {
@@ -281,10 +272,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             error instanceof HttpsError && error.code === 'cancelled' ? 'cancelled' : 'failed',
             errorCode,
           ).catch((finishError: unknown) => {
-            console.error(
-              `[scene-prompts] Falha ao finalizar ai_request com erro: ` +
-              `${finishError instanceof Error ? finishError.message : 'desconhecido'}`,
-            );
+            log.error('Falha ao finalizar ai_request com erro', { error: finishError instanceof Error ? finishError.message : 'desconhecido' });
           });
         }
 

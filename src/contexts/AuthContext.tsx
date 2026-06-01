@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged, type User } from '../lib/firebase';
 import { ensureAppCheck } from '../lib/app-check';
-import { createLogger } from '../lib/logger';
+import { createLogger, setLoggerUserId } from '../lib/logger';
 import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
 import { deleteAllUserData } from '../lib/db/account-cleanup';
@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
       syncAnalyticsUser(authUser?.uid ?? null);
+      setLoggerUserId(authUser?.uid ?? undefined);
       setAnalyticsUserProperties({ auth_state: authUser ? 'authenticated' : 'anonymous' });
 
       if (authUser) {

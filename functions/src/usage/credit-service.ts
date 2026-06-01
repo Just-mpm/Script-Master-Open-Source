@@ -17,6 +17,9 @@ import {
 import {
   type CreditEvent,
 } from './credit-events.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('credit-service');
 
 // ---------------------------------------------------------------------------
 // Tipos internos
@@ -211,7 +214,7 @@ export async function getCreditAvailabilitySnapshot(
     unlimitedCredits = await hasUnlimitedCredits(db, uid);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[credit-service] hasUnlimitedCredits falhou para uid=${uid}: ${msg}`);
+    log.error('hasUnlimitedCredits falhou', { uid, error: msg });
     throw err;
   }
 
@@ -220,7 +223,7 @@ export async function getCreditAvailabilitySnapshot(
     initialBeta = await getOrCreateBetaAccess(db, uid);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[credit-service] getOrCreateBetaAccess (inicial) falhou para uid=${uid}: ${msg}`);
+    log.error('getOrCreateBetaAccess (inicial) falhou', { uid, error: msg });
     throw err;
   }
 
@@ -229,7 +232,7 @@ export async function getCreditAvailabilitySnapshot(
     expiredReservations = await expireStaleReservations(db, uid);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[credit-service] expireStaleReservations falhou para uid=${uid}: ${msg}`);
+    log.error('expireStaleReservations falhou', { uid, error: msg });
     throw err;
   }
 
@@ -239,7 +242,7 @@ export async function getCreditAvailabilitySnapshot(
           return await getOrCreateBetaAccess(db, uid);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          console.error(`[credit-service] getOrCreateBetaAccess (pós-expiração) falhou para uid=${uid}: ${msg}`);
+          log.error('getOrCreateBetaAccess (pós-expiração) falhou', { uid, error: msg });
           throw err;
         }
       })()
@@ -339,9 +342,7 @@ async function expireStaleReservations(
   }
 
   if (releasedCount > 0) {
-    console.log(
-      `[credit-service] ${releasedCount} reserva(s) stale expirada(s): uid=${uid}`,
-    );
+    log.info('Reservas stale expiradas', { uid, count: releasedCount });
   }
 
   return releasedCount;
@@ -378,17 +379,14 @@ export async function getOrCreateBetaAccess(
         monthRef,
         createInitialCreditMonth(currentPeriod, initial.baseCredits, initial.bonusCredits),
       );
-      console.log(`[credit-service] BetaAccess criado para uid=${uid} periodo=${currentPeriod}`);
+      log.info('BetaAccess criado', { uid, period: currentPeriod });
       return initial;
     }
 
     const data = sanitizeBetaAccess(snap.data(), currentPeriod);
 
     if (isNewPeriod(data.currentPeriodKey)) {
-      console.log(
-        `[credit-service] Rollover detectado para uid=${uid}: ` +
-        `${data.currentPeriodKey} → ${currentPeriod}`,
-      );
+      log.info('Rollover detectado', { uid, from: data.currentPeriodKey, to: currentPeriod });
 
       const fresh = buildRolledOverBetaAccess(data, currentPeriod);
       transaction.set(betaRef, fresh);
@@ -501,10 +499,7 @@ export async function reserveCredits(
         : createInitialCreditMonth(currentPeriod, beta.baseCredits, beta.bonusCredits);
 
       if (shouldCreateBeta) {
-        console.log(
-          `[credit-service] BetaAccess criado sob demanda via reserveCredits: ` +
-          `uid=${uid} periodo=${currentPeriod}`,
-        );
+        log.info('BetaAccess criado sob demanda via reserveCredits', { uid, period: currentPeriod });
       }
 
       if (shouldCreateBeta || shouldRefreshBeta) {
@@ -554,7 +549,7 @@ export async function reserveCredits(
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error(`[credit-service] Falha na reserva: uid=${uid} requestId=${requestId} erro=${message}`);
+    log.error('Falha na reserva', { uid, requestId, error: message });
 
     if (message === 'Saldo insuficiente') {
       return { success: false, error: 'Saldo insuficiente' };
@@ -678,16 +673,13 @@ export async function confirmCredits(
       return { availableCredits: Math.max(0, newAvailable) };
     });
 
-    console.log(
-      `[credit-service] Créditos confirmados: uid=${uid} requestId=${requestId} ` +
-      `finalCredits=${finalCredits} availableCredits=${result.availableCredits}`,
-    );
+    log.info('Créditos confirmados', { uid, requestId, finalCredits, availableCredits: result.availableCredits });
 
     return { success: true, availableCredits: result.availableCredits };
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error(`[credit-service] Falha na confirmação: uid=${uid} requestId=${requestId} erro=${message}`);
+    log.error('Falha na confirmação', { uid, requestId, error: message });
     return { success: false, availableCredits: 0, error: message };
   }
 }
@@ -716,16 +708,14 @@ export async function revertCredits(
   const eventSnap = await eventRef.get();
 
   if (!eventSnap.exists) {
-    console.log(`[credit-service] Reversão ignorada: evento não encontrado para requestId=${requestId}`);
+    log.info('Reversão ignorada: evento não encontrado', { requestId });
     return;
   }
 
   const event = eventSnap.data() as CreditEvent;
 
   if (event.status !== 'reserved') {
-    console.log(
-      `[credit-service] Reversão ignorada: status=${event.status} para requestId=${requestId}`,
-    );
+    log.info('Reversão ignorada: status inválido', { requestId, status: event.status });
     return;
   }
 
@@ -776,14 +766,11 @@ export async function revertCredits(
       transaction.set(eventRef, updatedEvent, { merge: true });
     });
 
-    console.log(
-      `[credit-service] Créditos revertidos: uid=${uid} requestId=${requestId} ` +
-      `credits=${event.estimatedCredits} errorCode=${errorCode ?? 'N/A'}`,
-    );
+    log.info('Créditos revertidos', { uid, requestId, credits: event.estimatedCredits, errorCode: errorCode ?? 'N/A' });
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error(`[credit-service] Falha na reversão: uid=${uid} requestId=${requestId} erro=${message}`);
+    log.error('Falha na reversão', { uid, requestId, error: message });
     // Não relança — a reversão é best-effort
   }
 }
@@ -863,17 +850,14 @@ export async function grantFeedbackBonus(
         requestId,
       });
 
-      console.log(
-        `[credit-service] Bônus de feedback concedido: uid=${uid} ` +
-        `credits=${FEEDBACK_BONUS_CREDITS} rewardId=${rewardRef.id}`,
-      );
+      log.info('Bônus de feedback concedido', { uid, credits: FEEDBACK_BONUS_CREDITS, rewardId: rewardRef.id });
     }
 
     return { success: true, bonusGranted: result.bonusGranted };
 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error(`[credit-service] Falha ao conceder bônus: uid=${uid} erro=${message}`);
+    log.error('Falha ao conceder bônus', { uid, error: message });
     return { success: false, bonusGranted: false };
   }
 }

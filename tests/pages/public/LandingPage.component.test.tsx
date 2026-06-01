@@ -150,7 +150,7 @@ it('renderiza features extras (Multi-speaker, Chunking, Dual Storage)', () => {
 
   it('renderiza a seção de Demo do Produto (ProductDemoSection)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Script Master — Estúdio de Produção')).toBeDefined();
+    expect(screen.getByText('Script Master — AI Studio')).toBeDefined();
   });
 
   it('renderiza a seção de Depoimentos (TestimonialsSection)', () => {

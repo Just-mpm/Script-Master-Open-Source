@@ -646,7 +646,7 @@ export const ptBR: TranslationDictionary = {
   // ── Estúdio ────────────────────────────────────────────────────────────
   studio: {
     header: {
-      subtitle: 'Estúdio de produção',
+      subtitle: 'AI Studio',
       scriptTab: 'Roteiro',
       nav: {
         studio: 'Estúdio',
@@ -669,6 +669,10 @@ export const ptBR: TranslationDictionary = {
         tooltip: 'Sair',
         ariaLabel: 'Sair',
         drawerLabel: 'Sair',
+        dialogTitle: 'Sair',
+        dialogDescription: 'Tem certeza que deseja sair da sua conta?',
+        dialogCancel: 'Cancelar',
+        dialogConfirm: 'Sair',
       },
       deleteAccount: {
         drawerLabel: 'Excluir conta',
@@ -848,7 +852,7 @@ export const ptBR: TranslationDictionary = {
       clearConfirm: 'O roteiro será apagado permanentemente. Deseja continuar?',
     },
     studioPage: {
-      title: 'Estúdio de Produção',
+      title: 'AI Studio',
       subtitle: 'Ajuste cada detalhe do seu roteiro antes de gerar áudio, imagens e vídeo.',
       settingsTab: 'Configurações',
       scriptTab: 'Roteiro',
@@ -1047,16 +1051,16 @@ export const ptBR: TranslationDictionary = {
       thinking: 'Pensando',
       compacting: 'Compactando conversa...',
       suggestions: {
-        adjustPace: 'Ajustar ritmo',
-        suggestScene: 'Sugerir cena',
-        reviewText: 'Revisar texto',
-        analyzeAudio: 'Analisar áudio',
+        howItWorks: 'Como funciona a plataforma?',
+        createScript: 'Criar um roteiro',
+        reviewText: 'Revisar meu roteiro',
+        whichVoice: 'Qual voz usar?',
       },
       suggestionPrompts: {
-        adjustPace: 'Sugira um ritmo de narração mais dinâmico para o meu roteiro, com variações de velocidade para destacar momentos importantes.',
-        suggestScene: 'Crie uma descrição visual detalhada de uma cena cinematográfica que combine com um roteiro de documentário.',
+        howItWorks: 'Me ajude a entender como usar o Script Master. Explique de forma simples o que eu posso fazer aqui, por onde começar e quais são os principais recursos.',
+        createScript: 'Me ajude a criar um roteiro do zero. Vamos começar pela ideia central e eu quero sua ajuda para estruturar a história.',
         reviewText: 'Revise meu roteiro e sugira melhorias de clareza, fluidez e impacto narrativo.',
-        analyzeAudio: 'Analise as características de áudio do meu roteiro e sugira o perfil de voz ideal para cada parte.',
+        whichVoice: 'Analise meu roteiro e me diga qual tipo de voz, tom e ritmo de narração combinam melhor com cada parte.',
       },
     },
     interview: {
@@ -1727,6 +1731,9 @@ export const ptBR: TranslationDictionary = {
     sectionPersona: 'Persona e Direção',
     sectionScenes: 'Cenas e Imagens',
     sectionMultiSpeaker: 'Multi-locutor',
+    sectionLanguage: 'Idioma da Interface',
+    languageDescription: 'Altere o idioma de exibição do Script Master. A mudança é aplicada imediatamente.',
+    interfaceLocaleLabel: 'Idioma',
     voiceLabel: 'Voz padrão',
     personaNameLabel: 'Nome do locutor',
     profileLabel: 'Perfil de voz',

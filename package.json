@@ -1,7 +1,7 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.120.0",
+  "version": "0.121.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -24,7 +24,8 @@
     "emulators": "node scripts/emulators.mjs",
     "emulators:all": "node scripts/emulators.mjs --all",
     "emulators:functions": "node scripts/emulators.mjs --only functions",
-    "emulators:ui": "node scripts/emulators.mjs --only ui"
+    "emulators:ui": "node scripts/emulators.mjs --only ui",
+    "export-error-logs": "bun run scripts/export-error-logs.ts"
   },
   "dependencies": {
     "@dnd-kit/helpers": "^0.4.0",

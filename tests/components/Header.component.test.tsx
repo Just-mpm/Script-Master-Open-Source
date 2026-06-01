@@ -92,9 +92,9 @@ describe('Header', () => {
     expect(elements.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renderiza o subtítulo do estúdio de produção', () => {
+  it('renderiza o subtítulo do header', () => {
     render(<Header />, { wrapper: Wrapper });
-    expect(screen.getByText('Estúdio de produção')).toBeDefined();
+    expect(screen.getByText('AI Studio')).toBeDefined();
   });
 
   it('renderiza a navegação com os itens de navegação', () => {
@@ -127,7 +127,7 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: /Sair/i })).toBeDefined();
   });
 
-  it('chama logout ao clicar no botão Sair', async () => {
+  it('abre dialog de confirmação ao clicar no botão Sair', async () => {
     const mockLogout = vi.fn();
     mockUseAuth.mockReturnValue({
       user: loggedInUser,
@@ -141,7 +141,14 @@ describe('Header', () => {
     const user = userEvent.setup();
     render(<Header />, { wrapper: Wrapper });
 
+    // Clica no botão de logout — deve abrir dialog, NÃO chamar logout diretamente
     await user.click(screen.getByRole('button', { name: /Sair/i }));
+    expect(mockLogout).not.toHaveBeenCalled();
+
+    // Confirma no dialog — agora sim chama logout
+    const confirmButtons = screen.getAllByRole('button', { name: /Sair/i });
+    // O botão de confirmar do dialog é o último "Sair" visível
+    await user.click(confirmButtons[confirmButtons.length - 1]);
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 

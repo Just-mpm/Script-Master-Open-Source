@@ -33,6 +33,7 @@ vi.mock('../../src/lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 import { DB_NAME } from '../../src/lib/db/shared';

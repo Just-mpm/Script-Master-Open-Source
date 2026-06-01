@@ -142,9 +142,9 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
     }
 
     return validated.filter((item) => item.text.trim().length > 0);
-  } catch {
+  } catch (err: unknown) {
     // Fallback programático quando o Gemini falha
-    log.warn('Chunking via Gemini falhou, usando fallback programático');
+    log.warn('Chunking via Gemini falhou, usando fallback programático', { error: String(err) });
     const fallbackChunks = splitTextProgrammatically(script, limit);
     return fallbackChunks.map((text, idx) => ({
       text,

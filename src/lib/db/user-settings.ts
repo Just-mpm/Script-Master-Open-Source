@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { createLogger } from '../logger';
 import type { UserSetting } from './types';
 import {
   OperationType,
@@ -9,6 +10,8 @@ import {
   handleFirestoreError,
   putIndexedDbItem,
 } from './shared';
+
+const log = createLogger('user-settings');
 
 const LOCAL_SETTINGS_ID = 'local_settings';
 
@@ -52,8 +55,9 @@ export async function saveUserSettings(
       if (existing) {
         existingCustomPrompt = existing.customSystemPrompt ?? '';
       }
-    } catch {
+    } catch (err: unknown) {
       // Offline ou erro de rede — prossegue sem dados existentes
+      log.warn('Falha ao ler settings existentes para merge', { error: String(err) });
     }
   }
 
@@ -142,8 +146,9 @@ export async function hasTourSeen(userId?: string): Promise<boolean> {
     try {
       const settingDocument = await getDoc(userSettingsCollection(settingId));
       return settingDocument.exists() ? (settingDocument.data()?.tourSeen ?? false) : false;
-    } catch {
+    } catch (err: unknown) {
       // Offline ou erro — assume não visto para não bloquear o tour
+      log.warn('Falha ao verificar tourSeen, assumindo não visto', { error: String(err) });
       return false;
     }
   }

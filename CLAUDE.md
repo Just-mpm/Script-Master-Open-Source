@@ -31,6 +31,7 @@ bun run emulators        # inicia emuladores conforme flags VITE_EMULATOR_* no .
 bun run emulators:all    # força TODOS os emuladores (ignora .env)
 bun run emulators:functions # inicia apenas o emulador de functions
 bun run emulators:ui     # inicia apenas a UI dos emuladores
+bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 ```
 
 **Admin scripts (dentro de `functions/`):** `npm run grant-access` — concede admin e/ou créditos ilimitados.
@@ -63,7 +64,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 ## Convenções
 
 - **Idioma:** pt-BR (default), en e es na UI via i18n; comentários em pt-BR; inglês nos prompts de imagem
-- **Logger:** Use `createLogger('context')` de `src/lib/logger.ts` — import relativo, nunca `@/`. `debug`/`info` suprimidos em produção
+- **Logger:** Use `createLogger('context')` de `src/lib/logger` — import relativo, nunca `@/`. Sistema modular com error tracking em produção (Firestore `errorLogs`), sanitização automática, batch processor e interceptação global. `initErrorTracking()` chamado em `main.tsx`. `debug`/`info` suprimidos em produção; `warn`/`error`/`fatal` enviados ao Firestore. Configurado via `VITE_LOGGER_ENABLED`, `VITE_LOGGER_MIN_LEVEL`, `VITE_LOGGER_SEND_IN_DEV`
 - **Backend:** Firebase Cloud Functions v2 (callable ou HTTP). Sem rotas `/api/*` no frontend
 - **Rotas:** lazy loading por rota, páginas em `src/pages/`
 - **HMR:** não altere `DISABLE_HMR` em `vite.config.ts` — usado por AI Studio
@@ -109,7 +110,7 @@ bun run emulators:ui     # inicia apenas a UI dos emuladores
 ## Domínios
 
 ### App Shell & Router
-`App.tsx` (~250 linhas): providers (Router, Auth, I18n, AudioContext), `AudioGenerationHandler`, `MobileBottomNav` (mdDown), `PwaUpdatePrompt`. Router: lazy loading por rota, `ProtectedRoute` p/ rotas autenticadas, `GuestRoute` p/ `/`, `/login`, `/cadastro`. Redirects de compatibilidade (9 rotas) em `Redirects.tsx`.
+`App.tsx` (~250 linhas): providers (Router, Auth, I18n, AudioContext), `AudioGenerationHandler`, `MobileBottomNav` (mdDown), `PwaUpdatePrompt`. Router: lazy loading por rota, `ProtectedRoute` p/ rotas autenticadas, `GuestRoute` p/ `/`, `/login`, `/cadastro`. `ErrorBoundary` em `src/components/ErrorBoundary.tsx` com integração ao logger (error tracking). Redirects de compatibilidade (9 rotas) em `Redirects.tsx`.
 
 ### Páginas Públicas
 8 páginas em `src/pages/public/` (Landing, Funcionalidades, Pricing, FAQ, Contato, Sobre, Termos, Privacidade, Cookies). 17 componentes em `src/components/public/`. SEO via React 19 nativo: `DocumentHead` + `seo.ts` (OG, Twitter Cards, canonical, sitemap.xml, robots.txt). Logos em `src/assets/logos.ts`. Domínio prod: `script-master.pro`.
@@ -138,7 +139,7 @@ Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 
 Zustand (`useStudioStore`) com `useShallow` para seletores otimizados. Persistência localStorage (17 prefs, prefixo `s2a_*`) + Firestore via `useAutoSaveStudioSettings` (debounce 2s). Layout Grid: Inspector (lg:4) + ScriptEditor (lg:8). EmotionSelector (10 emoções + intensidade), VoiceCard. Keyboard shortcuts: Ctrl+Enter (gerar), Space (play/pause). Swipe horizontal mobile via `useSwipeTabs`.
 
 ### Configurações
-Rota `/app/configuracoes`. 4 seções colapsáveis (Voz, Persona & Direção, Cenas & Imagens, Multi-locutor), 15 campos. Mesma store do estúdio. Reset geral limpa `s2a_*` + `useStudioStore.getState().reset()`.
+Rota `/app/configuracoes`. 5 seções colapsáveis (Voz, Persona & Direção, Cenas & Imagens, Multi-locutor, Idioma da interface), 16+ campos. Seletor de locale da UI persistido em `UserSettings` via dual storage. Mesma store do estúdio. Reset geral limpa `s2a_*` + `useStudioStore.getState().reset()`.
 
 ### Billing & Créditos
 Beta aberto (`VITE_OPEN_BETA_ENABLED=true`). Planos: Free / Pro (R$49,90/mês) / Business (R$149,90/mês). Stripe preservado mas desconectado (`VITE_BILLING_ENABLED=false`). Backend: credit-service com estimativa/reserva/confirmação/reversão. Frontend: `useCredits` (store global Zustand), `CreditIndicator`, `CreditBlockedMessage`, `UpgradeDialog`.
@@ -147,10 +148,10 @@ Beta aberto (`VITE_OPEN_BETA_ENABLED=true`). Planos: Free / Pro (R$49,90/mês) /
 Library (`/biblioteca`): projetos expansíveis com áudios, cenas, roteiro, vídeos — botão "Levar ao Speed Paint". VideoLibrary: galeria horizontal no player com busca, batch download. Projetos em subcoleções Firestore (`audios`, `images`, `videos`). Blob cleanup com revogação seletiva de URLs.
 
 ### Autenticação
-`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
+`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. `LogoutConfirmDialog` confirma saída antes de efetuar logout. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
 
 ### Internacionalização (i18n)
-3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader. `TranslationDictionary` com nested keys e pluralização. Último namespace adicionado: `analyticsConsent` (5 chaves: title, message, accept, deny, manage).
+3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader/MobileBottomNav. `TranslationDictionary` com nested keys e pluralização. Últimos namespaces adicionados: `analyticsConsent` (5 chaves: title, message, accept, deny, manage), `studio.header.logout` (4 chaves: dialogTitle, dialogDescription, dialogCancel, dialogConfirm), `configuracoes.interfaceLocaleLabel`.
 
 ### Analytics & Consentimento
 Sistema de analytics com consentimento explícito do usuário via `src/lib/analytics.ts` (~287 linhas). **Lazy loading:** módulo `firebase/analytics` (~64 KiB) só carrega após consentimento e apenas em produção. **Consentimento:** `AnalyticsConsentPrompt` (Snackbar + Dialog LGPD-compliant) com persistência em `localStorage` via `s2a_analytics_consent`. **Eventos:** 31 eventos tipados via `AnalyticsEventMap` — geração (áudio, imagem, vídeo, speed paint), autenticação (login, logout, signup), navegação (CTAs, hero), onboarding, exportação e erros. **Identificação:** `syncAnalyticsUser()` vincula userId do Firebase Auth ao `user_id` do Google Analytics. **Controle:** `VITE_FIREBASE_ANALYTICS_ENABLED` (env var) + `isFirebaseAnalyticsEnabled()` — ativo por padrão apenas em produção. Componentes: `AnalyticsConsentPrompt.tsx`, `openAnalyticsConsentDialog()`.
@@ -165,7 +166,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.120.0`
+- **Current:** `0.121.0`
 - **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
@@ -174,8 +175,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.121.0` | Logger modular com error tracking: `src/lib/logger/` (8 módulos) substitui arquivo único — rastreamento de erros em produção via Firestore (`errorLogs`), sanitização automática, batch processor, interceptação global; `initErrorTracking()` no `main.tsx`; `LogoutConfirmDialog` em Header/PublicHeader/MobileBottomNav; seção "Idioma da interface" nas Configurações; `MobileBottomNav` expandido com locale/cookie/logout; error handling consistente em ~15+ arquivos (`catch {}` → `catch (err: unknown)`); backend migrado para logger próprio; brand renomeado "Estúdio de Produção" → "AI Studio"; quick actions do assistente atualizadas |
 | `0.120.0` | Sistema de Analytics com consentimento: nova lib `src/lib/analytics.ts` com lazy loading do `firebase/analytics`, 31 eventos tipados (`AnalyticsEventMap`); `AnalyticsConsentPrompt` com Snackbar/Dialog LGPD-compliant; integração em 13 hooks/páginas/componentes; chaves i18n `analyticsConsent` (3 locales); nova env var `VITE_FIREBASE_ANALYTICS_ENABLED`; refatoração de `legalData.ts`; novos assets de logo WebP |
 | `0.119.0` | Redirecionamento padrão unificado para `/app/assistente` (7 arquivos); chat persistente no Assistente com restauração de sessão (`ACTIVE_SESSION_KEY`); tour de boas-vindas com flag `tourSeen` em UserSettings (dual storage); skill `tour-da-plataforma` (+144 linhas); OG Image (`public/og-image.webp`); docs de auditoria/QA/testes (5 novos); seção "Pendências" removida de AGENTS.md/CLAUDE.md |
 | `0.118.0` | AssistantComposer com forwardRef pattern: nova interface `AssistantComposerHandle` e componente `AssistantComposerInner` para controle programático via ref; `extractSkillName()` no ToolEventCard para exibição contextual de skills; remoção de mocks obsoletos do TemplateSelector em testes |
 | `0.117.1` | Limpeza de arquivos obsoletos: `firebase-blueprint.json` e `metadata.json` removidos; teste `assistant-context.unit.test.ts` atualizado (remoção de voicesList/paceList do contexto) para alinhamento com o sistema de Skills |
-| `0.117.0` | Sistema de Skills para o Assistente IA: novo middleware Genkit (`skills.ts`) com scan/cache de `SKILL.md` e ferramenta `use_skill`; 2 skills iniciais (Guia de Vozes, Melhores Práticas TTS); script `copy-skills.mjs` para build; `ToolEventCard` com suporte a `use_skill`; i18n dos labels de skill em 3 locales; prompt do assistente simplificado (remoção de voicesList/paceList, agora gerenciado via skills) |

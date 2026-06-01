@@ -11,6 +11,7 @@ vi.mock('../../src/lib/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';

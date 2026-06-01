@@ -1,16 +1,20 @@
-import {StrictMode, type ReactNode} from 'react';
+import {StrictMode} from 'react';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { StyledEngineProvider } from '@mui/material/styles';
 import {createRoot} from 'react-dom/client';
-import { BrowserRouter, useLocation } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
-import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AudioProvider } from './contexts/AudioContext.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { AppThemeProvider } from './theme/AppThemeProvider';
 import { I18nProvider } from './features/i18n';
 import { getRecaptchaSiteKey } from './lib/env';
+import { initErrorTracking } from './lib/logger';
 import './index.css';
+
+// Inicializa captura automática de erros globais (window.onerror, unhandledrejection).
+// Logs de warn/error são enviados em batch para a collection errorLogs do Firestore.
+initErrorTracking();
 
 // NOTA: O registro do service worker agora é feito pelo hook useRegisterSW
 // dentro do componente PwaUpdatePrompt, que também gerencia o prompt de
@@ -50,36 +54,24 @@ if (import.meta.env.PROD && !getRecaptchaSiteKey()) {
   `;
 } else {
 
-/**
- * Wrapper que usa useLocation para resetar o ErrorBoundary a cada mudança de rota.
- * O key dinâmico força o React a destruir e recriar o ErrorBoundary,
- * limpando o estado de erro automaticamente.
- */
-function RoutableErrorBoundary({ children }: { children: ReactNode }) {
-  const location = useLocation();
-
-  return (
-    <ErrorBoundary key={location.pathname}>
-      {children}
-    </ErrorBoundary>
-  );
-}
-
+// ── Providers estáveis ────────────────────────────────────────────────────
+// Providers (Auth, I18n, Audio) ficam ACIMA de qualquer ErrorBoundary,
+// garantindo que NÃO sejam destruídos em mudanças de rota.
+// O ErrorBoundary com reset por pathname fica DENTRO do App, envolvendo
+// apenas as Routes — sem afetar providers.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyledEngineProvider enableCssLayer>
       <GlobalStyles styles="@layer theme, base, mui, components, utilities;" />
       <AppThemeProvider>
         <BrowserRouter>
-          <RoutableErrorBoundary>
-            <I18nProvider>
+          <I18nProvider>
             <AuthProvider>
               <AudioProvider>
-                  <App />
-                </AudioProvider>
+                <App />
+              </AudioProvider>
             </AuthProvider>
-            </I18nProvider>
-          </RoutableErrorBoundary>
+          </I18nProvider>
         </BrowserRouter>
       </AppThemeProvider>
     </StyledEngineProvider>

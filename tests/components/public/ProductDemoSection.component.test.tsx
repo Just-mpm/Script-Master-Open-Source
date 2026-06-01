@@ -49,7 +49,7 @@ describe('ProductDemoSection', () => {
 
   it('renderiza o header do mock do estúdio com nome do app', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
-    expect(screen.getByText('Script Master — Estúdio de Produção')).toBeDefined();
+    expect(screen.getByText('Script Master — AI Studio')).toBeDefined();
   });
 
   it('renderiza os 4 ícones da toolbar (Áudio, Vídeo, Imagens, Assistente)', () => {

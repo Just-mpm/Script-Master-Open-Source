@@ -17,18 +17,25 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import ImageIcon from '@mui/icons-material/Image';
 import logos from '../../assets/logos';
+import Language from '@mui/icons-material/Language';
 import LocalLibrary from '@mui/icons-material/LocalLibrary';
 import Logout from '@mui/icons-material/Logout';
 import DeleteForever from '@mui/icons-material/DeleteForever';
 import Mic from '@mui/icons-material/Mic';
 import MoreHoriz from '@mui/icons-material/MoreHoriz';
 import Palette from '@mui/icons-material/Palette';
+import Cookie from '@mui/icons-material/Cookie';
 import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import Settings from '@mui/icons-material/Settings';
 import Sparkles from '@mui/icons-material/AutoAwesome';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLocale } from '../../features/i18n';
+import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
+import type { Locale } from '../../features/i18n/types';
+import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
+import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
 import {
   BRAND_PRIMARY_GLOW_SOFT,
   ICON_SIZE_MD,
@@ -61,13 +68,15 @@ export const BOTTOM_NAV_HEIGHT = 56;
 
 export function MobileBottomNav() {
   const { user, logout } = useAuth();
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [localeAnchorEl, setLocaleAnchorEl] = useState<HTMLElement | null>(null);
 
   // ── 4 destinos principais ──
   const navItems = useMemo<BottomNavItem[]>(() => [
@@ -93,15 +102,28 @@ export function MobileBottomNav() {
     setDrawerOpen(false);
   }, []);
 
+  const handleOpenLogoutDialog = useCallback(() => {
+    closeDrawer();
+    setLogoutDialogOpen(true);
+  }, [closeDrawer]);
+
+  const handleCloseLogoutDialog = useCallback(() => {
+    setLogoutDialogOpen(false);
+  }, []);
+
+  const handleConfirmLogout = useCallback(() => {
+    setLogoutDialogOpen(false);
+    logout();
+  }, [logout]);
+
   const handleNavigate = useCallback((to: string) => {
     navigate(to);
     closeDrawer();
   }, [navigate, closeDrawer]);
 
   const handleLogout = useCallback(() => {
-    closeDrawer();
-    logout();
-  }, [closeDrawer, logout]);
+    handleOpenLogoutDialog();
+  }, [handleOpenLogoutDialog]);
 
   // ── Valor ativo do BottomNavigation ──
   // Se a rota atual é uma das 4 principais, usa o pathname.
@@ -364,6 +386,27 @@ export function MobileBottomNav() {
         <Divider sx={{ borderColor: APP_BORDER }} />
         <Box sx={{ px: 1, py: 1 }}>
           <ListItemButton
+            onClick={() => { closeDrawer(); openAnalyticsConsentDialog(); }}
+            sx={{ borderRadius: 2, color: 'text.secondary' }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+              <Cookie sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+            </ListItemIcon>
+            <ListItemText primary={t('analyticsConsent.manageCookies')} />
+          </ListItemButton>
+          <ListItemButton
+            onClick={(e) => setLocaleAnchorEl(e.currentTarget)}
+            sx={{ borderRadius: 2, color: 'text.secondary' }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+              <Language sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+            </ListItemIcon>
+            <ListItemText
+              primary={LOCALE_CONFIGS.find((c) => c.code === locale)?.label ?? locale}
+              slotProps={{ primary: { variant: 'body2' } }}
+            />
+          </ListItemButton>
+          <ListItemButton
             onClick={handleLogout}
             sx={{
               borderRadius: 2,
@@ -405,6 +448,58 @@ export function MobileBottomNav() {
           </ListItemButton>
         </Box>
       </Drawer>
+
+      {/* Menu de seleção de idioma (drawer mobile) */}
+      <Menu
+        anchorEl={localeAnchorEl}
+        open={Boolean(localeAnchorEl)}
+        onClose={() => setLocaleAnchorEl(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 180,
+              backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
+              border: `1px solid ${APP_BORDER}`,
+            },
+          },
+        }}
+      >
+        {LOCALE_CONFIGS.map((config) => (
+          <MenuItem
+            key={config.code}
+            selected={config.code === locale}
+            onClick={() => {
+              if (config.code !== locale) {
+                setLocale(config.code as Locale);
+              }
+              setLocaleAnchorEl(null);
+            }}
+            sx={{ py: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <Typography variant="body1" aria-hidden="true">
+                {config.flag}
+              </Typography>
+            </ListItemIcon>
+            <ListItemText
+              primary={config.label}
+              slotProps={{
+                primary: {
+                  variant: 'body2',
+                  sx: { fontWeight: config.code === locale ? 600 : 400 },
+                },
+              }}
+            />
+          </MenuItem>
+        ))}
+      </Menu>
+
+      {/* Dialog de confirmação de logout */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onClose={handleCloseLogoutDialog}
+        onConfirm={handleConfirmLogout}
+      />
     </>
   );
 }

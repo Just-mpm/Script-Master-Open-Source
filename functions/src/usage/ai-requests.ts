@@ -1,5 +1,8 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('ai-requests');
 
 export type AiRequestStatus =
   | 'running'
@@ -99,7 +102,7 @@ export async function startAiRequest(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[ai-requests] startAiRequest falhou: uid=${uid} requestId=${requestId} flow=${flow} erro=${message}`);
+    log.error('startAiRequest falhou', { uid, requestId, flow, error: message });
     throw new HttpsError('internal', `Falha ao registrar requisição de IA: ${message}`, {
       code: 'START_AI_REQUEST_FAILED',
     });

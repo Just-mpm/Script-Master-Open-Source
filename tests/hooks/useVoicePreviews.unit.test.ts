@@ -9,6 +9,7 @@ vi.mock('../../src/lib/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 import { useVoicePreviews } from '../../src/hooks/useVoicePreviews';

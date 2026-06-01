@@ -1,4 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// ─── Mock do Firebase para evitar re-inicialização após vi.resetModules() ──
+// Cadeia de imports: speedPaintRenderer → logger → batch-processor → firebase
+vi.mock('firebase/firestore', () => ({
+  initializeFirestore: vi.fn(),
+  persistentLocalCache: vi.fn(),
+  persistentMultipleTabManager: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
+  serverTimestamp: vi.fn(() => new Date()),
+  collection: vi.fn().mockReturnValue({}),
+  addDoc: vi.fn().mockResolvedValue({}),
+  doc: vi.fn().mockReturnValue({}),
+  setDoc: vi.fn().mockResolvedValue(undefined),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+  getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => null }),
+}));
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: { currentUser: null },
+  db: {},
+  storage: {},
+  functions: {},
+}));
+
 import {
   renderSpeedPaintFrame,
   createBufferCanvas,

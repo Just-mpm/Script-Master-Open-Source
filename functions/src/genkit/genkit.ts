@@ -16,6 +16,9 @@ import { genkit, generateMiddleware } from 'genkit/beta';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
 import { logger } from 'genkit/logging';
+import { createLogger } from './utils/logger.js';
+
+const log = createLogger('genkit');
 
 // ---------------------------------------------------------------------------
 // Telemetria Firebase — OpenTelemetry para tracing, logging e métricas
@@ -84,12 +87,8 @@ logger.setLogLevel('warn');
 // ---------------------------------------------------------------------------
 
 if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-  console.error(
-    '[genkit] GOOGLE_GENAI_API_KEY não configurada — os flows de IA vão falhar',
-  );
-  console.error(
-    '[genkit] Configure a variável no arquivo .env ou no ambiente de deploy',
-  );
+  log.error('GOOGLE_GENAI_API_KEY não configurada — os flows de IA vão falhar');
+  log.error('Configure a variável no arquivo .env ou no ambiente de deploy');
 }
 
 // ---------------------------------------------------------------------------
@@ -109,9 +108,7 @@ if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
 const OPEN_BETA_ENABLED = process.env.OPEN_BETA_ENABLED === 'true';
 
 if (!OPEN_BETA_ENABLED) {
-  console.warn(
-    '[genkit] OPEN_BETA_ENABLED não está ativa — os flows de IA DEVEM ser protegidos pelo middleware openBetaGuard',
-  );
+  log.warn('OPEN_BETA_ENABLED não está ativa — os flows de IA DEVEM ser protegidos pelo middleware openBetaGuard');
 }
 
 /**

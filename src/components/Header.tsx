@@ -38,7 +38,7 @@ import Settings from '@mui/icons-material/Settings';
 import Cookie from '@mui/icons-material/Cookie';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocale } from '../features/i18n';
+import { useLocale, LocaleSelector, LOCALE_CONFIGS } from '../features/i18n';
 import { isOpenBetaEnabled } from '../lib/env';
 import { CreditIndicator } from './CreditIndicator';
 import { NetworkStatusIndicator } from './NetworkStatusIndicator';
@@ -63,6 +63,7 @@ import {
 import { glassSurfaceSx } from '../theme/surfaces';
 import logos from '../assets/logos';
 import { openAnalyticsConsentDialog } from './app/AnalyticsConsentPrompt';
+import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 
 interface NavItem {
   to: string;
@@ -73,7 +74,7 @@ interface NavItem {
 
 export function Header() {
   const { user, loading, logout, deleteAccount } = useAuth();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
   const theme = useTheme();
@@ -86,6 +87,7 @@ export function Header() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   // Escuta evento do MobileBottomNav para abrir dialog de exclusão
   useEffect(() => {
@@ -120,6 +122,19 @@ export function Header() {
   const handleCloseDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setDeleteConfirmText('');
+  };
+
+  const handleOpenLogoutDialog = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const handleCloseLogoutDialog = () => {
+    setLogoutDialogOpen(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setLogoutDialogOpen(false);
+    logout();
   };
 
   const handleConfirmDeleteAccount = async () => {
@@ -320,6 +335,12 @@ export function Header() {
                 {isOpenBetaEnabled() && <CreditIndicator />}
 
                 {!isMobile && (
+                  <Tooltip title={LOCALE_CONFIGS.find((c) => c.code === locale)?.label ?? ''}>
+                    <LocaleSelector />
+                  </Tooltip>
+                )}
+
+                {!isMobile && (
                   <Tooltip title={t('analyticsConsent.manageCookies')}>
                     <IconButton onClick={openAnalyticsConsentDialog} aria-label={t('analyticsConsent.manageCookies')}>
                       <Cookie sx={{ fontSize: ICON_SIZE_MD }} />
@@ -330,7 +351,7 @@ export function Header() {
                 {!isMobile && (
                   <Tooltip title={t('studio.header.logout.tooltip')}>
                     <IconButton
-                      onClick={logout}
+                      onClick={handleOpenLogoutDialog}
                       color="error"
                       aria-label={t('studio.header.logout.ariaLabel')}
                       sx={{
@@ -497,7 +518,7 @@ export function Header() {
                 <ListItemText primary={t('analyticsConsent.manageCookies')} />
               </ListItemButton>
               <ListItemButton
-                onClick={() => { closeDrawer(); logout(); }}
+                onClick={() => { closeDrawer(); handleOpenLogoutDialog(); }}
                 sx={{
                   borderRadius: 2,
                   color: 'error.main',
@@ -535,6 +556,13 @@ export function Header() {
           </>
         )}
       </Drawer>
+
+      {/* Dialog de confirmação de logout */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onClose={handleCloseLogoutDialog}
+        onConfirm={handleConfirmLogout}
+      />
 
       {/* Dialog de confirmação de exclusão de conta */}
       <Dialog

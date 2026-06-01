@@ -6,6 +6,9 @@ import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import { CreditSnapshotOutputSchema, type CreditSnapshotOutput } from '../genkit/schemas/common.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 import { getCreditAvailabilitySnapshot } from '../usage/index.js';
+import { createLogger } from '../genkit/utils/logger.js';
+
+const log = createLogger('credit-snapshot');
 
 const CreditSnapshotInputSchema = z.object({});
 
@@ -36,13 +39,7 @@ export const creditSnapshot = onCallGenkit(
         // O framework do Firebase Functions mascara o erro para o cliente
         // como INTERNAL, mas o log fica disponível para debugging.
         const message = err instanceof Error ? err.message : String(err);
-        const stack = err instanceof Error ? err.stack : undefined;
-        console.error(
-          `[creditSnapshot] Erro ao obter snapshot para uid=${uid}: ${message}`,
-        );
-        if (stack) {
-          console.error(`[creditSnapshot] Stack trace:`, stack);
-        }
+        log.error('Erro ao obter snapshot', { uid, error: message, stack: err instanceof Error ? err.stack : undefined });
 
         // Relança como HttpsError para preservar o código de status HTTP
         // (500 internal) e garantir que headers CORS sejam incluídos.

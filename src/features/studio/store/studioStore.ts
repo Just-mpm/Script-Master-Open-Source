@@ -15,6 +15,7 @@
 
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
+import { createLogger } from '../../../lib/logger';
 import { EMOTION_OPTIONS, type SceneRatio, type StudioDraftState, type StudioSettingsPatch, type EmotionType } from '../types';
 import type { Locale } from '../../i18n/types';
 import { isValidLocale } from '../../i18n/utils';
@@ -25,6 +26,8 @@ import {
   getInitialStudioConfig,
   VIDEO_FPS,
 } from './studio.utils';
+
+const log = createLogger('studio');
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -295,8 +298,9 @@ useStudioStore.subscribe((state, previousState) => {
 
 try {
   localStorage.removeItem('s2a_has_ref_image');
-} catch {
+} catch (err: unknown) {
   // Safari Private Browsing — ignorar silenciosamente
+  log.debug('Falha ao limpar flag obsoleta do localStorage', { error: String(err) });
 }
 
 // ---------------------------------------------------------------------------

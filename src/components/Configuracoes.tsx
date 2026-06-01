@@ -23,6 +23,7 @@ import GraphicEq from '@mui/icons-material/GraphicEq';
 import MovieFilter from '@mui/icons-material/MovieFilter';
 import People from '@mui/icons-material/People';
 import SpeedIcon from '@mui/icons-material/Speed';
+import Language from '@mui/icons-material/Language';
 import { VOICES } from '../lib/constants';
 import { useVoicePreviews } from '../hooks/useVoicePreviews';
 import type { SceneRatio, EmotionType } from '../features/studio/types';
@@ -148,7 +149,7 @@ function CollapsibleSection({ icon, title, description, sectionId, summary, chil
 
 export function Configuracoes() {
   const theme = useTheme();
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const { user } = useAuth();
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -456,6 +457,7 @@ export function Configuracoes() {
         </Typography>
       </Stack>
 
+      <Collapse in={hasUnsavedChanges} timeout={300}>
       <Paper
         elevation={0}
         sx={(currentTheme) => ({
@@ -488,6 +490,7 @@ export function Configuracoes() {
           </Stack>
         </Stack>
       </Paper>
+      </Collapse>
 
       {/* -- Secao Voz -- */}
       <CollapsibleSection
@@ -698,6 +701,35 @@ export function Configuracoes() {
             </Grid>
           </>
         )}
+      </CollapsibleSection>
+
+      {/* -- Secao Idioma da Interface -- */}
+      <CollapsibleSection
+        icon={<Language sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />}
+        title={t('configuracoes.sectionLanguage')}
+        description={t('configuracoes.languageDescription')}
+        sectionId="config-language"
+        summary={
+          <Chip
+            size="small"
+            variant="outlined"
+            label={localeOptions.find((o) => o.value === locale)?.label ?? locale}
+          />
+        }
+      >
+        <FormControl fullWidth size="small">
+          <InputLabel id="config-interface-locale-label">{t('configuracoes.interfaceLocaleLabel')}</InputLabel>
+          <Select
+            labelId="config-interface-locale-label"
+            value={locale}
+            label={t('configuracoes.interfaceLocaleLabel')}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+          >
+            {localeOptions.map((o) => (
+              <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </CollapsibleSection>
 
       {/* -- Botoes de acao -- */}

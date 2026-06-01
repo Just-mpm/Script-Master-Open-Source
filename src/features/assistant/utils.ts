@@ -1,5 +1,8 @@
 import type { UploadAttachment } from '../../lib/db';
 import type { AssistantSettings } from './types';
+import { createLogger } from '../../lib/logger';
+
+const log = createLogger('assistant-utils');
 
 /** Retorno discriminado de extractJsonSettings — distingue "não encontrado" de "malformado" */
 export interface ExtractedSettings {
@@ -58,7 +61,8 @@ export function extractJsonSettings(text: string): ExtractedSettingsResult | nul
 
   try {
     return { settings: JSON.parse(jsonMatch[1]) as AssistantSettings, parseError: false };
-  } catch {
+  } catch (err: unknown) {
+    log.warn('Falha ao fazer parse de settings do assistente', { error: String(err) });
     return { settings: null, parseError: true };
   }
 }

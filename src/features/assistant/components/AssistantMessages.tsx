@@ -382,7 +382,7 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         useFlexGap
         sx={{ flexWrap: 'wrap', mt: { xs: 2, md: 3 }, justifyContent: 'center' }}
       >
-        {(['adjustPace', 'suggestScene', 'reviewText', 'analyzeAudio'] as const).map((key) => (
+        {(['howItWorks', 'createScript', 'reviewText', 'whichVoice'] as const).map((key) => (
           <Chip
             key={key}
             label={t(`assistant.messages.suggestions.${key}`)}

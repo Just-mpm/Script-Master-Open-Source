@@ -106,7 +106,7 @@ export function ProductDemoSection() {
                 ))}
               </Stack>
               <Typography variant="caption" sx={{ color: TEXT_SECONDARY, ml: 1 }}>
-                Script Master — Estúdio de Produção
+                Script Master — AI Studio
               </Typography>
             </Box>
 

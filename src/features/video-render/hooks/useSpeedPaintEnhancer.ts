@@ -12,6 +12,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { VideoScene } from '../types';
 import { enhanceScenesWithSpeedPaint, type SpeedPaintEnhanceResult } from '../lib/speedPaintService';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('speed-paint-enhancer');
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -105,8 +108,9 @@ export function useSpeedPaintEnhancer(
           setResult(enhanceResult);
           setProgress(1);
         }
-      } catch {
+      } catch (err: unknown) {
         if (renderIdRef.current !== currentRenderId) return;
+        log.error('Falha no enhance do speed paint', { error: String(err), renderId: currentRenderId });
         // Em caso de erro, retorna cenas sem animação
         setResult({ scenes: currentScenes, warnings: ['Falha ao gerar speed paint.'] });
         setProgress(0);

@@ -121,7 +121,8 @@ export function useProjectGallery(
               }))
               : undefined,
           };
-        } catch {
+        } catch (err: unknown) {
+          log.warn('Falha ao processar item da galeria de projetos', { error: String(err) });
           return item;
         }
       }));

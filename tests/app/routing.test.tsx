@@ -52,6 +52,7 @@ vi.mock('../../src/lib/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 vi.mock('../../src/lib/env', () => ({

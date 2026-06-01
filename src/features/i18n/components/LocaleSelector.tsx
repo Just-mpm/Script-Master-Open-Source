@@ -8,6 +8,7 @@ import LanguageIcon from '@mui/icons-material/Language';
 import { useState, type MouseEvent } from 'react';
 import { useLocale } from '../context';
 import { LOCALE_CONFIGS } from '../locales';
+import { ICON_SIZE_LG, APP_BORDER, WHITE_05, WHITE_015 } from '../../../theme/tokens';
 
 interface LocaleSelectorProps {
   /** Tamanho do botão: 'small' para header, 'medium' para outros contextos */
@@ -17,8 +18,6 @@ interface LocaleSelectorProps {
 /**
  * Seletor de idioma compacto.
  * Exibe um botão com ícone de globo e abre um dropdown com as opções disponíveis.
- *
- * NOTA: Não integrado no header ainda — será no passo 13.
  */
 export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
   const { locale, setLocale } = useLocale();
@@ -39,8 +38,6 @@ export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
     }
   };
 
-  const iconSize = size === 'small' ? 'medium' : 'large';
-
   return (
     <>
       <IconButton
@@ -53,7 +50,7 @@ export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
           '&:hover': { color: 'text.primary' },
         }}
       >
-        <LanguageIcon fontSize={iconSize} />
+        <LanguageIcon sx={{ fontSize: ICON_SIZE_LG }} />
       </IconButton>
 
       <Menu
@@ -63,8 +60,10 @@ export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
         slotProps={{
           paper: {
             sx: {
-              minWidth: 160,
+              minWidth: 180,
               mt: 0.5,
+              backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
+              border: `1px solid ${APP_BORDER}`,
             },
           },
         }}

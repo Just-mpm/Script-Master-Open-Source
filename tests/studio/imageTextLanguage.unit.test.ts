@@ -147,6 +147,29 @@ describe('imageTextLanguage — generateScenePrompts propaga locale', () => {
 // ---------------------------------------------------------------------------
 
 describe('imageTextLanguage — buildGenerateOptions propaga locale', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    // studio.utils importa logger → logger importa firebase/firestore
+    vi.doMock('../../src/lib/logger', () => ({
+      createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
+    }));
+    // studio.utils importa VOICES de constants
+    vi.doMock('../../src/lib/constants', () => ({
+      VOICES: [{ id: 'Aoede' }, { id: 'Puck' }],
+    }));
+    // studio.utils importa isValidLocale de i18n/utils
+    vi.doMock('../../src/features/i18n/utils', () => ({
+      isValidLocale: (v: string) => ['pt-BR', 'en', 'es'].includes(v),
+    }));
+  });
+
+  afterEach(() => {
+    vi.doUnmock('../../src/lib/logger');
+    vi.doUnmock('../../src/lib/constants');
+    vi.doUnmock('../../src/features/i18n/utils');
+    vi.resetModules();
+  });
+
   it('mapeia imageTextLanguage para locale no resultado', async () => {
     const { buildGenerateOptions } = await import('../../src/features/studio/store/studio.utils');
 
@@ -301,6 +324,19 @@ describe('imageTextLanguage — localStorage helpers', () => {
 
   beforeEach(() => {
     store.clear();
+    vi.resetModules();
+    // studio.utils importa logger → logger importa firebase/firestore
+    vi.doMock('../../src/lib/logger', () => ({
+      createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
+    }));
+    // studio.utils importa VOICES de constants
+    vi.doMock('../../src/lib/constants', () => ({
+      VOICES: [{ id: 'Aoede' }, { id: 'Puck' }],
+    }));
+    // studio.utils importa isValidLocale de i18n/utils
+    vi.doMock('../../src/features/i18n/utils', () => ({
+      isValidLocale: (v: string) => ['pt-BR', 'en', 'es'].includes(v),
+    }));
     vi.stubGlobal('localStorage', {
       getItem: vi.fn((key: string) => store.get(key) ?? null),
       setItem: vi.fn((key: string, value: string) => { store.set(key, value); }),
@@ -310,7 +346,11 @@ describe('imageTextLanguage — localStorage helpers', () => {
   });
 
   afterEach(() => {
+    vi.doUnmock('../../src/lib/logger');
+    vi.doUnmock('../../src/lib/constants');
+    vi.doUnmock('../../src/features/i18n/utils');
     vi.unstubAllGlobals();
+    vi.resetModules();
   });
 
   it('STORAGE_KEYS.imageTextLanguage existe com valor "s2a_image_text_lang"', async () => {

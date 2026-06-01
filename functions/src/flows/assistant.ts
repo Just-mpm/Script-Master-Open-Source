@@ -135,8 +135,9 @@ function extractJsonSettings(text: string): Record<string, unknown> | undefined 
       return parsed as Record<string, unknown>;
     }
     return undefined;
-  } catch {
+  } catch (err: unknown) {
     // JSON inválido — ignora silenciosamente
+    log.warn('JSON inválido ao extrair settings do assistente', { error: String(err) });
     return undefined;
   }
 }
@@ -476,11 +477,12 @@ export const assistant = onCallGenkit(
 
         const sendMetaChunk = async (type: string, payload: Record<string, unknown>) => {
           try {
-            sendChunk(serializeAssistantMeta(type, payload));
-            await forceFlush();
-          } catch {
-            sendFailed = true;
-          }
+             sendChunk(serializeAssistantMeta(type, payload));
+             await forceFlush();
+           } catch (err: unknown) {
+             sendFailed = true;
+             log.warn('sendChunk falhou — cliente pode ter desconectado', { error: String(err) });
+           }
         };
 
         historyBase = sanitizeHistoryAttachments(historyBase);
@@ -754,10 +756,11 @@ export const assistant = onCallGenkit(
                 try {
                   sendChunk(chunkText);
                   await forceFlush();
-                } catch {
+                } catch (err: unknown) {
                   // Cliente desconectou — aborta o streaming localmente,
                   // mas confirma créditos parciais pelo texto já gerado
                   sendFailed = true;
+                  log.warn('sendChunk falhou — cliente pode ter desconectado', { error: String(err) });
                   break;
                 }
               }

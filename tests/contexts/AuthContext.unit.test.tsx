@@ -42,6 +42,7 @@ vi.mock('../../src/lib/logger', () => ({
     error: vi.fn(),
     debug: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 vi.mock('../../src/components/DataMigrationDialog', () => ({
@@ -68,6 +69,13 @@ const mockDeleteAllUserData = vi.fn();
 
 vi.mock('../../src/lib/db/account-cleanup', () => ({
   deleteAllUserData: (...args: unknown[]) => mockDeleteAllUserData(...args),
+}));
+
+// AuthContext importa syncAnalyticsUser, setAnalyticsUserProperties e trackAnalyticsEvent
+vi.mock('../../src/lib/analytics', () => ({
+  syncAnalyticsUser: vi.fn(),
+  setAnalyticsUserProperties: vi.fn(),
+  trackAnalyticsEvent: vi.fn(),
 }));
 
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';

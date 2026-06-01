@@ -24,6 +24,7 @@ import { alpha } from '@mui/material/styles';
 import type { SlideProps } from '@mui/material/Slide';
 import toast from 'react-hot-toast';
 import { useLocale } from '../../features/i18n';
+import { createLogger } from '../../lib/logger';
 import {
   APP_BORDER_STRONG,
   APP_SURFACE,
@@ -42,6 +43,8 @@ import {
 /** Chave no sessionStorage para controlar "ignorar" por versão do SW */
 const DISMISS_KEY = 'pwa_update_dismissed_sw';
 
+const log = createLogger('PWA');
+
 function PwaUpdatePrompt() {
   const { t } = useLocale();
   const [dismissed, setDismissed] = useState(false);
@@ -54,11 +57,11 @@ function PwaUpdatePrompt() {
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
       if (registration) {
-        console.debug('[PWA] Service worker registrado:', registration.active?.scriptURL);
+        log.debug('Service worker registrado', { scriptURL: registration.active?.scriptURL });
       }
     },
     onRegisterError(error) {
-      console.error('[PWA] Erro ao registrar service worker:', error);
+      log.error('Erro ao registrar service worker', { error: String(error) });
     },
   });
 

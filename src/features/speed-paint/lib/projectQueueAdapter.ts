@@ -1,5 +1,8 @@
 import type { ProjectImage } from '../../../lib/db';
 import type { QueuedImage } from '../types';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('speed-paint-queue');
 
 export interface ProjectQueuePreparationResult {
   queue: QueuedImage[];
@@ -56,7 +59,8 @@ export async function prepareProjectImagesForSpeedPaint(
           } satisfies QueuedImage,
           failed: false,
         };
-      } catch {
+      } catch (err: unknown) {
+        log.warn('Falha ao processar imagem para fila de speed paint', { error: String(err) });
         return {
           queueItem: null,
           failed: true,

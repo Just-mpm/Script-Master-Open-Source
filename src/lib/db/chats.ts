@@ -156,8 +156,9 @@ export async function getChatSessions(userId?: string): Promise<ChatSession[]> {
         }
 
         return sortChatSessions([...sessionMap.values()]);
-      } catch {
+      } catch (err: unknown) {
         // Fallback: se IndexedDB falhar, retorna apenas Firestore
+        log.warn('IndexedDB falhou ao carregar sessões de chat, usando apenas Firestore', { error: String(err) });
         return sortChatSessions(firestoreSessions);
       }
     } catch (error: unknown) {

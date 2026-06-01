@@ -368,8 +368,9 @@ export function useTranscription(
         if (!resolvedSegments && projectId) {
           try {
             resolvedSegments = await loadAudioSegments(projectId, userId) ?? null;
-          } catch {
+          } catch (err: unknown) {
             // Falha ao carregar segmentos — segue para Whisper/fallback
+            log.warn('Falha ao carregar segmentos de transcrição, usando fallback', { error: String(err) });
           }
         }
 

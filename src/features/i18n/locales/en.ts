@@ -633,7 +633,7 @@ export const en: TranslationDictionary = {
 
   studio: {
     header: {
-      subtitle: 'Production Studio',
+      subtitle: 'AI Studio',
       scriptTab: 'Script',
       nav: {
         studio: 'Studio',
@@ -656,6 +656,10 @@ export const en: TranslationDictionary = {
         tooltip: 'Sign out',
         ariaLabel: 'Sign out',
         drawerLabel: 'Sign out',
+        dialogTitle: 'Sign out',
+        dialogDescription: 'Are you sure you want to sign out of your account?',
+        dialogCancel: 'Cancel',
+        dialogConfirm: 'Sign out',
       },
       deleteAccount: {
         drawerLabel: 'Delete account',
@@ -835,7 +839,7 @@ export const en: TranslationDictionary = {
       clearConfirm: 'The script will be permanently deleted. Continue?',
     },
     studioPage: {
-      title: 'Production Studio',
+      title: 'AI Studio',
       subtitle: 'Fine-tune every detail of your script before generating audio, images, and video.',
       settingsTab: 'Settings',
       scriptTab: 'Script',
@@ -1032,16 +1036,16 @@ export const en: TranslationDictionary = {
       thinking: 'Thinking',
       compacting: 'Compacting conversation...',
       suggestions: {
-        adjustPace: 'Adjust pace',
-        suggestScene: 'Suggest scene',
-        reviewText: 'Review text',
-        analyzeAudio: 'Analyze audio',
+        howItWorks: 'How does the platform work?',
+        createScript: 'Create a script',
+        reviewText: 'Review my script',
+        whichVoice: 'Which voice to use?',
       },
       suggestionPrompts: {
-        adjustPace: 'Suggest a more dynamic narration pace for my script, with speed variations to highlight important moments.',
-        suggestScene: 'Create a detailed visual description of a cinematic scene that matches a documentary script.',
+        howItWorks: 'Help me understand how to use Script Master. Explain in a simple way what I can do here, where to start, and what the main features are.',
+        createScript: 'Help me create a script from scratch. Let\'s start with the core idea and I want your help to structure the story.',
         reviewText: 'Review my script and suggest improvements in clarity, flow, and narrative impact.',
-        analyzeAudio: 'Analyze the audio characteristics of my script and suggest the ideal voice profile for each part.',
+        whichVoice: 'Analyze my script and tell me what type of voice, tone, and narration pace would work best for each part.',
       },
     },
     interview: {
@@ -1708,6 +1712,9 @@ export const en: TranslationDictionary = {
     sectionPersona: 'Persona & Direction',
     sectionScenes: 'Scenes & Images',
     sectionMultiSpeaker: 'Multi-speaker',
+    sectionLanguage: 'Interface Language',
+    languageDescription: 'Change the display language of Script Master. The change is applied immediately.',
+    interfaceLocaleLabel: 'Language',
     voiceLabel: 'Default voice',
     personaNameLabel: 'Speaker name',
     profileLabel: 'Voice profile',

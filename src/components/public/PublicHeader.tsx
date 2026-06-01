@@ -23,6 +23,7 @@ import Login from '@mui/icons-material/Login';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale, LocaleSelector } from '../../features/i18n';
+import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
 import {
   APP_HEADER_HEIGHT,
   APP_MAX_WIDTH,
@@ -48,6 +49,7 @@ export function PublicHeader() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const isLoginRoute = location.pathname === '/login';
   const isRegisterRoute = location.pathname === '/cadastro';
   const guestCta = isLoginRoute
@@ -66,6 +68,19 @@ export function PublicHeader() {
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const closeDrawer = () => setDrawerOpen(false);
+
+  const handleOpenLogoutDialog = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const handleCloseLogoutDialog = () => {
+    setLogoutDialogOpen(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setLogoutDialogOpen(false);
+    logout();
+  };
 
   const drawerPaperSx = {
     backgroundColor: APP_SURFACE,
@@ -318,7 +333,7 @@ export function PublicHeader() {
             <Divider sx={{ borderColor: APP_BORDER }} />
             <Box sx={{ px: 1, py: 1 }}>
               <ListItemButton
-                onClick={() => { closeDrawer(); logout(); }}
+                onClick={() => { closeDrawer(); handleOpenLogoutDialog(); }}
                 sx={{
                   borderRadius: 2,
                   color: 'error.main',
@@ -335,6 +350,12 @@ export function PublicHeader() {
           </>
         )}
       </Drawer>
+      {/* Dialog de confirmação de logout */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onClose={handleCloseLogoutDialog}
+        onConfirm={handleConfirmLogout}
+      />
     </AppBar>
   );
 }

@@ -99,6 +99,7 @@ vi.mock('../../src/lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   }),
+  setLoggerUserId: vi.fn(),
 }));
 
 vi.mock('../../src/contexts/AuthContext', () => ({
@@ -221,7 +222,9 @@ describe('ConfiguracoesPage', () => {
     it('renderiza o valor selecionado "pt-BR" como opcao no select', () => {
       render(<ConfiguracoesPage />, { wrapper: Wrapper });
       // O valor selecionado do select de idioma aparece como texto visivel
-      expect(screen.getByText('🇧🇷 Português')).toBeInTheDocument();
+      // Agora há 2 selects com locale (imageTextLanguage + interfaceLocale)
+      const matches = screen.getAllByText('🇧🇷 Português');
+      expect(matches.length).toBeGreaterThanOrEqual(1);
     });
   });
 
