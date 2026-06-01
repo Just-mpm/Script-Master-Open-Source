@@ -20,7 +20,7 @@ import { getFirebaseEnvConfig, getActiveEmulators } from './env';
 
 const appletConfig = getFirebaseEnvConfig();
 
-const app = initializeApp(appletConfig);
+export const app = initializeApp(appletConfig);
 
 // ── App Check movido para src/lib/app-check.ts (lazy loading) ─────────────
 // Inicializado via ensureAppCheck() apenas quando um usuário autenticado é

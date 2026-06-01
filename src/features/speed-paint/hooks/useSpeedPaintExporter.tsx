@@ -20,6 +20,7 @@ import { generateStrokesFromImage } from '../lib/imageProcessing';
 import { downloadFile } from '../../../lib/download';
 import { createLogger } from '../../../lib/logger';
 import { useLocale } from '../../i18n';
+import { categorizeAnalyticsError, trackAnalyticsEvent } from '../../../lib/analytics';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -340,6 +341,8 @@ export function useSpeedPaintExporter() {
     });
 
     const resolution = getSpeedPaintResolution(animation.canvasWidth, animation.canvasHeight, quality);
+    const analyticsParams = { quality, mode: 'single' };
+    trackAnalyticsEvent('speed_paint_export_started', analyticsParams);
 
     // Cria AbortController ANTES da renderização para permitir cancelamento
     const abortController = new AbortController();
@@ -434,11 +437,20 @@ export function useSpeedPaintExporter() {
         renderProgress: 100,
         renderStatusText: t('speedPaint.exportCompleted'),
       });
+      trackAnalyticsEvent('speed_paint_export_completed', {
+        ...analyticsParams,
+        codec: resolvedVideoCodecRef.current,
+        container: resolvedContainerRef.current,
+      });
     } catch (err: unknown) {
       // Ignora erros de renders antigos (outra renderização já iniciou)
       if (renderIdRef.current !== renderId) return;
 
       const cancelled = isCancellationError(err);
+      trackAnalyticsEvent(cancelled ? 'speed_paint_export_cancelled' : 'speed_paint_export_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
 
       setState(prev => ({
         ...prev,
@@ -469,6 +481,8 @@ export function useSpeedPaintExporter() {
     exportFileNameRef.current = fileName || '';
 
     if (items.length === 0) return;
+    const analyticsParams = { quality, mode: 'batch', scene_count: items.length };
+    trackAnalyticsEvent('speed_paint_export_started', analyticsParams);
 
     if (abortControllerRef.current) {
       log.warn('Renderização já em andamento — abortando anterior antes de iniciar lote');
@@ -495,6 +509,10 @@ export function useSpeedPaintExporter() {
       const canRenderBatch = await checkSupportRef.current(preflightResolution.width, preflightResolution.height);
 
       if (!canRenderBatch) {
+        trackAnalyticsEvent('speed_paint_export_failed', {
+          ...analyticsParams,
+          error_category: 'unsupported_browser',
+        });
         setState(prev => ({
           ...prev,
           isRendering: false,
@@ -616,10 +634,19 @@ export function useSpeedPaintExporter() {
         renderProgress: 100,
         renderStatusText: t('speedPaint.batchCompleted'),
       });
+      trackAnalyticsEvent('speed_paint_export_completed', {
+        ...analyticsParams,
+        codec: resolvedVideoCodecRef.current,
+        container: resolvedContainerRef.current,
+      });
     } catch (err: unknown) {
       if (renderIdRef.current !== renderId) return;
 
       const cancelled = isCancellationError(err);
+      trackAnalyticsEvent(cancelled ? 'speed_paint_export_cancelled' : 'speed_paint_export_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
 
       setState(prev => ({
         ...prev,
@@ -651,6 +678,10 @@ export function useSpeedPaintExporter() {
     const ext = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
     const name = exportFileNameRef.current || `speed-paint-${Date.now()}`;
     void downloadFile(url, `${name}.${ext}`);
+    trackAnalyticsEvent('speed_paint_downloaded', {
+      codec: resolvedVideoCodecRef.current,
+      container: resolvedContainerRef.current,
+    });
   }, []);
 
   // -------------------------------------------------------------------------

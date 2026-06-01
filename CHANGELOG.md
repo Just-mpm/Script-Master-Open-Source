@@ -7,6 +7,30 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.120.0] - 2026-06-01
+
+### Adicionado
+
+- **Sistema de Analytics com consentimento** (`src/lib/analytics.ts`, +287 linhas): nova lib de analytics com lazy loading (`getAnalyticsInstance()`) e consentimento explícito do usuário. 13 funções exportadas — `trackAnalyticsEvent()` com tipagem forte via `AnalyticsEventMap` (31 eventos mapeados), `grantAnalyticsConsent()`/`denyAnalyticsConsent()` com persistência em `localStorage`, `syncAnalyticsUser()` para identificação de usuários autenticados, `setAnalyticsUserProperties()` para metadados de sessão, `categorizeAnalyticsError()` e `getSizeBucket()` para analytics de erros e tamanhos. Implementa lazy loading do módulo `firebase/analytics` (~64 KiB sob demanda) — só carrega após consentimento e apenas em produção (controlado por `VITE_FIREBASE_ANALYTICS_ENABLED` + `isFirebaseAnalyticsEnabled()`)
+- **AnalyticsConsentPrompt** (`src/components/app/AnalyticsConsentPrompt.tsx`, +130 linhas): novo componente de consentimento com Snackbar persistente (1ª visita) + Dialog (reabertura via `openAnalyticsConsentDialog()`). Exibe aviso LGPD-compliant com link para Política de Privacidade. Botões "Aceitar" e "Recusar" — dispara `grantAnalyticsConsent()`/`denyAnalyticsConsent()`. Exporta evento customizado `OPEN_ANALYTICS_CONSENT_EVENT` para reabertura programática via `dispatchEvent`
+- **Integração de consentimento** em 3 pontos de UI: `Header.tsx` (botão Cookie na área do usuário logado), `PublicFooter.tsx` (link "Gerenciar cookies" entre links legais), `OnboardingPage.tsx` (botão "Gerenciar cookies" no onboarding)
+- **Tracking de eventos** em 13 hooks/páginas/componentes: `Library.tsx`, `AudioGenerationHandler.tsx`, `CTASection.tsx`, `HeroSection.tsx`, `AuthContext.tsx`, `UpgradeDialog.tsx`, `wizardStore.ts`, `useSpeedPaintExporter.tsx`, `useVideoExporter.tsx`, `useAssistant.ts`, `useAudioGenerator.ts`, `useImageGenerator.ts`, `ContactPage.tsx` — eventos de geração (áudio, imagem, vídeo, speed paint), autenticação (login, logout, cadastro), navegação (CTAs), onboarding e exportação
+- **Chaves i18n `analyticsConsent.*`** nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`): namespace com 5 chaves — `title`, `message`, `accept`, `deny` e `manage` para o diálogo de consentimento de analytics
+- **Nova env var** (`VITE_FIREBASE_ANALYTICS_ENABLED`) em `.env.example`, `README.md` e tipada em `vite-env.d.ts` — ativo por padrão apenas em produção via `isFirebaseAnalyticsEnabled()`
+- **Novos assets de logo** (`public/logo-*.webp`, `public/apple-touch-icon.webp`): 7 variações de logo em formato WebP (quadrado, redondo, transparente, sem título) para PWA splash screens e apple-touch-icon
+
+### Alterado
+
+- **`src/lib/firebase.ts`**: export do `app` (`initializeApp()`) adicionado — necessário para `getAnalytics()` no módulo de analytics
+- **`public/og-image.webp`**: atualizado (imagem Open Graph 1200×630 com logo + marca)
+- **`src/pages/public/legalData.ts`**: refatoração interna (+18/-18 linhas) — dados legais reestruturados sem mudança de comportamento visível
+
+### Corrigido
+
+- **Testes**: `PublicFooter.component.test.tsx` — teste de links atualizado (verifica que "Roadmap" e "Changelog" não são renderizados); `OnboardingPage.component.test.tsx` — verifica botão "Gerenciar cookies" no onboarding com `hasTrackedStart: false`
+
+---
+
 ## [0.119.0] - 2026-06-01
 
 ### Adicionado

@@ -189,7 +189,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'pt-BR': {
     title: 'Política de Privacidade',
     description: 'Política de privacidade do Script Master. Saiba como tratamos seus dados conforme a LGPD.',
-    lastUpdated: '24 de abril de 2026',
+    lastUpdated: '1 de junho de 2026',
     tocAriaLabel: 'Sumário da política de privacidade',
     sections: [
       {
@@ -215,7 +215,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies',
         title: '5. Cookies',
-        content: 'Usamos cookies técnicos essenciais para o funcionamento do Serviço. Cookies de autenticação: mantêm sua sessão ativa (Firebase Auth). Cookies de preferências: armazenam suas configurações de interface. Service Worker: permite funcionalidades offline para conteúdo já acessado. Não utilizamos cookies de publicidade ou rastreamento de terceiros. Para mais detalhes, consulte nossa Política de Cookies.',
+        content: 'Usamos cookies técnicos essenciais para o funcionamento do Serviço. Cookies de autenticação mantêm sua sessão ativa e cookies de preferências armazenam suas configurações. Com seu consentimento explícito, o Firebase Analytics coleta métricas de uso com identificador pseudônimo quando você está autenticado. Não enviamos roteiros, prompts, nomes ou emails ao Analytics. Para mais detalhes, consulte nossa Política de Cookies.',
       },
       {
         id: 'direitos-lgpd',
@@ -247,7 +247,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'en': {
     title: 'Privacy Policy',
     description: 'Privacy policy of Script Master. Learn how we handle your data in accordance with the LGPD and GDPR.',
-    lastUpdated: 'April 24, 2026',
+    lastUpdated: 'June 1, 2026',
     tocAriaLabel: 'Summary of privacy policy',
     sections: [
       {
@@ -273,7 +273,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies',
         title: '5. Cookies',
-        content: 'We use technical cookies essential for the operation of the Service. Authentication cookies: keep your session active (Firebase Auth). Preference cookies: store your interface settings. Service Worker: allows offline features for content already accessed. We do not use third-party advertising or tracking cookies. For more details, consult our Cookies Policy.',
+        content: 'We use technical cookies essential for the operation of the Service. Authentication cookies keep your session active and preference cookies store your settings. With your explicit consent, Firebase Analytics collects usage metrics with a pseudonymous identifier when you are signed in. We do not send scripts, prompts, names, or emails to Analytics. For more details, consult our Cookies Policy.',
       },
       {
         id: 'direitos-lgpd',
@@ -305,7 +305,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'es': {
     title: 'Política de Privacidad',
     description: 'Política de privacidad de Script Master. Conozca cómo tratamos sus datos de acuerdo con la LGPD y el GDPR.',
-    lastUpdated: '24 de abril de 2026',
+    lastUpdated: '1 de junio de 2026',
     tocAriaLabel: 'Índice de la política de privacidad',
     sections: [
       {
@@ -331,7 +331,7 @@ export const PRIVACY_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies',
         title: '5. Cookies',
-        content: 'Utilizamos cookies técnicas esenciales para el funcionamiento del Servicio. Cookies de autenticación: mantienen su sesión activa (Firebase Auth). Cookies de preferencias: almacenan sus configuraciones de interfaz. Service Worker: permite funciones sin conexión para contenido ya accedido. No utilizamos cookies publicitarias o de seguimiento de terceros. Para más detalles, consulte nuestra Política de cookies.',
+        content: 'Utilizamos cookies técnicas esenciales para el funcionamiento del Servicio. Las cookies de autenticación mantienen tu sesión activa y las cookies de preferencias almacenan tu configuración. Con tu consentimiento explícito, Firebase Analytics recopila métricas de uso con un identificador seudónimo cuando inicias sesión. No enviamos guiones, prompts, nombres ni emails a Analytics. Para más detalles, consulta nuestra Política de cookies.',
       },
       {
         id: 'direitos-lgpd',
@@ -366,7 +366,7 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'pt-BR': {
     title: 'Política de Cookies',
     description: 'Política de cookies do Script Master. Saiba quais cookies utilizamos e por quê.',
-    lastUpdated: '24 de abril de 2026',
+    lastUpdated: '1 de junho de 2026',
     tocAriaLabel: 'Sumário da política de cookies',
     sections: [
       {
@@ -377,17 +377,17 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies-usamos',
         title: '2. Cookies que Usamos',
-        content: 'O Script Master utiliza os seguintes tipos de cookies: Cookies essenciais: necessários para o funcionamento básico do Serviço. Incluem cookies de autenticação (Firebase Auth) e preferências do usuário. Sem eles, o Serviço não funciona corretamente. Cookies de funcionalidade: permitem lembrar suas preferências (voz favorita, configurações do estúdio) e fornecer funcionalidades aprimoradas. Cookies de análise: coletam informações anônimas sobre como você usa o Serviço, ajudando a entender o uso e melhorar a experiência. Cookies de Service Worker: permitem funcionalidades offline, como acesso a áudios já gerados.',
+        content: 'O Script Master utiliza os seguintes tipos de cookies: Cookies essenciais: necessários para o funcionamento básico do Serviço. Incluem cookies de autenticação (Firebase Auth) e preferências do usuário. Sem eles, o Serviço não funciona corretamente. Cookies de funcionalidade: permitem lembrar suas preferências (voz favorita, configurações do estúdio) e fornecer funcionalidades aprimoradas. Cookies de análise: coletam informações pseudônimas sobre como você usa o Serviço, ajudando a entender o uso e melhorar a experiência. Cookies de Service Worker: permitem funcionalidades offline, como acesso a áudios já gerados.',
       },
       {
         id: 'cookies-terceiros',
         title: '3. Cookies de Terceiros',
-        content: 'Alguns cookies são definidos por serviços de terceiros que aparecem em nossas páginas: Google Firebase: utilizado para autenticação, armazenamento de dados e análise. Google Analytics (futuro): pode ser utilizado para análise de tráfego e comportamento dos usuários. Não utilizamos cookies de publicidade ou redes sociais de rastreamento. Não integramos pixels de rastreamento de terceiros.',
+        content: 'Alguns cookies são definidos por serviços de terceiros que aparecem em nossas páginas: Google Firebase é utilizado para autenticação, armazenamento de dados e métricas de uso. O Firebase Analytics só é ativado após seu consentimento e usa um identificador pseudônimo quando você está autenticado. Não enviamos roteiros, prompts, nomes ou emails ao Analytics. Não utilizamos cookies de publicidade ou pixels de rastreamento de redes sociais.',
       },
       {
         id: 'gerenciamento',
         title: '4. Gerenciamento de Cookies',
-        content: 'Você pode gerenciar ou desabilitar cookies nas configurações do seu navegador. Note que a desabilitação de cookies pode afetar a funcionalidade do Serviço. Para gerenciar cookies: No Chrome: Configurações > Privacidade e segurança > Cookies. No Firefox: Opções > Privacidade e segurança > Cookies. No Safari: Preferências > Privacidade > Cookies. No Edge: Configurações > Cookies e permissões de site. Cookies essenciais não podem ser desabilitados, pois são necessários para o funcionamento do Serviço.',
+        content: 'Você pode ativar ou revogar cookies analíticos a qualquer momento pelo controle "Gerenciar cookies" no Serviço. Também pode desabilitar cookies nas configurações do navegador. Cookies essenciais não podem ser desabilitados pelo Serviço, pois são necessários para o funcionamento básico.',
       },
       {
         id: 'alteracoes',
@@ -404,7 +404,7 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'en': {
     title: 'Cookies Policy',
     description: 'Cookies policy of Script Master. Learn what cookies we use and why.',
-    lastUpdated: 'April 24, 2026',
+    lastUpdated: 'June 1, 2026',
     tocAriaLabel: 'Summary of cookies policy',
     sections: [
       {
@@ -415,17 +415,17 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies-usamos',
         title: '2. Cookies We Use',
-        content: 'Script Master uses the following types of cookies: Essential cookies: necessary for the basic operation of the Service. These include authentication cookies (Firebase Auth) and user preferences. Without them, the Service does not function properly. Functionality cookies: allow remembering your preferences (favorite voice, studio settings) and providing enhanced features. Analytics cookies: collect anonymous information about how you use the Service, helping to understand usage and improve experience. Service Worker cookies: allow offline features, such as access to already generated audios.',
+        content: 'Script Master uses the following types of cookies: Essential cookies: necessary for the basic operation of the Service. These include authentication cookies (Firebase Auth) and user preferences. Without them, the Service does not function properly. Functionality cookies: allow remembering your preferences (favorite voice, studio settings) and providing enhanced features. Analytics cookies: collect pseudonymous information about how you use the Service, helping to understand usage and improve experience. Service Worker cookies: allow offline features, such as access to already generated audios.',
       },
       {
         id: 'cookies-terceiros',
         title: '3. Third-Party Cookies',
-        content: 'Some cookies are set by third-party services that appear on our pages: Google Firebase: used for authentication, data storage, and analysis. Google Analytics (future): may be used to analyze traffic and user behavior. We do not use advertising or social media tracking cookies. We do not integrate third-party tracking pixels.',
+        content: 'Some cookies are set by third-party services that appear on our pages: Google Firebase is used for authentication, data storage, and usage metrics. Firebase Analytics is only enabled after your consent and uses a pseudonymous identifier when you are signed in. We do not send scripts, prompts, names, or emails to Analytics. We do not use advertising cookies or social media tracking pixels.',
       },
       {
         id: 'gerenciamento',
         title: '4. Managing Cookies',
-        content: 'You can manage or disable cookies in your browser settings. Note that disabling cookies may affect the functionality of the Service. To manage cookies: In Chrome: Settings > Privacy and security > Cookies. In Firefox: Options > Privacy and security > Cookies. In Safari: Preferences > Privacy > Cookies. In Edge: Settings > Cookies and site permissions. Essential cookies cannot be disabled, as they are necessary for the operation of the Service.',
+        content: 'You can enable or revoke analytics cookies at any time through the "Manage cookies" control in the Service. You can also disable cookies in your browser settings. Essential cookies cannot be disabled by the Service because they are required for basic operation.',
       },
       {
         id: 'alteracoes',
@@ -442,7 +442,7 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
   'es': {
     title: 'Política de Cookies',
     description: 'Política de cookies de Script Master. Conozca qué cookies utilizamos y por qué.',
-    lastUpdated: '24 de abril de 2026',
+    lastUpdated: '1 de junio de 2026',
     tocAriaLabel: 'Índice de la política de cookies',
     sections: [
       {
@@ -453,17 +453,17 @@ export const COOKIES_DATA: Record<'pt-BR' | 'en' | 'es', LegalPageData> = {
       {
         id: 'cookies-usamos',
         title: '2. Cookies que Utilizamos',
-        content: 'Script Master utiliza los siguientes tipos de cookies: Cookies esenciales: necesarias para el funcionamiento básico del Servicio. Incluyen cookies de autenticación (Firebase Auth) y preferencias de usuario. Sin ellas, el Servicio no funciona correctamente. Cookies de funcionalidad: permiten recordar sus preferencias (voz favorita, configuración del estudio) y proporcionar funciones mejoradas. Cookies de análisis: recopilan información anónima sobre cómo utiliza el Servicio, lo que ayuda a comprender el uso y mejorar la experiencia. Cookies de Service Worker: permiten funciones sin conexión, como el acceso a audios ya generados.',
+        content: 'Script Master utiliza los siguientes tipos de cookies: Cookies esenciales: necesarias para el funcionamiento básico del Servicio. Incluyen cookies de autenticación (Firebase Auth) y preferencias de usuario. Sin ellas, el Servicio no funciona correctamente. Cookies de funcionalidad: permiten recordar sus preferencias (voz favorita, configuración del estudio) y proporcionar funciones mejoradas. Cookies de análisis: recopilan información seudónima sobre cómo utiliza el Servicio, lo que ayuda a comprender el uso y mejorar la experiencia. Cookies de Service Worker: permiten funciones sin conexión, como el acceso a audios ya generados.',
       },
       {
         id: 'cookies-terceiros',
         title: '3. Cookies de Terceros',
-        content: 'Algunas cookies las establecen servicios de terceros que aparecen en nuestras páginas: Google Firebase: utilizado para autenticación, almacenamiento de datos y análisis. Google Analytics (futuro): puede utilizarse para analizar el tráfico y comportamiento de los usuarios. No utilizamos cookies publicitarias o de seguimiento de redes sociales. No integramos píxeles de seguimiento de terceros.',
+        content: 'Algunas cookies las establecen servicios de terceros que aparecen en nuestras páginas: Google Firebase se utiliza para autenticación, almacenamiento de datos y métricas de uso. Firebase Analytics solo se activa después de tu consentimiento y utiliza un identificador seudónimo cuando inicias sesión. No enviamos guiones, prompts, nombres ni emails a Analytics. No utilizamos cookies publicitarias ni píxeles de seguimiento de redes sociales.',
       },
       {
         id: 'gerenciamento',
         title: '4. Gestión de Cookies',
-        content: 'Puede gestionar o desactivar las cookies en la configuración de su navegador. Tenga en cuenta que la desactivación de las cookies puede afectar la funcionalidad del Servicio. Para gestionar las cookies: En Chrome: Configuración > Privacidad y seguridad > Cookies. En Firefox: Opciones > Privacidad y seguridad > Cookies. En Safari: Preferencias > Privacidad > Cookies. En Edge: Configuración > Cookies y permisos del sitio. Las cookies esenciales no se pueden desactivar, ya que son necesarias para el funcionamiento del Servicio.',
+        content: 'Puedes activar o revocar las cookies analíticas en cualquier momento mediante el control "Gestionar cookies" del Servicio. También puedes desactivar cookies en la configuración del navegador. Las cookies esenciales no se pueden desactivar desde el Servicio porque son necesarias para el funcionamiento básico.',
       },
       {
         id: 'alteracoes',

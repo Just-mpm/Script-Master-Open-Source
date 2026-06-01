@@ -14,6 +14,7 @@ import {
   TEXT_SECONDARY,
 } from '../../theme/tokens';
 import { fadeInUp } from './animations';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 
 interface HeroSectionProps {
   title: string;
@@ -145,6 +146,11 @@ export function HeroSection({
                       variant="contained"
                       color="secondary"
                       size="large"
+                      onClick={() => trackAnalyticsEvent('select_content', {
+                        content_type: 'public_cta',
+                        item_id: primaryCta.to,
+                        source: 'hero',
+                      })}
                       sx={{
                         px: 4,
                         py: 1.5,

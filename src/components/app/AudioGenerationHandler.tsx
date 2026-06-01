@@ -14,6 +14,7 @@ import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
 import type { AudioPreflightSummary } from './AudioPreflightDialog';
 import { useLocale } from '../../features/i18n';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 
 const log = createLogger('AudioGenerationHandler');
 const AUDIO_PREFLIGHT_TIMEOUT_MS = 30_000;
@@ -306,6 +307,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
       setSuccessMsg(user
         ? t('audioPreflight.saveCloudSuccess')
         : t('audioPreflight.saveLocalSuccess'));
+      trackAnalyticsEvent('library_audio_saved', { source: 'studio' });
     } catch (saveError: unknown) {
       log.error('Erro ao salvar na biblioteca', { error: saveError });
       setError(t('audioPreflight.saveError'));

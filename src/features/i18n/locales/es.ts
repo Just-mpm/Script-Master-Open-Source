@@ -95,7 +95,21 @@ export const es: TranslationDictionary = {
       terms: 'Términos de Uso',
       privacy: 'Privacidad',
       cookies: 'Cookies',
+      manageCookies: 'Gestionar cookies',
     },
+  },
+
+  analyticsConsent: {
+    title: 'Cookies analíticas',
+    description: 'Podemos recopilar métricas seudónimas de uso para mejorar Script Master. No enviamos guiones, prompts, nombres ni emails.',
+    details: 'Ver detalles',
+    accept: 'Aceptar',
+    reject: 'Rechazar',
+    manageTitle: 'Gestionar cookies analíticas',
+    manageDescription: 'Puedes activar o revocar la recopilación de métricas seudónimas en cualquier momento.',
+    enable: 'Activar métricas',
+    disable: 'Desactivar métricas',
+    manageCookies: 'Gestionar cookies',
   },
 
   dataMigration: {

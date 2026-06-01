@@ -40,6 +40,7 @@ Copie `.env.example` para `.env.local` e preencha as variáveis:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
+- `VITE_FIREBASE_ANALYTICS_ENABLED` (opcional; padrão ativo somente em produção)
 - `VITE_FIREBASE_FIRESTORE_DATABASE_ID` (opcional)
 
 ### 3. Inicie o projeto

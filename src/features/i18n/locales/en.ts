@@ -95,7 +95,21 @@ export const en: TranslationDictionary = {
       terms: 'Terms of Use',
       privacy: 'Privacy',
       cookies: 'Cookies',
+      manageCookies: 'Manage cookies',
     },
+  },
+
+  analyticsConsent: {
+    title: 'Analytics cookies',
+    description: 'We can collect pseudonymous usage metrics to improve Script Master. We do not send scripts, prompts, names, or emails.',
+    details: 'View details',
+    accept: 'Accept',
+    reject: 'Reject',
+    manageTitle: 'Manage analytics cookies',
+    manageDescription: 'You can enable or revoke pseudonymous metrics collection at any time.',
+    enable: 'Enable metrics',
+    disable: 'Disable metrics',
+    manageCookies: 'Manage cookies',
   },
 
   dataMigration: {

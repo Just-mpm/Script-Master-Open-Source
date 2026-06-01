@@ -35,6 +35,7 @@ import Palette from '@mui/icons-material/Palette';
 import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import Settings from '@mui/icons-material/Settings';
+import Cookie from '@mui/icons-material/Cookie';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
@@ -61,6 +62,7 @@ import {
 } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 import logos from '../assets/logos';
+import { openAnalyticsConsentDialog } from './app/AnalyticsConsentPrompt';
 
 interface NavItem {
   to: string;
@@ -318,6 +320,14 @@ export function Header() {
                 {isOpenBetaEnabled() && <CreditIndicator />}
 
                 {!isMobile && (
+                  <Tooltip title={t('analyticsConsent.manageCookies')}>
+                    <IconButton onClick={openAnalyticsConsentDialog} aria-label={t('analyticsConsent.manageCookies')}>
+                      <Cookie sx={{ fontSize: ICON_SIZE_MD }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                {!isMobile && (
                   <Tooltip title={t('studio.header.logout.tooltip')}>
                     <IconButton
                       onClick={logout}
@@ -477,6 +487,15 @@ export function Header() {
           <>
             <Divider sx={{ borderColor: APP_BORDER }} />
             <Box sx={{ px: 1, py: 1 }}>
+              <ListItemButton
+                onClick={() => { closeDrawer(); openAnalyticsConsentDialog(); }}
+                sx={{ borderRadius: 2, color: 'text.secondary' }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                  <Cookie sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+                </ListItemIcon>
+                <ListItemText primary={t('analyticsConsent.manageCookies')} />
+              </ListItemButton>
               <ListItemButton
                 onClick={() => { closeDrawer(); logout(); }}
                 sx={{

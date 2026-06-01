@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLocale } from './features/i18n';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -15,6 +15,7 @@ import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
 import { PwaUpdatePrompt } from './components/app/PwaUpdatePrompt';
+import { AnalyticsConsentPrompt } from './components/app/AnalyticsConsentPrompt';
 import { MobileBottomNav, BOTTOM_NAV_HEIGHT } from './components/app/MobileBottomNav';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
@@ -23,13 +24,18 @@ import { VIDEO_FPS } from './features/studio/store';
 import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
 import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
 import { useGlobalAudioActions, useAudioActiveId } from './contexts/AudioContext';
+import { setAnalyticsUserProperties } from './lib/analytics';
 
 export default function App() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  useEffect(() => {
+    setAnalyticsUserProperties({ locale });
+  }, [locale]);
 
   // ─── Auto-save de settings do estúdio no Firestore ────────
   useAutoSaveStudioSettings();
@@ -251,6 +257,7 @@ export default function App() {
 
       {/* Prompt de atualização PWA — detecta nova versão após deploy */}
       <PwaUpdatePrompt />
+      <AnalyticsConsentPrompt />
 
       {/* Bottom Nav mobile — apenas em rotas /app/* (não onboarding) */}
       {showAppLayout && <MobileBottomNav />}

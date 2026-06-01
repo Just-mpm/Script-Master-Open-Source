@@ -10,6 +10,7 @@ import { useBillingInit } from '../features/billing/hooks';
 import { isBillingEnabled } from '../lib/env';
 import type { StudioDraftState } from '../features/studio/types';
 import { useStudioStore } from '../features/studio/store';
+import { setAnalyticsUserProperties, syncAnalyticsUser, trackAnalyticsEvent } from '../lib/analytics';
 
 const log = createLogger('AuthContext');
 
@@ -72,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
+      syncAnalyticsUser(authUser?.uid ?? null);
+      setAnalyticsUserProperties({ auth_state: authUser ? 'authenticated' : 'anonymous' });
 
       if (authUser) {
         const onboardingCompleted = localStorage.getItem('s2a_onboarding_completed') === 'true';
@@ -193,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       wasLoginRequested.current = true;
       await signInWithPopup(auth, googleProvider);
+      trackAnalyticsEvent('login', { method: 'google' });
     } catch (error) {
       wasLoginRequested.current = false;
       log.error('Erro no login', { error });
@@ -205,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       wasLoginRequested.current = true;
       const credential = await createUserWithEmailAndPassword(auth, email, password);
+      trackAnalyticsEvent('sign_up', { method: 'email' });
       // Envia email de verificação após cadastro bem-sucedido
       try {
         await sendEmailVerification(credential.user);
@@ -224,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       wasLoginRequested.current = true;
       await signInWithEmailAndPassword(auth, email, password);
+      trackAnalyticsEvent('login', { method: 'email' });
     } catch (error) {
       wasLoginRequested.current = false;
       log.error('Erro no login com email', { error });
@@ -235,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthError(null);
       await sendPasswordResetEmail(auth, email);
+      trackAnalyticsEvent('password_reset_requested', {});
     } catch (error) {
       log.error('Erro ao enviar email de reset', { error });
       setAuthError(getAuthErrorMessage(error));
@@ -246,6 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthError(null);
       await signOut(auth);
+      trackAnalyticsEvent('logout', {});
       // Full reload para limpar COEP e permitir próximo login via Firebase Auth
       window.location.href = '/login';
     } catch (error) {

@@ -7,6 +7,7 @@ import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
 import { useCredits } from './useCredits';
+import { categorizeAnalyticsError, getSizeBucket, trackAnalyticsEvent } from '../lib/analytics';
 
 const log = createLogger('useImageGenerator');
 
@@ -117,6 +118,12 @@ export function useImageGenerator() {
   }, [isCreditBlocked]);
 
   const generateImage = async (options: ImageGenerationOptions) => {
+    const analyticsParams = {
+      size_bucket: getSizeBucket(options.prompt.length),
+      ratio: options.aspectRatio,
+      has_attachment: Boolean(options.referenceImage),
+    };
+    trackAnalyticsEvent('image_generate_started', analyticsParams);
     cancelRef.current = false;
     setIsGenerating(true);
     setError(null);
@@ -175,15 +182,21 @@ export function useImageGenerator() {
       setImageBlob(blob);
       setImageUrl(blobUrl);
       imageUrlRef.current = blobUrl;
+      trackAnalyticsEvent('image_generate_completed', analyticsParams);
     } catch (err: unknown) {
       // Cancelamento silencioso — sem erro para o usuário
       const errorMessageText = err instanceof Error ? err.message : '';
       if (errorMessageText === CANCEL_ERROR_MESSAGE || isCallableCancelledError(err)) {
+        trackAnalyticsEvent('image_generate_cancelled', analyticsParams);
         setIsGenerating(false);
         return;
       }
 
       log.error('Erro ao gerar imagem', { error: err });
+      trackAnalyticsEvent('image_generate_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
       const friendlyMessage = toUserFriendlyImageError(err);
       if (isCreditCallableError(err) || friendlyMessage.includes('crédito') || friendlyMessage.includes('saldo')) {
         setCreditsExhausted(true);

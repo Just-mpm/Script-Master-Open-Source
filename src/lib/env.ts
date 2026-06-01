@@ -21,6 +21,7 @@ type RequiredEnvName =
 type OptionalEnvName =
   | 'VITE_RECAPTCHA_SITE_KEY'
   | 'VITE_FIREBASE_MEASUREMENT_ID'
+  | 'VITE_FIREBASE_ANALYTICS_ENABLED'
   | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID'
   | 'VITE_STRIPE_PUBLISHABLE_KEY'
   | 'VITE_PEXELS_API_KEY'
@@ -125,4 +126,10 @@ export function getFirebaseEnvConfig(): FirebaseEnvConfig {
     measurementId: readOptionalEnv('VITE_FIREBASE_MEASUREMENT_ID'),
     firestoreDatabaseId: readOptionalEnv('VITE_FIREBASE_FIRESTORE_DATABASE_ID'),
   };
+}
+
+/** Analytics fica ativo por padrão apenas em produção. */
+export function isFirebaseAnalyticsEnabled(): boolean {
+  const configured = readOptionalEnv('VITE_FIREBASE_ANALYTICS_ENABLED');
+  return configured === undefined ? import.meta.env.PROD : configured === 'true';
 }

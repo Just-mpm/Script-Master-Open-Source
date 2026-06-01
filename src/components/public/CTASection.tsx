@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { BRAND_GRADIENT, BRAND_SECONDARY_GLOW_SOFT, TEXT_SECONDARY } from '../../theme/tokens';
 import { fadeInUp, VIEWPORT_ONCE } from './animations';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 
 interface CTASectionProps {
   title: string;
@@ -94,6 +95,11 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
             variant="contained"
             color="secondary"
             size="large"
+            onClick={() => trackAnalyticsEvent('select_content', {
+              content_type: 'public_cta',
+              item_id: buttonHref,
+              source: 'cta_section',
+            })}
             sx={{
               px: 5,
               py: 1.5,

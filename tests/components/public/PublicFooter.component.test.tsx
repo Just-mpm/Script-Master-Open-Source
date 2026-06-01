@@ -51,9 +51,15 @@ describe('PublicFooter', () => {
   it('renderiza o título de todos os grupos de links', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
     expect(screen.getByText('Produto')).toBeDefined();
-    expect(screen.getByText('Recursos')).toBeDefined();
     expect(screen.getByText('Empresa')).toBeDefined();
     expect(screen.getByText('Legal')).toBeDefined();
+  });
+
+  it('não renderiza links para páginas públicas inexistentes', () => {
+    render(<PublicFooter />, { wrapper: Wrapper });
+    expect(screen.queryByText('Roadmap')).toBeNull();
+    expect(screen.queryByText('Changelog')).toBeNull();
+    expect(screen.queryByText('Comunidade')).toBeNull();
   });
 
   it('renderiza links do grupo Produto', () => {

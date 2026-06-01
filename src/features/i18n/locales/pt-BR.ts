@@ -101,7 +101,21 @@ export const ptBR: TranslationDictionary = {
       terms: 'Termos de Uso',
       privacy: 'Privacidade',
       cookies: 'Cookies',
+      manageCookies: 'Gerenciar cookies',
     },
+  },
+
+  analyticsConsent: {
+    title: 'Cookies analíticos',
+    description: 'Podemos coletar métricas pseudônimas de uso para melhorar o Script Master. Não enviamos roteiros, prompts, nomes ou emails.',
+    details: 'Ver detalhes',
+    accept: 'Aceitar',
+    reject: 'Recusar',
+    manageTitle: 'Gerenciar cookies analíticos',
+    manageDescription: 'Você pode ativar ou revogar a coleta de métricas pseudônimas a qualquer momento.',
+    enable: 'Ativar métricas',
+    disable: 'Desativar métricas',
+    manageCookies: 'Gerenciar cookies',
   },
 
   dataMigration: {

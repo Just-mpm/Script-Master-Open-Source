@@ -4,6 +4,7 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { Link as RouterLink } from 'react-router-dom';
 import { useLocale } from '../../features/i18n';
 import {
@@ -13,6 +14,7 @@ import {
   TEXT_SECONDARY,
 } from '../../theme/tokens';
 import logos from '../../assets/logos';
+import { openAnalyticsConsentDialog } from '../app/AnalyticsConsentPrompt';
 
 export function PublicFooter() {
   const { t } = useLocale();
@@ -25,14 +27,6 @@ export function PublicFooter() {
         { label: t('footer.links.features'), href: '/funcionalidades' },
         { label: t('footer.links.pricing'), href: '/precos' },
         { label: t('footer.links.faq'), href: '/perguntas-frequentes' },
-      ],
-    },
-    {
-      title: t('footer.resourcesGroup'),
-      links: [
-        { label: t('footer.links.roadmap'), href: '/roadmap' },
-        { label: t('footer.links.changelog'), href: '/changelog' },
-        { label: t('footer.links.community'), href: '/community' },
       ],
     },
     {
@@ -143,6 +137,9 @@ export function PublicFooter() {
           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
             {t('footer.madeWith')}
           </Typography>
+          <Button size="small" color="inherit" onClick={openAnalyticsConsentDialog}>
+            {t('footer.links.manageCookies')}
+          </Button>
         </Stack>
       </Container>
     </Box>

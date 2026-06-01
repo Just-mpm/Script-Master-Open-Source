@@ -10,6 +10,7 @@ import { create } from 'zustand';
 import { createLogger } from '../../../lib/logger';
 import type { WizardData } from '../types';
 import { TOTAL_STEPS } from '../constants';
+import { trackAnalyticsEvent } from '../../../lib/analytics';
 
 const log = createLogger('onboardingWizard');
 
@@ -59,6 +60,8 @@ export interface WizardStore {
   data: WizardData;
   /** Wizard ja foi concluido (verifica localStorage) */
   isCompleted: boolean;
+  /** Inicio do wizard ja registrado nesta sessao */
+  hasTrackedStart: boolean;
 
   /** Avanca para a proxima etapa */
   nextStep: () => void;
@@ -82,9 +85,14 @@ export const useWizardStore = create<WizardStore>((set, get) => {
     direction: 1,
     data: savedProfile ?? { name: '', role: '', goals: [] },
     isCompleted: readCompleted(),
+    hasTrackedStart: false,
 
     nextStep: () => {
-      const { currentStep } = get();
+      const { currentStep, hasTrackedStart } = get();
+      if (currentStep === 0 && !hasTrackedStart) {
+        trackAnalyticsEvent('onboarding_started', {});
+        set({ hasTrackedStart: true });
+      }
       if (currentStep < TOTAL_STEPS - 1) {
         set({ direction: 1, currentStep: currentStep + 1 });
       }
@@ -120,12 +128,17 @@ export const useWizardStore = create<WizardStore>((set, get) => {
       writeProfile(data);
       writeCompleted(true);
       log.debug('Wizard concluido');
+      trackAnalyticsEvent('onboarding_completed', {
+        role: data.role || 'unknown',
+        goals_count: data.goals.length,
+      });
       set({ isCompleted: true });
     },
 
     skip: () => {
       writeCompleted(true);
       log.debug('Wizard pulado');
+      trackAnalyticsEvent('onboarding_skipped', {});
       set({ isCompleted: true });
     },
   };

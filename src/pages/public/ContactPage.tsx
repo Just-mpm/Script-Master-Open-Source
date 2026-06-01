@@ -33,6 +33,7 @@ import { glassPanelSx } from '../../theme/surfaces';
 import { createLogger } from '../../lib/logger';
 import { useLocale } from '../../features/i18n';
 import { useAuth } from '../../contexts/AuthContext';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -307,6 +308,7 @@ function FeedbackForm() {
 
       const data = result.data;
       setFeedbackSent(true);
+      trackAnalyticsEvent('generate_lead', { source: 'feedback' });
 
       if (data.bonusGranted) {
         setBonusMessage(t('contact.feedback.successWithBonus'));
@@ -469,6 +471,7 @@ function ContactForm() {
     event.preventDefault();
     if (!validate()) return;
     window.open(buildMailtoBody(), '_blank');
+    trackAnalyticsEvent('generate_lead', { source: 'contact_email' });
     setMailtoOpened(true);
     log.info('mailto aberto', { subject: form.subject });
   };

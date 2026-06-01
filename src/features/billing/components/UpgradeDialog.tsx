@@ -6,7 +6,7 @@
 // Só aparece se o Stripe estiver configurado (VITE_STRIPE_PUBLISHABLE_KEY).
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -29,6 +29,7 @@ import { redirectToCheckout } from '../../../lib/stripe';
 import { createLogger } from '../../../lib/logger';
 import { auth } from '../../../lib/firebase';
 import type { PlanId } from '../types';
+import { trackAnalyticsEvent } from '../../../lib/analytics';
 
 const log = createLogger('UpgradeDialog');
 
@@ -73,6 +74,10 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
   // Planos disponíveis para upgrade
   const upgradePlans = Object.values(PLANS).filter((plan) => plan.id !== 'free' && plan.id !== planId);
 
+  useEffect(() => {
+    if (open) trackAnalyticsEvent('upgrade_dialog_opened', { plan_id: recommendedPlan });
+  }, [open, recommendedPlan]);
+
   const handleUpgrade = useCallback(async (selectedPlanId: PlanId) => {
     const user = auth.currentUser;
     if (!user) return;
@@ -91,6 +96,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
 
       const locale = t('_locale') as string;
       const priceId = priceIds[billingCycle];
+      trackAnalyticsEvent('begin_checkout', { plan_id: selectedPlanId, billing_cycle: billingCycle });
 
       await redirectToCheckout({
         priceId,

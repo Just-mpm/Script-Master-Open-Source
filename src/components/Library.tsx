@@ -52,6 +52,7 @@ import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
 import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
 import { prepareProjectImagesForSpeedPaint } from '../features/speed-paint/lib/projectQueueAdapter';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import { useAnimationStore } from '../features/speed-paint/store/animationStore';
 
 interface ProjectDataState {
@@ -298,6 +299,7 @@ export function Library() {
         : null;
 
       loadLibraryQueue(queue, project.name, speedPaintNotice);
+      trackAnalyticsEvent('library_opened_in_speed_paint', { scene_count: queue.length });
 
       startTransition(() => {
         navigate('/app/pintura-rapida');
@@ -319,6 +321,7 @@ export function Library() {
     setDeleteError(null);
     try {
       await deleteProject(itemToDelete, user?.uid);
+      trackAnalyticsEvent('library_project_deleted', {});
       setItemToDelete(null);
       setProjectNameToDelete(null);
       cleanupBlobUrls();

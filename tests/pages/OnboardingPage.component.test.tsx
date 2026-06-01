@@ -135,6 +135,7 @@ describe('OnboardingPage — Renderizacao', () => {
       direction: 1,
       data: { name: '', role: '', goals: [] },
       isCompleted: false,
+      hasTrackedStart: false,
     });
   });
 
@@ -196,6 +197,14 @@ describe('OnboardingPage — Renderizacao', () => {
     renderWithProviders(<OnboardingPage />);
     expect(screen.getByText('Conexão segura')).toBeDefined();
   });
+
+  it('permite gerenciar cookies durante o onboarding', () => {
+    mockUseAuth.mockReturnValue({ ...defaultAuth, user: authenticatedUser });
+
+    renderWithProviders(<OnboardingPage />);
+
+    expect(screen.getByRole('button', { name: 'Gerenciar cookies' })).toBeDefined();
+  });
 });
 
 // ===========================================================================
@@ -210,6 +219,7 @@ describe('useWizardStore — Fluxo de steps', () => {
       direction: 1,
       data: { name: '', role: '', goals: [] },
       isCompleted: false,
+      hasTrackedStart: false,
     });
   });
 
@@ -273,6 +283,7 @@ describe('useWizardStore — Dados do wizard', () => {
       direction: 1,
       data: { name: '', role: '', goals: [] },
       isCompleted: false,
+      hasTrackedStart: false,
     });
   });
 
@@ -336,6 +347,7 @@ describe('useWizardStore — Persistencia localStorage', () => {
       direction: 1,
       data: { name: '', role: '', goals: [] },
       isCompleted: false,
+      hasTrackedStart: false,
     });
   });
 
@@ -397,6 +409,7 @@ describe('OnboardingPage — Navegacao entre etapas', () => {
       direction: 1,
       data: { name: '', role: '', goals: [] },
       isCompleted: false,
+      hasTrackedStart: false,
     });
   });
 

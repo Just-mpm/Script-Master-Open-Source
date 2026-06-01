@@ -9,6 +9,7 @@ import { saveProject, saveAudioToProject, saveImageToProject, Project, AudioSour
 import type { Locale } from '../features/i18n/types';
 import type { AudioSegment } from '../lib/db/types';
 import { saveAudioSegments } from '../lib/db/audio-segments';
+import { categorizeAnalyticsError, getSizeBucket, trackAnalyticsEvent } from '../lib/analytics';
 import { validateSceneTimestamps, buildUniformTimestamps } from '../lib/audio-analysis';
 import { validateImageIsDecodable } from '../lib/validateImage';
 import { createLogger } from '../lib/logger';
@@ -352,6 +353,12 @@ export function useAudioGenerator() {
       emotionIntensity = 0.5,
       locale = 'pt-BR',
     } = options;
+    const analyticsParams = {
+      size_bucket: getSizeBucket(script.length),
+      ratio: sceneRatio,
+      multi_speaker: Boolean(isMultiSpeaker),
+      generate_scenes: Boolean(generateScenes),
+    };
 
     if (!script.trim()) {
       storeApi.getState().setError('Por favor, insira um roteiro antes de gerar o áudio.');
@@ -370,6 +377,7 @@ export function useAudioGenerator() {
     storeApi.getState().setError(null);
     storeApi.getState().setSceneGenerationWarning(null);
     storeApi.getState().setStatusText('Iniciando...');
+    trackAnalyticsEvent('audio_generate_started', analyticsParams);
 
     const currentProjectId = crypto.randomUUID();
 
@@ -754,10 +762,15 @@ export function useAudioGenerator() {
       }
 
       storeApi.getState().setGenerationProgress(100);
+      trackAnalyticsEvent('audio_generate_completed', {
+        ...analyticsParams,
+        scene_count: storeApi.getState().scenes.length,
+      });
     } catch (err: unknown) {
       const errorMessageText = err instanceof Error ? err.message : '';
 
       if (errorMessageText === USER_CANCELLED_MESSAGE || isCallableCancelledError(err)) {
+        trackAnalyticsEvent('audio_generate_cancelled', analyticsParams);
         if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
           URL.revokeObjectURL(generatedAudioUrl);
         }
@@ -768,6 +781,10 @@ export function useAudioGenerator() {
       }
 
       log.error('Erro ao gerar áudio', { error: err });
+      trackAnalyticsEvent('audio_generate_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
       const errorInfo = getCallableErrorInfo(err);
       const errorMessage = errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
         ? 'Seu saldo mudou depois da prévia. Revise a geração antes de confirmar novamente.'

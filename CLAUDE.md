@@ -150,7 +150,10 @@ Library (`/biblioteca`): projetos expansíveis com áudios, cenas, roteiro, víd
 `AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
 
 ### Internacionalização (i18n)
-3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader. `TranslationDictionary` com nested keys e pluralização.
+3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader. `TranslationDictionary` com nested keys e pluralização. Último namespace adicionado: `analyticsConsent` (5 chaves: title, message, accept, deny, manage).
+
+### Analytics & Consentimento
+Sistema de analytics com consentimento explícito do usuário via `src/lib/analytics.ts` (~287 linhas). **Lazy loading:** módulo `firebase/analytics` (~64 KiB) só carrega após consentimento e apenas em produção. **Consentimento:** `AnalyticsConsentPrompt` (Snackbar + Dialog LGPD-compliant) com persistência em `localStorage` via `s2a_analytics_consent`. **Eventos:** 31 eventos tipados via `AnalyticsEventMap` — geração (áudio, imagem, vídeo, speed paint), autenticação (login, logout, signup), navegação (CTAs, hero), onboarding, exportação e erros. **Identificação:** `syncAnalyticsUser()` vincula userId do Firebase Auth ao `user_id` do Google Analytics. **Controle:** `VITE_FIREBASE_ANALYTICS_ENABLED` (env var) + `isFirebaseAnalyticsEnabled()` — ativo por padrão apenas em produção. Componentes: `AnalyticsConsentPrompt.tsx`, `openAnalyticsConsentDialog()`.
 
 ### Environment & COEP
 COEP ativo em `/app/**` (SharedArrayBuffer p/ Whisper + Remotion). Rotas públicas, `/login`, `/cadastro`, `/onboarding` sem COEP. **App Check com lazy loading:** `ensureAppCheck()` em `src/lib/app-check.ts` só inicializa reCAPTCHA v3 (~729 KiB, ~720ms) quando `AuthContext` detecta usuário autenticado — eliminando o custo em rotas públicas visitadas por anônimos. Emuladores seletivos via flags `VITE_EMULATOR_*`. **PWA:** vite-plugin-pwa com runtime caching (1 ano assets), update prompt via `PwaUpdatePrompt` (Snackbar MUI + SW reload). Manifest: standalone, portrait, `theme_color: #0a0a0f`.
@@ -162,7 +165,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.119.0`
+- **Current:** `0.120.0`
 - **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
@@ -171,8 +174,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.120.0` | Sistema de Analytics com consentimento: nova lib `src/lib/analytics.ts` com lazy loading do `firebase/analytics`, 31 eventos tipados (`AnalyticsEventMap`); `AnalyticsConsentPrompt` com Snackbar/Dialog LGPD-compliant; integração em 13 hooks/páginas/componentes; chaves i18n `analyticsConsent` (3 locales); nova env var `VITE_FIREBASE_ANALYTICS_ENABLED`; refatoração de `legalData.ts`; novos assets de logo WebP |
 | `0.119.0` | Redirecionamento padrão unificado para `/app/assistente` (7 arquivos); chat persistente no Assistente com restauração de sessão (`ACTIVE_SESSION_KEY`); tour de boas-vindas com flag `tourSeen` em UserSettings (dual storage); skill `tour-da-plataforma` (+144 linhas); OG Image (`public/og-image.webp`); docs de auditoria/QA/testes (5 novos); seção "Pendências" removida de AGENTS.md/CLAUDE.md |
 | `0.118.0` | AssistantComposer com forwardRef pattern: nova interface `AssistantComposerHandle` e componente `AssistantComposerInner` para controle programático via ref; `extractSkillName()` no ToolEventCard para exibição contextual de skills; remoção de mocks obsoletos do TemplateSelector em testes |
 | `0.117.1` | Limpeza de arquivos obsoletos: `firebase-blueprint.json` e `metadata.json` removidos; teste `assistant-context.unit.test.ts` atualizado (remoção de voicesList/paceList do contexto) para alinhamento com o sistema de Skills |
 | `0.117.0` | Sistema de Skills para o Assistente IA: novo middleware Genkit (`skills.ts`) com scan/cache de `SKILL.md` e ferramenta `use_skill`; 2 skills iniciais (Guia de Vozes, Melhores Práticas TTS); script `copy-skills.mjs` para build; `ToolEventCard` com suporte a `use_skill`; i18n dos labels de skill em 3 locales; prompt do assistente simplificado (remoção de voicesList/paceList, agora gerenciado via skills) |
-| `0.116.0` | Sistema de Templates removido (~1.000 linhas): TemplateSelector, TemplateGallery, TemplatePreviewDialog, TemplateCard, scriptTemplates, templateUtils e tipos relacionados; créditos gratuitos reduzidos de 1.000 para 500/mês; hreflang removido do SEO (sitemap.xml only); meta tag Apple `mobile-web-app-capable` corrigida |

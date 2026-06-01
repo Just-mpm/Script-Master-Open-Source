@@ -16,6 +16,7 @@ import { useCodecSupport } from '../hooks/useCodecSupport';
 import { saveVideoToProject } from '../../../lib/db/videos';
 import { downloadFile } from '../../../lib/download';
 import { createLogger } from '../../../lib/logger';
+import { categorizeAnalyticsError, trackAnalyticsEvent } from '../../../lib/analytics';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -254,6 +255,13 @@ export function useVideoExporter() {
 
     const resolvedQuality = quality ?? DEFAULT_EXPORT_QUALITY;
     const resolution = getResolutionFromQuality(ratio, resolvedQuality);
+    const analyticsParams = {
+      quality: resolvedQuality,
+      ratio,
+      scene_count: scenes.length,
+      mode: animateScenes ? 'speed_paint' : 'standard',
+    };
+    trackAnalyticsEvent('video_export_started', analyticsParams);
     let mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
 
     // Cria AbortController ANTES da fase de speed paint para permitir cancelamento
@@ -398,6 +406,11 @@ export function useVideoExporter() {
         renderStatusText: 'Exportação concluída!',
         speedPaintWarnings: collectedWarnings,
       });
+      trackAnalyticsEvent('video_export_completed', {
+        ...analyticsParams,
+        codec: resolvedVideoCodecRef.current,
+        container: resolvedContainerRef.current,
+      });
 
       // Salva no projeto de forma não-bloqueante
       if (projectId) {
@@ -432,6 +445,10 @@ export function useVideoExporter() {
       if (renderIdRef.current !== renderId) return;
 
       const cancelled = isCancellationError(err);
+      trackAnalyticsEvent(cancelled ? 'video_export_cancelled' : 'video_export_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
 
       setState(prev => ({
         ...prev,
@@ -464,6 +481,10 @@ export function useVideoExporter() {
     const ext = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
     const name = exportFileNameRef.current || `video-export-${Date.now()}`;
     void downloadFile(url, `${name}.${ext}`);
+    trackAnalyticsEvent('video_downloaded', {
+      codec: resolvedVideoCodecRef.current,
+      container: resolvedContainerRef.current,
+    });
   }, []);
 
   // -------------------------------------------------------------------------

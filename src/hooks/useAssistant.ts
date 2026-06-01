@@ -29,6 +29,7 @@ import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
 import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
 import { useCredits } from './useCredits';
+import { categorizeAnalyticsError, getSizeBucket, trackAnalyticsEvent } from '../lib/analytics';
 
 const log = createLogger('useAssistant');
 const STREAM_ABORTED = Symbol('assistant-stream-aborted');
@@ -258,6 +259,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
   const rafRef = useRef<number>(0);
   const streamingTargetRef = useRef<string>('');
   const activeRequestIdRef = useRef<string | null>(null);
+  const hasTrackedCancellationRef = useRef(false);
   const streamedContentStartedRef = useRef(false);
   const planRef = useRef<AssistantPlan>([]);
   const interviewRef = useRef<InterviewDatum | null>(null);
@@ -639,6 +641,12 @@ export function useAssistant(currentState?: AssistantStudioState) {
     resume?: InterviewResumeData,
   ) => {
     if (!text.trim() && (!attachments || attachments.length === 0) && !resume) return;
+    const analyticsParams = {
+      size_bucket: getSizeBucket(text.length),
+      mode: selectedModel,
+      has_attachment: Boolean(attachments?.length),
+    };
+    trackAnalyticsEvent('assistant_message_sent', analyticsParams);
 
     const newUserMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -661,6 +669,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
     // Cria AbortController para esta chamada
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
+    hasTrackedCancellationRef.current = false;
     streamActiveRef.current = true;
 
     // ID da mensagem de resposta do assistente (para atualização progressiva)
@@ -846,6 +855,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
           estimatedContextTokensRef.current = output.estimatedContextTokens ?? estimatedContextTokensRef.current;
           retryAttachmentsRef.current = undefined;
           interruptToolRequestRef.current = null;
+          trackAnalyticsEvent('assistant_response_completed', analyticsParams);
         } catch (finalDataError: unknown) {
           if (!isCallableCancelledError(finalDataError)) {
             const errorInfo = getCallableErrorInfo(finalDataError);
@@ -867,11 +877,19 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
       // Ignora erros de aborto (intencional pelo usuário)
       if (abortController.signal.aborted || isCallableCancelledError(err)) {
+        if (!hasTrackedCancellationRef.current) {
+          trackAnalyticsEvent('assistant_response_cancelled', analyticsParams);
+          hasTrackedCancellationRef.current = true;
+        }
         removePendingAssistantPlaceholder();
         return;
       }
 
       log.error('Erro no assistente', { error: err });
+      trackAnalyticsEvent('assistant_response_failed', {
+        ...analyticsParams,
+        error_category: categorizeAnalyticsError(err),
+      });
       const errorMessage = toUserFriendlyAssistantError(err);
 
       if (isCreditCallableError(err) || errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
@@ -926,6 +944,10 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
   /** Interrompe a geração em andamento via AbortController. */
   const stopGeneration = () => {
+    if (abortControllerRef.current && !hasTrackedCancellationRef.current) {
+      trackAnalyticsEvent('assistant_response_cancelled', { feature: 'assistant' });
+      hasTrackedCancellationRef.current = true;
+    }
     requestRemoteCancellation(activeRequestIdRef.current);
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
