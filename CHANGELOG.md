@@ -7,6 +7,19 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.117.1] - 2026-06-01
+
+### Removido
+
+- **`firebase-blueprint.json`** (109 linhas): blueprint de entidades Firestore (Memory, Project, AudioSource, ProjectImage) removido — arquivo de documentação de schema que não é mais utilizado pela aplicação
+- **`metadata.json`** (6 linhas): metadados de projeto (nome, descrição, permissões, capacidades) removidos — arquivo obsoleto que não tem função no ecossistema atual
+
+### Corrigido
+
+- **`tests/functions/assistant-context.unit.test.ts`**: removidas referências a `voicesList`/`paceList` no teste de contexto do assistente — alinhamento com a simplificação do prompt do assistente (v0.117.0) onde esses campos foram movidos do contexto fixo para o sistema de Skills (`skills.ts`). O teste agora reflete o novo retorno do contexto sem as listas de vozes/velocidades
+
+---
+
 ## [0.117.0] - 2026-06-01
 
 ### Adicionado

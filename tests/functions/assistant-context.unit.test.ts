@@ -70,8 +70,6 @@ describe('prompt builders', () => {
     const instruction = buildAssistantSystemInstruction({
       memoriesText: '- Prefere tom direto',
       userProfileBlock: '- Perfil: criador',
-      voicesList: '- Zephyr (Brilhante)',
-      paceList: 'normal (Normal)',
       studioBlock: 'ESTÚDIO: roteiro ativo',
       customPromptBlock: 'DIRETRIZ CUSTOM: responda com clareza',
     });
@@ -86,8 +84,6 @@ describe('prompt builders', () => {
     const instruction = buildInlineAssistantInstruction({
       memoriesText: '',
       userProfileBlock: '',
-      voicesList: '- Zephyr',
-      paceList: 'normal',
       customPromptBlock: '',
       selectedText: 'Texto original',
       instruction: 'Resuma em uma frase',
@@ -199,8 +195,6 @@ describe('buildAssistantSystemInstruction — tool-first', () => {
     const instruction = buildAssistantSystemInstruction({
       memoriesText: '- Prefere tom direto\n- Gosta de ritmo rápido',
       userProfileBlock: '- Perfil: criador',
-      voicesList: '- Zephyr (Brilhante)',
-      paceList: 'normal (Normal)',
       studioBlock: 'ESTÚDIO COMPLETO: roteiro ativo, voz Zephyr...',
       customPromptBlock: 'DIRETRIZ CUSTOM: responda com clareza',
       toolFirst: true,
@@ -223,8 +217,6 @@ describe('buildAssistantSystemInstruction — tool-first', () => {
     const instruction = buildAssistantSystemInstruction({
       memoriesText: '- Prefere tom direto',
       userProfileBlock: '- Perfil: criador',
-      voicesList: '- Zephyr (Brilhante)',
-      paceList: 'normal (Normal)',
       studioBlock: 'ESTÚDIO: roteiro ativo',
       customPromptBlock: 'DIRETRIZ CUSTOM: responda com clareza',
       toolFirst: false,
@@ -239,8 +231,6 @@ describe('buildAssistantSystemInstruction — tool-first', () => {
     const toolFirstInstruction = buildAssistantSystemInstruction({
       memoriesText: '',
       userProfileBlock: '',
-      voicesList: '- Zephyr',
-      paceList: 'normal',
       studioBlock: '',
       customPromptBlock: '',
       toolFirst: true,

@@ -168,7 +168,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.117.0`
+- **Current:** `0.117.1`
 - **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
@@ -177,8 +177,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.117.1` | Limpeza de arquivos obsoletos: `firebase-blueprint.json` e `metadata.json` removidos; teste `assistant-context.unit.test.ts` atualizado (remoção de voicesList/paceList do contexto) para alinhamento com o sistema de Skills |
 | `0.117.0` | Sistema de Skills para o Assistente IA: novo middleware Genkit (`skills.ts`) com scan/cache de `SKILL.md` e ferramenta `use_skill`; 2 skills iniciais (Guia de Vozes, Melhores Práticas TTS); script `copy-skills.mjs` para build; `ToolEventCard` com suporte a `use_skill`; i18n dos labels de skill em 3 locales; prompt do assistente simplificado (remoção de voicesList/paceList, agora gerenciado via skills) |
 | `0.116.0` | Sistema de Templates removido (~1.000 linhas): TemplateSelector, TemplateGallery, TemplatePreviewDialog, TemplateCard, scriptTemplates, templateUtils e tipos relacionados; créditos gratuitos reduzidos de 1.000 para 500/mês; hreflang removido do SEO (sitemap.xml only); meta tag Apple `mobile-web-app-capable` corrigida |
 | `0.115.1` | App Check extraído para `src/lib/app-check.ts` com lazy loading via `ensureAppCheck()` — reCAPTCHA v3 (~729 KiB) só carrega para usuários autenticados; fontes Google otimizadas com preload assíncrono; `AuthContext` delega ao novo módulo; 8 docs de auditoria/planos removidos; testes atualizados |
 | `0.115.0` | `FounderMessageDialog` no onboarding — dialog com mensagem pessoal do criador exibida apenas na primeira conclusão do wizard (persistido via localStorage); remoção completa da página `/status` (StatusPage, rota, footer link, sitemap, prerender, COEP config, ~180 traduções em 3 locales, testes) |
-| `0.114.0` | SEO/AEO/GEO completo: pre-renderização das 9 rotas públicas via puppeteer-core (`scripts/prerender.mjs`); JSON-LD centralizado (`buildJsonLd` com 3 tipos: SoftwareApplication, WebPage, BreadcrumbList); `llms.txt` + `llms-full.txt` para visibilidade em LLMs; favicon `.ico` + `apple-touch-icon.png` + meta tags Apple; robots.txt com directive `Llms-txt`; deploy scripts agora usam `build:full`; plano completo em `docs/plan/seo-aeo-geo-plano-final.md` |
