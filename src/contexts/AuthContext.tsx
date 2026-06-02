@@ -11,6 +11,7 @@ import { isBillingEnabled } from '../lib/env';
 import type { StudioDraftState } from '../features/studio/types';
 import { useStudioStore } from '../features/studio/store';
 import { setAnalyticsUserProperties, syncAnalyticsUser, trackAnalyticsEvent } from '../lib/analytics';
+import { authActionCodeSettings } from '../lib/auth-action-settings';
 
 const log = createLogger('AuthContext');
 
@@ -27,6 +28,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/wrong-password': 'Senha incorreta.',
   'auth/invalid-credential': 'Email ou senha incorretos.',
   'auth/requires-recent-login': 'Sessão expirada. Faça login novamente e tente excluir sua conta.',
+  'auth/expired-action-code': 'O link expirou. Solicite um novo email.',
+  'auth/invalid-action-code': 'Link inválido. Verifique se copiou o endereço correto.',
+  'auth/unauthorized-continue-uri': 'Domínio não autorizado.',
 };
 
 function getAuthErrorMessage(error: unknown): string {
@@ -213,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       trackAnalyticsEvent('sign_up', { method: 'email' });
       // Envia email de verificação após cadastro bem-sucedido
       try {
-        await sendEmailVerification(credential.user);
+        await sendEmailVerification(credential.user, authActionCodeSettings);
       } catch {
         // Falha na verificação não deve bloquear o cadastro
         log.warn('Falha ao enviar email de verificação', { email });
@@ -241,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = useCallback(async (email: string) => {
     try {
       setAuthError(null);
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email, authActionCodeSettings);
       trackAnalyticsEvent('password_reset_requested', {});
     } catch (error) {
       log.error('Erro ao enviar email de reset', { error });

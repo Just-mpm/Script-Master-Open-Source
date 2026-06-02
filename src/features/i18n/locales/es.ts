@@ -1827,6 +1827,62 @@ export const es: TranslationDictionary = {
     }
   },
 
+  // ── Acciones de Auth (verifyEmail, resetPassword, recoverEmail) ──
+  authAction: {
+    seoTitle: 'Verificando acción',
+    seoDesc: 'Página de verificación de acciones de la cuenta Script Master — confirmación de correo electrónico, restablecimiento de contraseña y recuperación de correo.',
+    loading: 'Procesando...',
+    error: {
+      expired: 'Este enlace ha expirado. Solicite uno nuevo.',
+      invalid: 'Este enlace no es válido. Verifique si lo copió correctamente.',
+      userDisabled: 'Esta cuenta ha sido desactivada. Contacte al soporte.',
+      userNotFound: 'No se encontró ningún usuario para esta acción.',
+      network: 'Error de conexión. Verifique su internet e intente de nuevo.',
+      weakPassword: 'La contraseña es muy débil. Use al menos 6 caracteres.',
+      tooManyRequests: 'Demasiados intentos. Intente de nuevo más tarde.',
+      generic: 'Ocurrió un error inesperado. Intente de nuevo.',
+    },
+    verifyEmail: {
+      successTitle: '¡Correo verificado!',
+      successDesc: 'Su correo electrónico ha sido confirmado con éxito. Ya puede iniciar sesión normalmente.',
+      loginBtn: 'Ir a inicio de sesión',
+      loginSuccess: '¡Correo verificado con éxito! Ya puede iniciar sesión.',
+      errorTitle: 'No fue posible verificar',
+      backToLogin: 'Volver al inicio de sesión',
+    },
+    resetPassword: {
+      title: 'Restablecer contraseña',
+      desc: 'Defina su nueva contraseña abajo.',
+      newPasswordLabel: 'Nueva contraseña',
+      confirmPasswordLabel: 'Confirmar nueva contraseña',
+      submitBtn: 'Restablecer contraseña',
+      submittingBtn: 'Restableciendo...',
+      successTitle: '¡Contraseña restablecida!',
+      successDesc: 'Su contraseña fue cambiada con éxito. Inicie sesión con la nueva contraseña.',
+      loginBtn: 'Ir a inicio de sesión',
+      errorTitle: 'Error al restablecer',
+      backToLogin: 'Volver al inicio de sesión',
+      validation: {
+        minLength: 'La contraseña debe tener al menos 6 caracteres.',
+        mismatch: 'Las contraseñas no coinciden.',
+      },
+    },
+    recoverEmail: {
+      title: 'Revertir cambio de correo',
+      desc: 'El correo electrónico de su cuenta fue modificado. Confirme abajo si desea revertir al correo anterior.',
+      fromLabel: 'De:',
+      toLabel: 'Para:',
+      confirmBtn: 'Revertir cambio',
+      revertingBtn: 'Revirtiendo...',
+      cancelBtn: 'Cancelar',
+      successTitle: '¡Correo revertido!',
+      successDesc: 'Su correo electrónico fue restaurado con éxito. Inicie sesión con el correo original.',
+      loginBtn: 'Ir a inicio de sesión',
+      errorTitle: 'Error al revertir',
+      backToLogin: 'Volver al inicio de sesión',
+    },
+  },
+
   // ── Página no encontrada (404) ──────────────────────────
   notFound: {
     seoTitle: 'Página no encontrada',

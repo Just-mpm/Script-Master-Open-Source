@@ -7,6 +7,31 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.122.0] - 2026-06-01
+
+### Adicionado
+
+- **AuthActionPage** (`src/pages/AuthActionPage.tsx`, +694 linhas): nova página pública dedicada ao tratamento customizado de ações de email do Firebase Auth — verificação de email, reset de senha e recuperação de email. Suporta 3 fluxos completos com estados de loading/sucesso/erro, animações Motion (AnimatePresence + fade), mapeamento de error codes Firebase → chaves i18n (8 códigos mapeados), formulário de nova senha com validação (mínimo 6 caracteres + confirmação), layout com PublicHeader/PublicFooter e glass panel MUI. SEO via `DocumentHead` com title/description dinâmicos por locale. Rota pública `/auth/action` sem COEP
+- **authActionCodeSettings** (`src/lib/auth-action-settings.ts`, +12 linhas): utilitário que exporta `ActionCodeSettings` compartilhado com `handleCodeInApp: true` — faz links de ações de email (verificação, reset, recuperação) apontarem para `/auth/action` em vez do handler padrão do Firebase. Importado por `AuthContext`, `ProtectedRoute` e `LoginPage`
+- **Chaves i18n `authAction.*`** nos 3 locales (`pt-BR.ts`, `en.ts`, `es.ts`, +56 linhas cada): namespace completo com SEO (seoTitle, seoDesc), verificação (verifyEmail.*), reset de senha (resetPassword.*, validation.*), recuperação de email (recoverEmail.*), erros mapeados (8 error codes → chaves i18n)
+- **Testes do AuthActionPage** (`tests/pages/AuthActionPage.component.test.tsx`, +412 linhas): 20+ testes cobrindo verificação de email, reset de senha, recuperação de email, tratamento de erros, navegação e validação de formulário
+- **Rota `/auth/action`** no router (`routes.tsx`): lazy loading com `AuthActionPage`, rota pública sem restrição de auth
+- **Pre-render** (`vite.config.ts`): `/auth/action` adicionado à lista de rotas pré-renderizadas
+
+### Alterado
+
+- **AuthContext** (`src/contexts/AuthContext.tsx`): `sendEmailVerification` agora recebe `authActionCodeSettings` como segundo argumento — link de verificação aponta para `/auth/action`
+- **ProtectedRoute** (`src/components/ProtectedRoute.tsx`): import de `authActionCodeSettings` para reenvio de verificação com link customizado
+- **LoginPage** (`src/pages/LoginPage.tsx`): atualizada para usar `authActionCodeSettings` no fluxo de recuperação de senha
+- **firebase.ts** (`src/lib/firebase.ts`): novos exports de tipo — `User`, `ActionCodeInfo`, `ActionCodeSettings`
+- **Testes existentes**: `ProtectedRoute.component.test.tsx` e `AuthContext.unit.test.tsx` atualizados para refletir `authActionCodeSettings` nos asserts
+
+### Removido
+
+- **Documento obsoleto** (`docs/scan/auditoria-ux-4-melhorias.md`, -151 linhas): auditoria de UX concluída e arquivada
+
+---
+
 ## [0.121.0] - 2026-06-01
 
 ### Adicionado

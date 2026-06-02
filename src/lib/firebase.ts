@@ -11,7 +11,13 @@ import {
   deleteUser,
   signOut,
   onAuthStateChanged,
+  applyActionCode,
+  checkActionCode,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
   type User,
+  type ActionCodeInfo,
+  type ActionCodeSettings,
 } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
@@ -71,5 +77,9 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true') {
   }
 }
 
-export { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged };
-export type { User };
+export {
+  signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  sendPasswordResetEmail, sendEmailVerification, deleteUser, signOut, onAuthStateChanged,
+  applyActionCode, checkActionCode, verifyPasswordResetCode, confirmPasswordReset,
+};
+export type { User, ActionCodeInfo, ActionCodeSettings };

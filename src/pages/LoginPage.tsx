@@ -18,7 +18,7 @@ import { useTheme } from '@mui/material/styles';
 import Google from '@mui/icons-material/Google';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import { DocumentHead } from '../components/DocumentHead';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPageSeo } from '../lib/seo';
 import { getLocalizedAuthBenefits } from '../data/authBenefits';
@@ -44,6 +44,8 @@ export function LoginPage() {
   const authBenefits = getLocalizedAuthBenefits(locale);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [searchParams] = useSearchParams();
+  const emailVerified = searchParams.get('verified') === 'true';
 
   const seo = getPageSeo({
     title: t('auth.login.seoTitle'),
@@ -242,6 +244,12 @@ export function LoginPage() {
                   {authError && (
                     <Alert severity="error" variant="filled" sx={{ width: '100%' }}>
                       {authError}
+                    </Alert>
+                  )}
+
+                  {emailVerified && (
+                    <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+                      {t('authAction.verifyEmail.loginSuccess')}
                     </Alert>
                   )}
 

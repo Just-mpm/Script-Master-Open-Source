@@ -1827,6 +1827,62 @@ export const en: TranslationDictionary = {
     }
   },
 
+  // ── Auth Actions (verifyEmail, resetPassword, recoverEmail) ──
+  authAction: {
+    seoTitle: 'Verifying action',
+    seoDesc: 'Script Master account action verification page — email confirmation, password reset, and email recovery.',
+    loading: 'Processing...',
+    error: {
+      expired: 'This link has expired. Please request a new one.',
+      invalid: 'This link is invalid. Please check if you copied it correctly.',
+      userDisabled: 'This account has been disabled. Please contact support.',
+      userNotFound: 'No user found for this action.',
+      network: 'Connection error. Please check your internet and try again.',
+      weakPassword: 'The password is too weak. Use at least 6 characters.',
+      tooManyRequests: 'Too many attempts. Please try again later.',
+      generic: 'An unexpected error occurred. Please try again.',
+    },
+    verifyEmail: {
+      successTitle: 'Email verified!',
+      successDesc: 'Your email has been successfully confirmed. You can now log in.',
+      loginBtn: 'Go to login',
+      loginSuccess: 'Email verified successfully! You can now log in.',
+      errorTitle: 'Unable to verify',
+      backToLogin: 'Back to login',
+    },
+    resetPassword: {
+      title: 'Reset password',
+      desc: 'Set your new password below.',
+      newPasswordLabel: 'New password',
+      confirmPasswordLabel: 'Confirm new password',
+      submitBtn: 'Reset password',
+      submittingBtn: 'Resetting...',
+      successTitle: 'Password reset!',
+      successDesc: 'Your password has been changed successfully. Log in with your new password.',
+      loginBtn: 'Go to login',
+      errorTitle: 'Error resetting password',
+      backToLogin: 'Back to login',
+      validation: {
+        minLength: 'Password must be at least 6 characters.',
+        mismatch: 'Passwords do not match.',
+      },
+    },
+    recoverEmail: {
+      title: 'Revert email change',
+      desc: 'Your account email was changed. Confirm below if you want to revert to the previous email.',
+      fromLabel: 'From:',
+      toLabel: 'To:',
+      confirmBtn: 'Revert change',
+      revertingBtn: 'Reverting...',
+      cancelBtn: 'Cancel',
+      successTitle: 'Email reverted!',
+      successDesc: 'Your email has been successfully restored. Log in with your original email.',
+      loginBtn: 'Go to login',
+      errorTitle: 'Error reverting',
+      backToLogin: 'Back to login',
+    },
+  },
+
   // ── Page Not Found (404) ──────────────────────────
   notFound: {
     seoTitle: 'Page not found',

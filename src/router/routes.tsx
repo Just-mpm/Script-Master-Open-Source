@@ -81,6 +81,11 @@ const OnboardingPage = lazy(async () => {
   return { default: module.OnboardingPage };
 });
 
+const AuthActionPage = lazy(async () => {
+  const module = await import('../pages/AuthActionPage');
+  return { default: module.AuthActionPage };
+});
+
 // ─── Páginas do app (lazy) — export nomeado ───────────────
 
 const StudioPage = lazy(async () => {
@@ -247,6 +252,7 @@ export function AppRoutes({
         <Route path="/privacidade" element={<PrivacyPage />} />
         <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/auth/action" element={<AuthActionPage />} />
 
         {/* Redirects de compatibilidade (rotas públicas antigas) */}
         {publicCompatRedirects}

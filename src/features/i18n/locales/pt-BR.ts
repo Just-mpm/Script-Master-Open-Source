@@ -1846,6 +1846,62 @@ export const ptBR: TranslationDictionary = {
     }
   },
 
+  // ── Ações de Auth (verifyEmail, resetPassword, recoverEmail) ──
+  authAction: {
+    seoTitle: 'Verificando ação',
+    seoDesc: 'Página de verificação de ações da conta Script Master — confirmação de email, redefinição de senha e recuperação de email.',
+    loading: 'Processando...',
+    error: {
+      expired: 'Este link expirou. Solicite um novo.',
+      invalid: 'Este link é inválido. Verifique se copiou corretamente.',
+      userDisabled: 'Esta conta foi desativada. Entre em contato com o suporte.',
+      userNotFound: 'Nenhum usuário encontrado para esta ação.',
+      network: 'Erro de conexão. Verifique sua internet e tente novamente.',
+      weakPassword: 'A senha é muito fraca. Use pelo menos 6 caracteres.',
+      tooManyRequests: 'Muitas tentativas. Tente novamente mais tarde.',
+      generic: 'Ocorreu um erro inesperado. Tente novamente.',
+    },
+    verifyEmail: {
+      successTitle: 'Email verificado!',
+      successDesc: 'Seu email foi confirmado com sucesso. Agora você pode fazer login normalmente.',
+      loginBtn: 'Ir para login',
+      loginSuccess: 'Email verificado com sucesso! Você já pode fazer login.',
+      errorTitle: 'Não foi possível verificar',
+      backToLogin: 'Voltar ao login',
+    },
+    resetPassword: {
+      title: 'Redefinir senha',
+      desc: 'Defina sua nova senha abaixo.',
+      newPasswordLabel: 'Nova senha',
+      confirmPasswordLabel: 'Confirmar nova senha',
+      submitBtn: 'Redefinir senha',
+      submittingBtn: 'Redefinindo...',
+      successTitle: 'Senha redefinida!',
+      successDesc: 'Sua senha foi alterada com sucesso. Faça login com a nova senha.',
+      loginBtn: 'Ir para login',
+      errorTitle: 'Erro ao redefinir',
+      backToLogin: 'Voltar ao login',
+      validation: {
+        minLength: 'A senha deve ter pelo menos 6 caracteres.',
+        mismatch: 'As senhas não conferem.',
+      },
+    },
+    recoverEmail: {
+      title: 'Reverter alteração de email',
+      desc: 'O email da sua conta foi alterado. Confirme abaixo se deseja reverter para o email anterior.',
+      fromLabel: 'De:',
+      toLabel: 'Para:',
+      confirmBtn: 'Reverter alteração',
+      revertingBtn: 'Revertendo...',
+      cancelBtn: 'Cancelar',
+      successTitle: 'Email revertido!',
+      successDesc: 'Seu email foi restaurado com sucesso. Faça login com o email original.',
+      loginBtn: 'Ir para login',
+      errorTitle: 'Erro ao reverter',
+      backToLogin: 'Voltar ao login',
+    },
+  },
+
   // ── Página Não Encontrada (404) ──────────────────────────
   notFound: {
     seoTitle: 'Página não encontrada',

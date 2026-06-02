@@ -13,7 +13,7 @@ Firebase Hosting (frontend) + Firebase Cloud Functions v2 (backend serverless qu
 ```bash
 bun run dev              # Vite em http://localhost:3000
 bun run build            # lint + typecheck + build de produção (~1s, sem pre-render)
-bun run build:full       # build + pre-render das 9 rotas públicas (~25s, para deploy)
+bun run build:full       # build + pre-render das 10 rotas públicas (~25s, para deploy)
 bun run lint             # ESLint 10 (flat config)
 bun run lint:fix         # ESLint com autocorreção
 bun run typecheck        # tsc -b
@@ -50,7 +50,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 - **Zustand** (estado) | **Motion** (animações, swipe/drag) | **@dnd-kit/react** (drag-and-drop) | **react-dropzone** (upload) | **react-hot-toast** (toasts)
 - **Vitest 4** + **@testing-library/react** — testes unitários e de componentes
 - **vite-plugin-pwa** — service worker + manifest para instalação como app
-- **puppeteer-core** — pre-renderização das 9 rotas públicas via Chrome do sistema (`scripts/prerender.mjs`)
+- **puppeteer-core** — pre-renderização das 10 rotas públicas via Chrome do sistema (`scripts/prerender.mjs`)
 
 ## Modelos Gemini
 
@@ -90,6 +90,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 | `/termos` | TermsPage | Público |
 | `/privacidade` | PrivacyPage | Público |
 | `/cookies` | CookiesPage | Público |
+| `/auth/action` | AuthActionPage | Público |
 | `/login` | LoginPage | Visitante (GuestRoute) |
 | `/cadastro` | RegisterPage | Visitante (GuestRoute) |
 | `/onboarding` | OnboardingPage | Público (sem COEP) |
@@ -116,7 +117,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 8 páginas em `src/pages/public/` (Landing, Funcionalidades, Pricing, FAQ, Contato, Sobre, Termos, Privacidade, Cookies). 17 componentes em `src/components/public/`. SEO via React 19 nativo: `DocumentHead` + `seo.ts` (OG, Twitter Cards, canonical, sitemap.xml, robots.txt). Logos em `src/assets/logos.ts`. Domínio prod: `script-master.pro`.
 
 ### SEO / AEO / GEO
-Pre-renderização das 9 rotas públicas via `scripts/prerender.mjs` (puppeteer-core + Chrome do sistema). Dispara em `bun run build:full` após vite build — gera HTML estático com tags SEO completas em `dist/{route}/index.html`. `DocumentHead` dispara flag `window.__PRERENDER_READY` para sinalizar quando capturar. `seo.ts` gera: title, meta description, canonical, hreflang (pt-BR, en, es, x-default), Open Graph completo (image 1200x630, width/height/alt, locale, locale:alternate), Twitter Cards, JSON-LD (SoftwareApplication com offers, WebPage, BreadcrumbList). Arquivos estáticos: `public/llms.txt` + `public/llms-full.txt` (para ChatGPT/Claude/Perplexity), `public/robots.txt` (Allow llms.txt, Llms-txt directive), `public/sitemap.xml`. Favicon: `.ico` (16+32+48) + `.webp` + `apple-touch-icon.png` (180x180).
+Pre-renderização das 10 rotas públicas via `scripts/prerender.mjs` (puppeteer-core + Chrome do sistema). Dispara em `bun run build:full` após vite build — gera HTML estático com tags SEO completas em `dist/{route}/index.html`. `DocumentHead` dispara flag `window.__PRERENDER_READY` para sinalizar quando capturar. `seo.ts` gera: title, meta description, canonical, hreflang (pt-BR, en, es, x-default), Open Graph completo (image 1200x630, width/height/alt, locale, locale:alternate), Twitter Cards, JSON-LD (SoftwareApplication com offers, WebPage, BreadcrumbList). Arquivos estáticos: `public/llms.txt` + `public/llms-full.txt` (para ChatGPT/Claude/Perplexity), `public/robots.txt` (Allow llms.txt, Llms-txt directive), `public/sitemap.xml`. Favicon: `.ico` (16+32+48) + `.webp` + `apple-touch-icon.png` (180x180).
 
 ### Áudio & TTS
 TTS via Genkit flow `audio.ts` — chunking automático (>500 chars), multi-speaker (2 vozes), detecção de silêncio, voice previews WAV estáticos. Hook frontend: `useAudioGenerator`. Créditos via middleware `credit-metering.ts`. Limites: 50K chars/roteiro, 500 chars/chamada TTS.
@@ -148,10 +149,10 @@ Beta aberto (`VITE_OPEN_BETA_ENABLED=true`). Planos: Free / Pro (R$49,90/mês) /
 Library (`/biblioteca`): projetos expansíveis com áudios, cenas, roteiro, vídeos — botão "Levar ao Speed Paint". VideoLibrary: galeria horizontal no player com busca, batch download. Projetos em subcoleções Firestore (`audios`, `images`, `videos`). Blob cleanup com revogação seletiva de URLs.
 
 ### Autenticação
-`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. `LogoutConfirmDialog` confirma saída antes de efetuar logout. Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
+`AuthContext` + `useAuth()`: Google popup, email/senha com verificação (polling 5s), reset de senha, exclusão LGPD. `LogoutConfirmDialog` confirma saída antes de efetuar logout. `authActionCodeSettings` (`src/lib/auth-action-settings.ts`) com `handleCodeInApp: true` redireciona ações de email para a página customizada `/auth/action`. `AuthActionPage` trata verificação de email, reset de senha e recuperação de email com UI dedicada (Motion + MUI glass panel). Onboarding Wizard (`/onboarding`): 4 passos (Welcome → Profile → Goals → Completion), 6 roles, 8 goals — persistido em localStorage + `user_settings` no Firestore. `FounderMessageDialog` exibe mensagem pessoal do criador na conclusão (apenas na primeira vez, controlado por `isFounderMessageSeen()` via localStorage). Pós-login: sem onboarding → `/onboarding`, completo → `/app/assistente`. Login/logout/delete fazem full reload (COEP conflict).
 
 ### Internacionalização (i18n)
-3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader/MobileBottomNav. `TranslationDictionary` com nested keys e pluralização. Últimos namespaces adicionados: `analyticsConsent` (5 chaves: title, message, accept, deny, manage), `studio.header.logout` (4 chaves: dialogTitle, dialogDescription, dialogCancel, dialogConfirm), `configuracoes.interfaceLocaleLabel`.
+3 locales (pt-BR, en, es), 20+ namespaces. `I18nProvider` no `main.tsx`. Hooks: `useLocale()` e `useLocaleSafe()`. `LocaleSelector` no Header/PublicHeader/MobileBottomNav. `TranslationDictionary` com nested keys e pluralização. Últimos namespaces adicionados: `authAction` (verifyEmail, resetPassword, recoverEmail, validation, error, seoTitle, seoDesc), `analyticsConsent` (5 chaves: title, message, accept, deny, manage), `studio.header.logout` (4 chaves: dialogTitle, dialogDescription, dialogCancel, dialogConfirm), `configuracoes.interfaceLocaleLabel`.
 
 ### Analytics & Consentimento
 Sistema de analytics com consentimento explícito do usuário via `src/lib/analytics.ts` (~287 linhas). **Lazy loading:** módulo `firebase/analytics` (~64 KiB) só carrega após consentimento e apenas em produção. **Consentimento:** `AnalyticsConsentPrompt` (Snackbar + Dialog LGPD-compliant) com persistência em `localStorage` via `s2a_analytics_consent`. **Eventos:** 31 eventos tipados via `AnalyticsEventMap` — geração (áudio, imagem, vídeo, speed paint), autenticação (login, logout, signup), navegação (CTAs, hero), onboarding, exportação e erros. **Identificação:** `syncAnalyticsUser()` vincula userId do Firebase Auth ao `user_id` do Google Analytics. **Controle:** `VITE_FIREBASE_ANALYTICS_ENABLED` (env var) + `isFirebaseAnalyticsEnabled()` — ativo por padrão apenas em produção. Componentes: `AnalyticsConsentPrompt.tsx`, `openAnalyticsConsentDialog()`.
@@ -166,7 +167,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.121.0`
+- **Current:** `0.122.0`
 - **Last release:** 2026-06-01
 
 ### Últimas mudanças (atualizado por /fast)
@@ -175,8 +176,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.122.0` | AuthActionPage: página customizada para ações de email do Firebase Auth (verificação de email, reset de senha, recuperação de email) com UI dedicada (Motion + MUI glass panel); `authActionCodeSettings` com `handleCodeInApp: true`; rota pública `/auth/action`; chaves i18n `authAction.*` (3 locales); testes (+412 linhas); pre-render expandido (10 rotas) |
 | `0.121.0` | Logger modular com error tracking: `src/lib/logger/` (8 módulos) substitui arquivo único — rastreamento de erros em produção via Firestore (`errorLogs`), sanitização automática, batch processor, interceptação global; `initErrorTracking()` no `main.tsx`; `LogoutConfirmDialog` em Header/PublicHeader/MobileBottomNav; seção "Idioma da interface" nas Configurações; `MobileBottomNav` expandido com locale/cookie/logout; error handling consistente em ~15+ arquivos (`catch {}` → `catch (err: unknown)`); backend migrado para logger próprio; brand renomeado "Estúdio de Produção" → "AI Studio"; quick actions do assistente atualizadas |
 | `0.120.0` | Sistema de Analytics com consentimento: nova lib `src/lib/analytics.ts` com lazy loading do `firebase/analytics`, 31 eventos tipados (`AnalyticsEventMap`); `AnalyticsConsentPrompt` com Snackbar/Dialog LGPD-compliant; integração em 13 hooks/páginas/componentes; chaves i18n `analyticsConsent` (3 locales); nova env var `VITE_FIREBASE_ANALYTICS_ENABLED`; refatoração de `legalData.ts`; novos assets de logo WebP |
 | `0.119.0` | Redirecionamento padrão unificado para `/app/assistente` (7 arquivos); chat persistente no Assistente com restauração de sessão (`ACTIVE_SESSION_KEY`); tour de boas-vindas com flag `tourSeen` em UserSettings (dual storage); skill `tour-da-plataforma` (+144 linhas); OG Image (`public/og-image.webp`); docs de auditoria/QA/testes (5 novos); seção "Pendências" removida de AGENTS.md/CLAUDE.md |
 | `0.118.0` | AssistantComposer com forwardRef pattern: nova interface `AssistantComposerHandle` e componente `AssistantComposerInner` para controle programático via ref; `extractSkillName()` no ToolEventCard para exibição contextual de skills; remoção de mocks obsoletos do TemplateSelector em testes |
-| `0.117.1` | Limpeza de arquivos obsoletos: `firebase-blueprint.json` e `metadata.json` removidos; teste `assistant-context.unit.test.ts` atualizado (remoção de voicesList/paceList do contexto) para alinhamento com o sistema de Skills |

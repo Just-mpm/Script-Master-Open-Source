@@ -131,7 +131,7 @@ describe('ProtectedRoute', () => {
     await userActions.click(await screen.findByRole('button', { name: 'Reenviar email de verificação' }));
 
     await waitFor(() => {
-      expect(mockSendEmailVerification).toHaveBeenCalledWith(user);
+      expect(mockSendEmailVerification).toHaveBeenCalledWith(user, expect.objectContaining({ handleCodeInApp: true }));
     });
   });
 

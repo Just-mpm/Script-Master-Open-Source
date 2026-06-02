@@ -9,6 +9,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendEmailVerification } from '../lib/firebase';
 import type { User } from '../lib/firebase';
+import { authActionCodeSettings } from '../lib/auth-action-settings';
 import { createLogger } from '../lib/logger';
 import { useLocale } from '../features/i18n';
 
@@ -34,7 +35,7 @@ export function ProtectedRoute() {
     setResendStatus(null);
     setResendMessage(null);
     try {
-      await sendEmailVerification(user);
+      await sendEmailVerification(user, authActionCodeSettings);
       setResendStatus('success');
       setResendMessage(t('auth.verification.resendSuccess'));
     } catch (err) {

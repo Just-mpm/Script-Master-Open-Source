@@ -611,7 +611,8 @@ describe('AuthContext', () => {
 
       expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
         expect.anything(),
-        'user@test.com'
+        'user@test.com',
+        expect.objectContaining({ handleCodeInApp: true })
       );
     });
 
