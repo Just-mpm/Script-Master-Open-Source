@@ -39,6 +39,8 @@ import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
 import type { Locale } from '../../features/i18n/types';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
 import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
+import { useStore } from 'zustand';
+import { useVideoRenderController } from '../../features/video-render/store/videoRenderController';
 import {
   BRAND_PRIMARY_GLOW_SOFT,
   ICON_SIZE_MD,
@@ -82,6 +84,11 @@ export function MobileBottomNav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [localeAnchorEl, setLocaleAnchorEl] = useState<HTMLElement | null>(null);
+
+  // ── Indicador de export de vídeo (P5=A — só ícone "Vídeo") ──
+  // Lê slices primitivas do controller. Não aparece em desktop (mdDown check).
+  const videoIsRendering = useStore(useVideoRenderController, (s) => s.isRendering);
+  const videoStatus = useStore(useVideoRenderController, (s) => s.status);
 
   // ── 4 destinos principais ──
   const navItems = useMemo<BottomNavItem[]>(() => [
@@ -220,6 +227,13 @@ export function MobileBottomNav() {
         >
           {navItems.map((item) => {
             const Icon = item.icon;
+            // Dot indicator — apenas no item "Vídeo" (P5=A). Pulsante azul durante
+            // render, verde estático quando concluído. Some em outras rotas.
+            const isVideoItem = item.to === '/app/video';
+            const showExportDot =
+              isVideoItem &&
+              (videoIsRendering || videoStatus === 'completed') &&
+              location.pathname !== '/app/video';
             return (
               <BottomNavigationAction
                 key={item.to}
@@ -253,6 +267,34 @@ export function MobileBottomNav() {
                         }),
                       }}
                     />
+                    {/* Dot de export de vídeo (P5=A) */}
+                    {showExportDot && (
+                      <Box
+                        aria-label={videoIsRendering
+                          ? t('exportCrossRoute.mobileDotActive')
+                          : t('exportCrossRoute.mobileDotCompleted')}
+                        role="status"
+                        sx={{
+                          position: 'absolute',
+                          top: -2,
+                          right: -4,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
+                          boxShadow: videoIsRendering
+                            ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
+                            : `0 0 0 2px ${APP_SURFACE}`,
+                          animation: videoIsRendering
+                            ? 'exportDotPulse 1.6s ease-in-out infinite'
+                            : 'none',
+                          '@keyframes exportDotPulse': {
+                            '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                            '50%': { transform: 'scale(1.4)', opacity: 0.7 },
+                          },
+                        }}
+                      />
+                    )}
                   </Box>
                 }
                 sx={item.accent ? {

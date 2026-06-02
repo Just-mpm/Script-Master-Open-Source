@@ -156,21 +156,13 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     setDurationOverride(durationInSeconds > 0 ? durationInSeconds : null);
   }, [durationInSeconds, setDurationOverride]);
 
-  // Bridge store — lê apenas as slices necessárias (evita re-render 30x/s)
+  // Bridge store — mantém o uso para outros fins (legado). NOTA: o aviso
+  // `beforeunload` foi REMOVIDO deste arquivo — agora é responsabilidade de
+  // `useCrossRouteRenderGuard` (M5) em `App.tsx`, que centraliza o
+  // tratamento de renderização (vídeo, speed paint) E geração de áudio.
+  // Decisão P3=A (centralizar para evitar listeners duplicados).
   const isExportingVideo = useVideoRenderBridge((s) => s.isExportingVideo);
   const videoExportProgress = useVideoRenderBridge((s) => s.videoExportProgress);
-
-  // Aviso antes de fechar aba durante geração ou exportação
-  useEffect(() => {
-    if (!isGenerating && !isExportingVideo) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isGenerating, isExportingVideo]);
 
   // ─── Handlers ─────────────────────────────────────────────
 

@@ -211,19 +211,14 @@ export function VideoPage({
   );
 
   // --- Sincronização com o bridge store ---
-
-  useEffect(() => {
-    useVideoRenderBridge.getState().syncExportState(videoExporter.isRendering, videoExporter.renderProgress);
-  }, [videoExporter.isRendering, videoExporter.renderProgress]);
+  // NOTA: a sincronização de export (isExportingVideo/videoExportProgress) é
+  // responsabilidade do `videoRenderController` (M1) — não precisamos mais
+  // fazer isso aqui. O bridge é escrito por M1 em cada `set()`.
+  // Apenas transcrição ainda sincroniza daqui (controlada por `useTranscription`).
 
   useEffect(() => {
     useVideoRenderBridge.getState().syncTranscriptionState(isTranscribing, transcriptionProgress, transcriptionStatusText);
   }, [isTranscribing, transcriptionProgress, transcriptionStatusText]);
-
-  // Reseta o bridge ao desmontar (navegação para fora de /video)
-  useEffect(() => {
-    return () => { useVideoRenderBridge.getState().resetBridge(); };
-  }, []);
 
   // --- Efeitos locais ---
 

@@ -1,5 +1,6 @@
 import { type ElementType } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ACTION_HOVER,
   ACTION_SELECTED,
+  APP_SURFACE,
   BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_SECONDARY_GLOW_SOFT,
@@ -26,6 +28,10 @@ interface SidebarNavItemProps {
   accent?: boolean;
   /** Estado atual da sidebar: `true` = apenas ícones com tooltip. */
   collapsed: boolean;
+  /** Exibe dot pulsante no canto superior direito do ícone (exportação de vídeo ativa) */
+  showExportDot?: boolean;
+  /** true = renderizando (dot azul pulsante), false = concluído (dot verde estático) */
+  videoIsRendering?: boolean;
 }
 
 /**
@@ -46,6 +52,8 @@ export function SidebarNavItem({
   icon: Icon,
   accent,
   collapsed,
+  showExportDot,
+  videoIsRendering,
 }: SidebarNavItemProps) {
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -57,11 +65,14 @@ export function SidebarNavItem({
       ? 'secondary.light'
       : 'text.secondary';
 
-  // Estilos base compartilhados (fundo ativo, hover, borda esquerda com glow)
+  // Estilos base compartilhados (fundo ativo, hover, borda esquerda com glow).
+  // Quando o dot de export está ativo, troca overflow:hidden → visible para o
+  // dot escapar do bounding box sem ser clipado (::before da borda ativa não
+  // é afetado — ele vive dentro do item, não do overflow edge).
   const itemSx = {
     borderRadius: 1.5,
     position: 'relative' as const,
-    overflow: 'hidden',
+    overflow: showExportDot ? ('visible' as const) : ('hidden' as const),
     bgcolor: isActive ? ACTION_SELECTED : 'transparent',
     color: activeColor,
     transition: 'background-color 0.15s ease, color 0.15s ease',
@@ -89,19 +100,22 @@ export function SidebarNavItem({
   if (collapsed) {
     return (
       <Tooltip title={label} placement="right" arrow>
-        <IconButton
-          component={Link}
-          to={to}
-          aria-current={isActive ? 'page' : undefined}
-          aria-label={label}
-          sx={{
-            width: 44,
-            height: 44,
-            ...itemSx,
-          }}
-        >
-          <Icon sx={{ fontSize: ICON_SIZE_MD }} />
-        </IconButton>
+        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+          <IconButton
+            component={Link}
+            to={to}
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={label}
+            sx={{
+              width: 44,
+              height: 44,
+              ...itemSx,
+            }}
+          >
+            <Icon sx={{ fontSize: ICON_SIZE_MD }} />
+          </IconButton>
+          {showExportDot && <ExportDot videoIsRendering={videoIsRendering} />}
+        </Box>
       </Tooltip>
     );
   }
@@ -116,7 +130,10 @@ export function SidebarNavItem({
       sx={itemSx}
     >
       <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-        <Icon sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+          <Icon sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+          {showExportDot && <ExportDot videoIsRendering={videoIsRendering} />}
+        </Box>
       </ListItemIcon>
       <AnimatePresence mode="wait">
         <motion.div
@@ -138,5 +155,38 @@ export function SidebarNavItem({
         </motion.div>
       </AnimatePresence>
     </ListItemButton>
+  );
+}
+
+/**
+ * Dot pulsante de exportação de vídeo (espelha o do `MobileBottomNav`).
+ * Azul pulsante enquanto render está em andamento; verde estático quando concluído.
+ * Some quando o usuário está na rota do próprio item.
+ */
+function ExportDot({ videoIsRendering }: { videoIsRendering?: boolean }) {
+  return (
+    <Box
+      role="status"
+      aria-label={videoIsRendering ? 'Renderização em andamento' : 'Vídeo pronto para ver'}
+      sx={{
+        position: 'absolute',
+        top: -2,
+        right: -4,
+        width: 10,
+        height: 10,
+        borderRadius: '50%',
+        backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
+        boxShadow: videoIsRendering
+          ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
+          : `0 0 0 2px ${APP_SURFACE}`,
+        animation: videoIsRendering
+          ? 'exportDotPulse 1.6s ease-in-out infinite'
+          : 'none',
+        '@keyframes exportDotPulse': {
+          '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+          '50%': { transform: 'scale(1.4)', opacity: 0.7 },
+        },
+      }}
+    />
   );
 }

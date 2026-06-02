@@ -111,7 +111,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 ## Domínios
 
 ### App Shell & Router
-`App.tsx` (~300 linhas): providers (Router, Auth, I18n, AudioContext), `AudioGenerationHandler`, `Sidebar` (mdUp, colapsável 68px/264px), `MobileBottomNav` (mdDown), `GuestMobileNav` (drawer visitantes), `FeedbackController`, `FeedbackFab`, `PwaUpdatePrompt`. Router: lazy loading por rota, `ProtectedRoute` p/ rotas autenticadas, `GuestRoute` p/ `/`, `/login`, `/cadastro`. `ErrorBoundary` em `src/components/ErrorBoundary.tsx` com integração ao logger (error tracking). Redirects de compatibilidade (9 rotas) em `Redirects.tsx`. Store Zustand `useSidebarStore` com persistência localStorage do estado collapsed/expanded.
+`App.tsx` (~300 linhas): providers (Router, Auth, I18n, AudioContext), `AudioGenerationHandler`, `Sidebar` (mdUp, colapsável 68px/264px), `MobileBottomNav` (mdDown), `GuestMobileNav` (drawer visitantes), `FeedbackController`, `FeedbackFab`, `PwaUpdatePrompt`, `ExportCrossRouteToast` (snackbar global de progresso cross-route), `useCrossRouteRenderGuard` (beforeunload/visibilitychange/title dinâmico). Router: lazy loading por rota, `ProtectedRoute` p/ rotas autenticadas, `GuestRoute` p/ `/`, `/login`, `/cadastro`. `ErrorBoundary` em `src/components/ErrorBoundary.tsx` com integração ao logger (error tracking). Redirects de compatibilidade (9 rotas) em `Redirects.tsx`. Store Zustand `useSidebarStore` com persistência localStorage do estado collapsed/expanded.
 
 ### Páginas Públicas
 8 páginas em `src/pages/public/` (Landing, Funcionalidades, Pricing, FAQ, Contato, Sobre, Termos, Privacidade, Cookies). 17 componentes em `src/components/public/`. SEO via React 19 nativo: `DocumentHead` + `seo.ts` (OG, Twitter Cards, canonical, sitemap.xml, robots.txt). Logos em `src/assets/logos.ts`. Domínio prod: `script-master.pro`.
@@ -127,6 +127,8 @@ Geração via Genkit flow `images.ts`. Prompts de cena via `scene-prompts` (saí
 
 ### Vídeo (Remotion)
 Renderização client-side via WebCodecs com fallback de codec (H.264+AAC → H.264 → VP8+Opus+WebM). Legendas: pipeline 3 fontes (segment-timing > whisper-aligned > proportional). Speed Paint: edge detection + BFS + renderização Remotion com fases sketch/reveal. Timings centralizados em `speedPaintTimings.ts` (`DEFAULT_SPEED_PAINT_HOLD_SECONDS=3s`, `DURATION_BASED_SKETCH_RATIO=0.8`). Web Worker inline para >5 cenas. Cache LRU (SHA-256, 20 entradas). Export quality: 720p–4K.
+
+**Renderização Cross-Route:** controllers Zustand singleton (`videoRenderController.tsx` + `speedPaintRenderController.tsx`) substituem hooks inline — o ciclo de vida do `renderMediaOnWeb` vive fora do React (AbortController em escopo de módulo, lazy import `@remotion/web-renderer`). `ExportCrossRouteToast.tsx` mostra progresso/erro/conclusão em qualquer rota. `useCrossRouteRenderGuard.ts` centraliza `beforeunload`, `visibilitychange` e `document.title`. Hooks fachada (`useVideoExporter.tsx`, `useSpeedPaintExporter.tsx`) delegam toda lógica aos controllers — `useEffect` cleanup que abortava render no unmount foi removido. `useCodecSupport` permanece local (detecção de codec é por-instância), sincronizado via `setCodecContainer()` action nomeada.
 
 ### Persistência (Dual Storage)
 Dual automático: Firestore + Storage (logado) / IndexedDB (visitante). Offline: `persistentLocalCache` + `multipleTabManager`. Chat fallback p/ IndexedDB se >900KB. Admin via custom claim (`admin: true`) — script `grant-access`. Converter genérico `createFirestoreConverter<T>()`. Limites Storage: áudio 150MB, imagem 10MB, vídeo 200MB.
@@ -170,7 +172,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.123.0`
+- **Current:** `0.124.0`
 - **Last release:** 2026-06-02
 
 ### Últimas mudanças (atualizado por /fast)
@@ -179,8 +181,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.124.0` | Renderização Cross-Route (PR1) — vídeo e speed paint sobrevivem à navegação entre rotas: `videoRenderController.tsx` + `speedPaintRenderController.tsx` (controllers Zustand singleton), `useCrossRouteRenderGuard.ts`, `ExportCrossRouteToast.tsx`, dot indicators no Sidebar/MobileBottomNav. Hooks refatorados para fachada fina (delegação aos controllers, `useShallow` para arrays, `setCodecContainer()` action). Namespace i18n `exportCrossRoute.*`. Performance: `useCallback` + constantes de módulo no toast (hot path 30×/s) |
 | `0.123.0` | Sidebar de Navegação Colapsável (68px/264px) substitui Header nas rotas `/app/*` — Sidebar, SidebarFooter, SidebarHeader, SidebarNavItem, GuestMobileNav, DeleteAccountDialog, store Zustand `useSidebarStore` com persistência localStorage; novo Sistema de Feedback Global (8 arquivos em `src/components/feedback/`) com FeedbackController, FeedbackDialog, FeedbackFab, FeedbackBanner, FeedbackFormFields reutilizável, hook `useFeedbackDialog()`; namespace i18n `feedback.*` (3 locales); ContactPage refatorada (+11/-161) para usar FeedbackFormFields compartilhado; tokens de tema SIDEBAR_WIDTH_COLLAPSED/EXPANDED/TRANSITION_DURATION; testes (+969 linhas); docs de planejamento/auditoria (11 novos) |
 | `0.122.0` | AuthActionPage: página customizada para ações de email do Firebase Auth (verificação de email, reset de senha, recuperação de email) com UI dedicada (Motion + MUI glass panel); `authActionCodeSettings` com `handleCodeInApp: true`; rota pública `/auth/action`; chaves i18n `authAction.*` (3 locales); testes (+412 linhas); pre-render expandido (10 rotas) |
 | `0.121.0` | Logger modular com error tracking: `src/lib/logger/` (8 módulos) substitui arquivo único — rastreamento de erros em produção via Firestore (`errorLogs`), sanitização automática, batch processor, interceptação global; `initErrorTracking()` no `main.tsx`; `LogoutConfirmDialog` em Header/PublicHeader/MobileBottomNav; seção "Idioma da interface" nas Configurações; `MobileBottomNav` expandido com locale/cookie/logout; error handling consistente em ~15+ arquivos (`catch {}` → `catch (err: unknown)`); backend migrado para logger próprio; brand renomeado "Estúdio de Produção" → "AI Studio"; quick actions do assistente atualizadas |
 | `0.120.0` | Sistema de Analytics com consentimento: nova lib `src/lib/analytics.ts` com lazy loading do `firebase/analytics`, 31 eventos tipados (`AnalyticsEventMap`); `AnalyticsConsentPrompt` com Snackbar/Dialog LGPD-compliant; integração em 13 hooks/páginas/componentes; chaves i18n `analyticsConsent` (3 locales); nova env var `VITE_FIREBASE_ANALYTICS_ENABLED`; refatoração de `legalData.ts`; novos assets de logo WebP |
-| `0.119.0` | Redirecionamento padrão unificado para `/app/assistente` (7 arquivos); chat persistente no Assistente com restauração de sessão (`ACTIVE_SESSION_KEY`); tour de boas-vindas com flag `tourSeen` em UserSettings (dual storage); skill `tour-da-plataforma` (+144 linhas); OG Image (`public/og-image.webp`); docs de auditoria/QA/testes (5 novos); seção "Pendências" removida de AGENTS.md/CLAUDE.md |

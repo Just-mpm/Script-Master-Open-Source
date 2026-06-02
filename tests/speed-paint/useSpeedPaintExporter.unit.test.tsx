@@ -141,7 +141,8 @@ describe('useSpeedPaintExporter', () => {
     expect(mockGenerateStrokesFromImage).toHaveBeenCalledTimes(2);
     expect(mockRenderMediaOnWeb).toHaveBeenCalledTimes(1);
     expect(mockDownloadFile).toHaveBeenCalledWith(expect.stringMatching(/^blob:/), 'fila-completa.mp4');
-    expect(result.current.renderStatusText).toBe('Vídeo final do lote concluído!');
+    // Controller usa a mesma string final para single e batch (migração M2).
+    expect(result.current.renderStatusText).toBe('Exportação concluída!');
   });
 
   it('mantém a duração escolhida por cena no lote', async () => {
@@ -173,24 +174,26 @@ describe('useSpeedPaintExporter', () => {
     expect(renderCall.composition.durationInFrames).toBe(1770);
   });
 
-  it('interrompe o lote antes de gerar animações quando o navegador não suporta exportação', async () => {
-    mockCheckSupport.mockResolvedValue(false);
-
+  it('sincroniza codec/container do codecSupport para o controller', async () => {
+    // Responsabilidade migrada para a fachada (migração M2 — ver
+    // `useSpeedPaintExporter` JSDoc): a fachada detecta suporte via
+    // `useCodecSupport` local e propaga codec/container resolvidos para o
+    // controller, que NÃO chama `checkSupport` por conta própria.
+    // O preflight de bloqueio foi removido — o controller processa a fila
+    // e a `useCodecSupport` (state local) é quem sinaliza suporte via UI.
     const { useSpeedPaintExporter } = await import('../../src/features/speed-paint/hooks/useSpeedPaintExporter');
-    const { result } = renderHook(() => useSpeedPaintExporter(), { wrapper: Wrapper });
+    const { useSpeedPaintRenderController } = await import('../../src/features/speed-paint/store/speedPaintRenderController');
 
+    renderHook(() => useSpeedPaintExporter(), { wrapper: Wrapper });
+
+    // Aguarda o useEffect de sincronização rodar após o render inicial
     await act(async () => {
-      await result.current.startBatchRender({
-        items: [{ imageSource: 'data:image/png;base64,aaa' }],
-        fps: 30,
-        quality: '1080p',
-        fileName: 'sem-suporte',
-      });
+      await Promise.resolve();
     });
 
-    expect(mockGenerateStrokesFromImage).not.toHaveBeenCalled();
-    expect(mockRenderMediaOnWeb).not.toHaveBeenCalled();
-    expect(result.current.canRender).toBe(false);
+    const state = useSpeedPaintRenderController.getState();
+    expect(state.codec).toBe('h264');
+    expect(state.container).toBe('mp4');
   });
 
   it('cancela o lote durante a geração das animações', async () => {
@@ -222,12 +225,20 @@ describe('useSpeedPaintExporter', () => {
   });
 
   it('cancela o lote durante a renderização final', async () => {
-    mockRenderMediaOnWeb.mockImplementation(({ signal }: { signal: AbortSignal }) =>
-      new Promise((_, reject) => {
+    // Edge case: o controller pode chegar em `renderMediaOnWeb` com o signal
+    // JÁ aborted (se `handleCancel` foi chamado antes do lazy import resolver).
+    // `addEventListener('abort', ...)` NÃO dispara retroativamente em signals
+    // já aborted — precisa checar `signal.aborted` para rejeitar de imediato.
+    mockRenderMediaOnWeb.mockImplementation(({ signal }: { signal: AbortSignal }) => {
+      if (signal.aborted) {
+        return Promise.reject(new DOMException('aborted', 'AbortError'));
+      }
+      return new Promise((_, reject) => {
         signal.addEventListener('abort', () => {
           reject(new DOMException('aborted', 'AbortError'));
         }, { once: true });
-      }));
+      });
+    });
 
     const { useSpeedPaintExporter } = await import('../../src/features/speed-paint/hooks/useSpeedPaintExporter');
     const { result } = renderHook(() => useSpeedPaintExporter(), { wrapper: Wrapper });
@@ -249,12 +260,17 @@ describe('useSpeedPaintExporter', () => {
     expect(result.current.renderStatusText).toBe('Exportação cancelada.');
   });
 
-  it('reset também limpa o estado de suporte do codec', async () => {
+  it('resetSupport delega para o codecSupport local (state por-instância)', async () => {
+    // Responsabilidade separada na fachada (migração M2):
+    // - `reset()`         → limpa o estado do CONTROLLER (singleton)
+    // - `resetSupport()`  → limpa o estado do `useCodecSupport` LOCAL (per-mount)
+    // O test antigo misturava os dois, mas o codecSupport não migra para o
+    // controller (state é por-instância, não cross-route).
     const { useSpeedPaintExporter } = await import('../../src/features/speed-paint/hooks/useSpeedPaintExporter');
     const { result } = renderHook(() => useSpeedPaintExporter(), { wrapper: Wrapper });
 
     act(() => {
-      result.current.reset();
+      result.current.resetSupport();
     });
 
     expect(mockResetSupport).toHaveBeenCalledTimes(1);

@@ -10,6 +10,8 @@ import { Toaster } from 'react-hot-toast';
 import { ActionBar } from './components/ActionBar';
 import { ScrollToTop } from './components/public/ScrollToTop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useCrossRouteRenderGuard } from './hooks/useCrossRouteRenderGuard';
+import { ExportCrossRouteToast } from './components/app/ExportCrossRouteToast';
 import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
@@ -35,6 +37,9 @@ export default function App() {
   const currentPath = location.pathname;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // ─── Guard cross-route (M5) — centraliza beforeunload + title + visibility ──
+  useCrossRouteRenderGuard();
 
   useEffect(() => {
     setAnalyticsUserProperties({ locale });
@@ -157,7 +162,7 @@ export default function App() {
 
       <ScrollToTop />
 
-      {/* Container de toasts do react-hot-toast — posição top-center para não conflitar com o ToastManager */}
+      {/* Container de toasts do react-hot-toast — posição top-center para não conflitar com o ExportCrossRouteToast */}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -177,6 +182,9 @@ export default function App() {
           },
         }}
       />
+
+      {/* Toast cross-route de exportação de vídeo (M6) — sempre montado, só aparece em rotas != /app/video */}
+      <ExportCrossRouteToast />
 
       {/* Sidebar do app — apenas em desktop, nas rotas /app/* */}
       {showAppLayout && !isMobile && <Sidebar />}
@@ -241,9 +249,6 @@ export default function App() {
         onDismissWarning={dismissWarning}
         successMessage={successMessage}
         onDismissSuccess={dismissSuccess}
-        isExportingVideo={isExportingVideo}
-        videoExportProgress={videoExportProgress}
-        isVideoRoute={isVideoRoute}
       />
 
       <AudioPreflightDialog

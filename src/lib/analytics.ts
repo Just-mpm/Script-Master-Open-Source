@@ -68,6 +68,15 @@ export interface AnalyticsEventMap {
   video_export_completed: ExportParams;
   video_export_failed: ExportParams;
   video_export_cancelled: ExportParams;
+  /**
+   * Disparado quando uma exportação de vídeo é concluída com sucesso
+   * enquanto o usuário está em uma rota diferente de `/app/video` ou
+   * `/app/pintura-rapida` (Toast cross-route). Indica engajamento com
+   * a funcionalidade de renderização em background.
+   *
+   * `source` é SEMPRE uma string (pathname atual) — contrato RNF-007.
+   */
+  video_export_completed_offroute: ExportParams & { source: string };
   video_downloaded: ExportParams;
   speed_paint_export_started: ExportParams;
   speed_paint_export_completed: ExportParams;

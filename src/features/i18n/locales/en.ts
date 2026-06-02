@@ -112,6 +112,38 @@ export const en: TranslationDictionary = {
     manageCookies: 'Manage cookies',
   },
 
+  /**
+   * Cross-route toast/indicator for video and speed paint export.
+   * Shown on any route when a render is in progress (except `/app/video`
+   * and `/app/pintura-rapida`).
+   * @see `src/components/app/ExportCrossRouteToast.tsx` (M6)
+   */
+  exportCrossRoute: {
+    // State: rendering
+    renderingTitle: 'Rendering video',
+
+    // State: completed
+    completedTitle: 'Video ready!',
+
+    // State: failed
+    failedTitle: 'Export failed',
+
+    // Button actions
+    actionViewVideo: 'View Video',
+    actionDownload: 'Download',
+    actionCancel: 'Cancel',
+    actionClose: 'Close',
+    actionSeeDetails: 'See details',
+
+    // beforeunload
+    beforeUnloadMessage:
+      'A render is in progress. If you leave now, you will lose your progress.',
+
+    // Mobile dot indicator
+    mobileDotActive: 'Render in progress',
+    mobileDotCompleted: 'Video ready to view',
+  },
+
   dataMigration: {
     checking: 'Checking local data...',
     completed: 'Migration completed',

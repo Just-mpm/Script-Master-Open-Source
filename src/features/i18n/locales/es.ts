@@ -112,6 +112,38 @@ export const es: TranslationDictionary = {
     manageCookies: 'Gestionar cookies',
   },
 
+  /**
+   * Mensajes del toast/indicador cross-route para exportación de vídeo y
+   * speed paint. Aparece en cualquier ruta cuando hay un render en curso
+   * (excepto `/app/video` y `/app/pintura-rapida`).
+   * @see `src/components/app/ExportCrossRouteToast.tsx` (M6)
+   */
+  exportCrossRoute: {
+    // Estado: rendering
+    renderingTitle: 'Renderizando vídeo',
+
+    // Estado: completed
+    completedTitle: '¡Vídeo listo!',
+
+    // Estado: failed
+    failedTitle: 'Falló la exportación',
+
+    // Acciones de los botones
+    actionViewVideo: 'Ver Vídeo',
+    actionDownload: 'Descargar',
+    actionCancel: 'Cancelar',
+    actionClose: 'Cerrar',
+    actionSeeDetails: 'Ver detalles',
+
+    // beforeunload
+    beforeUnloadMessage:
+      'Hay una renderización en curso. Si sales ahora, perderás el progreso.',
+
+    // Indicador dot móvil
+    mobileDotActive: 'Renderización en curso',
+    mobileDotCompleted: 'Vídeo listo para ver',
+  },
+
   dataMigration: {
     checking: 'Verificando datos locales...',
     completed: 'Migración completada',

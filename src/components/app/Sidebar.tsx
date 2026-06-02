@@ -16,11 +16,14 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import Settings from '@mui/icons-material/Settings';
 import { useShallow } from 'zustand/react/shallow';
+import { useStore } from 'zustand';
 import { useLocation } from 'react-router-dom';
 import { useLocale } from '../../features/i18n';
 import { useSidebarStore } from '../../features/sidebar/store';
 import { useCredits } from '../../hooks/useCredits';
 import { useFeedbackDialog } from '../../components/feedback';
+import { useVideoRenderController } from '../../features/video-render/store/videoRenderController';
+import { useSpeedPaintRenderController } from '../../features/speed-paint/store/speedPaintRenderController';
 import {
   APP_BORDER,
   APP_SURFACE,
@@ -76,6 +79,16 @@ export function Sidebar() {
     useShallow((s) => ({ collapsed: s.collapsed, toggle: s.toggle })),
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // ── Indicador de export de vídeo no nav item "Vídeo" (M7) ──
+  // Lê slices primitivas do controller — espelha o padrão do `MobileBottomNav`.
+  const videoIsRendering = useStore(useVideoRenderController, (s) => s.isRendering);
+  const videoStatus = useStore(useVideoRenderController, (s) => s.status);
+
+  // ── Indicador de export de speed paint no nav item "Speed Paint" ──
+  // Lê slices primitivas do controller — espelha o padrão do vídeo acima.
+  const spIsRendering = useStore(useSpeedPaintRenderController, (s) => s.isRendering);
+  const spStatus = useStore(useSpeedPaintRenderController, (s) => s.status);
 
   // CTA de feedback só aparece se: sem bônus + sem créditos ilimitados
   const showFeedbackCta = !feedbackBonusGranted && !unlimitedCredits;
@@ -229,6 +242,17 @@ export function Sidebar() {
                   icon={item.icon}
                   accent={item.accent}
                   collapsed={collapsed}
+                  showExportDot={
+                    (item.to === '/app/video' &&
+                      (videoIsRendering || videoStatus === 'completed') &&
+                      location.pathname !== '/app/video') ||
+                    (item.to === '/app/pintura-rapida' &&
+                      (spIsRendering || spStatus === 'completed') &&
+                      location.pathname !== '/app/pintura-rapida')
+                  }
+                  videoIsRendering={
+                    item.to === '/app/pintura-rapida' ? spIsRendering : videoIsRendering
+                  }
                 />
               );
             })}

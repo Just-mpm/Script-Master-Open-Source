@@ -42,9 +42,6 @@ const defaultProps = {
   onDismissWarning: vi.fn(),
   successMessage: null as string | null,
   onDismissSuccess: vi.fn(),
-  isExportingVideo: false,
-  videoExportProgress: 0,
-  isVideoRoute: false,
 };
 
 // ─── Testes ────────────────────────────────────────────────
@@ -87,34 +84,11 @@ describe('ToastManager', () => {
     expect(screen.getByRole('alert')).toBeTruthy();
   });
 
-  it('mostra toast de exportação de vídeo quando isExportingVideo é true', () => {
-    render(
-      <ToastManager
-        {...defaultProps}
-        isExportingVideo={true}
-        videoExportProgress={45}
-        isVideoRoute={false}
-      />,
-      { wrapper: Wrapper },
-    );
-    // O snackbar de exportação contém "Exportando vídeo..." e a porcentagem
-    expect(screen.getByText(/Exportando vídeo/i)).toBeTruthy();
-    expect(screen.getByText('45%')).toBeTruthy();
-  });
-
-  it('não mostra toast de exportação quando está na rota /video', () => {
-    render(
-      <ToastManager
-        {...defaultProps}
-        isExportingVideo={true}
-        videoExportProgress={45}
-        isVideoRoute={true}
-      />,
-      { wrapper: Wrapper },
-    );
-    // Não deve mostrar o snackbar de exportação quando já está na página de vídeo
-    expect(screen.queryByText(/Exportando vídeo/i)).toBeNull();
-  });
+  // NOTA: os testes de "toast de exportação" foram migrados para
+  // `tests/components/ExportCrossRouteToast.component.test.tsx`.
+  // O `ToastManager` atual (pós-PR1 do plano `video-render-survive-navigation`)
+  // é responsável apenas por Error/Warning/Success. O Snackbar cross-route
+  // vive em `ExportCrossRouteToast` (M6) montado em `App.tsx`.
 
   it('chama onDismissError ao fechar o toast de erro', async () => {
     const onDismissError = vi.fn();

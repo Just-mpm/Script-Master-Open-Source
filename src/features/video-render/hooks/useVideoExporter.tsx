@@ -1,25 +1,40 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { renderMediaOnWeb } from '@remotion/web-renderer';
-import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
-import type { ComponentType } from 'react';
-import { VideoComposition } from '../components/VideoComposition';
-import type { VideoCompositionProps } from '../types';
+/**
+ * Hook fachada para exportação de vídeo.
+ *
+ * Esta fachada fina delega todo o ciclo de vida de render para
+ * `videoRenderController` (singleton Zustand) que vive no `App.tsx` e
+ * sobrevive à navegação entre rotas.
+ *
+ * **Contrato público preservado** — `VideoExporter`, `VideoExportOptions`
+ * e `VideoExporterState` mantêm a mesma forma. Consumidores
+ * (`VideoExportPanel`, `useSpeedPaintExporter`) não precisam mudar.
+ *
+ * **O que mudou:**
+ * - Lógica pesada de `startRender` (speed paint, mapping, renderMediaOnWeb,
+ *   getBlob, saveVideoToProject) migrou para `videoRenderController.startRender`.
+ * - O `useEffect` cleanup que abortava render no unmount foi **removido** —
+ *   o controller gerencia seu próprio AbortController em escopo de módulo.
+ * - Estado vem de `useVideoRenderController` via `useStore` (seletores
+ *   primitivos, evitando re-render 30×/s em cascata).
+ *
+ * **`useCodecSupport` permanece local** (state de detecção de codec é
+ * por-instância; não migra para controller).
+ *
+ * @see videoRenderController contract — `docs/plan/video-render-survive-navigation-architecture.md §3 M3`
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 import type { SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
-import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
-import { enhanceScenesWithSpeedPaint } from '../lib/speedPaintService';
-import { clearStrokeCache } from '../lib/strokeCache';
-import { patchCanvasFontStretch } from '../lib/canvasFontStretchPatch';
-import { isCancellationError, toUserFriendlyError } from '../lib/exportUtils';
-import { useCodecSupport } from '../hooks/useCodecSupport';
-import { saveVideoToProject } from '../../../lib/db/videos';
+import { useCodecSupport } from './useCodecSupport';
 import { downloadFile } from '../../../lib/download';
-import { createLogger } from '../../../lib/logger';
-import { categorizeAnalyticsError, trackAnalyticsEvent } from '../../../lib/analytics';
+import { useVideoRenderController, getCurrentExportFileName } from '../store/videoRenderController';
+import { trackAnalyticsEvent } from '../../../lib/analytics';
 
 // ---------------------------------------------------------------------------
-// Tipos
+// Tipos públicos (contrato preservado)
 // ---------------------------------------------------------------------------
 
 /** Opções para iniciar a exportação de vídeo */
@@ -64,131 +79,74 @@ export interface VideoExporterState {
   resolvedVideoCodec: string;
   /** Container resolvido após checkSupport ('mp4' ou 'webm') */
   resolvedContainer: string;
-
 }
 
-const INITIAL_STATE: VideoExporterState = {
-  isRendering: false,
-  renderProgress: 0,
-  renderStatusText: '',
-  outputBlob: null,
-  outputUrl: null,
-  error: null,
-  canRender: null,
-  saveWarning: null,
-  speedPaintWarnings: [],
-  resolvedVideoCodec: 'h264',
-  resolvedContainer: 'mp4',
-};
-
 // ---------------------------------------------------------------------------
-// Compatibilidade de tipos com renderMediaOnWeb
+// Hook fachada
 // ---------------------------------------------------------------------------
 
-/**
- * Wrapper em torno de VideoComposition que satisfaz a constraint
- * Props extends Record<string, unknown> do renderMediaOnWeb.
- *
- * O renderMediaOnWeb usa generics complexos com Zod schemas que exigem
- * index signatures implícitos. Como interfaces TypeScript regulares não
- * possuem index signatures, criamos um wrapper com tipo explícito.
- */
-type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
-
-function ExportableComposition(props: ExportableProps): React.ReactNode {
-  const {
-    scenes,
-    audioUrl,
-    fps,
-    captions,
-    subtitleStyle,
-    speedPaintSpeed,
-    speedPaintMultipliers,
-    showDrawTool,
-  } = props;
-  return (
-    <VideoComposition
-      scenes={scenes}
-      audioUrl={audioUrl}
-      fps={fps}
-      captions={captions}
-      subtitleStyle={subtitleStyle}
-      isExporting={true}
-      speedPaintSpeed={speedPaintSpeed}
-      speedPaintMultipliers={speedPaintMultipliers}
-      showDrawTool={showDrawTool}
-    />
+export function useVideoExporter(): VideoExporterState & {
+  supportsHtmlInCanvas: boolean;
+  checkSupport: (width: number, height: number) => Promise<void>;
+  startRender: (options: VideoExportOptions) => Promise<void>;
+  handleCancel: () => void;
+  handleDownload: () => void;
+  dismissSaveWarning: () => void;
+  reset: () => void;
+} {
+  // ── 1. Estado do controller (singleton) — seletores primitivos ─────
+  // Cada `useStore` com seletor primitivo re-renderiza APENAS quando aquela
+  // slice muda. Isso evita re-render em cascata 30×/s durante progresso.
+  const isRendering = useStore(useVideoRenderController, (s) => s.isRendering);
+  const renderProgress = useStore(useVideoRenderController, (s) => s.renderProgress);
+  const renderStatusText = useStore(useVideoRenderController, (s) => s.renderStatusText);
+  const outputBlob = useStore(useVideoRenderController, (s) => s.outputBlob);
+  const outputUrl = useStore(useVideoRenderController, (s) => s.outputUrl);
+  const error = useStore(useVideoRenderController, (s) => s.error);
+  // speedPaintWarnings é um array (referência muda quando o controller adiciona
+  // itens durante speed paint). `useShallow` faz comparação rasa para evitar
+  // re-render quando o array é recriado com os mesmos itens.
+  const speedPaintWarnings = useStore(
+    useVideoRenderController,
+    useShallow((s) => s.speedPaintWarnings),
   );
-}
+  // saveWarning vem do controller — setado por M1 quando `saveVideoToProject`
+  // falha após exportação bem-sucedida. Diferente de `error` (que indica falha
+  // de render): aqui o vídeo está pronto e o usuário pode baixá-lo.
+  const saveWarning = useStore(useVideoRenderController, (s) => s.saveWarning);
 
-// ---------------------------------------------------------------------------
-// Utilitários
-// ---------------------------------------------------------------------------
-
-const log = createLogger('useVideoExporter');
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
-export function useVideoExporter() {
-  const [state, setState] = useState<VideoExporterState>(INITIAL_STATE);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  /** Identifica qual renderização é a atual — evita que catch/finally de renders antigos corrompam estado */
-  const renderIdRef = useRef(0);
-  const outputUrlRef = useRef<string | null>(null);
-  /** Último percentual reportado — evita re-renders quando o inteiro não mudou */
-  const lastReportedPercentRef = useRef(-1);
-  /** Codec de áudio resolvido — lido de codecSupport via ref */
-  const resolvedAudioCodecRef = useRef<string | null>('aac');
-  /** Codec de vídeo e container resolvidos — lidos de codecSupport via refs sincronizadas */
-  const resolvedVideoCodecRef = useRef<string>('h264');
-  const resolvedContainerRef = useRef<string>('mp4');
-  /** Nome do arquivo para download */
-  const exportFileNameRef = useRef<string>('');
-  /** Peso acumulado da fase de speed paint no progresso total (0 se não houve speed paint) */
-  const speedPaintPhaseWeightRef = useRef(0);
-
-  // Detecção de codecs via hook unificado (com áudio)
+  // ── 2. Codec support (hook local — não migra para controller) ───
   const codecSupport = useCodecSupport({ muted: false });
 
-  // Sincroniza canRender, codec e warnings do hook para o estado do exporter
+  // ── 3. Sincroniza codec/container resolvidos de volta no controller.
+  //    O controller não chama `checkSupport` por conta própria — ele lê
+  //    `get().codec` e `get().container` ao montar a chamada do
+  //    `renderMediaOnWeb`. Sem esta sincronização, o controller usaria
+  //    sempre os defaults do estado inicial ('h264'/'mp4'), ignorando
+  //    o fallback VP8/WebM em browsers sem suporte a H.264.
   useEffect(() => {
-    setState(prev => ({
-      ...prev,
-      canRender: codecSupport.canRender,
-      resolvedVideoCodec: codecSupport.resolvedVideoCodec,
-      resolvedContainer: codecSupport.resolvedContainer,
-      // Mapeia supportError para error (só quando não está renderizando)
-      error: prev.isRendering ? prev.error : (codecSupport.supportError ?? prev.error),
-      // Mapeia codecWarning para saveWarning
-      saveWarning: prev.saveWarning ?? codecSupport.codecWarning,
-    }));
-  }, [codecSupport.canRender, codecSupport.resolvedVideoCodec, codecSupport.resolvedContainer, codecSupport.supportError, codecSupport.codecWarning]);
+    useVideoRenderController.getState().setCodecContainer(
+      codecSupport.resolvedVideoCodec,
+      codecSupport.resolvedContainer,
+    );
+  }, [codecSupport.resolvedVideoCodec, codecSupport.resolvedContainer]);
 
-  // Mantém refs sincronizadas para uso em callbacks sem depender do estado
+  // ── 4. Sincroniza canRender do codecSupport para o estado do exporter
+  //    (M3 deriva canRender de codecSupport, como antes)
+  const [canRender, setCanRender] = useState<boolean | null>(null);
   useEffect(() => {
-    outputUrlRef.current = state.outputUrl;
-    resolvedVideoCodecRef.current = state.resolvedVideoCodec;
-    resolvedContainerRef.current = state.resolvedContainer;
-    resolvedAudioCodecRef.current = codecSupport.resolvedAudioCodec;
-  }, [state.outputUrl, state.resolvedVideoCodec, state.resolvedContainer, codecSupport.resolvedAudioCodec]);
+    setCanRender(codecSupport.canRender);
+  }, [codecSupport.canRender]);
 
-  // Cleanup de blob URL ao desmontar e aborta renderização em andamento
-  useEffect(() => {
-    return () => {
-      const url = outputUrlRef.current;
-      if (url && url.startsWith('blob:')) {
-        URL.revokeObjectURL(url);
-      }
-      abortControllerRef.current?.abort();
-    };
-  }, []);
+  // ── 4. speedPaintWarnings — derivado do controller ──
+  //    O controller acumula warnings durante a fase de speed paint e os
+  //    expõe no estado. Reset acontece em `controller.reset()` ou quando
+  //    `cancelRender()` é chamado sem blob pronto.
 
-  // -------------------------------------------------------------------------
-  // Verifica suporte do browser (delegado ao hook useCodecSupport)
-  // -------------------------------------------------------------------------
-  // Ref estável para checkSupport — evita re-criação do callback
+  // ── 5. Handlers thin — só delegam para o controller ──────────────
+
+  // Ref para `codecSupport.checkSupport` — estabiliza o callback abaixo sem
+  // depender do objeto `codecSupport` (que muda a cada render do useCodecSupport).
   const checkSupportRef = useRef(codecSupport.checkSupport);
   useEffect(() => {
     checkSupportRef.current = codecSupport.checkSupport;
@@ -196,327 +154,90 @@ export function useVideoExporter() {
 
   const checkSupport = useCallback(async (width: number, height: number) => {
     await checkSupportRef.current(width, height);
-    // Sincroniza codec de áudio após checkSupport (ref — sem stale closure)
-    resolvedAudioCodecRef.current = codecSupport.resolvedAudioCodec;
-  }, [codecSupport.resolvedAudioCodec]);
+  }, []);
 
-  // -------------------------------------------------------------------------
-  // Inicia renderização via WebCodecs
-  // -------------------------------------------------------------------------
   const startRender = useCallback(async (options: VideoExportOptions) => {
-    const {
-      scenes,
-      audioUrl,
-      fps,
-      durationInFrames,
-      ratio,
-      captions,
-      subtitleStyle,
-      projectId,
-      userId,
-      quality,
-      fileName,
-      animateScenes = false,
-      showDrawTool = true,
-    } = options;
-
-    // Identifica esta renderização — catch/finally antigos serão ignorados
-    const renderId = ++renderIdRef.current;
-
-    // Grava o nome do arquivo diretamente na ref (antes de qualquer reset de estado)
-    exportFileNameRef.current = fileName || '';
-
-    if (!audioUrl || scenes.length === 0) return;
-    if (durationInFrames <= 0) {
-      setState(prev => ({
-        ...prev,
-        error: 'A duração do áudio ainda não foi carregada. Aguarde alguns instantes e tente exportar novamente.',
-        isRendering: false,
-        renderProgress: 0,
-        renderStatusText: '',
-      }));
-      return;
-    }
-
-    // Previne dupla renderização — aborta a anterior se existir
-    if (abortControllerRef.current) {
-      log.warn('Renderização já em andamento — abortando anterior antes de iniciar nova');
-      abortControllerRef.current.abort();
-    }
-
-    // Entra em modo renderização imediatamente para mostrar feedback visual
-    setState({
-      ...INITIAL_STATE,
-      canRender: true,
-      isRendering: true,
-      renderProgress: 0,
-      renderStatusText: 'Preparando exportação...',
-    });
-
-    const resolvedQuality = quality ?? DEFAULT_EXPORT_QUALITY;
-    const resolution = getResolutionFromQuality(ratio, resolvedQuality);
-    const analyticsParams = {
-      quality: resolvedQuality,
-      ratio,
-      scene_count: scenes.length,
-      mode: animateScenes ? 'speed_paint' : 'standard',
-    };
-    trackAnalyticsEvent('video_export_started', analyticsParams);
-    let mappedScenes = mapScenesToVideoScenes(scenes, durationInFrames, fps);
-
-    // Cria AbortController ANTES da fase de speed paint para permitir cancelamento
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    // Warnings de speed paint acumulados em variável local — evita bug de React batching
-    // onde setState intermediário (speedPaintWarnings) é perdido ao ser lido no setState final
-    let collectedWarnings: string[] = [];
-
-    // Gera strokeAnimations para cenas quando o toggle está ativo
-    if (animateScenes && mappedScenes.length > 0) {
-      const SPEED_PAINT_PHASE_WEIGHT = 50;
-
-      try {
-        log.info('Gerando strokeAnimations para cenas', { sceneCount: mappedScenes.length });
-        const enhanceResult = await enhanceScenesWithSpeedPaint(mappedScenes, {
-          onProgress: (progress) => {
-            const pct = Math.round(progress * SPEED_PAINT_PHASE_WEIGHT);
-            if (pct !== lastReportedPercentRef.current) {
-              lastReportedPercentRef.current = pct;
-              setState(prev => ({
-                ...prev,
-                renderProgress: pct,
-                renderStatusText: `Gerando animações... ${pct}%`,
-              }));
-            }
-          },
-          signal: abortController.signal,
-        });
-
-        mappedScenes = enhanceResult.scenes;
-        collectedWarnings = enhanceResult.warnings;
-
-        // Armazena o peso da fase de speed paint para progresso acumulado
-        speedPaintPhaseWeightRef.current = SPEED_PAINT_PHASE_WEIGHT;
-      } catch (err) {
-        log.warn('Falha ao gerar strokeAnimations — exportando sem animação', { error: err });
-        collectedWarnings = ['Falha geral ao gerar animações de speed paint.'];
-      }
-    }
-
-    // Destrutura com default para speedPaintSpeed
-    const speedPaintSpeed = options.speedPaintSpeed ?? 'normal';
-
-    // Monta inputProps com tipo compatível com Record<string, unknown>
-    const exportableInputProps: ExportableProps = {
-      scenes: mappedScenes,
-      audioUrl,
-      fps,
-      animateScenes,
-      captions,
-      subtitleStyle,
-      speedPaintSpeed,
-      speedPaintMultipliers: options.speedPaintMultipliers,
-      showDrawTool,
-    };
-
-    // Revoga URL anterior
-    const prevUrl = outputUrlRef.current;
-    if (prevUrl && prevUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(prevUrl);
-    }
-
-    // Peso acumulado da fase de speed paint (progresso contínuo: não reseta para 0)
-    const speedPaintOffset = speedPaintPhaseWeightRef.current;
-    const remainingWeight = 100 - speedPaintOffset;
-
-    setState(prev => ({
-      ...prev,
-      renderProgress: speedPaintOffset || 0,
-      renderStatusText: 'Iniciando renderização...',
-      speedPaintWarnings: collectedWarnings,
-    }));
-
-    try {
-      // Aplica patch que traduz fontStretch percentual → keyword para a Canvas API
-      // Corrige bug do @remotion/web-renderer 4.0.450 que causa centenas de warnings
-      patchCanvasFontStretch();
-
-      // Reseta o throttle de percentual para nova renderização
-      lastReportedPercentRef.current = -1;
-
-      // Usa o wrapper ExportableComposition para satisfazer as constraints de tipo
-      const composition: {
-        component: ComponentType<ExportableProps>;
-        id: string;
-        width: number;
-        height: number;
-        fps: number;
-        durationInFrames: number;
-        defaultProps: ExportableProps;
-      } = {
-        component: ExportableComposition,
-        id: 'script-master-video-export',
-        width: resolution.width,
-        height: resolution.height,
-        fps,
-        durationInFrames,
-        defaultProps: exportableInputProps,
-      };
-
-      const result = await renderMediaOnWeb({
-        composition,
-        inputProps: exportableInputProps,
-        videoCodec: resolvedVideoCodecRef.current as 'h264' | 'vp8' | 'vp9' | 'h265' | 'av1',
-        audioCodec: resolvedAudioCodecRef.current as 'aac' | 'opus' | null,
-        container: resolvedContainerRef.current as 'mp4' | 'webm',
-        licenseKey: 'free-license',
-        signal: abortController.signal,
-        // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
-        // O drawElementImage (Chromium experimental) não captura canvas 2D de
-        // forma confiável. O software renderer (DOM tree walker) lê pixels do
-        // canvas via drawImage(canvas, ...) — síncrono e estável.
-        // allowHtmlInCanvas: true,
-        onProgress: (progress: RenderMediaOnWebProgress) => {
-          // Progresso acumulado: speed paint ocupa [0, speedPaintOffset], render ocupa o restante
-          const percent = speedPaintOffset + Math.round(progress.progress * remainingWeight);
-          // Throttle: só atualiza estado quando o percentual inteiro mudar
-          if (percent === lastReportedPercentRef.current) return;
-          lastReportedPercentRef.current = percent;
-          setState(prev => ({
-            ...prev,
-            renderProgress: percent,
-            renderStatusText: percent < 100
-              ? `Renderizando... ${percent}%`
-              : 'Finalizando exportação...',
-          }));
-        },
-      });
-
-      // Obtém o blob final
-      const blob = await result.getBlob();
-      const url = URL.createObjectURL(blob);
-
-      setState({
-        ...INITIAL_STATE,
-        canRender: true,
-        outputBlob: blob,
-        outputUrl: url,
-        renderProgress: 100,
-        renderStatusText: 'Exportação concluída!',
-        speedPaintWarnings: collectedWarnings,
-      });
-      trackAnalyticsEvent('video_export_completed', {
-        ...analyticsParams,
-        codec: resolvedVideoCodecRef.current,
-        container: resolvedContainerRef.current,
-      });
-
-      // Salva no projeto de forma não-bloqueante
-      if (projectId) {
-        const durationInSeconds = durationInFrames / fps;
-        const format = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
-        saveVideoToProject(
-          {
-            projectId,
-            userId: userId ?? '',
-            videoUrl: url,
-            format,
-            width: resolution.width,
-            height: resolution.height,
-            fps,
-            durationInSeconds,
-            fileSizeBytes: blob.size,
-            videoBlob: blob,
-          },
-          userId,
-        ).catch(() => {
-          // Ignora se outra renderização já iniciou
-          if (renderIdRef.current !== renderId) return;
-          // Informa o usuário que o vídeo foi exportado mas não salvo no projeto
-          setState(prev => ({
-            ...prev,
-            saveWarning: 'O vídeo foi exportado, mas não foi possível salvar no projeto. Você ainda pode baixá-lo localmente.',
-          }));
-        });
-      }
-    } catch (err: unknown) {
-      // Ignora erros de renders antigos (outra renderização já iniciou)
-      if (renderIdRef.current !== renderId) return;
-
-      const cancelled = isCancellationError(err);
-      trackAnalyticsEvent(cancelled ? 'video_export_cancelled' : 'video_export_failed', {
-        ...analyticsParams,
-        error_category: categorizeAnalyticsError(err),
-      });
-
-      setState(prev => ({
-        ...prev,
-        isRendering: false,
-        error: cancelled ? null : toUserFriendlyError(err, log),
-        renderStatusText: cancelled ? 'Exportação cancelada.' : prev.renderStatusText,
-      }));
-    } finally {
-      // Só limpa refs se esta ainda é a renderização atual
-      if (renderIdRef.current === renderId) {
-        abortControllerRef.current = null;
-        speedPaintPhaseWeightRef.current = 0;
-      }
-    }
+    await useVideoRenderController.getState().startRender(options);
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Cancela renderização em andamento
-  // -------------------------------------------------------------------------
   const handleCancel = useCallback(() => {
-    abortControllerRef.current?.abort();
+    useVideoRenderController.getState().cancelRender();
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Baixa o vídeo exportado
-  // -------------------------------------------------------------------------
   const handleDownload = useCallback(() => {
-    const url = outputUrlRef.current;
+    const url = useVideoRenderController.getState().outputUrl;
     if (!url) return;
-    const ext = resolvedContainerRef.current === 'webm' ? 'webm' : 'mp4';
-    const name = exportFileNameRef.current || `video-export-${Date.now()}`;
+    const container = useVideoRenderController.getState().container;
+    const codec = useVideoRenderController.getState().codec;
+    const ext = container === 'webm' ? 'webm' : 'mp4';
+    const name = getCurrentExportFileName() || `video-export-${Date.now()}`;
     void downloadFile(url, `${name}.${ext}`);
     trackAnalyticsEvent('video_downloaded', {
-      codec: resolvedVideoCodecRef.current,
-      container: resolvedContainerRef.current,
+      codec,
+      container,
     });
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Dispensa aviso de salvamento sem revogar o blob
-  // -------------------------------------------------------------------------
   const dismissSaveWarning = useCallback(() => {
-    setState(prev => ({ ...prev, saveWarning: null }));
+    useVideoRenderController.getState().dismissSaveWarning();
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Reseta estado completo (revoga blob URL)
-  // -------------------------------------------------------------------------
   const reset = useCallback(() => {
-    const url = outputUrlRef.current;
-    if (url && url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
-    }
-    speedPaintPhaseWeightRef.current = 0;
-    clearStrokeCache();
-    setState(INITIAL_STATE);
+    useVideoRenderController.getState().reset();
   }, []);
 
-  return useMemo(() => ({
-    ...state,
-    supportsHtmlInCanvas: codecSupport.supportsHtmlInCanvas,
-    checkSupport,
-    startRender,
-    handleCancel,
-    handleDownload,
-    dismissSaveWarning,
-    reset,
-  }), [state, codecSupport.supportsHtmlInCanvas, checkSupport, startRender, handleCancel, handleDownload, dismissSaveWarning, reset]);
+  // ── 7. Actions estáveis — referência só muda quando os useCallback internos
+  //    mudam (deps vazias, então a referência é estável). Memorizar o objeto
+  //    de actions em useMemo dedicado evita re-criá-lo a cada render, o que
+  //    manteria o objeto de retorno com referência nova mesmo quando apenas
+  //    `renderProgress` muda.
+  const actions = useMemo(
+    () => ({
+      checkSupport,
+      startRender,
+      handleCancel,
+      handleDownload,
+      dismissSaveWarning,
+      reset,
+    }),
+    [checkSupport, startRender, handleCancel, handleDownload, dismissSaveWarning, reset],
+  );
+
+  // ── 8. Retorna estado consolidado (preservando forma do contrato) ──
+  // Actions são spread do useMemo estável — não causam re-criação quando
+  // apenas o estado muda (ex: renderProgress 30×/s).
+  return useMemo(
+    () => ({
+      isRendering,
+      renderProgress,
+      renderStatusText,
+      outputBlob,
+      outputUrl,
+      error,
+      canRender,
+      saveWarning,
+      speedPaintWarnings,
+      resolvedVideoCodec: codecSupport.resolvedVideoCodec,
+      resolvedContainer: codecSupport.resolvedContainer,
+      supportsHtmlInCanvas: codecSupport.supportsHtmlInCanvas,
+      ...actions,
+    }),
+    [
+      isRendering,
+      renderProgress,
+      renderStatusText,
+      outputBlob,
+      outputUrl,
+      error,
+      canRender,
+      saveWarning,
+      speedPaintWarnings,
+      codecSupport.resolvedVideoCodec,
+      codecSupport.resolvedContainer,
+      codecSupport.supportsHtmlInCanvas,
+      actions,
+    ],
+  );
 }
 
 /** Tipo do retorno do hook useVideoExporter — útil para passar via props */

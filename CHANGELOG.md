@@ -7,6 +7,51 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.124.0] - 2026-06-02
+
+### Adicionado
+
+- **Renderização Cross-Route (PR1 "Video Render Survive Navigation")** — renderização de vídeo e speed paint agora sobrevivem à navegação entre rotas:
+  - `src/features/video-render/store/videoRenderController.tsx` (+548 linhas): controller Zustand singleton que gerencia o ciclo de vida do `renderMediaOnWeb` do Remotion fora do ciclo de vida React. `AbortController` em escopo de módulo, lazy import de `@remotion/web-renderer`, progresso com throttle (inteiro, `lastReportedPercentRef`), bridge legado (`videoRenderBridge`), cancelamento idempotente, reset com revogação de blob URL. Action `setCodecContainer()` para sincronização de codec/container
+  - `src/features/speed-paint/store/speedPaintRenderController.tsx` (+801 linhas, substitui stub de 103 linhas): controller Zustand singleton equivalente ao de vídeo. Suporta render single + batch, composições React (ExportableSpeedPaintComposition, ExportableBatchSpeedPaintComposition), lazy import Remotion, mesmo padrão de AbortController/throttle/cancelamento. Action `setCodecContainer()`
+  - `src/features/video-render/types/renderController.ts` (+112 linhas): tipos compartilhados entre controllers — `RenderKind`, `RenderStatus`, `RenderPhase`, `RenderControllerPublicState`, `RenderControllerActions<O>` com interface genérica
+  - `src/hooks/useCrossRouteRenderGuard.ts` (+113 linhas): hook guard que centraliza `beforeunload` (aviso ao fechar aba com render ativo), `visibilitychange`/`focus` (pausa/retoma), `document.title` dinâmico durante rendering
+  - `src/components/app/ExportCrossRouteToast.tsx` (+275 linhas): Snackbar MUI global de progresso cross-route — ícone spinner/check/erro, botões Ver Vídeo/Cancelar/Baixar/Fechar, roteia entre `/app/video` e `/app/pintura-rapida`. Handlers estáveis via `useCallback` + objetos constantes em escopo de módulo (otimizado para 30×/s durante render)
+  - `src/components/app/SidebarNavItem.tsx`: subcomponente `ExportDot` com animação pulsante — azul durante render, verde estático ao concluir
+  - `src/components/app/Sidebar.tsx`: dot indicator estendido para speed paint (`spIsRendering`/`spStatus` do speed paint controller)
+  - `src/components/app/MobileBottomNav.tsx`: dot indicator de exportação de vídeo no item "Vídeo"
+  - Namespace i18n `exportCrossRoute.*` nos 3 locales: actionViewVideo, actionCancel, actionDownload, actionClose, actionSeeDetails, renderingTitle, completedTitle, failedTitle, mobileDotActive, mobileDotCompleted — 10 chaves por locale
+  - Evento analytics `video_export_completed_offroute` em `src/lib/analytics.ts`: telemetria de exportação concluída em rota diferente da página de origem
+
+### Alterado
+
+- **src/features/video-render/hooks/useVideoExporter.tsx** (+150/-429): refatorado para fachada fina — lógica pesada migrada para `videoRenderController`. Agora lê estado via `useStore` (seletores primitivos, `useShallow` para `speedPaintWarnings`). `useEffect` cleanup que abortava render no unmount **removido** (controller gerencia seu AbortController). Return object split em `actions` (estável) + state (reativo). Codec/container sincronizados via `setCodecContainer()` action nomeada
+- **src/features/speed-paint/hooks/useSpeedPaintExporter.tsx** (+173/-586): refatorado para fachada fina — mesmo padrão do hook de vídeo. Lógica de composições Remotion, lazy import, download, analytics migrada para controller. AbortController cleanup no unmount removido. Codec/container sincronizados via `setCodecContainer()`
+- **src/App.tsx** (+9/-4): `useCrossRouteRenderGuard` e `ExportCrossRouteToast` adicionados ao shell
+- **src/components/app/AudioGenerationHandler.tsx** (+5/-13): `beforeunload` removido (migrado para `useCrossRouteRenderGuard`)
+- **src/pages/VideoPage.tsx** (+4/-9): `useEffect` de sincronização bridge removido (controller faz via `reportProgress`)
+- **src/features/i18n/locales/en.ts, es.ts, pt-BR.ts** (+32 cada): namespace `exportCrossRoute`
+- **src/components/toast/ToastProvider.tsx** (+5/-63): toast de exportação de vídeo removido (substituído por ExportCrossRouteToast)
+- **src/features/video-render/types/renderController.ts**: `setCodecContainer` adicionado à interface `RenderControllerActions`
+- **tests/video-render/videoRenderController.unit.test.ts** (+292 linhas): novos testes do controller
+- **tests/components/ExportCrossRouteToast.component.test.tsx** (+246 linhas): novos testes do toast cross-route
+- **tests/hooks/useCrossRouteRenderGuard.unit.test.ts** (+226 linhas): novos testes do guard
+- **tests/speed-paint/useSpeedPaintExporter.unit.test.tsx** (+35/-19): 4 testes atualizados para fachada fina (status text, cancelamento, resetSupport)
+- **tests/video-render/useVideoExporter-speedpaint.unit.test.tsx** (-425 linhas): removido (lógica migrada para controller)
+
+### Melhorado
+
+- **ExportCrossRouteToast.tsx**: 5 handlers envolvidos em `useCallback` + 6 objetos extraídos para constantes de módulo (`TOAST_ANCHOR_ORIGIN`, `TOAST_SLOT_PROPS`, `ALERT_SX`, `PROGRESS_STACK_SX`, `TITLE_SX`, `MONO_SX`) — elimina recriação de objetos a cada render no hot path (30×/s durante progresso)
+- **useVideoExporter.tsx**: `speedPaintWarnings` usa `useShallow` para comparação shallow — re-render apenas quando conteúdo do array muda; `useEffect` + `setState` substituído por action nomeada `setCodecContainer()`
+- **useSpeedPaintExporter.tsx**: `useEffect` + `setState` substituído por action nomeada `setCodecContainer()`
+
+### Removido
+
+- **RenderSnapshot** interface de `src/features/video-render/types/renderController.ts` — código morto (declarado mas nunca consumido)
+- **docs/plan/ e docs/scan/**: 11 documentos de planejamento/auditoria da versão antiga (arquivados como conclusos)
+
+---
+
 ## [0.123.0] - 2026-06-02
 
 ### Adicionado
