@@ -1,4 +1,5 @@
 export const APP_MAX_WIDTH = 1600;
+/** @deprecated Substituído por SIDEBAR_WIDTH_*. Mantido apenas para PublicHeader. */
 export const APP_HEADER_HEIGHT = 60;
 export const APP_ACTION_BAR_BOTTOM = 24;
 
@@ -134,6 +135,26 @@ export const WHITE_56 = 'rgba(255, 255, 255, 0.56)';
 export const WHITE_66 = 'rgba(255, 255, 255, 0.66)';
 export const TRANSPARENT = 'transparent';
 export const GLASS_BG = 'rgba(16, 23, 42, 0.78)';
+
+// ─── Sidebar ─────────────────────────────────────────────
+
+/**
+ * Largura da sidebar em modo colapsado (apenas ícones).
+ * 44px IconButton + 12px padding × 2 + 4px folga para active indicator.
+ */
+export const SIDEBAR_WIDTH_COLLAPSED = 68;
+
+/**
+ * Largura da sidebar em modo expandido (ícones + labels).
+ * Diferencia do drawer mobile (280px) por 16px para identidade visual.
+ */
+export const SIDEBAR_WIDTH_EXPANDED = 264;
+
+/**
+ * Duração da transição de collapse/expand da sidebar em ms.
+ * Material Design 3 — equilíbrio entre fluidez e responsividade.
+ */
+export const SIDEBAR_TRANSITION_DURATION = 250;
 
 // ─── Empty States ───────────────────────────────────────
 

@@ -466,6 +466,51 @@ export const es: TranslationDictionary = {
     },
   },
 
+  // ── Feedback (sistema global: FAB, dialog, banner, header) ───────────
+  feedback: {
+    dialog: {
+      title: 'Tu opinión vale créditos',
+      subtitle: 'Gana 250 créditos de bonus',
+      description: 'Comparte tu experiencia, sugiere mejoras o reporta problemas. El bonus de 250 créditos se acredita automáticamente en tu cuenta — una vez por usuario.',
+      categoryLabel: 'Categoría',
+      categoryGeneral: 'General',
+      categoryBugs: 'Bugs / Problemas',
+      categoryFeatures: 'Sugerencias de funcionalidades',
+      categoryUX: 'Experiencia del usuario',
+      categoryPerformance: 'Rendimiento',
+      categoryOther: 'Otro',
+      textLabel: 'Tu feedback',
+      textPlaceholder: 'Describe tu experiencia, sugerencias o problemas (mínimo 10 caracteres)...',
+      screenContextLabel: 'Pantalla actual (opcional)',
+      screenContextPlaceholder: '¿Dónde estabas cuando ocurrió esto?',
+      button: 'Enviar feedback',
+      sending: 'Enviando...',
+      successWithBonus: '¡Feedback enviado! Ganaste 250 créditos. Gracias por ayudar a mejorar Script Master.',
+      successNoBonus: '¡Feedback enviado! Gracias por compartir.',
+      error: 'Error al enviar feedback. Inténtalo de nuevo.',
+      tooShort: 'Mínimo 10 caracteres.',
+      cancel: 'Cancelar',
+      hint: 'Selecciona una categoría y describe con al menos 10 caracteres para enviar.',
+      closingHint: 'Cerrando automáticamente...',
+    },
+    fab: {
+      tooltip: 'Enviar feedback (+250 créditos)',
+      badgeLabel: '+250',
+    },
+    banner: {
+      title: 'Tu opinión vale créditos de bonus',
+      description: 'Envía un feedback rápido sobre tu experiencia y gana 250 créditos automáticamente.',
+      cta: 'Dar feedback ahora',
+    },
+    emptyState: {
+      chipLabel: 'Gana 250 créditos',
+    },
+    navItem: {
+      headerLabel: 'Feedback (+250)',
+      drawerLabel: 'Feedback (+250)',
+    },
+  },
+
   contact: {
     hero: {
       title: 'Contáctanos',
@@ -1985,6 +2030,22 @@ export const es: TranslationDictionary = {
     update: 'Actualizar ahora',
     dismiss: 'Ignorar',
     offlineReady: '¡App lista para uso sin conexión!',
+  },
+
+  // ── Sidebar (navegación lateral) ───────────────────────────
+  sidebar: {
+    ariaLabel: 'Menú principal',
+    toggle: {
+      expand: 'Expandir menú',
+      collapse: 'Plegar',
+    },
+    user: {
+      tooltip: 'Configuración de la cuenta',
+    },
+    groups: {
+      main: 'Principal',
+      secondary: 'Biblioteca y configuración',
+    },
   },
 
   // ── Bottom Nav Mobile ──────────────────────────────────────

@@ -27,11 +27,14 @@ import Palette from '@mui/icons-material/Palette';
 import Cookie from '@mui/icons-material/Cookie';
 import Person from '@mui/icons-material/Person';
 import PlayCircle from '@mui/icons-material/PlayCircle';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import Settings from '@mui/icons-material/Settings';
 import Sparkles from '@mui/icons-material/AutoAwesome';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCredits } from '../../hooks/useCredits';
+import { useFeedbackDialog } from '../feedback';
 import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
 import type { Locale } from '../../features/i18n/types';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
@@ -68,6 +71,8 @@ export const BOTTOM_NAV_HEIGHT = 56;
 
 export function MobileBottomNav() {
   const { user, logout } = useAuth();
+  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
+  const openFeedback = useFeedbackDialog();
   const { t, locale, setLocale } = useLocale();
   const location = useLocation();
   const navigate = useNavigate();
@@ -86,12 +91,27 @@ export function MobileBottomNav() {
     { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
   ], [t]);
 
+  // Mostra CTA de feedback se: autenticado + sem bônus + sem créditos ilimitados
+  const showFeedbackInDrawer = !feedbackBonusGranted && !unlimitedCredits;
+
   // ── Itens do drawer (secundários + conta) ──
-  const drawerItems = useMemo(() => [
-    { to: '/app/imagens', label: t('studio.header.nav.image'), icon: ImageIcon },
-    { to: '/app/pintura-rapida', label: t('studio.header.nav.speedPaint'), icon: Palette },
-    { to: '/app/configuracoes', label: t('studio.header.nav.settings'), icon: Settings },
-  ], [t]);
+  // O item de feedback é omitido quando o bônus já foi concedido
+  const drawerItems = useMemo(() => {
+    const items: Array<{ to: string; label: string; icon: ElementType; action?: 'feedback' }> = [
+      { to: '/app/imagens', label: t('studio.header.nav.image'), icon: ImageIcon },
+      { to: '/app/pintura-rapida', label: t('studio.header.nav.speedPaint'), icon: Palette },
+      { to: '/app/configuracoes', label: t('studio.header.nav.settings'), icon: Settings },
+    ];
+    if (showFeedbackInDrawer) {
+      items.push({
+        to: '__feedback__',
+        label: t('feedback.navItem.drawerLabel'),
+        icon: RateReviewIcon,
+        action: 'feedback',
+      });
+    }
+    return items;
+  }, [t, showFeedbackInDrawer]);
 
   // ── Handlers ──
   const handleMoreClick = useCallback(() => {
@@ -116,10 +136,15 @@ export function MobileBottomNav() {
     logout();
   }, [logout]);
 
-  const handleNavigate = useCallback((to: string) => {
+  const handleNavigate = useCallback((to: string, action?: 'feedback') => {
+    if (action === 'feedback') {
+      openFeedback(location.pathname);
+      closeDrawer();
+      return;
+    }
     navigate(to);
     closeDrawer();
-  }, [navigate, closeDrawer]);
+  }, [navigate, closeDrawer, openFeedback, location.pathname]);
 
   const handleLogout = useCallback(() => {
     handleOpenLogoutDialog();
@@ -350,7 +375,7 @@ export function MobileBottomNav() {
               return (
                 <ListItemButton
                   key={item.to}
-                  onClick={() => handleNavigate(item.to)}
+                  onClick={() => handleNavigate(item.to, item.action)}
                   aria-current={isActive ? 'page' : undefined}
                   selected={isActive}
                   sx={{
@@ -426,8 +451,8 @@ export function MobileBottomNav() {
           <ListItemButton
             onClick={() => {
               closeDrawer();
-              // Dialog de exclusão é controlado pelo Header
-              // Disparamos evento para o Header abrir o dialog
+              // Dialog de exclusão é controlado pela Sidebar (presente em /app/* desktop)
+              // Disparamos evento global para a Sidebar abrir o dialog
               window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
             }}
             sx={{

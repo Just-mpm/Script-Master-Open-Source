@@ -475,6 +475,51 @@ export const ptBR: TranslationDictionary = {
     },
   },
 
+  // ── Feedback (sistema global: FAB, dialog, banner, header) ───────────
+  feedback: {
+    dialog: {
+      title: 'Sua opinião vale créditos',
+      subtitle: 'Ganhe 250 créditos bônus',
+      description: 'Compartilhe sua experiência, sugira melhorias ou reporte problemas. O bônus de 250 créditos é creditado automaticamente na sua conta — uma vez por usuário.',
+      categoryLabel: 'Categoria',
+      categoryGeneral: 'Geral',
+      categoryBugs: 'Bugs / Problemas',
+      categoryFeatures: 'Sugestões de funcionalidades',
+      categoryUX: 'Experiência do usuário',
+      categoryPerformance: 'Desempenho',
+      categoryOther: 'Outro',
+      textLabel: 'Seu feedback',
+      textPlaceholder: 'Descreva sua experiência, sugestões ou problemas (mínimo 10 caracteres)...',
+      screenContextLabel: 'Tela atual (opcional)',
+      screenContextPlaceholder: 'Onde você estava quando isso aconteceu?',
+      button: 'Enviar feedback',
+      sending: 'Enviando...',
+      successWithBonus: 'Feedback enviado! Você ganhou 250 créditos. Obrigado por ajudar a melhorar o Script Master.',
+      successNoBonus: 'Feedback enviado! Obrigado por compartilhar.',
+      error: 'Erro ao enviar feedback. Tente novamente.',
+      tooShort: 'Mínimo de 10 caracteres.',
+      cancel: 'Cancelar',
+      hint: 'Selecione uma categoria e descreva com pelo menos 10 caracteres para enviar.',
+      closingHint: 'Fechando automaticamente...',
+    },
+    fab: {
+      tooltip: 'Enviar feedback (+250 créditos)',
+      badgeLabel: '+250',
+    },
+    banner: {
+      title: 'Sua opinião vale créditos bônus',
+      description: 'Envie um feedback rápido sobre sua experiência e ganhe 250 créditos automaticamente.',
+      cta: 'Dar feedback agora',
+    },
+    emptyState: {
+      chipLabel: 'Ganhe 250 créditos',
+    },
+    navItem: {
+      headerLabel: 'Feedback (+250)',
+      drawerLabel: 'Feedback (+250)',
+    },
+  },
+
   // ── Contato ────────────────────────────────────────────────────────────
   contact: {
     hero: {
@@ -2004,6 +2049,22 @@ export const ptBR: TranslationDictionary = {
     update: 'Atualizar agora',
     dismiss: 'Ignorar',
     offlineReady: 'App pronto para uso offline!',
+  },
+
+  // ── Sidebar (navegação lateral) ─────────────────────────────
+  sidebar: {
+    ariaLabel: 'Menu principal',
+    toggle: {
+      expand: 'Expandir menu',
+      collapse: 'Recolher',
+    },
+    user: {
+      tooltip: 'Configurações da conta',
+    },
+    groups: {
+      main: 'Principal',
+      secondary: 'Biblioteca e configurações',
+    },
   },
 
   // ── Bottom Nav Mobile ──────────────────────────────────────

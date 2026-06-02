@@ -37,7 +37,10 @@ import PlayCircle from '@mui/icons-material/PlayCircle';
 import Settings from '@mui/icons-material/Settings';
 import Cookie from '@mui/icons-material/Cookie';
 import Sparkles from '@mui/icons-material/AutoAwesome';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import { useAuth } from '../contexts/AuthContext';
+import { useCredits } from '../hooks/useCredits';
+import { useFeedbackDialog, FEEDBACK_BONUS_DISPLAY } from './feedback';
 import { useLocale, LocaleSelector, LOCALE_CONFIGS } from '../features/i18n';
 import { isOpenBetaEnabled } from '../lib/env';
 import { CreditIndicator } from './CreditIndicator';
@@ -48,6 +51,7 @@ import {
   APP_MAX_WIDTH,
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
+  BRAND_SECONDARY,
   ICON_SIZE_MD,
   ICON_SIZE_SM,
   ICON_SIZE_LG,
@@ -60,6 +64,7 @@ import {
   WHITE_05,
   WHITE_015,
 } from '../theme/tokens';
+import { alpha } from '@mui/material/styles';
 import { glassSurfaceSx } from '../theme/surfaces';
 import logos from '../assets/logos';
 import { openAnalyticsConsentDialog } from './app/AnalyticsConsentPrompt';
@@ -74,11 +79,17 @@ interface NavItem {
 
 export function Header() {
   const { user, loading, logout, deleteAccount } = useAuth();
+  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
+  const openFeedback = useFeedbackDialog();
   const { t, locale } = useLocale();
   const location = useLocation();
   const currentPath = location.pathname;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Mostra botão feedback no header: desktop only + autenticado + sem bônus + sem créditos ilimitados
+  const showFeedbackButton = !isMobile && !feedbackBonusGranted && !unlimitedCredits;
+  const handleFeedbackClick = () => openFeedback(currentPath);
   const isScrolled = useScrollTrigger({
     disableHysteresis: true,
     threshold: 12,
@@ -330,6 +341,51 @@ export function Header() {
                   </Stack>
                 </Paper>
                 </Tooltip>
+
+                {/* Botão de feedback — desktop only, some após bônus concedido */}
+                {showFeedbackButton ? (
+                  <Tooltip title={t('feedback.fab.tooltip')} arrow>
+                    <IconButton
+                      onClick={handleFeedbackClick}
+                      aria-label={t('feedback.navItem.headerLabel')}
+                      sx={{
+                        position: 'relative',
+                        color: BRAND_SECONDARY,
+                        transition: 'transform 0.2s ease, background-color 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: alpha(BRAND_SECONDARY, 0.08),
+                          transform: 'scale(1.05)',
+                        },
+                      }}
+                    >
+                      <RateReviewIcon sx={{ fontSize: ICON_SIZE_LG }} />
+                      {/* Badge "+250" — canto superior direito */}
+                      <Box
+                        aria-hidden="true"
+                        sx={{
+                          position: 'absolute',
+                          top: 2,
+                          right: 2,
+                          minWidth: 26,
+                          height: 16,
+                          px: 0.5,
+                          borderRadius: '8px',
+                          backgroundColor: BRAND_SECONDARY,
+                          color: 'background.paper',
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          letterSpacing: '0.02em',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {`+${FEEDBACK_BONUS_DISPLAY}`}
+                      </Box>
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
 
                 {/* Indicador de créditos — visível apenas no beta aberto */}
                 {isOpenBetaEnabled() && <CreditIndicator />}

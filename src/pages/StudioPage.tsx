@@ -89,7 +89,7 @@ export function StudioPage({
           <Box
             sx={{
               position: 'sticky',
-              top: 68,
+              top: 8,
               zIndex: 5,
               py: 0.5,
               mx: -0.5,
@@ -182,7 +182,7 @@ export function StudioPage({
           <Box
             sx={{
               position: { lg: 'sticky' },
-              top: { lg: 84 },
+              top: { lg: 16 },
             }}
           >
             <Inspector isGenerating={isGenerating} />

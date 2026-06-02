@@ -41,6 +41,7 @@ import { APP_BORDER, APP_SURFACE_ELEVATED, BRAND_PRIMARY, ICON_SIZE_SM, RADIUS_X
 import { useLocale } from '../../features/i18n';
 import { InterviewPanel } from './components/InterviewPanel';
 import { ScrollToBottomFab } from './components/ScrollToBottomFab';
+import { FeedbackBanner } from '../../components/feedback';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -416,6 +417,9 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
           </Alert>
         </Box>
       ) : null}
+
+      {/* Banner de feedback — incentiva envio até o bônus de 250 ser concedido */}
+      <FeedbackBanner screenContext="/app/assistente" />
 
       {showMemories && (
         <AssistantMemoriesPanel

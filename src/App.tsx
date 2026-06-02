@@ -8,7 +8,6 @@ import { useTheme } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ActionBar } from './components/ActionBar';
-import { Header } from './components/Header';
 import { ScrollToTop } from './components/public/ScrollToTop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import type { VideoPreviewHandle } from './components/VideoPreview';
@@ -16,12 +15,16 @@ import { useAudioGenerationHandler } from './components/app/AudioGenerationHandl
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
 import { PwaUpdatePrompt } from './components/app/PwaUpdatePrompt';
 import { AnalyticsConsentPrompt } from './components/app/AnalyticsConsentPrompt';
-import { MobileBottomNav, BOTTOM_NAV_HEIGHT } from './components/app/MobileBottomNav';
+import { MobileBottomNav } from './components/app/MobileBottomNav';
+import { Sidebar } from './components/app/Sidebar';
+import { GuestMobileNav } from './components/app/GuestMobileNav';
+import { SidebarNetworkBanner } from './components/app/SidebarNetworkBanner';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
+import { FeedbackController, FeedbackFab } from './components/feedback';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
-import { APP_HEADER_HEIGHT, APP_MAX_WIDTH } from './theme/tokens';
+import { APP_MAX_WIDTH } from './theme/tokens';
 import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
 import { useGlobalAudioActions, useAudioActiveId } from './contexts/AudioContext';
 import { setAnalyticsUserProperties } from './lib/analytics';
@@ -118,7 +121,16 @@ export default function App() {
   const showContainerLayout = isPublicOrLogin && !isOnboardingRoute;
 
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        height: '100dvh',
+        display: 'flex',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+        overflow: 'hidden',
+      }}
+    >
       <Typography
         component="a"
         href="#main-content"
@@ -166,8 +178,12 @@ export default function App() {
         }}
       />
 
-      {/* Header do app — apenas nas rotas /app/* */}
-      {showAppLayout && <Header />}
+      {/* Sidebar do app — apenas em desktop, nas rotas /app/* */}
+      {showAppLayout && !isMobile && <Sidebar />}
+
+      {/* Guest Mobile Nav — drawer mobile para visitantes (rotas públicas).
+          O componente já guarda !isMobile || user internamente. */}
+      {!isAppRoute && <GuestMobileNav />}
 
       <Box
         component="main"
@@ -175,8 +191,13 @@ export default function App() {
         aria-label={t('common.mainContent')}
         tabIndex={-1}
         sx={{
-          minHeight: showAppLayout ? undefined : `calc(100dvh - ${APP_HEADER_HEIGHT}px)`,
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
           outline: 'none',
+          overflow: 'auto',
         }}
       >
         {/* Créditos esgotados — exibido no estúdio e página de vídeo */}
@@ -195,7 +216,7 @@ export default function App() {
         {showContainerLayout ? (
           routesElement
         ) : isAssistantRoute ? (
-          <Box sx={{ height: `calc(100dvh - ${APP_HEADER_HEIGHT}px${isMobile ? ` - ${BOTTOM_NAV_HEIGHT}px` : ''})`, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {routesElement}
           </Box>
         ) : (
@@ -259,8 +280,17 @@ export default function App() {
       <PwaUpdatePrompt />
       <AnalyticsConsentPrompt />
 
+      {/* Controller global do FeedbackDialog — escuta evento de abertura */}
+      <FeedbackController />
+
       {/* Bottom Nav mobile — apenas em rotas /app/* (não onboarding) */}
       {showAppLayout && <MobileBottomNav />}
+
+      {/* FAB de feedback — auto-gestão de visibilidade por rota/auth/bônus */}
+      {showAppLayout && <FeedbackFab />}
+
+      {/* Banner de status de rede — sobreposto no topo (retorna null quando online) */}
+      <SidebarNetworkBanner />
     </Box>
   );
 }

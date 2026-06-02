@@ -466,6 +466,51 @@ export const en: TranslationDictionary = {
     },
   },
 
+  // ── Feedback (global system: FAB, dialog, banner, header) ─────────────
+  feedback: {
+    dialog: {
+      title: 'Your opinion is worth credits',
+      subtitle: 'Earn 250 bonus credits',
+      description: 'Share your experience, suggest improvements, or report issues. The 250-credit bonus is added to your account automatically — once per user.',
+      categoryLabel: 'Category',
+      categoryGeneral: 'General',
+      categoryBugs: 'Bugs / Issues',
+      categoryFeatures: 'Feature suggestions',
+      categoryUX: 'User experience',
+      categoryPerformance: 'Performance',
+      categoryOther: 'Other',
+      textLabel: 'Your feedback',
+      textPlaceholder: 'Describe your experience, suggestions, or issues (minimum 10 characters)...',
+      screenContextLabel: 'Current screen (optional)',
+      screenContextPlaceholder: 'Where were you when this happened?',
+      button: 'Send feedback',
+      sending: 'Sending...',
+      successWithBonus: 'Feedback sent! You earned 250 credits. Thanks for helping improve Script Master.',
+      successNoBonus: 'Feedback sent! Thanks for sharing.',
+      error: 'Error sending feedback. Please try again.',
+      tooShort: 'Minimum 10 characters.',
+      cancel: 'Cancel',
+      hint: 'Select a category and describe with at least 10 characters to send.',
+      closingHint: 'Closing automatically...',
+    },
+    fab: {
+      tooltip: 'Send feedback (+250 credits)',
+      badgeLabel: '+250',
+    },
+    banner: {
+      title: 'Your opinion is worth bonus credits',
+      description: 'Send quick feedback about your experience and earn 250 credits automatically.',
+      cta: 'Give feedback now',
+    },
+    emptyState: {
+      chipLabel: 'Earn 250 credits',
+    },
+    navItem: {
+      headerLabel: 'Feedback (+250)',
+      drawerLabel: 'Feedback (+250)',
+    },
+  },
+
   contact: {
     hero: {
       title: 'Contact Us',
@@ -1985,6 +2030,22 @@ export const en: TranslationDictionary = {
     update: 'Update now',
     dismiss: 'Dismiss',
     offlineReady: 'App ready for offline use!',
+  },
+
+  // ── Sidebar (lateral navigation) ───────────────────────────
+  sidebar: {
+    ariaLabel: 'Main menu',
+    toggle: {
+      expand: 'Expand menu',
+      collapse: 'Collapse',
+    },
+    user: {
+      tooltip: 'Account settings',
+    },
+    groups: {
+      main: 'Main',
+      secondary: 'Library and settings',
+    },
   },
 
   // ── Mobile Bottom Nav ──────────────────────────────────────

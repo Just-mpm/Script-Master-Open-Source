@@ -19,6 +19,7 @@ function Wrapper({ children }: { children: ReactNode }) {
 // Mock dos tokens
 vi.mock('../../src/theme/tokens', () => ({
   BRAND_PRIMARY: '#06b6d4',
+  BRAND_SECONDARY: '#F7941E',
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
   APP_BORDER: 'rgba(255,255,255,0.08)',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
@@ -71,6 +72,30 @@ vi.mock('../../src/features/assistant/components/assistantUi', () => ({
 // Mock do react-markdown
 vi.mock('react-markdown', () => ({
   default: ({ children }: { children: string }) => <div data-testid="markdown">{children}</div>,
+}));
+
+// Mock do AuthContext — o EmptyChatState usa useAuth para checar bônus de feedback
+vi.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { uid: 'test-user', email: 'test@example.com' },
+    loading: false,
+    authError: null,
+  }),
+}));
+
+// Mock do useCredits — também usado pelo EmptyChatState (feedbackBonusGranted)
+vi.mock('../../src/hooks/useCredits', () => ({
+  useCredits: () => ({
+    availableCredits: 500,
+    feedbackBonusGranted: false,
+    unlimitedCredits: false,
+    loading: false,
+  }),
+}));
+
+// Mock do useFeedbackDialog — hook usado no chip de feedback do EmptyChatState
+vi.mock('../../src/components/feedback', () => ({
+  useFeedbackDialog: () => vi.fn(),
 }));
 
 function createMessage(overrides: Partial<ChatMessageRecord> = {}): ChatMessageRecord {

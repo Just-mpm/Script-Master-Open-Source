@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
@@ -8,7 +8,6 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import CircularProgress from '@mui/material/CircularProgress';
 import EmailIcon from '@mui/icons-material/Email';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -19,12 +18,9 @@ import XIcon from '@mui/icons-material/X';
 import LoginIcon from '@mui/icons-material/Login';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import type { ReactNode } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { removeUndefinedFields } from '../../lib/callable-utils';
 import { DocumentHead } from '../../components/DocumentHead';
 import { alpha } from '@mui/material/styles';
 import { getPageSeo } from '../../lib/seo';
-import { functions } from '../../lib/firebase';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
@@ -34,6 +30,7 @@ import { createLogger } from '../../lib/logger';
 import { useLocale } from '../../features/i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { trackAnalyticsEvent } from '../../lib/analytics';
+import { FeedbackFormFields } from '../../components/feedback';
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 
@@ -255,166 +252,19 @@ function ContactInfoPanel() {
   );
 }
 
-/** Formulário de feedback inline que chama o flow feedback (Cloud Function).
- * Substitui o antigo mailto: — agora concede 250 créditos automaticamente. */
+/** Formulário de feedback inline da página pública.
+ * Reutiliza o componente FeedbackFormFields compartilhado com o FeedbackDialog
+ * e o FeedbackFab. Após envio, mostra confirmação inline (mantida para SEO). */
 function FeedbackForm() {
   const { t } = useLocale();
-  const log = createLogger('FeedbackForm');
-
-  const [category, setCategory] = useState('');
-  const [text, setText] = useState('');
-  const [screenContext, setScreenContext] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [feedbackSent, setFeedbackSent] = useState(false);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [bonusMessage, setBonusMessage] = useState<string | null>(null);
-
-  // Opções de categoria com labels traduzidos
-  const categoryOptions: readonly SelectOption[] = [
-    { value: 'general', label: t('contact.feedback.categoryGeneral') },
-    { value: 'bugs', label: t('contact.feedback.categoryBugs') },
-    { value: 'features', label: t('contact.feedback.categoryFeatures') },
-    { value: 'ux', label: t('contact.feedback.categoryUX') },
-    { value: 'performance', label: t('contact.feedback.categoryPerformance') },
-    { value: 'other', label: t('contact.feedback.categoryOther') },
-  ];
-
-  const isTooShort = text.length > 0 && text.trim().length < 10;
-  const canSubmit = category.trim().length > 0 && text.trim().length >= 10 && !isSending;
-
-  const handleSubmit = useCallback(async () => {
-    setIsSending(true);
-    setFeedbackError(null);
-    setBonusMessage(null);
-
-    try {
-      const feedbackCall = httpsCallable<{
-        category: string;
-        text: string;
-        screenContext?: string;
-        requestId: string;
-      }, {
-        success: boolean;
-        bonusGranted: boolean;
-        availableCredits?: number;
-      }>(functions, 'feedback');
-
-      const result = await feedbackCall(removeUndefinedFields({
-        category,
-        text: text.trim(),
-        screenContext: screenContext.trim() || undefined,
-        requestId: crypto.randomUUID(),
-      }));
-
-      const data = result.data;
-      setFeedbackSent(true);
-      trackAnalyticsEvent('generate_lead', { source: 'feedback' });
-
-      if (data.bonusGranted) {
-        setBonusMessage(t('contact.feedback.successWithBonus'));
-      } else {
-        setBonusMessage(t('contact.feedback.successNoBonus'));
-      }
-
-      log.info('feedback enviado', { category, bonusGranted: data.bonusGranted });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn('erro ao enviar feedback', { error: message });
-      setFeedbackError(t('contact.feedback.error'));
-    } finally {
-      setIsSending(false);
-    }
-  }, [category, text, screenContext, t, log]);
-
-  // Após envio bem-sucedido, mostra mensagem de confirmação
-  if (feedbackSent && bonusMessage) {
-    return (
-      <Stack spacing={2} sx={{ alignItems: 'center' }}>
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: '16px',
-            backgroundColor: alpha(BRAND_SECONDARY, 0.12),
-            color: BRAND_SECONDARY,
-          }}
-        >
-          <RateReviewIcon sx={{ fontSize: 28 }} />
-        </Box>
-        <Typography variant="h6" component="p" sx={{ fontWeight: 700 }}>
-          {t('contact.feedback.title')}
-        </Typography>
-        <Alert severity="success" variant="outlined" sx={{ maxWidth: 480 }}>
-          {bonusMessage}
-        </Alert>
-      </Stack>
-    );
-  }
 
   return (
-    <Stack spacing={2.5} sx={{ width: '100%', maxWidth: 480 }}>
-      {/* Categoria */}
-      <TextField
-        select
-        label={t('contact.feedback.categoryLabel')}
-        value={category}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setCategory(e.target.value)}
-        size="small"
-        fullWidth
-      >
-        {categoryOptions.map((opt) => (
-          <MenuItem key={opt.value} value={opt.value}>
-            {opt.label}
-          </MenuItem>
-        ))}
-      </TextField>
-
-      {/* Texto do feedback */}
-      <TextField
-        label={t('contact.feedback.textLabel')}
-        placeholder={t('contact.feedback.textPlaceholder')}
-        value={text}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setText(e.target.value)}
-        multiline
-        minRows={3}
-        maxRows={6}
-        fullWidth
-        error={isTooShort}
-        helperText={isTooShort ? t('contact.feedback.tooShort') : undefined}
-      />
-
-      {/* Contexto da tela (opcional) */}
-      <TextField
-        label={t('contact.feedback.screenContextLabel')}
-        value={screenContext}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setScreenContext(e.target.value)}
-        size="small"
-        fullWidth
-      />
-
-      {/* Erro */}
-      {feedbackError && (
-        <Alert severity="error" variant="outlined" onClose={() => setFeedbackError(null)}>
-          {feedbackError}
-        </Alert>
-      )}
-
-      {/* Botão de envio */}
-      <Button
-        variant="contained"
-        color="secondary"
-        size="large"
-        onClick={handleSubmit}
-        disabled={!canSubmit}
-        endIcon={isSending ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
-        sx={{ mt: 1 }}
-      >
-        {isSending ? t('contact.feedback.sending') : t('contact.feedback.button')}
-      </Button>
-    </Stack>
+    <FeedbackFormFields
+      defaultScreenContext="/contato"
+      showSuccessInline
+      maxWidth={480}
+      buttonLabel={t('contact.feedback.button')}
+    />
   );
 }
 

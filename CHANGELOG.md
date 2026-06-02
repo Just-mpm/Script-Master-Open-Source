@@ -7,6 +7,64 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.123.0] - 2026-06-02
+
+### Adicionado
+
+- **Sidebar de Navegação Colapsável** — novo sistema de navegação lateral que substitui o `Header` nas rotas `/app/*`:
+  - `src/components/app/Sidebar.tsx` (+247 linhas): componente Sidebar com dois estados — collapsed (68px, apenas ícones) e expanded (264px, ícones + labels). Drawer `permanent` customizado com `MuiDrawer-paper` estilizado, toggle animado via Motion, 7 itens de navegação, destaque visual da rota ativa, persistência do estado colapsado em `localStorage` via `s2a_sidebar_collapsed`
+  - `src/components/app/SidebarHeader.tsx` (+113 linhas): header da Sidebar com logo Koda AI Studio, botão de toggle colapsar/expandir (ícones `ChevronLeft`/`ChevronRight`), animação Motion fade
+  - `src/components/app/SidebarFooter.tsx` (+271 linhas): footer com avatar do usuário (nome + email), créditos (`CreditIndicator`), menu de acesso rápido (Perfil, Gerenciar Cookies, Logout com `LogoutConfirmDialog`)
+  - `src/components/app/SidebarNavItem.tsx` (+143 linhas): item de navegação individual com `ListItemButton`, tooltip no estado collapsed, ícone + label no estado expanded, Motion para micro-animações
+  - `src/components/app/SidebarNetworkBanner.tsx` (+39 linhas): banner de conectividade de rede posicionado no topo da Sidebar
+  - `src/components/app/GuestMobileNav.tsx` (+203 linhas): drawer mobile para visitantes não autenticados (extraído da lógica anterior do Header) — avatar genérico, links de navegação, botão "Abrir App"
+  - `src/components/app/DeleteAccountDialog.tsx` (+118 linhas): dialog de exclusão de conta com confirmação textual (`CONFIRM_KEYWORD` = "EXCLUIR"), validação de input, feedback de erro/sucesso, integração com `useAuth().deleteAccount()`
+  - `src/features/sidebar/store.ts` (+28 linhas): store Zustand com `create<SidebarState>()(...)`, estado `collapsed: true`, actions `toggle()` e `setCollapsed()`, middleware `persist` com `s2a_sidebar_collapsed` no localStorage
+  - `src/theme/tokens.ts` (+21 linhas): novos tokens `SIDEBAR_WIDTH_COLLAPSED` (68), `SIDEBAR_WIDTH_EXPANDED` (264), `SIDEBAR_TRANSITION_DURATION` (250ms)
+  - `src/App.tsx` (+38/-8): `Header` removido, `Sidebar`, `GuestMobileNav` e `SidebarNetworkBanner` adicionados; keep alive do `MobileBottomNav` em mdDown
+
+- **Sistema de Feedback Global** — 8 novos arquivos em `src/components/feedback/` (~818 linhas no total):
+  - `FeedbackController.tsx` (+81 linhas): controller global que escuta evento customizado `OPEN_FEEDBACK_EVENT` e renderiza o `FeedbackDialog`
+  - `FeedbackDialog.tsx` (+178 linhas): dialog modal com título, campos de formulário, submissão via Cloud Function, feedback visual de sucesso/erro
+  - `FeedbackFab.tsx` (+145 linhas): floating action button no canto inferior direito das rotas `/app/*` — visível apenas para usuários autenticados, abre o dialog de feedback
+  - `FeedbackBanner.tsx` (+83 linhas): banner informativo no Assistente IA — sugere envio de feedback com bônus de 250 créditos (desaparece após envio)
+  - `FeedbackFormFields.tsx` (+242 linhas): campos de formulário reutilizáveis (categoria, assunto, descrição) — compartilhados entre `FeedbackDialog` e `ContactPage`
+  - `useFeedbackDialog.ts` (+36 linhas): hook imperativo `useFeedbackDialog()` que retorna função `openFeedback(source)` — dispara evento `OPEN_FEEDBACK_EVENT` no `window`
+  - `constants.ts` (+28 linhas): `FEEDBACK_CATEGORIES` com 5 categorias (bug, sugestão, elogio, dúvida, outro), enum `FeedbackCategory`
+  - `index.ts` (+25 linhas): barrel exports de todos os componentes e hooks
+  - Namespace `feedback.*` nos 3 locales (`en.ts`, `es.ts`, `pt-BR.ts`, +61 linhas cada): `dialog.*` (title, category, subject, description, submit, success, error), `fab.*` (label, ariaLabel), `banner.*` (title, description, button), `emptyState.*`, `navItem.*` (label, ariaLabel), `sidebar.*` (label, ariaLabel), `toggle.*`, `user.*`, `groups.*`
+  - Integração em `Assistant.tsx`: `FeedbackBanner` adicionado abaixo do chat
+  - Integração em `AssistantMessages.tsx`: botão "Feedback (+250)" com `RateReviewIcon` e `useFeedbackDialog`
+  - Integração em `MobileBottomNav.tsx`: item "Feedback (+250)" no drawer com `action='feedback'` (corrigido para passar `item.action` no `onClick`)
+  - Integração em `App.tsx`: `FeedbackController` e `FeedbackFab` renderizados no shell
+
+- **ContactPage refatorada** (`src/pages/public/ContactPage.tsx`, +11/-161 linhas): formulário de contato local substituído por `FeedbackFormFields` reutilizável — elimina duplicação de ~160 linhas de formulário. Ícone `RateReviewIcon` adicionado. Import do `firebase/functions` e `callable-utils` removidos (submissão agora via componente compartilhado)
+
+- **Testes** (+969 linhas líquidas):
+  - `tests/components/Sidebar.component.test.tsx` (+321 linhas): 19 testes — larguras collapsed/expanded, toggle, itens de navegação (7), acessibilidade (aria-labels), user null (sem avatar/logout), delete account dialog
+  - `tests/components/Sidebar.features.test.tsx` (+310 linhas): 18 testes — links de navegação (hrefs corretos), active state por rota, persistência do toggle, logout dialog, feedback dialog, locale selector
+  - `tests/features/sidebar/store.test.ts` (+126 linhas): 12 testes — estado inicial, toggle, setCollapsed, persistência localStorage
+  - `tests/components/feedback/FeedbackController.component.test.tsx` (+211 linhas): testes do controller com evento customizado
+  - `tests/components/feedback/FeedbackFab.component.test.tsx` (+200 linhas): testes do FAB com visibilidade condicional
+
+### Alterado
+
+- **App.tsx** (+38/-8): Header removido, Sidebar adicionado com 6 novos imports; MobileBottomNav preservado em mobile; GuestMobileNav para visitantes; FeedbackController e FeedbackFab integrados
+- **ContactPage.tsx** (+11/-161): refatoração para usar `FeedbackFormFields` compartilhado — formulário de contato reutilizável, remove dependências diretas de Cloud Functions
+- **MobileBottomNav.tsx** (+35/-10): item "Feedback (+250)" no drawer com `action='feedback'`; import de `RateReviewIcon`, `useCredits`, `useFeedbackDialog`; correção do `onClick` para passar `item.action`
+- **Assistant.tsx** (+4/-0): FeedbackBanner adicionado abaixo do chat do assistente
+- **AssistantMessages.tsx** (+36/-0): botão "Feedback (+250)" com `RateReviewIcon`, integração com `useFeedbackDialog` e `useAuth`
+- **StudioPage.tsx** (+2/-2): ajustes internos de implementação
+- **tokens.ts** (+21/-0): novos tokens de largura e transição da Sidebar
+
+### Removido
+
+- **Header.tsx** (removido de `App.tsx`): componente de cabeçalho AppBar substituído pela Sidebar lateral — `GuestMobileNav` extraído para componente próprio; `LogoutConfirmDialog`, `CreditIndicator` e `LocaleSelector` movidos para `SidebarFooter`
+- **Testes do Header**: `tests/components/Header.component.test.tsx` (-183 linhas) e `tests/components/Header.features.test.tsx` (-183 linhas) — removidos junto com o componente
+- **Formulário de contato local** (ContactPage.tsx, -160 linhas): formulário inline substituído por `FeedbackFormFields` compartilhado
+
+---
+
 ## [0.122.0] - 2026-06-01
 
 ### Adicionado

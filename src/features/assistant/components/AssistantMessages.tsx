@@ -19,9 +19,13 @@ import Check from '@mui/icons-material/Check';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import Description from '@mui/icons-material/Description';
 import Person from '@mui/icons-material/Person';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import Refresh from '@mui/icons-material/Refresh';
 import SmartToy from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useCredits } from '../../../hooks/useCredits';
+import { useFeedbackDialog } from '../../../components/feedback';
 import type { AssistantSettings, AssistantToolEvent, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
 import {
@@ -41,6 +45,7 @@ import { PreBlock } from './CodeBlock';
 import { ImageLightbox } from './ImageLightbox';
 import {
   BRAND_PRIMARY,
+  BRAND_SECONDARY,
   BRAND_GRADIENT,
   APP_BORDER,
   BRAND_PRIMARY_GLOW_SOFT,
@@ -349,6 +354,16 @@ const MessageBubble = React.memo(function MessageBubble({
 
 function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: string) => void }) {
   const { t } = useLocale();
+  const { user } = useAuth();
+  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
+  const openFeedback = useFeedbackDialog();
+
+  // Mostra CTA de feedback se: autenticado + sem bônus + sem créditos ilimitados
+  const showFeedbackCta = !!user && !feedbackBonusGranted && !unlimitedCredits;
+
+  const handleFeedbackClick = useCallback(() => {
+    openFeedback('/app/assistente');
+  }, [openFeedback]);
 
   return (
     <Box sx={assistantEmptyStateSx}>
@@ -392,6 +407,27 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
             sx={assistantSuggestionChipSx}
           />
         ))}
+
+        {/* CTA de feedback — abre o FeedbackDialog (não envia mensagem) */}
+        {showFeedbackCta ? (
+          <Chip
+            icon={<RateReviewIcon sx={{ fontSize: 16 }} />}
+            label={t('feedback.emptyState.chipLabel')}
+            size="small"
+            variant="outlined"
+            onClick={handleFeedbackClick}
+            sx={{
+              ...assistantSuggestionChipSx,
+              color: BRAND_SECONDARY,
+              borderColor: alpha(BRAND_SECONDARY, 0.4),
+              fontWeight: 600,
+              '&:hover': {
+                borderColor: BRAND_SECONDARY,
+                backgroundColor: alpha(BRAND_SECONDARY, 0.08),
+              },
+            }}
+          />
+        ) : null}
       </Stack>
     </Box>
   );
