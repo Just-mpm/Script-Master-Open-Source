@@ -22,7 +22,7 @@ import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/http
 import { getFirestore } from 'firebase-admin/firestore';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MessageSchema, z, type MessageData } from 'genkit';
+import { MessageSchema, z, type MessageData, generateMiddleware } from 'genkit';
 import { ai } from '../genkit/genkit.js';
 import { createSkillsMiddleware } from '../genkit/middlewares/skills.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
@@ -551,13 +551,80 @@ export const assistant = onCallGenkit(
         historyText = buildMeteringMessagesText(messages);
         const systemInstruction = appendContextSummary(baseSystemInstruction, contextSummary);
 
-        // Helper: serializa erro como resultado para o modelo se auto-corrigir
-        // em vez de propagar exceção e quebrar o tool loop
-        const toolErrorResponse = (toolName: string, error: unknown): { error: true; tool: string; message: string } => {
-          const message = error instanceof Error ? error.message.slice(0, 300) : 'Erro desconhecido';
-          log.warn(`Tool ${toolName} falhou — modelo receberá erro como resultado`, { error: message });
-          return { error: true, tool: toolName, message };
-        };
+        // -----------------------------------------------------------------
+        // Middleware de recovery — captura ValidationErrors do Genkit
+        // -----------------------------------------------------------------
+        // O Genkit valida o inputSchema ANTES de executar o handler.
+        // Se falhar, lança ValidationError e quebra o stream.
+        // Este middleware intercepta TODAS as tools (dynamicTools,
+        // interrupts, skills) e converte ValidationErrors em
+        // toolResponse amigável — o modelo autocorrige no próximo turno.
+        // -----------------------------------------------------------------
+
+        const toolValidationRecovery = generateMiddleware(
+          { name: 'toolValidationRecovery' },
+          () => ({
+            tool: async (req, ctx, next) => {
+              try {
+                return await next(req, ctx);
+              } catch (err: unknown) {
+                // Re-lança cancelamento do usuário — deve propagar para abortar o flow
+                if (err instanceof HttpsError && err.code === 'cancelled') {
+                  throw err;
+                }
+
+                // Verifica se é erro de validação de schema do Genkit
+                const errorName = err instanceof Error ? err.constructor.name : '';
+                const isValidationError = errorName === 'ValidationError' ||
+                  (err instanceof Error && err.message?.includes('Schema validation failed'));
+
+                if (isValidationError) {
+                  const toolName = req.toolRequest?.name ?? 'unknown';
+                  const rawMessage = err instanceof Error ? err.message : 'Input inválido';
+
+                  // Extrai só as linhas relevantes do erro (parse errors)
+                  const parseErrors = rawMessage.split('\n')
+                    .filter((line: string) => line.trim().startsWith('-') || line.trim().startsWith('•'))
+                    .map((line: string) => `• ${line.trim().replace(/^[-•]\s*/, '')}`)
+                    .join('\n');
+
+                  const friendlyMessage = parseErrors
+                    ? `Formato inválido. Corrija os campos abaixo e chame novamente:\n${parseErrors}`
+                    : 'Os dados enviados não seguem o formato esperado. Verifique os campos obrigatórios.';
+
+                  log.warn(`Tool ${toolName}: validação falhou — modelo vai autocorrigir`, {
+                    error: rawMessage.slice(0, 300),
+                  });
+
+                  return {
+                    toolResponse: {
+                      name: toolName,
+                      ref: req.toolRequest?.ref,
+                      output: { error: true, tool: toolName, message: friendlyMessage },
+                    },
+                  };
+                }
+
+                // Outros erros de runtime nas tools — converte para resultado amigável
+                const toolName = req.toolRequest?.name ?? 'unknown';
+                const message = err instanceof Error ? err.message.slice(0, 300) : 'Erro desconhecido';
+                log.warn(`Tool ${toolName} falhou em runtime — modelo receberá erro como resultado`, { error: message });
+
+                return {
+                  toolResponse: {
+                    name: toolName,
+                    ref: req.toolRequest?.ref,
+                    output: { error: true, tool: toolName, message },
+                  },
+                };
+              }
+            },
+          }),
+        );
+
+        // -----------------------------------------------------------------
+        // Definição das tools (com inputSchema real — middleware protege)
+        // -----------------------------------------------------------------
 
         const updatePlanTool = ai.dynamicTool({
           name: 'updatePlan',
@@ -578,23 +645,19 @@ export const assistant = onCallGenkit(
           outputSchema: z.record(z.unknown()),
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
-          try {
-            const state = input.studioState ?? {};
-            const fields = toolInput.fields ?? [];
+          const state = input.studioState ?? {};
+          const fields = toolInput.fields ?? [];
 
-            if (fields.length === 0) {
-              return state;
-            }
-
-            return fields.reduce<Record<string, unknown>>((accumulator, field) => {
-              if (field in state) {
-                accumulator[field] = state[field];
-              }
-              return accumulator;
-            }, {});
-          } catch (err) {
-            return toolErrorResponse('getStudioState', err);
+          if (fields.length === 0) {
+            return state;
           }
+
+          return fields.reduce<Record<string, unknown>>((accumulator, field) => {
+            if (field in state) {
+              accumulator[field] = state[field];
+            }
+            return accumulator;
+          }, {});
         });
 
         const getUserMemoriesTool = ai.dynamicTool({
@@ -610,29 +673,25 @@ export const assistant = onCallGenkit(
           }),
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
-          try {
-            const limit = toolInput.limit ?? 20;
-            const mode = toolInput.mode ?? 'list';
-            const snapshot = await db
-              .collection('memories')
-              .where('userId', '==', uid)
-              .limit(limit)
-              .get();
+          const limit = toolInput.limit ?? 20;
+          const mode = toolInput.mode ?? 'list';
+          const snapshot = await db
+            .collection('memories')
+            .where('userId', '==', uid)
+            .limit(limit)
+            .get();
 
-            const memoryItems = snapshot.docs.map((doc) => {
-              const data = doc.data() as { content?: unknown };
-              const content = typeof data.content === 'string' ? data.content : '';
-              return {
-                content: mode === 'list' && content.length > 180
-                  ? `${content.slice(0, 180)}...`
-                  : content,
-              };
-            }).filter((memory) => memory.content.length > 0);
+          const memoryItems = snapshot.docs.map((doc) => {
+            const data = doc.data() as { content?: unknown };
+            const content = typeof data.content === 'string' ? data.content : '';
+            return {
+              content: mode === 'list' && content.length > 180
+                ? `${content.slice(0, 180)}...`
+                : content,
+            };
+          }).filter((memory) => memory.content.length > 0);
 
-            return { memories: memoryItems, mode };
-          } catch (err) {
-            return toolErrorResponse('getUserMemories', err);
-          }
+          return { memories: memoryItems, mode };
         });
 
         const updateStudioTool = ai.dynamicTool({
@@ -649,14 +708,10 @@ export const assistant = onCallGenkit(
           }),
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
-          try {
-            pendingStudioSettings = toolInput.settings;
-            const summary = toolInput.summary ?? 'O assistente sugeriu ajustes para o estúdio.';
-            await sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
-            return { ok: true, settings: toolInput.settings, summary };
-          } catch (err) {
-            return toolErrorResponse('updateStudio', err);
-          }
+          pendingStudioSettings = toolInput.settings;
+          const summary = toolInput.summary ?? 'O assistente sugeriu ajustes para o estúdio.';
+          await sendMetaChunk('studio_update', { settings: toolInput.settings, summary });
+          return { ok: true, settings: toolInput.settings, summary };
         });
 
         const respondTool = ai.dynamicTool({
@@ -685,26 +740,22 @@ export const assistant = onCallGenkit(
           }),
         }, async (toolInput) => {
           await throwIfAiCancellationRequested(db, uid, requestId);
-          try {
-            const response = await ai.generate({
-              model: resolvedModel,
-              prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
-              config: {
-                googleSearchRetrieval: {},
-              },
-            });
-            const custom = typeof response.custom === 'object' && response.custom !== null
-              ? response.custom as { candidates?: Array<{ groundingMetadata?: { groundingChunks?: Array<Record<string, unknown>> } }> }
-              : {};
-            const sources = custom.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-            return {
-              query: toolInput.query,
-              text: response.text,
-              sources: sources.slice(0, toolInput.numResults ?? 5),
-            };
-          } catch (err) {
-            return toolErrorResponse('webSearch', err);
-          }
+          const response = await ai.generate({
+            model: resolvedModel,
+            prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
+            config: {
+              googleSearchRetrieval: {},
+            },
+          });
+          const custom = typeof response.custom === 'object' && response.custom !== null
+            ? response.custom as { candidates?: Array<{ groundingMetadata?: { groundingChunks?: Array<Record<string, unknown>> } }> }
+            : {};
+          const sources = custom.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+          return {
+            query: toolInput.query,
+            text: response.text,
+            sources: sources.slice(0, toolInput.numResults ?? 5),
+          };
         });
 
         try {
@@ -721,7 +772,7 @@ export const assistant = onCallGenkit(
               interviewInterrupt,
               respondTool,
             ],
-            use: [skillsMiddleware()],
+            use: [toolValidationRecovery(), skillsMiddleware()],
             maxTurns: 20,
             resume: genkitResume,
             config: thinkingConfig ? { thinkingConfig } : undefined,

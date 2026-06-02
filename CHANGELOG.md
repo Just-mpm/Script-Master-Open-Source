@@ -7,6 +7,25 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.124.1] - 2026-06-02
+
+### Adicionado
+
+- **Middleware `toolValidationRecovery` no assistente IA** (`functions/src/flows/assistant.ts`): novo middleware Genkit via `generateMiddleware` que intercepta `ValidationError` do Genkit (input de tool não passa no schema) e converte em `toolResponse` amigável — o modelo se auto-corrige no próximo turno em vez de quebrar o tool loop. Import `generateMiddleware` adicionado. Substitui a função local `toolErrorResponse` e os try/catch individuais de 5 tools (`getStudioState`, `getUserMemories`, `updateStudio`, `webSearch`), agora protegidas centralizadamente pelo middleware
+- **`.describe()` em todos os schemas Zod do assistente** (`functions/src/genkit/schemas/common.ts`): `AssistantSubtaskSchema`, `AssistantTaskSchema`, `AssistantPlanSchema`, `UpdatePlanInputSchema`, `WebSearchInputSchema`, `UpdateStudioInputSchema`, `InterviewOptionSchema`, `InterviewQuestionSchema`, `InterviewInputSchema`, `RespondSuggestedActionSchema`, `RespondMediaSchema`, `RespondInputSchema` — todos os campos agora têm descrições semânticas em português para guiar o LLM a gerar JSON válido, reduzindo erros de validação
+- **Testes de regressão para layout mobile iOS Safari** (`tests/assistant/assistantUi.unit.test.ts`, +43 linhas): verifica que `assistantMessagesContainerSx` tem `flex: 1` + `minHeight: 0`, que `assistantEmptyStateSx` NÃO tem `minHeight`, e que a centralização via flex continua funcional
+- **Documentação técnica:** `docs/audits/safetool-wrapper-and-zod-describe.md` (auditoria estática do wrapper `safeTool` e `.describe()`) e `docs/scan/tool-validation-retry-gaps.md` (scan de lacunas para retry robusto de validação)
+
+### Corrigido
+
+- **Bug de layout no chat mobile iOS Safari** (`src/features/assistant/components/assistantUi.ts`): `assistantMessagesContainerSx` agora usa `flex: 1` + `minHeight: 0` em vez de depender de `minHeight: '100%'` no `EmptyChatState`. Isso elimina o ciclo de altura no iOS Safari quando o teclado virtual abre ao focar o textarea — o composer `sticky` não perdia mais a referência e a área de chat não "vazava" para fora da viewport
+
+### Melhorado
+
+- **Robustez do tool loop do assistente:** erros de validação de schema (Camada 2) agora são interceptados centralizadamente pelo middleware `toolValidationRecovery`, que extrai mensagens de erro legíveis e as retorna como `toolResponse` — o modelo Gemini pode se auto-corrigir sem interromper a conversa. Erros de runtime continuam sendo capturados com o mesmo padrão de `toolResponse` com `{ error: true }`
+
+---
+
 ## [0.124.0] - 2026-06-02
 
 ### Adicionado

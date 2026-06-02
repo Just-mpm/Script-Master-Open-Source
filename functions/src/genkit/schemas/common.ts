@@ -95,29 +95,29 @@ export const ThinkingLevelSchema = z.enum(['minimal', 'low', 'medium', 'high']);
 export const AssistantTaskStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'failed', 'need_help']);
 
 export const AssistantSubtaskSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().nullable().optional(),
+  id: z.string().describe('Identificador único da subtarefa (ex: "1.1", "1.2")'),
+  title: z.string().describe('Título curto e OBRIGATÓRIO da subtarefa — NUNCA omita este campo'),
+  description: z.string().nullable().optional().describe('Descrição detalhada opcional da subtarefa'),
   status: z.string().describe('Status da subtarefa: pending, in_progress, completed, failed ou need_help'),
 });
 
 export const AssistantTaskSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().nullable().optional(),
+  id: z.string().describe('Identificador único da tarefa (ex: "1", "2")'),
+  title: z.string().describe('Título curto e OBRIGATÓRIO da tarefa — NUNCA omita este campo'),
+  description: z.string().nullable().optional().describe('Descrição detalhada opcional da tarefa'),
   status: z.string().describe('Status da tarefa: pending, in_progress, completed, failed ou need_help'),
-  subtasks: z.array(AssistantSubtaskSchema),
+  subtasks: z.array(AssistantSubtaskSchema).describe('Lista de subtarefas (pode ser vazia [])'),
 });
 
-export const AssistantPlanSchema = z.array(AssistantTaskSchema);
+export const AssistantPlanSchema = z.array(AssistantTaskSchema).describe('Lista de tarefas do plano');
 
 export const UpdatePlanInputSchema = z.object({
-  plan: AssistantPlanSchema,
+  plan: AssistantPlanSchema.describe('Lista completa de tarefas — cada item DEVE ter id, title e status'),
 });
 
 export const WebSearchInputSchema = z.object({
-  query: z.string(),
-  numResults: z.number().min(1).max(10).nullable().optional(),
+  query: z.string().describe('Termo de busca para pesquisar na web'),
+  numResults: z.number().min(1).max(10).nullable().optional().describe('Quantas fontes retornar (1-10, padrão 5)'),
 });
 
 export const GetStudioStateInputSchema = z.object({
@@ -130,32 +130,32 @@ export const GetMemoriesInputSchema = z.object({
 });
 
 export const UpdateStudioInputSchema = z.object({
-  settings: z.record(z.unknown()),
-  summary: z.string().nullable().optional(),
+  settings: z.record(z.unknown()).describe('Campos do estúdio a alterar (apenas os que devem mudar)'),
+  summary: z.string().nullable().optional().describe('Resumo da alteração sugerida'),
 });
 
 export const InterviewOptionSchema = z.object({
-  label: z.string(),
-  description: z.string().nullable().optional(),
+  label: z.string().describe('Texto curto do botão de opção (ex: "Sim", "Voz Clara")'),
+  description: z.string().nullable().optional().describe('Explicação do que a opção significa'),
 });
 
 /** Uma única pergunta com opções */
 export const InterviewQuestionSchema = z.object({
-  question: z.string(),
-  options: z.array(InterviewOptionSchema).nullable().optional(),
+  question: z.string().describe('Texto da pergunta a exibir ao usuário'),
+  options: z.array(InterviewOptionSchema).nullable().optional().describe('Lista de opções de resposta'),
   /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
-  multiple: z.boolean().nullable().optional(),
+  multiple: z.boolean().nullable().optional().describe('Permite múltipla seleção (padrão: false)'),
 });
 
 /** Input do tool de entrevista — suporta single e multi-question */
 export const InterviewInputSchema = z.object({
   /** Pergunta única (backward compat) */
-  question: z.string(),
-  options: z.array(InterviewOptionSchema).nullable().optional(),
+  question: z.string().describe('Texto da pergunta a exibir ao usuário — OBRIGATÓRIO'),
+  options: z.array(InterviewOptionSchema).nullable().optional().describe('Lista de opções de resposta'),
   /** Se true, permite selecionar múltiplas opções (checkboxes). Default: false (radio) */
-  multiple: z.boolean().nullable().optional(),
+  multiple: z.boolean().nullable().optional().describe('Permite múltipla seleção (padrão: false)'),
   /** Múltiplas perguntas — se presente, renderiza como tabs com confirmação em lote */
-  questions: z.array(InterviewQuestionSchema).nullable().optional(),
+  questions: z.array(InterviewQuestionSchema).nullable().optional().describe('Lista de múltiplas perguntas (opcional)'),
 });
 
 /** Dados de retomada quando o usuário responde a um interrupt de entrevista */
@@ -167,21 +167,21 @@ export const InterviewResumeDataSchema = z.object({
 });
 
 export const RespondSuggestedActionSchema = z.object({
-  label: z.string(),
-  action: z.string(),
-  params: z.record(z.unknown()).nullable().optional(),
+  label: z.string().describe('Texto curto do botão (ex: "Aplicar", "Gerar áudio")'),
+  action: z.string().describe('Identificador da ação (ex: "apply_settings", "generate_audio")'),
+  params: z.record(z.unknown()).nullable().optional().describe('Parâmetros da ação'),
 });
 
 export const RespondMediaSchema = z.object({
-  type: z.string(),
-  url: z.string(),
-  title: z.string().nullable().optional(),
+  type: z.string().describe('Tipo da mídia (ex: "image", "audio")'),
+  url: z.string().describe('URL da mídia'),
+  title: z.string().nullable().optional().describe('Título/descrição da mídia'),
 });
 
 export const RespondInputSchema = z.object({
-  text: z.string(),
-  suggestedActions: z.array(RespondSuggestedActionSchema).nullable().optional(),
-  media: z.array(RespondMediaSchema).nullable().optional(),
+  text: z.string().describe('Texto da resposta que o usuário vê como mensagem normal'),
+  suggestedActions: z.array(RespondSuggestedActionSchema).nullable().optional().describe('Botões de ação clicáveis'),
+  media: z.array(RespondMediaSchema).nullable().optional().describe('Links de mídia (imagens, áudios)'),
 });
 
 /** Input do flow de chat principal */

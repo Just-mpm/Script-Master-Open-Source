@@ -2,8 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { createTheme } from '@mui/material/styles';
 import {
   assistantDrawerPaperSx,
+  assistantEmptyStateSx,
   assistantInsetSx,
   assistantMarkdownSx,
+  assistantMessagesContainerSx,
   assistantSuggestionChipSx,
 } from '../../src/features/assistant/components/assistantUi';
 
@@ -166,6 +168,47 @@ describe('assistantUi', () => {
       expect(assistantSuggestionChipSx).toHaveProperty('transition');
       expect(assistantSuggestionChipSx.transition).toContain('border-color');
       expect(assistantSuggestionChipSx.transition).toContain('transform');
+    });
+  });
+
+  /**
+   * Regressão: bug de layout do chat mobile após clicar em mensagem rápida.
+   *
+   * O `EmptyChatState` usava `minHeight: '100%'` para centralizar verticalmente,
+   * o que causava um ciclo de altura no Safari iOS quando o composer focava o
+   * textarea (abrir o teclado virtual) — o `Assistant` root crescia além da
+   * viewport e o `position: sticky; bottom: 0` do composer perdia a referência,
+   * permitindo scrollar uma área vazia abaixo do composer.
+   *
+   * A correção foi:
+   * 1. Tirar `minHeight: '100%'` do `assistantEmptyStateSx` (anti-pattern)
+   * 2. Restaurar `flex: 1` no `assistantMessagesContainerSx` para que o container
+   *    ocupe todo o scrollable e a centralização via `justifyContent: center`
+   *    do EmptyChatState funcione
+   * 3. Garantir `minHeight: 0` no container (regra de ouro do flex)
+   */
+  describe('layout do chat mobile (regressão iOS Safari)', () => {
+    it('assistantMessagesContainerSx preenche o scrollable com flex: 1', () => {
+      expect(assistantMessagesContainerSx.flex).toBe(1);
+    });
+
+    it('assistantMessagesContainerSx tem minHeight: 0 (regra de ouro do flex)', () => {
+      expect(assistantMessagesContainerSx.minHeight).toBe(0);
+    });
+
+    it('assistantEmptyStateSx NÃO usa minHeight: 100% (anti-pattern iOS Safari)', () => {
+      // O ciclo acontecia porque o pai do EmptyChatState (assistantMessagesContainer)
+      // não tinha altura explícita. Sem `flex: 1` lá, o `minHeight: 100%` aqui
+      // resolvia para 0 ou entrava em loop no iOS.
+      expect(assistantEmptyStateSx).not.toHaveProperty('minHeight');
+    });
+
+    it('assistantEmptyStateSx ainda centraliza via flex + justifyContent', () => {
+      expect(assistantEmptyStateSx.flex).toBe(1);
+      expect(assistantEmptyStateSx.display).toBe('flex');
+      expect(assistantEmptyStateSx.flexDirection).toBe('column');
+      expect(assistantEmptyStateSx.alignItems).toBe('center');
+      expect(assistantEmptyStateSx.justifyContent).toBe('center');
     });
   });
 });

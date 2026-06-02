@@ -226,10 +226,18 @@ export const assistantMarkdownSx = {
 
 // ─── Message List Container ────────────────────────────────────
 // Container de layout das mensagens (sem scroll — scroll está no pai)
+// `flex: 1` + `minHeight: 0` preenche o scrollable pai e respeita o overflow.
+// Sem isso, o EmptyChatState com `min-height: 100%` antigo entrava em ciclo
+// de altura no iOS Safari ao focar o textarea (composer reflowava e o sticky
+// do composer perdia a referência, deixando a área de chat "vazar" para fora
+// da viewport). Centralização vertical passa a ser feita no EmptyChatState
+// via `flex: 1` + `justifyContent: 'center'`, sem `min-height: 100%`.
 
 export const assistantMessagesContainerSx = {
+  flex: 1,
   display: 'flex',
   flexDirection: 'column' as const,
+  minHeight: 0,
   px: { xs: 2, md: 3 },
   py: { xs: 1, md: 2 },
 };
@@ -250,7 +258,11 @@ export const assistantHistoryItemSx = {
 };
 
 // ─── Empty State ────────────────────────────────────────────────
-// Estado vazio do chat
+// Estado vazio do chat.
+// `flex: 1` preenche o container de mensagens; `alignItems/justifyContent: center`
+// centralizam o conteúdo (ícone, título, chips de sugestão) sem depender de
+// `min-height: 100%` — anti-pattern conhecido que causa ciclo de altura no
+// Safari iOS e layout shift quando o composer foca o textarea mobile.
 
 export const assistantEmptyStateSx = {
   flex: 1,
@@ -261,7 +273,6 @@ export const assistantEmptyStateSx = {
   textAlign: 'center' as const,
   px: { xs: 2, md: 4 },
   py: { xs: 3, md: 4 },
-  minHeight: '100%',
 };
 
 // ─── Suggestion Chip ─────────────────────────────────────────────
