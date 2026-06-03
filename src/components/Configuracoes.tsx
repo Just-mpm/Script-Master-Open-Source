@@ -752,6 +752,8 @@ export function Configuracoes() {
                     </Button>
                   </Stack>
                 }
+                actionPlacement="stack"
+                actionAlign="end"
               />
             ) : null}
           </Stack>

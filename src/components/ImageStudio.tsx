@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
-import Collapse from '@mui/material/Collapse';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -25,8 +24,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import Check from '@mui/icons-material/Check';
-import ChevronDown from '@mui/icons-material/ExpandMore';
-import ChevronUp from '@mui/icons-material/ExpandLess';
 import CloudUpload from '@mui/icons-material/CloudUpload';
 import Close from '@mui/icons-material/Close';
 import Delete from '@mui/icons-material/Delete';
@@ -48,8 +45,9 @@ import { CreditBlockedMessage } from './CreditBlockedMessage';
 import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
 import { StackedHeader } from './ui';
+import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 
 const log = createLogger('ImageStudio');
 
@@ -88,7 +86,7 @@ export function ImageStudio() {
   const [isSaved, setIsSaved] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const sidebarSection = useCollapsibleSection(false);
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
   const [imagesError, setImagesError] = useState<string | null>(null);
@@ -253,7 +251,7 @@ export function ImageStudio() {
     }
   };
 
-  const isSidebarOpen = isDesktop || !isSidebarCollapsed;
+  const isSidebarOpen = isDesktop || sidebarSection.expanded;
 
   // Memoiza blob URLs de imagens salvas para evitar criar novas referências a cada render
   const blobUrls = useMemo(() => {
@@ -284,112 +282,98 @@ export function ImageStudio() {
     <>
     <Grid container spacing={{ xs: 3, lg: 4 }}>
       <Grid size={{ xs: 12, lg: 4, xl: 3.5 }}>
-          <Paper elevation={0} sx={glassPanelSx}>
-          <Button
-            onClick={() => {
+          <StackedHeader
+            variant="glass"
+            collapsible={!isDesktop}
+            expanded={isSidebarOpen}
+            onToggle={() => {
               if (!isDesktop) {
-                setIsSidebarCollapsed((previous) => !previous);
+                sidebarSection.onToggle();
               }
             }}
-            color="inherit"
-            fullWidth
-            sx={{ justifyContent: 'space-between', px: 3, py: 2, borderRadius: 0 }}
-            endIcon={!isDesktop ? (isSidebarOpen ? <ChevronUp sx={{ fontSize: ICON_SIZE_LG }} /> : <ChevronDown sx={{ fontSize: ICON_SIZE_LG }} />) : undefined}
+            collapseId={sidebarSection.collapseId}
+            icon={<ImageIcon fontSize="small" sx={{ color: 'primary.main' }} />}
+            title={t('imageStudio.sidebarTitle')}
+            description={t('imageStudio.sidebarDescription')}
+            density="compact"
           >
-            <Stack spacing={0.6} sx={{ textAlign: 'left' }}>
-              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-                <ImageIcon sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} />
-                <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                  {t('imageStudio.sidebarTitle')}
-                </Typography>
-              </Stack>
-              <Typography variant="body2" color="text.secondary">
-                {t('imageStudio.sidebarDescription')}
-              </Typography>
-            </Stack>
-          </Button>
+            <Box sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
+              <Stack spacing={2}>
+                <FormControl fullWidth>
+                  <InputLabel id="image-studio-ratio">{t('imageStudio.ratioLabel')}</InputLabel>
+                  <Select
+                    labelId="image-studio-ratio"
+                    value={aspectRatio}
+                    label={t('imageStudio.ratioLabel')}
+                    onChange={(event) => setAspectRatio(event.target.value)}
+                    disabled={isGenerating}
+                  >
+                    {aspectRatios.map((ratio) => (
+                      <MenuItem key={ratio.id} value={ratio.id}>
+                        {ratio.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-          <Collapse in={isSidebarOpen} timeout="auto">
-            <Stack spacing={2} sx={{ px: 3, pb: 3 }}>
-                <Box sx={(currentTheme): SystemStyleObject<Theme> => ({ ...insetPanelSx(currentTheme), p: 2 })}>
-                <Stack spacing={2}>
-                  <FormControl fullWidth>
-                    <InputLabel id="image-studio-ratio">{t('imageStudio.ratioLabel')}</InputLabel>
-                    <Select
-                      labelId="image-studio-ratio"
-                      value={aspectRatio}
-                      label={t('imageStudio.ratioLabel')}
-                      onChange={(event) => setAspectRatio(event.target.value)}
-                      disabled={isGenerating}
-                    >
-                      {aspectRatios.map((ratio) => (
-                        <MenuItem key={ratio.id} value={ratio.id}>
-                          {ratio.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                <Stack spacing={1}>
+                  {/* subtitle2 é adequado aqui: label dentro de subseção Collapse, abaixo do overline do painel. Promover para subtitle1 criaria inconsistência hierárquica. */}
+                  <Typography variant="subtitle2">{t('imageStudio.referenceTitle')}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('imageStudio.referenceDescription')}
+                  </Typography>
 
-                  <Stack spacing={1}>
-                    {/* subtitle2 é adequado aqui: label dentro de subseção Collapse, abaixo do overline do painel. Promover para subtitle1 criaria inconsistência hierárquica. */}
-                    <Typography variant="subtitle2">{t('imageStudio.referenceTitle')}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('imageStudio.referenceDescription')}
-                    </Typography>
-
-                    {referencePreview ? (
-                      <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
-                        <Box component="img" src={referencePreview} alt={t('imageStudio.referenceAlt')} sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
-                        <Tooltip title={t('imageStudio.removeReference')}>
-                          <IconButton
-                            onClick={clearReference}
-                            aria-label={t('imageStudio.removeReferenceAria')}
+                  {referencePreview ? (
+                    <Card elevation={0} sx={{ borderRadius: RADIUS_SM, overflow: 'hidden', position: 'relative' }}>
+                      <Box component="img" src={referencePreview} alt={t('imageStudio.referenceAlt')} sx={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover' }} />
+                      <Tooltip title={t('imageStudio.removeReference')}>
+                        <IconButton
+                          onClick={clearReference}
+                          aria-label={t('imageStudio.removeReferenceAria')}
                           sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'background.default' }}
-                          >
-                            <Close sx={{ fontSize: ICON_SIZE_MD }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Card>
-                    ) : (
-                      <Button
-                        onClick={() => fileInputRef.current?.click()}
-                        variant="outlined"
-                        startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
-                        sx={{
+                        >
+                          <Close sx={{ fontSize: ICON_SIZE_MD }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Card>
+                  ) : (
+                    <Button
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="outlined"
+                      startIcon={<CloudUpload sx={{ fontSize: ICON_SIZE_MD }} />}
+                      sx={{
+                        borderStyle: 'dashed',
+                        minHeight: 56,
+                        borderColor: 'rgba(255, 255, 255, 0.12)',
+                        color: 'text.secondary',
+                        transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          backgroundColor: 'rgba(46, 117, 182, 0.06)',
                           borderStyle: 'dashed',
-                          minHeight: 56,
-                          borderColor: 'rgba(255, 255, 255, 0.12)',
-                          color: 'text.secondary',
-                          transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease',
-                          '&:hover': {
-                            borderColor: 'primary.main',
-                            color: 'primary.main',
-                            backgroundColor: 'rgba(46, 117, 182, 0.06)',
-                            borderStyle: 'dashed',
-                          },
-                        }}
-                      >
-                        {t('imageStudio.uploadReference')}
-                      </Button>
-                    )}
-                  </Stack>
-
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden />
-
-                  {/* GAP-07: Alert info persistente migrado para StackedHeader variant="alert".
-                      Como o Alert original não tinha título, usamos o texto do tip como `title`
-                      (subtitle2 default para variant=alert). Visualmente equivalente. */}
-                  <StackedHeader
-                    variant="alert"
-                    severity="info"
-                    alertVariant="outlined"
-                    title={t('imageStudio.promptTip')}
-                  />
+                        },
+                      }}
+                    >
+                      {t('imageStudio.uploadReference')}
+                    </Button>
+                  )}
                 </Stack>
-              </Box>
-            </Stack>
-          </Collapse>
-        </Paper>
+
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden />
+
+                {/* GAP-07: Alert info persistente migrado para StackedHeader variant="alert".
+                    Como o Alert original não tinha título, usamos o texto do tip como `title`
+                    (subtitle2 default para variant=alert). Visualmente equivalente. */}
+                <StackedHeader
+                  variant="alert"
+                  severity="info"
+                  alertVariant="outlined"
+                  title={t('imageStudio.promptTip')}
+                />
+              </Stack>
+            </Box>
+          </StackedHeader>
       </Grid>
 
       <Grid size={{ xs: 12, lg: 8, xl: 8.5 }}>
@@ -636,6 +620,8 @@ export function ImageStudio() {
                       {t('common.tryAgain')}
                     </Button>
                   }
+                  actionPlacement="stack"
+                  actionAlign="end"
                 />
               ) : (
                 <Grid container spacing={1.5}>
@@ -733,7 +719,7 @@ export function ImageStudio() {
 
     {/* Snackbar: erro de galeria quando sidebar está colapsado (mobile) */}
     <Snackbar
-      open={Boolean(imagesError) && isSidebarCollapsed}
+      open={Boolean(imagesError) && !sidebarSection.expanded}
       autoHideDuration={8000}
       onClose={() => setImagesError(null)}
       message={imagesError}

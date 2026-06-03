@@ -1635,7 +1635,7 @@ export const ptBR: TranslationDictionary = {
       },
       1: {
         question: 'Qual o limite de tamanho do roteiro?',
-        answer: 'O limite máximo é de 50.000 caracteres por roteiro. Roteiros maiores que 500 caracteres são automaticamente divididos em segmentos para garantir a consistência da voz.',
+        answer: 'O limite máximo é de 25.000 caracteres por roteiro. Roteiros maiores que 500 caracteres são automaticamente divididos em segmentos para garantir a consistência da voz.',
       },
       2: {
         question: 'Como funcionam os vídeos?',

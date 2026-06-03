@@ -37,7 +37,6 @@ export {
 export { shouldIgnoreError, shouldIgnoreErrorObject } from './filters';
 export { startErrorInterception, stopErrorInterception } from './interceptor';
 
-import { serverTimestamp } from 'firebase/firestore';
 import type {
   LogLevel,
   LogPayload,
@@ -127,7 +126,7 @@ function sendToBatch(
 
   const entry: ErrorLogEntry = {
     id: crypto.randomUUID(),
-    timestamp: serverTimestamp(),
+    timestamp: Date.now(),
     level,
     category,
     context,

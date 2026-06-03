@@ -13,6 +13,7 @@
 
 import { initializeApp } from 'firebase-admin/app';
 import { onRequest } from 'firebase-functions/v2/https';
+import { setGlobalOptions } from 'firebase-functions/v2/options';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import express from 'express';
@@ -21,6 +22,26 @@ import { APP_ALLOWED_CORS_ORIGINS } from './config/cors.js';
 import { createLogger } from './genkit/utils/logger.js';
 
 const log = createLogger('index');
+
+// ---------------------------------------------------------------------------
+// Service Account dedicada — menor privilégio
+// ---------------------------------------------------------------------------
+//
+// Cloud Functions v2 usam por padrão a Compute Engine default SA
+// (PROJECT_NUMBER-compute@developer.gserviceaccount.com), que tem papéis
+// amplos de Editor. Substituímos por uma SA dedicada com apenas as
+// permissões necessárias:
+//   - iam.serviceAccountTokenCreator → signed URLs do Storage (signBlob)
+//   - storage.admin                  → upload/download de áudio/imagem
+//   - firestore.serviceAgent         → CRUD de créditos, ai_requests
+//   - firebase.admin                 → Auth (verificar tokens) + App Check
+//   - cloudfunctions.serviceAgent    → identidade de execução
+//
+// SA: scriptmaster-functions@script-master-7ac07.iam.gserviceaccount.com
+// ---------------------------------------------------------------------------
+setGlobalOptions({
+  serviceAccount: 'scriptmaster-functions@script-master-7ac07.iam.gserviceaccount.com',
+});
 
 // Inicialização explícita do Firebase Admin SDK (necessário para Genkit flows)
 initializeApp();

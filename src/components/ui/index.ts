@@ -11,4 +11,12 @@ export type {
   StackedHeaderAlertVariant,
   StackedHeaderTitleVariant,
   StackedHeaderDescriptionVariant,
+  StackedHeaderAxis,
+  StackedHeaderBreakpoint,
+  StackedHeaderResponsiveAxis,
+  StackedHeaderDirection,
+  StackedHeaderActionAlign,
+  StackedHeaderControlAlign,
+  StackedHeaderActionPlacement,
+  StackedHeaderDensity,
 } from './StackedHeader';

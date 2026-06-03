@@ -7,6 +7,55 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.126.0] - 2026-06-03
+
+### Adicionado
+
+- **StackedHeader expandido — 5 novas props de layout responsivo** (`src/components/ui/StackedHeader.tsx`, +327/-12 linhas):
+  - `direction` (`'vertical' | 'horizontal' | 'responsive'`): controla eixo do layout interno. `default` deriva da variant via `DIRECTION_DEFAULTS` (`alert` → vertical, `glass`/`plain` → responsive). `'responsive'` alterna de horizontal (mdUp) para vertical (xs)
+  - `actionAlign` (`'start' | 'end' | 'center' | 'stretch'`): alinhamento do slot de ação. Default deriva do eixo efetivo (vertical → `'end'`, horizontal → `'center'`)
+  - `controlAlign` (`'start' | 'end' | 'center'`): alinhamento do slot de controle (chip/switch). Default deriva do eixo efetivo
+  - `actionPlacement` (`'inline' | 'stack' | 'bottom'`): posição do slot de ação relativo ao conteúdo. Default: `'inline'` para `alert`, `'stack'` para `section`
+  - `density` (`'compact' | 'standard' | 'comfortable'`): densidade visual com tokens `DENSITY_TOKENS` (padding, gap). Default: `'standard'`
+  - 8 novos tipos públicos exportados: `StackedHeaderAxis`, `StackedHeaderBreakpoint`, `StackedHeaderResponsiveAxis`, `StackedHeaderDirection`, `StackedHeaderActionAlign`, `StackedHeaderControlAlign`, `StackedHeaderActionPlacement`, `StackedHeaderDensity`
+  - 3 helpers internos: `resolveDirection`, `resolveAlignItems`, `getEffectiveAxis`
+  - Constantes `DIRECTION_DEFAULTS` e `DENSITY_TOKENS`
+  - Barrel export em `src/components/ui/index.ts` expandido com os novos tipos
+
+- **`useCollapsibleSection` adotado em SpeedPaintControls** (`src/features/video-render/components/SpeedPaintControls.tsx`, +85/-134): seção de controles colapsável migrada de `<Box><Collapse>` + `useState` manual + `useId` para `<StackedHeader collapsible>` + `useCollapsibleSection`. Remove imports de `Collapse`, `ExpandMore`, `ExpandLess`, `ButtonBase`. 2 seções (Paint Settings + Layers) usando o hook centralizado
+
+- **`setGlobalOptions` para Cloud Functions** (`functions/src/index.ts`, +21 linhas): nova configuração global de memória via `firebase-functions/v2/options`. Import de `setGlobalOptions` adicionado
+
+- **Testes do StackedHeader expandido** (`tests/components/StackedHeader.component.test.tsx`, +482 linhas): 6 describe blocks específicos — `direction`, `actionAlign`, `controlAlign`, `actionPlacement`, `density`, `defaults inteligentes por variant` + 3 testes de retrocompatibilidade. Cobre combinações responsivas, valores de densidade e interação entre props
+
+- **Constantes de densidade em mock de tokens** (`tests/__mocks__/tokensMock.ts`, +4 linhas): `GAP_COMPACT` (0.75), `GAP_DEFAULT` (1)
+
+- **Documentação técnica:** `docs/scan/stacked-header-gaps-audit.md` (422 linhas) — auditoria estática do componente StackedHeader com 18 call sites analisados
+
+### Alterado
+
+- **Limite de caracteres reduzido para 25.000** (`src/lib/constants.ts`, `public/llms-full.txt`, i18n FAQ nos 3 idiomas): `MAX_CHARS` alterado de 50.000 para 25.000 caracteres por roteiro. Atualiza a documentão de SEO (`llms-full.txt`) e as respostas da FAQ em pt-BR, en e es. Teste unitário `constants.unit.test.ts` atualizado para refletir o novo valor
+
+- **Timestamp dos error logs migrado de `serverTimestamp()` para `Date.now()`** (`src/lib/logger/types.ts`, `src/lib/logger/interceptor.ts`, `firestore.rules`):
+  - `types.ts`: tipo `timestamp` alterado de `unknown` (sentinel opaco) para `number` — documenta a decisão (correlação com horário local do usuário é mais útil para debug, elimina edge cases do sentinela em regras v2)
+  - `interceptor.ts`: default `null` substituído por `Date.now()` — cada log já chega com timestamp do cliente
+  - `firestore.rules`: validação do campo `timestamp` em `errorLogs` alterada de `is timestamp` para `is number` — comentário explicativo adicionado (9 linhas)
+  - `src/lib/logger/index.ts`: import de `firebase/firestore` removido (não mais necessário — não usa `serverTimestamp`)
+
+- **Memória das Cloud Functions aumentada para 512MiB** (`functions/src/flows/audio.ts`, +5/-0): default de 256 MiB estourava para roteiros grandes (273 MiB observado em produção em 2026-06-03 — scripts longos geram dezenas de buffers PCM mantidos simultaneamente). Configurado via `setGlobalOptions` + `memory: '512MiB'` no flow de áudio
+
+- **Migração de 9 call sites para novas props do StackedHeader**: `Configuracoes.tsx` (+2), `Library.tsx` (+10, 5 call sites), `ImageStudio.tsx` (+2), `VideoLibrary.tsx` (+2), `AnalyticsConsentPrompt.tsx` (+3, `density="compact"` incluso), `FeedbackBanner.tsx` (+2), `Assistant.tsx` (+2) — todos recebem `actionPlacement="stack" actionAlign="end"` para posicionamento de ação consistente
+
+- **CreditBlockedMessage.tsx**: refatoração (+12/-14) com novas props — `actionAlign="start"` intencional para alinhamento à esquerda do CTA "Ver planos"
+
+### Corrigido
+
+- **Bug de referência circular no logger** (`src/lib/logger/index.ts`): import de `firebase/firestore` removido — o módulo não usava diretamente funções do Firestore (`serverTimestamp` foi substituído por `Date.now()`). Elimina warning de import não utilizado e potencial ciclo em ambiente de teste
+
+- **Testes SpeedPaintControls**: atualizados (+41/-30) para refletir a migração de Collapse/ButtonBase para StackedHeader — asserções de padding, ícones e estado de colapso ajustados para a nova implementação
+
+---
+
 ## [0.125.0] - 2026-06-03
 
 ### Adicionado

@@ -33,6 +33,8 @@ const WARNING_BORDER = 'rgba(245, 158, 11, 0.14)';
 const WARNING_GLOW = 'rgba(245, 158, 11, 0.15)';
 const ICON_SIZE_MD = 20;
 const BRAND_SECONDARY_GLOW_SOFT = 'rgba(247, 148, 30, 0.12)';
+const GAP_COMPACT = 0.75;
+const GAP_DEFAULT = 1;
 
 interface CreateTokensMockOptions {
   /** Tokens extras a mesclar no mock (ex: tokens específicos do consumidor). */
@@ -54,6 +56,8 @@ export function createTokensMock(options: CreateTokensMockOptions = {}) {
     WARNING_GLOW,
     ICON_SIZE_MD,
     BRAND_SECONDARY_GLOW_SOFT,
+    GAP_COMPACT,
+    GAP_DEFAULT,
     ...(options.extras ?? {}),
   };
 }

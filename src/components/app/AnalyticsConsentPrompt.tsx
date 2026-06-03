@@ -99,6 +99,9 @@ export function AnalyticsConsentPrompt() {
               <Button size="small" variant="contained" onClick={accept}>{t('analyticsConsent.accept')}</Button>
             </>
           }
+          actionPlacement="stack"
+          actionAlign="end"
+          density="compact"
         />
       </Snackbar>
 

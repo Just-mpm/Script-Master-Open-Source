@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { MAX_CHARS, CHUNK_LIMIT, VOICES, PACE_INSTRUCTIONS } from '../../src/lib/constants';
 
 describe('constants', () => {
-  it('MAX_CHARS deve ser 50000', () => {
-    expect(MAX_CHARS).toBe(50000);
+  it('MAX_CHARS deve ser 25000', () => {
+    expect(MAX_CHARS).toBe(25000);
   });
 
   it('CHUNK_LIMIT deve ser 500', () => {

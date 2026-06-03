@@ -1616,7 +1616,7 @@ export const en: TranslationDictionary = {
       },
       1: {
         question: 'What is the script size limit?',
-        answer: 'The maximum limit is 50,000 characters per script. Scripts larger than 500 characters are automatically split into segments to ensure voice consistency.',
+        answer: 'The maximum limit is 25,000 characters per script. Scripts larger than 500 characters are automatically split into segments to ensure voice consistency.',
       },
       2: {
         question: 'How do videos work?',

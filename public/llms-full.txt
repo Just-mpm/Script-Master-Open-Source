@@ -6,7 +6,7 @@ Script Master é uma ferramenta web para criadores de conteúdo que precisam tra
 
 ## Estúdio de Voz (TTS)
 
-O estúdio de voz converte roteiros em áudio profissional usando Gemini TTS (gemini-3.1-flash-tts-preview). Suporta mais de 30 vozes diferentes com preview em WAV. Permite configuração de emoções (10 tipos com intensidade ajustável), suporte a multi-locutor com até 2 vozes simultâneas, chunking automático para roteiros longos (mais de 500 caracteres, divididos em chunks de até 500 caracteres por chamada), e detecção de silêncio. Limite de 50.000 caracteres por roteiro.
+O estúdio de voz converte roteiros em áudio profissional usando Gemini TTS (gemini-3.1-flash-tts-preview). Suporta mais de 30 vozes diferentes com preview em WAV. Permite configuração de emoções (10 tipos com intensidade ajustável), suporte a multi-locutor com até 2 vozes simultâneas, chunking automático para roteiros longos (mais de 500 caracteres, divididos em chunks de até 500 caracteres por chamada), e detecção de silêncio. Limite de 25.000 caracteres por roteiro.
 
 ## Geração de Imagens e Cenas
 

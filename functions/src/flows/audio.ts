@@ -252,6 +252,11 @@ export const audio = onCallGenkit(
     // Timeout longo pois roteiros com muitos chunks (+50) exigem múltiplas
     // chamadas TTS ao Gemini, cada uma podendo levar vários segundos.
     timeoutSeconds: 3600,
+    // Memória aumentada: scripts longos geram dezenas de buffers PCM
+    // (~1.4-2.8 MB por chunk de 30-60s) mantidos em memória simultaneamente
+    // (pcmBuffers). Default 256 MiB estoura para roteiros grandes
+    // (273 MiB observado em produção em 2026-06-03).
+    memory: '512MiB',
   },
   ai.defineFlow(
     {

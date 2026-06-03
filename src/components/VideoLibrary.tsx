@@ -95,6 +95,8 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
             {t('common.tryAgain')}
           </Button>
         }
+        actionPlacement="stack"
+        actionAlign="end"
       />
     );
   }

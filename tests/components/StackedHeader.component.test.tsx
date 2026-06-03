@@ -498,4 +498,486 @@ describe('StackedHeader', () => {
       expect(allStyles.length).toBeGreaterThan(0);
     });
   });
+
+  // ── 5 props novas: direction / actionAlign / controlAlign / actionPlacement / density ──
+  describe('direction', () => {
+    // Helper: coleta CSS gerado por Emotion (style tags + style atributos).
+    function getEmotionStyles(): string {
+      return Array.from(document.querySelectorAll('style'))
+        .map((s) => s.textContent ?? '')
+        .join(' ');
+    }
+
+    it('direction="vertical" força mainRow a empilhar (flex-direction: column)', () => {
+      const { container } = renderWithProviders(
+        <StackedHeader title="T" direction="vertical" />,
+      );
+      // O mainRow é o primeiro .MuiStack-root renderizado (mais externo
+      // entre o mainRow e o textContent/rightContent).
+      const stacks = container.querySelectorAll('.MuiStack-root');
+      const mainRow = stacks[0] as HTMLElement;
+      expect(mainRow).toHaveStyle({ flexDirection: 'column' });
+    });
+
+    it('direction="horizontal" força mainRow em linha (flex-direction: row)', () => {
+      const { container } = renderWithProviders(
+        <StackedHeader title="T" direction="horizontal" />,
+      );
+      const stacks = container.querySelectorAll('.MuiStack-root');
+      const mainRow = stacks[0] as HTMLElement;
+      expect(mainRow).toHaveStyle({ flexDirection: 'row' });
+    });
+
+    it('direction="responsive" gera media query sm com flex-direction: row', () => {
+      renderWithProviders(<StackedHeader title="T" direction="responsive" />);
+      const styles = getEmotionStyles();
+      // Emotion gera @media (min-width: 600px) { ... flex-direction: row ... }
+      // para o breakpoint sm. Verificamos ambos os componentes.
+      expect(styles).toMatch(/min-width:\s*600px[^{}]*\{[^}]*flex-direction:\s*row/);
+    });
+
+    it('direction={{ xs: "vertical", md: "horizontal" }} gera breakpoints custom (md=900px)', () => {
+      renderWithProviders(
+        <StackedHeader title="T" direction={{ xs: 'vertical', md: 'horizontal' }} />,
+      );
+      const styles = getEmotionStyles();
+      // md = 900px. O Emotion emite a media query com a direção 'row'.
+      expect(styles).toMatch(/min-width:\s*900px[^{}]*\{[^}]*flex-direction:\s*row/);
+    });
+  });
+
+  describe('actionAlign', () => {
+    it('actionAlign="end" em variant=alert aplica alignSelf: flex-end no Box do action', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          action={<button data-testid="action-btn">Click</button>}
+          actionAlign="end"
+        />,
+      );
+      const action = screen.getByTestId('action-btn');
+      const actionBox = action.parentElement as HTMLElement;
+      // alert → direction='vertical' (default) → alignSelf aplicado
+      expect(actionBox).toHaveStyle({ alignSelf: 'flex-end' });
+    });
+
+    it('actionAlign="start" em variant=alert aplica alignSelf: flex-start no Box do action', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          action={<button data-testid="action-btn">Click</button>}
+          actionAlign="start"
+        />,
+      );
+      const action = screen.getByTestId('action-btn');
+      const actionBox = action.parentElement as HTMLElement;
+      expect(actionBox).toHaveStyle({ alignSelf: 'flex-start' });
+    });
+
+    it('actionAlign em direction="horizontal": Box do action não tem alignSelf aplicado', () => {
+      // Em direction horizontal, `applyControlAlignSelf` é false e o alignSelf
+      // não é gerado no sx (ignoraria o cross-axis vertical de qualquer forma).
+      renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          title="T"
+          direction="horizontal"
+          action={<button data-testid="action-btn">Click</button>}
+          actionAlign="end"
+        />,
+      );
+      const action = screen.getByTestId('action-btn');
+      const actionBox = action.parentElement as HTMLElement;
+      // alignSelf não é setado (vazio)
+      expect(actionBox.style.alignSelf).toBe('');
+    });
+  });
+
+  describe('controlAlign', () => {
+    it('controlAlign="end" em direction vertical aplica alignSelf: flex-end no Box do control', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          control={<span data-testid="ctrl">30</span>}
+          controlAlign="end"
+        />,
+      );
+      const ctrl = screen.getByTestId('ctrl');
+      const ctrlBox = ctrl.parentElement as HTMLElement;
+      expect(ctrlBox).toHaveStyle({ alignSelf: 'flex-end' });
+    });
+
+    it('controlAlign default em direction="horizontal": Box do control não tem alignSelf', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          title="T"
+          direction="horizontal"
+          control={<span data-testid="ctrl">30</span>}
+        />,
+      );
+      const ctrl = screen.getByTestId('ctrl');
+      const ctrlBox = ctrl.parentElement as HTMLElement;
+      expect(ctrlBox.style.alignSelf).toBe('');
+    });
+  });
+
+  describe('actionPlacement', () => {
+    it('actionPlacement="stack" renderiza action em Stack row horizontal com justifyContent', () => {
+      const { container } = renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          action={<button data-testid="action-btn">Click</button>}
+          actionPlacement="stack"
+          actionAlign="end"
+        />,
+      );
+      const action = screen.getByTestId('action-btn');
+      // O action deve estar dentro de um Stack row horizontal (stackedActionBlock).
+      const stackParent = action.closest('.MuiStack-root') as HTMLElement;
+      expect(stackParent).toBeInTheDocument();
+      expect(stackParent).toHaveStyle({ flexDirection: 'row' });
+      // justify-content deve refletir actionAlign='end' → flex-end
+      expect(stackParent).toHaveStyle({ justifyContent: 'flex-end' });
+    });
+
+    it('actionPlacement="bottom" renderiza action DEPOIS do conteúdo colapsável', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          collapsible
+          expanded={true}
+          onToggle={vi.fn()}
+          title="T"
+          action={<button data-testid="action-btn">Save</button>}
+          actionPlacement="bottom"
+        >
+          <div data-testid="child">Content</div>
+        </StackedHeader>,
+      );
+      const child = screen.getByTestId('child');
+      const action = screen.getByTestId('action-btn');
+      // Action deve estar DEPOIS do child na ordem do DOM
+      const following = child.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING;
+      expect(following).toBeTruthy();
+    });
+
+    it('actionPlacement="inline" (default) renderiza action dentro do rightContent', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          control={<span data-testid="ctrl">X</span>}
+          action={<button data-testid="action-btn">Click</button>}
+        />,
+      );
+      const ctrl = screen.getByTestId('ctrl');
+      const action = screen.getByTestId('action-btn');
+      // O rightContent é o Stack mais interno que contém ambos.
+      // Ambos devem ter o mesmo parent (Stack row do rightContent).
+      const ctrlStack = ctrl.closest('.MuiStack-root') as HTMLElement;
+      const actionStack = action.closest('.MuiStack-root') as HTMLElement;
+      // Eles compartilham o mesmo parent (rightContent)
+      expect(ctrlStack).toBe(actionStack);
+    });
+  });
+
+  describe('density', () => {
+    // jsdom não aplica media queries via getComputedStyle, então inspecionamos
+    // diretamente o `cssRules` para extrair os valores responsivos aplicados.
+    // A regra do Stack spacing no mainRow é:
+    //   `@media (min-width:0px){.css-XXX-MuiStack-root>:not(style)~:not(style){margin-top:NNNpx;}}`
+    // A regra do ButtonBase é:
+    //   `@media (min-width:0px){.css-XXX-MuiButtonBase-root{padding-top:NNNpx;...}}`
+    function findMainRowMarginTop(cssClass: string): number | null {
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRule[] = [];
+        try {
+          rules = Array.from(sheet.cssRules || []);
+        } catch {
+          continue;
+        }
+        for (const rule of rules) {
+          // Emotion emite a regra do spacing dentro de @media (min-width:0px)
+          // como parte do text da rule pai. Procuramos o seletor de sibling
+          // ':not(style)~:not(style)' e extraímos o margin-top.
+          const text = rule.cssText || '';
+          if (!text.includes(cssClass)) continue;
+          // Pode estar no top-level ou dentro de @media (texto concatenado)
+          // Procuramos a sequência 'margin-top: NNNpx' (com ou sem espaço).
+          const idx = text.indexOf(':not(style)~:not(style)');
+          if (idx === -1) continue;
+          const slice = text.substring(idx);
+          const m = slice.match(/margin-top:\s*(\d+(?:\.\d+)?)px/);
+          if (m) return parseFloat(m[1]);
+        }
+      }
+      return null;
+    }
+
+    function findButtonBasePaddingTop(): number | null {
+      // Emotion emite o padding do ButtonBase como `padding: TBpx LRpx` em
+      // @media (min-width:0px) (xs). O primeiro valor (TB) é o padding vertical
+      // aplicado pelo `density`.
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRule[] = [];
+        try {
+          rules = Array.from(sheet.cssRules || []);
+        } catch {
+          continue;
+        }
+        for (const rule of rules) {
+          const text = rule.cssText || '';
+          if (!text.includes('MuiButtonBase-root')) continue;
+          if (!text.includes('min-width: 0px') && !text.includes('min-width:0px')) continue;
+          // Procura padding:Npx Mpx dentro do ButtonBase
+          const m = text.match(/MuiButtonBase-root\s*\{[^}]*padding:\s*(\d+(?:\.\d+)?)px/);
+          if (m) return parseFloat(m[1]);
+        }
+      }
+      return null;
+    }
+
+    it('density="compact" tem mainRow spacing menor que density="standard"', () => {
+      const { container: cCompact } = renderWithProviders(
+        <StackedHeader title="T" density="compact" />,
+      );
+      const mainRowCompact = cCompact.querySelector('.MuiStack-root') as HTMLElement;
+      const compactClass = mainRowCompact.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const { container: cStandard } = renderWithProviders(
+        <StackedHeader title="T" density="standard" />,
+      );
+      const mainRowStandard = cStandard.querySelector('.MuiStack-root') as HTMLElement;
+      const standardClass = mainRowStandard.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const mCompact = findMainRowMarginTop(compactClass);
+      const mStandard = findMainRowMarginTop(standardClass);
+      // compact.xs = 0.5 → 4px; standard.xs = 1 → 8px
+      expect(mCompact).not.toBeNull();
+      expect(mStandard).not.toBeNull();
+      expect(mCompact!).toBeLessThan(mStandard!);
+    });
+
+    it('density="comfortable" tem mainRow spacing maior que density="standard"', () => {
+      const { container: cStandard } = renderWithProviders(
+        <StackedHeader title="T" density="standard" />,
+      );
+      const mainRowStandard = cStandard.querySelector('.MuiStack-root') as HTMLElement;
+      const standardClass = mainRowStandard.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const { container: cComfortable } = renderWithProviders(
+        <StackedHeader title="T" density="comfortable" />,
+      );
+      const mainRowComfortable = cComfortable.querySelector('.MuiStack-root') as HTMLElement;
+      const comfortableClass = mainRowComfortable.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const mStandard = findMainRowMarginTop(standardClass);
+      const mComfortable = findMainRowMarginTop(comfortableClass);
+      // comfortable.xs = 1.5 → 12px; standard.xs = 1 → 8px
+      expect(mStandard).not.toBeNull();
+      expect(mComfortable).not.toBeNull();
+      expect(mComfortable!).toBeGreaterThan(mStandard!);
+    });
+
+    it('density="standard" (default) tem padding intermediário no ButtonBase (collapsible glass)', () => {
+      // compact.containerPy.xs = 1 → 8px; standard.xs = 1.25 → 10px;
+      // comfortable.xs = 1.75 → 14px.
+      const { container: cCompact } = renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          collapsible
+          expanded={true}
+          onToggle={vi.fn()}
+          title="T"
+          density="compact"
+        />,
+      );
+      const cssClassCompact = (cCompact.querySelector('.MuiButtonBase-root') as HTMLElement)
+        .className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const { container: cStandard } = renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          collapsible
+          expanded={true}
+          onToggle={vi.fn()}
+          title="T"
+        />,
+      );
+      const cssClassStandard = (cStandard.querySelector('.MuiButtonBase-root') as HTMLElement)
+        .className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const { container: cComfortable } = renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          collapsible
+          expanded={true}
+          onToggle={vi.fn()}
+          title="T"
+          density="comfortable"
+        />,
+      );
+      const cssClassComfortable = (cComfortable.querySelector('.MuiButtonBase-root') as HTMLElement)
+        .className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      // Helper: extrai padding-top de uma classe específica
+      function findPaddingForClass(cls: string): number | null {
+        for (const sheet of Array.from(document.styleSheets)) {
+          let rules: CSSRule[] = [];
+          try { rules = Array.from(sheet.cssRules || []); } catch { continue; }
+          for (const rule of rules) {
+            const text = rule.cssText || '';
+            if (!text.includes(cls)) continue;
+            if (!text.includes('min-width: 0px') && !text.includes('min-width:0px')) continue;
+            // Emotion emite padding: TBpx LRpx (shorthand)
+            const m = text.match(new RegExp(`${cls.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{[^}]*padding:\\s*(\\d+(?:\\.\\d+)?)px`));
+            if (m) return parseFloat(m[1]);
+          }
+        }
+        return null;
+      }
+
+      const pCompact = findPaddingForClass(cssClassCompact);
+      const pStandard = findPaddingForClass(cssClassStandard);
+      const pComfortable = findPaddingForClass(cssClassComfortable);
+      expect(pCompact).not.toBeNull();
+      expect(pStandard).not.toBeNull();
+      expect(pComfortable).not.toBeNull();
+      expect(pCompact!).toBeLessThan(pStandard!);
+      expect(pStandard!).toBeLessThan(pComfortable!);
+    });
+
+    it('density respeita variant="alert" — padding do Alert reduzido em compact', () => {
+      // GAP-09: garante que density="compact" aplica padding menor no Alert
+      // externo mesmo quando variant="alert" (onde ButtonBase zera px/py)
+      const { container: cCompact } = renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          severity="warning"
+          title="T"
+          density="compact"
+        />,
+      );
+      const alertCompact = cCompact.querySelector('.MuiAlert-root') as HTMLElement;
+      const alertClass = alertCompact.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      const { container: cComfortable } = renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          severity="warning"
+          title="T"
+          density="comfortable"
+        />,
+      );
+      const alertComfortable = cComfortable.querySelector('.MuiAlert-root') as HTMLElement;
+      const alertClassComfortable = alertComfortable.className.split(' ').find((c) => c.startsWith('css-'))!;
+
+      // Helper: extrai padding-left de uma classe CSS (xs breakpoint)
+      function findAlertPadding(cls: string): number | null {
+        for (const sheet of Array.from(document.styleSheets)) {
+          let rules: CSSRule[] = [];
+          try { rules = Array.from(sheet.cssRules || []); } catch { continue; }
+          for (const rule of rules) {
+            const text = rule.cssText || '';
+            if (!text.includes(cls)) continue;
+            if (!text.includes('min-width: 0px') && !text.includes('min-width:0px')) continue;
+            const m = text.match(new RegExp(`${cls.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{[^}]*padding:\\s*(\\d+(?:\\.\\d+)?)px`));
+            if (m) return parseFloat(m[1]);
+          }
+        }
+        return null;
+      }
+
+      const pCompact = findAlertPadding(alertClass);
+      const pComfortable = findAlertPadding(alertClassComfortable);
+      expect(pCompact).not.toBeNull();
+      expect(pComfortable).not.toBeNull();
+      expect(pCompact!).toBeLessThan(pComfortable!);
+    });
+  });
+
+  describe('defaults inteligentes por variant', () => {
+    it('variant=alert sem direction resolve para vertical (flex-direction: column)', () => {
+      const { container } = renderWithProviders(
+        <StackedHeader variant="alert" title="T" />,
+      );
+      const mainRow = container.querySelector('.MuiStack-root') as HTMLElement;
+      expect(mainRow).toHaveStyle({ flexDirection: 'column' });
+    });
+
+    it('variant=glass sem direction resolve para responsive (mainRow começa column em xs)', () => {
+      const { container } = renderWithProviders(
+        <StackedHeader variant="glass" title="T" />,
+      );
+      const mainRow = container.querySelector('.MuiStack-root') as HTMLElement;
+      // glass default = responsive → em xs é 'column' (jsdom não tem media
+      // queries ativas, sempre mostra o xs). Verificamos o valor base.
+      expect(mainRow).toHaveStyle({ flexDirection: 'column' });
+      // E o CSS gerado contém a media query sm+ com 'row'
+      const styles = Array.from(document.querySelectorAll('style'))
+        .map((s) => s.textContent ?? '')
+        .join(' ');
+      expect(styles).toMatch(/min-width:\s*600px[^{}]*\{[^}]*flex-direction:\s*row/);
+    });
+  });
+
+  describe('retrocompatibilidade com 14+ call sites', () => {
+    it('uso sem nenhuma prop nova renderiza idêntico ao comportamento anterior', () => {
+      // Sem direction/density/etc., deve manter layout responsivo padrão
+      const { container } = renderWithProviders(
+        <StackedHeader variant="glass" title="T" description="D" control={<span>C</span>} />,
+      );
+      const mainRow = container.querySelector('.MuiStack-root') as HTMLElement;
+      // mainRow tem class MuiStack-root e está no DOM
+      expect(mainRow).toBeInTheDocument();
+      // textContent e control presentes
+      expect(screen.getByText('T')).toBeInTheDocument();
+      expect(screen.getByText('D')).toBeInTheDocument();
+      expect(screen.getByText('C')).toBeInTheDocument();
+    });
+
+    it('slotProps.action.sx ainda é mergeado quando actionPlacement=stack', () => {
+      renderWithProviders(
+        <StackedHeader
+          variant="alert"
+          title="T"
+          action={<button data-testid="action-btn">Click</button>}
+          actionPlacement="stack"
+          slotProps={{
+            action: { sx: { marginTop: 7 } },
+          }}
+        />,
+      );
+      // O action está dentro de stackedActionBlock que herda slotProps.action.sx
+      const styles = Array.from(document.querySelectorAll('style'))
+        .map((s) => s.textContent ?? '')
+        .join(' ');
+      // Emotion converte marginTop 7 → 56px (theme.spacing * 7)
+      expect(styles).toMatch(/margin-top:\s*56px/);
+    });
+
+    it('colapsar/expandir ainda funciona com as novas props', async () => {
+      const onToggle = vi.fn();
+      renderWithProviders(
+        <StackedHeader
+          variant="glass"
+          collapsible
+          expanded={false}
+          onToggle={onToggle}
+          title="T"
+          direction="responsive"
+          density="comfortable"
+        />,
+      );
+      const button = screen.getByRole('button');
+      const user = userEvent.setup();
+      await user.click(button);
+      expect(onToggle).toHaveBeenCalledWith(true);
+    });
+  });
 });

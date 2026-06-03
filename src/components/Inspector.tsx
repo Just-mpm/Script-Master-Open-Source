@@ -35,6 +35,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { insetPanelSx } from '../theme/surfaces';
 import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM } from '../theme/tokens';
 import { createLogger } from '../lib/logger';
+import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 import { useLocale } from '../features/i18n';
 import type { Locale } from '../features/i18n/types';
 import { VoiceCard } from './VoiceCard';
@@ -187,11 +188,9 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     imageTextLanguage: s.imageTextLanguage,
     setImageTextLanguage: s.setImageTextLanguage,
   })));
-  const [isVoiceCollapsed, setIsVoiceCollapsed] = useState(true);
-  const [isDirectionCollapsed, setIsDirectionCollapsed] = useState(true);
+  const voiceSection = useCollapsibleSection(false);
+  const directionSection = useCollapsibleSection(false);
   const [activeVoiceTab, setActiveVoiceTab] = useState<VoiceTabValue>('A');
-  const voiceSectionId = 'inspector-voice-section';
-  const directionSectionId = 'inspector-direction-section';
   const [referenceImageWarning, setReferenceImageWarning] = useState<string | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -225,8 +224,8 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
     };
   }, []);
 
-  const isVoiceOpen = !isVoiceCollapsed;
-  const isDirectionOpen = !isDirectionCollapsed;
+  const isVoiceOpen = voiceSection.expanded;
+  const isDirectionOpen = directionSection.expanded;
   const activeSpeakerName = activeVoiceTab === 'A' ? speakerAName : speakerBName;
   const selectedPrimaryVoice = useMemo(
     () => VOICES.find((voice) => voice.id === selectedVoice)?.name ?? selectedVoice,
@@ -330,8 +329,8 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
         variant="glass"
         collapsible
         expanded={isVoiceOpen}
-        onToggle={() => setIsVoiceCollapsed((prev) => !prev)}
-        collapseId={voiceSectionId}
+        onToggle={voiceSection.onToggle}
+        collapseId={voiceSection.collapseId}
         icon={<GraphicEq sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />}
         title={t('studio.inspector.voiceSection.title')}
         description={t('studio.inspector.voiceSection.description')}
@@ -462,8 +461,8 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
         variant="glass"
         collapsible
         expanded={isDirectionOpen}
-        onToggle={() => setIsDirectionCollapsed((prev) => !prev)}
-        collapseId={directionSectionId}
+        onToggle={directionSection.onToggle}
+        collapseId={directionSection.collapseId}
         icon={<Settings sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }} aria-hidden="true" />}
         title={t('studio.inspector.directionSection.title')}
         description={t('studio.inspector.directionSection.description')}

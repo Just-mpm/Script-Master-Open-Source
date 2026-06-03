@@ -1616,7 +1616,7 @@ export const es: TranslationDictionary = {
       },
       1: {
         question: '¿Cuál es el límite de tamaño del guion?',
-        answer: 'El límite máximo es de 50.000 caracteres por guion. Guiones mayores a 500 caracteres se dividen automáticamente en segmentos para garantizar la consistencia de la voz.',
+        answer: 'El límite máximo es de 25.000 caracteres por guion. Guiones mayores a 500 caracteres se dividen automáticamente en segmentos para garantizar la consistencia de la voz.',
       },
       2: {
         question: '¿Cómo funcionan los videos?',

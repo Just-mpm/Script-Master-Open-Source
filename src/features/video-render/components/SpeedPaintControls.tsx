@@ -1,22 +1,18 @@
-import React, { useState, useCallback, useMemo, useId } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
 import Slider from '@mui/material/Slider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ButtonBase from '@mui/material/ButtonBase';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { type Theme } from '@mui/material/styles';
 import SpeedIcon from '@mui/icons-material/Speed';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import ExpandLess from '@mui/icons-material/ExpandLess';
 import { insetPanelSx } from '../../../theme/surfaces';
 import {
   GAP_COMPACT,
-  GAP_DEFAULT,
-  ICON_SIZE_MD,
   BRAND_PRIMARY_GLOW_SOFT,
 } from '../../../theme/tokens';
 import { useLocaleSafe } from '../../../features/i18n';
+import { StackedHeader } from '../../../components/ui';
+import { useCollapsibleSection } from '../../../hooks/useCollapsibleSection';
 
 // ─── Constantes ──────────────────────────────────────────────
 
@@ -60,9 +56,7 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
   onSketchChange,
   onRevealChange,
 }: SpeedPaintControlsProps) {
-  const theme = useTheme();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const sectionId = useId();
+  const { expanded, onToggle, collapseId } = useCollapsibleSection(false);
 
   const { t } = useLocaleSafe();
   // Labels memoizados para evitar re-cálculo a cada render
@@ -88,135 +82,92 @@ export const SpeedPaintControls = React.memo(function SpeedPaintControls({
   );
 
   return (
-    <Stack spacing={0}>
-      {/* ── Header expansível ── */}
-      <ButtonBase
-        component="button"
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded}
-        aria-controls={sectionId}
-        sx={{
-          width: '100%',
-          px: { xs: 2.5, md: 3 },
-          py: 2,
-          textAlign: 'left',
-          borderRadius: { xs: 3, md: 4 },
-          transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-          },
-        }}
-      >
-        <Stack
-          direction="row"
-          sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}
-        >
+    <StackedHeader
+      variant="glass"
+      collapsible
+      expanded={expanded}
+      onToggle={onToggle}
+      collapseId={collapseId}
+      icon={<SpeedIcon fontSize="small" sx={{ color: 'primary.main' }} />}
+      title={t('speedPaint.speedSectionTitle')}
+      description={t('speedPaint.speedSectionDescription')}
+      density="compact"
+    >
+      <Box sx={(t: Theme) => ({ ...insetPanelSx(t), p: 2 })}>
+        <Stack spacing={2.5}>
+          {/* Slider Desenho (Sketch) */}
           <Stack spacing={GAP_COMPACT}>
-            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-              <SpeedIcon
-                sx={{ fontSize: ICON_SIZE_MD, color: theme.palette.primary.main }}
-                aria-hidden="true"
-              />
-              <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                {t('speedPaint.speedSectionTitle')}
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                {t('speedPaint.sketchLabel')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
+                {sketchLabel}
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {t('speedPaint.speedSectionDescription')}
-            </Typography>
+            <Slider
+              size="small"
+              min={SPEED_MIN}
+              max={SPEED_MAX}
+              step={SPEED_STEP}
+              value={sketch}
+              onChange={handleSketchChange}
+              aria-label={t('speedPaint.sketchAriaLabel')}
+              sx={{
+                color: 'primary.main',
+                '& .MuiSlider-thumb': {
+                  boxShadow: `0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  '&:hover, &.Mui-focusVisible': {
+                    boxShadow: `0 0 0 6px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                },
+                '& .MuiSlider-rail': {
+                  opacity: 0.24,
+                },
+              }}
+            />
           </Stack>
 
-          <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-            {!isExpanded ? (
-              <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} />
-            ) : (
-              <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} />
-            )}
-          </Stack>
-        </Stack>
-      </ButtonBase>
-
-      {/* ── Conteúdo expansível ── */}
-      <Collapse in={isExpanded} timeout="auto" id={sectionId}>
-        <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
-          <Box sx={(t: Theme) => ({ ...insetPanelSx(t), p: 2 })}>
-            <Stack spacing={2.5}>
-              {/* Slider Desenho (Sketch) */}
-              <Stack spacing={GAP_COMPACT}>
-                <Stack
-                  direction="row"
-                  sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    {t('speedPaint.sketchLabel')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {sketchLabel}
-                  </Typography>
-                </Stack>
-                <Slider
-                  size="small"
-                  min={SPEED_MIN}
-                  max={SPEED_MAX}
-                  step={SPEED_STEP}
-                  value={sketch}
-                  onChange={handleSketchChange}
-                  aria-label={t('speedPaint.sketchAriaLabel')}
-                  sx={{
-                    color: 'primary.main',
-                    '& .MuiSlider-thumb': {
-                      boxShadow: `0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`,
-                      '&:hover, &.Mui-focusVisible': {
-                        boxShadow: `0 0 0 6px ${BRAND_PRIMARY_GLOW_SOFT}`,
-                      },
-                    },
-                    '& .MuiSlider-rail': {
-                      opacity: 0.24,
-                    },
-                  }}
-                />
-              </Stack>
-
-              {/* Slider Colorir (Reveal) */}
-              <Stack spacing={GAP_COMPACT}>
-                <Stack
-                  direction="row"
-                  sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    {t('speedPaint.revealLabel')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {revealLabel}
-                  </Typography>
-                </Stack>
-                <Slider
-                  size="small"
-                  min={SPEED_MIN}
-                  max={SPEED_MAX}
-                  step={SPEED_STEP}
-                  value={reveal}
-                  onChange={handleRevealChange}
-                  aria-label={t('speedPaint.revealSpeed')}
-                  sx={{
-                    color: 'primary.main',
-                    '& .MuiSlider-thumb': {
-                      boxShadow: `0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`,
-                      '&:hover, &.Mui-focusVisible': {
-                        boxShadow: `0 0 0 6px ${BRAND_PRIMARY_GLOW_SOFT}`,
-                      },
-                    },
-                    '& .MuiSlider-rail': {
-                      opacity: 0.24,
-                    },
-                  }}
-                />
-              </Stack>
+          {/* Slider Colorir (Reveal) */}
+          <Stack spacing={GAP_COMPACT}>
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                {t('speedPaint.revealLabel')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'JetBrains Mono, monospace' }}>
+                {revealLabel}
+              </Typography>
             </Stack>
-          </Box>
+            <Slider
+              size="small"
+              min={SPEED_MIN}
+              max={SPEED_MAX}
+              step={SPEED_STEP}
+              value={reveal}
+              onChange={handleRevealChange}
+              aria-label={t('speedPaint.revealSpeed')}
+              sx={{
+                color: 'primary.main',
+                '& .MuiSlider-thumb': {
+                  boxShadow: `0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  '&:hover, &.Mui-focusVisible': {
+                    boxShadow: `0 0 0 6px ${BRAND_PRIMARY_GLOW_SOFT}`,
+                  },
+                },
+                '& .MuiSlider-rail': {
+                  opacity: 0.24,
+                },
+              }}
+            />
+          </Stack>
         </Stack>
-      </Collapse>
-    </Stack>
+      </Box>
+    </StackedHeader>
   );
 });

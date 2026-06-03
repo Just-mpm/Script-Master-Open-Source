@@ -51,8 +51,16 @@ export interface LoggerInstance {
 /** Estrutura do documento salvo na coleção `errorLogs` do Firestore. */
 export interface ErrorLogEntry {
   id: string;
-  /** serverTimestamp() — tipo opaco do Firestore */
-  timestamp: unknown;
+  /** Timestamp do cliente em milissegundos (Date.now()).
+   *
+   * Usamos Date.now() em vez de serverTimestamp() porque:
+   * 1. Error logs não precisam de precisão de tempo do servidor
+   * 2. Evita edge cases com o sentinela serverTimestamp() em regras
+   *    `is timestamp` (interceptor enviava `null`, gerando permission-denied)
+   * 3. Correlaciona diretamente com o horário local do usuário
+   * 4. Mais barato de processar (sem ida ao servidor)
+   */
+  timestamp: number;
   level: LogLevel;
   category: LogCategory;
   context: string;

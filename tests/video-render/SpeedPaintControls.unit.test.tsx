@@ -7,39 +7,50 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 
 vi.mock('../../src/theme/surfaces', () => ({
   insetPanelSx: () => ({ p: 2 }),
+  glassPanelSx: {},
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  GAP_COMPACT: 0.5,
-  GAP_DEFAULT: 1,
-  ICON_SIZE_MD: 20,
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
-}));
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return {
+    ...actual,
+    GAP_COMPACT: 0.5,
+    GAP_DEFAULT: 1,
+    ICON_SIZE_MD: 20,
+    BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  };
+});
 
-vi.mock('../../src/features/i18n', () => ({
-  useLocaleSafe: () => ({
-    t: (key: string) => {
-      const labels: Record<string, string> = {
-        'speedPaint.speedLabels.verySlow': 'Muito lento',
-        'speedPaint.speedLabels.slow': 'Lento',
-        'speedPaint.speedLabels.normal': 'Normal',
-        'speedPaint.speedLabels.fast': 'Rápido',
-        'speedPaint.speedLabels.veryFast': 'Muito rápido',
-        'speedPaint.speedLabels.maximum': 'Máximo',
-        'speedPaint.revealSpeed': 'Velocidade da coloração (reveal)',
-        'speedPaint.speedSectionTitle': 'Velocidade do Speed Paint',
-        'speedPaint.speedSectionDescription': 'Controle separado de velocidade para desenho e coloração.',
-        'speedPaint.sketchSpeed': 'Desenho (Sketch)',
-        'speedPaint.revealSpeedLabel': 'Colorir (Reveal)',
-        'speedPaint.sketchAriaLabel': 'Velocidade do desenho (sketch)',
-        'speedPaint.sketchLabel': 'Desenho (Sketch)',
-        'speedPaint.revealLabel': 'Colorir (Reveal)',
-      };
-      return labels[key] ?? key;
-    },
-    locale: 'pt-BR' as const,
-  }),
-}));
+vi.mock('../../src/features/i18n', () => {
+  const i18n = (key: string) => {
+    const labels: Record<string, string> = {
+      'speedPaint.speedLabels.verySlow': 'Muito lento',
+      'speedPaint.speedLabels.slow': 'Lento',
+      'speedPaint.speedLabels.normal': 'Normal',
+      'speedPaint.speedLabels.fast': 'Rápido',
+      'speedPaint.speedLabels.veryFast': 'Muito rápido',
+      'speedPaint.speedLabels.maximum': 'Máximo',
+      'speedPaint.revealSpeed': 'Velocidade da coloração (reveal)',
+      'speedPaint.speedSectionTitle': 'Velocidade do Speed Paint',
+      'speedPaint.speedSectionDescription': 'Controle separado de velocidade para desenho e coloração.',
+      'speedPaint.sketchSpeed': 'Desenho (Sketch)',
+      'speedPaint.revealSpeedLabel': 'Colorir (Reveal)',
+      'speedPaint.sketchAriaLabel': 'Velocidade do desenho (sketch)',
+      'speedPaint.sketchLabel': 'Desenho (Sketch)',
+      'speedPaint.revealLabel': 'Colorir (Reveal)',
+      // StackedHeader usa useLocale (não useLocaleSafe) para o aria-label
+      // dinâmico de colapso. Mantemos os mesmos labels para evitar divergência.
+      'stackedHeader.collapseAriaLabel.expand': 'Expandir',
+      'stackedHeader.collapseAriaLabel.collapse': 'Recolher',
+      'common.close': 'Fechar',
+    };
+    return labels[key] ?? key;
+  };
+  return {
+    useLocaleSafe: () => ({ t: i18n, locale: 'pt-BR' as const }),
+    useLocale: () => ({ t: i18n, locale: 'pt-BR' as const }),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (apos mocks)

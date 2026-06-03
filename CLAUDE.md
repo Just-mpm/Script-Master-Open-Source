@@ -64,7 +64,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 ## Convenções
 
 - **Idioma:** pt-BR (default), en e es na UI via i18n; comentários em pt-BR; inglês nos prompts de imagem
-- **Logger:** Use `createLogger('context')` de `src/lib/logger` — import relativo, nunca `@/`. Sistema modular com error tracking em produção (Firestore `errorLogs`), sanitização automática, batch processor e interceptação global. `initErrorTracking()` chamado em `main.tsx`. `debug`/`info` suprimidos em produção; `warn`/`error`/`fatal` enviados ao Firestore. Configurado via `VITE_LOGGER_ENABLED`, `VITE_LOGGER_MIN_LEVEL`, `VITE_LOGGER_SEND_IN_DEV`
+- **Logger:** Use `createLogger('context')` de `src/lib/logger` — import relativo, nunca `@/`. Sistema modular com error tracking em produção (Firestore `errorLogs`), sanitização automática, batch processor e interceptação global. `initErrorTracking()` chamado em `main.tsx`. `debug`/`info` suprimidos em produção; `warn`/`error`/`fatal` enviados ao Firestore. Configurado via `VITE_LOGGER_ENABLED`, `VITE_LOGGER_MIN_LEVEL`, `VITE_LOGGER_SEND_IN_DEV`. **Timestamp:** `Date.now()` do cliente em vez de `serverTimestamp()` (Firestore sentinel) — evita edge cases de permissão em regras v2 e facilita correlação com horário local para debug. Validação em `firestore.rules` com `is number`.
 - **Backend:** Firebase Cloud Functions v2 (callable ou HTTP). Sem rotas `/api/*` no frontend
 - **Rotas:** lazy loading por rota, páginas em `src/pages/`
 - **HMR:** não altere `DISABLE_HMR` em `vite.config.ts` — usado por AI Studio
@@ -120,7 +120,7 @@ bun run export-error-logs # exporta logs de erros do Firestore (script CLI)
 Pre-renderização das 10 rotas públicas via `scripts/prerender.mjs` (puppeteer-core + Chrome do sistema). Dispara em `bun run build:full` após vite build — gera HTML estático com tags SEO completas em `dist/{route}/index.html`. `DocumentHead` dispara flag `window.__PRERENDER_READY` para sinalizar quando capturar. `seo.ts` gera: title, meta description, canonical, hreflang (pt-BR, en, es, x-default), Open Graph completo (image 1200x630, width/height/alt, locale, locale:alternate), Twitter Cards, JSON-LD (SoftwareApplication com offers, WebPage, BreadcrumbList). Arquivos estáticos: `public/llms.txt` + `public/llms-full.txt` (para ChatGPT/Claude/Perplexity), `public/robots.txt` (Allow llms.txt, Llms-txt directive), `public/sitemap.xml`. Favicon: `.ico` (16+32+48) + `.webp` + `apple-touch-icon.png` (180x180).
 
 ### Áudio & TTS
-TTS via Genkit flow `audio.ts` — chunking automático (>500 chars), multi-speaker (2 vozes), detecção de silêncio, voice previews WAV estáticos. Hook frontend: `useAudioGenerator`. Créditos via middleware `credit-metering.ts`. Limites: 50K chars/roteiro, 500 chars/chamada TTS.
+TTS via Genkit flow `audio.ts` — chunking automático (>500 chars), multi-speaker (2 vozes), detecção de silêncio, voice previews WAV estáticos. Hook frontend: `useAudioGenerator`. Créditos via middleware `credit-metering.ts`. Limites: 25K chars/roteiro, 500 chars/chamada TTS. Cloud Function com `memory: '512MiB'` via `setGlobalOptions` para suportar roteiros grandes (~273 MiB observado em produção).
 
 ### Geração de Imagens
 Geração via Genkit flow `images.ts`. Prompts de cena via `scene-prompts` (saída textual JSON, não imagens). Aspect ratios: 8 (estúdio) / 5 (cenas) / 3 (vídeo). Frameworks visuais: `general` ou `whiteboard`. StockMediaPicker com Pexels API (fallback local).
@@ -142,7 +142,18 @@ Tool-first com Genkit: `ai.generate()` (import de `genkit/beta`) com `maxTurns: 
 Sistema global de feedback do usuário com 8 arquivos em `src/components/feedback/`. `FeedbackController` escuta evento customizado `OPEN_FEEDBACK_EVENT` no `window` e gerencia o `FeedbackDialog`. `FeedbackFab` (FAB no canto inferior direito de `/app/*`) e `FeedbackBanner` (no Assistente IA) oferecem múltiplos pontos de entrada. `FeedbackFormFields` compartilhado entre `FeedbackDialog` e `ContactPage` (evita duplicação de formulário). Hook imperativo `useFeedbackDialog()` para disparo programático. Bônus de 250 créditos por feedback enviado via Cloud Function. i18n completo com namespace `feedback.*` nos 3 locales. **Flag `feedbackPromoSeen`**: flag end-to-end (Zod schema no backend → `CreditState` no frontend → componentes de UI) que controla o "momento zero" do bônus — o FAB só aparece quando o usuário zera os créditos pela primeira vez; o chip no Assistente e o item na Sidebar/MobileBottomNav ficam sempre visíveis como atalho permanente.
 
 ### StackedHeader
-Componente genérico de header padronizado em `src/components/ui/StackedHeader.tsx` (~508 linhas). Resolve 3 famílias de UI com 1 API: (1) Banners com ação (substitui `<Alert action={<Button>}>` em 8+ componentes), (2) Headers de seção colapsáveis (animação Motion para expand/contract), (3) Títulos de seção simples. Props: `collapsible` (com `defaultCollapsed` + `onToggle` via hook `useCollapsibleSection` em `src/hooks/useCollapsibleSection.ts`), `action` (botão opcional), `severity` (success/warning/error/info), variante `section`/`banner`. Migrado em ~12 componentes (Ondas 1-3: Inspector, Configuracoes, Library, ImageStudio, VideoLibrary, CreditBlockedMessage, FeedbackBanner, FeedbackFormFields, AnalyticsConsentPrompt, Assistant, StockMediaPicker, TranscriptionPanel). Namespace i18n `stackedHeader.*` nos 3 locales. Barrel export em `src/components/ui/index.ts`.
+Componente genérico de header padronizado em `src/components/ui/StackedHeader.tsx` (~835 linhas). Resolve 3 famílias de UI com 1 API: (1) Banners com ação (substitui `<Alert action={<Button>}>` em 8+ componentes), (2) Headers de seção colapsáveis (animação Motion para expand/contract), (3) Títulos de seção simples.
+
+Props base: `collapsible` (com `defaultCollapsed` + `onToggle` via hook `useCollapsibleSection` em `src/hooks/useCollapsibleSection.ts`), `action` (botão opcional), `severity` (success/warning/error/info), variante `section`/`banner`.
+
+**5 novas props de layout (v0.126.0):**
+- `direction` (`'vertical' | 'horizontal' | 'responsive'`): eixo do layout — defaults inteligentes por variant (alert → vertical, glass/plain → responsive). `'responsive'` alterna horizontal (mdUp) para vertical (xs)
+- `actionAlign` (`'start' | 'end' | 'center' | 'stretch'`): alinhamento do slot de ação. Default deriva do eixo efetivo
+- `controlAlign` (`'start' | 'end' | 'center'`): alinhamento do slot de controle (chip/switch). Default deriva do eixo efetivo
+- `actionPlacement` (`'inline' | 'stack' | 'bottom'`): posição do slot de ação relativo ao conteúdo
+- `density` (`'compact' | 'standard' | 'comfortable'`): densidade visual com tokens `DENSITY_TOKENS` (containerPx/py, mainGap, collapsePx/pb)
+
+8 tipos públicos, 3 helpers (`resolveDirection`, `resolveAlignItems`, `getEffectiveAxis`), constantes `DIRECTION_DEFAULTS` e `DENSITY_TOKENS`. Migrado em ~12 componentes (Ondas 1-3: Inspector, Configuracoes, Library, ImageStudio, VideoLibrary, CreditBlockedMessage, FeedbackBanner, FeedbackFormFields, AnalyticsConsentPrompt, Assistant, StockMediaPicker, TranscriptionPanel, SpeedPaintControls). Namespace i18n `stackedHeader.*` nos 3 locales. Barrel export em `src/components/ui/index.ts` com todos os tipos.
 
 ### Estúdio de Produção
 Zustand (`useStudioStore`) com `useShallow` para seletores otimizados. Persistência localStorage (17 prefs, prefixo `s2a_*`) + Firestore via `useAutoSaveStudioSettings` (debounce 2s). Layout Grid: Inspector (lg:4) + ScriptEditor (lg:8). EmotionSelector (10 emoções + intensidade), VoiceCard. Keyboard shortcuts: Ctrl+Enter (gerar), Space (play/pause). Swipe horizontal mobile via `useSwipeTabs`.
@@ -175,7 +186,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.125.0`
+- **Current:** `0.126.0`
 - **Last release:** 2026-06-03
 
 ### Últimas mudanças (atualizado por /fast)
@@ -184,8 +195,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.126.0` | StackedHeader expandido: 5 novas props (direction, actionAlign, controlAlign, actionPlacement, density), 8 tipos, 3 helpers, DENSITY_TOKENS; SpeedPaintControls migrado para StackedHeader + useCollapsibleSection (+85/-134); MAX_CHARS 50K→25K; timestamp do logger migrado de serverTimestamp para Date.now(); memória Cloud Functions 256→512 MiB (via setGlobalOptions); 9 call sites com novas props; docs/scan/stacked-header-gaps-audit.md (+422 linhas); testes expandidos (+482 linhas) |
 | `0.125.0` | PWA Install Prompt (store singleton, hook, UI Snackbar, type augmentation, i18n, testes); StackedHeader componente genérico de UI (508 linhas) + useCollapsibleSection + migração de ~12 componentes (Ondas 1-3: Inspector, Configuracoes, Library, ImageStudio, etc); Flag feedbackPromoSeen end-to-end (backend schema → frontend store → UI); stopSwipePropagation() exportada; Header.tsx removido (-670 linhas); testes obsoletos removidos; 9 auditorias + 3 planos documentados |
 | `0.124.1` | Tool loop resiliente com middleware `toolValidationRecovery` (Genkit `generateMiddleware`) — intercepta `ValidationError` e converte em `toolResponse` amigável para autocorreção do modelo; `.describe()` em todos os schemas Zod do assistente (13 schemas, redução de erros de validação); correção de bug de layout no chat mobile iOS Safari (`flex: 1` + `minHeight: 0` no container de mensagens, `minHeight: 100%` removido do EmptyChatState); testes de regressão (+43 linhas); docs de auditoria (`safetool-wrapper-and-zod-describe.md`) e scan (`tool-validation-retry-gaps.md`) |
 | `0.124.0` | Renderização Cross-Route (PR1) — vídeo e speed paint sobrevivem à navegação entre rotas: `videoRenderController.tsx` + `speedPaintRenderController.tsx` (controllers Zustand singleton), `useCrossRouteRenderGuard.ts`, `ExportCrossRouteToast.tsx`, dot indicators no Sidebar/MobileBottomNav. Hooks refatorados para fachada fina (delegação aos controllers, `useShallow` para arrays, `setCodecContainer()` action). Namespace i18n `exportCrossRoute.*`. Performance: `useCallback` + constantes de módulo no toast (hot path 30×/s) |
 | `0.123.0` | Sidebar de Navegação Colapsável (68px/264px) substitui Header nas rotas `/app/*` — Sidebar, SidebarFooter, SidebarHeader, SidebarNavItem, GuestMobileNav, DeleteAccountDialog, store Zustand `useSidebarStore` com persistência localStorage; novo Sistema de Feedback Global (8 arquivos em `src/components/feedback/`) com FeedbackController, FeedbackDialog, FeedbackFab, FeedbackBanner, FeedbackFormFields reutilizável, hook `useFeedbackDialog()`; namespace i18n `feedback.*` (3 locales); ContactPage refatorada (+11/-161) para usar FeedbackFormFields compartilhado; tokens de tema SIDEBAR_WIDTH_COLLAPSED/EXPANDED/TRANSITION_DURATION; testes (+969 linhas); docs de planejamento/auditoria (11 novos) |
-| `0.122.0` | AuthActionPage: página customizada para ações de email do Firebase Auth (verificação de email, reset de senha, recuperação de email) com UI dedicada (Motion + MUI glass panel); `authActionCodeSettings` com `handleCodeInApp: true`; rota pública `/auth/action`; chaves i18n `authAction.*` (3 locales); testes (+412 linhas); pre-render expandido (10 rotas) |

@@ -509,6 +509,8 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
                 {t('assistant.runtime.retry')}
               </Button>
             }
+            actionPlacement="stack"
+            actionAlign="end"
             slotProps={{ root: { sx: { borderRadius: 2 } } }}
           />
         </Box>

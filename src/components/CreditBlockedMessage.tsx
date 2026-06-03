@@ -7,7 +7,6 @@
 // ---------------------------------------------------------------------------
 
 import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../features/i18n/context';
 import { StackedHeader } from './ui';
@@ -31,20 +30,19 @@ export function CreditBlockedMessage({ show }: CreditBlockedMessageProps) {
       alertVariant="outlined"
       title={t('credits.blocked.title')}
       titleVariant="alertTitle"
-      description={
-        <Stack spacing={1}>
-          <span>{t('credits.blocked.description')}</span>
-          <Button
-            variant="outlined"
-            color="warning"
-            size="small"
-            onClick={() => navigate('/precos')}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            {t('credits.blocked.cta')}
-          </Button>
-        </Stack>
+      description={t('credits.blocked.description')}
+      action={
+        <Button
+          variant="outlined"
+          color="warning"
+          size="small"
+          onClick={() => navigate('/precos')}
+        >
+          {t('credits.blocked.cta')}
+        </Button>
       }
+      actionPlacement="stack"
+      actionAlign="start"
       slotProps={{
         root: {
           sx: {

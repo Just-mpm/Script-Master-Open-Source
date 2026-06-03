@@ -62,7 +62,7 @@ function captureError(
 
   const entry: ErrorLogEntry = {
     id: crypto.randomUUID(),
-    timestamp: null, // serverTimestamp será adicionado pelo BatchProcessor
+    timestamp: Date.now(),
     level,
     category: inferCategoryFromContext(context),
     context,

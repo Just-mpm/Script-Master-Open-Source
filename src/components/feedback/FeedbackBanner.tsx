@@ -63,6 +63,8 @@ export function FeedbackBanner({ screenContext = '/app/assistente' }: FeedbackBa
             {t('feedback.banner.cta')}
           </Button>
         }
+        actionPlacement="stack"
+        actionAlign="end"
         slotProps={{
           root: {
             sx: {

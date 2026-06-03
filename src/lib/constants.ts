@@ -1,6 +1,6 @@
 import { Voice } from './types';
 
-export const MAX_CHARS = 50000;
+export const MAX_CHARS = 25000;
 export const CHUNK_LIMIT = 500;
 
 export const VOICES: Voice[] = [

@@ -506,6 +506,8 @@ export function Library() {
               {t('common.tryAgain')}
             </Button>
           }
+          actionPlacement="stack"
+          actionAlign="end"
         />
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
@@ -776,6 +778,8 @@ export function Library() {
                                         {t('common.tryAgain')}
                                       </Button>
                                     }
+                                    actionPlacement="stack"
+                                    actionAlign="end"
                                   />
                                 ) : projectData.audios.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
@@ -886,6 +890,8 @@ export function Library() {
                                         {t('common.tryAgain')}
                                       </Button>
                                     }
+                                    actionPlacement="stack"
+                                    actionAlign="end"
                                   />
                                 ) : projectData.images.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
@@ -961,6 +967,8 @@ export function Library() {
                                     {t('common.tryAgain')}
                                   </Button>
                                 }
+                                actionPlacement="stack"
+                                actionAlign="end"
                               />
                             ) : resolvedVideos.length === 0 ? (
                               <Typography variant="body2" color="text.secondary">
@@ -1129,6 +1137,8 @@ export function Library() {
               {t('library.updateList')}
             </Button>
           }
+          actionPlacement="stack"
+          actionAlign="end"
           slotProps={{ root: { sx: { mt: 1 } } }}
         />
       )}
