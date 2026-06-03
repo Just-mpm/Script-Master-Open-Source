@@ -80,7 +80,7 @@ const TEAM: readonly TeamMember[] = [
 
 /** Versões do roadmap (dados invariantes — não traduzíveis) */
 const ROADMAP_VERSIONS: readonly string[] = [
-  '0.17', '0.20', '0.22', '0.23', '0.24', 'next', '1.0',
+  '01', '02', '03', '04', '05', '06', '1.0',
 ];
 
 /** Status de cada item do roadmap (índice corresponde a ROADMAP_VERSIONS) */
@@ -291,7 +291,7 @@ function RoadmapRow({
           sx={{ alignItems: 'center', mb: 0.5, flexWrap: 'wrap' }}
         >
           <Chip
-            label={`v${item.version}`}
+            label={item.version}
             size="small"
             sx={(theme) => ({
               fontWeight: 600,

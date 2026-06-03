@@ -7,6 +7,41 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.126.1] - 2026-06-03
+
+### Alterado
+
+- **Conteúdo editorial das páginas públicas reescrito — foco em clareza e benefício direto** (7 arquivos em `src/data/`, +93/-93 linhas líquidas):
+  - `authBenefits.ts`: textos dos 4 benefícios reescritos para tom mais direto ("Narração sem gravar", "Vídeo montado no navegador", "Cenas com IA", "Assistente criativo") — chaves renomeadas de `b*Title`/`b*Desc` para os 3 locales
+  - `metrics.ts`: métricas renomeadas para conceitos mais relevantes ao beta ("Fluxo em 3 etapas", "Créditos mensais", "Bônus por feedback", "Sem cartão") — chaves `metric*Label`/`metric*Desc` renomeadas
+  - `pricingFaq.ts`: resposta da FAQ sobre créditos não utilizados ajustada ("expiram" em vez de linguagem anterior)
+  - `testimonials.ts`: todos os 6 depoimentos reescritos com linguagem mais natural e casos de uso específicos — chaves `t*Text`/`t*UseCase` renomeadas
+  - `useCases.ts`: todos os 6 casos de uso reescritos com descrições mais diretas — chaves `uc*Title`/`uc*Desc` renomeadas, novo anchor `images` adicionado
+
+- **Arquivos de tradução reestruturados** (`src/features/i18n/locales/{en,es,pt-BR}.ts`, +198/-197, +200/-199, +200/-199 linhas respectivamente):
+  - Namespace `images` adicionado nos 3 locales com chave `images.alt` para alt text de imagens
+  - Chaves `landingShowcases.*.alt` reorganizadas e renomeadas para consistência
+  - Chaves de feature items (`featureItems.*`) e showcase sections reestruturadas
+  - Chave `of` removida do locale EN
+
+- **Descrições SEO reescritas** (`public/llms-full.txt` +36/-32, `public/llms.txt` +16/-16):
+  - Tom reformulado de descrição de "plataforma SaaS" para "ferramenta web para criadores"
+  - Seções reestruturadas em `llms-full.txt`: "Principal Promessa", "Para Quem É" (detalhamento por perfil), seções de features renomeadas ("Texto para Narração", "Cenas e Imagens", "Vídeo e Legendas", "Assistente de Criação")
+  - `llms.txt`: resumo simplificado com links focados em "Criar vídeos para YouTube com IA", seção "Tecnologia" simplificada (sem detalhes de stack — foco em o que faz, não como)
+  - Descrições longas e curtas alinhadas entre llms.txt e llms-full.txt
+
+- **Alt texts de imagens migrados para i18n** (`src/pages/public/FuncionalidadesPage.tsx`, +3/-3): 3 alt texts de showcases (TTS, vídeo, imagens) movidos de strings literais para `t('landingShowcases.audio.alt')`, `t('landingShowcases.video.alt')`, `t('landingShowcases.images.alt')` — consistência com LandingPage que já usava i18n para alt texts
+
+- **Labels do roadmap na AboutPage** (`src/pages/public/AboutPage.tsx`, +2/-2): versões de `'0.17', '0.20', '0.22', '0.23', '0.24', 'next'` para `'01', '02', '03', '04', '05', '06'` — label do chip alterada de `v{item.version}` para `item.version` (exibe o número sem prefixo)
+
+### Melhorado
+
+- **HeroSection com `sx` function-based** (`src/components/public/HeroSection.tsx`, +9/-3): `sx` migrado de objeto estático para arrow function `(theme) => ({...})` — permite acesso direto ao tema e evita warnings de TypeScript sobre tipos de tema não resolvidos
+
+- **maxWidth na LandingPage** (`src/pages/public/LandingPage.tsx`, +6/-3): ajuste de largura máxima do container visual do hero para melhor responsividade em telas grandes
+
+---
+
 ## [0.126.0] - 2026-06-03
 
 ### Adicionado

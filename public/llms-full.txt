@@ -1,59 +1,63 @@
 # Script Master
 
-> Plataforma SaaS que transforma roteiros de vídeo em áudio profissional usando inteligência artificial (Gemini TTS).
+> Ferramenta web para transformar roteiros em vídeos para YouTube com narração por IA, cenas, legendas e organização de projetos.
 
-Script Master é uma ferramenta web para criadores de conteúdo que precisam transformar textos em produções audiovisuais completas. Funciona inteiramente no navegador, sem instalação. Desenvolvido pela Koda AI Studio, empresa brasileira de IA criativa.
+Script Master foi criado para criadores que têm ideias e roteiros, mas não querem depender de um processo pesado de gravação, edição e montagem para publicar. O produto reúne texto para narração, criação de cenas, composição de vídeo, legendas e biblioteca de projetos em uma experiência única no navegador.
 
-## Estúdio de Voz (TTS)
+Desenvolvido pela Koda AI Studio, empresa brasileira de IA criativa. Domínio oficial: https://script-master.pro.
 
-O estúdio de voz converte roteiros em áudio profissional usando Gemini TTS (gemini-3.1-flash-tts-preview). Suporta mais de 30 vozes diferentes com preview em WAV. Permite configuração de emoções (10 tipos com intensidade ajustável), suporte a multi-locutor com até 2 vozes simultâneas, chunking automático para roteiros longos (mais de 500 caracteres, divididos em chunks de até 500 caracteres por chamada), e detecção de silêncio. Limite de 25.000 caracteres por roteiro.
+## Principal Promessa
 
-## Geração de Imagens e Cenas
+Escreva ou cole seu roteiro. O Script Master ajuda a gerar narração, organizar cenas, criar legendas e montar o vídeo para publicação.
 
-Gera imagens para cada cena do roteiro usando Gemini (gemini-3.1-flash-image-preview). Oferece 8 aspect ratios no estúdio, 5 nas cenas e 3 no vídeo. Suporta frameworks visuais: general e whiteboard. Inclui geração automática de prompts de cena com saída textual JSON. Possui StockMediaPicker integrado com Pexels API como fallback local.
+## Para Quem É
 
-## Speed Paint
+- Criadores de YouTube que publicam vídeos narrados
+- Canais educativos, faceless, documentais, tutoriais e comentários
+- Pessoas que querem testar ideias de vídeo antes de investir em produção pesada
+- Times pequenos que precisam transformar textos em vídeos com menos retrabalho
 
-Animação automatizada de imagens com efeito de pintura progressiva. Utiliza edge detection com BFS (busca em largura) e renderização via Remotion com fases de sketch e reveal. Os timings são centralizados em speedPaintTimings.ts com configurações padrão (hold de 3 segundos, ratio de sketch de 0.8). Web Worker inline é usado para mais de 5 cenas.
+## Texto para Narração
 
-## Renderização de Vídeo
+O estúdio converte roteiros em narração com vozes de IA. O objetivo é reduzir a necessidade de gravar tudo manualmente e permitir testes rápidos de tom, ritmo e estilo. Roteiros longos são tratados em partes menores para manter a narração consistente.
 
-Composição de vídeo client-side com Remotion 4. Usa WebCodecs com fallback de codec: H.264+AAC, depois H.264, depois VP8+Opus+WebM. Legendas automáticas com pipeline de 3 fontes: segment-timing, whisper-aligned e proportional. Suporta exportação de 720p até 4K. Animações de cena opcionais com toggle. Cache LRU com SHA-256 para 20 entradas.
+## Cenas e Imagens
 
-## Assistente IA
+O criador pode gerar ou organizar imagens para acompanhar trechos do roteiro. O fluxo ajuda a transformar um texto corrido em uma sequência visual mais fácil de revisar, ajustar e publicar.
 
-Chat com IA usando Genkit com maxTurns de 20 e 7 ferramentas integradas: updatePlan, webSearch, getStudioState, getUserMemories, updateStudio, interview, respond. Dois modos: fast (gemini-3.1-flash-lite) e specialist (gemini-3.5-flash). Streaming com batching via requestAnimationFrame. Preservação de tool context via fullHistory. Compactação automática de histórico por threshold de tokens. Inclui CodeBlock com syntax highlight, ImageLightbox com zoom, e ScrollToBottomFab.
+## Vídeo e Legendas
+
+O Script Master combina narração, cenas e legendas para montar vídeos diretamente no navegador. A experiência foi pensada para tornar mais simples sair de um roteiro para um arquivo pronto para publicar no YouTube ou reaproveitar em outros formatos.
+
+## Assistente de Criação
+
+O assistente ajuda a refinar ideias, revisar roteiros, sugerir planos de produção e acelerar decisões criativas. Ele trabalha como apoio ao processo, não como substituto obrigatório da voz do criador.
 
 ## Biblioteca de Projetos
 
-Gerenciamento completo de projetos com áudios, cenas, roteiros e vídeos organizados. Projetos armazenados em subcoleções Firestore (audios, images, videos). Suporta busca, download em lote de vídeos e galeria horizontal no player. Blob cleanup com revogação seletiva de URLs.
+Projetos salvos mantêm roteiros, áudios, cenas e vídeos organizados. Isso facilita continuar uma produção depois, reaproveitar materiais e criar variações sem recomeçar do zero.
 
-## Persistência Dual
+## Beta Aberto e Créditos
 
-Armazenamento automático: Firestore + Storage quando autenticado, IndexedDB para visitantes. Offline suportado com persistentLocalCache e multipleTabManager. Chat faz fallback para IndexedDB se exceder 900KB. Admin via custom claim (admin: true).
+O Script Master está em beta aberto com créditos mensais gratuitos. O objetivo do beta é permitir que criadores testem o fluxo real, enviem feedback e ajudem a lapidar o produto antes da abertura completa dos planos pagos.
 
-## Preços
+## Tecnologia
 
-Beta aberto gratuito com créditos mensais. Planos futuros planejados: Free, Pro (R$49,90/mês), Business (R$149,90/mês). Stripe integrado mas desconectado durante o beta (flag VITE_BILLING_ENABLED). Backend com credit-service para estimativa, reserva, confirmação e reversão de créditos.
+A tecnologia fica nos bastidores para sustentar o fluxo criativo:
 
-## Internacionalização
+- IA generativa para narração, imagens, assistente e apoio ao roteiro
+- Renderização de vídeo no navegador
+- Firebase para autenticação, armazenamento, backend serverless e hospedagem
+- Interface internacionalizada em pt-BR, en e es
+- PWA instalável para uma experiência mais próxima de app
 
-3 idiomas suportados: pt-BR (padrão), en e es. Mais de 20 namespaces de tradução. Interface completa traduzida com suporte a pluralização.
-
-## Stack Técnica
-
-Frontend: React 19, Vite 8, react-router-dom v7 (lazy loading por rota), MUI v9, Zustand, Motion, @dnd-kit/react, react-dropzone, react-hot-toast, vite-plugin-pwa.
-Backend: Firebase Cloud Functions v2 com Genkit, Firebase Auth, Firestore, Storage, App Check (reCAPTCHA v3).
-IA: Gemini 3.1 Flash TTS, Gemini 3.1 Flash Image, Gemini 3.1 Flash Lite, Gemini 3.5 Flash.
-Vídeo: Remotion 4, WebCodecs, Whisper WASM.
-Testes: Vitest 4, @testing-library/react.
-Domínio de produção: script-master.pro.
-
-## Contato e Links
+## Links
 
 Site: https://script-master.pro
+Funcionalidades: https://script-master.pro/funcionalidades
+Preços: https://script-master.pro/precos
+Sobre: https://script-master.pro/sobre
 Contato: https://script-master.pro/contato
-Email: contato@scriptmaster.app
-Instagram: https://instagram.com/scriptmaster
-YouTube: https://youtube.com/@scriptmaster
-Twitter/X: https://x.com/scriptmaster
+Termos: https://script-master.pro/termos
+Privacidade: https://script-master.pro/privacidade
+Cookies: https://script-master.pro/cookies

@@ -77,7 +77,7 @@ export const es: TranslationDictionary = {
     logoAlt: 'Script Master — Ir a la página de inicio',
   },  footer: {
     description:
-      'Convierte guiones en arte con IA. Audio, video e imágenes profesionales generados por Gemini.',
+      'Transforma guiones en videos para YouTube con narración, escenas y subtítulos generados por IA.',
     copyright: 'Script Master. Todos los derechos reservados.',
     madeWith: 'Hecho con IA y Gemini',
     productGroup: 'Producto',
@@ -168,37 +168,37 @@ export const es: TranslationDictionary = {
 
   landing: {
     hero: {
-      title: 'Convierte guiones en arte con IA',
+      title: 'Nunca fue tan fácil crear videos para YouTube',
       subtitle:
-        'Plataforma completa para crear audio, video e imágenes profesionales a partir de guiones. Todo del lado del cliente con Gemini AI.',
-      cta: 'Crear cuenta gratuita',
-      ctaSecondary: 'Ver Funcionalidades',
-      alt: 'Ilustración de Script Master — convirtiendo guiones en arte con IA',
+        'Pega tu guion y genera narración, escenas, subtítulos y video en un solo lugar, sin grabar todo desde cero.',
+      cta: 'Crear mi primer video',
+      ctaSecondary: 'Ver cómo funciona',
+      alt: 'Interfaz de Script Master con un guion listo para generar narración y video',
     },
     socialProof: {
-      label: 'Powered by Gemini AI',
-      sublabel: 'TTS, generación de imágenes y asistente conversacional',
+      label: 'Voz, escenas y video con IA',
+      sublabel: 'Hecho para creadores que quieren publicar más con menos retrabajo',
     },
     features: {
-      title: 'Todo lo que necesitas para crear',
+      title: 'Del guion al video listo',
       subtitle:
-        'Seis herramientas integradas en una sola plataforma para transformar tus ideas en contenido profesional.',
+        'Las herramientas que llevan tu contenido adelante: narración, escenas, subtítulos, asistente y biblioteca en un solo flujo.',
     },
     featureCards: {
       voice: {
-        title: 'Voz con IA',
+        title: 'Narración lista sin grabar',
         description:
-          'Transforma guiones en audio profesional con Gemini TTS. Control de voz, ritmo y multi-locutor.',
+          'Convierte texto en voz natural, con ritmo, emoción y hasta dos locutores cuando lo necesites.',
       },
       video: {
-        title: 'Video Automático',
+        title: 'Video montado en el navegador',
         description:
-          'Crea videos del lado del cliente con subtítulos, transiciones y waveform. Sin backend.',
+          'Combina narración, escenas y subtítulos para exportar videos sin abrir un editor pesado.',
       },
       images: {
-        title: 'Generación de Imágenes',
+        title: 'Escenas para acompañar el guion',
         description:
-          '8 aspect ratios, referencia visual y galería completa con persistencia en la nube.',
+          'Crea imágenes para cada parte de la historia, en formatos útiles para YouTube, Shorts y Reels.',
       },
       speedPaint: {
     durationLabel: 'Duración del speed paint',
@@ -208,13 +208,13 @@ export const es: TranslationDictionary = {
     chooseFiles: 'Elegir archivos',
         title: 'Speed Paint',
         description:
-          'Animación de pintura progresiva con detección de bordes, procesamiento por lotes y exportación.',
+          'Da movimiento a las imágenes con efecto de pintura progresiva para mantener la atención.',
       },
       assistant: {
     deleteMemoryConfirm: '¿Eliminar memoria?',
-        title: 'Asistente IA',
+        title: 'Asistente creativo',
         description:
-          'Chat con streaming, memorias, archivos adjuntos e integración directa con el estudio de producción.',
+          'Pide ideas, ajustes de guion, tono de voz y dirección visual antes de generar contenido.',
       },
       library: {
     emptyGallery: 'Tu galería está vacía',
@@ -222,89 +222,89 @@ export const es: TranslationDictionary = {
     sortNewestFirst: 'Más recientes primero',
     generation: 'Generación',
     project: 'Proyecto',
-        title: 'Biblioteca',
+        title: 'Proyectos guardados y organizados',
         description:
-          'Gestión completa de proyectos con audios, escenas, videos y persistencia dual.',
+          'Guarda guiones, audios, escenas y videos para retomarlos o descargarlos cuando quieras.',
       },
     },
     ttsShowcase: {
-      title: 'Voz Profesional con Gemini TTS',
+      title: 'Tu narración lista en minutos',
       description:
-        'Transforma cualquier guion en narración profesional con voces naturales y control total sobre ritmo, tono y perfil de audio.',
+        'Elige el estilo de voz, ajusta el ritmo y genera una narración clara sin montar estudio, micrófono ni repetir toma por toma.',
       benefits: {
-        0: 'Multi-locutor con 2 narradores independientes',
-        1: 'Detección automática de escenas mediante análisis de silencio (RMS)',
-        2: 'Control de ritmo, tono y perfil de audio (podcast, audiolibro, narración)',
-        3: 'Previews de voz disponibles para cada voz',
-        4: 'Audio de alta calidad 24kHz mono 16-bit PCM',
+        0: 'Dos voces independientes para diálogos, entrevistas y narraciones alternadas',
+        1: 'Ritmo y emoción ajustables para combinar con el estilo del canal',
+        2: 'Previews de voz antes de gastar créditos en la generación final',
+        3: 'Guiones largos divididos automáticamente para mantener consistencia',
+        4: 'Audio de alta calidad listo para usar en el video',
       },
     },
     videoShowcase: {
-      title: 'Video del Lado del Cliente con Remotion',
+      title: 'Video montado sin salir del navegador',
       description:
-        'Renderiza videos completos directamente en tu navegador. Sin servidor, sin costo de renderización. WebCodecs + Whisper para subtítulos automáticos.',
+        'Después de la narración, organiza escenas, subtítulos y transiciones en un flujo simple. Creas el video en el navegador y descargas el resultado.',
       benefits: {
-        0: 'Fallback de codec: H.264+AAC+MP4 > H.264 sin audio > VP8+Opus+WebM',
-        1: 'Subtítulos automáticos con Whisper WASM (3 fuentes de sincronización)',
-        2: 'Crossfade entre escenas con spring animation (400ms overlap)',
-        3: '3 resoluciones: 16:9, 9:16, 1:1',
-        4: 'Waveform overlay sincronizado con el video',
+        0: 'Formatos para video horizontal, vertical y cuadrado',
+        1: 'Subtítulos automáticos para Shorts, Reels y cortes',
+        2: 'Transiciones entre escenas para un resultado más pulido',
+        3: 'Exportación sin depender de render externo',
+        4: 'Preview antes de descargar',
       },
     },
     assistantShowcase: {
-      title: 'Asistente IA Integrado',
+      title: 'Un compañero para destrabar el guion',
       description:
-        'Chat conversacional con streaming de Gemini, memorias a largo plazo e integración directa con el estudio. El asistente sugiere cambios que aplicas con un clic.',
+        'Usa el asistente para mejorar apertura, ritmo, llamada a la acción e ideas de escena. Cuando te guste una sugerencia, llévala al estudio.',
       benefits: {
-        0: 'Streaming en tiempo real con Gemini 3.1 Flash',
-        1: 'Sistema de memoria: textos cortos + carga de documentos (.md, .txt, .csv)',
-        2: 'Adjuntos: 5 por mensaje (imágenes 10MB, documentos 5MB)',
-        3: 'Extracción de JSON del chat con botón "Aplicar en el estudio"',
-        4: 'Auto-guardado de sesiones con historial completo',
+        0: 'Sugerencias para hacer el guion más claro y envolvente',
+        1: 'Ideas de escenas visuales alineadas con el texto',
+        2: 'Memorias y adjuntos para contexto de canal, público y estilo',
+        3: 'Ajustes aplicables en el estudio con pocos clics',
+        4: 'Historial guardado para retomar conversaciones importantes',
       },
     },
     useCases: {
-      title: 'Para cada tipo de creador',
+      title: 'Hecho para quien crea contenido',
       subtitle:
-        'Ya seas YouTuber, podcaster, profesor o marketer — Script Master se adapta a tu flujo de trabajo.',
+        'YouTube, Shorts, clases, podcasts o campañas: transforma ideas en contenido publicable sin empezar de cero cada vez.',
       learnMore: 'Más información',
     },
     metrics: {
-      title: 'Números que importan',
+      title: 'Menos etapas entre idea y publicación',
       subtitle:
-        'Resultados reales de la comunidad de creadores que usan Script Master todos los días.',
+        'Una visión honesta del beta: créditos para probar, flujo simple y feedback directo para mejorar el producto.',
     },
     demo: {
-      title: 'Ve Script Master en acción',
+      title: 'Mira tu guion tomando forma',
       subtitle:
-        'Un estudio completo en tu navegador. Escribe, genera y exporta — todo en un solo lugar.',
+        'Escribe, genera la voz, crea escenas y exporta el video sin saltar entre varias herramientas.',
       toolbar: {
         audio: 'Audio',
         video: 'Video',
         images: 'Imágenes',
         assistant: 'Asistente',
       },
-      scriptTitle: 'Mi Guion — Episodio 01',
+      scriptTitle: 'Mi video para YouTube — Episodio 01',
       statsLine: '{lines} líneas · ~{chars} caracteres',
       scriptLines: {
-        0: 'En la era digital, el contenido es rey.',
-        1: 'Pero no todos tienen tiempo para grabar.',
-        2: 'Con inteligencia artificial, cualquier texto se convierte en voz.',
-        3: 'Y cualquier voz, se convierte en una historia contada.',
+        0: 'Hoy vamos a convertir una idea simple en video.',
+        1: 'Primero viene el guion, después la narración.',
+        2: 'Las escenas ayudan al público a seguir cada punto.',
+        3: 'Al final, exportas y publicas.',
       },
-      generateButton: 'Generar audio',
-      tryFree: 'Probar gratis',
+      generateButton: 'Generar narración',
+      tryFree: 'Crear mi primer video',
       noCreditCard: 'Sin tarjeta de crédito · Configuración en 30 segundos',
     },
     testimonials: {
-      title: 'Lo que dicen nuestros creadores',
+      title: 'Creadores que quieren publicar más',
       subtitle:
-        'Miles de creadores ya usan Script Master para transformar ideas en contenido profesional.',
+        'Ejemplos de cómo Script Master puede acortar el camino entre guion, narración, escenas y video final.',
     },
     howItWorks: {
       title: 'Cómo Funciona',
       subtitle:
-        'Tres pasos para transformar tu guion en contenido profesional.',
+        'Tres pasos para salir del guion y llegar a un video listo para publicar.',
     },
     steps: {
       1: {
@@ -313,129 +313,129 @@ export const es: TranslationDictionary = {
           'Usa el editor integrado o pega tu texto. El asistente IA puede ayudar a mejorar tu guion.',
       },
       2: {
-        title: 'Genera con IA',
+        title: 'Genera voz, escenas y subtítulos',
         description:
-          'Un clic para transformar tu guion en audio, imágenes y video con Gemini.',
+          'Convierte el texto en narración, crea imágenes de apoyo y prepara el montaje.',
       },
       3: {
-        title: 'Exporta y comparte',
+        title: 'Exporta y publica',
         description:
-          'Descarga tu audio WAV, video MP4/WebM o imágenes PNG en alta resolución.',
+          'Descarga el video, la narración o las escenas para YouTube, Shorts, Reels o clases.',
       },
     },
     moreFeatures: {
-      title: 'Y Mucho Más',
+      title: 'Detalles que hacen el flujo más liviano',
       cards: {
         multiSpeaker: {
-          title: 'Multi-locutor',
+          title: 'Dos voces en el mismo guion',
           description:
-            'Soporte para 2 locutores con configuración independiente de voz y nombre.',
+            'Crea conversaciones, entrevistas y narraciones alternadas sin grabar a dos personas.',
         },
         chunking: {
-          title: 'Chunking Inteligente',
+          title: 'Guiones largos sin dolor de cabeza',
           description:
-            'División optimizada vía LLM + fallback programático. Límite de 500 caracteres por chunk.',
+            'El texto se divide automáticamente para mantener la narración consistente incluso en videos largos.',
         },
         dualStorage: {
-          title: 'Dual Storage',
+          title: 'Tus proyectos siempre a mano',
           description:
-            'Firestore (autenticado) + IndexedDB (local) con migración automática.',
+            'Empieza localmente, inicia sesión cuando quieras y mantén tu historial organizado.',
         },
       },
     },
     cta: {
-      title: 'Empieza a crear ahora',
-      subtitle: 'Crea tu primera narración gratuitamente. Sin tarjeta de crédito.',
-      button: 'Comenzar ahora',
+      title: 'Tu próximo video puede empezar por el guion',
+      subtitle: 'Crea tu primera narración, genera escenas y prueba el flujo gratis. Sin tarjeta de crédito.',
+      button: 'Crear mi primer video',
     },
   },
 
   features: {
     hero: {
-      title: 'Todo lo que necesitas para crear',
+      title: 'Las herramientas para transformar guion en video',
       subtitle:
-        'Explora todas las herramientas integradas de Script Master para transformar tus guiones en contenido profesional.',
-      cta: 'Empezar Gratis',
+        'Narración, imágenes, subtítulos, montaje y asistente creativo para quien quiere publicar más sin depender de un flujo complicado.',
+      cta: 'Crear mi primer video',
       ctaSecondary: 'Ver beta',
     },
     sections: {
-      tts: 'Estudio de Voz (TTS)',
-      video: 'Renderización de Video',
-      images: 'Generación de Imágenes',
+      tts: 'Narración y Voz',
+      video: 'Montaje de Video',
+      images: 'Escenas e Imágenes',
       speedPaint: 'Speed Paint y Animación',
       assistant: 'Asistente IA',
       platform: 'Plataforma',
     },
     ttsShowcase: {
-      title: 'Audio Profesional con Gemini TTS',
+      title: 'Narración profesional sin abrir el micrófono',
       description:
-        'Nuestro motor de TTS usa el modelo más avanzado de Gemini para generar narraciones naturales con control total sobre todos los parámetros de voz.',
+        'Convierte texto en voz natural, ajusta el ritmo y elige el estilo correcto para videos explicativos, historias, clases o contenido corto.',
       benefits: {
-        0: 'Soporte para 14+ parámetros de estudio en el Inspector',
-        1: 'Detección automática de escenas mediante análisis RMS del audio generado',
-        2: 'Calibración automática del umbral de silencio en hasta 3 iteraciones',
-        3: 'Reintentos inteligentes: 3 intentos con jitter y backoff exponencial',
-        4: 'Previews de voz estáticos WAV para reproducción instantánea',
+        0: 'Controles de voz, ritmo, emoción y perfil de narración',
+        1: 'Dos voces para guiones con diálogo o entrevista',
+        2: 'Previews de voz antes de la generación final',
+        3: 'Guiones largos tratados en partes para mantener fluidez',
+        4: 'Audio WAV de alta calidad para editar o publicar',
       },
     },
     videoShowcase: {
-      title: 'Video Sin Servidor',
+      title: 'Montaje de video directo en el navegador',
       description:
-        'Toda la renderización ocurre en tu navegador. Sin carga de video, sin costo de procesamiento. Total privacidad y control.',
+        'Monta escenas, subtítulos y narración en un solo flujo. La tecnología corre en el navegador para dar más privacidad y control, sin complicar tu rutina.',
       benefits: {
-        0: 'Fallback de codec: H.264+AAC+MP4 > H.264 > VP8+Opus+WebM',
-        1: 'Transcripción Whisper WASM integrada (sin backend)',
-        2: 'Editor inline de estilo de subtítulos (fontSize, padding, borderRadius, opacity)',
-        3: 'Waveform overlay que se deshabilita durante la exportación para rendimiento',
-        4: 'Canvas patch para corrección de bug font-stretch en Remotion',
+        0: 'Videos en formatos útiles para YouTube, Shorts y redes sociales',
+        1: 'Subtítulos automáticos para mejorar retención y accesibilidad',
+        2: 'Estilo de subtítulos ajustable sin salir del editor',
+        3: 'Preview para revisar escenas antes de exportar',
+        4: 'Renderización en el navegador con fallback de formato cuando sea necesario',
       },
     },
     imagesShowcase: {
-      title: 'Imágenes con Referencia Visual',
+      title: 'Escenas visuales para contar mejor la historia',
       description:
-        'Genera imágenes con Gemini usando prompts de texto y, opcionalmente, una imagen de referencia para guiar el estilo y composición.',
+        'Crea imágenes a partir del guion o usa una referencia para mantener estilo y composición. Ideal para videos narrados, clases, historias y contenido explicativo.',
       benefits: {
-        0: '8 aspect ratios: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9',
-        1: 'Frameworks visuales: cine/fotografía o pizarra',
-        2: 'Generación automática de escenas a partir del guion',
-        3: 'Persistencia dual: Firestore + IndexedDB',
+        0: 'Formatos para thumbnail, video horizontal, vertical, cuadrado y panorámico',
+        1: 'Estilos visuales para escenas realistas, explicativas o whiteboard',
+        2: 'Sugerencias de escena generadas a partir del guion',
+        3: 'Galería para revisar, reutilizar y descargar imágenes',
       },
     },
     cta: {
-      title: '¿Listo para crear?',
-      subtitle: 'Empieza a usar todas estas funciones gratuitamente.',
-      button: 'Empezar Gratis',
+      title: '¿Listo para transformar guion en video?',
+      subtitle: 'Prueba el flujo completo gratis mientras el beta está abierto.',
+      button: 'Crear mi primer video',
     },
   },
 
   // ── Beta Abierto ─────────────────────────────────────────────────────
   pricing: {
     hero: {
-      title: 'Beta Abierto',
-      subtitle: 'Script Master está en beta abierto. El uso de IA requiere inicio de sesión.',
+      title: 'Entra ahora mientras el beta está abierto',
+      subtitle: 'Crea videos con IA gratis, prueba el flujo completo y ayuda a moldear Script Master con tu feedback.',
       cta: 'Crear cuenta gratuita',
       ctaSecondary: 'Cómo funciona',
     },
     popular: 'Popular',
     credits: {
-      title: 'Créditos',
-      subtitle: 'Los créditos son la moneda del beta. Cada acción consume créditos, renovados cada mes.',
+      title: 'Créditos para crear sin pagar ahora',
+      subtitle: 'Durante el beta, recibes créditos mensuales para probar narración, imágenes, asistente y video.',
       monthly: '500 créditos mensuales gratuitos',
       monthlyDesc: 'Créditos renovados automáticamente al inicio de cada mes.',
       bonus: '+250 créditos al enviar feedback',
       bonusDesc: 'Envía feedback constructivo y gana un bono de créditos.',
-      noPayment: 'Sin pago',
+      noPayment: 'Sin tarjeta de crédito',
       noPaymentDesc: 'Sin tarjeta de crédito. El beta es 100% gratuito.',
     },
     howItWorks: {
-      title: 'Cómo funciona',
-      subtitle: 'Es simple comenzar a crear con Script Master.',
+      title: 'Cómo empezar en el beta',
+      subtitle: 'En pocos minutos ya puedes probar tu primer guion.',
       step1Title: 'Inicia sesión',
       step1Desc: 'Inicia sesión con tu cuenta de Google o email para acceder a todas las herramientas.',
-      step2Title: 'Crea contenido',
-      step2Desc: 'Cada generación de audio, imagen o chat consume créditos de tu saldo mensual.',
+      step2Title: 'Prueba tu guion',
+      step2Desc: 'Genera narración, escenas, subtítulos o conversa con el asistente usando tus créditos mensuales.',
       step3Title: 'Monitorea tu saldo',
-      step3Desc: 'Tus créditos disponibles aparecen en el encabezado después de iniciar sesión.',
+      step3Desc: 'Tu saldo aparece en la app para que sepas cuánto aún puedes crear en el mes.',
     },
     notice: {
       title: 'Los pagos y suscripciones están temporalmente pausados.',
@@ -445,17 +445,17 @@ export const es: TranslationDictionary = {
       title: 'Preguntas frecuentes sobre el beta',
     },
     cta: {
-      title: '¿Listo para empezar?',
-      subtitle: 'Crea tu primera narración gratuitamente. Créditos mensuales renovados cada mes.',
-      button: 'Iniciar sesión con Google',
+      title: '¿Quieres probar antes de que sea un plan pago?',
+      subtitle: 'Entra al beta abierto y crea tu primera narración gratis. Créditos renovados cada mes.',
+      button: 'Crear cuenta gratuita',
     },
   },
 
   faq: {
     hero: {
-      title: 'Preguntas Frecuentes',
+      title: '¿Dudas antes de crear tu primer video?',
       subtitle:
-        'Encuentra respuestas rápidas a las dudas más comunes sobre Script Master.',
+        'Entiende créditos, seguridad, generación de voz, imágenes y video antes de entrar al beta.',
       cta: 'Crear cuenta gratuita',
       ctaSecondary: 'Ver créditos',
     },
@@ -472,10 +472,10 @@ export const es: TranslationDictionary = {
       button: 'Contáctanos',
     },
     cta: {
-      title: '¿Listo para crear?',
+      title: 'La mejor respuesta es probar con un guion real',
       subtitle:
-        'Empieza a usar Script Master y descubre el poder de la IA para transformar tus guiones.',
-      button: 'Empezar Gratis',
+        'Entra al beta, pega un guion corto y mira cómo voz, escenas y subtítulos encajan en tu flujo.',
+      button: 'Crear mi primer video',
     },
     feedback: {
       title: 'Envía feedback y gana 250 créditos',
@@ -549,10 +549,10 @@ export const es: TranslationDictionary = {
 
   contact: {
     hero: {
-      title: 'Contáctanos',
+      title: 'Habla directo con quien lo está construyendo',
       subtitle:
-        'Estamos aquí para ayudar. Envía tu duda, sugerencia o reporta un problema y responderemos en 24 horas hábiles.',
-      cta: 'Enviar mensaje',
+        'Duda, sugerencia, alianza o bug: tu mensaje ayuda a hacer Script Master más útil para creadores reales.',
+      cta: 'Enviar mi mensaje',
       ctaSecondary: 'Ver beta',
     },
     info: {
@@ -565,7 +565,7 @@ export const es: TranslationDictionary = {
       },
     },
     form: {
-      title: 'Enviar un mensaje',
+      title: 'Envía tu mensaje',
       alert: 'Al enviar, tu cliente de email se abrirá con los datos completados. Si prefieres, envía directamente a contato@scriptmaster.app.',
       name: 'Tu nombre',
       namePlaceholder: 'Juan Pérez',
@@ -576,7 +576,7 @@ export const es: TranslationDictionary = {
       emailInvalid: 'Formato de email inválido',
       subject: 'Asunto',
       message: 'Tu mensaje',
-      messagePlaceholder: 'Describe tu duda, sugerencia o problema...',
+      messagePlaceholder: 'Cuenta qué quieres crear, qué duda apareció o qué mejora haría el producto más útil para ti...',
       messageRequired: 'El mensaje es obligatorio',
       submit: 'Enviar mensaje',
       snackbar:
@@ -613,57 +613,57 @@ export const es: TranslationDictionary = {
       tooShort: 'Mínimo de 10 caracteres.',
     },
     cta: {
-      title: '¿Listo para empezar?',
-      subtitle: 'Crea tu primera narración gratuitamente. Sin compromiso, sin tarjeta.',
-      button: 'Comenzar ahora',
+      title: '¿Quieres verlo antes de mandar mensaje?',
+      subtitle: 'Entra al beta y prueba el flujo con un guion corto. Sin compromiso, sin tarjeta.',
+      button: 'Crear mi primer video',
     },
   },
 
   about: {
     hero: {
-      title: 'Acerca de Script Master',
+      title: 'Una herramienta hecha para sacar guiones del borrador',
       subtitle:
-        'Descubre la historia, los valores y el roadmap de la plataforma que está transformando la producción de contenido con inteligencia artificial.',
-      cta: 'Crear cuenta gratuita',
-      ctaSecondary: 'Ver Funcionalidades',
-      alt: 'Ilustración de Script Master',
+        'Script Master nació para ayudar a creadores a pasar más rápido de la idea a la narración, las escenas y el video final.',
+      cta: 'Probar el beta abierto',
+      ctaSecondary: 'Ver herramientas',
+      alt: 'Ilustración de Script Master transformando guion en video',
     },
     mission: {
-      title: 'Nuestra Misión',
-      text: 'Democratizar la producción de contenido de audio y video, permitiendo que cualquier persona transforme sus ideas en producciones profesionales con el poder de la inteligencia artificial.',
+      title: 'Por qué existe',
+      text: 'Crear contenido no debería depender de tener estudio, micrófono perfecto, tiempo libre para editar o una pila de herramientas diferentes. La misión es dar al creador un camino más corto: escribir, generar, revisar y publicar.',
     },
     vision: {
-      title: 'Nuestra Visión',
-      text: 'Ser la plataforma líder en creación de contenido asistida por IA en Brasil, reconocida por la calidad, simplicidad e innovación.',
+      title: 'Qué estamos construyendo',
+      text: 'Un estudio de creación con IA que entiende el flujo real de quien hace video: guion, voz, escena, subtítulo, revisión y biblioteca. Menos promesa vacía, más herramienta práctica para producir mejor.',
     },
     values: {
-      title: 'Nuestros Valores',
+      title: 'Principios del producto',
       subtitle:
-        'Tres pilares que guían cada decisión y funcionalidad de la plataforma.',
+        'Las decisiones del beta siguen tres principios simples.',
       creativity: {
         title: 'Creatividad',
         description:
-          'Creemos que la tecnología debe amplificar la creatividad humana, no reemplazarla. Por eso, construimos herramientas que empoderan al creador.',
+          'La IA debe acelerar la ejecución, pero la idea, el estilo y la decisión final siguen con el creador.',
       },
       simplicity: {
         title: 'Simplicidad',
         description:
-          'Transformar guiones en producciones profesionales no debería ser complicado. Cada funcionalidad está diseñada para ser intuitiva y accesible.',
+          'El flujo debe ser lo bastante claro para probar un guion sin estudiar un manual antes.',
       },
       innovation: {
         title: 'Innovación',
         description:
-          'Estamos en la frontera de la IA generativa aplicada a la producción de contenido. Nuestro compromiso es traer lo más avanzado a tu día a día.',
+          'El beta evoluciona con feedback real. Si una herramienta no ayuda al creador a publicar mejor, tiene que mejorar.',
       },
     },
     team: {
-      title: 'Quiénes Somos',
+      title: 'Quién está detrás',
       description:
-        'Somos un equipo apasionado por la tecnología y la creación de contenido, construyendo el futuro de la producción audiovisual con inteligencia artificial.',
+        'Script Master es desarrollado por Koda AI Studio, con lectura directa de feedback de usuarios para priorizar lo que realmente reduce fricción en la creación.',
     },
     roadmap: {
-      title: 'Roadmap Público',
-      description: 'Descubre los hitos que ya hemos alcanzado y lo que está por venir.',
+      title: 'Roadmap del beta',
+      description: 'Lo que ya sostiene el flujo actual y lo que aún será refinado antes del lanzamiento oficial.',
       status: {
         done: 'Completado',
         current: 'En progreso',
@@ -671,40 +671,40 @@ export const es: TranslationDictionary = {
       },
       items: {
         0: {
-          title: 'Autenticación y Navegación',
-          description: 'Login con Google y email/contraseña, registro, rutas protegidas y SEO con páginas públicas',
+          title: 'Entrada simple y segura',
+          description: 'Login, registro, acciones de email y páginas públicas para entrar al producto con menos fricción',
         },
         1: {
-          title: 'Speed Paint y Video Avanzado',
-          description: 'Animación de pintura progresiva, Web Worker para renderización, caché LRU y exportación WebM',
+          title: 'Escenas y video en el navegador',
+          description: 'Montaje con narración, imágenes, subtítulos y efectos visuales sin depender de un flujo externo pesado',
         },
         2: {
-          title: 'Estudio de Producción',
-          description: 'Refactorización completa del estudio con Zustand, persistencia de preferencias y control granular de speed paint',
+          title: 'Estudio de producción',
+          description: 'Preferencias de voz, dirección visual, guion y biblioteca organizadas para retomar proyectos con facilidad',
         },
         3: {
-          title: 'Eliminación de Cuenta LGPD',
-          description: 'Pipeline de eliminación completo (Firestore + Storage + IndexedDB), verificación de email y UI centralizada del asistente',
+          title: 'Privacidad y control',
+          description: 'Eliminación de cuenta, datos de proyecto y configuraciones con cuidado para quien está probando el beta',
         },
         4: {
-          title: 'Calidad de Video y Exportación',
-          description: 'Export quality (720p–4k), estimación de tamaño, multiplicadores de speed paint por fase y 1185 tests',
+          title: 'Exportación más confiable',
+          description: 'Mejoras continuas en calidad, formatos y estabilidad para videos más grandes',
         },
         5: {
-          title: 'Planes y Pagos',
-          description: 'Integración con Stripe para suscripciones, pagos y gestión de planes',
+          title: 'Planes justos',
+          description: 'Los pagos vuelven cuando el producto pruebe suficiente valor para una cobranza clara y honesta',
         },
         6: {
-          title: 'Lanzamiento Oficial',
-          description: 'Versión estable con todas las funcionalidades core y documentación completa',
+          title: 'Lanzamiento oficial',
+          description: 'Versión estable con flujo de creación más pulido, documentación útil y límites bien explicados',
         },
       },
     },
     cta: {
-      title: 'Sé parte de esta historia',
+      title: 'Ayuda a moldear el estudio que te gustaría usar',
       subtitle:
-        'Empieza a crear contenido profesional con IA. Gratis, sin tarjeta de crédito.',
-      button: 'Comenzar ahora',
+        'Prueba el beta con un guion real y manda feedback sobre qué te bloqueó, encantó o debería existir.',
+      button: 'Probar el beta abierto',
     },
   },
 
@@ -1552,28 +1552,28 @@ export const es: TranslationDictionary = {
   // ── SEO (meta tags por página) ─────────────────────────────────────
   seo: {
     landing: {
-      title: 'Convierte guiones en arte con IA | Script Master',
-      description: 'Plataforma completa para crear audio, video e imágenes profesionales a partir de guiones con Gemini AI. Todo del lado del cliente.',
+      title: 'Crear videos para YouTube con IA | Script Master',
+      description: 'Generador de video con IA que transforma guiones en narración, escenas, subtítulos y contenido para YouTube sin grabar desde cero.',
     },
     about: {
       title: 'Acerca de Script Master',
-      description: 'Descubre la historia, los valores y el roadmap de la plataforma que está transformando la producción de contenido con inteligencia artificial.',
+      description: 'Conoce el estudio con IA creado para transformar guiones en narración, escenas, subtítulos y videos para YouTube con menos fricción.',
     },
     contact: {
       title: 'Contáctanos | Script Master',
-      description: 'Envía tu duda, sugerencia o reporta un problema. Respuesta en 24 horas hábiles.',
+      description: 'Habla con el equipo de Script Master para resolver dudas, sugerir mejoras, reportar bugs o proponer alianzas.',
     },
     faq: {
       title: 'Preguntas Frecuentes | Script Master',
-      description: 'Encuentra respuestas rápidas a las dudas más comunes sobre Script Master.',
+      description: 'Resuelve dudas sobre créditos, beta abierto, narración, escenas, subtítulos, generación de video y seguridad en Script Master.',
     },
     features: {
-      title: 'Funcionalidades | Script Master',
-      description: 'Conoce todas las funcionalidades de Script Master: generación de audio, imágenes, videos, asistente IA y más.',
+      title: 'Generador de video con IA | Script Master',
+      description: 'Conoce las herramientas de Script Master para crear narración, escenas, subtítulos y videos para YouTube a partir de guiones.',
     },
     pricing: {
       title: 'Beta Abierto | Script Master',
-      description: 'Script Master está en beta abierto. Accede gratis con 500 créditos mensuales.',
+      description: 'Entra al beta abierto de Script Master y prueba gratis la creación de videos con IA usando 500 créditos mensuales.',
     },
     onboarding: {
       title: 'Configuración Inicial | Script Master',
@@ -1586,7 +1586,7 @@ export const es: TranslationDictionary = {
     general: {
       0: {
         question: '¿Qué es Script Master?',
-        answer: 'Script Master es una plataforma completa para transformar guiones en audio profesional con voces generadas por IA. Además, puedes generar imágenes, renderizar videos y contar con un asistente IA para ayudar en la creación de contenido.',
+        answer: 'Script Master ayuda a transformar guiones en videos para YouTube con narración, escenas, subtítulos y organización de proyectos en un solo lugar. La IA entra para reducir grabación, edición manual y retrabajo.',
       },
       1: {
         question: '¿Necesito una cuenta para usarlo?',
@@ -1598,15 +1598,15 @@ export const es: TranslationDictionary = {
       },
       3: {
         question: '¿Funciona sin conexión?',
-        answer: 'Script Master es una aplicación web (SPA) que funciona en tu navegador. Algunos recursos como la reproducción de audios ya generados funcionan offline gracias al Service Worker, pero la generación de contenido requiere conexión a internet.',
+        answer: 'Puedes acceder a partes de la app y reproducir materiales ya generados sin conexión, pero crear nuevas voces, escenas y videos requiere internet.',
       },
       4: {
         question: '¿Qué navegadores son compatibles?',
-        answer: 'Recomendamos Google Chrome, Microsoft Edge o Firefox en sus versiones más recientes. Safari tiene soporte parcial — algunas funcionalidades avanzadas como la renderización de video pueden no funcionar correctamente.',
+        answer: 'Recomendamos Chrome, Edge o Firefox actualizados. Para montar y exportar videos con más estabilidad, usa preferentemente un navegador moderno en computadora.',
       },
       5: {
         question: '¿Puedo usarlo en el celular?',
-        answer: '¡Sí! Script Master es responsivo y funciona en dispositivos móviles. Sin embargo, la experiencia de edición de guiones y renderización de video está optimizada para pantallas más grandes.',
+        answer: 'Sí. Puedes revisar guiones, organizar ideas y acompañar proyectos desde el celular. Para editar con comodidad y exportar videos, las pantallas más grandes funcionan mejor.',
       },
     },
     technical: {
@@ -1616,19 +1616,19 @@ export const es: TranslationDictionary = {
       },
       1: {
         question: '¿Cuál es el límite de tamaño del guion?',
-        answer: 'El límite máximo es de 25.000 caracteres por guion. Guiones mayores a 500 caracteres se dividen automáticamente en segmentos para garantizar la consistencia de la voz.',
+        answer: 'Puedes trabajar con guiones largos de hasta 25.000 caracteres. Script Master divide el texto automáticamente en partes menores para mantener la narración consistente.',
       },
       2: {
         question: '¿Cómo funcionan los videos?',
-        answer: 'Los videos se renderizan directamente en tu navegador usando WebCodecs. Puedes combinar audio generado, imágenes de escena y subtítulos automáticos. La renderización es 100% del lado del cliente — tu guion nunca sale de tu dispositivo.',
+        answer: 'Combinas guion, narración, imágenes de escena y subtítulos, y Script Master monta el video directamente en el navegador. Así es más simple pasar del texto a un archivo listo para publicar.',
       },
       3: {
         question: '¿Cuál es la calidad del audio generado?',
-        answer: 'El audio se genera en WAV 24kHz mono 16-bit PCM, con calidad profesional.',
+        answer: 'La narración se genera como audio limpio y listo para videos, clases, presentaciones y contenidos narrados.',
       },
       4: {
         question: '¿Cómo funcionan los subtítulos automáticos?',
-        answer: 'Usamos el modelo Whisper para transcripción automática del audio. Los subtítulos se generan con timestamps precisos y pueden editarse manualmente en el editor de subtítulos.',
+        answer: 'Después de crear el audio, la app genera subtítulos sincronizados que puedes revisar y ajustar antes de exportar el video.',
       },
     },
     account: {
@@ -1650,42 +1650,43 @@ export const es: TranslationDictionary = {
   // ── Features (FuncionalidadesPage — cards por seção) ────────────────
   featureItems: {
     audio: {
-      0: { title: 'Generación de Audio TTS', description: 'Transforma guiones en audio profesional con Gemini TTS (24kHz mono 16-bit PCM).' },
-      1: { title: 'Chunking Inteligente', description: 'División optimizada vía LLM + fallback programático. Límite de 500 caracteres por chunk.' },
-      2: { title: 'Multi-locutor', description: 'Soporte para 2 locutores (Speaker A + B) con configuración independiente de voz y nombre.' },
-      3: { title: 'Control de Voz', description: 'Selección de voz, ritmo, tono y perfil de audio (podcast, audiolibro, conversación, narración).' },
+      0: { title: 'Texto para narración', description: 'Transforma guiones en audio claro para videos, clases, podcasts e historias.' },
+      1: { title: 'Guiones largos sin dolor de cabeza', description: 'El texto se divide automáticamente para preservar fluidez y consistencia de voz.' },
+      2: { title: 'Dos voces en un guion', description: 'Crea diálogos, entrevistas y narraciones alternadas con locutores independientes.' },
+      3: { title: 'Control de voz', description: 'Ajusta voz, ritmo, emoción y perfil para combinar con el estilo de tu canal.' },
     },
     video: {
-      0: { title: 'Composición de Video', description: 'Videos del lado del cliente con Remotion y WebCodecs. Sin backend, sin costo de renderización.' },
-      1: { title: 'Subtítulos Automáticos', description: '3 fuentes de sincronización: segment-timing > whisper-aligned > proportional.' },
-      2: { title: '3 Resoluciones', description: '16:9 (1920x1080), 9:16 (1080x1920) y 1:1 (1080x1080).' },
+      0: { title: 'Video montado en el navegador', description: 'Combina narración, escenas y subtítulos sin depender de un editor pesado.' },
+      1: { title: 'Subtítulos automáticos', description: 'Genera subtítulos para mejorar retención, accesibilidad y cortes para redes sociales.' },
+      2: { title: 'Formatos para publicar', description: 'Crea contenido en 16:9, 9:16 y 1:1 para YouTube, Shorts, Reels y posts.' },
     },
     image: {
-      0: { title: 'Estudio de Imagen', description: 'Generación de imágenes con Gemini a partir de prompts + referencia visual opcional.' },
-      1: { title: '8 Aspect Ratios', description: '1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 21:9.' },
-      2: { title: 'Galería Integrada', description: 'Historial de imágenes generadas con visualización, eliminación y persistencia dual.' },
+      0: { title: 'Escenas creadas con IA', description: 'Genera imágenes para acompañar cada parte del guion y dar ritmo visual al video.' },
+      1: { title: 'Formatos flexibles', description: 'Elige proporciones para thumbnail, video horizontal, vertical, cuadrado y panorámico.' },
+      2: { title: 'Galería integrada', description: 'Revisa, reutiliza y descarga imágenes generadas para proyectos futuros.' },
     },
     assistant: {
-      0: { title: 'Chat Conversacional', description: 'Streaming con Gemini, memorias, adjuntos (5 por msg: imagen 10MB, documento 5MB).' },
-      1: { title: 'Integración con Estudio', description: 'Modelo sugiere alteraciones en bloque JSON, botón "Aplicar en el estudio" para patch parcial.' },
-      2: { title: 'Sistema de Memoria', description: 'Memorias cortas (texto) + carga de documentos (.md/.txt/.csv hasta 500KB).' },
+      0: { title: 'Ideas y revisión de guion', description: 'Pide mejores aperturas, cortes, llamadas a la acción y ajustes de tono.' },
+      1: { title: 'Integración con el estudio', description: 'Aplica sugerencias en el guion y en las configuraciones sin rehacer todo manualmente.' },
+      2: { title: 'Memoria de canal', description: 'Guarda preferencias, referencias y contexto para respuestas más alineadas con tu estilo.' },
     },
     library: {
-      0: { title: 'Gestión de Proyectos', description: 'Organiza audios, escenas, videos e imágenes en proyectos con metadatos completos.' },
-      1: { title: 'Descarga Fácil', description: 'Descarga audio WAV, videos MP4/WebM e imágenes PNG con un clic.' },
-      2: { title: 'Persistencia Dual', description: 'Firestore (autenticado) + IndexedDB (local), migración automática al iniciar sesión.' },
+      0: { title: 'Proyectos organizados', description: 'Mantén guiones, audios, escenas y videos separados por proyecto.' },
+      1: { title: 'Descarga fácil', description: 'Descarga narraciones, videos e imágenes con un clic para publicar o editar afuera.' },
+      2: { title: 'Historial siempre a mano', description: 'Usa almacenamiento local o sincronización con cuenta para continuar desde donde paraste.' },
     },
     speedPaint: {
-      0: { title: 'Animación de Pintura', description: 'Subida > detección de bordes > clusterización BFS > vectorización > renderización progresiva.' },
-      1: { title: 'Procesamiento por Lotes', description: 'Cola de imágenes con modos watch (auto-avanza) y record (graba + avanza).' },
-      2: { title: 'Exportación de Medios', description: 'Export PNG (2x) y WebM (H.264 > VP9 > predeterminado, 12Mbps).' },
+      0: { title: 'Animación de pintura', description: 'Transforma imágenes estáticas en escenas con movimiento progresivo.' },
+      1: { title: 'Cola de imágenes', description: 'Procesa varias escenas en secuencia para acelerar videos más largos.' },
+      2: { title: 'Exportación de medios', description: 'Descarga imágenes y animaciones listas para usar en tu proyecto.' },
     },
   },
 
   // ── Landing showcases (alt texts) ───────────────────────────────────
   landingShowcases: {
-    audio: { alt: 'Generación de audio TTS con Script Master' },
-    video: { alt: 'Renderización de video con Script Master' },
+    audio: { alt: 'Narración generada para videos con Script Master' },
+    video: { alt: 'Montaje de video para YouTube con Script Master' },
+    images: { alt: 'Escenas visuales generadas para videos con Script Master' },
     assistant: { alt: 'Asistente IA de Script Master' },
   },
 

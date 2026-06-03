@@ -30,7 +30,7 @@ const pricingFaqStrings = {
       'Envie feedback construtivo pela área logada e ganhe 250 créditos bônus. O bônus é creditado automaticamente.',
     faq5Question: 'Créditos não usados acumulam?',
     faq5Answer:
-      'Não. O saldo renova para 500 no início de cada mês. Créditos não utilizados expirem.',
+      'Não. O saldo renova para 500 no início de cada mês. Créditos não utilizados expiram.',
   },
   en: {
     faq0Question: 'How do credits work?',

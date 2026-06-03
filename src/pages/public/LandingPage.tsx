@@ -123,14 +123,17 @@ export default function LandingPage() {
         visual={
           <Box
             component="img"
-            src="/images/public/hero-illustration.webp"
+            src="/projeto/estudio.png"
             alt={t('landing.hero.alt')}
             sx={{
-              maxWidth: { xs: 320, sm: 420, md: 520 },
+              maxWidth: { xs: 340, sm: 520, md: 620 },
               width: '100%',
               height: 'auto',
-              objectFit: 'contain',
+              aspectRatio: '16 / 9',
+              objectFit: 'cover',
+              objectPosition: 'center top',
               filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 2,
             }}
           />

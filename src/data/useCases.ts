@@ -24,10 +24,10 @@ const useCasesStrings = {
   'pt-BR': {
     uc0Title: 'Vídeos para YouTube',
     uc0Desc:
-      'Roteiro longo vira cenas, narração e legendas automáticas. publique mais, edite menos.',
+      'Transforme um roteiro longo em vídeo com voz, cenas e legendas. Publique mais, edite menos.',
     uc1Title: 'Podcasts e audiobooks',
     uc1Desc:
-      '2 vozes distintas com ritmo e tom controlados. Episódios profissionais sem estudio.',
+      'Simule conversas com duas vozes e menos retrabalho. Episódios claros sem montar estúdio.',
     uc2Title: 'Material educacional',
     uc2Desc:
       'Aulas narradas, audiodescrição e legendas acessíveis. Alunos engajados, conteúdo claro.',
@@ -44,10 +44,10 @@ const useCasesStrings = {
   en: {
     uc0Title: 'YouTube Videos',
     uc0Desc:
-      'Long scripts become scenes, narration, and automatic subtitles. Publish more, edit less.',
+      'Turn a long script into a video with voice, scenes, and subtitles. Publish more, edit less.',
     uc1Title: 'Podcasts & Audiobooks',
     uc1Desc:
-      '2 distinct voices with controlled pace and tone. Professional episodes without a studio.',
+      'Simulate conversations with two voices and less rework. Clear episodes without setting up a studio.',
     uc2Title: 'Educational Content',
     uc2Desc:
       'Narrated lessons, audio descriptions, and accessible subtitles. Engaged students, clear content.',
@@ -64,10 +64,10 @@ const useCasesStrings = {
   es: {
     uc0Title: 'Videos para YouTube',
     uc0Desc:
-      'Guión largo se convierte en escenas, narración y subtítulos automáticos. Publica más, edita menos.',
+      'Transforma un guion largo en video con voz, escenas y subtítulos. Publica más, edita menos.',
     uc1Title: 'Podcasts y audiolibros',
     uc1Desc:
-      '2 voces distintas con ritmo y tono controlados. Episodios profesionales sin estudio.',
+      'Simula conversaciones con dos voces y menos retrabajo. Episodios claros sin montar estudio.',
     uc2Title: 'Material educativo',
     uc2Desc:
       'Clases narradas, audiodescripción y subtítulos accesibles. Alumnos comprometidos, contenido claro.',

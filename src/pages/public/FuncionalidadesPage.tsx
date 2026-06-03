@@ -148,7 +148,7 @@ export default function FuncionalidadesPage() {
           <Box
             component="img"
             src="/images/public/feature-tts.webp"
-            alt="Geração de áudio TTS"
+            alt={t('landingShowcases.audio.alt')}
             loading="lazy"
             sx={{
               maxWidth: { xs: 280, md: 380 },
@@ -177,7 +177,7 @@ export default function FuncionalidadesPage() {
           <Box
             component="img"
             src="/images/public/feature-video.webp"
-            alt="Renderização de vídeo"
+            alt={t('landingShowcases.video.alt')}
             loading="lazy"
             sx={{
               maxWidth: { xs: 280, md: 380 },
@@ -204,7 +204,7 @@ export default function FuncionalidadesPage() {
           <Box
             component="img"
             src="/images/public/feature-images.webp"
-            alt="Geração de imagens com IA"
+            alt={t('landingShowcases.images.alt')}
             loading="lazy"
             sx={{
               maxWidth: { xs: 280, md: 380 },

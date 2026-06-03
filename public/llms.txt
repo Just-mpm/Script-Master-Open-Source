@@ -1,33 +1,33 @@
 # Script Master
 
-> Plataforma SaaS que transforma roteiros de vídeo em áudio profissional usando inteligência artificial (Gemini TTS). Oferece geração de voz multi-locutor, criação de cenas com IA, Speed Paint, renderização de vídeo com Remotion e assistente conversacional.
+> Ferramenta web para transformar roteiros em vídeos para YouTube com narração por IA, cenas, legendas e organização de projetos.
 
-Script Master é uma ferramenta web para criadores de conteúdo que precisam transformar textos em produções audiovisuais completas. Funciona inteiramente no navegador, sem instalação.
+Script Master ajuda criadores a sair do roteiro para um vídeo pronto para publicar, sem precisar gravar toda a narração do zero ou montar cada etapa em ferramentas separadas. Funciona no navegador e está em beta aberto.
 
 ## Funcionalidades Principais
 
-- [Estúdio de Voz (TTS)](https://script-master.pro/funcionalidades): Conversão de roteiro em áudio com 30+ vozes via Gemini, suporte multi-locutor, preview de vozes e emotions
-- [Geração de Imagens e Cenas](https://script-master.pro/funcionalidades): Imagens geradas por IA para cada cena do roteiro, com frameworks visuais (general, whiteboard)
-- [Speed Paint](https://script-master.pro/funcionalidades): Animação automatizada de imagens com efeito de pintura progressiva, edge detection e renderização via Remotion
-- [Renderização de Vídeo](https://script-master.pro/funcionalidades): Composição de vídeo client-side com WebCodecs, legendas automáticas (Whisper WASM), exportação até 4K
-- [Assistente IA](https://script-master.pro/funcionalidades): Chat com IA para refinar roteiros, gerar planos de produção e editar conteúdo, com ferramentas integradas
-- [Biblioteca de Projetos](https://script-master.pro/funcionalidades): Gerenciamento de projetos com áudios, cenas, vídeos e roteiros organizados
+- [Criar vídeos para YouTube com IA](https://script-master.pro/funcionalidades): roteiro, narração, cenas, legendas e exportação em um fluxo único
+- [Texto para narração](https://script-master.pro/funcionalidades): gere narrações a partir de roteiros longos, com vozes e estilos diferentes
+- [Cenas e imagens](https://script-master.pro/funcionalidades): crie imagens ou organize visuais para acompanhar cada trecho do roteiro
+- [Vídeo montado no navegador](https://script-master.pro/funcionalidades): combine narração, cenas e legendas em um arquivo pronto para publicar
+- [Assistente de criação](https://script-master.pro/funcionalidades): refine ideias, melhore roteiros e organize o plano de produção
+- [Biblioteca de projetos](https://script-master.pro/funcionalidades): mantenha roteiros, áudios, cenas e vídeos salvos e organizados
 
 ## Preços
 
-- [Planos e Preços](https://script-master.pro/precos): Beta aberto gratuito — planos futuros: Free, Pro (R$49,90/mês), Business (R$149,90/mês)
+- [Planos e Preços](https://script-master.pro/precos): beta aberto gratuito com 500 créditos mensais e bônus por feedback
 
 ## Empresa
 
-- [Sobre](https://script-master.pro/sobre): Desenvolvido pela Koda AI Studio, empresa brasileira de IA criativa
-- [Contato](https://script-master.pro/contato): Suporte e contato
+- [Sobre](https://script-master.pro/sobre): produto criado pela Koda AI Studio para simplificar a produção de vídeos narrados
+- [Contato](https://script-master.pro/contato): suporte, feedback e contato direto com o time
 
-## Stack Técnica
+## Tecnologia
 
-- React 19 + Vite 8 + Firebase (Auth, Firestore, Storage, Cloud Functions, Hosting)
-- Gemini 3.1 Flash (TTS e imagens) + Gemini 3.5 Flash (assistente)
-- Remotion 4 (renderização de vídeo) + WebCodecs
-- 3 idiomas: pt-BR, en, es
+- IA para narração, imagens, assistente e apoio ao roteiro
+- Renderização de vídeo no navegador
+- Firebase para autenticação, armazenamento e backend serverless
+- Interface em pt-BR, en e es
 
 ## Optional
 

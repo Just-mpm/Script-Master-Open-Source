@@ -172,15 +172,21 @@ export function HeroSection({
                       variant="outlined"
                       color="primary"
                       size="large"
-                      sx={{
+                      sx={(theme) => ({
                         px: 4,
                         py: 1.5,
                         borderWidth: 1.5,
-                        transition: 'border-color 0.2s ease, background-color 0.2s ease',
+                        color: theme.palette.text.primary,
+                        borderColor: 'rgba(99, 179, 237, 0.42)',
+                        backgroundColor: 'rgba(46, 117, 182, 0.08)',
+                        transition: 'border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease',
                         '&:hover': {
                           borderWidth: 1.5,
+                          borderColor: theme.palette.primary.light,
+                          backgroundColor: 'rgba(46, 117, 182, 0.16)',
+                          transform: 'translateY(-1px)',
                         },
-                      }}
+                      })}
                     >
                       {secondaryCta.label}
                     </Button>
