@@ -22,7 +22,7 @@ import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/http
 import { getFirestore } from 'firebase-admin/firestore';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MessageSchema, z, type MessageData, generateMiddleware } from 'genkit';
+import { MessageSchema, z, type MessageData, generateMiddleware, ToolInterruptError } from 'genkit';
 import { ai } from '../genkit/genkit.js';
 import { createSkillsMiddleware } from '../genkit/middlewares/skills.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
@@ -95,7 +95,11 @@ const skillsMiddleware = createSkillsMiddleware({
 });
 
 // ---------------------------------------------------------------------------
-// Interrupt de entrevista — definido no módulo para evitar re-registro a cada request
+// Interrupt de entrevista — registrado uma vez no escopo do módulo.
+// O Node avalia módulos uma única vez por processo, então o `const` no
+// escopo do módulo já garante inicialização única (não há risco de
+// re-registro no Genkit registry em invocações subsequentes da mesma
+// instância da Cloud Function).
 // ---------------------------------------------------------------------------
 
 const interviewInterrupt = ai.defineInterrupt({
@@ -568,6 +572,14 @@ export const assistant = onCallGenkit(
               try {
                 return await next(req, ctx);
               } catch (err: unknown) {
+                // Re-lança signal de interrupt — o Genkit captura ToolInterruptError
+                // internamente para pausar o loop e retornar response.interrupts.
+                // Se engolirmos aqui, o interrupt nunca é processado.
+                // Dupla verificação espelhando resolve-tool-requests do Genkit.
+                if (err instanceof ToolInterruptError || (err instanceof Error && err.name === 'ToolInterruptError')) {
+                  throw err;
+                }
+
                 // Re-lança cancelamento do usuário — deve propagar para abortar o flow
                 if (err instanceof HttpsError && err.code === 'cancelled') {
                   throw err;

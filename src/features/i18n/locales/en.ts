@@ -18,6 +18,8 @@ export const en: TranslationDictionary = {
     loadingPageSubtitle: 'Preparing your experience...',
     error: 'Error',
     success: 'Success',
+    warning: 'Warning',
+    info: 'Info',
     cancel: 'Cancel',
     confirm: 'Confirm',
     close: 'Close',
@@ -536,10 +538,12 @@ export const en: TranslationDictionary = {
     },
     emptyState: {
       chipLabel: 'Earn 250 credits',
+      chipLabelAfterBonus: 'Send feedback',
     },
     navItem: {
       headerLabel: 'Feedback (+250)',
       drawerLabel: 'Feedback (+250)',
+      labelAfterBonus: 'Feedback',
     },
   },
 
@@ -1031,6 +1035,8 @@ export const en: TranslationDictionary = {
       sourceProportional: 'proportional',
       sourceManual: 'manual',
       staleWarning: 'The script changed after transcription. Generate again to update captions.',
+      whisperNotSupportedTitle: 'Whisper not supported in this browser',
+      whisperNotSupportedDescription: 'Captions will be generated automatically based on audio timing.',
       wordCount: '{count} caption(s)',
       regenerate: 'Generate again',
     },
@@ -1047,6 +1053,7 @@ export const en: TranslationDictionary = {
     deleteMemoryConfirm: 'Delete memory?',
     runtime: {
       guestNotice: 'You can use the assistant without signing in, but chat history, memories, and guidelines stay only in this browser.',
+      errorTitle: 'Could not answer',
       retry: 'Try again',
       deleteMemoryDescription: 'This memory will be permanently removed and the assistant will stop considering it in future replies.',
       deleteConversationTitle: 'Delete conversation?',
@@ -2064,6 +2071,16 @@ export const en: TranslationDictionary = {
     offlineReady: 'App ready for offline use!',
   },
 
+  // ── PWA Install ─────────────────────────────────────────────
+  pwaInstall: {
+    title: 'Install Script Master',
+    description: 'Quick access from your device.',
+    install: 'Install',
+    dismiss: 'Not now',
+    installed: 'App installed successfully!',
+    installError: 'Could not start installation. Please try again.',
+  },
+
   // ── Sidebar (lateral navigation) ───────────────────────────
   sidebar: {
     ariaLabel: 'Main menu',
@@ -2083,8 +2100,16 @@ export const en: TranslationDictionary = {
   // ── Mobile Bottom Nav ──────────────────────────────────────
   mobileBottomNav: {
     ariaLabel: 'Main navigation',
-    ariaDrawer: 'Secondary menu',
+    ariaDrawer: 'Secondary navigation',
     more: 'More',
     openMenu: 'Open menu',
+  },
+
+  // ── StackedHeader (generic header component) ──────────────
+  stackedHeader: {
+    collapseAriaLabel: {
+      expand: 'Expand section',
+      collapse: 'Collapse section',
+    },
   },
 };

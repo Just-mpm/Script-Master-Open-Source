@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
@@ -14,6 +13,7 @@ import PhotoLibrary from '@mui/icons-material/PhotoLibrary';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { useLocale } from '../../../features/i18n';
+import { StackedHeader } from '../../../components/ui';
 import { glassPanelSx, searchFieldSx } from '../../../theme/surfaces';
 import { RADIUS_SM, ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT } from '../../../theme/tokens';
 import type { StockImage, StockSearchParams } from '../../../lib/stockMedia';
@@ -136,9 +136,13 @@ export function StockMediaPicker({ onSelect, orientation }: StockMediaPickerProp
 
         {/* Resultados */}
         {searchError && (
-          <Alert severity="error" onClose={() => setSearchError(null)}>
-            {searchError}
-          </Alert>
+          <StackedHeader
+            variant="alert"
+            severity="error"
+            title={t('common.error')}
+            description={searchError}
+            onClose={() => setSearchError(null)}
+          />
         )}
         {isSearching ? (
           <Grid container spacing={1}>

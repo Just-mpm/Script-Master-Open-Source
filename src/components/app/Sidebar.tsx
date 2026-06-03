@@ -90,8 +90,9 @@ export function Sidebar() {
   const spIsRendering = useStore(useSpeedPaintRenderController, (s) => s.isRendering);
   const spStatus = useStore(useSpeedPaintRenderController, (s) => s.status);
 
-  // CTA de feedback só aparece se: sem bônus + sem créditos ilimitados
-  const showFeedbackCta = !feedbackBonusGranted && !unlimitedCredits;
+  // CTA de feedback aparece sempre (exceto créditos ilimitados)
+  // Label muda após o bônus ser concedido
+  const showFeedbackCta = !unlimitedCredits;
 
   // ── Lista de itens de navegação (espelha o que existia no Header) ──
   const navItems = useMemo<NavItem[]>(() => {
@@ -108,13 +109,15 @@ export function Sidebar() {
     if (showFeedbackCta) {
       items.push({
         to: '__feedback__',
-        label: t('feedback.navItem.drawerLabel'),
+        label: feedbackBonusGranted
+          ? t('feedback.navItem.labelAfterBonus')
+          : t('feedback.navItem.drawerLabel'),
         icon: RateReviewIcon,
         action: 'feedback',
       });
     }
     return items;
-  }, [t, showFeedbackCta]);
+  }, [t, showFeedbackCta, feedbackBonusGranted]);
 
   // ── Handler de ação para itens especiais (ex: feedback) ──
   const handleItemAction = useCallback(

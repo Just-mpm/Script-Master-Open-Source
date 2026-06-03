@@ -358,8 +358,8 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
   const { feedbackBonusGranted, unlimitedCredits } = useCredits();
   const openFeedback = useFeedbackDialog();
 
-  // Mostra CTA de feedback se: autenticado + sem bônus + sem créditos ilimitados
-  const showFeedbackCta = !!user && !feedbackBonusGranted && !unlimitedCredits;
+  // Chip sempre presente (exceto ilimitados) — label muda após bônus
+  const showFeedbackCta = !!user && !unlimitedCredits;
 
   const handleFeedbackClick = useCallback(() => {
     openFeedback('/app/assistente');
@@ -412,7 +412,9 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         {showFeedbackCta ? (
           <Chip
             icon={<RateReviewIcon sx={{ fontSize: 16 }} />}
-            label={t('feedback.emptyState.chipLabel')}
+            label={feedbackBonusGranted
+              ? t('feedback.emptyState.chipLabelAfterBonus')
+              : t('feedback.emptyState.chipLabel')}
             size="small"
             variant="outlined"
             onClick={handleFeedbackClick}

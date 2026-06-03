@@ -34,7 +34,9 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCredits } from '../../hooks/useCredits';
+import { isOpenBetaEnabled } from '../../lib/env';
 import { useFeedbackDialog } from '../feedback';
+import { CreditIndicator } from '../CreditIndicator';
 import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
 import type { Locale } from '../../features/i18n/types';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
@@ -98,8 +100,9 @@ export function MobileBottomNav() {
     { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
   ], [t]);
 
-  // Mostra CTA de feedback se: autenticado + sem bônus + sem créditos ilimitados
-  const showFeedbackInDrawer = !feedbackBonusGranted && !unlimitedCredits;
+  // CTA de feedback aparece sempre (exceto créditos ilimitados)
+  // Label muda após o bônus ser concedido
+  const showFeedbackInDrawer = !unlimitedCredits;
 
   // ── Itens do drawer (secundários + conta) ──
   // O item de feedback é omitido quando o bônus já foi concedido
@@ -112,13 +115,15 @@ export function MobileBottomNav() {
     if (showFeedbackInDrawer) {
       items.push({
         to: '__feedback__',
-        label: t('feedback.navItem.drawerLabel'),
+        label: feedbackBonusGranted
+          ? t('feedback.navItem.labelAfterBonus')
+          : t('feedback.navItem.drawerLabel'),
         icon: RateReviewIcon,
         action: 'feedback',
       });
     }
     return items;
-  }, [t, showFeedbackInDrawer]);
+  }, [t, showFeedbackInDrawer, feedbackBonusGranted]);
 
   // ── Handlers ──
   const handleMoreClick = useCallback(() => {
@@ -402,6 +407,14 @@ export function MobileBottomNav() {
                 </Stack>
               </Stack>
             </Paper>
+
+            {/* ── CreditIndicator — apenas durante o beta aberto ──
+                Espelha o desktop (SidebarFooter) para consistência entre breakpoints. */}
+            {isOpenBetaEnabled() && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <CreditIndicator />
+              </Box>
+            )}
           </Stack>
         </Box>
 

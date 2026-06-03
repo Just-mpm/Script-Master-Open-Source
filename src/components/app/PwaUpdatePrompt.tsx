@@ -43,6 +43,14 @@ import {
 /** Chave no sessionStorage para controlar "ignorar" por versão do SW */
 const DISMISS_KEY = 'pwa_update_dismissed_sw';
 
+/**
+ * Nome do evento customizado emitido sempre que a visibilidade do banner de
+ * atualização PWA muda. Consumido pelo `PwaInstallPrompt` para coordenar
+ * sobreposição visual com o prompt de instalação (evitar dois banners do PWA
+ * competindo pela mesma região da tela).
+ */
+export const PWA_UPDATE_VISIBILITY_EVENT = 'S2A_PWA_UPDATE_VISIBILITY';
+
 const log = createLogger('PWA');
 
 function PwaUpdatePrompt() {
@@ -88,6 +96,14 @@ function PwaUpdatePrompt() {
         // sessionStorage pode estar inacessível (modo privado restrito)
       }
     }
+  }, [needRefresh]);
+
+  // Notifica o app sempre que a visibilidade do banner de update muda,
+  // para que outros prompts PWA (ex: install) possam coordenar sobreposição.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(PWA_UPDATE_VISIBILITY_EVENT, {
+      detail: needRefresh,
+    }));
   }, [needRefresh]);
 
   const handleUpdate = useCallback(() => {

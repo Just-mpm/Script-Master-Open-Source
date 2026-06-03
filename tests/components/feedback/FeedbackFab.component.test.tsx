@@ -64,6 +64,7 @@ describe('FeedbackFab', () => {
     mockUseAuth.mockReturnValue({ user: { uid: 'test-user' } });
     mockUseCredits.mockReturnValue({
       feedbackBonusGranted: false,
+      feedbackPromoSeen: true,
       unlimitedCredits: false,
     });
   });
@@ -108,6 +109,22 @@ describe('FeedbackFab', () => {
 
     render(
       <Wrapper>
+        <FeedbackFab />
+      </Wrapper>,
+    );
+
+    expect(screen.queryByLabelText(/Enviar feedback/i)).toBeNull();
+  });
+
+  it('não renderiza quando o usuário ainda não zerou os créditos (feedbackPromoSeen=false)', () => {
+    mockUseCredits.mockReturnValue({
+      feedbackBonusGranted: false,
+      feedbackPromoSeen: false,
+      unlimitedCredits: false,
+    });
+
+    render(
+      <Wrapper initialPath="/app/assistente">
         <FeedbackFab />
       </Wrapper>,
     );

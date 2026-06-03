@@ -18,6 +18,8 @@ export const es: TranslationDictionary = {
     loadingPageSubtitle: 'Preparando tu experiencia...',
     error: 'Error',
     success: 'Éxito',
+    warning: 'Advertencia',
+    info: 'Información',
     cancel: 'Cancelar',
     confirm: 'Confirmar',
     close: 'Cerrar',
@@ -536,10 +538,12 @@ export const es: TranslationDictionary = {
     },
     emptyState: {
       chipLabel: 'Gana 250 créditos',
+      chipLabelAfterBonus: 'Enviar feedback',
     },
     navItem: {
       headerLabel: 'Feedback (+250)',
       drawerLabel: 'Feedback (+250)',
+      labelAfterBonus: 'Feedback',
     },
   },
 
@@ -1031,6 +1035,8 @@ export const es: TranslationDictionary = {
       sourceProportional: 'proporcional',
       sourceManual: 'manual',
       staleWarning: 'El guion cambió después de la transcripción. Genera de nuevo para actualizar los subtítulos.',
+      whisperNotSupportedTitle: 'Whisper no soportado en este navegador',
+      whisperNotSupportedDescription: 'Los subtítulos se generarán automáticamente según el tiempo del audio.',
       wordCount: '{count} subtítulo(s)',
       regenerate: 'Generar de nuevo',
     },
@@ -1047,6 +1053,7 @@ export const es: TranslationDictionary = {
     deleteMemoryConfirm: '¿Eliminar memoria?',
     runtime: {
       guestNotice: 'Puedes usar el asistente sin iniciar sesión, pero el historial, las memorias y las directrices quedan guardados solo en este navegador.',
+      errorTitle: 'No se pudo responder',
       retry: 'Intentar de nuevo',
       deleteMemoryDescription: 'Esta memoria se eliminará permanentemente y el asistente dejará de considerarla en las respuestas.',
       deleteConversationTitle: '¿Eliminar conversación?',
@@ -2064,6 +2071,16 @@ export const es: TranslationDictionary = {
     offlineReady: '¡App lista para uso sin conexión!',
   },
 
+  // ── Instalación PWA ─────────────────────────────────────────
+  pwaInstall: {
+    title: 'Instala Script Master',
+    description: 'Acceso rápido desde tu dispositivo.',
+    install: 'Instalar',
+    dismiss: 'Ahora no',
+    installed: '¡App instalada con éxito!',
+    installError: 'No se pudo iniciar la instalación. Inténtalo de nuevo.',
+  },
+
   // ── Sidebar (navegación lateral) ───────────────────────────
   sidebar: {
     ariaLabel: 'Menú principal',
@@ -2086,5 +2103,13 @@ export const es: TranslationDictionary = {
     ariaDrawer: 'Menú secundario',
     more: 'Más',
     openMenu: 'Abrir menú',
+  },
+
+  // ── StackedHeader (componente genérico de header) ──────────
+  stackedHeader: {
+    collapseAriaLabel: {
+      expand: 'Expandir sección',
+      collapse: 'Contraer sección',
+    },
   },
 };

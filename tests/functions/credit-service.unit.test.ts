@@ -21,6 +21,7 @@ function createBetaAccess(overrides: Partial<BetaAccess> = {}): BetaAccess {
     reservedCredits: 0,
     updatedAt: Date.now(),
     feedbackBonusGranted: false,
+    feedbackPromoSeen: false,
     ...overrides,
   };
 }
@@ -265,5 +266,179 @@ describe('credit-service', () => {
     expect(db.read('users/user-3/beta_access/current')).toEqual(beforeBeta);
     expect(db.read(`users/user-3/credit_months/${periodKey}`)).toEqual(beforeMonth);
     expect(db.read(`users/user-3/credit_events/${requestId}`)?.status).toBe('reserved');
+  });
+
+  describe('feedbackPromoSeen — ativação ao zerar saldo', () => {
+    it('deve ativar feedbackPromoSeen quando o saldo total zera após confirmação (fluxo comum: reserve zerou livre)', async () => {
+      const db = new MockFirestore();
+      const uid = 'user-promo-reserve-zero';
+      const requestId = 'req-promo';
+      const periodKey = getCurrentPeriodKey();
+      const estimatedCredits = 20;
+
+      // Cenário real: reserveCredits(20) de um saldo de 20:
+      // availableCredits = 0 (zerou), reservedCredits = 20
+      // confirmCredits(20): totalBeforeConfirm = 0 + 20 = 20 > 0
+      // finalAvailable = 0, finalReserved = 0 → ativa flag
+      db.seed('users/user-promo-reserve-zero/beta_access/current', createBetaAccess({
+        availableCredits: 0,
+        reservedCredits: estimatedCredits,
+        feedbackPromoSeen: false,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-reserve-zero/credit_months/${periodKey}`, createCreditMonth({
+        availableCredits: 0,
+        reservedCredits: estimatedCredits,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-reserve-zero/credit_events/${requestId}`, createReservedEvent(requestId, estimatedCredits) as unknown as Record<string, unknown>);
+
+      const result = await confirmCredits(
+        db as unknown as Parameters<typeof confirmCredits>[0],
+        uid,
+        requestId,
+        estimatedCredits,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.availableCredits).toBe(0);
+
+      const betaSnap = db.read(`users/${uid}/beta_access/current`);
+      expect(betaSnap?.feedbackPromoSeen).toBe(true);
+    });
+
+    it('deve ativar feedbackPromoSeen quando saldo livre e reserva somam zero após confirmação', async () => {
+      const db = new MockFirestore();
+      const uid = 'user-promo-partial';
+      const requestId = 'req-promo-partial';
+      const periodKey = getCurrentPeriodKey();
+
+      // Cenário: availableCredits = 5, reservedCredits = 15, estimatedCredits = 15
+      // confirmCredits(20): totalBeforeConfirm = 5 + 15 = 20
+      // betaConfirmableCredits = 5 + 15 = 20
+      // newAvailable = 0, newReserved = 0 → ativa flag
+      db.seed('users/user-promo-partial/beta_access/current', createBetaAccess({
+        availableCredits: 5,
+        reservedCredits: 15,
+        feedbackPromoSeen: false,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-partial/credit_months/${periodKey}`, createCreditMonth({
+        availableCredits: 5,
+        reservedCredits: 15,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-partial/credit_events/${requestId}`, createReservedEvent(requestId, 15) as unknown as Record<string, unknown>);
+
+      const result = await confirmCredits(
+        db as unknown as Parameters<typeof confirmCredits>[0],
+        uid,
+        requestId,
+        20, // consome tudo (5 livre + 15 reserva)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.availableCredits).toBe(0);
+
+      const betaSnap = db.read(`users/${uid}/beta_access/current`);
+      expect(betaSnap?.feedbackPromoSeen).toBe(true);
+    });
+
+    it('deve manter feedbackPromoSeen=true após nova confirmação que não zera', async () => {
+      const db = new MockFirestore();
+      const uid = 'user-promo-already-seen';
+      const requestId = 'req-promo-2';
+      const periodKey = getCurrentPeriodKey();
+      const estimatedCredits = 10;
+
+      db.seed('users/user-promo-already-seen/beta_access/current', createBetaAccess({
+        availableCredits: 90,
+        reservedCredits: estimatedCredits,
+        feedbackPromoSeen: true,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-already-seen/credit_months/${periodKey}`, createCreditMonth({
+        availableCredits: 90,
+        reservedCredits: estimatedCredits,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-already-seen/credit_events/${requestId}`, createReservedEvent(requestId, estimatedCredits) as unknown as Record<string, unknown>);
+
+      const result = await confirmCredits(
+        db as unknown as Parameters<typeof confirmCredits>[0],
+        uid,
+        requestId,
+        5,
+      );
+
+      expect(result.success).toBe(true);
+
+      const betaSnap = db.read(`users/${uid}/beta_access/current`);
+      expect(betaSnap?.feedbackPromoSeen).toBe(true);
+    });
+
+    it('não deve ativar feedbackPromoSeen se saldo total já era zero antes da reserva', async () => {
+      const db = new MockFirestore();
+      const uid = 'user-promo-already-zero';
+      const requestId = 'req-promo-3';
+      const periodKey = getCurrentPeriodKey();
+      const estimatedCredits = 0;
+
+      // Edge case: saldo já era zero antes de qualquer reserva.
+      // Isso não deveria acontecer (reserveCredits falharia), mas testamos defensivamente.
+      db.seed('users/user-promo-already-zero/beta_access/current', createBetaAccess({
+        availableCredits: 0,
+        reservedCredits: 0,
+        feedbackPromoSeen: false,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-already-zero/credit_months/${periodKey}`, createCreditMonth({
+        availableCredits: 0,
+        reservedCredits: 0,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-already-zero/credit_events/${requestId}`, createReservedEvent(requestId, 0) as unknown as Record<string, unknown>);
+
+      const result = await confirmCredits(
+        db as unknown as Parameters<typeof confirmCredits>[0],
+        uid,
+        requestId,
+        0,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.availableCredits).toBe(0);
+
+      const betaSnap = db.read(`users/${uid}/beta_access/current`);
+      // totalBeforeConfirm = 0 + 0 = 0 → NÃO ativa
+      expect(betaSnap?.feedbackPromoSeen).toBe(false);
+    });
+
+    it('não deve ativar feedbackPromoSeen quando sobram créditos reservados após confirmação', async () => {
+      const db = new MockFirestore();
+      const uid = 'user-promo-has-reserve';
+      const requestId = 'req-promo-4';
+      const periodKey = getCurrentPeriodKey();
+      const estimatedCredits = 10;
+
+      // Cenário: availableCredits = 0, reservedCredits = 30
+      // confirmCredits(10): totalBeforeConfirm = 30 > 0
+      // newAvailable = 0, newReserved = 20 → NÃO ativa (ainda tem reserva)
+      db.seed('users/user-promo-has-reserve/beta_access/current', createBetaAccess({
+        availableCredits: 0,
+        reservedCredits: 30,
+        feedbackPromoSeen: false,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-has-reserve/credit_months/${periodKey}`, createCreditMonth({
+        availableCredits: 0,
+        reservedCredits: 30,
+      }) as unknown as Record<string, unknown>);
+      db.seed(`users/user-promo-has-reserve/credit_events/${requestId}`, createReservedEvent(requestId, estimatedCredits) as unknown as Record<string, unknown>);
+
+      const result = await confirmCredits(
+        db as unknown as Parameters<typeof confirmCredits>[0],
+        uid,
+        requestId,
+        estimatedCredits,
+      );
+
+      expect(result.success).toBe(true);
+
+      const betaSnap = db.read(`users/${uid}/beta_access/current`);
+      // finalReserved = 20 ≠ 0 → NÃO ativa
+      expect(betaSnap?.feedbackPromoSeen).toBe(false);
+    });
   });
 });

@@ -339,6 +339,7 @@ export const CreditSnapshotOutputSchema = z.object({
   bonusCredits: z.number(),
   reservedCredits: z.number(),
   feedbackBonusGranted: z.boolean(),
+  feedbackPromoSeen: z.boolean(),
   unlimitedCredits: z.boolean(),
   currentPeriodKey: z.string(),
 });

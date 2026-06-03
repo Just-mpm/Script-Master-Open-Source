@@ -16,6 +16,7 @@ import type { VideoPreviewHandle } from './components/VideoPreview';
 import { useAudioGenerationHandler } from './components/app/AudioGenerationHandler';
 import { AudioPreflightDialog } from './components/app/AudioPreflightDialog';
 import { PwaUpdatePrompt } from './components/app/PwaUpdatePrompt';
+import { PwaInstallPrompt } from './components/app/PwaInstallPrompt';
 import { AnalyticsConsentPrompt } from './components/app/AnalyticsConsentPrompt';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { Sidebar } from './components/app/Sidebar';
@@ -283,6 +284,9 @@ export default function App() {
 
       {/* Prompt de atualização PWA — detecta nova versão após deploy */}
       <PwaUpdatePrompt />
+      {/* Prompt de instalação PWA — convite para Add to Home Screen,
+          coordena sobreposição com PwaUpdatePrompt via evento customizado */}
+      <PwaInstallPrompt />
       <AnalyticsConsentPrompt />
 
       {/* Controller global do FeedbackDialog — escuta evento de abertura */}

@@ -32,22 +32,25 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_HEADER_HEIGHT: 64,
-  APP_MAX_WIDTH: 1600,
-  BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-  BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
-  ICON_SIZE_MD: 20,
-  ICON_SIZE_LG: 24,
-  GAP_MEDIUM: 12,
-  APP_SURFACE: '#1a1a2e',
-  APP_BORDER: 'rgba(255,255,255,0.08)',
-  WHITE_05: 'rgba(255,255,255,0.05)',
-  WHITE_015: 'rgba(255,255,255,0.015)',
-  SHADOW_DEEP: '#020617',
-  TEXT_SECONDARY: 'rgba(255,255,255,0.6)',
-}));
+vi.mock('../../src/theme/tokens', async () => {
+  const { createTokensMock } = await import('../__mocks__/tokensMock');
+  return createTokensMock({
+    extras: {
+      APP_HEADER_HEIGHT: 64,
+      APP_MAX_WIDTH: 1600,
+      BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+      BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
+      BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+      ICON_SIZE_LG: 24,
+      GAP_MEDIUM: 12,
+      APP_SURFACE: '#1a1a2e',
+      WHITE_05: 'rgba(255,255,255,0.05)',
+      WHITE_015: 'rgba(255,255,255,0.015)',
+      SHADOW_DEEP: '#020617',
+      TEXT_SECONDARY: 'rgba(255,255,255,0.6)',
+    },
+  });
+});
 
 const anonymousUser = {
   user: null,

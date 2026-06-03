@@ -28,6 +28,7 @@ interface BetaAccessDocument {
   baseCredits?: number;
   bonusCredits?: number;
   feedbackBonusGranted?: boolean;
+  feedbackPromoSeen?: boolean;
   unlimitedCredits?: boolean;
 }
 
@@ -45,6 +46,8 @@ export interface CreditState {
   bonusCredits: number;
   /** Se o bônus de feedback já foi concedido */
   feedbackBonusGranted: boolean;
+  /** Se o usuário já zerou os créditos pelo menos uma vez (momento zero da promo de feedback) */
+  feedbackPromoSeen: boolean;
   /** Se a conta tem créditos ilimitados */
   unlimitedCredits: boolean;
   /** Se o saldo atual já foi confirmado e pode ser usado para bloqueio */
@@ -62,6 +65,7 @@ interface CreditSnapshotCallableOutput {
   baseCredits: number;
   bonusCredits: number;
   feedbackBonusGranted: boolean;
+  feedbackPromoSeen: boolean;
   unlimitedCredits: boolean;
 }
 
@@ -100,6 +104,7 @@ const initialState: CreditState = {
   baseCredits: 0,
   bonusCredits: 0,
   feedbackBonusGranted: false,
+  feedbackPromoSeen: false,
   unlimitedCredits: false,
   canEnforceBalance: false,
   loading: true,
@@ -158,6 +163,7 @@ function readCreditState(store: CreditStore): CreditState {
     baseCredits: store.baseCredits,
     bonusCredits: store.bonusCredits,
     feedbackBonusGranted: store.feedbackBonusGranted,
+    feedbackPromoSeen: store.feedbackPromoSeen,
     unlimitedCredits: store.unlimitedCredits,
     canEnforceBalance: store.canEnforceBalance,
     loading: store.loading,
@@ -212,6 +218,7 @@ function handleCreditSnapshot(snapshot: DocumentSnapshot): void {
     const baseCredits = readNumber(data.baseCredits);
     const bonusCredits = readNumber(data.bonusCredits);
     const feedbackBonusGranted = data.feedbackBonusGranted === true;
+    const feedbackPromoSeen = data.feedbackPromoSeen === true;
     const unlimitedCredits = typeof data.unlimitedCredits === 'boolean'
       ? data.unlimitedCredits
       : undefined;
@@ -223,6 +230,7 @@ function handleCreditSnapshot(snapshot: DocumentSnapshot): void {
       baseCredits,
       bonusCredits,
       feedbackBonusGranted,
+      feedbackPromoSeen,
       unlimitedCredits: unlimitedCredits ?? prev.unlimitedCredits,
       canEnforceBalance,
       loading: false,
@@ -241,6 +249,7 @@ function handleCreditSnapshot(snapshot: DocumentSnapshot): void {
     baseCredits: canEnforceBalance ? 0 : prev.baseCredits,
     bonusCredits: canEnforceBalance ? 0 : prev.bonusCredits,
     feedbackBonusGranted: canEnforceBalance ? false : prev.feedbackBonusGranted,
+    feedbackPromoSeen: canEnforceBalance ? false : prev.feedbackPromoSeen,
     canEnforceBalance,
     loading: false,
     error: canEnforceBalance ? null : prev.error,
@@ -424,6 +433,7 @@ export const useCreditsStore = create<CreditStore>()((set, get) => ({
         baseCredits: resultData.baseCredits,
         bonusCredits: resultData.bonusCredits,
         feedbackBonusGranted: resultData.feedbackBonusGranted,
+        feedbackPromoSeen: resultData.feedbackPromoSeen,
         unlimitedCredits: resultData.unlimitedCredits,
         canEnforceBalance: true,
         loading: false,
@@ -479,6 +489,7 @@ export function useCredits(): CreditState {
     baseCredits: store.baseCredits,
     bonusCredits: store.bonusCredits,
     feedbackBonusGranted: store.feedbackBonusGranted,
+    feedbackPromoSeen: store.feedbackPromoSeen,
     unlimitedCredits: store.unlimitedCredits,
     canEnforceBalance: store.canEnforceBalance,
     loading: store.loading,

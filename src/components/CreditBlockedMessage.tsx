@@ -6,12 +6,11 @@
 // o usuário sobre renovação automática e bônus por feedback.
 // ---------------------------------------------------------------------------
 
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { useNavigate } from 'react-router-dom';
 import { useLocale } from '../features/i18n/context';
+import { StackedHeader } from './ui';
 
 export interface CreditBlockedMessageProps {
   /** Se true, renderiza como um Alert inline. Se false, não renderiza nada. */
@@ -26,27 +25,34 @@ export function CreditBlockedMessage({ show }: CreditBlockedMessageProps) {
   if (!show) return null;
 
   return (
-    <Alert
+    <StackedHeader
+      variant="alert"
       severity="warning"
-      variant="outlined"
-      sx={{
-        borderColor: 'warning.main',
-        backgroundColor: 'rgba(255, 167, 38, 0.08)',
+      alertVariant="outlined"
+      title={t('credits.blocked.title')}
+      titleVariant="alertTitle"
+      description={
+        <Stack spacing={1}>
+          <span>{t('credits.blocked.description')}</span>
+          <Button
+            variant="outlined"
+            color="warning"
+            size="small"
+            onClick={() => navigate('/precos')}
+            sx={{ alignSelf: 'flex-start' }}
+          >
+            {t('credits.blocked.cta')}
+          </Button>
+        </Stack>
+      }
+      slotProps={{
+        root: {
+          sx: {
+            borderColor: 'warning.main',
+            backgroundColor: 'rgba(255, 167, 38, 0.08)',
+          },
+        },
       }}
-    >
-      <AlertTitle>{t('credits.blocked.title')}</AlertTitle>
-      <Stack spacing={1}>
-        <span>{t('credits.blocked.description')}</span>
-        <Button
-          variant="outlined"
-          color="warning"
-          size="small"
-          onClick={() => navigate('/precos')}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          {t('credits.blocked.cta')}
-        </Button>
-      </Stack>
-    </Alert>
+    />
   );
 }

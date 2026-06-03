@@ -57,7 +57,7 @@ const HIDDEN_ROUTES = ['/app/estudio', '/app/video', '/onboarding'] as const;
  */
 export function FeedbackFab() {
   const { user } = useAuth();
-  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
+  const { feedbackBonusGranted, feedbackPromoSeen, unlimitedCredits } = useCredits();
   const { t } = useLocale();
   const location = useLocation();
   const openFeedback = useFeedbackDialog();
@@ -66,9 +66,11 @@ export function FeedbackFab() {
     if (!user) return false;
     if (unlimitedCredits) return false;
     if (feedbackBonusGranted) return false;
+    // Só mostra no "momento zero" — quando o usuário já zerou créditos pelo menos uma vez
+    if (!feedbackPromoSeen) return false;
     if (HIDDEN_ROUTES.some((route) => location.pathname.startsWith(route))) return false;
     return true;
-  }, [user, unlimitedCredits, feedbackBonusGranted, location.pathname]);
+  }, [user, unlimitedCredits, feedbackBonusGranted, feedbackPromoSeen, location.pathname]);
 
   const handleClick = useCallback(() => {
     openFeedback(location.pathname);

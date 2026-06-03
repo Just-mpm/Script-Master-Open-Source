@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
@@ -17,8 +15,6 @@ import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
 import GraphicEq from '@mui/icons-material/GraphicEq';
 import MovieFilter from '@mui/icons-material/MovieFilter';
 import People from '@mui/icons-material/People';
@@ -31,10 +27,12 @@ import { EmotionSelector } from '../features/studio/components/EmotionSelector';
 import { getInitialStudioConfig, saveStudioDefaults, clearStudioDefaults } from '../features/studio/store/studio.utils';
 import { useStudioStore } from '../features/studio/store';
 import { glassPanelSx, insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_RELAXED } from '../theme/tokens';
+import { ICON_SIZE_MD, GAP_COMPACT, GAP_RELAXED } from '../theme/tokens';
 import { useLocale } from '../features/i18n';
 import { LOCALE_CONFIGS } from '../features/i18n/locales';
 import type { Locale } from '../features/i18n/types';
+import { StackedHeader } from './ui';
+import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 import { VoiceCard } from './VoiceCard';
 import { createPaceOptions, createVisualFrameworkOptions, createSceneRatioOptions, createDensityOptions } from '../data/studioOptions';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,10 +71,6 @@ interface SettingsSnapshot {
   isMultiSpeaker: boolean;
 }
 
-function buildSettingsSnapshot(config: SettingsSnapshot): SettingsSnapshot {
-  return config;
-}
-
 function compactSummary(text: string, maxLength = 28): string {
   const normalized = text.trim();
   if (normalized.length <= maxLength) {
@@ -89,59 +83,27 @@ function compactSummary(text: string, maxLength = 28): string {
 // ─── Section Colapsavel ─────────────────────────────────────
 
 function CollapsibleSection({ icon, title, description, sectionId, summary, children }: SectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { expanded, onToggle } = useCollapsibleSection(true);
 
   return (
-    <Paper elevation={0} sx={glassPanelSx}>
-      <ButtonBase
-        component="button"
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded}
-        aria-controls={sectionId}
-        sx={{
-          width: '100%',
-          px: { xs: 2.5, md: 3 },
-          py: 2,
-          textAlign: 'left',
-          borderRadius: { xs: 3, md: 4 },
-          transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' },
-        }}
-      >
-        <Stack direction="row" sx={{ width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Stack spacing={GAP_COMPACT}>
-            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-              {icon}
-              <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
-                {title}
-              </Typography>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {description}
-            </Typography>
-            {summary ? (
-              <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', pt: 0.5 }}>
-                {summary}
-              </Stack>
-            ) : null}
-          </Stack>
-          <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
-            {!isExpanded ? <ExpandMore sx={{ fontSize: ICON_SIZE_MD }} /> : <ExpandLess sx={{ fontSize: ICON_SIZE_MD }} />}
-          </Stack>
+    <StackedHeader
+      variant="glass"
+      collapsible
+      expanded={expanded}
+      onToggle={onToggle}
+      collapseId={sectionId}
+      icon={icon}
+      title={title}
+      description={description}
+      summary={summary}
+      summaryAlwaysVisible
+    >
+      <Paper elevation={0} sx={(t) => ({ ...insetPanelSx(t), p: 2 })}>
+        <Stack spacing={2}>
+          {children}
         </Stack>
-      </ButtonBase>
-
-      <Collapse in={isExpanded} timeout="auto" unmountOnExit id={sectionId}>
-        <Stack spacing={2} sx={{ px: { xs: 2.5, md: 3 }, pb: { xs: 2.5, md: 3 } }}>
-          <Paper elevation={0} sx={(t) => ({ ...insetPanelSx(t), p: 2 })}>
-            <Stack spacing={2}>
-              {children}
-            </Stack>
-          </Paper>
-        </Stack>
-      </Collapse>
-    </Paper>
+      </Paper>
+    </StackedHeader>
   );
 }
 
@@ -191,7 +153,7 @@ export function Configuracoes() {
     label: `${c.flag} ${c.label}`,
   }));
 
-  const currentSnapshot = useMemo<SettingsSnapshot>(() => buildSettingsSnapshot({
+  const currentSnapshot = useMemo<SettingsSnapshot>(() => ({
     selectedVoice: voice,
     speakerAName,
     speakerBName,
@@ -396,7 +358,7 @@ export function Configuracoes() {
       setIsMultiSpeaker(fresh.isMultiSpeaker);
       setSpeakerBName(fresh.speakerBName);
       setSpeakerBVoice(fresh.speakerBVoice);
-      setSavedSnapshot(buildSettingsSnapshot({
+      setSavedSnapshot({
         selectedVoice: fresh.selectedVoice,
         speakerAName: fresh.speakerAName,
         speakerBName: fresh.speakerBName,
@@ -413,7 +375,7 @@ export function Configuracoes() {
         emotionIntensity: fresh.emotionIntensity,
         imageTextLanguage: fresh.imageTextLanguage,
         isMultiSpeaker: fresh.isMultiSpeaker,
-      }));
+      });
 
     // Persistir valores default no Firestore (se logado) para evitar
     // que a próxima carga restaure os valores antigos do Firestore
@@ -765,13 +727,21 @@ export function Configuracoes() {
               </Typography>
             </Stack>
             {toast ? (
-              <Alert severity="success" onClose={() => setToast(null)} sx={{ py: 0 }}>
-                {toast}
-              </Alert>
+              <StackedHeader
+                variant="alert"
+                severity="success"
+                title={t('common.success')}
+                description={toast}
+                onClose={() => setToast(null)}
+                slotProps={{ root: { sx: { py: 0 } } }}
+              />
             ) : null}
             {resetConfirmOpen ? (
-              <Alert
+              <StackedHeader
+                variant="alert"
                 severity="warning"
+                title={t('common.warning')}
+                description={t('configuracoes.resetConfirm')}
                 action={
                   <Stack direction="row" spacing={1}>
                     <Button size="small" color="inherit" onClick={() => setResetConfirmOpen(false)}>
@@ -782,9 +752,7 @@ export function Configuracoes() {
                     </Button>
                   </Stack>
                 }
-              >
-                {t('configuracoes.resetConfirm')}
-              </Alert>
+              />
             ) : null}
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ flexShrink: 0 }}>

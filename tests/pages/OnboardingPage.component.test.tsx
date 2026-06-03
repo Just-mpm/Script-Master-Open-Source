@@ -57,6 +57,28 @@ vi.mock('../../src/theme/tokens', () => ({
   SUCCESS_MAIN: '#10b981',
   WHITE_04: 'rgba(255, 255, 255, 0.04)',
   WHITE_06: 'rgba(255, 255, 255, 0.06)',
+  // Tokens exigidos por StackedHeader (importado via AnalyticsConsentPrompt
+  // que o OnboardingPage referencia em openAnalyticsConsentDialog).
+  APP_BORDER: 'rgba(255, 255, 255, 0.08)',
+  GLASS_BG: 'rgba(16, 23, 42, 0.78)',
+  SUCCESS_BG_SUBTLE: 'rgba(16, 185, 129, 0.08)',
+  SUCCESS_BORDER: 'rgba(16, 185, 129, 0.18)',
+  SUCCESS_GLOW: 'rgba(16, 185, 129, 0.2)',
+  ERROR_BG_SUBTLE: 'rgba(239, 68, 68, 0.08)',
+  ERROR_BORDER: 'rgba(239, 68, 68, 0.14)',
+  ERROR_GLOW: 'rgba(239, 68, 68, 0.15)',
+  WARNING_BG_SUBTLE: 'rgba(245, 158, 11, 0.08)',
+  WARNING_BORDER: 'rgba(245, 158, 11, 0.14)',
+  WARNING_GLOW: 'rgba(245, 158, 11, 0.15)',
+  ICON_SIZE_MD: 20,
+  GAP_COMPACT: 4,
+  GAP_DEFAULT: 8,
+  GAP_MEDIUM: 12,
+  RADIUS_SM: 8,
+  RADIUS_XS: 4,
+  APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
+  APP_SURFACE: '#1a1a2e',
+  SHADOW_DEEP: '#020617',
 }));
 
 vi.mock('../../src/theme/authStyles', () => ({

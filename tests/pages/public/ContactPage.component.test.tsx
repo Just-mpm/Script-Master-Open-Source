@@ -22,25 +22,32 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
   PageLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
-  APP_BORDER: 'rgba(255,255,255,0.08)',
-  BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-  BRAND_PRIMARY: '#2E75B6',
-  BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
-  BRAND_SECONDARY: '#F7941E',
-  BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
-  TEXT_PRIMARY: '#f8fafc',
-  TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-  SUCCESS_MAIN: '#10b981',
-  WARNING_MAIN: '#f59e0b',
-  TEXT_DISABLED: 'rgba(248, 250, 252, 0.38)',
-  SHADOW_DEEP: '#020617',
-  ICON_SIZE_MD: 16,
-  WHITE_04: 'rgba(255,255,255,0.04)',
-  WHITE_06: 'rgba(255,255,255,0.06)',
-  WHITE_12: 'rgba(255,255,255,0.12)',
-}));
+vi.mock('../../../src/theme/tokens', async () => {
+  const { createTokensMock: factory } = await import('../../__mocks__/tokensMock');
+  return factory({
+    extras: {
+      APP_MAX_WIDTH: 1600,
+      BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+      BRAND_PRIMARY: '#2E75B6',
+      BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
+      BRAND_SECONDARY: '#F7941E',
+      TEXT_PRIMARY: '#f8fafc',
+      TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
+      SUCCESS_MAIN: '#10b981',
+      WARNING_MAIN: '#f59e0b',
+      TEXT_DISABLED: 'rgba(248, 250, 252, 0.38)',
+      SHADOW_DEEP: '#020617',
+      ICON_SIZE_MD: 16,
+      WHITE_04: 'rgba(255,255,255,0.04)',
+      WHITE_06: 'rgba(255,255,255,0.06)',
+      WHITE_12: 'rgba(255,255,255,0.12)',
+      GAP_COMPACT: 4,
+      GAP_DEFAULT: 8,
+      GAP_MEDIUM: 12,
+      RADIUS_SM: 8,
+    },
+  });
+});
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),

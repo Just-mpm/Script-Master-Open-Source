@@ -5,9 +5,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
 import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
@@ -19,6 +17,7 @@ import {
   grantAnalyticsConsent,
   type AnalyticsConsent,
 } from '../../lib/analytics';
+import { StackedHeader } from '../ui';
 import {
   APP_BORDER_STRONG,
   APP_SURFACE,
@@ -65,40 +64,42 @@ export function AnalyticsConsentPrompt() {
   return (
     <>
       <Snackbar open={consent === 'unknown'} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Paper
+        {/* GAP-06 (Onda 1): Paper + Stack + Typography manuais substituídos por
+            StackedHeader variant="glass". Preserva:
+            - <Link> no description via ReactNode
+            - 2 botões no slot action (accept/reject)
+            - a11y (role="region" + aria-labelledby) via slotProps.root
+            - sizing/coloring custom do Paper original (border, bgcolor, shadow) */}
+        <StackedHeader
+          variant="glass"
           role="region"
-          aria-labelledby="analytics-consent-title"
-          elevation={0}
-          sx={{
-            width: 'calc(100vw - 32px)',
-            maxWidth: 920,
-            p: { xs: 1.5, sm: 1.75 },
-            borderRadius: RADIUS_SM,
-            border: `1px solid ${APP_BORDER_STRONG}`,
-            bgcolor: alpha(APP_SURFACE, 0.94),
-            boxShadow: `0 12px 32px ${alpha(SHADOW_DEEP, 0.42)}`,
+          slotProps={{
+            root: {
+              sx: {
+                width: 'calc(100vw - 32px)',
+                maxWidth: 920,
+                p: { xs: 1.5, sm: 1.75 },
+                border: `1px solid ${APP_BORDER_STRONG}`,
+                bgcolor: alpha(APP_SURFACE, 0.94),
+                boxShadow: `0 12px 32px ${alpha(SHADOW_DEEP, 0.42)}`,
+              },
+            },
+            title: { sx: { fontSize: 'subtitle2' } },
           }}
-        >
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={{ xs: 1.25, sm: 2 }}
-            sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
-          >
-            <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
-              <Typography id="analytics-consent-title" variant="subtitle2" sx={{ fontWeight: 700 }}>
-                {t('analyticsConsent.title')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-                {t('analyticsConsent.description')}{' '}
-                <Link component={RouterLink} to="/cookies">{t('analyticsConsent.details')}</Link>
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} sx={{ flexShrink: 0, justifyContent: 'flex-end' }}>
+          title={t('analyticsConsent.title')}
+          description={
+            <>
+              {t('analyticsConsent.description')}{' '}
+              <Link component={RouterLink} to="/cookies">{t('analyticsConsent.details')}</Link>
+            </>
+          }
+          action={
+            <>
               <Button size="small" color="inherit" onClick={reject}>{t('analyticsConsent.reject')}</Button>
               <Button size="small" variant="contained" onClick={accept}>{t('analyticsConsent.accept')}</Button>
-            </Stack>
-          </Stack>
-        </Paper>
+            </>
+          }
+        />
       </Snackbar>
 
       <Dialog
@@ -114,7 +115,12 @@ export function AnalyticsConsentPrompt() {
           {t('analyticsConsent.manageTitle')}
         </DialogTitle>
         <DialogContent sx={{ pb: 1 }}>
-          <Typography id="analytics-consent-dialog-description" variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+          <Typography
+            id="analytics-consent-dialog-description"
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.6 }}
+          >
             {t('analyticsConsent.manageDescription')}
           </Typography>
         </DialogContent>

@@ -1,5 +1,4 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -50,6 +49,7 @@ import { downloadFile } from '../lib/download';
 import { createLogger } from '../lib/logger';
 import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
+import { StackedHeader } from './ui';
 import { ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, RADIUS_SM, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
 import { prepareProjectImagesForSpeedPaint } from '../features/speed-paint/lib/projectQueueAdapter';
 import { trackAnalyticsEvent } from '../lib/analytics';
@@ -449,21 +449,35 @@ export function Library() {
       </Stack>
 
       {!user ? (
-        <Alert variant="outlined" severity="info">
-          {t('library.offlineHint')}
-        </Alert>
+        <StackedHeader
+          variant="alert"
+          severity="info"
+          alertVariant="outlined"
+          title={t('common.info')}
+          description={t('library.offlineHint')}
+        />
       ) : null}
 
       {speedPaintError ? (
-        <Alert variant="outlined" severity="error" onClose={() => setSpeedPaintError(null)}>
-          {speedPaintError}
-        </Alert>
+        <StackedHeader
+          variant="alert"
+          severity="error"
+          alertVariant="outlined"
+          title={t('common.error')}
+          description={speedPaintError}
+          onClose={() => setSpeedPaintError(null)}
+        />
       ) : null}
 
       {speedPaintInfo ? (
-        <Alert variant="outlined" severity="warning" onClose={() => setSpeedPaintInfo(null)}>
-          {speedPaintInfo}
-        </Alert>
+        <StackedHeader
+          variant="alert"
+          severity="warning"
+          alertVariant="outlined"
+          title={t('common.warning')}
+          description={speedPaintInfo}
+          onClose={() => setSpeedPaintInfo(null)}
+        />
       ) : null}
 
       {loading ? (
@@ -481,17 +495,18 @@ export function Library() {
           ))}
         </Grid>
       ) : error ? (
-        <Alert
-          variant="outlined"
+        <StackedHeader
+          variant="alert"
           severity="error"
+          alertVariant="outlined"
+          title={t('common.error')}
+          description={error}
           action={
             <Button color="inherit" size="small" onClick={() => void loadProjects()}>
               {t('common.tryAgain')}
             </Button>
           }
-        >
-          {error}
-        </Alert>
+        />
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
             <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
@@ -750,17 +765,18 @@ export function Library() {
                                 </Typography>
 
                                 {detailError ? (
-                                  <Alert
-                                    variant="outlined"
+                                  <StackedHeader
+                                    variant="alert"
                                     severity="error"
+                                    alertVariant="outlined"
+                                    title={t('common.error')}
+                                    description={detailError}
                                     action={
                                       <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
                                         {t('common.tryAgain')}
                                       </Button>
                                     }
-                                  >
-                                    {detailError}
-                                  </Alert>
+                                  />
                                 ) : projectData.audios.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
                                     {t('library.noAudio')}
@@ -859,17 +875,18 @@ export function Library() {
                                 </Typography>
 
                                 {detailError ? (
-                                  <Alert
-                                    variant="outlined"
+                                  <StackedHeader
+                                    variant="alert"
                                     severity="error"
+                                    alertVariant="outlined"
+                                    title={t('common.error')}
+                                    description={detailError}
                                     action={
                                       <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
                                         {t('common.tryAgain')}
                                       </Button>
                                     }
-                                  >
-                                    {detailError}
-                                  </Alert>
+                                  />
                                 ) : projectData.images.length === 0 ? (
                                   <Typography variant="body2" color="text.secondary">
                                     {t('library.noImages')}
@@ -933,17 +950,18 @@ export function Library() {
                             </Typography>
 
                             {detailError ? (
-                              <Alert
-                                variant="outlined"
+                              <StackedHeader
+                                variant="alert"
                                 severity="error"
-                                action={(
+                                alertVariant="outlined"
+                                title={t('common.error')}
+                                description={detailError}
+                                action={
                                   <Button color="inherit" size="small" onClick={() => void handleExpandProject(project.id)}>
                                     {t('common.tryAgain')}
                                   </Button>
-                                )}
-                              >
-                                {detailError}
-                              </Alert>
+                                }
+                              />
                             ) : resolvedVideos.length === 0 ? (
                               <Typography variant="body2" color="text.secondary">
                                 {t('library.noVideos')}
@@ -1100,18 +1118,19 @@ export function Library() {
 
       {/* Snackbar de sucesso quando exclusão OK mas refresh falhou */}
       {deleteSuccess && (
-        <Alert
+        <StackedHeader
+          variant="alert"
           severity="success"
-          variant="outlined"
+          alertVariant="outlined"
+          title={t('common.success')}
+          description={t('library.deleteSuccess')}
           action={
             <Button color="inherit" size="small" onClick={() => void loadProjects()}>
               {t('library.updateList')}
             </Button>
           }
-          sx={{ mt: 1 }}
-        >
-          {t('library.deleteSuccess')}
-        </Alert>
+          slotProps={{ root: { sx: { mt: 1 } } }}
+        />
       )}
     </Stack>
   );

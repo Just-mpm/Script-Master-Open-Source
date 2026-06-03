@@ -68,18 +68,23 @@ vi.mock('../../src/theme/surfaces', () => ({
   insetPanelSx: () => ({ p: 2 }),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
-  ICON_SIZE_SM: 16,
-  ICON_SIZE_MD: 20,
-  GAP_COMPACT: 0.5,
-  GAP_DEFAULT: 1,
-  GAP_MEDIUM: 1.5,
-  GAP_RELAXED: 2,
-  RADIUS_SM: 8,
-  RADIUS_XS: 4,
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(99, 102, 241, 0.15)',
-}));
+vi.mock('../../src/theme/tokens', async () => {
+  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
+  return factory({
+    extras: {
+      APP_MAX_WIDTH: 1600,
+      ICON_SIZE_SM: 16,
+      ICON_SIZE_MD: 20,
+      GAP_COMPACT: 0.5,
+      GAP_DEFAULT: 1,
+      GAP_MEDIUM: 1.5,
+      GAP_RELAXED: 2,
+      RADIUS_SM: 8,
+      RADIUS_XS: 4,
+      BRAND_PRIMARY_GLOW_SOFT: 'rgba(99, 102, 241, 0.15)',
+    },
+  });
+});
 
 vi.mock('../../src/lib/constants', () => ({
   VOICES: [

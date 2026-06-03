@@ -9,7 +9,7 @@
  * Seguranca: ignora gestos originados em elementos interativos.
  */
 
-import { useCallback } from 'react';
+import { useCallback, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PanInfo, Variants, Transition } from 'motion/react';
 
 // ── Thresholds de gesto ──────────────────────────────────────────────
@@ -76,6 +76,21 @@ const INTERACTIVE_SELECTORS = [
 function isInteractiveTarget(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
   return element?.closest?.(INTERACTIVE_SELECTORS) != null;
+}
+
+/**
+ * Handler de `pointerdown` que interrompe a propagação do gesto para o
+ * listener de drag do `useSwipeTabs` pai.
+ *
+ * Use em elementos interativos (ButtonBase, Switch, etc.) que vivem dentro
+ * de um container com `drag="x"` no mobile, para que arrastar horizontalmente
+ * o elemento NÃO seja interpretado como swipe entre abas.
+ *
+ * Deve ser passado via `onPointerDownCapture` (fase de captura) para
+ * interceptar antes do `motion.div` reagir.
+ */
+export function stopSwipePropagation(event: ReactPointerEvent | PointerEvent): void {
+  event.stopPropagation();
 }
 
 // ── Tipos da API publica ─────────────────────────────────────────────

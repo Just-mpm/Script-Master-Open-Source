@@ -20,6 +20,8 @@ export const ptBR: TranslationDictionary = {
     loadingPageSubtitle: 'Preparando sua experiência...',
     error: 'Erro',
     success: 'Sucesso',
+    warning: 'Atenção',
+    info: 'Informação',
     cancel: 'Cancelar',
     confirm: 'Confirmar',
     close: 'Fechar',
@@ -545,10 +547,12 @@ export const ptBR: TranslationDictionary = {
     },
     emptyState: {
       chipLabel: 'Ganhe 250 créditos',
+      chipLabelAfterBonus: 'Enviar feedback',
     },
     navItem: {
       headerLabel: 'Feedback (+250)',
       drawerLabel: 'Feedback (+250)',
+      labelAfterBonus: 'Feedback',
     },
   },
 
@@ -1045,6 +1049,8 @@ export const ptBR: TranslationDictionary = {
       sourceProportional: 'proporcional',
       sourceManual: 'manual',
       staleWarning: 'O roteiro mudou depois da transcrição. Gere novamente para atualizar as legendas.',
+      whisperNotSupportedTitle: 'Whisper não suportado neste navegador',
+      whisperNotSupportedDescription: 'As legendas serão geradas automaticamente com base no tempo do áudio.',
       wordCount: '{count} legenda(s)',
       regenerate: 'Gerar novamente',
     },
@@ -1062,6 +1068,7 @@ export const ptBR: TranslationDictionary = {
     deleteMemoryConfirm: 'Excluir memória?',
     runtime: {
       guestNotice: 'Você pode usar o assistente sem login, mas o histórico, as memórias e as diretrizes ficam locais ao navegador atual.',
+      errorTitle: 'Não foi possível responder',
       retry: 'Tentar novamente',
       deleteMemoryDescription: 'Esta memória será removida permanentemente e o assistente não a considerará mais nas respostas.',
       deleteConversationTitle: 'Excluir conversa?',
@@ -2083,6 +2090,16 @@ export const ptBR: TranslationDictionary = {
     offlineReady: 'App pronto para uso offline!',
   },
 
+  // ── Instalação PWA ─────────────────────────────────────────
+  pwaInstall: {
+    title: 'Instale o Script Master',
+    description: 'Acesse rapidamente pelo seu dispositivo.',
+    install: 'Instalar',
+    dismiss: 'Agora não',
+    installed: 'App instalado com sucesso!',
+    installError: 'Não foi possível iniciar a instalação. Tente novamente.',
+  },
+
   // ── Sidebar (navegação lateral) ─────────────────────────────
   sidebar: {
     ariaLabel: 'Menu principal',
@@ -2105,5 +2122,13 @@ export const ptBR: TranslationDictionary = {
     ariaDrawer: 'Menu secundário',
     more: 'Mais',
     openMenu: 'Abrir menu',
+  },
+
+  // ── StackedHeader (componente genérico de header) ─────────────
+  stackedHeader: {
+    collapseAriaLabel: {
+      expand: 'Expandir seção',
+      collapse: 'Recolher seção',
+    },
   },
 };

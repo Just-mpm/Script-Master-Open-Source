@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, MouseEvent } from 'react';
 import { alpha } from '@mui/material/styles';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -39,6 +38,7 @@ import { DeleteConfirmationDialog } from '../../components/video-library/DeleteC
 import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { APP_BORDER, APP_SURFACE_ELEVATED, BRAND_PRIMARY, ICON_SIZE_SM, RADIUS_XS, SHADOW_DEEP } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
+import { StackedHeader } from '../../components/ui';
 import { InterviewPanel } from './components/InterviewPanel';
 import { ScrollToBottomFab } from './components/ScrollToBottomFab';
 import { FeedbackBanner } from '../../components/feedback';
@@ -412,9 +412,14 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     >
       {documentTruncationWarning ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 1 }}>
-          <Alert severity="warning" onClose={handleDismissTruncationWarning} sx={{ borderRadius: 2 }}>
-            {documentTruncationWarning}
-          </Alert>
+          <StackedHeader
+            variant="alert"
+            severity="warning"
+            title={t('common.warning')}
+            description={documentTruncationWarning}
+            onClose={handleDismissTruncationWarning}
+            slotProps={{ root: { sx: { borderRadius: 2 } } }}
+          />
         </Box>
       ) : null}
 
@@ -466,17 +471,22 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       {!user ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
-          <Alert
-            variant="outlined"
+          {/* GAP-07: Alert guestNotice migrado para StackedHeader variant="alert".
+              Cor de borda/ícone BRAND_PRIMARY preservada via slotProps.root.sx. */}
+          <StackedHeader
+            variant="alert"
             severity="info"
-            sx={{
-              borderRadius: 2,
-              borderColor: alpha(BRAND_PRIMARY, 0.24),
-              '& .MuiAlert-icon': { color: BRAND_PRIMARY },
+            alertVariant="outlined"
+            slotProps={{
+              root: {
+                sx: {
+                  borderColor: alpha(BRAND_PRIMARY, 0.24),
+                  '& .MuiAlert-icon': { color: BRAND_PRIMARY },
+                },
+              },
             }}
-          >
-            {t('assistant.runtime.guestNotice')}
-          </Alert>
+            title={t('assistant.runtime.guestNotice')}
+          />
         </Box>
       ) : null}
 
@@ -488,18 +498,19 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       {error && !creditsExhausted ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
-          <Alert
-            variant="outlined"
+          <StackedHeader
+            variant="alert"
             severity="error"
-            sx={{ borderRadius: 2 }}
+            alertVariant="outlined"
+            title={t('assistant.runtime.errorTitle')}
+            description={error}
             action={
               <Button color="inherit" size="small" onClick={retryLastMessage}>
                 {t('assistant.runtime.retry')}
               </Button>
             }
-          >
-            {error}
-          </Alert>
+            slotProps={{ root: { sx: { borderRadius: 2 } } }}
+          />
         </Box>
       ) : null}
 

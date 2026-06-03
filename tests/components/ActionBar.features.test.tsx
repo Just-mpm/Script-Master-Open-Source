@@ -59,22 +59,29 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_ACTION_BAR_BOTTOM: 16,
-  BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-  BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #0891b2, #7c3aed)',
-  BRAND_GLOW: '0 4px 16px rgba(6, 182, 212, 0.3)',
-  BRAND_GLOW_FOCUS: '0 0 0 3px rgba(6, 182, 212, 0.3)',
-  WHITE_08: 'rgba(255,255,255,0.08)',
-  ICON_SIZE_MD: 20,
-  GAP_COMPACT: 4,
-  GAP_DEFAULT: 8,
-  GAP_MEDIUM: 12,
-  RADIUS_SM: 8,
-  RADIUS_CHIP: 16,
-  CYAN_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
-}));
+vi.mock('../../src/theme/tokens', async () => {
+  // vi.mock é hoisted; dynamic import para acessar createTokensMock
+  // sem violar a ordem de inicialização do vitest.
+  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
+  return factory({
+    extras: {
+      APP_ACTION_BAR_BOTTOM: 16,
+      BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+      BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #0891b2, #7c3aed)',
+      BRAND_GLOW: '0 4px 16px rgba(6, 182, 212, 0.3)',
+      BRAND_GLOW_FOCUS: '0 0 0 3px rgba(6, 182, 212, 0.3)',
+      WHITE_08: 'rgba(255,255,255,0.08)',
+      ICON_SIZE_MD: 20,
+      GAP_COMPACT: 4,
+      GAP_DEFAULT: 8,
+      GAP_MEDIUM: 12,
+      RADIUS_SM: 8,
+      RADIUS_CHIP: 16,
+      CYAN_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
+      BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.1)',
+    },
+  });
+});
 
 vi.mock('../../src/features/video-render/store/videoRenderBridge', () => ({
   useVideoRenderBridge: Object.assign(

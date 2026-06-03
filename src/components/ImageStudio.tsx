@@ -49,6 +49,7 @@ import { StockMediaPicker } from '../features/studio/components/StockMediaPicker
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
 import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, ICON_SIZE_LG, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { StackedHeader } from './ui';
 
 const log = createLogger('ImageStudio');
 
@@ -375,9 +376,15 @@ export function ImageStudio() {
 
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden />
 
-                  <Alert variant="outlined" severity="info">
-                    {t('imageStudio.promptTip')}
-                  </Alert>
+                  {/* GAP-07: Alert info persistente migrado para StackedHeader variant="alert".
+                      Como o Alert original não tinha título, usamos o texto do tip como `title`
+                      (subtitle2 default para variant=alert). Visualmente equivalente. */}
+                  <StackedHeader
+                    variant="alert"
+                    severity="info"
+                    alertVariant="outlined"
+                    title={t('imageStudio.promptTip')}
+                  />
                 </Stack>
               </Box>
             </Stack>
@@ -561,7 +568,16 @@ export function ImageStudio() {
               </Box>
 
               {creditsExhausted ? <CreditBlockedMessage show={true} /> : null}
-              {error && !creditsExhausted ? <Alert variant="outlined" severity="error">{error}</Alert> : null}
+              {/* GAP-07: Alert de erro migrado para StackedHeader. Texto do erro é o `title` (sem descrição separada). */}
+              {error && !creditsExhausted ? (
+                <StackedHeader
+                  variant="alert"
+                  severity="error"
+                  alertVariant="outlined"
+                  title={error}
+                />
+              ) : null}
+              {/* Fora do escopo StackedHeader: Snackbar/toast auto-hide (successMsg) */}
               {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null}
             </Stack>
           </Paper>
@@ -609,17 +625,18 @@ export function ImageStudio() {
                   </Typography>
                 </Box>
               ) : imagesError ? (
-                <Alert
-                  variant="outlined"
+                <StackedHeader
+                  variant="alert"
                   severity="error"
+                  alertVariant="outlined"
+                  title={t('common.error')}
+                  description={imagesError}
                   action={
                     <Button color="inherit" size="small" onClick={() => void loadSavedImages()}>
                       {t('common.tryAgain')}
                     </Button>
                   }
-                >
-                  {imagesError}
-                </Alert>
+                />
               ) : (
                 <Grid container spacing={1.5}>
                   {savedImages.map((img) => (

@@ -555,8 +555,8 @@ export const audio = onCallGenkit(
           }
         }
 
-        if (!pcmBuffer) {
-          // Todas as tentativas falharam (sem media.url em nenhuma)
+        if (!pcmBuffer || pcmBuffer.length < MIN_TTS_PCM_BYTES) {
+          // Todas as tentativas falharam — sem dados, PCM curto ou corrompido
           await creditMeter.revert('TTS_CHUNK_FAILED');
           creditsSettled = true;
 
@@ -566,14 +566,16 @@ export const audio = onCallGenkit(
           );
         }
 
-        // PCM validado — rejeita apenas se ficou curto e esgotou retries
-        if (pcmBuffer.length < MIN_TTS_PCM_BYTES) {
-          await creditMeter.revert('PCM_TOO_SHORT');
+        // Detecção de silêncio puro APÓS o retry loop — o Gemini TTS pode
+        // retornar silêncio em TODAS as tentativas. Se passou desapercebido
+        // (isLastAttempt = true + break), rejeitamos aqui.
+        if (isSilentPcm(pcmBuffer)) {
+          await creditMeter.revert('TTS_SILENT_AUDIO');
           creditsSettled = true;
 
           throw new HttpsError(
             'internal',
-            `Chunk ${i + 1}/${enrichedChunks.length} gerou PCM inválido (${pcmBuffer.length} bytes, mínimo ${MIN_TTS_PCM_BYTES}) após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
+            `Chunk ${i + 1}/${enrichedChunks.length} gerou áudio silencioso após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
           );
         }
 

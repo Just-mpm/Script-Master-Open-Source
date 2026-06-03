@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
 import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ClosedCaption from '@mui/icons-material/ClosedCaption';
@@ -15,6 +14,7 @@ import StopCircleOutlined from '@mui/icons-material/StopCircleOutlined';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import { glassSurfaceSx } from '../../../theme/surfaces';
+import { StackedHeader } from '../../../components/ui';
 import {
   GAP_COMPACT,
   GAP_DEFAULT,
@@ -139,13 +139,13 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
           <>
             {/* Alerta de staleness: roteiro foi editado após geração */}
             {isStale && (
-              <Alert
+              <StackedHeader
+                variant="alert"
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                sx={{ mb: 1, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
-              >
-                {t('video.transcription.staleWarning')}
-              </Alert>
+                slotProps={{ root: { sx: { mb: 1, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE } } }}
+                title={t('video.transcription.staleWarning')}
+              />
             )}
 
             <Stack
@@ -244,12 +244,15 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         {/* ── Estado: erro ── */}
         {hasError && transcriptionError && (
           <Stack spacing={GAP_DEFAULT}>
-            <Alert
+            <StackedHeader
+              variant="alert"
               severity="error"
-              sx={{ mb: 0, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
-            >
-              {transcriptionError}
-            </Alert>
+              title={t('common.error')}
+              description={transcriptionError}
+              slotProps={{
+                root: { sx: { mb: 0, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE } },
+              }}
+            />
             <Button
               variant="contained"
               size="small"
@@ -271,13 +274,14 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
           <Stack spacing={GAP_DEFAULT}>
             {/* Aviso: Whisper não suportado — usa fallback proporcional */}
             {whisperSupported === false && (
-              <Alert
+              <StackedHeader
+                variant="alert"
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                sx={{ borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
-              >
-                As legendas serão geradas automaticamente com base no tempo do áudio.
-              </Alert>
+                slotProps={{ root: { sx: { borderRadius: 2, bgcolor: WARNING_BG_SUBTLE } } }}
+                title={t('video.transcription.whisperNotSupportedTitle')}
+                description={t('video.transcription.whisperNotSupportedDescription')}
+              />
             )}
 
             <Stack

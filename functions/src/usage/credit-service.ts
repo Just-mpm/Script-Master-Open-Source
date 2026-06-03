@@ -41,6 +41,8 @@ export interface CreditAvailabilitySnapshot {
   usedCredits: number;
   reservedCredits: number;
   feedbackBonusGranted: boolean;
+  /** Marca que o usuário já teve saldo zero (>0 → 0) pelo menos uma vez */
+  feedbackPromoSeen: boolean;
   currentPeriodKey: string;
 }
 
@@ -55,6 +57,8 @@ export interface BetaAccess {
   reservedCredits: number;
   updatedAt: number;
   feedbackBonusGranted: boolean;
+  /** Marca que o usuário já teve saldo zero (>0 → 0) pelo menos uma vez */
+  feedbackPromoSeen: boolean;
 }
 
 /** Dados do documento credit_months/{YYYY-MM} */
@@ -111,6 +115,7 @@ function createInitialBetaAccess(periodKey: string): BetaAccess {
     reservedCredits: 0,
     updatedAt: Date.now(),
     feedbackBonusGranted: false,
+    feedbackPromoSeen: false,
   };
 }
 
@@ -145,6 +150,7 @@ function buildRolledOverBetaAccess(current: BetaAccess, nextPeriodKey: string): 
     reservedCredits: 0,
     updatedAt: Date.now(),
     feedbackBonusGranted: current.feedbackBonusGranted,
+    feedbackPromoSeen: current.feedbackPromoSeen,
   };
 }
 
@@ -178,6 +184,7 @@ function sanitizeBetaAccess(raw: unknown, fallbackPeriodKey: string): BetaAccess
     reservedCredits,
     updatedAt: readNumber(data.updatedAt, Date.now()),
     feedbackBonusGranted: data.feedbackBonusGranted === true,
+    feedbackPromoSeen: data.feedbackPromoSeen === true,
   };
 }
 
@@ -256,6 +263,7 @@ export async function getCreditAvailabilitySnapshot(
     usedCredits: beta.usedCredits,
     reservedCredits: beta.reservedCredits,
     feedbackBonusGranted: beta.feedbackBonusGranted,
+    feedbackPromoSeen: beta.feedbackPromoSeen,
     currentPeriodKey: beta.currentPeriodKey,
   };
 }
@@ -641,12 +649,26 @@ export async function confirmCredits(
       const newMonthReserved = month.reservedCredits - releasableMonthReservation;
       const newMonthUsed = month.usedCredits + finalCredits;
 
+      // Detecta quando o saldo total do usuário chega a zero após a confirmação.
+      // O `beta.availableCredits` já pode ser 0 (reserveCredits zerou antes),
+      // então consideramos o saldo total (livre + reservado) antes da confirmação.
+      // A flag é ativada atomicamente na mesma transação que atualiza o saldo.
+      const totalBeforeConfirm = beta.availableCredits + beta.reservedCredits;
+      const finalAvailable = Math.max(0, newAvailable);
+      const finalReserved = Math.max(0, newReserved);
+      const shouldActivateFeedbackPromo =
+        totalBeforeConfirm > 0
+        && finalAvailable === 0
+        && finalReserved === 0
+        && !beta.feedbackPromoSeen;
+
       // 4. Atualiza beta_access
       const updatedBeta: Partial<BetaAccess> = {
-        availableCredits: Math.max(0, newAvailable),
+        availableCredits: finalAvailable,
         reservedCredits: Math.max(0, newReserved),
         usedCredits: newUsed,
         updatedAt: Date.now(),
+        ...(shouldActivateFeedbackPromo ? { feedbackPromoSeen: true } : {}),
       };
       transaction.set(betaRef, updatedBeta, { merge: true });
 
@@ -670,7 +692,7 @@ export async function confirmCredits(
       };
       transaction.set(eventRef, updatedEvent, { merge: true });
 
-      return { availableCredits: Math.max(0, newAvailable) };
+      return { availableCredits: finalAvailable };
     });
 
     log.info('Créditos confirmados', { uid, requestId, finalCredits, availableCredits: result.availableCredits });

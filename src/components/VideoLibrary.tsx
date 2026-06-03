@@ -29,6 +29,7 @@ import { useProjectGallery } from './video-library/useProjectGallery';
 import { useBatchDownload } from './video-library/useBatchDownload';
 import type { VideoLibraryProps } from './video-library/types';
 import { useLocale } from '../features/i18n';
+import { StackedHeader } from './ui';
 
 // Re-export para compatibilidade com consumidores existentes
 export type { VideoLibraryItem, VideoLibraryProps, SortOrder } from './video-library/types';
@@ -83,17 +84,18 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
 
   if (error) {
     return (
-      <Alert
-        variant="outlined"
+      <StackedHeader
+        variant="alert"
         severity="error"
+        alertVariant="outlined"
+        title={t('common.error')}
+        description={error}
         action={
           <Button color="inherit" size="small" onClick={() => { void reload(); }}>
             {t('common.tryAgain')}
           </Button>
         }
-      >
-        {error}
-      </Alert>
+      />
     );
   }
 
@@ -285,6 +287,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
         }}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
+        {/* Fora do escopo StackedHeader: Snackbar/toast auto-hide (downloadError) */}
         <Alert
           severity="error"
           variant="filled"

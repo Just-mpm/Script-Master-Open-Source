@@ -175,7 +175,10 @@ export function createSkillsMiddleware(config: { skillPaths: string[] }) {
   const skillCache = scanSkills(config.skillPaths);
 
   // -----------------------------------------------------------------------
-  // Tool use_skill
+  // Tool use_skill — criada uma única vez quando o middleware é instanciado.
+  // Como `createSkillsMiddleware()` é chamado uma única vez (em
+  // `assistant.ts`), o `const` no escopo da função já garante inicialização
+  // única (não há risco de re-registro no Genkit registry).
   // -----------------------------------------------------------------------
 
   const useSkillTool = tool(

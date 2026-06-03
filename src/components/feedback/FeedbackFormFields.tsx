@@ -32,6 +32,7 @@ import { trackAnalyticsEvent } from '../../lib/analytics';
 import { BRAND_SECONDARY, BRAND_SECONDARY_GLOW_SOFT } from '../../theme/tokens';
 import { alpha } from '@mui/material/styles';
 import { FEEDBACK_CATEGORIES, type FeedbackCategory } from './constants';
+import { StackedHeader } from '../ui';
 
 const log = createLogger('FeedbackFormFields');
 
@@ -147,6 +148,7 @@ export function FeedbackFormFields({
 
     return (
       <Stack spacing={1.5} sx={{ alignItems: 'center', width: '100%' }}>
+        {/* Fora do escopo StackedHeader: Snackbar/toast auto-hide (sucesso de envio) */}
         <Alert
           severity="success"
           variant="outlined"
@@ -210,9 +212,14 @@ export function FeedbackFormFields({
 
       {/* Erro */}
       {error ? (
-        <Alert severity="error" variant="outlined" onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <StackedHeader
+          variant="alert"
+          severity="error"
+          alertVariant="outlined"
+          title={t('common.error')}
+          description={error}
+          onClose={() => setError(null)}
+        />
       ) : null}
 
       {/* Botão de envio */}

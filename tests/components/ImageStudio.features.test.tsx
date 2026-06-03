@@ -71,20 +71,25 @@ vi.mock('../../src/theme/surfaces', () => ({
   searchFieldSx: {},
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  SHADOW_IMAGE: 'rgba(0,0,0,0.2)',
-  ICON_SIZE_SM: 16,
-  ICON_SIZE_MD: 20,
-  ICON_SIZE_LG: 24,
-  GAP_COMPACT: 4,
-  GAP_DEFAULT: 8,
-  GAP_MEDIUM: 12,
-  RADIUS_SM: 8,
-  EMPTY_ICON_SIZE: 48,
-  EMPTY_WRAPPER_MAX_WIDTH: 400,
-  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
-  BRAND_PRIMARY: '#2E75B6',
-}));
+vi.mock('../../src/theme/tokens', async () => {
+  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
+  return factory({
+    extras: {
+      SHADOW_IMAGE: 'rgba(0,0,0,0.2)',
+      ICON_SIZE_SM: 16,
+      ICON_SIZE_MD: 20,
+      ICON_SIZE_LG: 24,
+      GAP_COMPACT: 4,
+      GAP_DEFAULT: 8,
+      GAP_MEDIUM: 12,
+      RADIUS_SM: 8,
+      EMPTY_ICON_SIZE: 48,
+      EMPTY_WRAPPER_MAX_WIDTH: 400,
+      BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+      BRAND_PRIMARY: '#2E75B6',
+    },
+  });
+});
 
 vi.mock('../../src/components/video-library/DeleteConfirmationDialog', () => ({
   DeleteConfirmationDialog: () => null,
