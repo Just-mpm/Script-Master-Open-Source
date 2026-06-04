@@ -24,8 +24,7 @@ import {
   ICON_SIZE_LG,
   ICON_SIZE_MD,
   WHITE_05,
-  WHITE_015,
-} from '../../theme/tokens';
+  WHITE_015, RADIUS_XS } from '../../theme/tokens';
 
 interface GuestNavItem {
   to: string;
@@ -150,9 +149,9 @@ export function GuestMobileNav() {
                   component={Link}
                   to={item.to}
                   selected={isActive}
-                  aria-current={isActive ? 'page' : undefined}
+                  aria-current={isActive ? 'page' : undefined }
                   sx={{
-                    borderRadius: 2,
+                    borderRadius: RADIUS_XS,
                     mb: 0.5,
                     color: isActive ? 'text.primary' : 'text.secondary',
                     bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -183,7 +182,7 @@ export function GuestMobileNav() {
             to={authCta.to}
             onClick={closeDrawer}
             sx={{
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               color: 'primary.main',
               fontWeight: 600,
               transition: 'background-color 0.2s ease',

@@ -22,31 +22,30 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
   PageLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../../../src/theme/tokens', async () => {
-  const { createTokensMock: factory } = await import('../../__mocks__/tokensMock');
-  return factory({
-    extras: {
-      APP_MAX_WIDTH: 1600,
-      BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-      BRAND_PRIMARY: '#2E75B6',
-      BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
-      BRAND_SECONDARY: '#F7941E',
-      TEXT_PRIMARY: '#f8fafc',
-      TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-      SUCCESS_MAIN: '#10b981',
-      WARNING_MAIN: '#f59e0b',
-      TEXT_DISABLED: 'rgba(248, 250, 252, 0.38)',
-      SHADOW_DEEP: '#020617',
-      ICON_SIZE_MD: 16,
-      WHITE_04: 'rgba(255,255,255,0.04)',
-      WHITE_06: 'rgba(255,255,255,0.06)',
-      WHITE_12: 'rgba(255,255,255,0.12)',
-      GAP_COMPACT: 4,
-      GAP_DEFAULT: 8,
-      GAP_MEDIUM: 12,
-      RADIUS_SM: 8,
-    },
-  });
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return {
+    ...actual,
+    APP_MAX_WIDTH: 1600,
+    BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+    BRAND_PRIMARY: '#2E75B6',
+    BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
+    BRAND_SECONDARY: '#F7941E',
+    TEXT_PRIMARY: '#f8fafc',
+    TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
+    SUCCESS_MAIN: '#10b981',
+    WARNING_MAIN: '#f59e0b',
+    TEXT_DISABLED: 'rgba(248, 250, 252, 0.38)',
+    SHADOW_DEEP: '#020617',
+    ICON_SIZE_MD: 16,
+    WHITE_04: 'rgba(255,255,255,0.04)',
+    WHITE_06: 'rgba(255,255,255,0.06)',
+    WHITE_12: 'rgba(255,255,255,0.12)',
+    GAP_COMPACT: 4,
+    GAP_DEFAULT: 8,
+    GAP_MEDIUM: 12,
+    RADIUS_SM: 8,
+  };
 });
 
 vi.mock('../../../src/theme/surfaces', () => ({
@@ -73,14 +72,13 @@ describe('ContactPage', () => {
     localStorage.setItem('s2a_locale', 'pt-BR');
   });
 
-  it('renderiza título "Fale Conosco"', () => {
+  it('renderiza título "Fale direto com quem está construindo"', () => {
     render(<ContactPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Fale Conosco')).toBeDefined();
+    expect(screen.getByText('Fale direto com quem está construindo')).toBeDefined();
   });
 
   it('renderiza informações de contato', () => {
     render(<ContactPage />, { wrapper: Wrapper });
-    // Email aparece tanto no painel lateral quanto no disclaimer do formulário
     expect(screen.getAllByText('contato@scriptmaster.app').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Em até 24h úteis')).toBeDefined();
     expect(screen.getByText('Português (Brasil)')).toBeDefined();
@@ -93,7 +91,9 @@ describe('ContactPage', () => {
     // "Assunto" aparece como label e como MenuItem — usar getAllByText
     const assunto = screen.getAllByText('Assunto');
     expect(assunto.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByPlaceholderText('Descreva sua dúvida, sugestão ou problema...')).toBeDefined();
+    expect(
+      screen.getByPlaceholderText('Conte o que você quer criar, qual dúvida apareceu ou que melhoria deixaria o produto mais útil para você...')
+    ).toBeDefined();
   });
 
   it('mostra erro de validação ao enviar sem preencher campos', () => {

@@ -54,6 +54,8 @@ import {
   WHITE_04,
   WHITE_06,
   WHITE_08,
+  RADIUS_SM,
+  RADIUS_XS,
 } from '../../theme/tokens';
 
 const log = createLogger('PWA');
@@ -156,7 +158,7 @@ function PwaInstallPrompt() {
           p: { xs: 1.75, sm: 2 },
           minWidth: { xs: 'calc(100vw - 32px)', sm: 420 },
           maxWidth: { sm: 520 },
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
           border: `1px solid ${APP_BORDER_STRONG}`,
           backgroundColor: alpha(APP_SURFACE, 0.82),
           backgroundImage: `linear-gradient(180deg, ${WHITE_06} 0%, ${WHITE_04} 100%)`,
@@ -203,7 +205,7 @@ function PwaInstallPrompt() {
                 }}
               />
             </Stack>
-            <Stack spacing={GAP_COMPACT / 3}>
+            <Stack spacing={GAP_COMPACT / 3 }>
               <Typography
                 id={titleId}
                 variant="subtitle2"
@@ -252,7 +254,7 @@ function PwaInstallPrompt() {
               variant="contained"
               onClick={handleInstall}
               sx={{
-                borderRadius: 2,
+                borderRadius: RADIUS_XS,
                 fontWeight: 600,
                 px: 2,
                 background: BRAND_GRADIENT,

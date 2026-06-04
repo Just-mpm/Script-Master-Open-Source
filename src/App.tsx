@@ -173,7 +173,7 @@ export default function App() {
             color: '#e0e0e0',
             borderRadius: '12px',
             fontSize: '0.875rem',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid ${WHITE_08}',
           },
           success: {
             iconTheme: {
@@ -198,7 +198,7 @@ export default function App() {
         component="main"
         id="main-content"
         aria-label={t('common.mainContent')}
-        tabIndex={-1}
+        tabIndex={-1 }
         sx={{
           flex: 1,
           minHeight: 0,

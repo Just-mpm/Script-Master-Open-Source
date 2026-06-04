@@ -114,7 +114,7 @@ export function SettingsPreviewCard({ pendingSettings, onApply, onDismiss }: Set
               />
             ))}
           </Stack>
-        ) : null}
+        ) : null }
 
         <Stack direction="row" spacing={GAP_COMPACT} sx={{ justifyContent: 'flex-end' }}>
           <Button

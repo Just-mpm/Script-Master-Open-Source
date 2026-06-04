@@ -96,11 +96,13 @@ describe('StackedHeader', () => {
   // ── Colapso controlado (RF-04) ──
   describe('colapso', () => {
     it('collapsible=false: não renderiza ButtonBase', () => {
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <StackedHeader title="T" description="D">
           <div>Content</div>
         </StackedHeader>,
       );
+      expect(screen.queryByRole('button')).toBeNull();
+      expect(screen.getByText('Content')).toBeDefined();
       // Sem collapsible, o conteúdo children não vai em Collapse
       // mas o content é renderizado direto se children presente
       // (apenas se collapsible=true, vai dentro de Collapse)

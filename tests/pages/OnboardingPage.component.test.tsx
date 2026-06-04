@@ -47,8 +47,9 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
   BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #2563a0 0%, #e08520 100%)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
@@ -78,8 +79,8 @@ vi.mock('../../src/theme/tokens', () => ({
   RADIUS_XS: 4,
   APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
   APP_SURFACE: '#1a1a2e',
-  SHADOW_DEEP: '#020617',
-}));
+  SHADOW_DEEP: '#020617', };
+});;
 
 vi.mock('../../src/theme/authStyles', () => ({
   authTextFieldSx: {},

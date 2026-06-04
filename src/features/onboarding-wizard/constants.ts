@@ -12,7 +12,7 @@ import Image from '@mui/icons-material/Image';
 import Videocam from '@mui/icons-material/Videocam';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import type { Variants } from 'motion/react';
-import { BRAND_PRIMARY } from '../../theme/tokens';
+import { BRAND_PRIMARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
 import type { WizardRole, WizardGoal } from './types';
 
 /** Tipo para componentes de icone MUI */
@@ -50,7 +50,7 @@ export const WIZARD_GOALS: GoalOption[] = [
 /** Estilo compartilhado do Chip de identificacao de etapa */
 export const STEP_CHIP_SX = {
   alignSelf: 'flex-start' as const,
-  backgroundColor: 'rgba(46, 117, 182, 0.12)',
+  backgroundColor: BRAND_PRIMARY_GLOW_SOFT,
   color: BRAND_PRIMARY,
   fontWeight: 700,
   fontSize: '0.7rem',

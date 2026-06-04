@@ -32,6 +32,7 @@ import {
   GAP_RELAXED,
   TEXT_SECONDARY,
   SUCCESS_MAIN,
+  BRAND_PRIMARY_GLOW_SOFT,
 } from '../theme/tokens';
 import { authTextFieldSx, authLinkSx } from '../theme/authStyles';
 import { glassPanelSx } from '../theme/surfaces';
@@ -140,7 +141,7 @@ export function LoginPage() {
 
       {/* Landmark main fica em App.tsx — este Box é apenas container de conteúdo */}
       <Box
-        tabIndex={-1}
+        tabIndex={-1 }
         sx={{
           flex: 1,
           display: 'grid',
@@ -178,7 +179,7 @@ export function LoginPage() {
                             bgcolor: 'action.hover',
                             color: 'primary.main',
                             flexShrink: 0,
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            border: '1px solid ${WHITE_06}',
                             transition: 'background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                             '&:hover': {
                               bgcolor: 'action.selected',
@@ -266,7 +267,7 @@ export function LoginPage() {
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
+                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
                       },
                       '&:active': {
                         transform: 'translateY(0)',
@@ -326,7 +327,7 @@ export function LoginPage() {
                         size="large"
                         fullWidth
                         disabled={isSubmitting}
-                        startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined}
+                        startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined }
                         sx={{
                           mt: 0.5,
                           py: 1.5,
@@ -334,7 +335,7 @@ export function LoginPage() {
                           transition: 'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover:not(.Mui-disabled)': {
                             borderWidth: 2,
-                            boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
+                            boxShadow: '0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}',
                           },
                           '&:active:not(.Mui-disabled)': {
                             transform: 'scale(0.98)',
@@ -470,7 +471,7 @@ export function LoginPage() {
                 type="submit"
                 variant="contained"
                 disabled={isResetting}
-                startIcon={isResetting ? <CircularProgress size={18} color="inherit" /> : undefined}
+                startIcon={isResetting ? <CircularProgress size={18} color="inherit" /> : undefined }
                 sx={{ px: 3 }}
               >
                 {isResetting ? t('auth.login.resetDialog.submittingBtn') : t('auth.login.resetDialog.submitBtn')}

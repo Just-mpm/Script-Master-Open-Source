@@ -20,7 +20,7 @@ import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { FAQAccordion } from '../../components/public/FAQAccordion';
 import { CTASection } from '../../components/public/CTASection';
-import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
+import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, RADIUS_SM, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { getLocalizedPricingFaq } from '../../data/pricingFaq';
 import { fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
@@ -162,7 +162,7 @@ export default function FaqPage() {
             aria-label={t('faq.categories.ariaLabel')}
             variant={isMobile ? 'fullWidth' : 'scrollable'}
             scrollButtons={isMobile ? false : 'auto'}
-            allowScrollButtonsMobile={!isMobile}
+            allowScrollButtonsMobile={!isMobile }
             sx={{
               minHeight: { xs: 48, md: 56 },
               '& .MuiTabs-list': {
@@ -172,7 +172,7 @@ export default function FaqPage() {
               '& .MuiTabs-indicator': {
                 backgroundColor: BRAND_PRIMARY,
                 height: 3,
-                borderRadius: 3,
+                borderRadius: RADIUS_SM,
               },
               // Botoes de scroll estilizados
               '& .MuiTabs-scrollButtons': {
@@ -202,7 +202,7 @@ export default function FaqPage() {
                     minHeight: { xs: 48, md: 56 },
                     px: { xs: 2, md: 3 },
                     py: 1,
-                    borderRadius: 2,
+                    borderRadius: RADIUS_XS,
                     transition: 'color 200ms ease-in-out, background-color 200ms ease-in-out',
                     '&:hover': {
                       backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -269,7 +269,7 @@ export default function FaqPage() {
               color: BRAND_PRIMARY,
               px: 3,
               py: 1.25,
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               '&:hover': {
                 backgroundColor: alpha(BRAND_PRIMARY, 0.08),
                 boxShadow: `0 4px 20px ${BRAND_PRIMARY_GLOW_SOFT}`,

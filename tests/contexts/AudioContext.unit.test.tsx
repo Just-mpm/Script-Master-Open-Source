@@ -14,9 +14,10 @@ vi.mock('../../src/lib/logger', () => ({
   setLoggerUserId: vi.fn(),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  ICON_SIZE_MD: 16,
-}));
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_MD: 16, };
+});;
 
 vi.mock('@mui/material/Snackbar', () => ({
   default: function MockSnackbar({ open, children }: { open: boolean; children: ReactNode }) {

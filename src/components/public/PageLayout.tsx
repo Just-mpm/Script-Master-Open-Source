@@ -26,7 +26,7 @@ export function PageLayout({ children }: PageLayoutProps) {
 
       {/* Landmark main fica em App.tsx — este Box é apenas container de conteúdo */}
       <Box
-        tabIndex={-1}
+        tabIndex={-1 }
         sx={{
           flex: 1,
           pt: { xs: 6, md: 10 },

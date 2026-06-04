@@ -71,7 +71,7 @@ export function ScrollingPhrase({
     borderRadius,
     userSelect: 'none' as const,
     backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity})`,
-    boxShadow: `0 0 40px 20px rgba(0, 0, 0, ${backgroundOpacity * 0.8})`,
+    boxShadow: `0 0 40px 20px rgba(0, 0, 0, ${backgroundOpacity * 0.8 })`,
     color: WHITE,
   }), [fontSize, paddingX, paddingY, borderRadius, backgroundOpacity]);
 

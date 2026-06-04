@@ -180,8 +180,9 @@ vi.mock('../../src/lib/seo', () => ({
   getPageSeo: () => ({ title: 'Cadastro', description: 'Crie sua conta' }),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   APP_HEADER_HEIGHT: 64,
   APP_ACTION_BAR_BOTTOM: 24,
   AVATAR_SIZE_SM: 32,
@@ -294,8 +295,8 @@ vi.mock('../../src/theme/tokens', () => ({
   BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #5BA3D0 0%, #F7941E 100%)',
   BRAND_GLOW: '0 14px 36px rgba(46, 117, 182, 0.26)',
   BRAND_GLOW_FOCUS: '0 0 0 3px rgba(46, 117, 182, 0.45)',
-  APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%), radial-gradient(circle at 85% 20%, rgba(247, 148, 30, 0.12) 0%, transparent 30%), linear-gradient(180deg, #050816 0%, #070b18 100%)',
-}));
+  APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%), radial-gradient(circle at 85% 20%, rgba(247, 148, 30, 0.12) 0%, transparent 30%), linear-gradient(180deg, #050816 0%, #070b18 100%)', };
+});;
 
 // Mock do store Zustand (usado por StudioPage, AssistantPage, VideoPage)
 vi.mock('../../src/features/studio/store', () => {
@@ -489,18 +490,18 @@ describe('Pages — Renderização', () => {
 
     it('deve exibir os 4 benefícios de LOGIN_BENEFITS', () => {
       renderWithRouter(<LoginPage />);
-      expect(screen.getByText('Voz com IA')).toBeTruthy();
-      expect(screen.getByText('Vídeo Automático')).toBeTruthy();
-      expect(screen.getByText('Imagens')).toBeTruthy();
-      expect(screen.getByText('Assistente IA')).toBeTruthy();
+      expect(screen.getByText('Narração sem gravar')).toBeTruthy();
+      expect(screen.getByText('Vídeo montado no navegador')).toBeTruthy();
+      expect(screen.getByText('Cenas com IA')).toBeTruthy();
+      expect(screen.getByText('Assistente criativo')).toBeTruthy();
     });
 
     it('deve exibir a descrição dos benefícios', () => {
       renderWithRouter(<LoginPage />);
-      expect(screen.getByText('Roteiros em áudio profissional com Gemini TTS')).toBeTruthy();
-      expect(screen.getByText('Renderização client-side com legendas')).toBeTruthy();
-      expect(screen.getByText('Geração com 8 aspect ratios e referência')).toBeTruthy();
-      expect(screen.getByText('Chat com memória e integração ao estúdio')).toBeTruthy();
+      expect(screen.getByText('Roteiros viram áudio claro para vídeos')).toBeTruthy();
+      expect(screen.getByText('Cenas, voz e legendas em um fluxo simples')).toBeTruthy();
+      expect(screen.getByText('Imagens para YouTube, Shorts e Reels')).toBeTruthy();
+      expect(screen.getByText('Ideias, revisão e direção de cena')).toBeTruthy();
     });
 
     it('deve exibir o título "Crie com IA no beta aberto"', () => {

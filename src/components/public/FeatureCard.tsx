@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import type { ElementType, ReactNode } from 'react';
 import { glassPanelSx } from '../../theme/surfaces';
 import { fadeInUp, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
+import { RADIUS_SM } from '../../theme/tokens';
 
 interface FeatureCardProps {
   icon: ElementType;
@@ -72,7 +73,7 @@ export function FeatureCard({
             sx={(theme) => ({
               width: 56,
               height: 56,
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               display: 'grid',
               placeItems: 'center',
               background: highlighted ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})` : undefined,

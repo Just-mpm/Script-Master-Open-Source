@@ -32,8 +32,7 @@ import {
   EMPTY_ICON_SIZE,
   GAP_RELAXED,
   SUCCESS_MAIN,
-  TEXT_SECONDARY,
-} from '../theme/tokens';
+  TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
 import { authTextFieldSx } from '../theme/authStyles';
 import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
@@ -86,7 +85,7 @@ const CONTAINED_BUTTON_SX = {
   transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   '&:hover:not(.Mui-disabled)': {
     transform: 'translateY(-1px)',
-    boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
+    boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
   },
   '&:active:not(.Mui-disabled)': {
     transform: 'translateY(0)',
@@ -99,7 +98,7 @@ const OUTLINED_BUTTON_SX = {
   transition: 'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
   '&:hover:not(.Mui-disabled)': {
     borderWidth: 2,
-    boxShadow: '0 0 0 3px rgba(46, 117, 182, 0.12)',
+    boxShadow: '0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}',
   },
   '&:active:not(.Mui-disabled)': {
     transform: 'scale(0.98)',
@@ -524,7 +523,7 @@ function ResetPasswordView({ oobCode, t }: ResetPasswordViewProps) {
               size="large"
               fullWidth
               disabled={isSubmitting}
-              startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined}
+              startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined }
               sx={CONTAINED_BUTTON_SX}
             >
               {isSubmitting
@@ -679,7 +678,7 @@ function RecoverEmailView({ oobCode, t }: RecoverEmailViewProps) {
             onClick={handleRevert}
             size="large"
             disabled={isReverting}
-            startIcon={isReverting ? <CircularProgress size={18} color="inherit" /> : undefined}
+            startIcon={isReverting ? <CircularProgress size={18} color="inherit" /> : undefined }
             sx={{ flex: 1, ...CONTAINED_BUTTON_SX }}
           >
             {isReverting

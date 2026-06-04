@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
-import Collapse from '@mui/material/Collapse';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -15,7 +14,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
-import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import { useShallow } from 'zustand/react/shallow';
 import { useAnimationStore } from '../features/speed-paint/store/animationStore';
@@ -34,7 +32,6 @@ import { getPageSeo } from '../lib/seo';
 import type { SpeedPaintTimingMode } from '../features/video-render/lib/speedPaintTimings';
 import {
   BRAND_GRADIENT,
-  BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_PRIMARY_LIGHT,
   EMPTY_WRAPPER_MAX_WIDTH,
@@ -44,8 +41,11 @@ import {
   RADIUS_CHIP,
   WHITE_08,
   WHITE_14,
+  RADIUS_SM,
 } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
+import { StackedHeader } from '../components/ui';
+import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -68,7 +68,7 @@ export function SpeedPaintPage() {
   const speedPaintExporter = useSpeedPaintExporter();
   const [isBatchRecording, setIsBatchRecording] = useState(false);
   const batchRenderStartedRef = useRef(false);
-  const [configOpen, setConfigOpen] = useState(true);
+  const configSection = useCollapsibleSection(true);
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
@@ -361,9 +361,9 @@ export function SpeedPaintPage() {
                 <Alert variant="outlined" severity="warning" role="status">
                   {queueSourceNotice}
                 </Alert>
-              ) : null}
+              ) : null }
             </Stack>
-          ) : null}
+          ) : null }
           <QueueStaging />
         </Stack>
       )}
@@ -417,7 +417,7 @@ export function SpeedPaintPage() {
           <Box sx={{ width: '100%', maxWidth: 448 }}>
             <LinearProgress
               variant="determinate"
-              value={job.progress * 100}
+              value={job.progress * 100 }
               sx={{
                 height: 8,
                 borderRadius: RADIUS_CHIP,
@@ -521,7 +521,7 @@ export function SpeedPaintPage() {
                         {t(pluralKey('speedPaint.queueFailedSummary', failedBatchCount), { failed: failedBatchCount })}
                       </Typography>
                     </Box>
-                  ) : null}
+                  ) : null }
                 </Stack>
               </Stack>
             ) : (
@@ -591,7 +591,7 @@ export function SpeedPaintPage() {
               <Box
                 sx={{
                   p: { xs: 1.75, md: 2 },
-                  borderRadius: 3,
+                  borderRadius: RADIUS_SM,
                   bgcolor: WHITE_08,
                   border: `1px solid ${WHITE_14}`,
                 }}
@@ -616,7 +616,7 @@ export function SpeedPaintPage() {
                 onReset={handleBatchExportBackToQueue}
                 onClear={handleBatchExportReset}
                 statusText={speedPaintExporter.renderStatusText}
-                blobSizeBytes={speedPaintExporter.outputBlob?.size}
+                blobSizeBytes={speedPaintExporter.outputBlob?.size }
                 labelRetry={t('speedPaint.batchExportBackToQueue')}
                 retryIcon={<ArrowBack sx={{ fontSize: 16 }} />}
                 labelClear={t('speedPaint.batchExportClearQueue')}
@@ -647,13 +647,13 @@ export function SpeedPaintPage() {
             <SpeedPaintPlayer
               ref={playerRef}
               animation={job.animation!}
-              imageSource={job.animation!.resizedImage || job.inputImage}
+              imageSource={job.animation!.resizedImage || job.inputImage }
               showDrawTool={showDrawTool}
               animationDuration={animationDuration}
               fps={FPS}
               jobStatus={job.status}
               timingMode={previewTimingMode}
-              isLastScene={!isBatchWatchPreview || isLastBatchPreviewScene}
+              isLastScene={!isBatchWatchPreview || isLastBatchPreviewScene }
             />
           </Grid>
 
@@ -697,7 +697,7 @@ export function SpeedPaintPage() {
               {activeTab === 'export' && (
                 <SpeedPaintExportPanel
                   animation={job.animation!}
-                  imageSource={job.animation!.resizedImage || job.inputImage}
+                  imageSource={job.animation!.resizedImage || job.inputImage }
                   animationDuration={animationDuration}
                   onAnimationDurationChange={setAnimationDuration}
                   showDrawTool={showDrawTool}
@@ -705,59 +705,22 @@ export function SpeedPaintPage() {
                 />
               )}
 
-              {/* Seção de configurações collapsível */}
-              <Paper
-                elevation={0}
+              <StackedHeader
+                variant="glass"
+                collapsible
+                expanded={configSection.expanded}
+                onToggle={configSection.onToggle}
+                collapseId={configSection.collapseId}
+                title={t('speedPaint.pageConfigTitle')}
+                titleVariant="subtitle2"
+                density="compact"
                 sx={(theme) => ({
                   ...glassSurfaceSx(theme),
                   width: '100%',
-                  p: { xs: 2, md: 2.5 },
                   borderRadius: { xs: 3, md: 4 },
                 })}
               >
-                <Box
-                  component="button"
-                  onClick={() => setConfigOpen((prev) => !prev)}
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    p: 0,
-                    color: 'inherit',
-                    typography: 'subtitle2',
-                    fontWeight: 600,
-                    letterSpacing: '-0.02em',
-                    transition: 'opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': { opacity: 0.85 },
-                    '&:focus-visible': {
-                      outline: `2px solid ${BRAND_PRIMARY}`,
-                      outlineOffset: 4,
-                      borderRadius: 1,
-                    },
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: '-0.02em' }}>
-                    {t('speedPaint.pageConfigTitle')}
-                  </Typography>
-                  <Box
-                    component="span"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      transform: configOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
-                  >
-                    <ExpandMore sx={{ fontSize: 20, color: 'text.secondary' }} />
-                  </Box>
-                </Box>
-
-                <Collapse in={configOpen}>
-                  <Stack spacing={GAP_MEDIUM} sx={{ mt: 2 }}>
+                  <Stack spacing={GAP_MEDIUM}>
                     {/* Mostrar lápis/pincel */}
                     <FormControlLabel
                       control={
@@ -826,8 +789,7 @@ export function SpeedPaintPage() {
                       </Box>
                     </Box>
                   </Stack>
-                </Collapse>
-              </Paper>
+              </StackedHeader>
             </Stack>
           </Grid>
         </Grid>

@@ -42,8 +42,7 @@ import {
   TEXT_DISABLED,
   ERROR_MAIN,
   SHADOW_DEEP,
-  BRAND_PRIMARY,
-} from '../../../theme/tokens';
+  BRAND_PRIMARY, RADIUS_XS } from '../../../theme/tokens';
 import {
   assistantComposerContainerSx,
   assistantAttachmentChipSx,
@@ -311,7 +310,7 @@ function AssistantComposerInner(
               })}
             </Stack>
           </Box>
-        ) : null}
+        ) : null }
 
         <Box sx={assistantComposerInputRowSx}>
           <input
@@ -356,7 +355,7 @@ function AssistantComposerInner(
                   {PLACEHOLDERS[placeholderIndex].split('').map((char, i) => (
                     <Box component="span" key={i} sx={assistantPlaceholderLetterSx}>
                       <motion.span variants={letterVariants}>
-                        {char === ' ' ? '\u00A0' : char}
+                        {char === ' ' ? '\u00A0' : char }
                       </motion.span>
                     </Box>
                   ))}
@@ -369,7 +368,7 @@ function AssistantComposerInner(
               id="assistant-chat-input"
               name="chat-message"
               rows={1}
-              placeholder={interviewPending ? t('assistant.composer.interviewPending') : undefined}
+              placeholder={interviewPending ? t('assistant.composer.interviewPending') : undefined }
               aria-label={interviewPending ? t('assistant.composer.interviewPending') : t('assistant.composer.placeholder')}
               value={input}
               onChange={handleInputChange}
@@ -383,7 +382,7 @@ function AssistantComposerInner(
                 if (related && wrapperRef.current?.contains(related)) return;
                 setIsFocused(false);
               }}
-              disabled={creditsBlocked || interviewPending}
+              disabled={creditsBlocked || interviewPending }
               style={{
                 position: 'relative',
                 zIndex: 1,
@@ -409,7 +408,7 @@ function AssistantComposerInner(
           {isLoading ? (
             <Tooltip title={t('assistant.composer.stopGeneration')}>
               <IconButton
-                onClick={onStopGeneration || onSubmit}
+                onClick={onStopGeneration || onSubmit }
                 aria-label={t('assistant.composer.stopGeneration')}
                 size="small"
                 sx={{
@@ -434,7 +433,7 @@ function AssistantComposerInner(
               type="submit"
               variant="contained"
               size="small"
-              disabled={!canSend}
+              disabled={!canSend }
               aria-label={t('assistant.composer.send')}
               endIcon={<SendIcon sx={{ fontSize: ICON_SIZE_SM }} />}
               sx={assistantSendButtonSx}
@@ -502,7 +501,7 @@ function AssistantComposerInner(
                 fontSize: '0.8125rem',
               }}
             />
-          ) : null}
+          ) : null }
         </Box>
 
         {/* Thinking Level Menu — abre para cima */}
@@ -517,7 +516,7 @@ function AssistantComposerInner(
               sx: (theme) => ({
                 mt: 1,
                 minWidth: 140,
-                borderRadius: 2,
+                borderRadius: RADIUS_XS,
                 backgroundColor: alpha(theme.palette.background.paper, 0.96),
                 backdropFilter: 'blur(20px)',
                 border: `1px solid ${alpha(BRAND_PRIMARY, 0.15)}`,
@@ -530,7 +529,7 @@ function AssistantComposerInner(
             <MenuItem
               key={level}
               onClick={() => handleThinkingSelect(level)}
-              selected={selectedThinkingLevel === level}
+              selected={selectedThinkingLevel === level }
             >
               <ListItemText primary={thinkingLabels[level]} />
               {selectedThinkingLevel === level && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}
@@ -550,7 +549,7 @@ function AssistantComposerInner(
               sx: (theme) => ({
                 mt: 1,
                 minWidth: 140,
-                borderRadius: 2,
+                borderRadius: RADIUS_XS,
                 backgroundColor: alpha(theme.palette.background.paper, 0.96),
                 backdropFilter: 'blur(20px)',
                 border: `1px solid ${alpha(BRAND_PRIMARY, 0.15)}`,
@@ -563,7 +562,7 @@ function AssistantComposerInner(
             <MenuItem
               key={model}
               onClick={() => handleModelSelect(model)}
-              selected={selectedModel === model}
+              selected={selectedModel === model }
             >
               <ListItemText primary={modelLabels[model]} />
               {selectedModel === model && <Check sx={{ fontSize: ICON_SIZE_SM, color: BRAND_PRIMARY }} />}

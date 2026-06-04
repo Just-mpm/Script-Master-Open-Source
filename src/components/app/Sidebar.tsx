@@ -33,6 +33,8 @@ import {
   SIDEBAR_WIDTH_EXPANDED,
   WHITE_015,
   WHITE_05,
+  RADIUS_XS,
+  WHITE_08,
 } from '../../theme/tokens';
 import { alpha } from '@mui/material/styles';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
@@ -197,12 +199,12 @@ export function Sidebar() {
             py: 1.5,
             '&::-webkit-scrollbar': { width: 4 },
             '&::-webkit-scrollbar-thumb': {
-              bgcolor: 'rgba(255, 255, 255, 0.08)',
-              borderRadius: 2,
+              bgcolor: WHITE_08,
+              borderRadius: RADIUS_XS,
             },
             '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
             scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255, 255, 255, 0.08) transparent',
+            scrollbarColor: '${WHITE_08} transparent',
           }}
         >
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 0 }}>
@@ -215,7 +217,7 @@ export function Sidebar() {
                     onClick={() => handleItemAction(item)}
                     aria-label={item.label}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: RADIUS_XS,
                       color: BRAND_SECONDARY,
                       fontWeight: 600,
                       transition: 'background-color 0.2s ease, color 0.2s ease',
@@ -233,7 +235,7 @@ export function Sidebar() {
                         primary={item.label}
                         slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 600 } } }}
                       />
-                    ) : null}
+                    ) : null }
                   </ListItemButton>
                 );
               }

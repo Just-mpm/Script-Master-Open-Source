@@ -418,10 +418,10 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             title={t('common.warning')}
             description={documentTruncationWarning}
             onClose={handleDismissTruncationWarning}
-            slotProps={{ root: { sx: { borderRadius: 2 } } }}
+            slotProps={{ root: { sx: { borderRadius: RADIUS_XS } } }}
           />
         </Box>
-      ) : null}
+      ) : null }
 
       {/* Banner de feedback — incentiva envio até o bônus de 250 ser concedido */}
       <FeedbackBanner screenContext="/app/assistente" />
@@ -488,13 +488,13 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             title={t('assistant.runtime.guestNotice')}
           />
         </Box>
-      ) : null}
+      ) : null }
 
       {creditsExhausted ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
           <CreditBlockedMessage show={true} />
         </Box>
-      ) : null}
+      ) : null }
 
       {error && !creditsExhausted ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
@@ -511,10 +511,10 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             }
             actionPlacement="stack"
             actionAlign="end"
-            slotProps={{ root: { sx: { borderRadius: 2 } } }}
+            slotProps={{ root: { sx: { borderRadius: RADIUS_XS } } }}
           />
         </Box>
-      ) : null}
+      ) : null }
 
       {/* Container scrollável — agrupa mensagens + widgets dinâmicos */}
       <Box
@@ -550,7 +550,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
             onApply={handleApplyPendingSettings}
             onDismiss={clearPendingSettings}
           />
-        ) : null}
+        ) : null }
 
         {respondResult && (
           respondResult.text || (respondResult.suggestedActions?.length ?? 0) > 0 || (respondResult.media?.length ?? 0) > 0
@@ -576,7 +576,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
                   <Box sx={{ ...assistantMarkdownSx, typography: 'body2' }}>
                     <ReactMarkdown>{respondResult.text}</ReactMarkdown>
                   </Box>
-                ) : null}
+                ) : null }
                 {respondResult.suggestedActions && respondResult.suggestedActions.length > 0 ? (
                   <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
                     {respondResult.suggestedActions.map((action) => (
@@ -592,7 +592,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
                       </Button>
                     ))}
                   </Stack>
-                ) : null}
+                ) : null }
 
                 {respondResult.media && respondResult.media.length > 0 ? (
                   <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
@@ -604,24 +604,24 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
                         target="_blank"
                         rel="noreferrer"
                         clickable
-                        label={media.title ?? media.url}
+                        label={media.title ?? media.url }
                         variant="outlined"
                         sx={{ borderColor: APP_BORDER, maxWidth: '100%' }}
                       />
                     ))}
                   </Stack>
-                ) : null}
+                ) : null }
               </Stack>
             </Card>
           </Box>
-        ) : null}
+        ) : null }
 
         {interview ? (
           <InterviewPanel
             interview={interview}
             onAnswer={handleAnswerInterview}
           />
-        ) : null}
+        ) : null }
 
         <ScrollToBottomFab containerRef={scrollContainerRef} isStreaming={isStreaming} />
       </Box>
@@ -632,7 +632,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         isLoading={isLoading}
         isThinkActive={thinkingEnabled}
         creditsBlocked={creditBlockedByBalance}
-        interviewPending={!!interview}
+        interviewPending={!!interview }
         fileInputRef={fileInputRef}
         selectedModel={selectedModel}
         selectedThinkingLevel={selectedThinkingLevel}
@@ -647,7 +647,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       <DeleteConfirmationDialog
         open={Boolean(memoryToDelete)}
-        itemName={memoryToDelete ?? null}
+        itemName={memoryToDelete ?? null }
         deletingItem={deletingConfirm}
         deleteError={null}
         titleIdleLabel={t('assistant.deleteMemoryConfirm')}
@@ -658,7 +658,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
 
       <DeleteConfirmationDialog
         open={Boolean(chatToDelete)}
-        itemName={chatToDelete ?? null}
+        itemName={chatToDelete ?? null }
         deletingItem={deletingConfirm}
         deleteError={null}
         titleIdleLabel={t('assistant.runtime.deleteConversationTitle')}

@@ -9,8 +9,7 @@ import { createLogger } from '../../../../lib/logger';
 import { useLocale } from '../../../i18n';
 import {
   ERROR_MAIN,
-  BRAND_GRADIENT,
-} from '../../../../theme/tokens';
+  BRAND_GRADIENT, RADIUS_SM } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 
 const log = createLogger('BatchOrchestrator');
@@ -146,7 +145,7 @@ export function BatchOrchestrator() {
           alignItems: 'center',
           textAlign: 'center',
           border: `1px solid ${alpha(ERROR_MAIN, 0.3)}`,
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
         })}
         role="alert"
       >

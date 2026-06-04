@@ -19,8 +19,9 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
   PageLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   APP_BORDER: 'rgba(255,255,255,0.08)',
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
   BRAND_PRIMARY: '#2E75B6',
@@ -35,8 +36,8 @@ vi.mock('../../../src/theme/tokens', () => ({
   ICON_SIZE_MD: 16,
   WHITE_04: 'rgba(255,255,255,0.04)',
   WHITE_06: 'rgba(255,255,255,0.06)',
-  WHITE_12: 'rgba(255,255,255,0.12)',
-}));
+  WHITE_12: 'rgba(255,255,255,0.12)', };
+});;
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),

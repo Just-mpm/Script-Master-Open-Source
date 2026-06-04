@@ -16,6 +16,7 @@ import { GuestRoute } from '../components/GuestRoute';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useLocale } from '../features/i18n';
 import { publicCompatRedirects, appCompatRedirects } from './Redirects';
+import { RADIUS_SM } from '../theme/tokens';
 
 // ─── Páginas públicas (lazy) — todas usam export default ──
 
@@ -189,15 +190,15 @@ function RouteFallback() {
               </Stack>
             </Stack>
 
-            {pageLabel ? <Chip label={pageLabel} size="small" variant="outlined" /> : null}
+            {pageLabel ? <Chip label={pageLabel} size="small" variant="outlined" /> : null }
           </Stack>
 
           <Stack spacing={1.2}>
             <Skeleton variant="text" animation="wave" width="36%" height={18} />
-            <Skeleton variant="rounded" animation="wave" height={88} sx={{ borderRadius: 3 }} />
+            <Skeleton variant="rounded" animation="wave" height={88} sx={{ borderRadius: RADIUS_SM }} />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
-              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: 3 }} />
-              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: 3 }} />
+              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: RADIUS_SM }} />
+              <Skeleton variant="rounded" animation="wave" height={64} sx={{ flex: 1, borderRadius: RADIUS_SM }} />
             </Stack>
           </Stack>
         </Stack>

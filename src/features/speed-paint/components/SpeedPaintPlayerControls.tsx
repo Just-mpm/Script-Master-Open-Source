@@ -247,11 +247,11 @@ const PlaybackButtons = React.memo(function PlaybackButtons({
 }: PlaybackButtonsProps) {
   return (
     <Stack direction="row" sx={{ alignItems: 'center', gap: GAP_COMPACT }}>
-      <Tooltip title={isPlaying ? pauseLabel : playLabel}>
+      <Tooltip title={isPlaying ? pauseLabel : playLabel }>
         <span>
           <IconButton
             onClick={onPlayPause}
-            aria-label={isPlaying ? pauseAria : playAria}
+            aria-label={isPlaying ? pauseAria : playAria }
             sx={(theme) => ({
               bgcolor: alpha(theme.palette.primary.main, 0.15),
               color: 'primary.main',
@@ -329,7 +329,7 @@ const ActionButtons = React.memo(function ActionButtons({
         <span>
           <IconButton
             onClick={onDownload}
-            disabled={progress === 0}
+            disabled={progress === 0 }
             aria-label={downloadAria}
             sx={{
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -348,7 +348,7 @@ const ActionButtons = React.memo(function ActionButtons({
         </span>
       </Tooltip>
 
-      <Tooltip title={batchMode !== 'idle' ? leaveQueueLabel : newImageLabel}>
+      <Tooltip title={batchMode !== 'idle' ? leaveQueueLabel : newImageLabel }>
         <Button
           onClick={onNewImage}
           startIcon={<ImageIcon sx={{ fontSize: 18 }} />}
@@ -366,7 +366,7 @@ const ActionButtons = React.memo(function ActionButtons({
           })}
         >
           <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-            {batchMode !== 'idle' ? leaveQueueBtnLabel : newImageBtnLabel}
+            {batchMode !== 'idle' ? leaveQueueBtnLabel : newImageBtnLabel }
           </Typography>
         </Button>
       </Tooltip>

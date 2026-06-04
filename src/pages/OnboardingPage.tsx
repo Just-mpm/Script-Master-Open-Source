@@ -28,7 +28,7 @@ export function OnboardingPage() {
   });
 
   const steps = [
-    <WelcomeStep key="welcome" onNext={useWizardStore.getState().nextStep} />,
+    <WelcomeStep key="welcome" onNext={useWizardStore.getState().nextStep } />,
     <ProfileStep key="profile" />,
     <GoalsStep key="goals" />,
     <CompletionStep key="completion" />,

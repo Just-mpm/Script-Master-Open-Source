@@ -93,7 +93,7 @@ describe('I18nProvider', () => {
         wrapper: createWrapper('pt-BR'),
       });
       expect(result.current.t('landing.hero.title')).toBe(
-        'Transforme roteiros em arte com IA',
+        'Nunca foi tão fácil criar vídeos para YouTube',
       );
     });
 

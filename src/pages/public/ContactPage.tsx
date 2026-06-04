@@ -24,7 +24,7 @@ import { getPageSeo } from '../../lib/seo';
 import { PageLayout } from '../../components/public/PageLayout';
 import { HeroSection } from '../../components/public/HeroSection';
 import { CTASection } from '../../components/public/CTASection';
-import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, BRAND_SECONDARY, APP_BORDER, WHITE_04, WHITE_12 } from '../../theme/tokens';
+import { TEXT_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY, BRAND_SECONDARY, APP_BORDER, WHITE_04, WHITE_12, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { createLogger } from '../../lib/logger';
 import { useLocale } from '../../features/i18n';
@@ -131,7 +131,7 @@ function ContactInfoItem({ info }: { info: ContactInfo }) {
       sx={{
         alignItems: 'center',
         p: 2,
-        borderRadius: 2,
+        borderRadius: RADIUS_XS,
         transition: 'background-color 0.2s ease, transform 0.2s ease',
         textDecoration: 'none',
         color: 'inherit',

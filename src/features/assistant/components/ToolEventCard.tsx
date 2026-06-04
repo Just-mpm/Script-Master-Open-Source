@@ -328,7 +328,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
       >
         {/* Ícone da tool */}
         <Box sx={{ color: isPending ? config.color : isError ? ERROR_MAIN : config.color, display: 'flex' }}>
-          {isPending ? <PendingIndicator color={config.color} /> : config.icon}
+          {isPending ? <PendingIndicator color={config.color} /> : config.icon }
         </Box>
 
         {/* Label + resultado */}
@@ -351,15 +351,15 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
                 <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
                   — {resultText}
                 </Typography>
-              ) : null}
+              ) : null }
               {isError ? (
                 <Typography variant="caption" sx={{ color: ERROR_MAIN }}>
                   — {t('assistant.toolEvents.failed')}
                 </Typography>
-              ) : null}
+              ) : null }
               {!isPending && !isError && !resultText && event.type === 'tool_result' ? (
                 <CheckCircle sx={{ fontSize: 12, color: 'success.main' }} />
-              ) : null}
+              ) : null }
             </Stack>
           )}
         </Box>
@@ -371,7 +371,7 @@ function ToolEventItem({ event, isPending }: ToolEventItemProps) {
           error={(event.output as { message?: string }).message ?? String(event.output)}
           label={displayLabel}
         />
-      ) : null}
+      ) : null }
     </Box>
   );
 }
@@ -529,7 +529,7 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
               ml: 0.5,
             }}
           />
-        ) : null}
+        ) : null }
       </Stack>
 
       {/* Event list — um item por tool */}
@@ -538,11 +538,11 @@ export function ToolEventList({ events, isStreaming }: ToolEventListProps) {
           <Typography variant="caption" sx={{ px: 1, py: 0.25, fontSize: '0.6rem', color: TEXT_DISABLED }}>
             +{hiddenCount} {t('assistant.toolEvents.more')}
           </Typography>
-        ) : null}
+        ) : null }
         {visibleEvents.map((merged) => (
           <ToolEventItem
             key={getEventKey(merged.resultEvent ?? merged.callEvent, events)}
-            event={merged.resultEvent ?? merged.callEvent}
+            event={merged.resultEvent ?? merged.callEvent }
             isPending={merged.isPending}
           />
         ))}

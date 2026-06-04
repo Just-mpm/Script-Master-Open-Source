@@ -45,6 +45,7 @@ export function HeroSection({
       transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
       sx={{
         flex: { md: 1 },
+        width: { xs: '100%', md: 'auto' },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -6,6 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import type { UsageResource } from '../types';
 import { formatUsageDisplay } from '../usageUtils';
 import { useLocale } from '../../../features/i18n';
+import { RADIUS_SM } from '../../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -77,10 +78,10 @@ export function UsageIndicator({ resource, used, limit }: UsageIndicatorProps) {
         value={percentage}
         sx={{
           height: 6,
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
           backgroundColor: `${theme.palette.action.disabledBackground}`,
           '& .MuiLinearProgress-bar': {
-            borderRadius: 3,
+            borderRadius: RADIUS_SM,
             backgroundColor: color,
           },
         }}

@@ -22,18 +22,22 @@ vi.mock('../../../src/components/public/PageLayout', () => ({
   PageLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
-  BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-  BRAND_PRIMARY: '#2E75B6',
-  BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
-  BRAND_SECONDARY: '#F7941E',
-  BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
-  TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-  ICON_SIZE_MD: 20,
-  APP_BORDER: 'rgba(255,255,255,0.08)',
-}));
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return {
+    ...actual,
+    APP_MAX_WIDTH: 1600,
+    BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+    BRAND_PRIMARY: '#2E75B6',
+    BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
+    BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+    BRAND_SECONDARY: '#F7941E',
+    BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
+    TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
+    ICON_SIZE_MD: 20,
+    APP_BORDER: 'rgba(255,255,255,0.08)',
+  };
+});
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
@@ -51,20 +55,20 @@ describe('FuncionalidadesPage', () => {
 
   it('renderiza o título principal', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Tudo que você precisa para criar')).toBeDefined();
+    expect(screen.getByText('As ferramentas para transformar roteiro em vídeo')).toBeDefined();
   });
 
   it('renderiza o subtítulo', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText(/Explore todas as ferramentas integradas/)).toBeDefined();
+    expect(screen.getByText(/Narração, imagens, legendas, montagem/)).toBeDefined();
   });
 
   it('renderiza todas as 6 seções de features', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
     const sections = [
-      'Estúdio de Voz (TTS)',
-      'Renderização de Vídeo',
-      'Geração de Imagens',
+      'Narração e Voz',
+      'Montagem de Vídeo',
+      'Cenas e Imagens',
       'Speed Paint & Animação',
       'Assistente IA',
       'Plataforma',
@@ -84,60 +88,60 @@ describe('FuncionalidadesPage', () => {
     expect(document.getElementById('platform')).toBeDefined();
   });
 
-it('renderiza features de TTS', () => {
+  it('renderiza features de TTS', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Geração de Áudio TTS')).toBeDefined();
-    expect(screen.getByText('Chunking Inteligente')).toBeDefined();
-    expect(screen.getByText('Multi-speaker')).toBeDefined();
+    expect(screen.getByText('Texto para narração')).toBeDefined();
+    expect(screen.getByText('Roteiros longos sem dor de cabeça')).toBeDefined();
+    expect(screen.getByText('Duas vozes no mesmo roteiro')).toBeDefined();
   });
 
   it('renderiza features de vídeo', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Composição de Vídeo')).toBeDefined();
-    expect(screen.getByText('Legendas Automáticas')).toBeDefined();
-    expect(screen.getByText('3 Resoluções')).toBeDefined();
+    expect(screen.getByText('Vídeo montado no navegador')).toBeDefined();
+    expect(screen.getByText('Legendas automáticas')).toBeDefined();
+    expect(screen.getByText('Formatos para publicar')).toBeDefined();
   });
 
   it('renderiza features de imagens', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Estúdio de Imagem')).toBeDefined();
-    expect(screen.getByText('8 Aspect Ratios')).toBeDefined();
-    expect(screen.getByText('Galeria Integrada')).toBeDefined();
+    expect(screen.getByText('Cenas criadas com IA')).toBeDefined();
+    expect(screen.getByText('Formatos flexíveis')).toBeDefined();
+    expect(screen.getByText('Galeria integrada')).toBeDefined();
   });
 
   it('renderiza features de Speed Paint', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Animação de Pintura')).toBeDefined();
-    expect(screen.getByText('Batch Processing')).toBeDefined();
-    expect(screen.getByText('Exportação Mídia')).toBeDefined();
+    expect(screen.getByText('Animação de pintura')).toBeDefined();
+    expect(screen.getByText('Fila de imagens')).toBeDefined();
+    expect(screen.getByText('Exportação de mídia')).toBeDefined();
   });
 
   it('renderiza features do assistente', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Chat Conversacional')).toBeDefined();
-    expect(screen.getByText('Integração com Estúdio')).toBeDefined();
-    expect(screen.getByText('Sistema de Memória')).toBeDefined();
+    expect(screen.getByText('Ideias e revisão de roteiro')).toBeDefined();
+    expect(screen.getByText('Integração com o estúdio')).toBeDefined();
+    expect(screen.getByText('Memória de canal')).toBeDefined();
   });
 
   it('renderiza features da plataforma', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Gestão de Projetos')).toBeDefined();
-    expect(screen.getByText('Download Fácil')).toBeDefined();
-    expect(screen.getByText('Persistência Dual')).toBeDefined();
+    expect(screen.getByText('Projetos organizados')).toBeDefined();
+    expect(screen.getByText('Download fácil')).toBeDefined();
+    expect(screen.getByText('Histórico sempre à mão')).toBeDefined();
   });
 
   it('renderiza os feature showcases de deep dive', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Áudio Profissional com Gemini TTS')).toBeDefined();
-    expect(screen.getByText('Vídeo Sem Servidor')).toBeDefined();
-    expect(screen.getByText('Imagens com Referência Visual')).toBeDefined();
+    expect(screen.getByText('Narração profissional sem abrir o microfone')).toBeDefined();
+    expect(screen.getByText('Montagem de vídeo direto no navegador')).toBeDefined();
+    expect(screen.getByText('Cenas visuais para contar melhor a história')).toBeDefined();
   });
 
   it('renderiza a CTA final', () => {
     render(<FuncionalidadesPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('heading', { level: 2, name: 'Pronto para criar?' })).toBeDefined();
-    // "Começar Grátis" aparece tanto no hero quanto na CTA final
-    const links = screen.getAllByRole('link', { name: /Começar Grátis/i });
+    expect(screen.getByRole('heading', { level: 2, name: 'Pronto para transformar roteiro em vídeo?' })).toBeDefined();
+    // "Criar meu primeiro vídeo" aparece tanto no hero quanto na CTA final
+    const links = screen.getAllByRole('link', { name: /Criar meu primeiro vídeo/i });
     expect(links.length).toBeGreaterThanOrEqual(1);
   });
 });

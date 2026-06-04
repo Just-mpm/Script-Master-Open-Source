@@ -17,8 +17,9 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({ p: 2, borderRadius: 3 }),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  GAP_DEFAULT: 1,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, GAP_DEFAULT: 1,
   GAP_COMPACT: 0.5,
   RADIUS_SM: 4,
   ICON_SIZE_LG: 18,
@@ -33,8 +34,8 @@ vi.mock('../../src/theme/tokens', () => ({
   TEXT_SECONDARY: 'rgba(255,255,255,0.65)',
   TEXT_DISABLED: 'rgba(255,255,255,0.38)',
   ERROR_MAIN: '#ef4444',
-  APP_SURFACE_ELEVATED: '#1a1a2e',
-}));
+  APP_SURFACE_ELEVATED: '#1a1a2e', };
+});;
 
 vi.mock('../../src/features/video-render/lib/formatTimestamp', () => ({
   formatTimestamp: (frame: number, _fps: number) => `00:${String(frame).padStart(2, '0')}`,

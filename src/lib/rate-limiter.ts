@@ -122,7 +122,7 @@ export async function withRetry<T>(
           ? String(errorLike.code)
           : 'desconhecido';
       log.warn(
-        `Erro transitório (status ${status}), tentativa ${attempt + 1}/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
+        `Erro transitório (status ${status}), tentativa ${attempt + 1 }/${mergedConfig.maxRetries}. Aguardando ${delay}ms...`,
       );
 
       await sleep(delay);

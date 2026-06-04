@@ -18,7 +18,7 @@ import { useCredits } from '../../hooks/useCredits';
 import { useLocale } from '../../features/i18n';
 import { useFeedbackDialog } from './useFeedbackDialog';
 import { StackedHeader } from '../ui';
-import { BRAND_SECONDARY, BRAND_SECONDARY_GLOW_SOFT } from '../../theme/tokens';
+import { BRAND_SECONDARY, BRAND_SECONDARY_GLOW_SOFT, RADIUS_XS } from '../../theme/tokens';
 
 export interface FeedbackBannerProps {
   /** Contexto da tela atual (default: "/app/assistente") */
@@ -68,7 +68,7 @@ export function FeedbackBanner({ screenContext = '/app/assistente' }: FeedbackBa
         slotProps={{
           root: {
             sx: {
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               borderColor: `${BRAND_SECONDARY}52`,
               backgroundColor: `${BRAND_SECONDARY}14`,
               boxShadow: `0 0 0 1px ${BRAND_SECONDARY_GLOW_SOFT}`,

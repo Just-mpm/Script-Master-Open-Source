@@ -44,7 +44,7 @@ export function DeleteConfirmationDialog({
   return (
     <Dialog
       open={open}
-      onClose={deletingItem ? undefined : onCancel}
+      onClose={deletingItem ? undefined : onCancel }
       fullWidth
       maxWidth="xs"
       aria-labelledby="delete-confirmation-title"
@@ -59,7 +59,7 @@ export function DeleteConfirmationDialog({
       }}
     >
       <DialogTitle id="delete-confirmation-title">
-        {deletingItem ? loadingLabel : displayTitle}
+        {deletingItem ? loadingLabel : displayTitle }
       </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
@@ -76,7 +76,7 @@ export function DeleteConfirmationDialog({
           Cancelar
         </Button>
         <Button onClick={() => void onConfirm()} color="error" variant="contained" disabled={deletingItem}>
-          {deletingItem ? loadingLabel : confirmLabel}
+          {deletingItem ? loadingLabel : confirmLabel }
         </Button>
       </DialogActions>
     </Dialog>

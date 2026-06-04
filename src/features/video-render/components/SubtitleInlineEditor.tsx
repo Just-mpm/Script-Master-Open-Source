@@ -348,7 +348,7 @@ export const SubtitleInlineEditor = React.memo(function SubtitleInlineEditor({
       {children}
 
       {/* Botão "Editar legenda" */}
-      <EditorButton visible={!isEditing} onClick={enterEditMode} />
+      <EditorButton visible={!isEditing } onClick={enterEditMode} />
 
       {/* Preview CSS da legenda */}
       <SubtitlePreview

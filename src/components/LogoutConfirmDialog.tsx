@@ -6,6 +6,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import Logout from '@mui/icons-material/Logout';
 import { useLocale } from '../features/i18n';
+import { RADIUS_XS } from '../theme/tokens';
 
 interface LogoutConfirmDialogProps {
   open: boolean;
@@ -24,7 +25,7 @@ export function LogoutConfirmDialog({ open, onClose, onConfirm }: LogoutConfirmD
       fullWidth
       maxWidth="xs"
       aria-labelledby="logout-confirm-title"
-      slotProps={{ paper: { sx: { borderRadius: 2 } } }}
+      slotProps={{ paper: { sx: { borderRadius: RADIUS_XS } } }}
     >
       <DialogTitle id="logout-confirm-title" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Logout sx={{ fontSize: 20, color: 'error.main' }} aria-hidden="true" />

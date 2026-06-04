@@ -82,7 +82,7 @@ export function ProfileStep() {
           {WIZARD_ROLES.map((role) => (
             <Box key={role.id} component={motion.div} variants={staggerItem}>
               <SelectionCard
-                selected={data.role === role.id}
+                selected={data.role === role.id }
                 onClick={() => updateData({ role: role.id })}
                 icon={<role.icon sx={{ fontSize: 20 }} />}
                 label={t(ROLE_I18N_KEYS[role.id])}
@@ -93,7 +93,7 @@ export function ProfileStep() {
         </Stack>
       </Box>
 
-      <StepNavigation onPrev={prevStep} onNext={nextStep} isDisabled={!isValid} />
+      <StepNavigation onPrev={prevStep} onNext={nextStep} isDisabled={!isValid } />
     </Stack>
   );
 }

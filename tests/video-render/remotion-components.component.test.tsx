@@ -51,8 +51,9 @@ vi.mock('@remotion/media-utils', () => ({
 }));
 
 // Mock dos tokens de tema (mínimo necessário)
-vi.mock('../../src/theme/tokens', () => ({
-  WHITE: '#ffffff',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, WHITE: '#ffffff',
   BRAND_PRIMARY: '#00e5ff',
   BRAND_PRIMARY_LIGHT: '#80f0ff',
   BRAND_PRIMARY_DARK: '#00b8d4',
@@ -92,8 +93,8 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_MEDIUM: 12,
   ICON_SIZE_LG: 18,
   ICON_SIZE_MD: 16,
-  APP_SURFACE_ELEVATED: 'rgba(30, 30, 50, 0.9)',
-}));
+  APP_SURFACE_ELEVATED: 'rgba(30, 30, 50, 0.9)', };
+});;
 
 // Mock do logger
 vi.mock('../../src/lib/logger', () => ({

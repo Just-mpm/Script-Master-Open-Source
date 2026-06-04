@@ -84,9 +84,9 @@ const SceneItem = React.memo(function SceneItem({
           imageSource={scene.imageUrl}
           durationInFrames={adjustedDuration}
           isLastScene={isLastScene}
-          speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier}
-          drawSpeed={speedPaintMultipliers?.sketch}
-          paintSpeed={speedPaintMultipliers?.reveal}
+          speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier }
+          drawSpeed={speedPaintMultipliers?.sketch }
+          paintSpeed={speedPaintMultipliers?.reveal }
           isExporting={isExporting}
           showDrawTool={showDrawTool}
         />
@@ -100,8 +100,8 @@ const SceneItem = React.memo(function SceneItem({
       )}
       {(sceneCaptions.length > 0 || scene.subtitle) && (
         <SubtitleOverlay
-          captions={sceneCaptions.length > 0 ? sceneCaptions : undefined}
-          text={sceneCaptions.length === 0 ? scene.subtitle : undefined}
+          captions={sceneCaptions.length > 0 ? sceneCaptions : undefined }
+          text={sceneCaptions.length === 0 ? scene.subtitle : undefined }
           durationInFrames={adjustedDuration}
           subtitleStyle={subtitleStyle}
           position={subtitleStyle?.position ?? 'bottom'}
@@ -112,7 +112,7 @@ const SceneItem = React.memo(function SceneItem({
           audioUrl={audioUrl}
           frame={globalFrame}
           sceneStartTime={scene.timestamp}
-          sceneEndTime={scene.timestamp + scene.durationInFrames / fps}
+          sceneEndTime={scene.timestamp + scene.durationInFrames / fps }
           fps={fps}
           opacity={0.3}
           isExporting={isExporting}
@@ -215,10 +215,10 @@ export const VideoComposition = React.memo(function VideoComposition({
           // multiplicador arbitrário. speed=1.0 → progressão linear, completa
           // no tempo certo. Para velocidade diferente, o slider da SpeedPaintPage
           // controla a duração total via AnimationDurationSelector.
-          globalSpeedMultiplier={SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal}
+          globalSpeedMultiplier={SPEED_PAINT_MULTIPLIERS[speedPaintSpeed as SpeedPaintSpeed] ?? SPEED_PAINT_MULTIPLIERS.normal }
           showDrawTool={showDrawTool}
           speedPaintMultipliers={speedPaintMultipliers}
-          nextHasSpeedPaint={nextHasSpeedPaintMap.get(index) ?? false}
+          nextHasSpeedPaint={nextHasSpeedPaintMap.get(index) ?? false }
           globalFrame={frame}
         />
       ))}

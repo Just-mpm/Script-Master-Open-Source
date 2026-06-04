@@ -216,7 +216,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   return (
     <AudioContext.Provider value={contextValue}>
       {children}
-      <audio ref={audioRef} aria-hidden="true" tabIndex={-1} style={{ display: 'none' }} />
+      <audio ref={audioRef} aria-hidden="true" tabIndex={-1 } style={{ display: 'none' }} />
       <Snackbar
         open={Boolean(playbackError)}
         autoHideDuration={6000}

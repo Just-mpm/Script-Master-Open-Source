@@ -6,6 +6,7 @@ import Zoom from '@mui/material/Zoom';
 import Close from '@mui/icons-material/Close';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { useLocale } from '../../../features/i18n';
+import { BLACK_50 } from '../../../theme/tokens';
 
 interface ImageLightboxProps {
   /** Fonte da imagem (data URL ou URL normal) */
@@ -71,7 +72,7 @@ export function ImageLightbox({ src, alt, thumbnailSx }: ImageLightboxProps) {
               top: 8,
               zIndex: 1,
               color: '#fff',
-              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              bgcolor: BLACK_50,
               '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
             }}
           >

@@ -10,8 +10,9 @@ import {
 } from '../../src/features/assistant/components/assistantUi';
 
 // Mock das dependências de tema
-vi.mock('../../src/theme/tokens', () => ({
-  APP_BORDER: 'rgba(255,255,255,0.08)',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, APP_BORDER: 'rgba(255,255,255,0.08)',
   APP_BORDER_STRONG: 'rgba(255,255,255,0.14)',
   APP_SURFACE: 'rgba(20,20,30,1)',
   APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
@@ -32,8 +33,8 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_MEDIUM: 8,
   GAP_DEFAULT: 12,
   RADIUS_XS: 8,
-  RADIUS_CHIP: 999,
-}));
+  RADIUS_CHIP: 999, };
+});;
 
 vi.mock('../../src/theme/surfaces', () => ({
   insetPanelSx: () => ({

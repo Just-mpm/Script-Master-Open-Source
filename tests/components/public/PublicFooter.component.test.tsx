@@ -22,17 +22,16 @@ vi.mock('../../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({}),
 }));
 
-vi.mock('../../../src/theme/tokens', async () => {
-  const { createTokensMock } = await import('../../__mocks__/tokensMock');
-  return createTokensMock({
-    extras: {
-      APP_MAX_WIDTH: 1600,
-      BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
-      BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
-      BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
-      TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-    },
-  });
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return {
+    ...actual,
+    APP_MAX_WIDTH: 1600,
+    BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+    BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
+    BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
+    TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
+  };
 });
 
 describe('PublicFooter', () => {
@@ -52,7 +51,7 @@ describe('PublicFooter', () => {
 
   it('renderiza a descrição da plataforma', () => {
     render(<PublicFooter />, { wrapper: Wrapper });
-    expect(screen.getByText(/Transforme roteiros em arte com IA/)).toBeDefined();
+    expect(screen.getByText(/Transforme roteiros em vídeos para YouTube/)).toBeDefined();
   });
 
   it('renderiza o título de todos os grupos de links', () => {

@@ -437,7 +437,7 @@ export function ActionBar({
                     </Stack>
                   </Stack>
                 </Stack>
-              ) : null}
+              ) : null }
             </Box>
 
             {!isImagePhase && (
@@ -507,7 +507,7 @@ export function ActionBar({
                       </IconButton>
                     </Tooltip>
                   </>
-                ) : null}
+                ) : null }
 
                 {isGenerating ? (
                   <Button onClick={handleCancel} variant="outlined" color="error" startIcon={<Stop sx={{ fontSize: ICON_SIZE_MD }} />} sx={{
@@ -518,7 +518,7 @@ export function ActionBar({
                    }}>
                     {t('studio.actionBar.cancel')}
                   </Button>
-                ) : null}
+                ) : null }
               </Stack>
             )}
           </Stack>
@@ -561,7 +561,7 @@ export function ActionBar({
             <span style={{ flex: 1 }}>
               {isDownloadingAll ? downloadProgress : t('studio.actionBar.downloadAllImages')}
             </span>
-            {isDownloadingAll ? <CircularProgress size={16} thickness={2.5} /> : null}
+            {isDownloadingAll ? <CircularProgress size={16} thickness={2.5} /> : null }
           </MenuItem>,
           <Divider key="divider" />,
           ...scenes.map((sceneItem, index) => (
@@ -579,7 +579,7 @@ export function ActionBar({
               </Typography>
             </MenuItem>
           )),
-        ] : null}
+        ] : null }
       </Menu>
     </Box>
   );

@@ -15,6 +15,7 @@ import {
   getSpeedPaintTimingConfig,
   type SpeedPaintTimingMode,
 } from '../lib/speedPaintTimings';
+import { WHITE_12 } from '../../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Draw Tool — lápis/pincel animado que segue o último stroke visível
@@ -402,7 +403,7 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
       {/* Badge de fase — apenas no preview (não durante exportação) */}
       {!isExporting && (
         <SpeedPaintPhaseBadge
-          revealThreshold={animation.revealThreshold ?? 0.8}
+          revealThreshold={animation.revealThreshold ?? 0.8 }
           durationInFrames={durationInFrames}
         />
       )}
@@ -446,7 +447,7 @@ const SpeedPaintPhaseBadge = React.memo(function SpeedPaintPhaseBadge({
         padding: '4px 12px',
         borderRadius: 8,
         backgroundColor: isSketchPhase
-          ? 'rgba(255, 255, 255, 0.12)'
+          ? WHITE_12
           : 'rgba(46, 117, 182, 0.15)',
         backdropFilter: 'blur(8px)',
         color: '#fff',

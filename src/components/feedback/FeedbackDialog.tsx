@@ -24,7 +24,7 @@ import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import { useLocale } from '../../features/i18n';
 import { FeedbackFormFields, type FeedbackSubmitResult } from './FeedbackFormFields';
-import { BRAND_SECONDARY, BRAND_SECONDARY_GLOW_SOFT } from '../../theme/tokens';
+import { BRAND_SECONDARY, BRAND_SECONDARY_GLOW_SOFT, RADIUS_XS, BLACK_32 } from '../../theme/tokens';
 
 export interface FeedbackDialogProps {
   /** Se o dialog está aberto */
@@ -89,11 +89,11 @@ export function FeedbackDialog({ open, onClose, defaultScreenContext }: Feedback
       slotProps={{
         paper: {
           sx: (theme) => ({
-            borderRadius: 2,
+            borderRadius: RADIUS_XS,
             backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.96)}, ${alpha(theme.palette.background.paper, 0.92)})`,
             backdropFilter: 'blur(20px)',
             border: `1px solid ${alpha(BRAND_SECONDARY, 0.24)}`,
-            boxShadow: `0 24px 64px rgba(0, 0, 0, 0.32), 0 0 0 1px ${BRAND_SECONDARY_GLOW_SOFT}`,
+            boxShadow: `0 24px 64px ${BLACK_32}, 0 0 0 1px ${BRAND_SECONDARY_GLOW_SOFT}`,
           }),
         },
       }}
@@ -171,7 +171,7 @@ export function FeedbackDialog({ open, onClose, defaultScreenContext }: Feedback
             {t('feedback.dialog.cancel')}
           </Button>
         </DialogActions>
-      ) : null}
+      ) : null }
     </Dialog>
   );
 }

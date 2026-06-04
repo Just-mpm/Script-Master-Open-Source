@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import Check from '@mui/icons-material/Check';
 import { motion } from 'motion/react';
 import type { ElementType, ReactNode } from 'react';
-import { APP_MAX_WIDTH, TEXT_SECONDARY, ICON_SIZE_MD, BRAND_PRIMARY_GLOW_SOFT } from '../../theme/tokens';
+import { APP_MAX_WIDTH, TEXT_SECONDARY, ICON_SIZE_MD, BRAND_PRIMARY_GLOW_SOFT, RADIUS_XS } from '../../theme/tokens';
 import { VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
 interface FeatureShowcaseProps {
@@ -83,7 +83,7 @@ export function FeatureShowcase({
                 sx={(theme) => ({
                   width: 48,
                   height: 48,
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   display: 'grid',
                   placeItems: 'center',
                   background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,

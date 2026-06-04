@@ -42,7 +42,7 @@ export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
     <>
       <IconButton
         onClick={handleClick}
-        aria-label={LOCALE_CONFIGS.find((c) => c.code === locale)?.label}
+        aria-label={LOCALE_CONFIGS.find((c) => c.code === locale)?.label }
         size={size}
         sx={{
           color: 'text.secondary',
@@ -71,7 +71,7 @@ export function LocaleSelector({ size = 'small' }: LocaleSelectorProps) {
         {LOCALE_CONFIGS.map((config) => (
           <MenuItem
             key={config.code}
-            selected={config.code === locale}
+            selected={config.code === locale }
             onClick={() => handleSelect(config.code)}
             sx={{
               py: 1,

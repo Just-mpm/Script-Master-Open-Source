@@ -101,7 +101,7 @@ export const VoiceCard = React.memo(function VoiceCard({
         </Stack>
       </ButtonBase>
 
-      <Tooltip title={hasError ? previewErrorLabel : previewVoiceLabel}>
+      <Tooltip title={hasError ? previewErrorLabel : previewVoiceLabel }>
         <span>
           <IconButton
             size="small"
@@ -110,7 +110,7 @@ export const VoiceCard = React.memo(function VoiceCard({
               onPlayPreview(voice.id);
             }}
             disabled={disabled}
-            aria-label={hasError ? previewErrorLabel : previewVoiceLabel}
+            aria-label={hasError ? previewErrorLabel : previewVoiceLabel }
             sx={(ct: Theme) => ({
               position: 'absolute',
               right: 8,

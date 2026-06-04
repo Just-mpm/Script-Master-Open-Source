@@ -13,15 +13,21 @@ vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
 }));
 
 vi.mock('../../src/theme/surfaces', () => ({
+  glassPanelSx: () => ({}),
   glassSurfaceSx: () => ({ p: 2, borderRadius: 3 }),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  GAP_COMPACT: 0.5,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, GAP_COMPACT: 0.5,
   GAP_DEFAULT: 1,
   GAP_MEDIUM: 1.5,
   RADIUS_CHIP: 8,
+  RADIUS_SM: 3,
+  RADIUS_XS: 2,
   ICON_SIZE_MD: 18,
+  APP_BORDER: 'rgba(255,255,255,0.08)',
+  GLASS_BG: 'rgba(16,23,42,0.78)',
   BRAND_GRADIENT: 'linear-gradient(135deg, #2e75b6, #ff8c00)',
   BRAND_GRADIENT_HOVER: 'linear-gradient(135deg, #3a8bd4, #ff9d33)',
   BRAND_GLOW: '0 0 20px rgba(46,117,182,0.4)',
@@ -30,11 +36,18 @@ vi.mock('../../src/theme/tokens', () => ({
   WHITE_08: 'rgba(255,255,255,0.08)',
   WHITE_14: 'rgba(255,255,255,0.14)',
   SUCCESS_MAIN: '#22c55e',
+  SUCCESS_BORDER: 'rgba(16,185,129,0.18)',
   SUCCESS_GLOW: 'rgba(16,185,129,0.2)',
+  SUCCESS_BG_SUBTLE: 'rgba(16,185,129,0.08)',
+  ERROR_BORDER: 'rgba(239,68,68,0.14)',
+  ERROR_GLOW: 'rgba(239,68,68,0.15)',
+  WARNING_BORDER: 'rgba(245,158,11,0.14)',
+  WARNING_GLOW: 'rgba(245,158,11,0.15)',
+  BRAND_SECONDARY_GLOW_SOFT: 'rgba(247,148,30,0.12)',
   WARNING_BG_SUBTLE: 'rgba(245,158,11,0.1)',
   ERROR_BG_SUBTLE: 'rgba(239,68,68,0.1)',
-  WHITE: '#ffffff',
-}));
+  WHITE: '#ffffff', };
+});;
 
 // ---------------------------------------------------------------------------
 // Imports

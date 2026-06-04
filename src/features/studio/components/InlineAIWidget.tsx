@@ -13,7 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useInlineAssistant } from '../../../hooks/useInlineAssistant';
 import { useLocale } from '../../i18n';
 import { CreditBlockedMessage } from '../../../components/CreditBlockedMessage';
-import { BRAND_PRIMARY, BRAND_PRIMARY_GLOW } from '../../../theme/tokens';
+import { BRAND_PRIMARY, BRAND_PRIMARY_GLOW, RADIUS_SM, RADIUS_XS } from '../../../theme/tokens';
 import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
@@ -332,7 +332,7 @@ export function InlineAIWidget({
       {/* Popover de Input da IA — ancorado via Virtual Element nas coordenadas do mouse */}
       <Popover
         open={isPopoverOpen}
-        anchorEl={popoverAnchor as unknown as HTMLElement}
+        anchorEl={popoverAnchor as unknown as HTMLElement }
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
@@ -348,7 +348,7 @@ export function InlineAIWidget({
               p: 0,
               width: 380,
               maxWidth: '92vw',
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               overflow: 'hidden',
               bgcolor: alpha(theme.palette.background.paper, 0.82),
               backdropFilter: 'blur(28px)',
@@ -448,7 +448,7 @@ export function InlineAIWidget({
                 onClick={handleClose}
                 sx={{
                   minWidth: 0,
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   px: 1.5,
                   py: 0.625,
                   textTransform: 'none',
@@ -466,11 +466,11 @@ export function InlineAIWidget({
                 size="small"
                 variant="contained"
                 onClick={() => void handleSubmit()}
-                disabled={!instruction.trim() || isProcessing}
-                startIcon={isProcessing ? <CircularProgress size={14} color="inherit" /> : null}
+                disabled={!instruction.trim() || isProcessing }
+                startIcon={isProcessing ? <CircularProgress size={14} color="inherit" /> : null }
                 sx={(theme) => ({
                   minWidth: 0,
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   px: 2,
                   py: 0.625,
                   textTransform: 'none',
@@ -535,7 +535,7 @@ export function InlineAIWidget({
                 WebkitBackdropFilter: 'blur(20px)',
                 p: 0.5,
                 pr: 0.75,
-                borderRadius: 3,
+                borderRadius: RADIUS_SM,
                 boxShadow: `0 12px 40px ${alpha(theme.palette.common.black, 0.45)}, 0 0 0 1px ${alpha(BRAND_PRIMARY_GLOW, 0.2)}`,
                 border: '1px solid',
                 borderColor: alpha(theme.palette.common.white, 0.08),
@@ -567,7 +567,7 @@ export function InlineAIWidget({
                 startIcon={<CheckIcon sx={{ fontSize: 15 }} />}
                 sx={(theme) => ({
                   minWidth: 0,
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   px: 1.25,
                   py: 0.5,
                   textTransform: 'none',
@@ -590,7 +590,7 @@ export function InlineAIWidget({
                 startIcon={<CloseIcon sx={{ fontSize: 15 }} />}
                 sx={{
                   minWidth: 0,
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   px: 1.25,
                   py: 0.5,
                   textTransform: 'none',

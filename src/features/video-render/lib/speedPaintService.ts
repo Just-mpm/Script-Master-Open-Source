@@ -107,7 +107,7 @@ export async function enhanceScenesWithSpeedPaint(
       const result = results[index];
 
       if (result?.error) {
-        warnings.push(`Cena ${index + 1}: ${result.error}`);
+        warnings.push(`Cena ${index + 1 }: ${result.error}`);
       }
 
       return {

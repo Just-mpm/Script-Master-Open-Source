@@ -216,7 +216,7 @@ const MessageBubble = React.memo(function MessageBubble({
               );
             })}
           </Stack>
-        ) : null}
+        ) : null }
 
         <Card
           elevation={0}
@@ -235,7 +235,7 @@ const MessageBubble = React.memo(function MessageBubble({
                   <Typography variant="caption" sx={{ color: TEXT_DISABLED, fontSize: '0.65rem' }}>
                     {formatTimestamp(message.createdAt, locale, t)}
                   </Typography>
-                ) : null}
+                ) : null }
               </Stack>
 
               {isCurrentlyStreaming ? (
@@ -269,13 +269,13 @@ const MessageBubble = React.memo(function MessageBubble({
                         <Refresh sx={{ fontSize: ICON_SIZE_SM }} />
                       </IconButton>
                     </Tooltip>
-                  ) : null}
+                  ) : null }
                 </Stack>
-              ) : null}
+              ) : null }
             </Stack>
 
             <Box sx={{ ...assistantMarkdownSx, typography: 'body2', position: 'relative' }}>
-              {cleanText ? <ReactMarkdown components={{ pre: PreBlock }}>{cleanText}</ReactMarkdown> : null}
+              {cleanText ? <ReactMarkdown components={{ pre: PreBlock }}>{cleanText}</ReactMarkdown> : null }
               {isCurrentlyStreaming ? (
                 <Box
                   component="span"
@@ -294,22 +294,22 @@ const MessageBubble = React.memo(function MessageBubble({
                     },
                   }}
                 />
-              ) : null}
+              ) : null }
 
               {hasMalformedJson ? (
                 <Typography variant="caption" sx={{ color: TEXT_DISABLED, fontStyle: 'italic', mt: 0.5 }}>
                   {t('assistant.messages.malformedJson')}
                 </Typography>
-              ) : null}
+              ) : null }
             </Box>
 
             {isModel && toolEvents.length > 0 ? (
               <ToolEventList events={toolEvents} isStreaming={isCurrentlyStreaming} />
-            ) : null}
+            ) : null }
 
             {settings
               ? <Divider sx={{ borderColor: isModel ? APP_BORDER : WHITE_16 }} />
-              : null}
+              : null }
 
             <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               {!isCurrentlyStreaming && settings ? (
@@ -322,7 +322,7 @@ const MessageBubble = React.memo(function MessageBubble({
                 >
                   {isApplied ? t('assistant.messages.applied') : t('assistant.messages.applyToStudio')}
                 </Button>
-              ) : null}
+              ) : null }
 
               {isApplied ? (
                 <Chip
@@ -342,7 +342,7 @@ const MessageBubble = React.memo(function MessageBubble({
                   }}
                   variant="outlined"
                 />
-              ) : null}
+              ) : null }
             </Stack>
           </Stack>
         </Card>
@@ -429,7 +429,7 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
               },
             }}
           />
-        ) : null}
+        ) : null }
       </Stack>
     </Box>
   );
@@ -524,14 +524,14 @@ export function AssistantMessages({
                   key={message.id}
                   message={message}
                   isCurrentlyStreaming={isCurrentlyStreamingMessage}
-                  isApplied={appliedMessageId === message.id}
-                  isCopied={copiedMessageId === message.id}
+                  isApplied={appliedMessageId === message.id }
+                  isCopied={copiedMessageId === message.id }
                   isLastModelMessage={isLastModel}
                   onCopy={handleCopyMessage}
                   onApply={onApply}
                   onStopGeneration={onStopGeneration}
                   onRegenerate={onRegenerate}
-                  toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS}
+                  toolEvents={lastModelMessage?.id === message.id ? toolEvents : EMPTY_TOOL_EVENTS }
                 />
               );
 
@@ -595,7 +595,7 @@ export function AssistantMessages({
                 </Stack>
               </Card>
             </Stack>
-          ) : null}
+          ) : null }
 
           <div ref={messagesEndRef} />
         </Stack>

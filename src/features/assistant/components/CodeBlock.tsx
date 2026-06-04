@@ -9,7 +9,7 @@ import { alpha } from '@mui/material/styles';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useLocale } from '../../../features/i18n';
-import { BRAND_PRIMARY, RADIUS_XS, TEXT_DISABLED, TEXT_SECONDARY } from '../../../theme/tokens';
+import { BRAND_PRIMARY, RADIUS_XS, TEXT_DISABLED, TEXT_SECONDARY, BLACK_50 } from '../../../theme/tokens';
 
 // Registro seletivo de linguagens — importa apenas as mais usadas para reduzir bundle
 import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
@@ -172,12 +172,12 @@ export function CodeBlock({ className, children }: CodeBlockProps) {
         <SyntaxHighlighter
           language={language}
           style={syntaxTheme}
-          showLineNumbers={codeText.split('\n').length > 5}
+          showLineNumbers={codeText.split('\n').length > 5 }
           wrapLongLines
           customStyle={{
             margin: 0,
             borderRadius: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+            background: BLACK_50,
             padding: '1rem',
           }}
         >

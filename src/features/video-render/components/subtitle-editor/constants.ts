@@ -33,8 +33,7 @@ import {
   GLASS_BG,
   SHADOW_DEEP,
   RADIUS_CHIP,
-  RADIUS_XS,
-} from '../../../../theme/tokens';
+  RADIUS_XS, RADIUS_SM } from '../../../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Estilos compartilhados dos botões da toolbar
@@ -85,7 +84,7 @@ export const SLIDER_SHARED_SX = {
   },
   '& .MuiSlider-track': {
     border: 'none',
-    borderRadius: 3,
+    borderRadius: RADIUS_SM,
   },
   '&:hover .MuiSlider-rail': {
     backgroundColor: WHITE_14,
@@ -303,7 +302,7 @@ export const DRAG_HINT_SX = {
   backgroundColor: BLACK_74,
   backdropFilter: 'blur(12px)',
   border: `1px solid ${APP_BORDER}`,
-  boxShadow: `0 4px 16px rgba(0, 0, 0, 0.4)`,
+  boxShadow: `0 4px 16px ${BLACK_40}`,
   zIndex: 9,
   pointerEvents: 'none',
 };

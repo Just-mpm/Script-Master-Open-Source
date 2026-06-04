@@ -514,7 +514,7 @@ export function useAudioGenerator() {
         const segmentDuration = audioDurationSec / chunkCount;
         for (let i = 0; i < chunkCount; i++) {
           generatedSegments.push({
-            text: `parte_${i + 1}`,
+            text: `parte_${i + 1 }`,
             startSec: i * segmentDuration,
             endSec: (i + 1) * segmentDuration,
             chunkIndex: i,
@@ -588,7 +588,7 @@ export function useAudioGenerator() {
 
           for (let i = 0; i < prompts.length; i++) {
             if (cancelRef.current) throw new Error(USER_CANCELLED_MESSAGE);
-            storeApi.getState().setStatusText(`Pintando cena ${i + 1} de ${prompts.length}...`);
+            storeApi.getState().setStatusText(`Pintando cena ${i + 1 } de ${prompts.length}...`);
             storeApi.getState().setGenerationProgress(Math.min(70 + Math.round((i / scenesToGenerate) * 25), 98));
 
             const imageRequestId = crypto.randomUUID();

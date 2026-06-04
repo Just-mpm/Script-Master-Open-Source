@@ -25,8 +25,7 @@ import {
   TEXT_SECONDARY,
   SUCCESS_MAIN,
   WARNING_MAIN,
-  APP_BORDER,
-} from '../../theme/tokens';
+  APP_BORDER, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import {
   staggerContainer,
@@ -379,7 +378,7 @@ export default function AboutPage() {
               height: 'auto',
               objectFit: 'contain',
               filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
             }}
           />
         }
@@ -540,7 +539,7 @@ export default function AboutPage() {
                 description: t(`about.roadmap.items.${index}.description`),
                 status: ROADMAP_STATUSES[index],
               }}
-              isLast={index === ROADMAP_VERSIONS.length - 1}
+              isLast={index === ROADMAP_VERSIONS.length - 1 }
               index={index}
               statusLabels={statusLabels}
             />

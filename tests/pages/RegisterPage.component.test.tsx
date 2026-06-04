@@ -29,8 +29,9 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_LIGHT: '#5BA3D0',
@@ -40,8 +41,8 @@ vi.mock('../../src/theme/tokens', () => ({
   ICON_SIZE_LG: 18,
   APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%)',
   GAP_RELAXED: 2,
-  TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-}));
+  TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)', };
+});;
 
 vi.mock('../../src/lib/seo', () => ({
   getPageSeo: () => ({ title: 'Cadastro', description: 'Crie sua conta' }),
@@ -132,10 +133,10 @@ describe('RegisterPage', () => {
 
   it('deve exibir os 4 benefícios', () => {
     renderWithRouter(<RegisterPage />);
-    expect(screen.getByText('Voz com IA')).toBeTruthy();
-    expect(screen.getByText('Vídeo Automático')).toBeTruthy();
-    expect(screen.getByText('Imagens')).toBeTruthy();
-    expect(screen.getByText('Assistente IA')).toBeTruthy();
+    expect(screen.getByText('Narração sem gravar')).toBeTruthy();
+    expect(screen.getByText('Vídeo montado no navegador')).toBeTruthy();
+    expect(screen.getByText('Cenas com IA')).toBeTruthy();
+    expect(screen.getByText('Assistente criativo')).toBeTruthy();
   });
 
   it('deve exibir helper text "Pelo menos 6 caracteres" no campo senha', () => {

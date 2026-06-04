@@ -68,15 +68,16 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  GAP_COMPACT: 4,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, GAP_COMPACT: 4,
   GAP_MEDIUM: 12,
   GAP_DEFAULT: 8,
   EMPTY_WRAPPER_MAX_WIDTH: 400,
   EMPTY_WRAPPER_PADDING_XS: 16,
   EMPTY_WRAPPER_PADDING_MD: 24,
-  TEXT_SECONDARY: 'rgba(255,255,255,0.6)',
-}));
+  TEXT_SECONDARY: 'rgba(255,255,255,0.6)', };
+});;
 
 describe('VideoPreview', () => {
   beforeEach(() => {

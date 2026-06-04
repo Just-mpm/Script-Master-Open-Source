@@ -25,8 +25,7 @@ import {
   BRAND_SECONDARY,
   BRAND_SECONDARY_LIGHT,
   BRAND_SECONDARY_GLOW_SOFT,
-  WHITE_06,
-} from '../../../../theme/tokens';
+  WHITE_06, RADIUS_XS } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 import { AnimationDurationSelector } from '../AnimationDurationSelector';
 
@@ -49,9 +48,9 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
       sx={(theme) => ({
         position: 'relative',
         bgcolor: alpha(theme.palette.background.default, 0.5),
-        borderRadius: 2,
+        borderRadius: RADIUS_XS,
         overflow: 'hidden',
-        border: `1px solid ${isDropTarget ? BRAND_PRIMARY : WHITE_06}`,
+        border: `1px solid ${isDropTarget ? BRAND_PRIMARY : WHITE_06 }`,
         aspectRatio: '1/1',
         display: 'flex',
         alignItems: 'center',
@@ -113,7 +112,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
           letterSpacing: '0.02em',
         })}
       >
-        #{index + 1}
+        #{index + 1 }
       </Box>
 
       <Box
@@ -239,7 +238,7 @@ export function QueueStaging() {
               {t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleCount), { eligible: eligibleCount })}
             </Typography>
             {failedCount > 0 && (
-              <Alert severity={eligibleCount > 0 ? 'warning' : 'error'} sx={{ mt: 1.5, borderRadius: 2 }}>
+              <Alert severity={eligibleCount > 0 ? 'warning' : 'error'} sx={{ mt: 1.5, borderRadius: RADIUS_XS }}>
                 {eligibleCount > 0
                   ? t(pluralKey('speedPaint.queueFailedSummary', failedCount), { failed: failedCount })
                   : t('speedPaint.queueNoEligibleSummary')}
@@ -252,7 +251,7 @@ export function QueueStaging() {
               mt: { xs: 2, sm: 0 },
               p: 2,
               bgcolor: alpha(theme.palette.background.default, 0.4),
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               border: `1px solid ${WHITE_06}`,
             })}
           >
@@ -298,7 +297,7 @@ export function QueueStaging() {
                 sx={(theme) => ({
                   position: 'relative',
                   bgcolor: alpha(theme.palette.background.default, 0.5),
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   overflow: 'hidden',
                   border: `1px solid ${alpha(BRAND_PRIMARY, 0.5)}`,
                   aspectRatio: '1/1',
@@ -397,7 +396,7 @@ export function QueueStaging() {
           <Button
             onClick={startRecording}
             variant="contained"
-            disabled={eligibleCount === 0}
+            disabled={eligibleCount === 0 }
             startIcon={<VideocamIcon sx={{ fontSize: 18 }} />}
             sx={{
               background: `linear-gradient(135deg, ${BRAND_SECONDARY} 0%, ${BRAND_SECONDARY_LIGHT} 100%)`,

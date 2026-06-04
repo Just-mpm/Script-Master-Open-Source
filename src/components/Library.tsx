@@ -456,7 +456,7 @@ export function Library() {
           title={t('common.info')}
           description={t('library.offlineHint')}
         />
-      ) : null}
+      ) : null }
 
       {speedPaintError ? (
         <StackedHeader
@@ -467,7 +467,7 @@ export function Library() {
           description={speedPaintError}
           onClose={() => setSpeedPaintError(null)}
         />
-      ) : null}
+      ) : null }
 
       {speedPaintInfo ? (
         <StackedHeader
@@ -478,7 +478,7 @@ export function Library() {
           description={speedPaintInfo}
           onClose={() => setSpeedPaintInfo(null)}
         />
-      ) : null}
+      ) : null }
 
       {loading ? (
         <Grid container spacing={2}>
@@ -642,7 +642,7 @@ export function Library() {
                           >
                             {projectPreview || t('library.scriptPreviewFallback')}
                           </Typography>
-                        ) : null}
+                        ) : null }
 
                         <Stack direction="row" spacing={GAP_DEFAULT} useFlexGap sx={{ flexWrap: 'wrap' }}>
                           <Chip icon={<GraphicEq sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.audio')} size="small" variant="outlined" />
@@ -675,10 +675,10 @@ export function Library() {
                                 onClick={() => void handleOpenInSpeedPaint(project)}
                                 variant="contained"
                                 color="secondary"
-                                disabled={isPreparingAnySpeedPaint || detailLoading}
+                                disabled={isPreparingAnySpeedPaint || detailLoading }
                                 loading={isPreparingSpeedPaint}
                                 loadingPosition="start"
-                                startIcon={!isPreparingSpeedPaint ? <Brush sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                                startIcon={!isPreparingSpeedPaint ? <Brush sx={{ fontSize: ICON_SIZE_MD }} /> : undefined }
                               >
                                 {isPreparingSpeedPaint
                                   ? t('library.speedPaintPreparing')
@@ -708,7 +708,7 @@ export function Library() {
                                 plural: projectData.audios.length === 1 ? '' : 's',
                               })}
                             />
-                          ) : null}
+                          ) : null }
                           {isExpanded ? (
                             <Chip
                               size="small"
@@ -718,7 +718,7 @@ export function Library() {
                                 plural: projectData.images.length === 1 ? '' : 's',
                               })}
                             />
-                          ) : null}
+                          ) : null }
                           {isExpanded ? (
                             <Chip
                               size="small"
@@ -728,7 +728,7 @@ export function Library() {
                                 plural: projectData.videos.length === 1 ? '' : 's',
                               })}
                             />
-                          ) : null}
+                          ) : null }
                         </Stack>
                       </Stack>
                     </Stack>
@@ -930,7 +930,7 @@ export function Library() {
                                               <IconButton
                                                 onClick={() => {
                                                   if (img.resolvedUrl) {
-                                                    void downloadFile(img.resolvedUrl, `${project.name}-cena-${index + 1}.png`);
+                                                    void downloadFile(img.resolvedUrl, `${project.name}-cena-${index + 1 }.png`);
                                                   }
                                                 }}
                                                 aria-label={t('library.downloadSceneAria', { number: index + 1 })}
@@ -1046,7 +1046,7 @@ export function Library() {
                                                   if (video.resolvedUrl) {
                                                     void downloadFile(
                                                       video.resolvedUrl,
-                                                      `${project.name}-video-${index + 1}.${video.format}`,
+                                                      `${project.name}-video-${index + 1 }.${video.format}`,
                                                     );
                                                   }
                                                 }}
@@ -1087,7 +1087,7 @@ export function Library() {
                          </>
                          )}
                        </Stack>
-                    ) : null}
+                    ) : null }
                   </Stack>
                 </CardContent>
               </Card>
@@ -1113,7 +1113,7 @@ export function Library() {
       {/* Dialog de confirmação de exclusão de áudio */}
       <DeleteConfirmationDialog
         open={Boolean(audioToDelete)}
-        itemName={audioToDelete ?? null}
+        itemName={audioToDelete ?? null }
         deletingItem={deletingAudio}
         deleteError={audioDeleteError}
         titleIdleLabel={t('library.deleteAudioTitle')}

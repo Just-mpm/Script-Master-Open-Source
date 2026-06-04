@@ -13,8 +13,7 @@ import {
   BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_PRIMARY_LIGHT,
-  WHITE_14,
-} from '../../../theme/tokens';
+  WHITE_14, RADIUS_XS } from '../../../theme/tokens';
 import { useLocale } from '../../../features/i18n';
 
 export const SPEED_PAINT_DURATION_OPTIONS = [10, 15, 30, 60] as const;
@@ -63,7 +62,7 @@ export const AnimationDurationSelector = React.memo(function AnimationDurationSe
             flexWrap: 'wrap',
             gap: 1,
             '& .MuiToggleButtonGroup-grouped': {
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               border: `1px solid ${WHITE_14}`,
               px: 1.75,
               py: 0.85,

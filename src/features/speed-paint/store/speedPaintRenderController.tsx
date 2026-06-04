@@ -142,7 +142,7 @@ function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintPr
       {items.map((item, index) => (
         <Sequence
           key={`${item.animation.id}-${index}`}
-          from={index * sceneStepFrames}
+          from={index * sceneStepFrames }
           durationInFrames={sceneDurationInFrames}
         >
           <SpeedPaintScene
@@ -150,7 +150,7 @@ function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintPr
             imageSource={item.imageSource}
             durationInFrames={sceneDurationInFrames}
             showDrawTool={showDrawTool}
-            isLastScene={index === items.length - 1}
+            isLastScene={index === items.length - 1 }
             isExporting
             fitMode="contain"
             timingMode={timingMode}
@@ -642,7 +642,7 @@ async function runBatchRender(
           reportProgress(
             set,
             percent,
-            `Gerando animações... ${index + 1}/${items.length}`,
+            `Gerando animações... ${index + 1 }/${items.length}`,
           );
         },
         { signal },

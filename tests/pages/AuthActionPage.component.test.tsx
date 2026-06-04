@@ -45,14 +45,19 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%)',
-  BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
-  EMPTY_ICON_SIZE: 36,
-  GAP_RELAXED: 2,
-  SUCCESS_MAIN: '#10b981',
-  TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-}));
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return {
+    ...actual,
+    APP_BACKGROUND_GLOW:
+      'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%)',
+    BRAND_PRIMARY_GLOW: 'rgba(46, 117, 182, 0.28)',
+    EMPTY_ICON_SIZE: 36,
+    GAP_RELAXED: 2,
+    SUCCESS_MAIN: '#10b981',
+    TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
+  };
+});
 
 vi.mock('../../src/theme/authStyles', () => ({
   authTextFieldSx: {},

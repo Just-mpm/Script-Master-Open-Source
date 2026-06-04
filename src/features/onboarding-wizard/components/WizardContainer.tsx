@@ -13,8 +13,7 @@ import {
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
   BRAND_SECONDARY_GLOW_SOFT,
-  WHITE_04,
-} from '../../../theme/tokens';
+  WHITE_04, RADIUS_SM } from '../../../theme/tokens';
 import { useLocale } from '../../i18n';
 import { useWizardStore } from '../store/wizardStore';
 import { TOTAL_STEPS, stepVariants } from '../constants';
@@ -94,7 +93,7 @@ export function WizardContainer({ children }: WizardContainerProps) {
         <Box sx={(theme) => ({ ...glassPanelSx(theme), p: { xs: 1.5, sm: 2 } })}>
           <Box
             sx={{
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               backgroundColor: WHITE_04,
               minHeight: { xs: 460, sm: 520 },
               display: 'flex',
@@ -106,7 +105,7 @@ export function WizardContainer({ children }: WizardContainerProps) {
             {/* Barra de progresso */}
             <Stack
               role="progressbar"
-              aria-valuenow={currentStep + 1}
+              aria-valuenow={currentStep + 1 }
               aria-valuemin={1}
               aria-valuemax={TOTAL_STEPS}
               aria-label={t('onboarding.wizard.progress', { current: currentStep + 1, total: TOTAL_STEPS })}

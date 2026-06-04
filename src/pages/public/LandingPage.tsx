@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -26,6 +27,12 @@ import { ProductDemoSection } from '../../components/public/ProductDemoSection';
 import { TestimonialsSection } from '../../components/public/TestimonialsSection';
 import { staggerContainer, fadeInUp, VIEWPORT_ONCE } from '../../components/public/animations';
 import { useLocale } from '../../features/i18n';
+import { RADIUS_SM } from '../../theme/tokens';
+
+const MarketingDemoPlayer = lazy(async () => {
+  const module = await import('../../features/public-demo-video');
+  return { default: module.MarketingDemoPlayer };
+});
 
 export default function LandingPage() {
   const { t, locale } = useLocale();
@@ -121,22 +128,9 @@ export default function LandingPage() {
         primaryCta={{ label: t('landing.hero.cta'), to: '/cadastro' }}
         secondaryCta={{ label: t('landing.hero.ctaSecondary'), to: '/funcionalidades' }}
         visual={
-          <Box
-            component="img"
-            src="/projeto/estudio.png"
-            alt={t('landing.hero.alt')}
-            sx={{
-              maxWidth: { xs: 340, sm: 520, md: 620 },
-              width: '100%',
-              height: 'auto',
-              aspectRatio: '16 / 9',
-              objectFit: 'cover',
-              objectPosition: 'center top',
-              filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: 2,
-            }}
-          />
+          <Suspense fallback={<HeroDemoFallback alt={t('landing.hero.alt')} />}>
+            <MarketingDemoPlayer alt={t('landing.hero.alt')} />
+          </Suspense>
         }
       />
 
@@ -357,5 +351,25 @@ export default function LandingPage() {
       </Box>
     </PageLayout>
     </>
+  );
+}
+
+function HeroDemoFallback({ alt }: { alt: string }) {
+  return (
+    <Box
+      component="img"
+      src="/projeto/estudio.png"
+      alt={alt}
+      sx={{
+        maxWidth: { xs: 356, sm: 520, md: 640 },
+        width: '100%',
+        aspectRatio: { xs: '4 / 5', sm: '16 / 9' },
+        objectFit: 'cover',
+        objectPosition: 'center top',
+        filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
+        border: '1px solid ${WHITE_12}',
+        borderRadius: RADIUS_SM,
+      }}
+    />
   );
 }

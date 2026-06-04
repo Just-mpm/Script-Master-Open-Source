@@ -24,7 +24,7 @@ import { useSpeedPaintEnhancer } from '../features/video-render/hooks/useSpeedPa
 import { useVideoRenderBridge } from '../features/video-render/store/videoRenderBridge';
 import type { SceneRatio, StudioScene } from '../features/studio/types';
 import { glassPanelSx } from '../theme/surfaces';
-import { GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, TEXT_SECONDARY, GLASS_BG, APP_BORDER, BLACK_40 } from '../theme/tokens';
+import { GAP_COMPACT, GAP_MEDIUM, GAP_DEFAULT, EMPTY_WRAPPER_MAX_WIDTH, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, TEXT_SECONDARY, GLASS_BG, APP_BORDER, BLACK_40, WHITE_12 } from '../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -353,7 +353,7 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 boxShadow: `0 4px 12px ${BLACK_40}`,
                 transition: 'all 0.2s ease',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                  backgroundColor: WHITE_12,
                   borderColor: 'rgba(255, 255, 255, 0.2)',
                 },
                 '&:active': {

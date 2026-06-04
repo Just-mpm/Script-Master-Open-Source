@@ -66,7 +66,7 @@ export function ScrollToBottomFab({ containerRef, isStreaming }: ScrollToBottomF
   }, [containerRef]);
 
   return (
-    <Zoom in={!isAtBottom}>
+    <Zoom in={!isAtBottom }>
         <Box sx={{ position: 'sticky', bottom: 16, display: 'flex', justifyContent: 'flex-end', pr: 2, zIndex: 3 }}>
           <Fab
             size="small"
@@ -97,7 +97,7 @@ export function ScrollToBottomFab({ containerRef, isStreaming }: ScrollToBottomF
                   animation: `${pulseAnimation} 1.2s ease-in-out infinite`,
                 }}
               />
-            ) : null}
+            ) : null }
           </Fab>
         </Box>
     </Zoom>

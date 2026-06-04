@@ -18,7 +18,7 @@ import { resolveActiveScene } from '../lib/scene';
 import type { StudioScene } from '../features/studio/types';
 import { useLocale } from '../features/i18n';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS, BRAND_PRIMARY_GLOW } from '../theme/tokens';
+import { ICON_SIZE_LG, ICON_SIZE_MD, GAP_MEDIUM, GAP_COMPACT, BLACK_18, BLACK_24, WHITE_16, BRAND_PRIMARY_GLOW_SOFT, BRAND_GLOW_FOCUS, BRAND_PRIMARY_GLOW, RADIUS_SM } from '../theme/tokens';
 import { InlineAIWidget } from '../features/studio/components/InlineAIWidget';
 import { AIModeToggle } from '../features/studio/components/AIModeToggle';
 
@@ -201,7 +201,7 @@ export function ScriptEditor({
                 variant="outlined"
                 sx={{ alignSelf: 'flex-start' }}
               />
-            ) : null}
+            ) : null }
           </Stack>
 
           <Stack
@@ -395,7 +395,7 @@ export function ScriptEditor({
                   width: { xs: '100%', sm: 'auto' },
                   minHeight: { xs: 48, sm: 50 },
                   px: { xs: 3, sm: 4 },
-                  borderRadius: 3,
+                  borderRadius: RADIUS_SM,
                   fontSize: { xs: '1rem', sm: '1.05rem' },
                   fontWeight: 700,
                   backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,

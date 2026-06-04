@@ -37,6 +37,7 @@ import {
   TEXT_DISABLED,
   ERROR_MAIN,
   APP_SURFACE_ELEVATED,
+  RADIUS_XS,
 } from '../../../theme/tokens';
 import { useLocale } from '../../../features/i18n';
 import { wordsToPhrases, phrasesToWords, parseBoldMarkdown } from '../lib/subtitleUtils';
@@ -271,7 +272,7 @@ const PhraseCard = React.memo(function PhraseCard({
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: 'error.main',
-                      boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.12)',
+                      boxShadow: '0 0 0 3px ${ERROR_BG_MEDIUM}',
                     },
                   }}
                 >
@@ -321,7 +322,7 @@ const PhraseCard = React.memo(function PhraseCard({
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: ERROR_MAIN,
-                      boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.12)',
+                      boxShadow: '0 0 0 3px ${ERROR_BG_MEDIUM}',
                     },
                   }}
                 >
@@ -471,7 +472,7 @@ const PhraseCard = React.memo(function PhraseCard({
               aria-labelledby={`timing-end-${phrase.id}`}
               slotProps={{ htmlInput: { min: 0, step: 0.01, style: { fontSize: '0.75rem' } } }}
               error={hasTimingError}
-              helperText={hasTimingError ? t('video.timingError') : undefined}
+              helperText={hasTimingError ? t('video.timingError') : undefined }
               sx={{
                 flex: 1,
                 '& .MuiOutlinedInput-root': {
@@ -833,7 +834,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
               '&::-webkit-scrollbar': { width: 4 },
               '&::-webkit-scrollbar-track': { background: 'transparent' },
               '&::-webkit-scrollbar-thumb': {
-                borderRadius: 2,
+                borderRadius: RADIUS_XS,
                 backgroundColor: WHITE_08,
                 '&:hover': {
                   backgroundColor: WHITE_14,
@@ -849,7 +850,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
 
               return (
                 <Box key={phrase.id}>
-                  <div ref={isActive ? activePhraseRef : undefined}>
+                  <div ref={isActive ? activePhraseRef : undefined }>
                     <PhraseCard
                       phrase={phrase}
                       isActive={isActive}
@@ -888,7 +889,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
 
       {/* Snackbar de undo para exclusão */}
       <Snackbar
-        open={deletedPhrase !== null}
+        open={deletedPhrase !== null }
         autoHideDuration={6000}
         onClose={() => setDeletedPhrase(null)}
         message="Frase removida"
@@ -908,7 +909,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
             borderRadius: RADIUS_SM,
             border: `1px solid ${WHITE_14}`,
             color: 'text.primary',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 8px 32px ${BLACK_40}',
             backdropFilter: 'blur(12px)',
           },
         }}

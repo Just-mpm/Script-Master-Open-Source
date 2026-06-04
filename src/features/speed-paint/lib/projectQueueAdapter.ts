@@ -17,7 +17,7 @@ function buildLibraryFileName(projectName: string, index: number): string {
     .replace(/^-+|-+$/g, '');
 
   const baseName = sanitizedProjectName || 'projeto';
-  return `${baseName}-cena-${index + 1}.png`;
+  return `${baseName}-cena-${index + 1 }.png`;
 }
 
 async function fetchProjectImageBlob(image: ProjectImage): Promise<Blob> {

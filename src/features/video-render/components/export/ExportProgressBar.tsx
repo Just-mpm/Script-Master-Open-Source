@@ -95,7 +95,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
             {statusText}
           </Typography>
         </Box>
-      ) : null}
+      ) : null }
 
       <Box
         sx={{
@@ -115,7 +115,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
           }}
           noWrap
         >
-          {title ? helperText ?? statusText : statusText}
+          {title ? helperText ?? statusText : statusText }
         </Typography>
         <Typography
           variant="caption"
@@ -152,7 +152,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
         <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
           {helperText}
         </Typography>
-      ) : null}
+      ) : null }
 
       <Stack
         direction={{ xs: 'column-reverse', sm: 'row' }}
@@ -161,7 +161,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
         sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}
       >
         <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          {isRendering ? t('video.exportBackgroundProcess') : statusText}
+          {isRendering ? t('video.exportBackgroundProcess') : statusText }
         </Typography>
         <Button
           variant="outlined"

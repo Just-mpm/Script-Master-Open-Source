@@ -24,8 +24,9 @@ vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_GLOW: 'rgba(6, 182, 212, 0.3)',
@@ -34,8 +35,8 @@ vi.mock('../../../src/theme/tokens', () => ({
   BRAND_SECONDARY_GLOW_SOFT: 'rgba(247, 148, 30, 0.12)',
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
   ICON_SIZE_MD: 20,
-  APP_BORDER: 'rgba(255,255,255,0.08)',
-}));
+  APP_BORDER: 'rgba(255,255,255,0.08)', };
+});;
 
 // ─── FeatureCard ───────────────────────────────────────────
 

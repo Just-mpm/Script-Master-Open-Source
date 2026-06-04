@@ -17,6 +17,7 @@ import { getPageSeo } from '../lib/seo';
 import { useLocale } from '../features/i18n';
 import { useStudioStore } from '../features/studio/store';
 import { useSwipeTabs } from '../hooks/useSwipeTabs';
+import { RADIUS_SM, WHITE_04 } from '../theme/tokens';
 
 interface StudioPageProps {
   isGenerating: boolean;
@@ -94,7 +95,7 @@ export function StudioPage({
               py: 0.5,
               mx: -0.5,
               px: 0.5,
-              borderRadius: 3,
+              borderRadius: RADIUS_SM,
               bgcolor: 'rgba(5, 8, 22, 0.88)',
               backdropFilter: 'blur(16px)',
             }}
@@ -108,8 +109,8 @@ export function StudioPage({
               variant="fullWidth"
               sx={{
                 minHeight: 46,
-                borderRadius: 3,
-                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                borderRadius: RADIUS_SM,
+                bgcolor: WHITE_04,
                 '& .MuiTabs-indicator': {
                   height: '100%',
                   borderRadius: 2.5,

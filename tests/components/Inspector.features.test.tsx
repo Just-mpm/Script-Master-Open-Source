@@ -5,7 +5,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { Inspector } from '../../src/components/Inspector';
 import { I18nProvider } from '../../src/features/i18n';
-
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
@@ -67,23 +66,19 @@ vi.mock('../../src/theme/surfaces', () => ({
   insetPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', async () => {
-  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
-  return factory({
-    extras: {
-      ICON_SIZE_SM: 16,
-      ICON_SIZE_MD: 20,
-      ICON_SIZE_LG: 24,
-      GAP_COMPACT: 4,
-      GAP_DEFAULT: 8,
-      GAP_MEDIUM: 12,
-      RADIUS_SM: 8,
-      RADIUS_XS: 4,
-      BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
-      WHITE_08: 'rgba(255,255,255,0.08)',
-    },
-  });
-});
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_SM: 16,
+  ICON_SIZE_MD: 20,
+  ICON_SIZE_LG: 24,
+  GAP_COMPACT: 4,
+  GAP_DEFAULT: 8,
+  GAP_MEDIUM: 12,
+  RADIUS_SM: 8,
+  RADIUS_XS: 4,
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
+  WHITE_08: 'rgba(255,255,255,0.08)', };
+});;
 
 vi.mock('../../src/features/studio/store', () => ({
   useStudioStore: (selector: (state: typeof storeMock) => unknown) => selector(storeMock),

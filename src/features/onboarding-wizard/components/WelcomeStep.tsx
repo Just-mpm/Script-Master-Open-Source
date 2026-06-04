@@ -13,7 +13,7 @@ import Lock from '@mui/icons-material/Lock';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 import { useTheme } from '@mui/material/styles';
-import { BRAND_GRADIENT, BRAND_PRIMARY } from '../../../theme/tokens';
+import { BRAND_GRADIENT, BRAND_PRIMARY, RADIUS_SM } from '../../../theme/tokens';
 import { useLocale } from '../../i18n';
 
 interface WelcomeStepProps {
@@ -38,7 +38,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             mb: 4,
             width: 64,
             height: 64,
-            borderRadius: 3,
+            borderRadius: RADIUS_SM,
             background: BRAND_GRADIENT,
             alignItems: 'center',
             justifyContent: 'center',

@@ -11,7 +11,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ImageIcon from '@mui/icons-material/Image';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Link } from 'react-router-dom';
-import { APP_MAX_WIDTH, BRAND_GRADIENT, TEXT_SECONDARY, BRAND_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, APP_BORDER } from '../../theme/tokens';
+import { APP_MAX_WIDTH, BRAND_GRADIENT, TEXT_SECONDARY, BRAND_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, APP_BORDER, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { fadeInUp, scaleIn, VIEWPORT_ONCE } from './animations';
 import { useLocale } from '../../features/i18n';
@@ -216,7 +216,7 @@ export function ProductDemoSection() {
                     sx={{
                       px: 2,
                       py: 0.75,
-                      borderRadius: 2,
+                      borderRadius: RADIUS_XS,
                       background: BRAND_GRADIENT,
                       color: 'common.white',
                       fontSize: '0.75rem',

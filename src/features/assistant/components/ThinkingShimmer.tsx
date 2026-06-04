@@ -84,7 +84,7 @@ export function ThinkingShimmer({ text }: ThinkingShimmerProps) {
               borderRadius: '50%',
               bgcolor: BRAND_PRIMARY,
               animation: `${dotsKeyframes} 1.4s ease-in-out infinite`,
-              animationDelay: `${i * 0.2}s`,
+              animationDelay: `${i * 0.2 }s`,
             }}
           />
         ))}

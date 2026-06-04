@@ -101,7 +101,7 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
       >
         {/* ── Avatar do usuário (link para /app/configuracoes) ── */}
         {collapsed ? (
-          <Tooltip title={user.displayName ?? user.email ?? userTooltip} placement="right" arrow>
+          <Tooltip title={user.displayName ?? user.email ?? userTooltip } placement="right" arrow>
             <IconButton
               onClick={handleAvatarClick}
               aria-label={userTooltip}
@@ -114,8 +114,8 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
               }}
             >
               <Avatar
-                alt={user.displayName ?? userAlt}
-                src={user.photoURL ?? undefined}
+                alt={user.displayName ?? userAlt }
+                src={user.photoURL ?? undefined }
                 slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
                 sx={{ width: 32, height: 32, bgcolor: 'action.hover' }}
               >
@@ -146,8 +146,8 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Avatar
-                alt={user.displayName ?? userAlt}
-                src={user.photoURL ?? undefined}
+                alt={user.displayName ?? userAlt }
+                src={user.photoURL ?? undefined }
                 slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
                 sx={{ width: 32, height: 32, bgcolor: 'action.hover' }}
               >
@@ -155,7 +155,7 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
               </Avatar>
               <Stack spacing={0.2} sx={{ minWidth: 0 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-                  {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0] ?? userFallback}
+                  {user.displayName?.split(' ')[0] ?? user.email?.split('@')[0] ?? userFallback }
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
                   {user.email ?? ''}

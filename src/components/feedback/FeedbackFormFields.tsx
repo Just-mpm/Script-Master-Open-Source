@@ -175,7 +175,7 @@ export function FeedbackFormFields({
         onChange={(e: ChangeEvent<HTMLInputElement>) => setCategory(e.target.value as FeedbackCategory)}
         size="small"
         fullWidth
-        disabled={disabled || isSending}
+        disabled={disabled || isSending }
       >
         {FEEDBACK_CATEGORIES.map((opt) => (
           <MenuItem key={opt.value} value={opt.value}>
@@ -195,8 +195,8 @@ export function FeedbackFormFields({
         maxRows={6}
         fullWidth
         error={isTooShort}
-        helperText={isTooShort ? t('feedback.dialog.tooShort') : undefined}
-        disabled={disabled || isSending}
+        helperText={isTooShort ? t('feedback.dialog.tooShort') : undefined }
+        disabled={disabled || isSending }
       />
 
       {/* Contexto da tela (opcional) — pré-preenchido pelo pai */}
@@ -207,7 +207,7 @@ export function FeedbackFormFields({
         onChange={(e: ChangeEvent<HTMLInputElement>) => setScreenContext(e.target.value)}
         size="small"
         fullWidth
-        disabled={disabled || isSending}
+        disabled={disabled || isSending }
       />
 
       {/* Erro */}
@@ -220,7 +220,7 @@ export function FeedbackFormFields({
           description={error}
           onClose={() => setError(null)}
         />
-      ) : null}
+      ) : null }
 
       {/* Botão de envio */}
       {!hideButton ? (
@@ -229,20 +229,20 @@ export function FeedbackFormFields({
           color="secondary"
           size="large"
           onClick={handleSubmit}
-          disabled={!canSubmit || disabled}
+          disabled={!canSubmit || disabled }
           endIcon={isSending ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
           sx={{ mt: 1, boxShadow: `0 0 24px ${BRAND_SECONDARY_GLOW_SOFT}` }}
         >
           {isSending ? t('feedback.dialog.sending') : (buttonLabel ?? t('feedback.dialog.button'))}
         </Button>
-      ) : null}
+      ) : null }
 
       {/* Dica visual — apenas quando categoria não selecionada (UX gentil) */}
       {!category && !hideButton ? (
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
           {t('feedback.dialog.hint')}
         </Typography>
-      ) : null}
+      ) : null }
     </Stack>
   );
 }

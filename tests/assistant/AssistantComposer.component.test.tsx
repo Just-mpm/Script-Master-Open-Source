@@ -18,8 +18,9 @@ function Wrapper({ children }: { children: ReactNode }) {
 }
 
 // Mock dos tokens
-vi.mock('../../src/theme/tokens', () => ({
-  ICON_SIZE_SM: 16,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_SM: 16,
   ICON_SIZE_MD: 20,
   RADIUS_XS: 8,
   WHITE_06: 'rgba(255,255,255,0.06)',
@@ -29,8 +30,8 @@ vi.mock('../../src/theme/tokens', () => ({
   APP_BORDER_STRONG: 'rgba(255,255,255,0.14)',
   APP_SURFACE_ELEVATED: 'rgba(30,30,45,1)',
   SHADOW_DEEP: 'rgba(0,0,0,0.5)',
-  ERROR_MAIN: '#ef4444',
-}));
+  ERROR_MAIN: '#ef4444', };
+});;
 
 // Mock do assistantUi
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({

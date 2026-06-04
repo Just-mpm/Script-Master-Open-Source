@@ -28,7 +28,6 @@ import { AnimationDurationSelector } from './AnimationDurationSelector';
 import { useLocale } from '../../i18n';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
-  GAP_DEFAULT,
   GAP_MEDIUM,
   ICON_SIZE_MD,
   BRAND_GRADIENT,
@@ -38,8 +37,8 @@ import {
   BRAND_PRIMARY_LIGHT,
   WHITE_14,
   WARNING_BG_SUBTLE,
-  ERROR_BG_SUBTLE,
-} from '../../../theme/tokens';
+  ERROR_BG_SUBTLE, RADIUS_XS } from '../../../theme/tokens';
+import { StackedHeader } from '../../../components/ui';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -145,55 +144,52 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
   };
 
   return (
-    <Box
+    <StackedHeader
       id="speed-paint-export-panel"
+      variant="glass"
+      icon={<VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />}
+      title={t('speedPaint.exportTitle')}
+      titleVariant="subtitle2"
+      density="compact"
       sx={(theme): SystemStyleObject<Theme> => ({
         ...glassSurfaceSx(theme),
-        p: { xs: 2.5, md: 3 },
         borderRadius: { xs: 3, md: 4 },
       })}
     >
-      {/* Cabeçalho */}
-      <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: exporter.isRendering || exporter.outputUrl ? 2 : 0 }}>
-        <VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-          {t('speedPaint.exportTitle')}
-        </Typography>
-      </Stack>
+      <Box>
+        {/* Alerta: navegador não suportado */}
+        {exporter.canRender === false && (
+          <Alert
+            severity="warning"
+            icon={<WarningAmber sx={{ fontSize: 20 }} />}
+            sx={{ mb: 2, borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE }}
+          >
+            {exporter.error || t('speedPaint.exportBrowserWarning')}
+          </Alert>
+        )}
 
-      {/* Alerta: navegador não suportado */}
-      {exporter.canRender === false && (
-        <Alert
-          severity="warning"
-          icon={<WarningAmber sx={{ fontSize: 20 }} />}
-          sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
-        >
-          {exporter.error || t('speedPaint.exportBrowserWarning')}
-        </Alert>
-      )}
+        {/* Alerta: erro de renderização */}
+        {exporter.error && exporter.canRender !== false && (
+          <Alert
+            severity="error"
+            action={
+              <IconButton size="small" onClick={exporter.reset} aria-label={t('speedPaint.exportDismissError')}>
+                <Close sx={{ fontSize: 18 }} />
+              </IconButton>
+            }
+            sx={{ mb: 2, borderRadius: RADIUS_XS, bgcolor: ERROR_BG_SUBTLE }}
+          >
+            {exporter.error}
+          </Alert>
+        )}
 
-      {/* Alerta: erro de renderização */}
-      {exporter.error && exporter.canRender !== false && (
-        <Alert
-          severity="error"
-          action={
-            <IconButton size="small" onClick={exporter.reset} aria-label={t('speedPaint.exportDismissError')}>
-              <Close sx={{ fontSize: 18 }} />
-            </IconButton>
-          }
-          sx={{ mb: 2, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
-        >
-          {exporter.error}
-        </Alert>
-      )}
-
-      {/* Painel de configuração antes de exportar */}
-      {!exporter.isRendering && !exporter.outputUrl && (
-        <Stack spacing={GAP_MEDIUM}>
-          {/* Info de resolução + estimativa */}
-           <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
-             {t('speedPaint.exportInfo', { width: resolution.width, height: resolution.height, fps: resolvedFps })}
-           </Typography>
+        {/* Painel de configuração antes de exportar */}
+        {!exporter.isRendering && !exporter.outputUrl && (
+          <Stack spacing={GAP_MEDIUM}>
+            {/* Info de resolução + estimativa */}
+            <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+              {t('speedPaint.exportInfo', { width: resolution.width, height: resolution.height, fps: resolvedFps })}
+            </Typography>
 
           <AnimationDurationSelector
             duration={animationDuration}
@@ -249,7 +245,7 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
           <Button
             variant="contained"
             size="small"
-            disabled={!isExportable}
+            disabled={!isExportable }
             onClick={handleStartExport}
             startIcon={<VideoFile sx={{ fontSize: ICON_SIZE_MD }} />}
             sx={{
@@ -261,36 +257,37 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
               } : {}),
             }}
           >
-            {t('speedPaint.exportButton')} vídeo
+            {t('speedPaint.exportButton')}
           </Button>
-        </Stack>
-      )}
+          </Stack>
+        )}
 
-      {/* Barra de progresso durante renderização */}
-      {exporter.isRendering && (
-        <ExportProgressBar
-          progress={exporter.renderProgress}
-          statusText={exporter.renderStatusText}
-          isRendering={exporter.isRendering}
-          onCancel={exporter.handleCancel}
-          cancelLabel={t('speedPaint.exportCancel')}
-          progressAriaLabel={t('speedPaint.exportProgressAria')}
-        />
-      )}
+        {/* Barra de progresso durante renderização */}
+        {exporter.isRendering && (
+          <ExportProgressBar
+            progress={exporter.renderProgress}
+            statusText={exporter.renderStatusText}
+            isRendering={exporter.isRendering}
+            onCancel={exporter.handleCancel}
+            cancelLabel={t('speedPaint.exportCancel')}
+            progressAriaLabel={t('speedPaint.exportProgressAria')}
+          />
+        )}
 
-      {/* Resultado: exportação concluída */}
-      {!exporter.isRendering && exporter.outputUrl && (
-        <ExportResultActions
-          hasOutput={true}
-          onDownload={exporter.handleDownload}
-          onReset={exporter.reset}
-          statusText={exporter.renderStatusText}
-          blobSizeBytes={exporter.outputBlob?.size}
-          labelRetry={t('speedPaint.exportAgain')}
-          labelClear={t('speedPaint.exportClear')}
-          labelDownload={t('speedPaint.exportDownload')}
-        />
-      )}
-    </Box>
+        {/* Resultado: exportação concluída */}
+        {!exporter.isRendering && exporter.outputUrl && (
+          <ExportResultActions
+            hasOutput={true}
+            onDownload={exporter.handleDownload}
+            onReset={exporter.reset}
+            statusText={exporter.renderStatusText}
+            blobSizeBytes={exporter.outputBlob?.size }
+            labelRetry={t('speedPaint.exportAgain')}
+            labelClear={t('speedPaint.exportClear')}
+            labelDownload={t('speedPaint.exportDownload')}
+          />
+        )}
+      </Box>
+    </StackedHeader>
   );
 });

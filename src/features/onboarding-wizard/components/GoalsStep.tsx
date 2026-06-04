@@ -95,7 +95,7 @@ export function GoalsStep() {
       <StepNavigation
         onPrev={prevStep}
         onNext={nextStep}
-        isDisabled={data.goals.length === 0}
+        isDisabled={data.goals.length === 0 }
         isLastStep
       />
     </Stack>

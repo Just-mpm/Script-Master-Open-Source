@@ -22,7 +22,7 @@ import Search from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { glassPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_COMPACT, GAP_DEFAULT, GAP_MEDIUM, GAP_RELAXED, EMPTY_WRAPPER_PADDING_XS, EMPTY_WRAPPER_PADDING_MD, BRAND_GRADIENT, WHITE_06, WHITE_16, WHITE_08, WHITE_04 } from '../theme/tokens';
 import { GalleryCard } from './video-library/GalleryCard';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
 import { useProjectGallery } from './video-library/useProjectGallery';
@@ -214,16 +214,16 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
               width: { xs: '100%', sm: 240 },
               '& .MuiOutlinedInput-root': {
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                backgroundColor: WHITE_04,
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255, 255, 255, 0.08)',
+                  borderColor: WHITE_08,
                   borderWidth: 1,
                 },
                 '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(255, 255, 255, 0.16)',
+                  borderColor: WHITE_16,
                 },
                 '&.Mui-focused': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  backgroundColor: WHITE_06,
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: '#2E75B6',
                     borderWidth: 2,
@@ -258,7 +258,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
               <GalleryCard
                 key={project.id}
                 project={project}
-                isActive={activeProjectId === project.id}
+                isActive={activeProjectId === project.id }
                 downloadingId={downloadingId}
                 onSelect={handleSelect}
                 onDownload={handleDownloadSequence}
@@ -272,7 +272,7 @@ export function VideoLibrary({ onSelect, activeProjectId }: VideoLibraryProps) {
       {/* Dialog de exclusão */}
       <DeleteConfirmationDialog
         open={Boolean(itemToDelete)}
-        itemName={itemToDelete?.name ?? null}
+        itemName={itemToDelete?.name ?? null }
         deletingItem={deletingItem}
         deleteError={deleteError}
         onConfirm={confirmDeleteItem}

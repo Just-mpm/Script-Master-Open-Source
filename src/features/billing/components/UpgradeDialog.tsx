@@ -30,6 +30,7 @@ import { createLogger } from '../../../lib/logger';
 import { auth } from '../../../lib/firebase';
 import type { PlanId } from '../types';
 import { trackAnalyticsEvent } from '../../../lib/analytics';
+import { RADIUS_SM, RADIUS_XS } from '../../../theme/tokens';
 
 const log = createLogger('UpgradeDialog');
 
@@ -128,7 +129,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
       maxWidth="sm"
       aria-labelledby="upgrade-dialog-title"
       slotProps={{
-        paper: { sx: { borderRadius: 3 } },
+        paper: { sx: { borderRadius: RADIUS_SM } },
       }}
     >
       <DialogTitle id="upgrade-dialog-title" sx={{ pb: 1 }}>
@@ -142,7 +143,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
             variant={billingCycle === 'monthly' ? 'contained' : 'outlined'}
             size="small"
             onClick={() => setBillingCycle('monthly')}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
+            sx={{ borderRadius: RADIUS_XS, textTransform: 'none' }}
           >
             {t('billing.upgrade.monthly')}
           </Button>
@@ -150,7 +151,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
             variant={billingCycle === 'yearly' ? 'contained' : 'outlined'}
             size="small"
             onClick={() => setBillingCycle('yearly')}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
+            sx={{ borderRadius: RADIUS_XS, textTransform: 'none' }}
           >
             {t('billing.upgrade.yearly')}
             <Chip
@@ -163,7 +164,7 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
         </Stack>
 
         {/* Plano atual */}
-        <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+        <Box sx={{ mb: 2, p: 1.5, borderRadius: RADIUS_XS, bgcolor: 'action.hover' }}>
           <Typography variant="body2" color="text.secondary">
             {t('billing.upgrade.currentPlan')}: <strong>{currentPlan.name}</strong>
           </Typography>
@@ -181,16 +182,16 @@ export function UpgradeDialog({ open, onClose, recommendedPlan }: UpgradeDialogP
               <Card
                 key={plan.id}
                 variant={isRecommended ? 'elevation' : 'outlined'}
-                elevation={isRecommended ? 4 : 0}
+                elevation={isRecommended ? 4 : 0 }
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   border: isRecommended ? '2px solid' : undefined,
                   borderColor: isRecommended ? 'secondary.main' : undefined,
                 }}
               >
                 <CardActionArea
                   onClick={() => stripeAvailable && handleUpgrade(plan.id)}
-                  disabled={!stripeAvailable || isLoading}
+                  disabled={!stripeAvailable || isLoading }
                   sx={{ p: 2 }}
                 >
                   <Stack spacing={1}>

@@ -18,11 +18,12 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-  BRAND_SECONDARY: '#F7941E',
-}));
+  BRAND_SECONDARY: '#F7941E', };
+});;
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
@@ -79,8 +80,8 @@ describe('UseCasesSection', () => {
 
   it('renderiza descrições de cada caso de uso', () => {
     render(<UseCasesSection />, { wrapper: Wrapper });
-    expect(screen.getByText(/Roteiro longo vira cenas/)).toBeDefined();
-    expect(screen.getByText(/2 vozes distintas/)).toBeDefined();
+    expect(screen.getByText(/Transforme um roteiro longo em vídeo/)).toBeDefined();
+    expect(screen.getByText(/Simule conversas com duas vozes/)).toBeDefined();
     expect(screen.getByText(/Aulas narradas/)).toBeDefined();
     expect(screen.getByText(/Escala de produção com IA/)).toBeDefined();
     expect(screen.getByText(/Do roteiro à imagem/)).toBeDefined();

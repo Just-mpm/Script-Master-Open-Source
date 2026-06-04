@@ -30,8 +30,9 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, APP_BORDER_STRONG: 'rgba(255, 255, 255, 0.14)',
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
   BRAND_PRIMARY: '#2E75B6',
   BRAND_PRIMARY_LIGHT: '#5BA3D0',
@@ -42,8 +43,8 @@ vi.mock('../../src/theme/tokens', () => ({
   APP_BACKGROUND_GLOW: 'radial-gradient(circle at 15% 15%, rgba(46, 117, 182, 0.12) 0%, transparent 34%)',
   GAP_RELAXED: 2,
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
-  SUCCESS_MAIN: '#10b981',
-}));
+  SUCCESS_MAIN: '#10b981', };
+});;
 
 function renderWithRouter(ui: React.ReactElement) {
   return render(<MemoryRouter>{ui}</MemoryRouter>);
@@ -90,18 +91,18 @@ describe('LoginPage', () => {
 
   it('deve exibir os 4 benefícios de LOGIN_BENEFITS', () => {
     renderWithRouter(<LoginPage />);
-    expect(screen.getByText('Voz com IA')).toBeTruthy();
-    expect(screen.getByText('Vídeo Automático')).toBeTruthy();
-    expect(screen.getByText('Imagens')).toBeTruthy();
-    expect(screen.getByText('Assistente IA')).toBeTruthy();
+    expect(screen.getByText('Narração sem gravar')).toBeTruthy();
+    expect(screen.getByText('Vídeo montado no navegador')).toBeTruthy();
+    expect(screen.getByText('Cenas com IA')).toBeTruthy();
+    expect(screen.getByText('Assistente criativo')).toBeTruthy();
   });
 
   it('deve exibir a descrição dos benefícios', () => {
     renderWithRouter(<LoginPage />);
-    expect(screen.getByText('Roteiros em áudio profissional com Gemini TTS')).toBeTruthy();
-    expect(screen.getByText('Renderização client-side com legendas')).toBeTruthy();
-    expect(screen.getByText('Geração com 8 aspect ratios e referência')).toBeTruthy();
-    expect(screen.getByText('Chat com memória e integração ao estúdio')).toBeTruthy();
+    expect(screen.getByText('Roteiros viram áudio claro para vídeos')).toBeTruthy();
+    expect(screen.getByText('Cenas, voz e legendas em um fluxo simples')).toBeTruthy();
+    expect(screen.getByText('Imagens para YouTube, Shorts e Reels')).toBeTruthy();
+    expect(screen.getByText('Ideias, revisão e direção de cena')).toBeTruthy();
   });
 
   it('deve exibir o título "Crie com IA no beta aberto"', () => {

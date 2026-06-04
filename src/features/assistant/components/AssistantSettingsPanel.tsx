@@ -21,8 +21,7 @@ import {
   ICON_SIZE_MD,
   ICON_SIZE_LG,
   GAP_DEFAULT,
-  GAP_COMPACT,
-} from '../../../theme/tokens';
+  GAP_COMPACT, RADIUS_XS } from '../../../theme/tokens';
 import { assistantDrawerPaperSx, assistantDrawerHeaderSx, assistantInsetSx } from './assistantUi';
 
 interface AssistantSettingsPanelProps {
@@ -97,7 +96,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
             variant="outlined"
             severity="info"
             sx={{
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               '& .MuiAlert-icon': {
                 color: BRAND_PRIMARY,
               },
@@ -118,7 +117,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
             sx={{
               flex: 1,
               '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
+                borderRadius: RADIUS_XS,
                 backgroundColor: alpha(APP_SURFACE_ELEVATED, 0.4),
                 '&:focus-within': {
                   backgroundColor: alpha(APP_SURFACE_ELEVATED, 0.56),
@@ -132,7 +131,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
             variant="contained"
             size="large"
             loading={isSavingSettings}
-            startIcon={!isSavingSettings ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+            startIcon={!isSavingSettings ? <Check sx={{ fontSize: ICON_SIZE_MD }} /> : undefined }
           >
             {t('assistant.settings.applyGuidelines')}
           </Button>

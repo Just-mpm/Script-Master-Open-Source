@@ -59,16 +59,16 @@ export function SubtitlePreview({
       >
         <div
           style={{
-            fontSize: `${editingStyle.fontSize * scale}px`,
+            fontSize: `${editingStyle.fontSize * scale }px`,
             fontWeight: 600,
             lineHeight: 1.6,
             textAlign: 'center',
             color: '#ffffff',
             userSelect: 'none',
-            padding: `${editingStyle.paddingY * scale}px ${editingStyle.paddingX * scale}px`,
-            borderRadius: `${editingStyle.borderRadius * scale}px`,
+            padding: `${editingStyle.paddingY * scale }px ${editingStyle.paddingX * scale }px`,
+            borderRadius: `${editingStyle.borderRadius * scale }px`,
             backgroundColor: `rgba(0, 0, 0, ${editingStyle.backgroundOpacity})`,
-            boxShadow: `0 0 ${40 * scale}px ${20 * scale}px rgba(0, 0, 0, ${editingStyle.backgroundOpacity * 0.8})`,
+            boxShadow: `0 0 ${40 * scale }px ${20 * scale }px rgba(0, 0, 0, ${editingStyle.backgroundOpacity * 0.8 })`,
             border: `1.5px solid ${BRAND_PRIMARY_GLOW_SOFT}`,
             outline: `1px solid ${WHITE_04}`,
             outlineOffset: '3px',

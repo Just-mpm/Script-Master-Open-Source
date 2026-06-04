@@ -73,7 +73,7 @@ export const GalleryCard = memo(function GalleryCard({
           },
         })}
       >
-        <CardActionArea onClick={() => onSelect(project)} disabled={!canSelect} sx={{ height: '100%', alignItems: 'stretch' }}>
+        <CardActionArea onClick={() => onSelect(project)} disabled={!canSelect } sx={{ height: '100%', alignItems: 'stretch' }}>
           <Box sx={{ position: 'relative', aspectRatio: '16 / 9', backgroundColor: 'action.hover', overflow: 'hidden' }}>
             {project.thumbnail ? (
               <Box
@@ -165,7 +165,7 @@ export const GalleryCard = memo(function GalleryCard({
                 <MetadataPill icon={<AccessTime sx={{ fontSize: ICON_SIZE_SM }} />} label={new Date(project.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
                 {project.videos && project.videos.length > 0 ? (
                   <MetadataPill icon={<Movie sx={{ fontSize: ICON_SIZE_SM }} />} label={t('library.videoCount', { count: project.videos.length, plural: project.videos.length === 1 ? '' : 's' })} />
-                ) : null}
+                ) : null }
               </Stack>
             </Stack>
           </CardContent>

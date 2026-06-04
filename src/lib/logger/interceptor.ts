@@ -122,7 +122,7 @@ function handleWindowError(
 ): boolean {
   const msg = typeof message === 'string' ? message : String(message);
   const context = source
-    ? `window.onerror:${source}:${lineno ?? 0}:${colno ?? 0}`
+    ? `window.onerror:${source}:${lineno ?? 0 }:${colno ?? 0 }`
     : 'window.onerror';
   captureError('error', context, msg, error);
   // Retorna false para permitir que o erro propague normalmente

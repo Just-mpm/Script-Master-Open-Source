@@ -226,18 +226,18 @@ export function WaveformOverlay({
 
           {/* Mask para fade nas bordas do waveform */}
           <mask id={`${id}-waveformFadeMask`}>
-            <rect x="0" y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill={`url(#${id}-fadeLeft)`} />
-            <rect x={SVG_WIDTH * 0.1} y="0" width={SVG_WIDTH * 0.8} height={SVG_HEIGHT} fill="white" />
-            <rect x={SVG_WIDTH * 0.9} y="0" width={SVG_WIDTH * 0.1} height={SVG_HEIGHT} fill={`url(#${id}-fadeRight)`} />
+            <rect x="0" y="0" width={SVG_WIDTH * 0.1 } height={SVG_HEIGHT} fill={`url(#${id}-fadeLeft)`} />
+            <rect x={SVG_WIDTH * 0.1 } y="0" width={SVG_WIDTH * 0.8 } height={SVG_HEIGHT} fill="white" />
+            <rect x={SVG_WIDTH * 0.9 } y="0" width={SVG_WIDTH * 0.1 } height={SVG_HEIGHT} fill={`url(#${id}-fadeRight)`} />
           </mask>
         </defs>
 
         {/* Linha base (zero amplitude) */}
         <line
           x1={0}
-          y1={SVG_HEIGHT - SVG_PADDING_Y}
+          y1={SVG_HEIGHT - SVG_PADDING_Y }
           x2={SVG_WIDTH}
-          y2={SVG_HEIGHT - SVG_PADDING_Y}
+          y2={SVG_HEIGHT - SVG_PADDING_Y }
           stroke={WHITE_14}
           strokeWidth={1}
         />
@@ -270,7 +270,7 @@ export function WaveformOverlay({
           x1={progressX}
           y1={SVG_PADDING_Y}
           x2={progressX}
-          y2={SVG_HEIGHT - SVG_PADDING_Y}
+          y2={SVG_HEIGHT - SVG_PADDING_Y }
           stroke={BRAND_PRIMARY_LIGHT}
           strokeWidth={PROGRESS_LINE_WIDTH}
           strokeLinecap="round"
@@ -282,9 +282,9 @@ export function WaveformOverlay({
           x1={progressX}
           y1={SVG_PADDING_Y}
           x2={progressX}
-          y2={SVG_HEIGHT - SVG_PADDING_Y}
+          y2={SVG_HEIGHT - SVG_PADDING_Y }
           stroke={BRAND_PRIMARY_LIGHT}
-          strokeWidth={PROGRESS_LINE_WIDTH + 6}
+          strokeWidth={PROGRESS_LINE_WIDTH + 6 }
           strokeLinecap="round"
           opacity={0.2}
           style={{

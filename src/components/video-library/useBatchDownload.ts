@@ -48,7 +48,7 @@ export function useBatchDownload() {
           await downloadFile(item.scenes[i].imageUrl, sceneFilename);
         } catch (err) {
           log.error('Falha no download da cena', { error: err, sceneIndex: i + 1 });
-          failedItems.push(`cena ${i + 1}`);
+          failedItems.push(`cena ${i + 1 }`);
         }
       }
     }
@@ -66,7 +66,7 @@ export function useBatchDownload() {
           await downloadFile(video.resolvedUrl, videoFilename);
         } catch (err) {
           log.error('Falha no download do vídeo', { error: err, videoIndex: i + 1 });
-          failedItems.push(`${t('library.video')} ${i + 1}`);
+          failedItems.push(`${t('library.video')} ${i + 1 }`);
         }
       }
     }

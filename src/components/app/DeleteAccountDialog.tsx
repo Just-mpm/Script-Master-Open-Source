@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../features/i18n';
 import { createLogger } from '../../lib/logger';
+import { RADIUS_XS } from '../../theme/tokens';
 
 const log = createLogger('delete-account-dialog');
 
@@ -67,12 +68,12 @@ export function DeleteAccountDialog({ open, onClose }: DeleteAccountDialogProps)
   return (
     <Dialog
       open={open}
-      onClose={isDeleting ? undefined : handleClose}
+      onClose={isDeleting ? undefined : handleClose }
       fullWidth
       maxWidth="xs"
       aria-labelledby="delete-account-title"
       slotProps={{
-        paper: { sx: { borderRadius: 2 } },
+        paper: { sx: { borderRadius: RADIUS_XS } },
       }}
     >
       <DialogTitle id="delete-account-title">
@@ -105,7 +106,7 @@ export function DeleteAccountDialog({ open, onClose }: DeleteAccountDialogProps)
           onClick={handleConfirm}
           color="error"
           variant="contained"
-          disabled={confirmText !== CONFIRM_KEYWORD || isDeleting}
+          disabled={confirmText !== CONFIRM_KEYWORD || isDeleting }
         >
           {isDeleting
             ? t('studio.header.deleteAccount.dialogDeleting')

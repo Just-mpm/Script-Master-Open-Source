@@ -174,7 +174,7 @@ export function DataMigrationDialog({ userId, onComplete }: DataMigrationDialogP
           variant="contained"
           onClick={handleMigrate}
           disabled={isMigrating}
-          startIcon={isMigrating ? <CircularProgress size={16} color="inherit" /> : undefined}
+          startIcon={isMigrating ? <CircularProgress size={16} color="inherit" /> : undefined }
         >
           {isMigrating ? t('dataMigration.transferring') : t('dataMigration.transfer')}
         </Button>

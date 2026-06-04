@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 import { Library } from '../../src/components/Library';
 import type { Project, AudioSource, ProjectImage } from '../../src/lib/db';
 import { I18nProvider } from '../../src/features/i18n';
-
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 const mockNavigate = vi.fn();
 const mockLoadLibraryQueue = vi.fn();
@@ -97,27 +96,23 @@ vi.mock('../../src/components/video-library/DeleteConfirmationDialog', () => ({
     open ? <div role="dialog">{titleIdleLabel ?? 'Excluir?'}</div> : null,
 }));
 
-vi.mock('../../src/theme/tokens', async () => {
-  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
-  return factory({
-    extras: {
-      ICON_SIZE_SM: 16,
-      ICON_SIZE_MD: 20,
-      ICON_SIZE_LG: 24,
-      GAP_COMPACT: 4,
-      GAP_DEFAULT: 8,
-      GAP_MEDIUM: 12,
-      GAP_RELAXED: 16,
-      RADIUS_SM: 8,
-      EMPTY_ICON_SIZE: 48,
-      EMPTY_WRAPPER_MAX_WIDTH: 400,
-      EMPTY_WRAPPER_PADDING_XS: 16,
-      EMPTY_WRAPPER_PADDING_MD: 24,
-      BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
-      BRAND_PRIMARY: '#2E75B6',
-    },
-  });
-});
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_SM: 16,
+  ICON_SIZE_MD: 20,
+  ICON_SIZE_LG: 24,
+  GAP_COMPACT: 4,
+  GAP_DEFAULT: 8,
+  GAP_MEDIUM: 12,
+  GAP_RELAXED: 16,
+  RADIUS_SM: 8,
+  EMPTY_ICON_SIZE: 48,
+  EMPTY_WRAPPER_MAX_WIDTH: 400,
+  EMPTY_WRAPPER_PADDING_XS: 16,
+  EMPTY_WRAPPER_PADDING_MD: 24,
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
+  BRAND_PRIMARY: '#2E75B6', };
+});;
 
 describe('Library', () => {
   beforeEach(() => {

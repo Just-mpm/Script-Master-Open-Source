@@ -219,7 +219,7 @@ export function SubtitleOverlay({
                   variant={isActive ? 'active' : 'previous'}
                   fadeOutFrame={isPrevious && activePhraseIndex + 1 < phrases.length
                     ? phrases[activePhraseIndex + 1][0].startFrame
-                    : undefined}
+                    : undefined }
                   fontSize={style.fontSize}
                   paddingX={style.paddingX}
                   paddingY={style.paddingY}

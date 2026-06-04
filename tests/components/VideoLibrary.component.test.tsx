@@ -4,7 +4,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { VideoLibrary } from '../../src/components/VideoLibrary';
 import { I18nProvider } from '../../src/features/i18n';
-
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
 function Wrapper({ children }: { children: ReactNode }) {
@@ -70,25 +69,21 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', async () => {
-  const { createTokensMock: factory } = await import('../__mocks__/tokensMock');
-  return factory({
-    extras: {
-      ICON_SIZE_SM: 16,
-      ICON_SIZE_MD: 20,
-      GAP_COMPACT: 4,
-      GAP_DEFAULT: 8,
-      GAP_MEDIUM: 12,
-      GAP_RELAXED: 16,
-      RADIUS_SM: 8,
-      RADIUS_CHIP: 16,
-      EMPTY_WRAPPER_PADDING_XS: 16,
-      EMPTY_WRAPPER_PADDING_MD: 24,
-      BLACK_66: 'rgba(0,0,0,0.66)',
-      BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
-    },
-  });
-});
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_SM: 16,
+  ICON_SIZE_MD: 20,
+  GAP_COMPACT: 4,
+  GAP_DEFAULT: 8,
+  GAP_MEDIUM: 12,
+  GAP_RELAXED: 16,
+  RADIUS_SM: 8,
+  RADIUS_CHIP: 16,
+  EMPTY_WRAPPER_PADDING_XS: 16,
+  EMPTY_WRAPPER_PADDING_MD: 24,
+  BLACK_66: 'rgba(0,0,0,0.66)',
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)', };
+});;
 
 describe('VideoLibrary', () => {
   const onSelect = vi.fn();

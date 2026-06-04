@@ -74,18 +74,18 @@ describe('Metrics — dados localizados', () => {
     expect(hasDifference).toBe(true);
   });
 
-  it('sufixos são consistentes (K+ ou /5)', () => {
+  it('sufixos são strings vazias (valores brutos)', () => {
     for (const metric of METRICS) {
-      if (metric.suffix) {
-        expect(['K+', '/5']).toContain(metric.suffix);
-      }
+      // Após a reescrita editorial, todas as métricas passaram a usar suffix vazio
+      expect(metric.suffix).toBe('');
     }
   });
 
-  it('satisfação tem value "4.8" e suffix "/5"', () => {
-    const satisfaction = METRICS[3];
-    expect(satisfaction.value).toBe('4.8');
-    expect(satisfaction.suffix).toBe('/5');
+  it('última métrica é "Sem cartão" com value "0" e suffix vazio', () => {
+    const last = METRICS[3];
+    expect(last.label).toBe('Sem cartão');
+    expect(last.value).toBe('0');
+    expect(last.suffix).toBe('');
   });
 });
 

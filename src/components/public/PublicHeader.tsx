@@ -37,8 +37,7 @@ import {
   APP_SURFACE,
   WHITE_05,
   WHITE_015,
-  SHADOW_DEEP,
-} from '../../theme/tokens';
+  SHADOW_DEEP, RADIUS_XS } from '../../theme/tokens';
 import { glassSurfaceSx } from '../../theme/surfaces';
 import logos from '../../assets/logos';
 
@@ -180,7 +179,7 @@ export function PublicHeader() {
                     key={item.to}
                     component={Link}
                     to={item.to}
-                    aria-current={isActive ? 'page' : undefined}
+                    aria-current={isActive ? 'page' : undefined }
                     sx={{
                       color: isActive ? 'text.primary' : 'text.secondary',
                       bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -241,7 +240,7 @@ export function PublicHeader() {
                   component={Link}
                   to={guestCta.to}
                   variant="contained"
-                  startIcon={!isMobile && !isRegisterRoute ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined}
+                  startIcon={!isMobile && !isRegisterRoute ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined }
                   size="small"
                   sx={{
                     transition: 'box-shadow 0.2s ease',
@@ -262,7 +261,7 @@ export function PublicHeader() {
       <Drawer
         variant="temporary"
         anchor="left"
-        open={isMobile && drawerOpen}
+        open={isMobile && drawerOpen }
         onClose={closeDrawer}
         ModalProps={{ keepMounted: true }}
         slotProps={{ paper: { sx: drawerPaperSx } }}
@@ -308,9 +307,9 @@ export function PublicHeader() {
                   component={Link}
                   to={item.to}
                   selected={isActive}
-                  aria-current={isActive ? 'page' : undefined}
+                  aria-current={isActive ? 'page' : undefined }
                   sx={{
-                    borderRadius: 2,
+                    borderRadius: RADIUS_XS,
                     mb: 0.5,
                     color: isActive ? 'text.primary' : 'text.secondary',
                     bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -335,7 +334,7 @@ export function PublicHeader() {
               <ListItemButton
                 onClick={() => { closeDrawer(); handleOpenLogoutDialog(); }}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: RADIUS_XS,
                   color: 'error.main',
                   transition: 'background-color 0.2s ease',
                   '&:hover': { bgcolor: 'action.hover' },

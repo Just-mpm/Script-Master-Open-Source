@@ -6,6 +6,7 @@ import WarningAmber from '@mui/icons-material/WarningAmber';
 import Sync from '@mui/icons-material/Sync';
 import { useCredits } from '../hooks/useCredits';
 import { useLocale } from '../features/i18n';
+import { RADIUS_SM, ERROR_BG_MEDIUM } from '../theme/tokens';
 
 /**
  * Badge compacto de créditos para o Header da área logada.
@@ -21,7 +22,7 @@ export function CreditIndicator() {
         variant="rectangular"
         width={80}
         height={24}
-        sx={{ borderRadius: 3, bgcolor: 'action.hover' }}
+        sx={{ borderRadius: RADIUS_SM, bgcolor: 'action.hover' }}
         aria-label={t('studio.header.credits.loading')}
       />
     );
@@ -88,9 +89,9 @@ export function CreditIndicator() {
             fontWeight: 600,
             fontSize: '0.7rem',
             letterSpacing: '0.04em',
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            backgroundColor: ERROR_BG_MEDIUM,
             color: 'error.light',
-            border: '1px solid rgba(239, 68, 68, 0.28)',
+            border: '1px solid ${ERROR_BORDER_HOVER}',
             '& .MuiChip-label': { px: 1 },
             '& .MuiChip-icon': { color: 'error.light', ml: 0.5 },
           }}
@@ -123,7 +124,7 @@ export function CreditIndicator() {
             ? lowCredits
               ? 'rgba(245, 158, 11, 0.12)'
               : 'rgba(16, 185, 129, 0.12)'
-            : 'rgba(239, 68, 68, 0.12)',
+            : ERROR_BG_MEDIUM,
           color: hasCredits
             ? lowCredits
               ? 'warning.light'
@@ -133,7 +134,7 @@ export function CreditIndicator() {
             ? lowCredits
               ? '1px solid rgba(245, 158, 11, 0.28)'
               : '1px solid rgba(16, 185, 129, 0.28)'
-            : '1px solid rgba(239, 68, 68, 0.28)',
+            : '1px solid ${ERROR_BORDER_HOVER}',
           '& .MuiChip-label': { px: 1 },
           '& .MuiChip-icon': {
             color: hasCredits

@@ -12,8 +12,7 @@ import {
   BRAND_PRIMARY_LIGHT,
   BRAND_PRIMARY_GLOW,
   BRAND_PRIMARY_GLOW_SOFT,
-  BRAND_GRADIENT,
-} from '../../../../theme/tokens';
+  BRAND_GRADIENT, RADIUS_SM } from '../../../../theme/tokens';
 import { useLocale } from '../../../../features/i18n';
 
 export function ImageUpload() {
@@ -67,7 +66,7 @@ export function ImageUpload() {
         p: 6,
         border: '2px dashed',
         borderColor: isDragActive ? BRAND_PRIMARY_LIGHT : 'divider',
-        borderRadius: 3,
+        borderRadius: RADIUS_SM,
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',

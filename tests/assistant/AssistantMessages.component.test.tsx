@@ -17,8 +17,9 @@ function Wrapper({ children }: { children: ReactNode }) {
 }
 
 // Mock dos tokens
-vi.mock('../../src/theme/tokens', () => ({
-  BRAND_PRIMARY: '#06b6d4',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, BRAND_PRIMARY: '#06b6d4',
   BRAND_SECONDARY: '#F7941E',
   BRAND_GRADIENT: 'linear-gradient(135deg, #2E75B6 0%, #F7941E 100%)',
   APP_BORDER: 'rgba(255,255,255,0.08)',
@@ -39,8 +40,8 @@ vi.mock('../../src/theme/tokens', () => ({
   GAP_DEFAULT: 12,
   GAP_MEDIUM: 8,
   GAP_RELAXED: 16,
-  ERROR_MAIN: '#ef4444',
-}));
+  ERROR_MAIN: '#ef4444', };
+});;
 
 // Mock do assistantUi
 vi.mock('../../src/features/assistant/components/assistantUi', () => ({

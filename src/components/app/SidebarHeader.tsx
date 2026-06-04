@@ -92,7 +92,7 @@ export function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
       >
         <IconButton
           onClick={onToggle}
-          aria-expanded={!collapsed}
+          aria-expanded={!collapsed }
           aria-label={collapsed ? t('sidebar.toggle.expand') : t('sidebar.toggle.collapse')}
           sx={{
             color: 'text.secondary',

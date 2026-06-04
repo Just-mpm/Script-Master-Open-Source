@@ -22,8 +22,7 @@ import { StepCard } from '../../components/public/StepCard';
 import {
   TEXT_SECONDARY,
   BRAND_PRIMARY,
-  BRAND_SECONDARY,
-} from '../../theme/tokens';
+  BRAND_SECONDARY, RADIUS_SM } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { getLocalizedPricingFaq } from '../../data/pricingFaq';
 import { useLocale } from '../../features/i18n';
@@ -123,7 +122,7 @@ function BetaNotice({ children }: { children: ReactNode }) {
         severity="info"
         variant="outlined"
         sx={(theme) => ({
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
           borderColor: alpha(theme.palette.info.main, 0.3),
           bgcolor: alpha(theme.palette.info.main, 0.06),
           '& .MuiAlert-message': { width: '100%' },
@@ -257,7 +256,7 @@ export default function PricingPage() {
             {steps.map((step, idx) => (
               <Grid size={{ xs: 12, md: 4 }} key={step.title}>
                 <StepCard
-                  number={idx + 1}
+                  number={idx + 1 }
                   title={step.title}
                   description={step.description}
                   icon={step.icon}

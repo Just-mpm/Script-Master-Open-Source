@@ -30,8 +30,9 @@ vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
 }));
 
-vi.mock('../../src/theme/tokens', () => ({
-  ICON_SIZE_LG: 24,
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, ICON_SIZE_LG: 24,
   ICON_SIZE_MD: 20,
   GAP_MEDIUM: 8,
   GAP_COMPACT: 4,
@@ -40,8 +41,8 @@ vi.mock('../../src/theme/tokens', () => ({
   WHITE_16: 'rgba(255,255,255,0.16)',
   BRAND_GLOW_FOCUS: '0 0 0 3px rgba(46, 117, 182, 0.45)',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(46,117,182,0.12)',
-  BRAND_PRIMARY_GLOW: 'rgba(46,117,182,0.35)',
-}));
+  BRAND_PRIMARY_GLOW: 'rgba(46,117,182,0.35)', };
+});;
 
 const defaultProps = {
   script: '',
@@ -95,15 +96,15 @@ describe('ScriptEditor', () => {
 
   it('exibe o contador de caracteres com formatação pt-BR', () => {
     render(<ScriptEditor {...defaultProps} script='texto' />, { wrapper: Wrapper });
-    // toLocaleString() formata com ponto em pt-BR: "5 / 50.000"
-    expect(screen.getByText('5 / 50.000')).toBeDefined();
+    // toLocaleString() formata com ponto em pt-BR: "5 / 25.000"
+    expect(screen.getByText('5 / 25.000')).toBeDefined();
   });
 
   it('exibe contador em vermelho quando ultrapassa limite', () => {
-    const longScript = 'a'.repeat(50001);
+    const longScript = 'a'.repeat(25001);
     render(<ScriptEditor {...defaultProps} script={longScript} />, { wrapper: Wrapper });
-    // O locale pode formatar 50001 e 50000 de forma diferente
-    const counter = screen.getByText(/50.001.*50.000/);
+    // O locale pode formatar 25001 e 25000 de forma diferente
+    const counter = screen.getByText(/25.001.*25.000/);
     expect(counter).toBeDefined();
   });
 

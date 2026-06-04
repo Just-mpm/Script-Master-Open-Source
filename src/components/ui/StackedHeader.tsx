@@ -48,8 +48,7 @@ import {
   SUCCESS_GLOW,
   WARNING_BG_SUBTLE,
   WARNING_BORDER,
-  WARNING_GLOW,
-} from '../../theme/tokens';
+  WARNING_GLOW, RADIUS_XS } from '../../theme/tokens';
 
 // ─── Tipos públicos ────────────────────────────────────────
 
@@ -124,7 +123,7 @@ const VARIANT_DEFAULTS = {
     titleVariant: 'subtitle2' as StackedHeaderTitleVariant,
     descriptionVariant: 'caption' as StackedHeaderDescriptionVariant,
     padding: { px: { xs: 2, md: 2.5 }, py: { xs: 1.25, md: 1.5 } },
-    borderRadius: 2,
+    borderRadius: RADIUS_XS,
   },
   plain: {
     titleVariant: 'overline' as StackedHeaderTitleVariant,
@@ -723,7 +722,7 @@ export function StackedHeader(props: StackedHeaderProps) {
         timeout="auto"
         id={collapseId}
         unmountOnExit={unmountOnExit}
-        {...slotProps?.collapse}
+        {...slotProps?.collapse }
       >
         <Stack
           spacing={2}
@@ -735,6 +734,19 @@ export function StackedHeader(props: StackedHeaderProps) {
           {children}
         </Stack>
       </CollapseSlot>
+    ) : null;
+
+  const staticContent =
+    !collapsible && children ? (
+      <Stack
+        spacing={2}
+        sx={{
+          px: { xs: densityTokens.collapsePx.xs, md: densityTokens.collapsePx.md },
+          pb: { xs: densityTokens.collapsePb.xs, md: densityTokens.collapsePb.md },
+        }}
+      >
+        {children}
+      </Stack>
     ) : null;
 
   // ── Action em modo 'bottom': renderizado DEPOIS do collapseContent, dentro
@@ -788,6 +800,7 @@ export function StackedHeader(props: StackedHeaderProps) {
       >
         {headerContent}
         {collapseContent}
+        {staticContent}
         {bottomActionBlock}
       </Alert>
     );
@@ -805,6 +818,7 @@ export function StackedHeader(props: StackedHeaderProps) {
       >
         {headerContent}
         {collapseContent}
+        {staticContent}
         {bottomActionBlock}
       </RootComponent>
     );
@@ -816,6 +830,7 @@ export function StackedHeader(props: StackedHeaderProps) {
     <RootComponent id={id} className={className} role={role} sx={sx}>
       {headerContent}
       {collapseContent}
+      {staticContent}
       {bottomActionBlock}
     </RootComponent>
   );

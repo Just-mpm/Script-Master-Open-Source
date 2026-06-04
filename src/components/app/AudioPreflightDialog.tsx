@@ -11,6 +11,7 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useLocale } from '../../features/i18n';
+import { RADIUS_XS } from '../../theme/tokens';
 
 export interface AudioPreflightStep {
   type: 'audio' | 'chunking' | 'scene_prompts' | 'image';
@@ -163,13 +164,13 @@ export function AudioPreflightDialog({
               {t('audioPreflight.loadingText')}
             </Typography>
           </Stack>
-        ) : null}
+        ) : null }
 
         {isUnavailable ? (
           <Alert severity="warning" variant="outlined">
             {error ?? t('audioPreflight.unavailableText')}
           </Alert>
-        ) : null}
+        ) : null }
 
         {preflight ? (
           <Stack spacing={2.5}>
@@ -198,7 +199,7 @@ export function AudioPreflightDialog({
                   sx={{
                     border: '1px solid',
                     borderColor: 'divider',
-                    borderRadius: 2,
+                    borderRadius: RADIUS_XS,
                     px: 2,
                     py: 1.5,
                   }}
@@ -263,7 +264,7 @@ export function AudioPreflightDialog({
               ))}
             </Stack>
           </Stack>
-        ) : null}
+        ) : null }
       </DialogContent>
 
       <DialogActions>
@@ -273,7 +274,7 @@ export function AudioPreflightDialog({
         <Button
           onClick={onConfirm}
           variant="contained"
-          disabled={loading || !preflight || !preflight.canProceed}
+          disabled={loading || !preflight || !preflight.canProceed }
         >
           {t('audioPreflight.confirmBtn')}
         </Button>

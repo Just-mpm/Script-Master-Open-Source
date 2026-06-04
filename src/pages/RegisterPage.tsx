@@ -24,6 +24,7 @@ import {
   BRAND_PRIMARY_GLOW,
   GAP_RELAXED,
   TEXT_SECONDARY,
+  BRAND_PRIMARY_GLOW_SOFT,
 } from '../theme/tokens';
 import { authTextFieldSx, authLinkSx } from '../theme/authStyles';
 import { glassPanelSx } from '../theme/surfaces';
@@ -95,7 +96,7 @@ export function RegisterPage() {
 
       {/* Landmark main fica em App.tsx — este Box é apenas container de conteúdo */}
       <Box
-        tabIndex={-1}
+        tabIndex={-1 }
         sx={{
           flex: 1,
           display: 'grid',
@@ -133,7 +134,7 @@ export function RegisterPage() {
                             bgcolor: 'action.hover',
                             color: 'primary.main',
                             flexShrink: 0,
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            border: '1px solid ${WHITE_06}',
                             transition: 'background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                             '&:hover': {
                               bgcolor: 'action.selected',
@@ -215,7 +216,7 @@ export function RegisterPage() {
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
-                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
+                        boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
                       },
                       '&:active': {
                         transform: 'translateY(0)',
@@ -288,14 +289,14 @@ export function RegisterPage() {
                         size="large"
                         fullWidth
                         disabled={isSubmitting}
-                        startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined}
+                        startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined }
                         sx={{
                           mt: 0.5,
                           py: 1.5,
                           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover:not(.Mui-disabled)': {
                             transform: 'translateY(-1px)',
-                            boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px rgba(46, 117, 182, 0.12)`,
+                            boxShadow: `0 20px 48px ${BRAND_PRIMARY_GLOW}, 0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
                           },
                           '&:active:not(.Mui-disabled)': {
                             transform: 'translateY(0)',

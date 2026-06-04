@@ -193,7 +193,7 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
           >
             {t('assistant.interview.backToOptions')}
           </Button>
-        ) : null}
+        ) : null }
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -307,7 +307,7 @@ function SingleQuestion({ question, state, onStateChange, focusKey }: SingleQues
                 <Typography variant="caption" sx={{ color: TEXT_SECONDARY, lineHeight: 1.4 }}>
                   {option.description}
                 </Typography>
-              ) : null}
+              ) : null }
             </Box>
           </Box>
         );
@@ -513,7 +513,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
       <Button
         variant="contained"
         onClick={handleSubmit}
-        disabled={!allAnswered}
+        disabled={!allAnswered }
         endIcon={<Check sx={{ fontSize: ICON_SIZE_SM }} />}
         sx={{ alignSelf: 'flex-end' }}
       >
@@ -549,7 +549,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
               <Typography variant="caption" sx={{ color: TEXT_SECONDARY }}>
                 {t('assistant.interview.questionCount', { answered: answeredCount, total: questions.length })}
               </Typography>
-            ) : null}
+            ) : null }
           </Stack>
 
           {/* Tabs para multi-question */}
@@ -585,7 +585,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
                         </Typography>
                         {isQuestionAnswered(index) ? (
                           <Check sx={{ fontSize: 14, color: 'success.main' }} />
-                        ) : null}
+                        ) : null }
                       </Stack>
                     }
                   />
@@ -617,7 +617,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
                   size="small"
                   startIcon={<ArrowBack sx={{ fontSize: ICON_SIZE_SM }} />}
                   onClick={handlePrevTab}
-                  disabled={activeTab === 0}
+                  disabled={activeTab === 0 }
                   sx={{ textTransform: 'none', fontSize: '0.75rem' }}
                 >
                   {t('assistant.interview.previous')}
@@ -633,14 +633,14 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
                       ? t('assistant.interview.reviewAnswers')
                       : t('assistant.interview.next')}
                   </Button>
-                ) : null}
+                ) : null }
               </Stack>
             </>
           ) : (
             /* Single question */
             <>
               <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.5 }}>
-                {questions[0].question}
+                {questions[0].question }
               </Typography>
               <SingleQuestion
                 question={questions[0]}
@@ -659,7 +659,7 @@ export function InterviewPanel({ interview, onAnswer }: InterviewPanelProps) {
                 >
                   {t('assistant.interview.send')}
                 </Button>
-              ) : null}
+              ) : null }
             </>
           )}
         </Stack>

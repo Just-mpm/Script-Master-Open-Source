@@ -224,7 +224,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                       fontWeight: 600,
                     }}
                   />
-                ) : null}
+                ) : null }
               </Stack>
             </Box>
           </Stack>
@@ -232,7 +232,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
         </ButtonBase>
 
         <Collapse in={expanded} timeout={180}>
-          <Stack spacing={GAP_COMPACT * 0.75} sx={{ mt: 1 }}>
+          <Stack spacing={GAP_COMPACT * 0.75 } sx={{ mt: 1 }}>
             {tasks.map((task) => (
               <Box
                 key={task.id}
@@ -276,7 +276,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                         >
                           {task.description}
                         </Typography>
-                      ) : null}
+                      ) : null }
                       {task.subtasks.length > 0 ? (
                         <Stack spacing={0.25} sx={{ mt: 0.5 }}>
                           {task.subtasks.map((subtask) => (
@@ -291,7 +291,7 @@ export function PlanWidget({ tasks, isExpanded, onToggle }: PlanWidgetProps) {
                             </Stack>
                           ))}
                         </Stack>
-                      ) : null}
+                      ) : null }
                     </Box>
                     {/* Chips de status — quebram para baixo em mobile */}
                     <Stack

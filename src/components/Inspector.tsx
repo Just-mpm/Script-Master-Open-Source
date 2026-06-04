@@ -33,7 +33,7 @@ import { EmotionSelector } from '../features/studio/components/EmotionSelector';
 import type { EmotionType } from '../features/studio/types';
 import { useShallow } from 'zustand/react/shallow';
 import { insetPanelSx } from '../theme/surfaces';
-import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM } from '../theme/tokens';
+import { ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, RADIUS_XS } from '../theme/tokens';
 import { createLogger } from '../lib/logger';
 import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 import { useLocale } from '../features/i18n';
@@ -82,11 +82,11 @@ function VoiceTabPanel({
   return (
     <Box
       role="tabpanel"
-      hidden={value !== activeValue}
+      hidden={value !== activeValue }
       id={`voice-panel-${value}`}
       aria-labelledby={`voice-tab-${value}`}
     >
-      {value === activeValue ? children : null}
+      {value === activeValue ? children : null }
     </Box>
   );
 }
@@ -486,7 +486,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
           onChange={(event) => setAudioProfile(event.target.value)}
           disabled={isGenerating}
           placeholder={t('studio.inspector.directionFields.characterPlaceholder')}
-          helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined}
+          helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined }
         />
 
         <TextField
@@ -499,7 +499,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
           onChange={(event) => setScene(event.target.value)}
           disabled={isGenerating}
           placeholder={t('studio.inspector.directionFields.environmentPlaceholder')}
-          helperText={!scene ? t('studio.inspector.directionFields.environmentHelper') : undefined}
+          helperText={!scene ? t('studio.inspector.directionFields.environmentHelper') : undefined }
         />
 
         <Grid container spacing={1.5}>
@@ -534,7 +534,7 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
               }}
               disabled={isGenerating}
               placeholder={t('studio.inspector.directionFields.accentPlaceholder')}
-              error={styleNotes.length === MAX_STYLE_NOTES}
+              error={styleNotes.length === MAX_STYLE_NOTES }
               helperText={styleNotes.length === MAX_STYLE_NOTES
                 ? t('studio.inspector.directionFields.accentLimitReached', { limit: MAX_STYLE_NOTES })
                 : !styleNotes
@@ -656,9 +656,9 @@ export const Inspector = React.memo(function Inspector({ isGenerating }: Inspect
                       title={t('common.warning')}
                       description={referenceImageWarning}
                       onClose={() => setReferenceImageWarning(null)}
-                      slotProps={{ root: { sx: { borderRadius: 2 } } }}
+                      slotProps={{ root: { sx: { borderRadius: RADIUS_XS } } }}
                     />
-                  ) : null}
+                  ) : null }
                   <Stack
                     direction={{ xs: 'column', sm: 'row' }}
                     spacing={GAP_MEDIUM}

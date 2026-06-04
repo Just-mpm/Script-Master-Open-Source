@@ -242,7 +242,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
                   })}
                 >
                   <ListItemText
-                    primary={memory.content.length > 320 ? `${memory.content.slice(0, 320)}…` : memory.content}
+                    primary={memory.content.length > 320 ? `${memory.content.slice(0, 320)}…` : memory.content }
                     secondary={new Date(memory.createdAt).toLocaleString()}
                     slotProps={{
                       primary: {

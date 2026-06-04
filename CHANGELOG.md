@@ -7,6 +7,43 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.127.0] - 2026-06-04
+
+### Adicionado
+
+- **Marketing Demo Video — player Remotion na LandingPage** (`src/features/public-demo-video/`, +826 linhas, 3 arquivos):
+  - `MarketingDemoComposition.tsx` (+659 linhas): composição Remotion com layout responsivo (desktop/mobile), tipografia estilizada com gradiente e superfície, exibição de funcionalidades em timeline animada
+  - `MarketingDemoPlayer.tsx` (+165 linhas): wrapper do `@remotion/player` com breakpoint responsivo (`useMediaQuery`), fallback via `React.lazy` + `Suspense`, ícone de play central
+  - `index.ts`: barrel export do `MarketingDemoPlayer`
+- `LandingPage.tsx` (+30/-16): lazy loading do `MarketingDemoPlayer` com `React.lazy` + `Suspense` + `HeroDemoFallback`; `aspectRatio` responsivo adicionado ao container; ajuste de `maxWidth`
+
+- **StackedHeader — Onda 4 de migração** (+117/-139 linhas):
+  - `SpeedPaintPage.tsx` (+24/-62): seção de controles do speed paint migrada de `<Box><Collapse>` + `ExpandMore`/`ExpandLess` para `<StackedHeader collapsible>` + `useCollapsibleSection`
+  - `VideoExportPanel.tsx` (+27/-27): painel de exportação de vídeo migrado para `StackedHeader` — import adicionado, `Collapse` removido
+  - `SpeedPaintExportPanel.tsx` (+70/-73): painel de exportação speed paint migrado para `StackedHeader` — import adicionado, colapso inline substituído
+
+### Alterado
+
+- **Tokens de borda arredondada adotados em 20+ componentes**: valores inline `borderRadius: 2` / `borderRadius: 3` substituídos por `RADIUS_XS` e `RADIUS_SM` do sistema de tokens. Arquivos migrados: `GuestMobileNav`, `MobileBottomNav`, `PwaInstallPrompt`, `PwaUpdatePrompt`, `Sidebar`, `SidebarNavItem`, `WizardContainer`, `AnimationDurationSelector`, `BatchOrchestrator`, `ImageUpload`, `AboutPage`, `PricingPage`, `FeatureCard`, `QueueStaging`, `Inspector`, `Configuracoes`, `ImageStudio`, `AssistantComposer`, `AssistantSettingsPanel`, `CallbackPage`, `LocaleSelector` e outros (+14 tokens importados em 8 novos arquivos)
+
+- **Mocks de tokens migrados para `async (importOriginal)` em 30+ arquivos de teste**: `vi.mock('../../src/theme/tokens', () => ({...}))` substituído por `vi.mock('../../src/theme/tokens', async (importOriginal) => { const actual = await importOriginal(); return { ...actual, ...overrides } })`. Isso elimina valores hardcoded frágeis e garante que os testes sempre reflitam os tokens reais do tema. Arquivos: `AssistantComposer`, `AssistantHistoryPanel`, `AssistantMemoriesPanel`, `AssistantMessages`, `AssistantSettingsPanel`, `assistantUi`, `ScriptEditor`, `VideoPreview`, `FAQAccordion`, `HeroSection`, `PageLayout`, `PricingCard`, `ProductDemoSection`, `PublicHeader`, `TestimonialsSection`, `UseCasesSection`, `marketingCards`, `AudioContext`, `AuthActionPage`, `LoginPage`, `OnboardingPage`, `RegisterPage`, `SpeedPaintPage`, `CookiesPage`, `FaqPage`, `PrivacyPage`, `TermsPage`, `BatchOrchestrator`, `ImageUpload`, `CaptionEditorPanel`, `remotion-components` e outros
+
+- **`tests/__mocks__/tokensMock.ts` simplificado** (+17/-58): mock refatorado — tokens obsoletos removidos (`APP_BORDER`, `GLASS_BG`, `SUCCESS_*`, `ERROR_*`, `WARNING_*`, `ICON_SIZE_MD`, `BRAND_SECONDARY_GLOW_SOFT`, `GAP_*`, etc), tipo `TokensModule` exportado, `createTokensMock` e `defaultTokensMock` removidos
+
+- **StackedHeader.tsx** (+19/-4): tokens de densidade `collapsePx` e `collapsePb` agora responsivos (`xs`/`md`) — padding horizontal e inferior do conteúdo colapsado se adaptam ao breakpoint
+
+- **`docs/audits/product-design-2026-06-04/`** — nova auditoria de design de produto para o fluxo público de descoberta e conversão
+
+### Removido
+
+- **`docs/scan/stacked-header-gaps-audit.md`** (-421 linhas): auditoria de lacunas do StackedHeader concluída e arquivada — todas as ações corretivas endereçadas nas ondas 3-4
+
+### Corrigido
+
+- **Consistência de espaçamento em template literals**: `attempt + 1/${total}` → `attempt + 1 }/${total}` em 10+ arquivos (`interceptor.ts`, `rate-limiter.ts`, `useAudioGenerator.ts`, `speedPaintRenderController.tsx`, `speedPaintService.ts`, `projectQueueAdapter.ts`, `SubtitlePreview.tsx`, `ScrollingPhrase.tsx`, `useBatchDownload.ts`, `ThinkingShimmer.tsx`) — formatação uniforme de expressões `${expr }` com trailing space
+
+---
+
 ## [0.126.1] - 2026-06-03
 
 ### Alterado

@@ -45,7 +45,7 @@ import { CreditBlockedMessage } from './CreditBlockedMessage';
 import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT, WHITE_12 } from '../theme/tokens';
 import { StackedHeader } from './ui';
 import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 
@@ -284,7 +284,7 @@ export function ImageStudio() {
       <Grid size={{ xs: 12, lg: 4, xl: 3.5 }}>
           <StackedHeader
             variant="glass"
-            collapsible={!isDesktop}
+            collapsible={!isDesktop }
             expanded={isSidebarOpen}
             onToggle={() => {
               if (!isDesktop) {
@@ -344,7 +344,7 @@ export function ImageStudio() {
                       sx={{
                         borderStyle: 'dashed',
                         minHeight: 56,
-                        borderColor: 'rgba(255, 255, 255, 0.12)',
+                        borderColor: WHITE_12,
                         color: 'text.secondary',
                         transition: 'border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease',
                         '&:hover': {
@@ -450,7 +450,7 @@ export function ImageStudio() {
                     ) : (
                       <Button
                         onClick={handleGenerate}
-                        disabled={!prompt.trim() || creditsExhausted}
+                        disabled={!prompt.trim() || creditsExhausted }
                         variant="contained"
                         size="large"
                         startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
@@ -551,7 +551,7 @@ export function ImageStudio() {
                 )}
               </Box>
 
-              {creditsExhausted ? <CreditBlockedMessage show={true} /> : null}
+              {creditsExhausted ? <CreditBlockedMessage show={true} /> : null }
               {/* GAP-07: Alert de erro migrado para StackedHeader. Texto do erro é o `title` (sem descrição separada). */}
               {error && !creditsExhausted ? (
                 <StackedHeader
@@ -560,9 +560,9 @@ export function ImageStudio() {
                   alertVariant="outlined"
                   title={error}
                 />
-              ) : null}
+              ) : null }
               {/* Fora do escopo StackedHeader: Snackbar/toast auto-hide (successMsg) */}
-              {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null}
+              {successMsg ? <Alert variant="outlined" severity="success">{successMsg}</Alert> : null }
             </Stack>
           </Paper>
 
@@ -654,7 +654,7 @@ export function ImageStudio() {
                             sx={{
                               position: 'absolute',
                               inset: 0,
-                              background: 'linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.5) 100%)',
+                              background: 'linear-gradient(180deg, transparent 40%, ${BLACK_50} 100%)',
                               opacity: 0,
                               transition: 'opacity 0.25s ease',
                               pointerEvents: 'none',
@@ -662,7 +662,7 @@ export function ImageStudio() {
                           />
                         </Box>
                         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ p: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Tooltip title={img.prompt || img.name}>
+                          <Tooltip title={img.prompt || img.name }>
                             <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {img.name}
                             </Typography>
@@ -706,7 +706,7 @@ export function ImageStudio() {
     {/* Dialog de confirmação de exclusão */}
     <DeleteConfirmationDialog
       open={Boolean(imageToDelete)}
-      itemName={imageToDelete?.name ?? null}
+      itemName={imageToDelete?.name ?? null }
       deletingItem={deletingImage}
       deleteError={imageDeleteError}
       titleIdleLabel={t('imageStudio.deleteTitle')}
@@ -719,7 +719,7 @@ export function ImageStudio() {
 
     {/* Snackbar: erro de galeria quando sidebar está colapsado (mobile) */}
     <Snackbar
-      open={Boolean(imagesError) && !sidebarSection.expanded}
+      open={Boolean(imagesError) && !sidebarSection.expanded }
       autoHideDuration={8000}
       onClose={() => setImagesError(null)}
       message={imagesError}

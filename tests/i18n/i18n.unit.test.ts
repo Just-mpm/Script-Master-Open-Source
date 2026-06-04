@@ -156,19 +156,19 @@ describe('dicionários', () => {
 
   it('possui chaves de landing page em pt-BR', () => {
     expect(getNestedValue(dictionaries['pt-BR'], 'landing.hero.title')).toBe(
-      'Transforme roteiros em arte com IA',
+      'Nunca foi tão fácil criar vídeos para YouTube',
     );
   });
 
   it('possui chaves de landing page em en', () => {
     expect(getNestedValue(dictionaries.en, 'landing.hero.title')).toBe(
-      'Turn scripts into art with AI',
+      'It has never been easier to create YouTube videos',
     );
   });
 
   it('possui chaves de landing page em es', () => {
     expect(getNestedValue(dictionaries.es, 'landing.hero.title')).toBe(
-      'Convierte guiones en arte con IA',
+      'Nunca fue tan fácil crear videos para YouTube',
     );
   });
 

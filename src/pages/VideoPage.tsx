@@ -283,7 +283,7 @@ export function VideoPage({
         fps={videoFps}
         durationInFrames={durationInFrames}
         ratio={sceneRatio}
-        captions={captions.length > 0 ? captions : undefined}
+        captions={captions.length > 0 ? captions : undefined }
         subtitleStyle={mergedSubtitleStyle}
         showCaptionToggle={true}
         captionVisible={captionVisible}
@@ -348,7 +348,7 @@ export function VideoPage({
               </Stack>
 
               <SubtitleInlineEditor
-                hasCaptions={captions.length > 0}
+                hasCaptions={captions.length > 0 }
                 subtitleStyle={subtitleStyle}
                 onSubtitleStyleChange={setSubtitleStyle}
                 ratio={sceneRatio}
@@ -512,10 +512,10 @@ export function VideoPage({
                     fps={videoFps}
                     durationInFrames={durationInFrames}
                     ratio={sceneRatio}
-                    projectId={currentProjectId ?? undefined}
+                    projectId={currentProjectId ?? undefined }
                     userId={userId}
                     exporter={videoExporter}
-                    captions={captions.length > 0 ? captions : undefined}
+                    captions={captions.length > 0 ? captions : undefined }
                     subtitleStyle={mergedSubtitleStyle}
                     includeSubtitles={includeSubtitles}
                     onIncludeSubtitlesChange={setIncludeSubtitles}

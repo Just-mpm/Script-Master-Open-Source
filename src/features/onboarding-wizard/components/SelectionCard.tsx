@@ -11,7 +11,7 @@ import Box from '@mui/material/Box';
 import { alpha, useTheme } from '@mui/material/styles';
 import { motion } from 'motion/react';
 import Check from '@mui/icons-material/Check';
-import { BRAND_PRIMARY } from '../../../theme/tokens';
+import { BRAND_PRIMARY, RADIUS_SM, RADIUS_XS } from '../../../theme/tokens';
 
 type SelectionMode = 'single' | 'multi';
 
@@ -63,7 +63,7 @@ export function SelectionCard({
           alignItems: multiline ? 'flex-start' : 'center',
           gap: 1.5,
           p: multiline ? 2 : 1.5,
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
           cursor: 'pointer',
           border: `1px solid ${selected ? BRAND_PRIMARY : alpha(theme.palette.common.white, 0.08)}`,
           backgroundColor: selected
@@ -79,7 +79,7 @@ export function SelectionCard({
         <Stack
           sx={{
             p: multiline ? 1.2 : 1,
-            borderRadius: 2,
+            borderRadius: RADIUS_XS,
             backgroundColor: selected
               ? alpha(BRAND_PRIMARY, 0.16)
               : alpha(theme.palette.common.white, 0.06),

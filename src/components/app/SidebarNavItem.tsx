@@ -87,7 +87,7 @@ export function SidebarNavItem({
           borderRadius: '0 2px 2px 0',
           backgroundColor: BRAND_PRIMARY,
           // Accent usa glow laranja, padrão usa glow azul
-          boxShadow: `0 0 12px ${accent ? BRAND_SECONDARY_GLOW_SOFT : BRAND_PRIMARY_GLOW_SOFT}`,
+          boxShadow: `0 0 12px ${accent ? BRAND_SECONDARY_GLOW_SOFT : BRAND_PRIMARY_GLOW_SOFT }`,
         }
       : undefined,
     '&:hover': {
@@ -104,7 +104,7 @@ export function SidebarNavItem({
           <IconButton
             component={Link}
             to={to}
-            aria-current={isActive ? 'page' : undefined}
+            aria-current={isActive ? 'page' : undefined }
             aria-label={label}
             sx={{
               width: 44,
@@ -125,7 +125,7 @@ export function SidebarNavItem({
     <ListItemButton
       component={Link}
       to={to}
-      aria-current={isActive ? 'page' : undefined}
+      aria-current={isActive ? 'page' : undefined }
       selected={isActive}
       sx={itemSx}
     >

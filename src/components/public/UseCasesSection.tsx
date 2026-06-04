@@ -10,7 +10,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Link } from 'react-router-dom';
 import { getLocalizedUseCases } from '../../data/useCases';
 import { useLocale } from '../../features/i18n';
-import { APP_MAX_WIDTH, TEXT_SECONDARY, BRAND_SECONDARY } from '../../theme/tokens';
+import { APP_MAX_WIDTH, TEXT_SECONDARY, BRAND_SECONDARY, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
 import { staggerContainer, fadeInUp, VIEWPORT_ONCE, SPRING_SMOOTH } from './animations';
 
@@ -93,7 +93,7 @@ export function UseCasesSection() {
                         sx={{
                           width: 48,
                           height: 48,
-                          borderRadius: 2,
+                          borderRadius: RADIUS_XS,
                           display: 'grid',
                           placeItems: 'center',
                           bgcolor: 'action.hover',

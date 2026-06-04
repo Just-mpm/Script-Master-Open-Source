@@ -51,6 +51,9 @@ import {
   APP_SURFACE,
   WHITE_05,
   WHITE_015,
+  RADIUS_SM,
+  RADIUS_XS,
+  BLACK_40,
 } from '../../theme/tokens';
 import { glassSurfaceSx } from '../../theme/surfaces';
 
@@ -306,7 +309,7 @@ export function MobileBottomNav() {
                   '&.Mui-selected': {
                     color: 'secondary.light',
                   },
-                } : undefined}
+                } : undefined }
               />
             );
           })}
@@ -355,7 +358,7 @@ export function MobileBottomNav() {
           '& .MuiBackdrop-root': {
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backgroundColor: BLACK_40,
           },
           // Drawer acima da bottom nav (1200) mas abaixo do ActionBar (1400)
           '& .MuiModal-root': {
@@ -385,13 +388,13 @@ export function MobileBottomNav() {
                 ...glassSurfaceSx(theme),
                 px: 1.25,
                 py: 1,
-                borderRadius: 3,
+                borderRadius: RADIUS_SM,
               })}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Avatar
                   alt={user.displayName ?? t('studio.header.user.alt')}
-                  src={user.photoURL ?? undefined}
+                  src={user.photoURL ?? undefined }
                   slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
                   sx={{ width: 32, height: 32, bgcolor: 'action.hover' }}
                 >
@@ -431,10 +434,10 @@ export function MobileBottomNav() {
                 <ListItemButton
                   key={item.to}
                   onClick={() => handleNavigate(item.to, item.action)}
-                  aria-current={isActive ? 'page' : undefined}
+                  aria-current={isActive ? 'page' : undefined }
                   selected={isActive}
                   sx={{
-                    borderRadius: 2,
+                    borderRadius: RADIUS_XS,
                     mb: 0.5,
                     color: isActive ? 'common.white' : 'text.secondary',
                     bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -467,7 +470,7 @@ export function MobileBottomNav() {
         <Box sx={{ px: 1, py: 1 }}>
           <ListItemButton
             onClick={() => { closeDrawer(); openAnalyticsConsentDialog(); }}
-            sx={{ borderRadius: 2, color: 'text.secondary' }}
+            sx={{ borderRadius: RADIUS_XS, color: 'text.secondary' }}
           >
             <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
               <Cookie sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
@@ -476,20 +479,20 @@ export function MobileBottomNav() {
           </ListItemButton>
           <ListItemButton
             onClick={(e) => setLocaleAnchorEl(e.currentTarget)}
-            sx={{ borderRadius: 2, color: 'text.secondary' }}
+            sx={{ borderRadius: RADIUS_XS, color: 'text.secondary' }}
           >
             <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
               <Language sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
             </ListItemIcon>
             <ListItemText
-              primary={LOCALE_CONFIGS.find((c) => c.code === locale)?.label ?? locale}
+              primary={LOCALE_CONFIGS.find((c) => c.code === locale)?.label ?? locale }
               slotProps={{ primary: { variant: 'body2' } }}
             />
           </ListItemButton>
           <ListItemButton
             onClick={handleLogout}
             sx={{
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               color: 'error.main',
               transition: 'background-color 0.2s ease',
               '&:hover': { bgcolor: 'action.hover' },
@@ -511,7 +514,7 @@ export function MobileBottomNav() {
               window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
             }}
             sx={{
-              borderRadius: 2,
+              borderRadius: RADIUS_XS,
               color: 'error.main',
               opacity: 0.7,
               transition: 'background-color 0.2s ease, opacity 0.2s ease',
@@ -547,7 +550,7 @@ export function MobileBottomNav() {
         {LOCALE_CONFIGS.map((config) => (
           <MenuItem
             key={config.code}
-            selected={config.code === locale}
+            selected={config.code === locale }
             onClick={() => {
               if (config.code !== locale) {
                 setLocale(config.code as Locale);

@@ -5,7 +5,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useLocale } from '../../i18n';
 import { alpha, useTheme } from '@mui/material/styles';
-import { BRAND_PRIMARY_GLOW } from '../../../theme/tokens';
+import { BRAND_PRIMARY_GLOW, RADIUS_SM } from '../../../theme/tokens';
 
 interface AIModeToggleProps {
   /** Quando true, o modo IA está ativo (aguardando seleção) */
@@ -71,7 +71,7 @@ export function AIModeToggle({
           gap: 1.25,
           px: { xs: 1.5, sm: 2 },
           py: 1,
-          borderRadius: 3,
+          borderRadius: RADIUS_SM,
           minWidth: 0,
           border: 'none',
           cursor: disabled ? 'default' : 'pointer',

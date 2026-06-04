@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
@@ -32,11 +31,11 @@ import {
   BRAND_PRIMARY_LIGHT,
   WHITE_14,
   WARNING_BG_SUBTLE,
-  ERROR_BG_SUBTLE,
-} from '../../../theme/tokens';
+  ERROR_BG_SUBTLE, RADIUS_XS } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 import { useLocale } from '../../i18n';
+import { StackedHeader } from '../../../components/ui';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -172,30 +171,31 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
     setFileName(sanitized);
   };
 
+  if (!hasContent) {
+    return null;
+  }
+
   return (
-    <Collapse in={hasContent} unmountOnExit>
-      <Box
-        id="video-export-panel"
-        sx={(theme): SystemStyleObject<Theme> => ({
-          ...glassSurfaceSx(theme),
-          p: { xs: 2.5, md: 3 },
-          borderRadius: { xs: 3, md: 4 },
-        })}
-      >
-        {/* Cabeçalho */}
-        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: exporter.isRendering || exporter.outputUrl ? 2 : 0 }}>
-          <VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-            {t('video.exportButton')}
-          </Typography>
-        </Stack>
+    <StackedHeader
+      id="video-export-panel"
+      variant="glass"
+      icon={<VideoFile sx={{ fontSize: 22, color: 'primary.main' }} />}
+      title={t('video.exportButton')}
+      titleVariant="subtitle2"
+      density="compact"
+      sx={(theme): SystemStyleObject<Theme> => ({
+        ...glassSurfaceSx(theme),
+        borderRadius: { xs: 3, md: 4 },
+      })}
+    >
+      <Box>
 
         {/* Alerta: navegador não suportado */}
         {exporter.canRender === false && (
           <Alert
             severity="warning"
             icon={<WarningAmber sx={{ fontSize: 20 }} />}
-            sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
+            sx={{ mb: 2, borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE }}
           >
             {exporter.error || t('video.exportNotSupported')}
           </Alert>
@@ -210,7 +210,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
                 <Close sx={{ fontSize: 18 }} />
               </IconButton>
             }
-            sx={{ mb: 2, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE }}
+            sx={{ mb: 2, borderRadius: RADIUS_XS, bgcolor: ERROR_BG_SUBTLE }}
           >
             {exporter.error}
           </Alert>
@@ -219,7 +219,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
         {hasContent && !isDurationReady && (
           <Alert
             severity="info"
-            sx={{ mb: 2, borderRadius: 2 }}
+            sx={{ mb: 2, borderRadius: RADIUS_XS }}
           >
             {durationPendingMessage}
           </Alert>
@@ -230,7 +230,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
           <Alert
             severity="warning"
             icon={<WarningAmber sx={{ fontSize: 20 }} />}
-            sx={{ mb: 2, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
+            sx={{ mb: 2, borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE }}
           >
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {t('video.speedPaintWarningsTitle')}
@@ -345,7 +345,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               <Button
                 variant="contained"
                 size="small"
-                disabled={!isExportable}
+                disabled={!isExportable }
                 onClick={handleStartExport}
                 startIcon={<VideoFile sx={{ fontSize: ICON_SIZE_MD }} />}
                 sx={{
@@ -381,7 +381,7 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
             onDownload={exporter.handleDownload}
             onReset={exporter.reset}
             statusText={exporter.renderStatusText}
-            blobSizeBytes={exporter.outputBlob?.size}
+            blobSizeBytes={exporter.outputBlob?.size }
           />
         )}
 
@@ -395,12 +395,12 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
                 <Close sx={{ fontSize: 18 }} />
               </IconButton>
             }
-            sx={{ mt: 1.5, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE }}
+            sx={{ mt: 1.5, borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE }}
           >
             {exporter.saveWarning}
           </Alert>
         )}
       </Box>
-    </Collapse>
+    </StackedHeader>
   );
 });

@@ -37,14 +37,15 @@ vi.mock('react-dropzone', () => ({
 }));
 
 // Mock do tokens
-vi.mock('../../src/theme/tokens', () => ({
-  CYAN_GLOW_SOFT: '0 0 15px rgba(0, 229, 255, 0.15)',
+vi.mock('../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/theme/tokens')>();
+  return { ...actual, CYAN_GLOW_SOFT: '0 0 15px rgba(0, 229, 255, 0.15)',
   BRAND_PRIMARY_GLOW_SOFT: '0 0 15px rgba(0, 229, 255, 0.15)',
   BRAND_PRIMARY: '#00e5ff',
   BRAND_PRIMARY_LIGHT: '#33d1ff',
   BRAND_PRIMARY_GLOW: 'rgba(0, 229, 255, 0.28)',
-  BRAND_GRADIENT: 'linear-gradient(135deg, #2e75b6, #f7941e)',
-}));
+  BRAND_GRADIENT: 'linear-gradient(135deg, #2e75b6, #f7941e)', };
+});;
 
 describe('ImageUpload', () => {
   beforeEach(() => {

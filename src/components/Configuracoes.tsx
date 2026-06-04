@@ -482,10 +482,10 @@ export function Configuracoes() {
               <Grid key={v.id} size={{ xs: 12, sm: 6 }}>
                 <VoiceCard
                   voice={v}
-                  isSelected={voice === v.id}
+                  isSelected={voice === v.id }
                   onSelect={setVoice}
-                  isPlaying={playingId === v.id}
-                  hasError={errorId === v.id}
+                  isPlaying={playingId === v.id }
+                  hasError={errorId === v.id }
                   onPlayPreview={playPreview}
                   previewVoiceLabel={t('studio.inspector.voiceSelection.previewVoice', { voice: v.name })}
                   previewErrorLabel={t('studio.inspector.voiceSelection.previewError')}
@@ -532,7 +532,7 @@ export function Configuracoes() {
               value={audioProfile}
               onChange={(e) => setAudioProfile(e.target.value)}
               placeholder={t('studio.inspector.directionFields.characterPlaceholder')}
-              helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined}
+              helperText={!audioProfile ? t('studio.inspector.directionFields.characterHelper') : undefined }
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -650,10 +650,10 @@ export function Configuracoes() {
                 <Grid key={v.id} size={{ xs: 12, sm: 6 }}>
                   <VoiceCard
                     voice={v}
-                    isSelected={speakerBVoice === v.id}
+                    isSelected={speakerBVoice === v.id }
                     onSelect={setSpeakerBVoice}
-                    isPlaying={playingId === v.id}
-                    hasError={errorId === v.id}
+                    isPlaying={playingId === v.id }
+                    hasError={errorId === v.id }
                     onPlayPreview={playPreview}
                     previewVoiceLabel={t('studio.inspector.voiceSelection.previewVoice', { voice: v.name })}
                     previewErrorLabel={t('studio.inspector.voiceSelection.previewError')}
@@ -675,7 +675,7 @@ export function Configuracoes() {
           <Chip
             size="small"
             variant="outlined"
-            label={localeOptions.find((o) => o.value === locale)?.label ?? locale}
+            label={localeOptions.find((o) => o.value === locale)?.label ?? locale }
           />
         }
       >
@@ -735,7 +735,7 @@ export function Configuracoes() {
                 onClose={() => setToast(null)}
                 slotProps={{ root: { sx: { py: 0 } } }}
               />
-            ) : null}
+            ) : null }
             {resetConfirmOpen ? (
               <StackedHeader
                 variant="alert"
@@ -755,7 +755,7 @@ export function Configuracoes() {
                 actionPlacement="stack"
                 actionAlign="end"
               />
-            ) : null}
+            ) : null }
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ flexShrink: 0 }}>
             {!resetConfirmOpen ? (
@@ -766,7 +766,7 @@ export function Configuracoes() {
               >
                 {t('configuracoes.reset')}
               </Button>
-            ) : null}
+            ) : null }
             <Button variant="contained" onClick={handleSave}>
               {t('configuracoes.save')}
             </Button>

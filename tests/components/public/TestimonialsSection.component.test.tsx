@@ -20,12 +20,13 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
   BRAND_SECONDARY: '#F7941E',
-  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
-}));
+  BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)', };
+});;
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
@@ -145,6 +146,6 @@ describe('TestimonialsSection', () => {
   it('localiza textos dos depoimentos para en', () => {
     localStorage.setItem('s2a_locale', 'en');
     render(<TestimonialsSection />, { wrapper: Wrapper });
-    expect(screen.getByText(/I used to record 2h and edit for days/)).toBeDefined();
+    expect(screen.getByText(/I used to freeze when it was time to record/)).toBeDefined();
   });
 });

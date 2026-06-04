@@ -18,14 +18,15 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-vi.mock('../../../src/theme/tokens', () => ({
-  APP_MAX_WIDTH: 1600,
+vi.mock('../../../src/theme/tokens', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();
+  return { ...actual, APP_MAX_WIDTH: 1600,
   BRAND_GRADIENT: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)',
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)',
   BRAND_SECONDARY: '#F7941E',
-  APP_BORDER: 'rgba(255,255,255,0.08)',
-}));
+  APP_BORDER: 'rgba(255,255,255,0.08)', };
+});;
 
 vi.mock('../../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
@@ -64,20 +65,20 @@ describe('ProductDemoSection', () => {
   it('renderiza o título do roteiro no editor mock', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
     // t('landing.demo.scriptTitle')
-    expect(screen.getByText('Meu Roteiro — Episódio 01')).toBeDefined();
+    expect(screen.getByText('Meu vídeo para YouTube — Episódio 01')).toBeDefined();
   });
 
   it('renderiza as 4 linhas do editor de roteiro', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
-    expect(screen.getByText('Na era digital, o conteúdo é rei.')).toBeDefined();
-    expect(screen.getByText('Mas nem todos têm tempo para gravar.')).toBeDefined();
-    expect(screen.getByText('Com inteligência artificial, qualquer texto vira voz.')).toBeDefined();
-    expect(screen.getByText('E qualquer voz, vira uma história contada.')).toBeDefined();
+    expect(screen.getByText('Hoje vamos transformar uma ideia simples em vídeo.')).toBeDefined();
+    expect(screen.getByText('Primeiro vem o roteiro, depois a narração.')).toBeDefined();
+    expect(screen.getByText('As cenas ajudam o público a acompanhar cada ponto.')).toBeDefined();
+    expect(screen.getByText('No final, você exporta e publica.')).toBeDefined();
   });
 
   it('renderiza o botão de gerar no mock do estúdio', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
-    expect(screen.getByText('Gerar áudio')).toBeDefined();
+    expect(screen.getByText('Gerar narração')).toBeDefined();
   });
 
   it('renderiza a linha de estatísticas', () => {
@@ -86,14 +87,14 @@ describe('ProductDemoSection', () => {
     expect(screen.getByText('4 linhas · ~150 caracteres')).toBeDefined();
   });
 
-  it('renderiza o CTA "Experimente grátis" com link para /cadastro', () => {
+  it('renderiza o CTA principal com link para /cadastro', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
-    const ctaLink = screen.getByRole('link', { name: /Experimente grátis/i });
+    const ctaLink = screen.getByRole('link', { name: /Criar meu primeiro vídeo/i });
     expect(ctaLink).toBeDefined();
     expect(ctaLink.getAttribute('href')).toBe('/cadastro');
   });
 
-  it('renderiza texto "Sem cartão de crédito"', () => {
+  it('renderiza texto sobre configuração rápida', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
     expect(screen.getByText(/Sem cartão de crédito/)).toBeDefined();
   });

@@ -29,8 +29,7 @@ import {
   SUCCESS_MAIN,
   SUCCESS_GLOW,
   WARNING_BG_SUBTLE,
-  ERROR_BG_SUBTLE,
-} from '../../../theme/tokens';
+  ERROR_BG_SUBTLE, RADIUS_XS } from '../../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -143,7 +142,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                 variant="alert"
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                slotProps={{ root: { sx: { mb: 1, borderRadius: 2, bgcolor: WARNING_BG_SUBTLE } } }}
+                slotProps={{ root: { sx: { mb: 1, borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE } } }}
                 title={t('video.transcription.staleWarning')}
               />
             )}
@@ -250,7 +249,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
               title={t('common.error')}
               description={transcriptionError}
               slotProps={{
-                root: { sx: { mb: 0, borderRadius: 2, bgcolor: ERROR_BG_SUBTLE } },
+                root: { sx: { mb: 0, borderRadius: RADIUS_XS, bgcolor: ERROR_BG_SUBTLE } },
               }}
             />
             <Button
@@ -278,7 +277,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
                 variant="alert"
                 severity="warning"
                 icon={<WarningAmber sx={{ fontSize: 20 }} />}
-                slotProps={{ root: { sx: { borderRadius: 2, bgcolor: WARNING_BG_SUBTLE } } }}
+                slotProps={{ root: { sx: { borderRadius: RADIUS_XS, bgcolor: WARNING_BG_SUBTLE } } }}
                 title={t('video.transcription.whisperNotSupportedTitle')}
                 description={t('video.transcription.whisperNotSupportedDescription')}
               />
@@ -298,7 +297,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
               <Button
                 variant="contained"
                 size="small"
-                disabled={!canTranscribe}
+                disabled={!canTranscribe }
                 onClick={onTranscribe}
                 startIcon={<ClosedCaption sx={{ fontSize: ICON_SIZE_MD }} />}
                 sx={{
