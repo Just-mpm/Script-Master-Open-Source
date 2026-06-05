@@ -7,6 +7,53 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.129.0] - 2026-06-05
+
+### Adicionado
+
+- **Projeto Manual — wizard de upload de áudio e imagens** (`src/features/manual-project/`, 14 novos arquivos + 3 testes, ~2500 linhas líquidas):
+  - **Rota nova** `/app/projeto/novo` (lazy-loaded, `ProtectedRoute`) com wizard de 4 passos: Nome+Roteiro → Áudio → Imagens → Sucesso
+  - **Upload de áudio** (mp3, wav, m4a, ogg, webm; ≤50MB) com validação MIME + `decodeAudioData` + duração mínima. Componentes: `ManualProjectStepAudio.tsx` (+188 linhas), `ManualProjectAudioPreview.tsx` (+143 linhas) — player inline com play/pause e visualização de forma de onda
+  - **Upload de imagens** (jpg, png, webp; ≤10MB cada, ≤30 por projeto) com validação MIME + `Image.decode()` + dimensões máximas (4096px). Componentes: `ManualProjectStepImages.tsx` (+151 linhas), `ManualProjectImageGrid.tsx` (+216 linhas)
+  - **Reordenação de imagens** via drag-and-drop (`@dnd-kit/react` sortable) + botões ↑↓ (fallback mobile) com `aria-*` labels
+  - **Persistência dual** via funções existentes: `saveProject` (Project doc no Firestore/IDB), `saveAudioToProject` (AudioSource no Storage/IDB), `saveImageToProject` (ProjectImage[] no Storage/IDB)
+  - **Tela de sucesso** (`ManualProjectSuccess.tsx`, +183 linhas) com 4 CTAs: Speed Paint (fila pré-carregada), Vídeo, Library, Criar outro projeto
+  - **Hook central** `useManualProject.ts` (+387 linhas): gerenciamento de estado do wizard via `useReducer`, `ManualProjectDraft` com 11 ações, ciclo de vida de blob URLs (previewUrl com revogação controlada), save sequencial com rollback parcial em caso de falha
+  - **Validação modular** (`manualProjectValidation.ts`, +192 linhas): `validateAudioFile()`, `validateImageFile()`, `validateName()`, `validateDraft()` — cobertura completa com `ValidationErrorKind` (7 tipos: `INVALID_MIME`, `FILE_TOO_LARGE`, `TOO_MANY_IMAGES`, `AUDIO_TOO_SHORT`, `NAME_TOO_SHORT`, `INVALID_DIMENSIONS`, `DECODE_FAILED`)
+  - **Integração com Library**: botão "Criar projeto manualmente" (`variant="contained"`, ícone `Add`) no header da Library + card de empty state com CTA
+  - **Campo `script: string | null`** no `useAudioGeneratorStore` para transporte do roteiro entre wizard e páginas de vídeo/speed paint — **sem poluir** `useStudioStore`
+  - **CORS do Firebase Storage** configurado (`storage-cors.json`): `Cross-Origin-Resource-Policy` adicionado aos `responseHeader` — necessário para COEP `credentialless`
+  - **9 novos eventos analytics** em `AnalyticsEventMap` (snake_case): `manual_project_started`, `manual_project_audio_uploaded`, `manual_project_audio_upload_failed`, `manual_project_image_uploaded`, `manual_project_image_upload_failed`, `manual_project_images_reordered`, `manual_project_saved`, `manual_project_save_failed`, `manual_project_cta_clicked`
+  - **i18n** nos 3 locales: namespace `manualProject.*` com ~10 subseções (meta, steps: 4 passos, stepName, stepAudio, stepImages, errors, success, liveRegion, cta)
+  - **Testes Vitest** (5 arquivos, 61 testes): `manualProjectHelpers.unit.test.ts` (21 testes — validação de arquivo, helpers), `manualProjectReducer.unit.test.ts` (16 testes — 10 ações do reducer), `useManualProject.unit.test.ts` (12 testes — hook com mocks), `ManualProjectImageGrid.component.test.tsx` (9 testes — drag-and-drop + teclado), `analytics.unit.test.ts` (3 testes — type-level para 9 eventos)
+
+### Alterado
+
+- **`src/components/Library.tsx`** (+34/-1): botão "Criar projeto manualmente" adicionado ao header (ao lado de "Projetos") com ícone `Add` e `onClick` → `navigate('/app/projeto/novo')`
+- **`src/features/studio/store/audioGeneratorStore.ts`** (+31/-4): novo campo `script: string | null` com getter/setter no estado; `loadProjectData` agora aceita `script?: string | null` — documentação JSDoc atualizada para refletir o novo campo
+- **`src/pages/VideoPage.tsx`** (+13/-5): integração com `script` do projeto manual — `loadProjectData` recebe `projectScript` do `audioGeneratorStore` em vez de `setScript` do `useStudioStore`
+- **`src/router/routes.tsx`** (+6/-0): nova rota `<Route path="/app/projeto/novo" element={<ManualProjectPage />} />` dentro de `ProtectedRoute` — lazy loading com `React.lazy`
+- **`src/lib/analytics.ts`** (+41/-0): 9 novos eventos adicionados ao `AnalyticsEventMap` com tipagem completa e comentários semânticos
+- **`src/features/i18n/locales/{en,es,pt-BR}.ts`** (+97 cada): namespace `manualProject.*` adicionado nos 3 locales com paridade de chaves
+- **Testes atualizados** (`tests/hooks/useAudioGenerator.unit.test.ts`, `tests/hooks/useImageGenerator.unit.test.ts`, `tests/lib/env.unit.test.ts`): `storageBucket` alterado de `*.appspot.com` para `*.firebasestorage.app` (novo domínio do Firebase Storage)
+
+### Corrigido
+
+- **Bug crítico de ciclo de vida de blob URL no `useManualProject.ts`**: `audioUrl` criado via `URL.createObjectURL` não era mais adicionado ao `blobUrlsRef` (a linha foi removida) — o `audioGeneratorStore.loadProjectData` agora gerencia seu próprio ciclo de vida, eliminando revogação prematura ao navegar para outra rota
+
+### Documentado
+
+- **13 novos documentos** em `docs/audits/`, `docs/plan/`, `docs/scan/`:
+  - Arquitetura da feature (`upload-manual-projeto-architecture.md`, 1500 linhas)
+  - Plano base, plano de produto, plano final e contrato de validação
+  - Análise de lacunas (gap-finder) em 3 versões (inicial, cobertura, final)
+  - Auditoria estática + final pós-correções
+  - Code validator com vereditos e achados
+  - Gap analysis entre plano e implementação
+  - Próximas ações manuais (CORS + smoke test E2E)
+
+---
+
 ## [0.128.0] - 2026-06-05
 
 ### Adicionado

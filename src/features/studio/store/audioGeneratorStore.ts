@@ -38,6 +38,10 @@ export interface AudioGeneratorState {
   audioSegments: AudioSegment[];
   projectId: string | null;
   audioDuration: number; // duração via metadados de URL (fallback)
+  /** Script do projeto carregado. `null` para projetos nativos (gerados no estúdio)
+   *  ou string para projetos manuais (upload de áudio + imagens). Não conflita
+   *  com `useStudioStore.script` (que é específico do estúdio). */
+  script: string | null;
 
   // ── Setters (usados pelo hook useAudioGenerator) ──
   setIsGenerating: (value: boolean) => void;
@@ -51,10 +55,19 @@ export interface AudioGeneratorState {
   setAudioSegments: (value: AudioSegment[]) => void;
   setProjectId: (value: string | null) => void;
   setAudioDuration: (value: number) => void;
+  setScript: (value: string | null) => void;
 
   // ── Ações compostas ──
-  /** Carrega dados de um projeto (da biblioteca). Revoga blob URL anterior. */
-  loadProjectData: (url: string, scenes: SceneItem[], audioBlob?: Blob, id?: string) => Promise<void>;
+  /** Carrega dados de um projeto (da biblioteca). Revoga blob URL anterior.
+   *  Aceita `projectScript` opcional (string | null) — `null` para projetos
+   *  nativos que não passaram script; string para projetos manuais. */
+  loadProjectData: (
+    url: string,
+    scenes: SceneItem[],
+    audioBlob?: Blob,
+    id?: string,
+    projectScript?: string | null,
+  ) => Promise<void>;
   /** Reseta todo o estado de geração e resultado */
   resetGeneration: () => void;
 }
@@ -75,6 +88,7 @@ const INITIAL_STATE = {
   audioSegments: [] as AudioSegment[],
   projectId: null as string | null,
   audioDuration: 0,
+  script: null as string | null,
 };
 
 // ---------------------------------------------------------------------------
@@ -96,14 +110,26 @@ export const useAudioGeneratorStore = create<AudioGeneratorState>()((set, get) =
   setAudioSegments: (value) => set({ audioSegments: value }),
   setProjectId: (value) => set({ projectId: value }),
   setAudioDuration: (value) => set({ audioDuration: value }),
+  setScript: (value) => set({ script: value }),
 
   // Ações compostas
-  loadProjectData: async (url, scenesData, audioBlobData, id) => {
-    const { audioUrl } = get();
+  loadProjectData: async (url, scenesData, audioBlobData, id, projectScript) => {
+    const { audioUrl, scenes: previousScenes } = get();
 
     // Revoga blob URL anterior para evitar memory leak
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
+    }
+
+    // Revoga imageUrls blob URLs das cenas anteriores. Cada loadProjectData
+    // cria N novos blob URLs via `buildVideoScenesFromDraft` (manual project) ou
+    // similar — sem revogação dos anteriores, há memory leak cumulativo
+    // ao trocar de projeto na VideoLibrary. URLs externas (https://, gs://)
+    // são ignoradas.
+    for (const scene of previousScenes) {
+      if (scene.imageUrl && scene.imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(scene.imageUrl);
+      }
     }
 
     set({
@@ -111,6 +137,7 @@ export const useAudioGeneratorStore = create<AudioGeneratorState>()((set, get) =
       scenes: scenesData,
       projectId: id ?? null,
       audioDuration: 0, // reseta duração ao carregar novo projeto
+      script: projectScript ?? null,
     });
 
     if (audioBlobData) {

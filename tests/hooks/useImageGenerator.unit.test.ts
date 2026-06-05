@@ -31,7 +31,7 @@ vi.mock('../../src/lib/env', () => ({
     apiKey: 'mock-api-key',
     authDomain: 'mock.firebaseapp.com',
     projectId: 'mock-project',
-    storageBucket: 'mock.appspot.com',
+    storageBucket: 'mock.firebasestorage.app',
     messagingSenderId: '123',
     appId: '1:123:web:abc',
   }),

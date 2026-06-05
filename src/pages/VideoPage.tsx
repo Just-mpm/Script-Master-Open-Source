@@ -54,9 +54,8 @@ export function VideoPage({
   const userId = user?.uid;
 
   // Estado de config do store — useShallow evita re-renders quando outros campos mudam
-  const { script, setScript, sceneRatio } = useStudioStore(useShallow((s) => ({
+  const { script: studioScript, sceneRatio } = useStudioStore(useShallow((s) => ({
     script: s.script,
-    setScript: s.setScript,
     sceneRatio: s.sceneRatio,
   })));
 
@@ -66,6 +65,10 @@ export function VideoPage({
   const audioSegments = useAudioGeneratorStore((s) => s.audioSegments);
   const currentProjectId = useAudioGeneratorStore((s) => s.projectId);
   const loadProjectData = useAudioGeneratorStore((s) => s.loadProjectData);
+
+  // Script: prioriza audioGeneratorStore (projetos manuais), cai para studioStore (projetos nativos)
+  const audioStoreScript = useAudioGeneratorStore((s) => s.script);
+  const script = audioStoreScript ?? studioScript;
 
   // Duração derivada — prioriza blob WAV (tamanho exato), fallback para metadados de URL
   const { audioBlob, audioDuration: audioDurationRaw } = useAudioGeneratorStore(
@@ -264,11 +267,16 @@ export function VideoPage({
     sceneList: { imageUrl: string; timestamp: number }[],
     projectScript: string,
   ) => {
-    loadProjectData(url, sceneList, undefined, projectId);
-    setScript(projectScript);
+    loadProjectData(url, sceneList, undefined, projectId, projectScript);
+    // NÃO chamar setStudioScript aqui: ele persiste em `s2a_script` no
+    // localStorage e polui o estúdio toda vez que o usuário clica em um
+    // projeto da VideoLibrary. O script do projeto manual vive no
+    // `audioGeneratorStore.script` (carregado por `loadProjectData`) e é
+    // lido via `audioStoreScript ?? studioScript` abaixo. Projetos nativos
+    // (do estúdio) continuam vendo seu próprio script via `studioScript`.
     // Áudio gerenciado pelo Remotion Player nesta rota —
     // não chamar play() do AudioContext para evitar dual-play
-  }, [loadProjectData, setScript]);
+  }, [loadProjectData]);
 
   // Callback memoizado para toggle de legenda visível no preview (Fix 4)
   const handleCaptionToggle = useCallback(() => setCaptionVisible((v) => !v), []);

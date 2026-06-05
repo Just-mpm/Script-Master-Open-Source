@@ -30,6 +30,7 @@ import Pause from '@mui/icons-material/Pause';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Search from '@mui/icons-material/Search';
 import Brush from '@mui/icons-material/Brush';
+import Add from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import {
   getProjects,
@@ -265,6 +266,16 @@ export function Library() {
     return detailError != null || projectData.images.length === 0;
   }, [detailError, expandedProjectId, projectData.images.length]);
 
+  const handleCreateManualProject = useCallback(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    startTransition(() => {
+      navigate('/app/projeto/novo');
+    });
+  }, [navigate, user]);
+
   const handleOpenInSpeedPaint = useCallback(async (project: Project) => {
     if (preparingSpeedPaintProjectId) {
       return;
@@ -409,6 +420,19 @@ export function Library() {
           ) : (
             <Chip label={t('library.projectCountEmpty')} variant="outlined" sx={{ borderColor: 'primary.main', color: 'primary.light' }} />
           )}
+          <Tooltip title={t('manualProject.createButtonHint')}>
+            <span>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />}
+                onClick={handleCreateManualProject}
+                aria-label={t('manualProject.createButton')}
+              >
+                {t('manualProject.createButton')}
+              </Button>
+            </span>
+          </Tooltip>
           {projects.length > 0 && (
             <TextField
               type="search"
@@ -511,7 +535,7 @@ export function Library() {
         />
       ) : projects.length === 0 ? (
         <Card elevation={0} sx={(theme): SystemStyleObject<Theme> => ({ ...glassPanelSx(theme), p: { xs: EMPTY_WRAPPER_PADDING_XS, md: EMPTY_WRAPPER_PADDING_MD }, textAlign: 'center' })}>
-            <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+          <Stack spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
             <Box sx={{
               width: 64,
               height: 64,
@@ -528,6 +552,15 @@ export function Library() {
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: EMPTY_WRAPPER_MAX_WIDTH }}>
               {t('library.emptyDescription')}
             </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<Add sx={{ fontSize: ICON_SIZE_MD }} />}
+              onClick={handleCreateManualProject}
+              sx={{ mt: 1 }}
+            >
+              {t('manualProject.createButton')}
+            </Button>
           </Stack>
         </Card>
       ) : filteredProjects.length === 0 ? (

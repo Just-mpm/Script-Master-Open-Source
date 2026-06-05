@@ -88,6 +88,47 @@ export interface AnalyticsEventMap {
   library_opened_in_speed_paint: { scene_count: number };
   upgrade_dialog_opened: { plan_id?: string };
   begin_checkout: { plan_id: string; billing_cycle: 'monthly' | 'yearly' };
+  // ── Manual Project (feature v0.129.0) — wizard de upload de áudio + imagens ──
+  /** Usuário abriu o wizard de projeto manual (clicou em "Criar projeto manual") */
+  manual_project_started: Record<string, never>;
+  /** Áudio enviado e validado com sucesso no wizard */
+  manual_project_audio_uploaded: {
+    size_bucket: string;
+    duration_bucket: string;
+    duration_seconds: number;
+  };
+  /** Áudio rejeitado pela validação do wizard */
+  manual_project_audio_upload_failed: {
+    error_category: AnalyticsErrorCategory;
+    size_bucket: string;
+  };
+  /** Imagem(ns) enviada(s) e validada(s) com sucesso */
+  manual_project_image_uploaded: {
+    count: number;
+    size_bucket: string;
+  };
+  /** Imagem rejeitada pela validação do wizard */
+  manual_project_image_upload_failed: {
+    error_category: AnalyticsErrorCategory;
+    size_bucket: string;
+  };
+  /** Usuário reordenou imagens (drag-and-drop ou botões ↑↓) */
+  manual_project_images_reordered: {
+    count: number;
+    from_index: number;
+    to_index: number;
+  };
+  /** Projeto manual salvo com sucesso (todas as etapas: project + audio + images) */
+  manual_project_saved: {
+    image_count: number;
+    audio_duration_seconds: number;
+    has_script: boolean;
+    source: 'library' | 'cta';
+  };
+  /** Falha ao salvar o projeto manual (parcial ou total) */
+  manual_project_save_failed: { error_category: AnalyticsErrorCategory; stage: 'project' | 'audio' | 'images' };
+  /** CTA da tela de sucesso clicado (ir para Library / Speed Paint / Vídeo / novo) */
+  manual_project_cta_clicked: { destination: 'library' | 'speed_paint' | 'video' | 'new' };
 }
 
 type AnalyticsModule = typeof import('firebase/analytics');
