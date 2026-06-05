@@ -7,6 +7,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.129.1] - 2026-06-05
+
+### Alterado
+
+- **ManualProjectStepName.tsx**, **ManualProjectStepAudio.tsx**, **ManualProjectStepImages.tsx**: Removidos parágrafos de descrição redundantes nos 3 steps do wizard de Projeto Manual — UI mais limpa e direta, redução de 16 linhas
+
+---
+
 ## [0.129.0] - 2026-06-05
 
 ### Adicionado

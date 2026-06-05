@@ -60,10 +60,6 @@ export function ManualProjectStepImages({
 
   return (
     <Stack spacing={GAP_DEFAULT}>
-      <Typography variant="body2" color="text.secondary">
-        {t('manualProject.stepImages.description')}
-      </Typography>
-
       {/* Contador */}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="caption" color="text.secondary">

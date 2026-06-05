@@ -195,7 +195,7 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.129.0`
+- **Current:** `0.129.1`
 - **Last release:** 2026-06-05
 
 ### Últimas mudanças (atualizado por /fast)
@@ -204,8 +204,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.129.1` | **Projeto Manual — UI refinada:** descrições redundantes removidas dos 3 steps do wizard (`ManualProjectStepName`, `ManualProjectStepAudio`, `ManualProjectStepImages`) — redução de 16 linhas, wizard mais limpo e direto |
 | `0.129.0` | **Projeto Manual** (wizard `/app/projeto/novo`) — upload de áudio (≤50MB) + imagens (≤30) com validação MIME/decode/dimensões, reordenação drag-and-drop (`@dnd-kit`) + botões ↑↓, persistência dual via `saveProject`/`saveAudioToProject`/`saveImageToProject`; integração com Speed Paint e Vídeo via novo campo `script` no `useAudioGeneratorStore` (NÃO polui `useStudioStore`); CORS do Firebase Storage configurado (`storage-cors.json` + `Cross-Origin-Resource-Policy`); 9 eventos analytics novos; namespace `manualProject.*` em pt-BR/en/es; 61 testes Vitest (5 arquivos); nova rota lazy + botão na Library |
 | `0.128.0` | Migração de vídeos do Storage para IndexedDB local (`videos.ts`, `projects.ts`, `shared.ts`, `migration.ts`) — novas escritas de vídeo bloqueadas no Storage/Firestore, leitura legada preservada; lazy loading de composições Remotion nos controllers (`createExportableComposition()`, `createExportableSpeedPaintComposition()`, `createExportableBatchSpeedPaintComposition()`); padronização visual `letterSpacing: 0` em ~50 componentes; UI responsiva de Login/Cadastro; i18n da biblioteca atualizada (`noVideos`, `openVideoExporter`); scroll suave pós-navegação com `requestAnimationFrame`; template literals aninhados corrigidos; auditoria de product design removida; testes expandidos (+388 linhas) |
 | `0.127.0` | Marketing Demo Video (`MarketingDemoComposition` + `MarketingDemoPlayer`, lazy-loaded na LandingPage, ~826 linhas); StackedHeader Onda 4 (SpeedPaintPage, VideoExportPanel, SpeedPaintExportPanel); tokens de borda `RADIUS_XS`/`RADIUS_SM` adotados em 20+ componentes; mocks de tokens migrados para `async (importOriginal)` em 30+ testes; `tokensMock.ts` simplificado; `stacked-header-gaps-audit.md` removido; consistência de espaçamento em template literals |
 | `0.126.1` | Conteúdo editorial reescrito em 7 arquivos de dados (`authBenefits`, `metrics`, `testimonials`, `useCases`, `pricingFaq`) — textos com tom mais direto e benefício claro; arquivos i18n reestruturados (namespace `images` adicionado, chaves renomeadas); descrições SEO reescritas (`llms-full.txt`, `llms.txt` — foco em "criador", seções reestruturadas); alt texts migrados para i18n em `FuncionalidadesPage`; labels do roadmap simplificados na `AboutPage`; `HeroSection` sx refatorado para function-based; ajuste de maxWidth na `LandingPage` |
-| `0.126.0` | StackedHeader expandido: 5 novas props (direction, actionAlign, controlAlign, actionPlacement, density), 8 tipos, 3 helpers, DENSITY_TOKENS; SpeedPaintControls migrado para StackedHeader + useCollapsibleSection (+85/-134); MAX_CHARS 50K→25K; timestamp do logger migrado de serverTimestamp para Date.now(); memória Cloud Functions 256→512 MiB (via setGlobalOptions); 9 call sites com novas props; docs/scan/stacked-header-gaps-audit.md (+422 linhas); testes expandidos (+482 linhas) |

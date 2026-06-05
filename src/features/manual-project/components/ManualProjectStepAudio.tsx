@@ -77,9 +77,6 @@ export function ManualProjectStepAudio({
   if (audio) {
     return (
       <Stack spacing={GAP_DEFAULT}>
-        <Typography variant="body2" color="text.secondary">
-          {t('manualProject.stepAudio.description')}
-        </Typography>
         <ManualProjectAudioPreview
           src={audio.previewUrl}
           durationSec={audio.durationSec}
@@ -100,10 +97,6 @@ export function ManualProjectStepAudio({
 
   return (
     <Stack spacing={GAP_DEFAULT}>
-      <Typography variant="body2" color="text.secondary">
-        {t('manualProject.stepAudio.description')}
-      </Typography>
-
       <Box
         {...getRootProps()}
         role="button"

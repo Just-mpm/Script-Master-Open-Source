@@ -9,7 +9,6 @@ import { useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { useLocale } from '../../i18n';
 import { validateProjectName } from '../lib/manualProjectValidation';
 
@@ -51,10 +50,6 @@ export function ManualProjectStepName({
   return (
     <Box>
       <Stack spacing={2}>
-        <Typography variant="body2" color="text.secondary">
-          {t('manualProject.stepName.description')}
-        </Typography>
-
         <TextField
           value={name}
           onChange={handleNameChange}
