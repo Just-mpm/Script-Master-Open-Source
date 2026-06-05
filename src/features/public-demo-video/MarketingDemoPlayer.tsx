@@ -4,7 +4,7 @@ import { useTheme } from '@mui/material/styles';
 import { Player } from '@remotion/player';
 import type { Locale } from '../i18n';
 import { useLocale } from '../i18n';
-import { RADIUS_SM } from '../../theme/tokens';
+import { RADIUS_SM, SHADOW_IMAGE, WHITE_12 } from '../../theme/tokens';
 import {
   MARKETING_DEMO_COMPOSITION,
   MARKETING_DEMO_MOBILE_COMPOSITION,
@@ -27,13 +27,19 @@ export function MarketingDemoPlayer({ alt }: MarketingDemoPlayerProps) {
   const copy = MARKETING_DEMO_COPY[locale];
   const qaFrame = getDemoQaFrame();
 
-  if (prefersReducedMotion) {
+  if (prefersReducedMotion || isMobile) {
     return (
       <Box
         component="img"
         src="/projeto/estudio.png"
         alt={alt}
-        sx={heroFrameSx}
+        loading="eager"
+        sx={{
+          ...heroFrameSx,
+          aspectRatio: isMobile ? '4 / 5' : '16 / 9',
+          objectFit: 'cover',
+          objectPosition: 'center top',
+        }}
       />
     );
   }
@@ -50,7 +56,7 @@ export function MarketingDemoPlayer({ alt }: MarketingDemoPlayerProps) {
           'linear-gradient(135deg, rgba(91, 163, 208, 0.16), rgba(5, 8, 22, 0.94) 34%, rgba(247, 148, 30, 0.14))',
         boxShadow: {
           xs: '0 18px 40px rgba(2, 6, 23, 0.38), 0 0 34px rgba(46, 117, 182, 0.16)',
-          md: '0 30px 80px ${SHADOW_IMAGE}, 0 0 54px rgba(46, 117, 182, 0.18)',
+          md: `0 24px 60px ${SHADOW_IMAGE}, 0 0 38px rgba(46, 117, 182, 0.14)`,
         },
         '& > div': {
           borderRadius: 'inherit',
@@ -66,7 +72,7 @@ export function MarketingDemoPlayer({ alt }: MarketingDemoPlayerProps) {
         compositionWidth={composition.width}
         compositionHeight={composition.height}
         style={{ width: '100%', height: '100%' }}
-        autoPlay={qaFrame === undefined }
+        autoPlay={qaFrame === undefined}
         loop
         initialFrame={qaFrame}
         initiallyMuted
@@ -82,9 +88,9 @@ export function MarketingDemoPlayer({ alt }: MarketingDemoPlayerProps) {
 const heroFrameSx = {
   maxWidth: { xs: 356, sm: 520, md: 640 },
   width: '100%',
-  border: '1px solid ${WHITE_12}',
+  border: `1px solid ${WHITE_12}`,
   borderRadius: RADIUS_SM,
-  filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.18))',
+  filter: 'drop-shadow(0 18px 36px rgba(46, 117, 182, 0.16))',
 } as const;
 
 function getDemoQaFrame(): number | undefined {

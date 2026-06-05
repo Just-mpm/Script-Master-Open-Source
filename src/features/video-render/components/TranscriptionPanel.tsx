@@ -128,7 +128,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         {/* Cabeçalho */}
         <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: 2 }}>
           <ClosedCaption sx={{ fontSize: 22, color: 'primary.main' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0 }}>
             {t('video.transcription.title')}
           </Typography>
         </Stack>
@@ -154,7 +154,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
           >
             <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center' }}>
               <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN, filter: `drop-shadow(0 0 6px ${SUCCESS_GLOW})` }} />
-              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: 0 }}>
                 {t('video.transcription.wordCount', { count: captionCount })}
               </Typography>
               {sourceLabel && (
@@ -195,7 +195,7 @@ export const TranscriptionPanel = React.memo(function TranscriptionPanel({
         {isTranscribing && (
           <Stack spacing={GAP_MEDIUM} role="status" aria-live="polite">
             <Stack direction="row" spacing={GAP_MEDIUM} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', letterSpacing: '-0.01em' }} noWrap>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', letterSpacing: 0 }} noWrap>
                 {transcriptionStatusText}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono, monospace' }}>

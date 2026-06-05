@@ -128,7 +128,7 @@ export function FounderMessageDialog({ open, onClose }: FounderMessageDialogProp
             sx={{
               fontWeight: 700,
               fontSize: '1.15rem',
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
               background: BRAND_GRADIENT,
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',

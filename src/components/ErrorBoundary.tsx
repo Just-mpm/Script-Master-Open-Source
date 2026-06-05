@@ -116,7 +116,7 @@ export function ErrorBoundaryFallback({ onRetry, onReload }: ErrorBoundaryFallba
             />
           </Box>
 
-          <Typography variant="h5" component="h1" sx={{ letterSpacing: '-0.025em' }}>
+          <Typography variant="h5" component="h1" sx={{ letterSpacing: 0 }}>
             {t('errorBoundary.title')}
           </Typography>
 

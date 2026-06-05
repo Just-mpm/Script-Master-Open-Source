@@ -36,7 +36,9 @@ import {
   TEXT_SECONDARY,
   TEXT_DISABLED,
   ERROR_MAIN,
+  ERROR_BG_MEDIUM,
   APP_SURFACE_ELEVATED,
+  BLACK_40,
   RADIUS_XS,
 } from '../../../theme/tokens';
 import { useLocale } from '../../../features/i18n';
@@ -272,7 +274,7 @@ const PhraseCard = React.memo(function PhraseCard({
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: 'error.main',
-                      boxShadow: '0 0 0 3px ${ERROR_BG_MEDIUM}',
+                      boxShadow: `0 0 0 3px ${ERROR_BG_MEDIUM}`,
                     },
                   }}
                 >
@@ -322,7 +324,7 @@ const PhraseCard = React.memo(function PhraseCard({
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: ERROR_MAIN,
-                      boxShadow: '0 0 0 3px ${ERROR_BG_MEDIUM}',
+                      boxShadow: `0 0 0 3px ${ERROR_BG_MEDIUM}`,
                     },
                   }}
                 >
@@ -811,7 +813,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
           {/* Cabeçalho */}
           <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center', mb: 2 }}>
             <ClosedCaptionOutlined sx={{ fontSize: HEADER_ICON_SIZE, color: 'primary.main' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0 }}>
               Editor de legendas
             </Typography>
             <Chip
@@ -909,7 +911,7 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
             borderRadius: RADIUS_SM,
             border: `1px solid ${WHITE_14}`,
             color: 'text.primary',
-            boxShadow: '0 8px 32px ${BLACK_40}',
+            boxShadow: `0 8px 32px ${BLACK_40}`,
             backdropFilter: 'blur(12px)',
           },
         }}

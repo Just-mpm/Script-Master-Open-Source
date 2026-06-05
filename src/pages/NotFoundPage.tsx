@@ -56,7 +56,7 @@ export function NotFoundPage() {
               sx={{
                 fontSize: { xs: 80, sm: 120 },
                 fontWeight: 800,
-                letterSpacing: '-0.04em',
+                letterSpacing: 0,
                 lineHeight: 1,
                 background: BRAND_GRADIENT,
                 WebkitBackgroundClip: 'text',
@@ -72,7 +72,7 @@ export function NotFoundPage() {
               aria-hidden="true"
             />
 
-            <Typography variant="h5" component="h1" sx={{ letterSpacing: '-0.025em' }}>
+            <Typography variant="h5" component="h1" sx={{ letterSpacing: 0 }}>
               {t('notFound.title')}
             </Typography>
 

@@ -88,7 +88,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <Psychology sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.memories.title')}</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: 0 }}>{t('assistant.memories.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
               {t('assistant.memories.subtitle')}
@@ -202,7 +202,7 @@ export const AssistantMemoriesPanel = React.memo(function AssistantMemoriesPanel
               >
                 <Description sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
               </Box>
-              <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.memories.noMemories')}</Typography>
+              <Typography variant="subtitle1" sx={{ letterSpacing: 0 }}>{t('assistant.memories.noMemories')}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, maxWidth: 320 }}>
                 {t('assistant.memories.noMemoriesDescription')}
               </Typography>

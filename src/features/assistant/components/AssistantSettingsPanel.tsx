@@ -64,7 +64,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <AutoAwesome sx={{ fontSize: ICON_SIZE_LG, color: BRAND_SECONDARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.settings.title')}</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: 0 }}>{t('assistant.settings.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
               {t('assistant.settings.subtitle')}
@@ -85,7 +85,7 @@ export const AssistantSettingsPanel = React.memo(function AssistantSettingsPanel
         <Stack spacing={2.5} sx={{ flex: 1, p: 2.5 }}>
           <Box sx={(theme) => ({ ...assistantInsetSx(theme), p: 2 })}>
             <Stack spacing={1}>
-              <Typography variant="subtitle2" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.settings.whatToWrite')}</Typography>
+              <Typography variant="subtitle2" sx={{ letterSpacing: 0 }}>{t('assistant.settings.whatToWrite')}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                 {t('assistant.settings.whatToWriteDescription')}
               </Typography>

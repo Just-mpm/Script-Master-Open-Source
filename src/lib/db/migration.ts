@@ -1,8 +1,6 @@
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { createLogger } from '../logger';
-
-const log = createLogger('migration');
 import {
   AUDIOS_STORE,
   CHAT_STORE,
@@ -16,6 +14,8 @@ import {
   countIndexedDbItems,
   deleteIndexedDbItem,
   getAllIndexedDbItems,
+  getIndexedDbItemsByIndex,
+  putIndexedDbItem,
 } from './shared';
 import type {
   AudioSource,
@@ -32,6 +32,8 @@ import {
   estimateDocumentSize,
   FIRESTORE_MAX_DOC_SIZE_BYTES,
 } from './chats';
+
+const log = createLogger('migration');
 
 /** Resultado da verificação de dados migráveis */
 export interface MigrationCheckResult {
@@ -109,7 +111,8 @@ export function markMigrationCompleted(userId: string): void {
  * apenas os metadados são migrados. Blobs locais não podem ser transferidos
  * via Firestore ( Storage requer re-upload, que não é viável em migração).
  *
- * Após migração bem-sucedida, remove itens do IndexedDB para evitar dados fantasmas.
+ * Após migração bem-sucedida, remove itens sincronizados do IndexedDB para evitar dados fantasmas.
+ * Vídeos permanecem locais e não são migrados para Firestore/Storage.
  */
 export async function migrateAnonymousData(userId: string): Promise<MigrationResult> {
   let migrated = 0;
@@ -268,24 +271,17 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     );
   }
 
-  // --- Videos (metadados apenas) ---
-  const videos = await getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE);
+  // --- Videos (local-only) ---
+  const videos = await getIndexedDbItemsByIndex<ProjectVideo>(VIDEOS_STORE, 'userId', '');
   for (const video of videos) {
-    trackMigration(
-      VIDEOS_STORE,
-      video.id,
-      setDoc(doc(db, 'projects', video.projectId, 'videos', video.id), {
-        id: video.id,
-        projectId: video.projectId,
+    migrations.push(
+      putIndexedDbItem<ProjectVideo>(VIDEOS_STORE, {
+        ...video,
         userId,
-        videoUrl: video.videoUrl,
-        format: video.format,
-        width: video.width,
-        height: video.height,
-        fps: video.fps,
-        durationInSeconds: video.durationInSeconds,
-        fileSizeBytes: video.fileSizeBytes,
-        createdAt: video.createdAt,
+        videoUrl: video.videoUrl.startsWith('blob:') ? '' : video.videoUrl,
+      }).catch((err: unknown) => {
+        log.error('Erro ao associar vídeo local ao usuário', { id: video.id, error: err });
+        errors++;
       }),
     );
   }
@@ -301,7 +297,7 @@ export async function migrateAnonymousData(userId: string): Promise<MigrationRes
     `${imageGenerations.length} imagens`,
     `${memories.length} memórias`,
     `${chats.length} chats`,
-    `${videos.length} vídeos`,
+    `${videos.length} vídeos locais preservados`,
   ].join(', ');
 
   return { migrated, errors, details };

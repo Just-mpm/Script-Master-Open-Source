@@ -147,7 +147,7 @@ const ProgressHeader = React.memo(function ProgressHeader({
             variant="body2"
             sx={{
               fontWeight: 600,
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
               transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               color: PHASE_COLORS[phase],
             }}
@@ -169,7 +169,7 @@ const ProgressHeader = React.memo(function ProgressHeader({
             sx={{
               color: PHASE_COLORS[phase],
               fontFamily: 'JetBrains Mono, monospace',
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
               fontVariantNumeric: 'tabular-nums',
               fontWeight: 600,
               transition: 'color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

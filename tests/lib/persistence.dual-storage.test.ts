@@ -11,6 +11,11 @@ const mockCollection = vi.fn().mockReturnValue({ withConverter: mockWithConverte
 const mockQuery = vi.fn().mockReturnValue({});
 const mockWhere = vi.fn().mockReturnValue({});
 const mockCollectionGroup = vi.fn().mockReturnValue({ withConverter: mockWithConverter });
+const mockStorageRef = vi.fn();
+const mockUploadBytes = vi.fn().mockResolvedValue({});
+const mockUploadBytesResumable = vi.fn();
+const mockGetDownloadURL = vi.fn().mockResolvedValue('https://storage.example/video.mp4');
+const mockDeleteObject = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('firebase/firestore', () => ({
   collection: mockCollection,
@@ -34,10 +39,11 @@ vi.mock('../../src/lib/firebase', () => ({
 }));
 
 vi.mock('firebase/storage', () => ({
-  ref: vi.fn(),
-  uploadBytes: vi.fn(),
-  getDownloadURL: vi.fn(),
-  deleteObject: vi.fn(),
+  ref: mockStorageRef,
+  uploadBytes: mockUploadBytes,
+  uploadBytesResumable: mockUploadBytesResumable,
+  getDownloadURL: mockGetDownloadURL,
+  deleteObject: mockDeleteObject,
 }));
 
 vi.mock('../../src/lib/logger', () => ({
@@ -49,15 +55,6 @@ vi.mock('../../src/lib/logger', () => ({
   }),
   setLoggerUserId: vi.fn(),
 }));
-
-vi.mock('../../src/lib/db/videos', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/lib/db/videos')>();
-  return {
-    ...actual,
-    getProjectVideos: vi.fn().mockResolvedValue([]),
-    deleteVideoFromProject: vi.fn().mockResolvedValue(undefined),
-  };
-});
 
 import { DB_NAME } from '../../src/lib/db/shared';
 
@@ -437,8 +434,10 @@ describe('db/videos', () => {
 
   it('saveVideoToProject salva no IndexedDB quando userId ausente', async () => {
     const { saveVideoToProject, getProjectVideos } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+
     const video = await saveVideoToProject({
-      projectId: `proj-${uid()}`,
+      projectId,
       userId: '',
       videoUrl: 'blob:test',
       format: 'mp4',
@@ -451,12 +450,134 @@ describe('db/videos', () => {
 
     expect(video.id).toBeDefined();
     expect(video.format).toBe('mp4');
+    expect(video.videoUrl).toBe('');
+
+    const videos = await getProjectVideos(projectId);
+    expect(videos.some((item) => item.id === video.id)).toBe(true);
+  });
+
+  it('saveVideoToProject com userId grava localmente sem upload nem Firestore', async () => {
+    const { saveVideoToProject, getProjectVideos } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+    const videoBlob = new Blob(['video'], { type: 'video/mp4' });
+
+    const video = await saveVideoToProject({
+      projectId,
+      userId: 'user-123',
+      videoUrl: 'blob:rendered-video',
+      format: 'mp4',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      durationInSeconds: 60,
+      fileSizeBytes: 5000,
+      videoBlob,
+    }, 'user-123');
+
+    const videos = await getProjectVideos(projectId, 'user-123');
+
+    expect(video.userId).toBe('user-123');
+    expect(video.videoUrl).toBe('');
+    const storedVideo = videos.find((item) => item.id === video.id);
+    expect(storedVideo).toBeDefined();
+    expect(storedVideo?.videoBlob).toBeDefined();
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    expect(mockUploadBytes).not.toHaveBeenCalled();
+    expect(mockUploadBytesResumable).not.toHaveBeenCalled();
   });
 
   it('getProjectVideos retorna vazio quando não há vídeos', async () => {
     const { getProjectVideos } = await import('../../src/lib/db/videos');
     const videos = await getProjectVideos('proj-inexistente-xyz');
     expect(videos).toEqual([]);
+  });
+
+  it('getProjectVideos com userId retorna vídeos locais e legados remotos', async () => {
+    const { saveVideoToProject, getProjectVideos } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+    const localVideo = await saveVideoToProject({
+      projectId,
+      userId: 'user-123',
+      videoUrl: '',
+      format: 'webm',
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      durationInSeconds: 30,
+      fileSizeBytes: 2000,
+    }, 'user-123');
+    const legacyVideo = {
+      id: `legacy-${uid()}`,
+      projectId,
+      userId: 'user-123',
+      videoUrl: 'https://storage.example/legacy.mp4',
+      format: 'mp4' as const,
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      durationInSeconds: 45,
+      fileSizeBytes: 3000,
+      createdAt: localVideo.createdAt + 1,
+    };
+    mockGetDocs.mockResolvedValueOnce({ docs: [{ data: () => legacyVideo }] });
+
+    const videos = await getProjectVideos(projectId, 'user-123');
+
+    expect(videos.map((video) => video.id)).toEqual([legacyVideo.id, localVideo.id]);
+  });
+
+  it('getProjectVideos com userId não retorna vídeos locais de outro usuário', async () => {
+    const { saveVideoToProject, getProjectVideos } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+    const userVideo = await saveVideoToProject({
+      projectId,
+      userId: 'user-123',
+      videoUrl: '',
+      format: 'mp4',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      durationInSeconds: 20,
+      fileSizeBytes: 1000,
+    }, 'user-123');
+    await saveVideoToProject({
+      projectId,
+      userId: 'user-456',
+      videoUrl: '',
+      format: 'webm',
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      durationInSeconds: 30,
+      fileSizeBytes: 2000,
+    }, 'user-456');
+
+    const videos = await getProjectVideos(projectId, 'user-123');
+    const anonymousVideos = await getProjectVideos(projectId);
+
+    expect(videos.map((video) => video.id)).toEqual([userVideo.id]);
+    expect(anonymousVideos).toEqual([]);
+  });
+
+  it('getProjectVideos retorna vídeos locais quando Firestore legado falha', async () => {
+    const { saveVideoToProject, getProjectVideos } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+    const localVideo = await saveVideoToProject({
+      projectId,
+      userId: 'user-123',
+      videoUrl: '',
+      format: 'mp4',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      durationInSeconds: 20,
+      fileSizeBytes: 1000,
+    }, 'user-123');
+    mockGetDocs.mockRejectedValueOnce(new Error('legacy offline'));
+
+    const videos = await getProjectVideos(projectId, 'user-123');
+
+    expect(videos.map((video) => video.id)).toEqual([localVideo.id]);
   });
 
   it('deleteVideoFromProject remove do IndexedDB quando userId ausente', async () => {
@@ -478,5 +599,31 @@ describe('db/videos', () => {
     await deleteVideoFromProject(saved.id, projectId);
     const videos = await getProjectVideos(projectId);
     expect(videos).toHaveLength(0);
+  });
+
+  it('deleteVideoFromProject local com userId não tenta apagar Storage sem doc legado', async () => {
+    const { saveVideoToProject, getProjectVideos, deleteVideoFromProject } = await import('../../src/lib/db/videos');
+    const projectId = `proj-${uid()}`;
+    const saved = await saveVideoToProject({
+      projectId,
+      userId: 'user-123',
+      videoUrl: '',
+      format: 'mp4',
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      durationInSeconds: 20,
+      fileSizeBytes: 1000,
+      videoBlob: new Blob(['video'], { type: 'video/mp4' }),
+    }, 'user-123');
+    vi.clearAllMocks();
+
+    await deleteVideoFromProject(saved.id, projectId, 'user-123');
+    const videos = await getProjectVideos(projectId);
+
+    expect(videos).toHaveLength(0);
+    expect(mockGetDoc).toHaveBeenCalled();
+    expect(mockDeleteDoc).not.toHaveBeenCalled();
+    expect(mockDeleteObject).not.toHaveBeenCalled();
   });
 });

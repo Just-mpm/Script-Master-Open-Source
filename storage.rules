@@ -55,21 +55,32 @@ service firebase.storage {
     }
 
     // Regras para projetos (audios e imagens vinculados a um projeto específico)
-    // Regra específica para vídeos (200MB) — deve vir ANTES do wildcard
-    match /projects/{userId}/{projectId}/videos/{videoId} {
+    match /projects/{userId}/{projectId}/audios/{audioId} {
       allow read, delete: if isOwner(userId) || isAdmin();
       
-      // Validação: vídeos até 200MB, apenas formato de vídeo
-      allow write: if isOwner(userId) 
-                    && request.resource.size <= 200 * 1024 * 1024
-                    && request.resource.contentType.matches('^video/(mp4|webm)$');
+      allow create, update: if isOwner(userId) 
+                    && request.resource.size < 150 * 1024 * 1024
+                    && request.resource.contentType.matches('audio/.*');
+    }
+
+    match /projects/{userId}/{projectId}/images/{imageId} {
+      allow read, delete: if isOwner(userId) || isAdmin();
+      
+      allow create, update: if isOwner(userId) 
+                    && request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+    }
+
+    // Vídeos exportados agora ficam apenas no IndexedDB local. Mantemos leitura/deleção
+    // para arquivos legados, mas bloqueamos novas criações/atualizações no Storage.
+    match /projects/{userId}/{projectId}/videos/{videoId} {
+      allow read, delete: if isOwner(userId) || isAdmin();
+      allow create, update: if false;
     }
 
     match /projects/{userId}/{allPaths=**} {
       allow read, delete: if isOwner(userId) || isAdmin();
-      
-      allow write: if isOwner(userId) 
-                    && request.resource.size < 150 * 1024 * 1024;
+      allow create, update: if false;
     }
 
     // Regras para prévias de vozes (amostras públicas)

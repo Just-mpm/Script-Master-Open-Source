@@ -1,31 +1,74 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
+import { createLogger } from '../logger';
 import type { ProjectVideo } from './types';
 import {
   VIDEOS_STORE,
-  OperationType,
   createFirestoreConverter,
   deleteIndexedDbItem,
   deleteStorageObjectSafely,
-  getAllIndexedDbItems,
+  getIndexedDbItem,
+  getIndexedDbItemsByIndex,
   handleFirestoreError,
   putIndexedDbItem,
-  uploadBlobAndGetUrl,
+  OperationType,
 } from './shared';
 
 /** Tipo persistido no Firestore (sem blob) */
 type FirestoreProjectVideo = Omit<ProjectVideo, 'videoBlob'>;
 
+const log = createLogger('videos');
 const videoConverter = createFirestoreConverter<FirestoreProjectVideo>();
 
 function projectVideosCollection(projectId: string) {
   return collection(db, 'projects', projectId, 'videos').withConverter(videoConverter);
 }
 
+function sortVideos(items: ProjectVideo[]): ProjectVideo[] {
+  return [...items].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+function mergeLocalAndLegacyVideos(localVideos: ProjectVideo[], legacyVideos: ProjectVideo[]): ProjectVideo[] {
+  const merged = new Map<string, ProjectVideo>();
+
+  for (const video of legacyVideos) {
+    merged.set(video.id, video);
+  }
+  for (const video of localVideos) {
+    merged.set(video.id, video);
+  }
+
+  return sortVideos([...merged.values()]);
+}
+
+function isVisibleLocalVideo(video: ProjectVideo, userId?: string): boolean {
+  if (userId) {
+    return video.userId === userId;
+  }
+
+  return !video.userId;
+}
+
+export async function getLocalProjectVideos(projectId: string, userId?: string): Promise<ProjectVideo[]> {
+  const projectVideos = await getIndexedDbItemsByIndex<ProjectVideo>(VIDEOS_STORE, 'projectId', projectId);
+  return projectVideos.filter((video) => isVisibleLocalVideo(video, userId));
+}
+
+export async function getLocalVideosForUser(userId?: string): Promise<ProjectVideo[]> {
+  return getIndexedDbItemsByIndex<ProjectVideo>(VIDEOS_STORE, 'userId', userId ?? '');
+}
+
+async function getLegacyFirestoreVideos(projectId: string): Promise<ProjectVideo[]> {
+  const snapshot = await getDocs(
+    query(projectVideosCollection(projectId), orderBy('createdAt', 'desc'), limit(100)),
+  );
+
+  return snapshot.docs.map((docSnapshot) => docSnapshot.data());
+}
+
 /**
- * Salva um vídeo associado a um projeto.
- * - Autenticado: upload do blob para Storage + metadados no Firestore.
- * - Anônimo: salva completo (com blob) no IndexedDB.
+ * Salva um vídeo associado a um projeto apenas no IndexedDB local.
+ * Vídeos exportados não são mais enviados para Firestore/Storage.
  */
 export async function saveVideoToProject(
   video: Omit<ProjectVideo, 'id' | 'createdAt'>,
@@ -33,44 +76,12 @@ export async function saveVideoToProject(
 ): Promise<ProjectVideo> {
   const id = crypto.randomUUID();
   const createdAt = Date.now();
-
-  if (userId && video.videoBlob) {
-    try {
-      // Determina extensão pelo formato
-      const extension = video.format === 'webm' ? 'webm' : 'mp4';
-      const videoUrl = await uploadBlobAndGetUrl(
-        `projects/${userId}/${video.projectId}/videos/${id}.${extension}`,
-        video.videoBlob,
-      );
-
-      const firestoreItem: FirestoreProjectVideo = {
-        id,
-        projectId: video.projectId,
-        userId,
-        videoUrl,
-        format: video.format,
-        width: video.width,
-        height: video.height,
-        fps: video.fps,
-        durationInSeconds: video.durationInSeconds,
-        fileSizeBytes: video.fileSizeBytes,
-        createdAt,
-      };
-
-      await setDoc(doc(projectVideosCollection(video.projectId), id), firestoreItem);
-
-      return { ...firestoreItem };
-    } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.WRITE, `projects/${video.projectId}/videos/${id}`);
-    }
-  }
-
-  // Caminho IndexedDB (usuário anônimo)
   const indexedDbItem: ProjectVideo = {
     ...video,
     id,
     createdAt,
     userId: userId ?? '',
+    videoUrl: video.videoUrl.startsWith('blob:') ? '' : video.videoUrl,
   };
 
   await putIndexedDbItem(VIDEOS_STORE, indexedDbItem);
@@ -79,43 +90,55 @@ export async function saveVideoToProject(
 
 /**
  * Lista vídeos de um projeto, ordenados por createdAt descendente.
- * - Autenticado: query na subcoleção Firestore.
- * - Anônimo: filtra da IndexedDB local.
+ * - IndexedDB local: fonte principal para novos vídeos.
+ * - Firestore: leitura de vídeos legados já salvos na nuvem.
  */
 export async function getProjectVideos(projectId: string, userId?: string): Promise<ProjectVideo[]> {
+  const localVideos = await getLocalProjectVideos(projectId, userId);
+
   if (userId) {
     try {
-      const snapshot = await getDocs(
-        query(projectVideosCollection(projectId), orderBy('createdAt', 'desc'), limit(100)),
-      );
-
-      return snapshot.docs.map((docSnapshot) => docSnapshot.data());
+      const legacyVideos = await getLegacyFirestoreVideos(projectId);
+      return mergeLocalAndLegacyVideos(localVideos, legacyVideos);
     } catch (error: unknown) {
-      handleFirestoreError(error, OperationType.LIST, `projects/${projectId}/videos`);
+      log.warn('Falha ao carregar vídeos legados do Firestore; usando vídeos locais', {
+        error,
+        projectId,
+      });
+      return sortVideos(localVideos);
     }
   }
 
-  const allVideos = await getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE);
-  return allVideos
-    .filter((video) => video.projectId === projectId)
-    .sort((a, b) => b.createdAt - a.createdAt);
+  return sortVideos(localVideos);
 }
 
 /**
  * Remove um vídeo de um projeto.
- * - Autenticado: deleta do Storage + Firestore.
- * - Anônimo: deleta do IndexedDB.
+ * Sempre remove do IndexedDB local. Se houver documento legado na nuvem,
+ * também remove o documento e o arquivo antigo no Storage.
  */
 export async function deleteVideoFromProject(
   videoId: string,
   projectId: string,
   userId?: string,
 ): Promise<void> {
+  const localVideo = await getIndexedDbItem<ProjectVideo>(VIDEOS_STORE, videoId);
+  if (
+    localVideo
+    && localVideo.projectId === projectId
+    && isVisibleLocalVideo(localVideo, userId)
+  ) {
+    await deleteIndexedDbItem(VIDEOS_STORE, videoId);
+  }
+
   if (userId) {
     try {
-      // Lê o documento para obter a extensão real do vídeo no Storage
       const videoDoc = await getDoc(doc(projectVideosCollection(projectId), videoId));
-      const extension = videoDoc.exists() ? videoDoc.data().format : 'mp4';
+      if (!videoDoc.exists()) {
+        return;
+      }
+
+      const extension = videoDoc.data().format;
 
       await Promise.all([
         deleteDoc(doc(projectVideosCollection(projectId), videoId)),
@@ -129,6 +152,4 @@ export async function deleteVideoFromProject(
       handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}/videos/${videoId}`);
     }
   }
-
-  await deleteIndexedDbItem(VIDEOS_STORE, videoId);
 }

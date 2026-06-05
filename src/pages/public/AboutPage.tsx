@@ -152,7 +152,7 @@ function ValueCardComponent({ icon, title, description }: ValueCard) {
         >
           {icon}
         </Box>
-        <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
+        <Typography variant="h6" component="h3" sx={{ letterSpacing: 0 }}>
           {title}
         </Typography>
         <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.7 }}>
@@ -195,7 +195,7 @@ function TeamCard({ name, role, avatarUrl }: TeamMember) {
         >
           {name.charAt(0)}
         </Avatar>
-        <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
+        <Typography variant="h6" component="h3" sx={{ letterSpacing: 0 }}>
           {name}
         </Typography>
         <Typography variant="body2" sx={{ color: TEXT_SECONDARY, lineHeight: 1.6 }}>
@@ -438,7 +438,7 @@ export default function AboutPage() {
           sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
         >
           <Box component={motion.div} variants={fadeInUp}>
-            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
               {t('about.values.title')}
             </Typography>
           </Box>
@@ -478,7 +478,7 @@ export default function AboutPage() {
           sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
         >
           <Box component={motion.div} variants={fadeInUp}>
-            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
               {t('about.team.title')}
             </Typography>
           </Box>
@@ -518,7 +518,7 @@ export default function AboutPage() {
           sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
         >
           <Box component={motion.div} variants={fadeInUp}>
-            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
               {t('about.roadmap.title')}
             </Typography>
           </Box>

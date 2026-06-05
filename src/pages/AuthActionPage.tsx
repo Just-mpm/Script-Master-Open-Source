@@ -29,10 +29,12 @@ import logos from '../assets/logos';
 import {
   APP_BACKGROUND_GLOW,
   BRAND_PRIMARY_GLOW,
+  BRAND_PRIMARY_GLOW_SOFT,
   EMPTY_ICON_SIZE,
   GAP_RELAXED,
   SUCCESS_MAIN,
-  TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT } from '../theme/tokens';
+  TEXT_SECONDARY,
+} from '../theme/tokens';
 import { authTextFieldSx } from '../theme/authStyles';
 import { glassPanelSx } from '../theme/surfaces';
 import { PublicHeader } from '../components/public/PublicHeader';
@@ -98,7 +100,7 @@ const OUTLINED_BUTTON_SX = {
   transition: 'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
   '&:hover:not(.Mui-disabled)': {
     borderWidth: 2,
-    boxShadow: '0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}',
+    boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}`,
   },
   '&:active:not(.Mui-disabled)': {
     transform: 'scale(0.98)',

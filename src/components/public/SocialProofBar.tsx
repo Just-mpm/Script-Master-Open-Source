@@ -48,7 +48,7 @@ export function SocialProofBar({ label, sublabel }: SocialProofBarProps) {
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
             }}
           >
             {label}

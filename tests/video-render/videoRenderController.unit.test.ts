@@ -268,6 +268,38 @@ describe('videoRenderController (M1 — singleton Zustand)', () => {
     expect(state.error).toMatch(/duração do áudio/);
   });
 
+  it('startRender concluído persiste vídeo local com videoBlob quando projectId é informado', async () => {
+    const fakeBlob = new Blob(['fake'], { type: 'video/mp4' });
+    mockGetBlob.mockResolvedValue(fakeBlob);
+    mockRenderMediaOnWeb.mockResolvedValue({ getBlob: mockGetBlob });
+
+    const { saveVideoToProject } = await import('../../src/lib/db/videos');
+    const { useVideoRenderController } = await import(
+      '../../src/features/video-render/store/videoRenderController'
+    );
+
+    await useVideoRenderController.getState().startRender({
+      scenes: [createMinimalStudioScene()],
+      audioUrl: 'audio.mp3',
+      fps: 30,
+      durationInFrames: 90,
+      ratio: '16:9',
+      projectId: 'project-1',
+      userId: 'user-123',
+    });
+
+    expect(saveVideoToProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 'project-1',
+        userId: 'user-123',
+        videoBlob: fakeBlob,
+        format: 'mp4',
+        fileSizeBytes: fakeBlob.size,
+      }),
+      'user-123',
+    );
+  });
+
   it('startRender falha graciosamente quando renderMediaOnWeb lança', async () => {
     mockRenderMediaOnWeb.mockRejectedValue(new Error('WebCodecs não suportado'));
 

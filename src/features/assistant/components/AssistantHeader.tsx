@@ -77,7 +77,7 @@ export const AssistantHeader = React.memo(function AssistantHeader({
             variant="h5"
             noWrap
             sx={{
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
               fontSize: { xs: '0.875rem', md: '1.5rem' },
             }}
           >

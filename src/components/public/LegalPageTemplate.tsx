@@ -125,7 +125,7 @@ export function LegalPageTemplate({
               fontWeight: 700,
               color: TEXT_PRIMARY,
               mb: 1.5,
-              letterSpacing: '-0.035em',
+              letterSpacing: 0,
             }}
           >
             {title}

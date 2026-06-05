@@ -88,7 +88,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
             sx={{
               fontWeight: 700,
               color: 'text.primary',
-              letterSpacing: '-0.02em',
+              letterSpacing: 0,
               lineHeight: 1.35,
             }}
           >
@@ -111,7 +111,7 @@ export const ExportProgressBar = React.memo(function ExportProgressBar({
             minWidth: 0,
             fontWeight: title ? 500 : 700,
             color: title ? 'text.secondary' : 'text.primary',
-            letterSpacing: '-0.01em',
+            letterSpacing: 0,
           }}
           noWrap
         >

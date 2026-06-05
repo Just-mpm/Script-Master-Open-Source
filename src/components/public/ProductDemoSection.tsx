@@ -49,7 +49,7 @@ export function ProductDemoSection() {
           <Typography
             variant="h3"
             component="h2"
-            sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+            sx={{ mb: 1.5, letterSpacing: 0 }}
           >
             {t('landing.demo.title')}
           </Typography>
@@ -160,7 +160,7 @@ export function ProductDemoSection() {
                   component="p"
                   sx={{
                     fontWeight: 600,
-                    letterSpacing: '-0.02em',
+                    letterSpacing: 0,
                     color: 'text.primary',
                   }}
                 >

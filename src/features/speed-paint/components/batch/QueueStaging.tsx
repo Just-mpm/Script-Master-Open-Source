@@ -228,7 +228,7 @@ export function QueueStaging() {
           }}
         >
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.03em', mb: 0.5 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0, mb: 0.5 }}>
               {t('speedPaint.queueTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
@@ -381,7 +381,7 @@ export function QueueStaging() {
             startIcon={<PlayArrowIcon sx={{ fontSize: 18 }} />}
             sx={{
               fontWeight: 600,
-              letterSpacing: '-0.01em',
+              letterSpacing: 0,
               borderColor: alpha(BRAND_PRIMARY, 0.35),
               color: 'text.primary',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -402,7 +402,7 @@ export function QueueStaging() {
               background: `linear-gradient(135deg, ${BRAND_SECONDARY} 0%, ${BRAND_SECONDARY_LIGHT} 100%)`,
               boxShadow: `0 12px 32px ${BRAND_SECONDARY_GLOW_SOFT}`,
               fontWeight: 600,
-              letterSpacing: '-0.01em',
+              letterSpacing: 0,
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 background: `linear-gradient(135deg, ${BRAND_SECONDARY_LIGHT} 0%, ${BRAND_SECONDARY} 100%)`,

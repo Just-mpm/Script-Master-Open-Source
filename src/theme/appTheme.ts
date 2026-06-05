@@ -131,7 +131,7 @@ const components: Components = {
         minHeight: 44,
         textTransform: 'none',
         fontWeight: 600,
-        letterSpacing: '-0.01em',
+        letterSpacing: 0,
         variants: [
           {
             props: { variant: 'contained', color: 'primary' },
@@ -245,27 +245,27 @@ let appTheme = createTheme({
     fontFamily: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'].join(','),
     h1: {
       fontWeight: 700,
-      letterSpacing: '-0.04em',
+      letterSpacing: 0,
     },
     h2: {
       fontWeight: 700,
-      letterSpacing: '-0.04em',
+      letterSpacing: 0,
     },
     h3: {
       fontWeight: 700,
-      letterSpacing: '-0.035em',
+      letterSpacing: 0,
     },
     h4: {
       fontWeight: 700,
-      letterSpacing: '-0.03em',
+      letterSpacing: 0,
     },
     h5: {
       fontWeight: 700,
-      letterSpacing: '-0.025em',
+      letterSpacing: 0,
     },
     h6: {
       fontWeight: 700,
-      letterSpacing: '-0.02em',
+      letterSpacing: 0,
     },
     subtitle1: {
       fontWeight: 600,

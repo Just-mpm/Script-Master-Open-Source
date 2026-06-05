@@ -7,6 +7,48 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.128.0] - 2026-06-05
+
+### Adicionado
+
+- **Migração de vídeos do Storage para IndexedDB local** (`src/lib/db/`, `firestore.rules`, `storage.rules`, +253 linhas líquidas):
+  - `src/lib/db/projects.ts`: novo tipo `ProjectDetails`, novas funções `getOrCreateProjectDetails()` e `upsertProjectVideo()` — gerenciamento de metadados de vídeo localmente
+  - `src/lib/db/videos.ts`: 6 novas funções — `sortVideos()`, `mergeLocalAndLegacyVideos()`, `isVisibleLocalVideo()`, `getLocalProjectVideos()`, `getLocalVideosForUser()`, `getLegacyFirestoreVideos()` — camada completa de acesso a vídeos com fallback legado
+  - `src/lib/db/shared.ts`: nova função `getIndexedDbItemsByIndex()`, `DB_VERSION` incrementado
+  - `src/lib/db/migration.ts`: migração refatorada — remoção do step de vídeos da migração do IndexedDB (agora gerenciados localmente)
+  - `storage.rules`: regras reestruturadas — áudio (`150MB`, `audio/*`) e imagem (`10MB`, `image/*`) com validação refinada; vídeos bloqueados para escrita (`allow create, update: if false`) — apenas leitura/deleção de legados preservada
+  - `firestore.rules`: subcoleção `videos` bloqueada para criação/atualização (`allow create, update: if false`)
+  - **Testes expandidos:** `shared.unit.test.ts` (+33 linhas), `migration.unit.test.ts` (+75 linhas), `persistence.dual-storage.test.ts` (+161 linhas), `videoRenderController.unit.test.ts` (+32 linhas), `Library.component.test.tsx` (+87 linhas)
+
+- **Lazy loading de composições Remotion nos controllers de renderização** (`src/features/video-render/store/videoRenderController.tsx`, `src/features/speed-paint/store/speedPaintRenderController.tsx`):
+  - `videoRenderController.tsx` (+41/-35): `ExportableComposition` migrado de exportação direta para `async function createExportableComposition()` — import lazy da composição real, removendo dependência direta de `VideoComponent`
+  - `speedPaintRenderController.tsx` (+79/-57): `ExportableSpeedPaintComposition` e `ExportableBatchSpeedPaintComposition` migrados para `async function createExportable*Composition()` — lazy loading de `SpeedPaintScene` e `remotion`, removendo imports diretos
+
+### Alterado
+
+- **Padronização visual — `letterSpacing: 0` em ~50 componentes**: remoção global de `letterSpacing` negativo (`-0.02em`, `-0.035em`, `-0.04em`, `-0.025em`, `-0.01em`) em favor de `letterSpacing: 0` em toda a árvore de componentes. Afeta: `appTheme.ts` (todos os variants de heading), `HeroSection`, `FeatureCard`, `FeatureShowcase`, `MetricsSection`, `ProductDemoSection`, `SocialProofBar`, `StepCard`, `TestimonialsSection`, `UseCasesSection`, `CTASection`, `LegalPageTemplate`, `ScrollToTop`, `AboutPage`, `FaqPage`, `FuncionalidadesPage`, `LandingPage`, `PricingPage`, `NotFoundPage`, `LoginPage`, `RegisterPage`, `StudioPage`, `VideoPage`, `SpeedPaintPage`, `AuthActionPage`, `AssistantHeader`, `AssistantHistoryPanel`, `AssistantMemoriesPanel`, `AssistantMessages`, `AssistantSettingsPanel`, `SpeedPaintPlayerControls`, `BatchOrchestrator`, `QueueStaging`, `ImageUpload`, `CaptionEditorPanel`, `TranscriptionPanel`, `ExportProgressBar`, `ExportQualitySelector`, `ExportResultActions`, `FounderMessageDialog`, `ErrorBoundary`, `Library`, `CreditIndicator`, `ImageStudio` e outros
+
+- **UI responsiva de Login e Cadastro** (`LoginPage.tsx`, `RegisterPage.tsx`, `PublicHeader.tsx`):
+  - `LoginPage.tsx` (+26/-22): `maxWidth` responsivo (xs:360, sm:420) no container do formulário; `width` e `height` do ícone vazio adaptáveis
+  - `RegisterPage.tsx` (+29/-20): mesmo padrão do Login — maxWidth, ícone responsivo; import de `useMediaQuery` e `useTheme` para detecção de breakpoint
+  - `PublicHeader.tsx` (+21/-8): `gap`, `flexBasis`, `maxWidth`, `minWidth` responsivos para melhor adaptação em telas intermediárias
+
+- **i18n — Biblioteca** (`src/features/i18n/locales/{en,es,pt-BR}.ts`): texto `noVideos` alterado de "Nenhum vídeo encontrado neste projeto." para "Nenhum vídeo salvo neste navegador." (reflete migração para IndexedDB); nova chave `openVideoExporter` adicionada nos 3 locales
+
+- **Scroll suave pós-navegação** (`ScrollToTop.tsx`): `window.scrollTo(0, 0)` substituído por `window.requestAnimationFrame()` com scroll no `#main-content` — elimina jump visual em navegações entre páginas públicas
+
+- **AnalyticsConsentPrompt refatorado** (`AnalyticsConsentPrompt.tsx`, +41/-38): import de `Box` adicionado, estrutura de layout alterada para melhor encapsulamento de conteúdo
+
+### Corrigido
+
+- **Template literals aninhados corrigidos em 3 arquivos**: `${...}` dentro de template strings com crases (`) convertidos para `${...}` concatenado — `Sidebar.tsx` (scrollbarColor), `MarketingDemoComposition.tsx` (borderBottom), `CaptionEditorPanel.tsx` (boxShadow) — elimina warnings de sintaxe e possíveis breaks em runtime
+
+### Removido
+
+- **Auditoria de Product Design** (`docs/audits/product-design-2026-06-04/README.md`, -174 linhas): documento de auditoria do fluxo público concluída e arquivada
+
+---
+
 ## [0.127.0] - 2026-06-04
 
 ### Adicionado

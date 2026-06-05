@@ -86,7 +86,7 @@ export function FeatureCard({
             <Icon sx={{ fontSize: 28 }} aria-hidden="true" />
           </Box>
 
-          <Typography variant="h6" component="h3" sx={{ letterSpacing: '-0.02em' }}>
+          <Typography variant="h6" component="h3" sx={{ letterSpacing: 0 }}>
             {title}
           </Typography>
 

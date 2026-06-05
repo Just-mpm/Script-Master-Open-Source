@@ -45,9 +45,7 @@
  */
 import { create } from 'zustand';
 import type { ComponentType, ReactNode } from 'react';
-import { AbsoluteFill, Sequence, useVideoConfig } from 'remotion';
 import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
-import { SpeedPaintScene } from '../../video-render/components/SpeedPaintScene';
 import { getSpeedPaintSequenceTiming, type SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import { patchCanvasFontStretch } from '../../video-render/lib/canvasFontStretchPatch';
 import { isCancellationError, toUserFriendlyError } from '../../video-render/lib/exportUtils';
@@ -105,60 +103,74 @@ type ExportableBatchSpeedPaintProps = BatchSpeedPaintCompositionProps & { [key: 
 // Composições React (exportáveis pelo Remotion)
 // ---------------------------------------------------------------------------
 
-/**
- * Wrapper de SpeedPaintScene para exportação single. Usa `useVideoConfig`
- * para obter `durationInFrames` calculado pelo Remotion, e renderiza
- * SpeedPaintScene com `isExporting=true` para desabilitar overlays de debug.
- */
-function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): ReactNode {
-  const { animation, imageSource, showDrawTool } = props;
-  const { durationInFrames } = useVideoConfig();
+async function createExportableSpeedPaintComposition(): Promise<ComponentType<ExportableSpeedPaintProps>> {
+  const [{ AbsoluteFill, useVideoConfig }, { SpeedPaintScene }] = await Promise.all([
+    import('remotion'),
+    import('../../video-render/components/SpeedPaintScene'),
+  ]);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000' }}>
-      <SpeedPaintScene
-        animation={animation}
-        imageSource={imageSource}
-        durationInFrames={durationInFrames}
-        showDrawTool={showDrawTool}
-        isLastScene
-        isExporting
-        timingMode="duration-based"
-      />
-    </AbsoluteFill>
-  );
+  /**
+   * Wrapper de SpeedPaintScene para exportação single. Usa `useVideoConfig`
+   * para obter `durationInFrames` calculado pelo Remotion, e renderiza
+   * SpeedPaintScene com `isExporting=true` para desabilitar overlays de debug.
+   */
+  return function ExportableSpeedPaintComposition(props: ExportableSpeedPaintProps): ReactNode {
+    const { animation, imageSource, showDrawTool } = props;
+    const { durationInFrames } = useVideoConfig();
+
+    return (
+      <AbsoluteFill style={{ backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000' }}>
+        <SpeedPaintScene
+          animation={animation}
+          imageSource={imageSource}
+          durationInFrames={durationInFrames}
+          showDrawTool={showDrawTool}
+          isLastScene
+          isExporting
+          timingMode="duration-based"
+        />
+      </AbsoluteFill>
+    );
+  };
 }
 
-/**
- * Wrapper de SpeedPaintScene para exportação em lote. Encadeia cenas via
- * `Sequence` com `from` calculado pelo `sceneStepFrames` e duração fixa por
- * cena (`sceneDurationInFrames`). Última cena tem `isLastScene=true`.
- */
-function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintProps): ReactNode {
-  const { items, showDrawTool, sceneDurationInFrames, sceneStepFrames, timingMode } = props;
+async function createExportableBatchSpeedPaintComposition(): Promise<ComponentType<ExportableBatchSpeedPaintProps>> {
+  const [{ AbsoluteFill, Sequence }, { SpeedPaintScene }] = await Promise.all([
+    import('remotion'),
+    import('../../video-render/components/SpeedPaintScene'),
+  ]);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: '#000' }}>
-      {items.map((item, index) => (
-        <Sequence
-          key={`${item.animation.id}-${index}`}
-          from={index * sceneStepFrames }
-          durationInFrames={sceneDurationInFrames}
-        >
-          <SpeedPaintScene
-            animation={item.animation}
-            imageSource={item.imageSource}
+  /**
+   * Wrapper de SpeedPaintScene para exportação em lote. Encadeia cenas via
+   * `Sequence` com `from` calculado pelo `sceneStepFrames` e duração fixa por
+   * cena (`sceneDurationInFrames`). Última cena tem `isLastScene=true`.
+   */
+  return function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintProps): ReactNode {
+    const { items, showDrawTool, sceneDurationInFrames, sceneStepFrames, timingMode } = props;
+
+    return (
+      <AbsoluteFill style={{ backgroundColor: '#000' }}>
+        {items.map((item, index) => (
+          <Sequence
+            key={`${item.animation.id}-${index}`}
+            from={index * sceneStepFrames }
             durationInFrames={sceneDurationInFrames}
-            showDrawTool={showDrawTool}
-            isLastScene={index === items.length - 1 }
-            isExporting
-            fitMode="contain"
-            timingMode={timingMode}
-          />
-        </Sequence>
-      ))}
-    </AbsoluteFill>
-  );
+          >
+            <SpeedPaintScene
+              animation={item.animation}
+              imageSource={item.imageSource}
+              durationInFrames={sceneDurationInFrames}
+              showDrawTool={showDrawTool}
+              isLastScene={index === items.length - 1 }
+              isExporting
+              fitMode="contain"
+              timingMode={timingMode}
+            />
+          </Sequence>
+        ))}
+      </AbsoluteFill>
+    );
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -437,11 +449,16 @@ async function runSingleRender(
 
   // 8. Carrega Remotion lazy
   let renderMediaOnWeb: typeof import('@remotion/web-renderer').renderMediaOnWeb;
+  let ExportableSpeedPaintComposition: ComponentType<ExportableSpeedPaintProps>;
   try {
-    const module = await loadRenderImpl();
+    const [module, exportableComposition] = await Promise.all([
+      loadRenderImpl(),
+      createExportableSpeedPaintComposition(),
+    ]);
     renderMediaOnWeb = module.renderMediaOnWeb;
+    ExportableSpeedPaintComposition = exportableComposition;
   } catch (err) {
-    log.error('Falha ao carregar @remotion/web-renderer', { error: err });
+    log.error('Falha ao carregar módulo de renderização speed paint', { error: err });
     if (currentRenderId !== renderId) return;
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
     set({
@@ -686,11 +703,16 @@ async function runBatchRender(
 
     // 8. Carrega Remotion lazy
     let renderMediaOnWeb: typeof import('@remotion/web-renderer').renderMediaOnWeb;
+    let ExportableBatchSpeedPaintComposition: ComponentType<ExportableBatchSpeedPaintProps>;
     try {
-      const module = await loadRenderImpl();
+      const [module, exportableComposition] = await Promise.all([
+        loadRenderImpl(),
+        createExportableBatchSpeedPaintComposition(),
+      ]);
       renderMediaOnWeb = module.renderMediaOnWeb;
+      ExportableBatchSpeedPaintComposition = exportableComposition;
     } catch (err) {
-      log.error('Falha ao carregar @remotion/web-renderer', { error: err });
+      log.error('Falha ao carregar módulo de renderização speed paint', { error: err });
       if (currentRenderId !== renderId) return;
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       set({

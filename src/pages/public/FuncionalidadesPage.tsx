@@ -118,7 +118,7 @@ export default function FuncionalidadesPage() {
             viewport={VIEWPORT_ONCE}
             sx={{ mb: { xs: 3, md: 4 } }}
           >
-            <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
+            <Typography variant="h4" component="h2" sx={{ letterSpacing: 0 }}>
               {t(section.titleKey)}
             </Typography>
           </Box>

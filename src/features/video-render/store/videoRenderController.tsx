@@ -32,7 +32,6 @@
  */
 import { create } from 'zustand';
 import type { ComponentType, ReactNode } from 'react';
-import { VideoComposition } from '../components/VideoComposition';
 import type { VideoCompositionProps, SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
 import { getResolutionFromQuality, mapScenesToVideoScenes, DEFAULT_EXPORT_QUALITY } from '../lib/videoUtils';
 import { enhanceScenesWithSpeedPaint } from '../lib/speedPaintService';
@@ -102,36 +101,38 @@ async function loadRenderImpl(): Promise<typeof import('@remotion/web-renderer')
 /** Tipo para satisfazer a constraint de `renderMediaOnWeb` que exige Props extends Record<string, unknown>. */
 type ExportableProps = VideoCompositionProps & { [key: string]: unknown };
 
-/**
- * Wrapper em torno de VideoComposition que satisfaz a constraint de tipo
- * `Props extends Record<string, unknown>` exigida pelo `renderMediaOnWeb`.
- * Como interfaces TypeScript regulares não possuem index signatures, criamos
- * um wrapper com tipo explícito.
- */
-function ExportableComposition(props: ExportableProps): ReactNode {
-  const {
-    scenes,
-    audioUrl,
-    fps,
-    captions,
-    subtitleStyle,
-    speedPaintSpeed,
-    speedPaintMultipliers,
-    showDrawTool,
-  } = props;
-  return (
-    <VideoComposition
-      scenes={scenes}
-      audioUrl={audioUrl}
-      fps={fps}
-      captions={captions}
-      subtitleStyle={subtitleStyle}
-      isExporting={true}
-      speedPaintSpeed={speedPaintSpeed}
-      speedPaintMultipliers={speedPaintMultipliers}
-      showDrawTool={showDrawTool}
-    />
-  );
+async function createExportableComposition(): Promise<ComponentType<ExportableProps>> {
+  const { VideoComposition } = await import('../components/VideoComposition');
+
+  /**
+   * Wrapper em torno de VideoComposition que satisfaz a constraint de tipo
+   * `Props extends Record<string, unknown>` exigida pelo `renderMediaOnWeb`.
+   */
+  return function ExportableComposition(props: ExportableProps): ReactNode {
+    const {
+      scenes,
+      audioUrl,
+      fps,
+      captions,
+      subtitleStyle,
+      speedPaintSpeed,
+      speedPaintMultipliers,
+      showDrawTool,
+    } = props;
+    return (
+      <VideoComposition
+        scenes={scenes}
+        audioUrl={audioUrl}
+        fps={fps}
+        captions={captions}
+        subtitleStyle={subtitleStyle}
+        isExporting={true}
+        speedPaintSpeed={speedPaintSpeed}
+        speedPaintMultipliers={speedPaintMultipliers}
+        showDrawTool={showDrawTool}
+      />
+    );
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -315,11 +316,16 @@ export const useVideoRenderController = create<VideoRenderControllerStore>()((se
 
     // 12. Carrega Remotion lazy (primeira vez baixa o chunk; demais é cache)
     let renderMediaOnWeb: typeof import('@remotion/web-renderer').renderMediaOnWeb;
+    let ExportableComposition: ComponentType<ExportableProps>;
     try {
-      const module = await loadRenderImpl();
+      const [module, exportableComposition] = await Promise.all([
+        loadRenderImpl(),
+        createExportableComposition(),
+      ]);
       renderMediaOnWeb = module.renderMediaOnWeb;
+      ExportableComposition = exportableComposition;
     } catch (err) {
-      log.error('Falha ao carregar @remotion/web-renderer', { error: err });
+      log.error('Falha ao carregar módulo de renderização de vídeo', { error: err });
       if (currentRenderId !== renderId) return; // render obsoleto
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       set({
@@ -416,7 +422,7 @@ export const useVideoRenderController = create<VideoRenderControllerStore>()((se
         });
       }
 
-      // 20. Salva no projeto de forma não-bloqueante
+      // 20. Salva no projeto local de forma não-bloqueante
       if (projectId) {
         const durationInSeconds = durationInFrames / fps;
         const format = get().container === 'webm' ? 'webm' : 'mp4';
@@ -438,7 +444,7 @@ export const useVideoRenderController = create<VideoRenderControllerStore>()((se
         ).catch(() => {
           if (currentRenderId !== renderId) return;
           set({
-            saveWarning: 'O vídeo foi exportado, mas não foi possível salvar no projeto. Você ainda pode baixá-lo localmente.',
+            saveWarning: 'O vídeo foi exportado, mas não foi possível salvá-lo localmente. Você ainda pode baixá-lo agora.',
           });
         });
       }

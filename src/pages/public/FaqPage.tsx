@@ -248,7 +248,7 @@ export default function FaqPage() {
         sx={{ py: { xs: 6, md: 8 }, textAlign: 'center' }}
       >
         <Box sx={{ maxWidth: 560, mx: 'auto', px: 2 }}>
-          <Typography variant="h4" component="h2" sx={{ mb: 2, letterSpacing: '-0.03em' }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2, letterSpacing: 0 }}>
             {t('faq.stillHaveQuestions.title')}
           </Typography>
           <Typography

@@ -94,7 +94,7 @@ export function FeatureShowcase({
                 <Icon sx={{ fontSize: 24 }} aria-hidden="true" />
               </Box>
 
-              <Typography variant="h4" component="h2" sx={{ letterSpacing: '-0.03em' }}>
+              <Typography variant="h4" component="h2" sx={{ letterSpacing: 0 }}>
                 {title}
               </Typography>
 

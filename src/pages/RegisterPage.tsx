@@ -9,6 +9,8 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import Google from '@mui/icons-material/Google';
 import { DocumentHead } from '../components/DocumentHead';
 import { Link } from 'react-router-dom';
@@ -25,6 +27,7 @@ import {
   GAP_RELAXED,
   TEXT_SECONDARY,
   BRAND_PRIMARY_GLOW_SOFT,
+  WHITE_06,
 } from '../theme/tokens';
 import { authTextFieldSx, authLinkSx } from '../theme/authStyles';
 import { glassPanelSx } from '../theme/surfaces';
@@ -35,6 +38,9 @@ export function RegisterPage() {
   const { login, signup, authError, clearAuthError } = useAuth();
   const { t, locale } = useLocale();
   const authBenefits = getLocalizedAuthBenefits(locale);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const googleButtonLabel = isMobile ? 'Google' : t('auth.register.googleBtn');
 
   const seo = getPageSeo({
     title: t('auth.register.seoTitle'),
@@ -101,17 +107,17 @@ export function RegisterPage() {
           flex: 1,
           display: 'grid',
           placeItems: 'center',
-          p: { xs: 3, sm: 4 },
-          py: { xs: 8, md: 12 },
+          p: { xs: 2, sm: 4 },
+          py: { xs: 3, sm: 5, md: 12 },
         }}
       >
         <Box sx={{ maxWidth: 960, width: '100%' }}>
-          <Grid container spacing={4} sx={{ alignItems: 'center' }}>
+          <Grid container spacing={{ xs: 2.5, md: 4 }} sx={{ alignItems: 'center' }}>
             {/* Coluna esquerda — beneficios */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ display: { xs: 'none', sm: 'block' }, order: { sm: 2, md: 1 } }}>
               <Stack spacing={3}>
                 <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-                  <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+                  <Typography variant="h4" component="h2" sx={{ mb: 1, letterSpacing: 0 }}>
                     {t('auth.login.benefitsTitle')}
                   </Typography>
                   <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
@@ -134,7 +140,7 @@ export function RegisterPage() {
                             bgcolor: 'action.hover',
                             color: 'primary.main',
                             flexShrink: 0,
-                            border: '1px solid ${WHITE_06}',
+                            border: `1px solid ${WHITE_06}`,
                             transition: 'background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                             '&:hover': {
                               bgcolor: 'action.selected',
@@ -160,26 +166,26 @@ export function RegisterPage() {
             </Grid>
 
             {/* Coluna direita — card de cadastro */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ order: { xs: 1, md: 2 } }}>
               <Paper
                 variant="outlined"
                 sx={(theme) => ({
                   ...glassPanelSx(theme),
-                  p: { xs: 4, sm: 5 },
+                  p: { xs: 2.5, sm: 5 },
                   textAlign: 'center',
                   mx: 'auto',
-                  maxWidth: 420,
+                  maxWidth: { xs: 360, sm: 420 },
                 })}
               >
-                <Stack spacing={GAP_RELAXED} sx={{ alignItems: 'center' }}>
+                <Stack spacing={{ xs: 1.35, sm: GAP_RELAXED }} sx={{ alignItems: 'center' }}>
                   {/* Brand logo */}
                   <Box
                     component="img"
                     src={logos.mark.round}
                     alt={t('nav.logoAlt')}
                     sx={{
-                      width: EMPTY_ICON_SIZE * 2,
-                      height: EMPTY_ICON_SIZE * 2,
+                      width: { xs: 56, sm: EMPTY_ICON_SIZE * 2 },
+                      height: { xs: 56, sm: EMPTY_ICON_SIZE * 2 },
                       objectFit: 'contain',
                       transition: 'transform 0.3s ease',
                       '&:hover': { transform: 'scale(1.04)' },
@@ -187,7 +193,7 @@ export function RegisterPage() {
                   />
 
                   <Box>
-                    <Typography variant="h5" component="h2" sx={{ letterSpacing: '-0.02em' }}>
+                    <Typography variant="h5" component="h1" sx={{ letterSpacing: 0 }}>
                       {t('auth.register.title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -206,13 +212,14 @@ export function RegisterPage() {
                   <Button
                     variant="contained"
                     color="primary"
-                    size="large"
+                    size={isMobile ? 'medium' : 'large'}
                     fullWidth
                     startIcon={<Google sx={{ fontSize: ICON_SIZE_LG }} />}
                     onClick={login}
                     sx={{
-                      py: 1.5,
+                      py: { xs: 1.15, sm: 1.5 },
                       mt: 0.5,
+                      lineHeight: 1.2,
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-1px)',
@@ -223,7 +230,7 @@ export function RegisterPage() {
                       },
                     }}
                   >
-                    {t('auth.register.googleBtn')}
+                    {googleButtonLabel}
                   </Button>
 
                   <Divider sx={{ width: '100%' }}>
@@ -242,7 +249,7 @@ export function RegisterPage() {
 
                   {/* Formulario email/senha */}
                   <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
-                    <Stack spacing={2}>
+                    <Stack spacing={{ xs: 1.25, sm: 2 }}>
                       <TextField
                         label={t('auth.register.emailLabel')}
                         type="email"
@@ -253,7 +260,7 @@ export function RegisterPage() {
                         fullWidth
                         required
                         autoComplete="email"
-                        autoFocus
+                        size={isMobile ? 'small' : 'medium'}
                         sx={authTextFieldSx}
                       />
 
@@ -267,6 +274,7 @@ export function RegisterPage() {
                         fullWidth
                         required
                         autoComplete="new-password"
+                        size={isMobile ? 'small' : 'medium'}
                         sx={authTextFieldSx}
                       />
 
@@ -280,19 +288,20 @@ export function RegisterPage() {
                         fullWidth
                         required
                         autoComplete="new-password"
+                        size={isMobile ? 'small' : 'medium'}
                         sx={authTextFieldSx}
                       />
 
                       <Button
                         type="submit"
                         variant="contained"
-                        size="large"
+                        size={isMobile ? 'medium' : 'large'}
                         fullWidth
                         disabled={isSubmitting}
                         startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : undefined }
                         sx={{
                           mt: 0.5,
-                          py: 1.5,
+                          py: { xs: 1.15, sm: 1.5 },
                           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover:not(.Mui-disabled)': {
                             transform: 'translateY(-1px)',

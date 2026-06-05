@@ -444,7 +444,7 @@ function BrowserChrome({ children, copy }: { children: ReactNode; copy: Marketin
           alignItems: 'center',
           gap: 14,
           padding: '0 28px',
-          borderBottom: '1px solid ${WHITE_08}',
+          borderBottom: `1px solid ${WHITE_08}`,
           color: TEXT_PRIMARY,
           fontSize: 24,
           fontWeight: 850,

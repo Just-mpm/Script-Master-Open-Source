@@ -27,7 +27,7 @@ import { ProductDemoSection } from '../../components/public/ProductDemoSection';
 import { TestimonialsSection } from '../../components/public/TestimonialsSection';
 import { staggerContainer, fadeInUp, VIEWPORT_ONCE } from '../../components/public/animations';
 import { useLocale } from '../../features/i18n';
-import { RADIUS_SM } from '../../theme/tokens';
+import { RADIUS_SM, WHITE_12 } from '../../theme/tokens';
 
 const MarketingDemoPlayer = lazy(async () => {
   const module = await import('../../features/public-demo-video');
@@ -154,7 +154,7 @@ export default function LandingPage() {
             <Typography
               variant="h3"
               component="h2"
-              sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+              sx={{ mb: 1.5, letterSpacing: 0 }}
             >
               {t('landing.features.title')}
             </Typography>
@@ -283,7 +283,7 @@ export default function LandingPage() {
           sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
         >
           <Box component={motion.div} variants={fadeInUp}>
-            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+            <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
               {t('landing.howItWorks.title')}
             </Typography>
           </Box>
@@ -320,7 +320,7 @@ export default function LandingPage() {
           viewport={VIEWPORT_ONCE}
           sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
         >
-          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+          <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
             {t('landing.moreFeatures.title')}
           </Typography>
         </Box>
@@ -367,7 +367,7 @@ function HeroDemoFallback({ alt }: { alt: string }) {
         objectFit: 'cover',
         objectPosition: 'center top',
         filter: 'drop-shadow(0 24px 48px rgba(46, 117, 182, 0.25))',
-        border: '1px solid ${WHITE_12}',
+        border: `1px solid ${WHITE_12}`,
         borderRadius: RADIUS_SM,
       }}
     />

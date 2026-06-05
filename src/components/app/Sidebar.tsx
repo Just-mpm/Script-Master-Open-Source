@@ -204,7 +204,7 @@ export function Sidebar() {
             },
             '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
             scrollbarWidth: 'thin',
-            scrollbarColor: '${WHITE_08} transparent',
+            scrollbarColor: `${WHITE_08} transparent`,
           }}
         >
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, p: 0 }}>

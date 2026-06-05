@@ -30,7 +30,7 @@ export function MetricsSection() {
             <Typography
               variant="h3"
               component="h2"
-              sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+              sx={{ mb: 1.5, letterSpacing: 0 }}
             >
               {t('landing.metrics.title')}
             </Typography>
@@ -89,7 +89,7 @@ export function MetricsSection() {
                         backgroundClip: 'text',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
-                        letterSpacing: '-0.04em',
+                        letterSpacing: 0,
                         lineHeight: 1.1,
                       }}
                     >

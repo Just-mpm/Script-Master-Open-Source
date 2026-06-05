@@ -1,8 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ProjectVideo } from '../../src/lib/db/types';
+
+const {
+  mockSetDoc,
+  mockStorageRef,
+  mockUploadBytes,
+  mockUploadBytesResumable,
+  mockGetDownloadURL,
+  mockDeleteObject,
+} = vi.hoisted(() => ({
+  mockSetDoc: vi.fn().mockResolvedValue(undefined),
+  mockStorageRef: vi.fn(),
+  mockUploadBytes: vi.fn().mockResolvedValue({}),
+  mockUploadBytesResumable: vi.fn(),
+  mockGetDownloadURL: vi.fn().mockResolvedValue('https://storage.example/video.mp4'),
+  mockDeleteObject: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn().mockReturnValue({}),
-  setDoc: vi.fn().mockResolvedValue(undefined),
+  setDoc: mockSetDoc,
   getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   query: vi.fn().mockReturnValue({}),
   where: vi.fn().mockReturnValue({}),
@@ -16,10 +33,11 @@ vi.mock('../../src/lib/firebase', () => ({
 }));
 
 vi.mock('firebase/storage', () => ({
-  ref: vi.fn(),
-  uploadBytes: vi.fn(),
-  getDownloadURL: vi.fn(),
-  deleteObject: vi.fn(),
+  ref: mockStorageRef,
+  uploadBytes: mockUploadBytes,
+  uploadBytesResumable: mockUploadBytesResumable,
+  getDownloadURL: mockGetDownloadURL,
+  deleteObject: mockDeleteObject,
 }));
 
 vi.mock('../../src/lib/logger', () => ({
@@ -100,6 +118,58 @@ describe('db/migration', () => {
       expect(result.summary.projects).toBe(1);
       expect(result.summary.generations).toBe(1);
       expect(result.summary.memories).toBe(1);
+    });
+  });
+
+  describe('migrateAnonymousData', () => {
+    it('mantém vídeos no IndexedDB e não envia para Firestore ou Storage', async () => {
+      const { clearAllIndexedDbStores, getAllIndexedDbItems, putIndexedDbItem, VIDEOS_STORE } = await import('../../src/lib/db/shared');
+      const { migrateAnonymousData } = await import('../../src/lib/db/migration');
+      await clearAllIndexedDbStores();
+      vi.clearAllMocks();
+
+      const video: ProjectVideo = {
+        id: 'video-local-1',
+        projectId: 'project-1',
+        userId: '',
+        videoUrl: 'blob:old-url',
+        format: 'mp4',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        durationInSeconds: 12,
+        fileSizeBytes: 1024,
+        createdAt: Date.now(),
+        videoBlob: new Blob(['video'], { type: 'video/mp4' }),
+      };
+      const otherUserVideo: ProjectVideo = {
+        ...video,
+        id: 'video-user-a',
+        userId: 'user-a',
+      };
+      await putIndexedDbItem<ProjectVideo>(VIDEOS_STORE, video);
+      await putIndexedDbItem<ProjectVideo>(VIDEOS_STORE, otherUserVideo);
+
+      const result = await migrateAnonymousData('user-123');
+      const videos = await getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE);
+
+      expect(result.migrated).toBe(0);
+      expect(result.details).toContain('1 vídeos locais preservados');
+      expect(videos).toHaveLength(2);
+      expect(videos.find((item) => item.id === video.id)).toMatchObject({
+        id: video.id,
+        projectId: video.projectId,
+        userId: 'user-123',
+        videoUrl: '',
+      });
+      expect(videos.find((item) => item.id === video.id)?.videoBlob).toBeDefined();
+      expect(videos.find((item) => item.id === otherUserVideo.id)).toMatchObject({
+        id: otherUserVideo.id,
+        userId: 'user-a',
+      });
+      expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(mockUploadBytes).not.toHaveBeenCalled();
+      expect(mockUploadBytesResumable).not.toHaveBeenCalled();
     });
   });
 });

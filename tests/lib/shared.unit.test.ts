@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   removeUndefinedFields,
   createFirestoreConverter,
+  clearAllIndexedDbStores,
   DB_NAME,
   DB_VERSION,
   STORE_NAME,
@@ -14,7 +15,10 @@ import {
   SETTING_STORE,
   VIDEOS_STORE,
   TRANSCRIPTIONS_STORE,
+  getIndexedDbItemsByIndex,
+  putIndexedDbItem,
 } from '../../src/lib/db/shared';
+import type { ProjectVideo } from '../../src/lib/db/types';
 
 describe('db/shared', () => {
   // -------------------------------------------------------------------------
@@ -25,8 +29,8 @@ describe('db/shared', () => {
       expect(DB_NAME).toBe('GeminiVoiceStudioDB');
     });
 
-    it('DB_VERSION deve ser 9', () => {
-      expect(DB_VERSION).toBe(9);
+    it('DB_VERSION deve ser 10', () => {
+      expect(DB_VERSION).toBe(10);
     });
 
     it('nomes de store devem ser strings não vazias', () => {
@@ -149,6 +153,33 @@ describe('db/shared', () => {
       };
       const result = converter.fromFirestore(mockSnapshot as never, {});
       expect(result).toEqual(mockData);
+    });
+  });
+
+  describe('getIndexedDbItemsByIndex', () => {
+    it('busca vídeos locais pelo índice projectId', async () => {
+      await clearAllIndexedDbStores();
+      const projectId = `project-${Date.now()}`;
+      const video: ProjectVideo = {
+        id: 'video-indexed',
+        projectId,
+        userId: '',
+        videoUrl: '',
+        format: 'mp4',
+        width: 1920,
+        height: 1080,
+        fps: 30,
+        durationInSeconds: 10,
+        fileSizeBytes: 1024,
+        createdAt: Date.now(),
+        videoBlob: new Blob(['video'], { type: 'video/mp4' }),
+      };
+      await putIndexedDbItem<ProjectVideo>(VIDEOS_STORE, video);
+
+      const videos = await getIndexedDbItemsByIndex<ProjectVideo>(VIDEOS_STORE, 'projectId', projectId);
+
+      expect(videos).toHaveLength(1);
+      expect(videos[0].id).toBe(video.id);
     });
   });
 });

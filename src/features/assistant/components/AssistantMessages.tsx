@@ -383,7 +383,7 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         <AutoAwesome sx={{ fontSize: { xs: ICON_SIZE_LG * 1.4, md: ICON_SIZE_LG * 1.8 } }} />
       </Box>
 
-      <Typography variant="h6" sx={{ mb: 0.75, letterSpacing: '-0.02em' }}>
+      <Typography variant="h6" sx={{ mb: 0.75, letterSpacing: 0 }}>
         {t('assistant.messages.emptyTitle')}
       </Typography>
 

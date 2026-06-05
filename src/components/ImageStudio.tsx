@@ -45,7 +45,7 @@ import { CreditBlockedMessage } from './CreditBlockedMessage';
 import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
-import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT, WHITE_12 } from '../theme/tokens';
+import { SHADOW_IMAGE, ICON_SIZE_SM, ICON_SIZE_MD, GAP_DEFAULT, GAP_MEDIUM, GAP_COMPACT, RADIUS_SM, EMPTY_ICON_SIZE, EMPTY_WRAPPER_MAX_WIDTH, BRAND_GRADIENT, WHITE_12, BLACK_50 } from '../theme/tokens';
 import { StackedHeader } from './ui';
 import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 
@@ -654,7 +654,7 @@ export function ImageStudio() {
                             sx={{
                               position: 'absolute',
                               inset: 0,
-                              background: 'linear-gradient(180deg, transparent 40%, ${BLACK_50} 100%)',
+                              background: `linear-gradient(180deg, transparent 40%, ${BLACK_50} 100%)`,
                               opacity: 0,
                               transition: 'opacity 0.25s ease',
                               pointerEvents: 'none',

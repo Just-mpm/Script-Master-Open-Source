@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { Library } from '../../src/components/Library';
-import type { Project, AudioSource, ProjectImage } from '../../src/lib/db';
+import type { Project, AudioSource, ProjectImage, ProjectVideo } from '../../src/lib/db';
 import { I18nProvider } from '../../src/features/i18n';
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
 const mockNavigate = vi.fn();
@@ -56,7 +56,7 @@ vi.mock('../../src/lib/db', () => ({
   getProjects: vi.fn().mockResolvedValue([]),
   deleteProject: vi.fn().mockResolvedValue(undefined),
   updateProjectName: vi.fn().mockResolvedValue(undefined),
-  getProjectDetails: vi.fn().mockResolvedValue({ audios: [], images: [] }),
+  getProjectDetails: vi.fn().mockResolvedValue({ audios: [], images: [], videos: [] }),
   deleteGeneration: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -493,5 +493,89 @@ describe('Library', () => {
         expect.stringContaining('2 imagem(ns) ficaram de fora'),
       );
     });
+  });
+
+  it('mostra caminho para reexportar quando não há vídeo salvo localmente', async () => {
+    const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+    vi.mocked(getProjects).mockResolvedValue([
+      { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+    ]);
+    vi.mocked(getProjectDetails).mockResolvedValue({
+      audios: [] as AudioSource[],
+      images: [] as ProjectImage[],
+      videos: [] as ProjectVideo[],
+    });
+
+    const user = userEvent.setup();
+    render(<Library />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('Projeto X')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Ver detalhes/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum vídeo salvo neste navegador.')).toBeDefined();
+    });
+
+    await user.click(screen.getByRole('button', { name: /Abrir exportador de vídeo/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/app/video');
+  });
+
+  it('usa URL local recriada para baixar vídeo salvo com Blob', async () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:local-video') as typeof URL.createObjectURL;
+    URL.revokeObjectURL = vi.fn() as typeof URL.revokeObjectURL;
+
+    try {
+      const { getProjects, getProjectDetails } = await import('../../src/lib/db');
+      const { downloadFile } = await import('../../src/lib/download');
+      const videoBlob = new Blob(['video'], { type: 'video/mp4' });
+      vi.mocked(getProjects).mockResolvedValue([
+        { id: 'p1', name: 'Projeto X', script: '', createdAt: Date.now(), userId: 'u1' } as Project,
+      ]);
+      vi.mocked(getProjectDetails).mockResolvedValue({
+        audios: [] as AudioSource[],
+        images: [] as ProjectImage[],
+        videos: [{
+          id: 'video-1',
+          projectId: 'p1',
+          userId: 'u1',
+          videoUrl: '',
+          format: 'mp4',
+          width: 1920,
+          height: 1080,
+          fps: 30,
+          durationInSeconds: 10,
+          fileSizeBytes: videoBlob.size,
+          createdAt: Date.now(),
+          videoBlob,
+        } as ProjectVideo],
+      });
+
+      const user = userEvent.setup();
+      render(<Library />, { wrapper: Wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('Projeto X')).toBeDefined();
+      });
+
+      await user.click(screen.getByRole('button', { name: /Ver detalhes/i }));
+
+      await waitFor(() => {
+        expect(URL.createObjectURL).toHaveBeenCalledWith(videoBlob);
+      });
+
+      await user.click(screen.getByRole('button', { name: /Baixar vídeo/i }));
+
+      expect(downloadFile).toHaveBeenCalledWith('blob:local-video', 'Projeto X-video-1.mp4');
+    } finally {
+      cleanup();
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+    }
   });
 });

@@ -12,7 +12,7 @@ import { createLogger } from '../logger';
 const log = createLogger('shared');
 
 export const DB_NAME = 'GeminiVoiceStudioDB';
-export const DB_VERSION = 9;
+export const DB_VERSION = 10;
 
 export const STORE_NAME = 'generations';
 export const IMAGE_STORE = 'image_generations';
@@ -178,6 +178,18 @@ export async function getAllIndexedDbItems<T>(storeName: string): Promise<T[]> {
   const transaction = database.transaction(storeName, 'readonly');
   const store = transaction.objectStore(storeName);
   return runRequest(store.getAll()) as Promise<T[]>;
+}
+
+export async function getIndexedDbItemsByIndex<T>(
+  storeName: string,
+  indexName: string,
+  key: IDBValidKey,
+): Promise<T[]> {
+  const database = await initDB();
+  const transaction = database.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+  const index = store.index(indexName);
+  return runRequest(index.getAll(key)) as Promise<T[]>;
 }
 
 export async function getIndexedDbItem<T>(storeName: string, key: IDBValidKey): Promise<T | null> {

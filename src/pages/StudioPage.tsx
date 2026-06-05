@@ -70,7 +70,7 @@ export function StudioPage({
 
   const intro = (
     <Stack spacing={0.75}>
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 800, letterSpacing: 0 }}>
         {t('studio.studioPage.title')}
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 760 }}>

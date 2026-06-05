@@ -92,7 +92,7 @@ export const ExportResultActions = React.memo(function ExportResultActions({
     >
       <Stack direction="row" spacing={GAP_COMPACT} sx={{ alignItems: 'center' }}>
         <CheckCircle sx={{ fontSize: 20, color: SUCCESS_MAIN, filter: `drop-shadow(0 0 6px ${SUCCESS_GLOW})` }} />
-        <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: '-0.01em' }}>
+        <Typography variant="body2" sx={{ color: SUCCESS_MAIN, fontWeight: 600, letterSpacing: 0 }}>
           {statusText}
         </Typography>
         {blobSizeBytes != null && blobSizeBytes > 0 && (

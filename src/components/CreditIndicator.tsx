@@ -6,7 +6,7 @@ import WarningAmber from '@mui/icons-material/WarningAmber';
 import Sync from '@mui/icons-material/Sync';
 import { useCredits } from '../hooks/useCredits';
 import { useLocale } from '../features/i18n';
-import { RADIUS_SM, ERROR_BG_MEDIUM } from '../theme/tokens';
+import { RADIUS_SM, ERROR_BG_MEDIUM, ERROR_BORDER_HOVER } from '../theme/tokens';
 
 /**
  * Badge compacto de créditos para o Header da área logada.
@@ -91,7 +91,7 @@ export function CreditIndicator() {
             letterSpacing: '0.04em',
             backgroundColor: ERROR_BG_MEDIUM,
             color: 'error.light',
-            border: '1px solid ${ERROR_BORDER_HOVER}',
+            border: `1px solid ${ERROR_BORDER_HOVER}`,
             '& .MuiChip-label': { px: 1 },
             '& .MuiChip-icon': { color: 'error.light', ml: 0.5 },
           }}
@@ -134,7 +134,7 @@ export function CreditIndicator() {
             ? lowCredits
               ? '1px solid rgba(245, 158, 11, 0.28)'
               : '1px solid rgba(16, 185, 129, 0.28)'
-            : '1px solid ${ERROR_BORDER_HOVER}',
+            : `1px solid ${ERROR_BORDER_HOVER}`,
           '& .MuiChip-label': { px: 1 },
           '& .MuiChip-icon': {
             color: hasCredits

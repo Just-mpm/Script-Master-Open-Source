@@ -48,7 +48,7 @@ const EXPORT_TOGGLE_GROUP_SX = (fontSize: string): SystemStyleObject<Theme> => (
     py: 0.4,
     fontSize,
     fontWeight: 600,
-    letterSpacing: '-0.01em',
+    letterSpacing: 0,
     border: '1px solid',
     borderColor: 'divider',
     color: 'text.secondary',

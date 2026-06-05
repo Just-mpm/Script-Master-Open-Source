@@ -163,7 +163,7 @@ export function BatchOrchestrator() {
         >
           <ErrorOutlineOutlined sx={{ fontSize: 40, color: ERROR_MAIN }} />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: '-0.02em', mb: 0.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0, mb: 0.5 }}>
           {t('speedPaint.batchProcessingFailed')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>

@@ -7,7 +7,6 @@ import {
   IMAGES_STORE,
   OperationType,
   PROJECTS_STORE,
-  VIDEOS_STORE,
   createFirestoreConverter,
   deleteIndexedDbItem,
   deleteStorageObjectSafely,
@@ -18,13 +17,19 @@ import {
   uploadBlobAndGetUrl,
 } from './shared';
 import { deleteTranscription } from './transcriptions';
-import { deleteVideoFromProject, getProjectVideos } from './videos';
+import {
+  deleteVideoFromProject,
+  getLocalProjectVideos,
+  getLocalVideosForUser,
+  getProjectVideos,
+} from './videos';
 
 const log = createLogger('projects');
 
 type FirestoreAudioSource = Omit<AudioSource, 'audioBlob'>;
 type FirestoreProjectImage = Omit<ProjectImage, 'imageBlob'>;
 type FirestoreProjectVideo = Omit<ProjectVideo, 'videoBlob'>;
+type ProjectDetails = { audios: AudioSource[]; images: ProjectImage[]; videos: ProjectVideo[] };
 
 const projectConverter = createFirestoreConverter<Project>();
 const audioSourceConverter = createFirestoreConverter<FirestoreAudioSource>();
@@ -55,6 +60,32 @@ function sortProjectAudios(items: AudioSource[]): AudioSource[] {
 
 function sortProjectImages(items: ProjectImage[]): ProjectImage[] {
   return [...items].sort((firstItem, secondItem) => firstItem.timestamp - secondItem.timestamp);
+}
+
+function getOrCreateProjectDetails(
+  detailsMap: Map<string, ProjectDetails>,
+  projectId: string,
+): ProjectDetails {
+  const current = detailsMap.get(projectId);
+  if (current) {
+    return current;
+  }
+
+  const details: ProjectDetails = { audios: [], images: [], videos: [] };
+  detailsMap.set(projectId, details);
+  return details;
+}
+
+function upsertProjectVideo(detailsMap: Map<string, ProjectDetails>, video: ProjectVideo): void {
+  const current = getOrCreateProjectDetails(detailsMap, video.projectId);
+  const existingIndex = current.videos.findIndex((existingVideo) => existingVideo.id === video.id);
+
+  if (existingIndex >= 0) {
+    current.videos[existingIndex] = video;
+    return;
+  }
+
+  current.videos.push(video);
 }
 
 export async function saveProject(project: Project, userId?: string): Promise<void> {
@@ -153,10 +184,7 @@ export async function saveImageToProject(image: ProjectImage, userId?: string): 
   return image.imageUrl;
 }
 
-export async function getProjectDetails(
-  projectId: string,
-  userId?: string,
-): Promise<{ audios: AudioSource[]; images: ProjectImage[]; videos: ProjectVideo[] }> {
+export async function getProjectDetails(projectId: string, userId?: string): Promise<ProjectDetails> {
   if (userId) {
     try {
       const [audioSnapshot, imageSnapshot, projectVideos] = await Promise.all([
@@ -175,48 +203,49 @@ export async function getProjectDetails(
     }
   }
 
-  const [allAudios, allImages, allVideos] = await Promise.all([
+  const [allAudios, allImages, projectVideos] = await Promise.all([
     getAllIndexedDbItems<AudioSource>(AUDIOS_STORE),
     getAllIndexedDbItems<ProjectImage>(IMAGES_STORE),
-    getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE),
+    getLocalProjectVideos(projectId),
   ]);
 
   return {
     audios: allAudios.filter((audio) => audio.projectId === projectId),
     images: allImages.filter((image) => image.projectId === projectId),
-    videos: allVideos.filter((video) => video.projectId === projectId),
+    videos: projectVideos,
   };
 }
 
 export async function getProjectsDetailsMap(
   userId?: string,
-): Promise<Record<string, { audios: AudioSource[]; images: ProjectImage[]; videos: ProjectVideo[] }>> {
+): Promise<Record<string, ProjectDetails>> {
   if (userId) {
     try {
-      const [audioSnapshot, imageSnapshot, videoSnapshot] = await Promise.all([
+      const [audioSnapshot, imageSnapshot, videoSnapshot, localVideos] = await Promise.all([
         getDocs(query(collectionGroup(db, 'audios').withConverter(audioSourceConverter), where('userId', '==', userId))),
         getDocs(query(collectionGroup(db, 'images').withConverter(projectImageConverter), where('userId', '==', userId))),
         getDocs(query(collectionGroup(db, 'videos').withConverter(firestoreVideoConverter), where('userId', '==', userId))),
+        getLocalVideosForUser(userId),
       ]);
 
-      const detailsMap = new Map<string, { audios: AudioSource[]; images: ProjectImage[]; videos: ProjectVideo[] }>();
+      const detailsMap = new Map<string, ProjectDetails>();
 
       for (const audio of audioSnapshot.docs.map((audioDoc) => audioDoc.data())) {
-        const current = detailsMap.get(audio.projectId) ?? { audios: [], images: [], videos: [] };
+        const current = getOrCreateProjectDetails(detailsMap, audio.projectId);
         current.audios.push(audio);
-        detailsMap.set(audio.projectId, current);
       }
 
       for (const image of imageSnapshot.docs.map((imageDoc) => imageDoc.data())) {
-        const current = detailsMap.get(image.projectId) ?? { audios: [], images: [], videos: [] };
+        const current = getOrCreateProjectDetails(detailsMap, image.projectId);
         current.images.push(image);
-        detailsMap.set(image.projectId, current);
       }
 
       for (const video of videoSnapshot.docs.map((videoDoc) => videoDoc.data())) {
-        const current = detailsMap.get(video.projectId) ?? { audios: [], images: [], videos: [] };
-        current.videos.push(video);
-        detailsMap.set(video.projectId, current);
+        upsertProjectVideo(detailsMap, video);
+      }
+
+      for (const video of localVideos) {
+        upsertProjectVideo(detailsMap, video);
       }
 
       return Object.fromEntries(
@@ -231,30 +260,26 @@ export async function getProjectsDetailsMap(
     }
   }
 
-  const [allAudios, allImages, allVideos] = await Promise.all([
+  const [allAudios, allImages, localVideos] = await Promise.all([
     getAllIndexedDbItems<AudioSource>(AUDIOS_STORE),
     getAllIndexedDbItems<ProjectImage>(IMAGES_STORE),
-    getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE),
+    getLocalVideosForUser(),
   ]);
 
-  const detailsMap = new Map<string, { audios: AudioSource[]; images: ProjectImage[]; videos: ProjectVideo[] }>();
+  const detailsMap = new Map<string, ProjectDetails>();
 
   for (const audio of allAudios) {
-    const current = detailsMap.get(audio.projectId) ?? { audios: [], images: [], videos: [] };
+    const current = getOrCreateProjectDetails(detailsMap, audio.projectId);
     current.audios.push(audio);
-    detailsMap.set(audio.projectId, current);
   }
 
   for (const image of allImages) {
-    const current = detailsMap.get(image.projectId) ?? { audios: [], images: [], videos: [] };
+    const current = getOrCreateProjectDetails(detailsMap, image.projectId);
     current.images.push(image);
-    detailsMap.set(image.projectId, current);
   }
 
-  for (const video of allVideos) {
-    const current = detailsMap.get(video.projectId) ?? { audios: [], images: [], videos: [] };
-    current.videos.push(video);
-    detailsMap.set(video.projectId, current);
+  for (const video of localVideos) {
+    upsertProjectVideo(detailsMap, video);
   }
 
   return Object.fromEntries(
@@ -301,10 +326,10 @@ export async function deleteProject(projectId: string, userId?: string): Promise
     }
   }
 
-  const [allAudios, allImages, allVideos] = await Promise.all([
+  const [allAudios, allImages, projectVideos] = await Promise.all([
     getAllIndexedDbItems<AudioSource>(AUDIOS_STORE),
     getAllIndexedDbItems<ProjectImage>(IMAGES_STORE),
-    getAllIndexedDbItems<ProjectVideo>(VIDEOS_STORE),
+    getLocalProjectVideos(projectId),
   ]);
 
   await deleteIndexedDbItem(PROJECTS_STORE, projectId);
@@ -316,9 +341,7 @@ export async function deleteProject(projectId: string, userId?: string): Promise
     ...allImages
       .filter((image) => image.projectId === projectId)
       .map((image) => deleteIndexedDbItem(IMAGES_STORE, image.id)),
-    ...allVideos
-      .filter((video) => video.projectId === projectId)
-      .map((video) => deleteIndexedDbItem(VIDEOS_STORE, video.id)),
+    ...projectVideos.map((video) => deleteVideoFromProject(video.id, projectId)),
     deleteTranscription(projectId),
   ]);
 }

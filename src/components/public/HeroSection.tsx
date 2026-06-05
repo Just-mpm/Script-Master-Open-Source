@@ -63,7 +63,7 @@ export function HeroSection({
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        py: { xs: 4, md: 6 },
+        py: { xs: 3, md: 5 },
         ...(showGlow && {
           '&::before': {
             content: '""',
@@ -72,7 +72,7 @@ export function HeroSection({
             left: '10%',
             width: '50%',
             height: '60%',
-            background: 'radial-gradient(circle, rgba(46, 117, 182, 0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(46, 117, 182, 0.1) 0%, transparent 70%)',
             pointerEvents: 'none',
           },
           '&::after': {
@@ -82,7 +82,7 @@ export function HeroSection({
             right: '10%',
             width: '40%',
             height: '50%',
-            background: 'radial-gradient(circle, rgba(247, 148, 30, 0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(247, 148, 30, 0.08) 0%, transparent 70%)',
             pointerEvents: 'none',
           },
         }),
@@ -91,7 +91,7 @@ export function HeroSection({
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={{ xs: 4, md: 6 }}
+          spacing={{ xs: 3, md: 5 }}
           sx={{
             alignItems: 'center',
             textAlign: { xs: 'center', md: 'left' },
@@ -112,7 +112,7 @@ export function HeroSection({
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    letterSpacing: '-0.04em',
+                    letterSpacing: 0,
                   }}
                 >
                   {title}
@@ -127,7 +127,7 @@ export function HeroSection({
                     color: TEXT_SECONDARY,
                     fontWeight: 400,
                     maxWidth: 560,
-                    lineHeight: 1.7,
+                    lineHeight: 1.6,
                   }}
                 >
                   {subtitle}
@@ -155,10 +155,10 @@ export function HeroSection({
                       sx={{
                         px: 4,
                         py: 1.5,
-                        boxShadow: `0 12px 36px ${BRAND_SECONDARY_GLOW_SOFT}`,
+                        boxShadow: `0 10px 28px ${BRAND_SECONDARY_GLOW_SOFT}`,
                         transition: 'box-shadow 0.3s ease, transform 0.2s ease',
                         '&:hover': {
-                          boxShadow: `0 18px 48px ${BRAND_PRIMARY_GLOW}`,
+                          boxShadow: `0 14px 38px ${BRAND_PRIMARY_GLOW}`,
                           transform: 'translateY(-1px)',
                         },
                       }}

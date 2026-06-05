@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -64,45 +65,47 @@ export function AnalyticsConsentPrompt() {
   return (
     <>
       <Snackbar open={consent === 'unknown'} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        {/* GAP-06 (Onda 1): Paper + Stack + Typography manuais substituídos por
-            StackedHeader variant="glass". Preserva:
-            - <Link> no description via ReactNode
-            - 2 botões no slot action (accept/reject)
-            - a11y (role="region" + aria-labelledby) via slotProps.root
-            - sizing/coloring custom do Paper original (border, bgcolor, shadow) */}
-        <StackedHeader
-          variant="glass"
-          role="region"
-          slotProps={{
-            root: {
-              sx: {
-                width: 'calc(100vw - 32px)',
-                maxWidth: 920,
-                p: { xs: 1.5, sm: 1.75 },
-                border: `1px solid ${APP_BORDER_STRONG}`,
-                bgcolor: alpha(APP_SURFACE, 0.94),
-                boxShadow: `0 12px 32px ${alpha(SHADOW_DEEP, 0.42)}`,
+        <Box>
+          {/* GAP-06 (Onda 1): Paper + Stack + Typography manuais substituídos por
+              StackedHeader variant="glass". Preserva:
+              - <Link> no description via ReactNode
+              - 2 botões no slot action (accept/reject)
+              - a11y (role="region" + aria-labelledby) via slotProps.root
+              - sizing/coloring custom do Paper original (border, bgcolor, shadow) */}
+          <StackedHeader
+            variant="glass"
+            role="region"
+            slotProps={{
+              root: {
+                sx: {
+                  width: 'calc(100vw - 32px)',
+                  maxWidth: 920,
+                  p: { xs: 1.5, sm: 1.75 },
+                  border: `1px solid ${APP_BORDER_STRONG}`,
+                  bgcolor: alpha(APP_SURFACE, 0.94),
+                  boxShadow: `0 12px 32px ${alpha(SHADOW_DEEP, 0.42)}`,
+                },
               },
-            },
-            title: { sx: { fontSize: 'subtitle2' } },
-          }}
-          title={t('analyticsConsent.title')}
-          description={
-            <>
-              {t('analyticsConsent.description')}{' '}
-              <Link component={RouterLink} to="/cookies">{t('analyticsConsent.details')}</Link>
-            </>
-          }
-          action={
-            <>
-              <Button size="small" color="inherit" onClick={reject}>{t('analyticsConsent.reject')}</Button>
-              <Button size="small" variant="contained" onClick={accept}>{t('analyticsConsent.accept')}</Button>
-            </>
-          }
-          actionPlacement="stack"
-          actionAlign="end"
-          density="compact"
-        />
+              title: { sx: { fontSize: 'subtitle2' } },
+            }}
+            title={t('analyticsConsent.title')}
+            description={
+              <>
+                {t('analyticsConsent.description')}{' '}
+                <Link component={RouterLink} to="/cookies">{t('analyticsConsent.details')}</Link>
+              </>
+            }
+            action={
+              <>
+                <Button size="small" color="inherit" onClick={reject}>{t('analyticsConsent.reject')}</Button>
+                <Button size="small" variant="contained" onClick={accept}>{t('analyticsConsent.accept')}</Button>
+              </>
+            }
+            actionPlacement="stack"
+            actionAlign="end"
+            density="compact"
+          />
+        </Box>
       </Snackbar>
 
       <Dialog

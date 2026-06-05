@@ -283,7 +283,7 @@ export function SpeedPaintPage() {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                letterSpacing: '-0.025em',
+                letterSpacing: 0,
                 mb: 1,
               }}
             >
@@ -396,7 +396,7 @@ export function SpeedPaintPage() {
               },
             }}
           />
-          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, letterSpacing: '-0.02em' }}>
+          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, letterSpacing: 0 }}>
             {`${t('speedPaint.pageGenerating')} (${Math.round(job.progress * 100)}%)...`}
           </Typography>
           {/* Anúncio para screen readers */}
@@ -456,7 +456,7 @@ export function SpeedPaintPage() {
               >
                 <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
                   <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0 }}>
                       {t('speedPaint.batchExportTitle')}
                     </Typography>
                     <Chip
@@ -498,7 +498,7 @@ export function SpeedPaintPage() {
                     <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
                       {t(pluralKey('speedPaint.queueDescription', queueLength), { count: queueLength })}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: 0 }}>
                       {t(pluralKey('speedPaint.queueFinalVideoSummary', eligibleBatchQueue.length), { eligible: eligibleBatchQueue.length })}
                     </Typography>
                   </Box>
@@ -517,7 +517,7 @@ export function SpeedPaintPage() {
                       <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.5 }}>
                         {t('speedPaint.batchExportTitle')}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: 0 }}>
                         {t(pluralKey('speedPaint.queueFailedSummary', failedBatchCount), { failed: failedBatchCount })}
                       </Typography>
                     </Box>
@@ -527,7 +527,7 @@ export function SpeedPaintPage() {
             ) : (
               <Stack sx={{ minWidth: 0 }}>
                 <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0 }}>
                     {t('speedPaint.batchExportTitle')}
                   </Typography>
                   <Chip
@@ -670,7 +670,7 @@ export function SpeedPaintPage() {
                   '& .MuiTab-root': {
                     minHeight: 44,
                     fontWeight: 600,
-                    letterSpacing: '-0.01em',
+                    letterSpacing: 0,
                     textTransform: 'none',
                     fontSize: '0.875rem',
                   },

@@ -206,7 +206,7 @@ export default function PricingPage() {
             sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
           >
             <Box component={motion.div} variants={fadeInUp}>
-              <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
                 {t('pricing.credits.title')}
               </Typography>
             </Box>
@@ -238,7 +238,7 @@ export default function PricingPage() {
             sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}
           >
             <Box component={motion.div} variants={fadeInUp}>
-              <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: '-0.035em' }}>
+              <Typography variant="h3" component="h2" sx={{ mb: 1.5, letterSpacing: 0 }}>
                 {t('pricing.howItWorks.title')}
               </Typography>
             </Box>

@@ -29,7 +29,7 @@ export function TestimonialsSection() {
             <Typography
               variant="h3"
               component="h2"
-              sx={{ mb: 1.5, letterSpacing: '-0.035em' }}
+              sx={{ mb: 1.5, letterSpacing: 0 }}
             >
               {t('landing.testimonials.title')}
             </Typography>

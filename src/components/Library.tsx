@@ -971,9 +971,19 @@ export function Library() {
                                 actionAlign="end"
                               />
                             ) : resolvedVideos.length === 0 ? (
-                              <Typography variant="body2" color="text.secondary">
-                                {t('library.noVideos')}
-                              </Typography>
+                              <Stack spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  {t('library.noVideos')}
+                                </Typography>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<Movie sx={{ fontSize: ICON_SIZE_SM }} />}
+                                  onClick={() => navigate('/app/video')}
+                                >
+                                  {t('library.openVideoExporter')}
+                                </Button>
+                              </Stack>
                             ) : (
                               <Grid container spacing={1.5}>
                                 {resolvedVideos.map((video, index) => (

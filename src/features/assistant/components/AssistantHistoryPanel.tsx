@@ -80,7 +80,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
           <Stack spacing={GAP_COMPACT}>
             <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
               <History sx={{ fontSize: ICON_SIZE_LG, color: BRAND_PRIMARY }} />
-              <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>{t('assistant.history.title')}</Typography>
+              <Typography variant="h6" sx={{ letterSpacing: 0 }}>{t('assistant.history.title')}</Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
               {t('assistant.history.subtitle')}
@@ -165,7 +165,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
                 <History sx={{ fontSize: ICON_SIZE_LG, color: TEXT_DISABLED }} />
               </Box>
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.history.noChats')}</Typography>
+                <Typography variant="subtitle1" sx={{ letterSpacing: 0 }}>{t('assistant.history.noChats')}</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                   {t('assistant.history.noChatsDescription')}
                 </Typography>
@@ -175,7 +175,7 @@ export const AssistantHistoryPanel = React.memo(function AssistantHistoryPanel({
             <Stack spacing={GAP_MEDIUM} sx={{ minHeight: 240, textAlign: 'center', alignItems: 'center', justifyContent: 'center' }}>
               <Search sx={{ fontSize: 44, color: TEXT_DISABLED }} />
               <Stack spacing={GAP_COMPACT}>
-                <Typography variant="subtitle1" sx={{ letterSpacing: '-0.01em' }}>{t('assistant.history.noResults')}</Typography>
+                <Typography variant="subtitle1" sx={{ letterSpacing: 0 }}>{t('assistant.history.noResults')}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {t('assistant.history.noResultsDescription', { query: searchQuery })}
                 </Typography>

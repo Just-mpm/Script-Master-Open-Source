@@ -16,7 +16,7 @@ import AppBar from '@mui/material/AppBar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useLocation, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Mic from '@mui/icons-material/Mic';
 import Logout from '@mui/icons-material/Logout';
 import Login from '@mui/icons-material/Login';
@@ -49,6 +49,7 @@ export function PublicHeader() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const drawerTitleId = 'public-mobile-navigation-title';
   const isLoginRoute = location.pathname === '/login';
   const isRegisterRoute = location.pathname === '/cadastro';
   const guestCta = isLoginRoute
@@ -67,6 +68,10 @@ export function PublicHeader() {
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const closeDrawer = () => setDrawerOpen(false);
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   const handleOpenLogoutDialog = () => {
     setLogoutDialogOpen(true);
@@ -100,7 +105,7 @@ export function PublicHeader() {
       }}
     >
       <Container maxWidth={false} sx={{ maxWidth: APP_MAX_WIDTH, px: { xs: 2, sm: 3, lg: 4 } }}>
-        <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 1, md: 1.5 } }}>
+        <Toolbar disableGutters sx={{ minHeight: APP_HEADER_HEIGHT, gap: { xs: 0.75, sm: 1, md: 1.5 } }}>
           {/* Logo — aria-label descritivo para screen readers */}
           <Box
             component={Link}
@@ -109,10 +114,12 @@ export function PublicHeader() {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1.5,
+              gap: { xs: 0.75, sm: 1.5 },
               textDecoration: 'none',
               color: 'inherit',
               minWidth: 0,
+              flexBasis: { xs: 128, sm: 178, md: 'auto' },
+              maxWidth: { xs: 132, sm: 190, md: 'none' },
               flexGrow: { xs: 1, md: 0 },
               flexShrink: 1,
               transition: 'opacity 0.2s ease',
@@ -124,7 +131,7 @@ export function PublicHeader() {
               src={logos.mark.transparent}
               alt=""
               aria-hidden="true"
-              sx={{ width: 36, height: 36, objectFit: 'contain' }}
+              sx={{ width: { xs: 30, sm: 36 }, height: { xs: 30, sm: 36 }, objectFit: 'contain', flexShrink: 0 }}
             />
             <Box sx={{ minWidth: 0 }}>
               <Typography
@@ -144,7 +151,7 @@ export function PublicHeader() {
                 component="div"
                 sx={{
                   lineHeight: 1.1,
-                  fontSize: { xs: '0.95rem', sm: '1.25rem' },
+                  fontSize: { xs: '0.88rem', sm: '1.25rem' },
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -201,7 +208,7 @@ export function PublicHeader() {
           {!loading && (
             <Stack
               direction="row"
-              spacing={{ xs: 1, sm: GAP_MEDIUM }}
+              spacing={{ xs: 0.5, sm: GAP_MEDIUM }}
               sx={{ flexShrink: 0, alignItems: 'center' }}
             >
               <LocaleSelector size="small" />
@@ -227,6 +234,9 @@ export function PublicHeader() {
                   startIcon={<AutoAwesome sx={{ fontSize: ICON_SIZE_MD }} />}
                   size="small"
                   sx={{
+                    minWidth: { xs: 'auto', sm: 64 },
+                    px: { xs: 1.25, sm: 2 },
+                    whiteSpace: 'nowrap',
                     transition: 'box-shadow 0.2s ease',
                     '&:hover': {
                       boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
@@ -243,6 +253,9 @@ export function PublicHeader() {
                   startIcon={!isMobile && !isRegisterRoute ? <Login sx={{ fontSize: ICON_SIZE_MD }} /> : undefined }
                   size="small"
                   sx={{
+                    minWidth: { xs: 'auto', sm: 64 },
+                    px: { xs: 1.25, sm: 2 },
+                    whiteSpace: 'nowrap',
                     transition: 'box-shadow 0.2s ease',
                     '&:hover': {
                       boxShadow: `0 8px 24px ${BRAND_PRIMARY_GLOW_SOFT}`,
@@ -265,7 +278,7 @@ export function PublicHeader() {
         onClose={closeDrawer}
         ModalProps={{ keepMounted: true }}
         slotProps={{ paper: { sx: drawerPaperSx } }}
-        aria-label={t('nav.ariaDrawerMenu')}
+        aria-labelledby={drawerTitleId}
         sx={{
           '& .MuiDrawer-paper': {
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -289,7 +302,7 @@ export function PublicHeader() {
             >
               <Mic sx={{ fontSize: ICON_SIZE_MD }} />
             </Box>
-            <Typography variant="subtitle2" component="p" sx={{ fontWeight: 700 }}>
+            <Typography id={drawerTitleId} variant="subtitle2" component="p" sx={{ fontWeight: 700 }}>
               Script Master
             </Typography>
           </Stack>

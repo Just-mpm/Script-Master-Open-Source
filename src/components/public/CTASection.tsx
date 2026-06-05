@@ -68,7 +68,7 @@ export function CTASection({ title, subtitle, buttonLabel, buttonHref }: CTASect
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              letterSpacing: '-0.04em',
+              letterSpacing: 0,
               lineHeight: 1.15,
             }}
           >

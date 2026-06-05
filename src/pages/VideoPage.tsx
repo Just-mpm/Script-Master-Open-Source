@@ -405,7 +405,7 @@ export function VideoPage({
                       <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.14em' }}>
                         {t('video.controlsEmpty.eyebrow')}
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0 }}>
                         {t('video.controlsEmpty.title')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">

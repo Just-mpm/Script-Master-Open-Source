@@ -20,14 +20,13 @@ import { PwaInstallPrompt } from './components/app/PwaInstallPrompt';
 import { AnalyticsConsentPrompt } from './components/app/AnalyticsConsentPrompt';
 import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { Sidebar } from './components/app/Sidebar';
-import { GuestMobileNav } from './components/app/GuestMobileNav';
 import { SidebarNetworkBanner } from './components/app/SidebarNetworkBanner';
 import { ToastManager } from './components/toast/ToastProvider';
 import { CreditBlockedMessage } from './components/CreditBlockedMessage';
 import { FeedbackController, FeedbackFab } from './components/feedback';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
-import { APP_MAX_WIDTH } from './theme/tokens';
+import { APP_MAX_WIDTH, WHITE_08 } from './theme/tokens';
 import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
 import { useGlobalAudioActions, useAudioActiveId } from './contexts/AudioContext';
 import { setAnalyticsUserProperties } from './lib/analytics';
@@ -173,7 +172,7 @@ export default function App() {
             color: '#e0e0e0',
             borderRadius: '12px',
             fontSize: '0.875rem',
-            border: '1px solid ${WHITE_08}',
+            border: `1px solid ${WHITE_08}`,
           },
           success: {
             iconTheme: {
@@ -189,10 +188,6 @@ export default function App() {
 
       {/* Sidebar do app — apenas em desktop, nas rotas /app/* */}
       {showAppLayout && !isMobile && <Sidebar />}
-
-      {/* Guest Mobile Nav — drawer mobile para visitantes (rotas públicas).
-          O componente já guarda !isMobile || user internamente. */}
-      {!isAppRoute && <GuestMobileNav />}
 
       <Box
         component="main"
