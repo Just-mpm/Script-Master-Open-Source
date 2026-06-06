@@ -40,7 +40,6 @@ import { useLocale } from '../../features/i18n';
 import { StackedHeader } from '../../components/ui';
 import { InterviewPanel } from './components/InterviewPanel';
 import { ScrollToBottomFab } from './components/ScrollToBottomFab';
-import { FeedbackBanner } from '../../components/feedback';
 
 interface AssistantProps {
   onApplySettings: (settings: AssistantSettings) => void;
@@ -420,8 +419,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null }
 
-      {/* Banner de feedback — incentiva envio de sugestões do usuário */}
-      <FeedbackBanner screenContext="/app/assistente" />
+
 
       {showMemories && (
         <AssistantMemoriesPanel

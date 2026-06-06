@@ -2,7 +2,7 @@
  * Constantes compartilhadas do sistema de feedback.
  *
  * Mantém a lista de categorias e a chave do evento de abertura do dialog
- * sincronizadas entre todos os pontos de uso (FAB, banner, header, drawer).
+ * sincronizadas entre todos os pontos de uso (sidebar, drawer).
  */
 
 /** Categorias de feedback suportadas pelo backend (feedback.ts flow) */
@@ -19,6 +19,3 @@ export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number]['value'];
 
 /** Evento DOM disparado para abrir o FeedbackDialog de qualquer lugar da app */
 export const OPEN_FEEDBACK_DIALOG_EVENT = 's2a-open-feedback-dialog';
-
-/** Z-index do FAB — entre MobileBottomNav (1200) e ActionBar (1400) */
-export const FEEDBACK_FAB_Z_INDEX = 1250;

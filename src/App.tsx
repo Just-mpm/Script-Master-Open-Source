@@ -23,7 +23,7 @@ import { Sidebar } from './components/app/Sidebar';
 import { SidebarNetworkBanner } from './components/app/SidebarNetworkBanner';
 import { ToastManager } from './components/toast/ToastProvider';
 
-import { FeedbackController, FeedbackFab } from './components/feedback';
+import { FeedbackController } from './components/feedback';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
 import { APP_MAX_WIDTH, WHITE_08 } from './theme/tokens';
@@ -216,7 +216,7 @@ export default function App() {
               maxWidth: APP_MAX_WIDTH,
               px: { xs: 2, sm: 3, lg: 4 },
               py: { xs: 3, md: 4 },
-              pb: { xs: 16, md: 18 },
+              pb: { xs: 10, md: 6 },
             }}
           >
             {routesElement}
@@ -276,8 +276,7 @@ export default function App() {
       {/* Bottom Nav mobile — apenas em rotas /app/* (não onboarding) */}
       {showAppLayout && <MobileBottomNav />}
 
-      {/* FAB de feedback — auto-gestão de visibilidade por rota/auth */}
-      {showAppLayout && <FeedbackFab />}
+
 
       {/* Banner de status de rede — sobreposto no topo (retorna null quando online) */}
       <SidebarNetworkBanner />

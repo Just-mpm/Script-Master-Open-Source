@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import Cookie from '@mui/icons-material/Cookie';
 import Logout from '@mui/icons-material/Logout';
 import Person from '@mui/icons-material/Person';
+import GitHub from '@mui/icons-material/GitHub';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale, LocaleSelector, LOCALE_CONFIGS } from '../../features/i18n';
 import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
@@ -184,6 +185,24 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
                 <Cookie sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
               </IconButton>
             </Tooltip>
+            {/* GitHub — repositório open source */}
+            <Tooltip title={t('nav.github')} placement="right" arrow>
+              <IconButton
+                component="a"
+                href="https://github.com/Just-mpm/Script-Master-Open-Source"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('nav.github')}
+                sx={{
+                  width: 44,
+                  height: 44,
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+                }}
+              >
+                <GitHub sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title={t('studio.header.logout.tooltip')} placement="right" arrow>
               <IconButton
                 onClick={handleOpenLogoutDialog}
@@ -219,6 +238,22 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
               </ListItemIcon>
               <ListItemText
                 primary={t('analyticsConsent.manageCookies')}
+                slotProps={{ primary: { variant: 'body2' } }}
+              />
+            </ListItemButton>
+            {/* GitHub — repositório open source */}
+            <ListItemButton
+              component="a"
+              href="https://github.com/Just-mpm/Script-Master-Open-Source"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ borderRadius: 1.5, color: 'text.secondary', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                <GitHub sx={{ fontSize: ICON_SIZE_MD }} aria-hidden="true" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t('nav.github')}
                 slotProps={{ primary: { variant: 'body2' } }}
               />
             </ListItemButton>

@@ -13,9 +13,9 @@ export interface ByokFaqItem {
 /** Strings do FAQ sobre BYOK e open source por idioma */
 const byokFaqStrings = {
   'pt-BR': {
-    faq0Question: 'O que é BYOK?',
+    faq0Question: 'Como funciona a chave do Google?',
     faq0Answer:
-      'BYOK (Bring Your Own Key) significa que você usa sua própria chave de API do Gemini para rodar as gerações. O Script Master não cobra nada nem intermedeia o consumo da API.',
+      'Você usa sua própria chave do Gemini para fazer as gerações. O Script Master não cobra nada nem intermedeia o uso da tecnologia.',
     faq1Question: 'Como consigo minha chave de API do Gemini?',
     faq1Answer:
       'Acesse Google AI Studio (aistudio.google.com), faça login com sua conta Google e gere uma chave de API. A chave é configurada uma única vez dentro do app.',
@@ -24,7 +24,7 @@ const byokFaqStrings = {
       'Sim. O app é open source e gratuito. As chamadas de IA usam a sua chave Gemini e ficam vinculadas à sua própria conta Google.',
     faq3Question: 'É seguro usar minha chave de API no app?',
     faq3Answer:
-      'Sua chave fica salva apenas neste dispositivo, no IndexedDB do navegador. Ela não é gravada no Firestore nem no bundle do frontend; é enviada por HTTPS ao backend somente durante testes e gerações para chamar o Gemini em seu nome.',
+      'Sua chave fica salva apenas neste dispositivo. Ela não é enviada para nossos servidores para armazenamento — é usada apenas na hora de gerar o conteúdo, de forma segura.',
     faq4Question: 'Como acompanho o uso do Gemini?',
     faq4Answer:
       'Acompanhe uso, limites e eventuais cobranças diretamente no Google AI Studio e na sua conta Google. O Script Master não altera nem intermedeia essas regras.',
@@ -33,18 +33,18 @@ const byokFaqStrings = {
       'Sim! O Script Master é open source. Você pode contribuir com código, reportar bugs, sugerir funcionalidades e melhorar a documentação. Acesse o repositório para começar: https://github.com/Just-mpm/Script-Master-Open-Source',
   },
   en: {
-    faq0Question: 'What is BYOK?',
+    faq0Question: 'How does the Google key work?',
     faq0Answer:
-      'BYOK (Bring Your Own Key) means you use your own Gemini API key to run generations. Script Master does not charge or intermediate API consumption.',
-    faq1Question: 'How do I get my Gemini API key?',
+      'You use your own Gemini key to run generations. Script Master doesn\'t charge anything or mediate the use of the technology.',
+    faq1Question: 'How do I get my Gemini key?',
     faq1Answer:
-      'Go to Google AI Studio (aistudio.google.com), sign in with your Google account, and generate an API key. The key is configured once inside the app.',
+      'Go to Google AI Studio (aistudio.google.com), sign in with your Google account, and generate a key. The key is configured once inside the app.',
     faq2Question: 'Is Script Master really free?',
     faq2Answer:
       'Yes. The app is open source and free. AI calls use your Gemini key and remain tied to your own Google account.',
-    faq3Question: 'Is it safe to use my API key in the app?',
+    faq3Question: 'Is it safe to use my key in the app?',
     faq3Answer:
-      'Your key is stored only on this device, in the browser IndexedDB. It is not written to Firestore or bundled into the frontend; it is sent over HTTPS to the backend only during tests and generations to call Gemini on your behalf.',
+      'Your key is stored only on this device, in the browser\'s local storage. It is not sent to our servers or included in the app code; it is sent securely to Google only during tests and generations to call Gemini on your behalf.',
     faq4Question: 'How do I track Gemini usage?',
     faq4Answer:
       'Track usage, limits, and any Google-side charges directly in Google AI Studio and your Google account. Script Master does not change or intermediate those rules.',
@@ -53,18 +53,18 @@ const byokFaqStrings = {
       'Yes! Script Master is open source. You can contribute code, report bugs, suggest features, and improve documentation. Check the repository to get started: https://github.com/Just-mpm/Script-Master-Open-Source',
   },
   es: {
-    faq0Question: '¿Qué es BYOK?',
+    faq0Question: '¿Cómo funciona la clave de Google?',
     faq0Answer:
-      'BYOK (Bring Your Own Key) significa que usas tu propia clave de API de Gemini para ejecutar las generaciones. Script Master no cobra ni intermedia el consumo de la API.',
-    faq1Question: '¿Cómo consigo mi clave de API de Gemini?',
+      'Usas tu propia clave de Gemini para hacer las generaciones. Script Master no cobra nada ni intermedia el uso de la tecnología.',
+    faq1Question: '¿Cómo consigo mi clave de Gemini?',
     faq1Answer:
-      'Accede a Google AI Studio (aistudio.google.com), inicia sesión con tu cuenta de Google y genera una clave de API. La clave se configura una única vez dentro de la app.',
+      'Accede a Google AI Studio (aistudio.google.com), inicia sesión con tu cuenta de Google y genera una clave. La clave se configura una única vez dentro de la app.',
     faq2Question: '¿Script Master es realmente gratuito?',
     faq2Answer:
       'Sí. La app es open source y gratuita. Las llamadas de IA usan tu clave Gemini y quedan vinculadas a tu propia cuenta de Google.',
-    faq3Question: '¿Es seguro usar mi clave de API en la app?',
+    faq3Question: '¿Es seguro usar mi clave en la app?',
     faq3Answer:
-      'Tu clave se guarda solo en este dispositivo, en el IndexedDB del navegador. No se escribe en Firestore ni se incluye en el bundle del frontend; se envía por HTTPS al backend solo durante pruebas y generaciones para llamar a Gemini en tu nombre.',
+      'Tu clave se guarda solo en este dispositivo, en el almacenamiento local del navegador. No se envía a nuestros servidores ni se incluye en el código de la app; se envía de forma segura a Google solo durante pruebas y generaciones para llamar a Gemini en tu nombre.',
     faq4Question: '¿Cómo acompaño el uso de Gemini?',
     faq4Answer:
       'Acompaña el uso, los límites y cualquier cobro del lado de Google directamente en Google AI Studio y en tu cuenta de Google. Script Master no cambia ni intermedia esas reglas.',

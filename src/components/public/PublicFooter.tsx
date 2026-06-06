@@ -5,6 +5,9 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import GitHub from '@mui/icons-material/GitHub';
 import { Link as RouterLink } from 'react-router-dom';
 import { useLocale } from '../../features/i18n';
 import {
@@ -12,6 +15,7 @@ import {
   APP_BORDER,
   BRAND_PRIMARY_GLOW,
   TEXT_SECONDARY,
+  ICON_SIZE_LG,
 } from '../../theme/tokens';
 import logos from '../../assets/logos';
 import { openAnalyticsConsentDialog } from '../app/AnalyticsConsentPrompt';
@@ -27,7 +31,7 @@ export function PublicFooter() {
         { label: t('footer.links.features'), href: '/funcionalidades' },
         { label: t('footer.links.openSource'), href: '/open-source' },
         { label: t('footer.links.faq'), href: '/perguntas-frequentes' },
-        { label: 'GitHub', href: 'https://github.com/Just-mpm/Script-Master-Open-Source', external: true },
+        { label: t('footer.links.github'), href: 'https://github.com/Just-mpm/Script-Master-Open-Source', external: true, icon: true },
       ],
     },
     {
@@ -62,7 +66,7 @@ export function PublicFooter() {
           top: 0,
           left: '10%',
           right: '10%',
-          height: 1,
+          height: '1px',
           background: `linear-gradient(90deg, transparent 0%, ${BRAND_PRIMARY_GLOW} 50%, transparent 100%)`,
         },
         borderTop: `1px solid ${APP_BORDER}`,
@@ -116,8 +120,12 @@ export function PublicFooter() {
                       textDecoration: 'none',
                       transition: 'color 0.2s ease, padding-left 0.2s ease',
                       '&:hover': { color: 'text.primary', pl: 0.5 },
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.75,
                     }}
                   >
+                    {'icon' in link && link.icon && <GitHub sx={{ fontSize: ICON_SIZE_LG }} aria-hidden="true" />}
                     {link.label}
                   </Link>
                 ))}
@@ -139,9 +147,28 @@ export function PublicFooter() {
           <Typography variant="caption" sx={{ color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
             {t('footer.madeWith')}
           </Typography>
-          <Button size="small" color="inherit" onClick={openAnalyticsConsentDialog}>
-            {t('footer.links.manageCookies')}
-          </Button>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+            <Tooltip title={t('footer.links.github')} placement="top" arrow>
+              <IconButton
+                component="a"
+                href="https://github.com/Just-mpm/Script-Master-Open-Source"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('footer.links.github')}
+                size="small"
+                sx={{
+                  color: TEXT_SECONDARY,
+                  transition: 'color 0.2s ease',
+                  '&:hover': { color: 'text.primary' },
+                }}
+              >
+                <GitHub sx={{ fontSize: ICON_SIZE_LG }} />
+              </IconButton>
+            </Tooltip>
+            <Button size="small" color="inherit" onClick={openAnalyticsConsentDialog}>
+              {t('footer.links.manageCookies')}
+            </Button>
+          </Stack>
         </Stack>
       </Container>
     </Box>

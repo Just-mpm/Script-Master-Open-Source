@@ -7,6 +7,31 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.130.1] - 2026-06-06
+
+### Adicionado
+
+- **Link do GitHub na navegação**: ícone GitHub adicionado ao `SidebarFooter.tsx`, `PublicFooter.tsx` e `PublicHeader.tsx` — acesso direto ao repositório de qualquer página
+
+### Alterado
+
+- **READMEs padronizados** (`README.md`, `README-en.md`, `README-es.md`, `README-pt.md`): conteúdo reescrito em inglês no principal, badges de versão/licença/idiomas, seção de documentação com links para CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/CHANGELOG, tabela de tecnologias, instruções BYOK — consistência entre os 3 idiomas
+- **`byokFaq.ts`**: textos da FAQ BYOK atualizados e refinados nos 3 idiomas
+- **`useCodecSupport.ts`**: mensagens de erro e aviso de codec atualizadas para clareza e precisão técnica
+- **Namespaces i18n `feedback`**: chaves `fab`, `banner` e `emptyState` removidas dos 3 locales (pt-BR, en, es) — componentes correspondentes removidos
+- **`ContactPage.tsx`**: comentário atualizado (referência a `FeedbackFab` → `FeedbackDialog`)
+- **`OpenSourcePage.tsx`**: import não utilizado de `Stack` removido
+
+### Removido
+
+- **`FeedbackFab.tsx`** e **`FeedbackBanner.tsx`**: componentes de feedback FAB e banner removidos — não eram mais necessários após a remoção do sistema de bônus de créditos (v0.130.0). O `FeedbackDialog` permanece como único ponto de entrada de feedback via `FeedbackController` e `useFeedbackDialog()`
+- **`FEEDBACK_FAB_Z_INDEX`** de `feedback/constants.ts`: constante órfã removida
+- **Exports de `FeedbackFab` e `FeedbackBanner`** do barrel `feedback/index.ts`
+- **Imports de feedback** em `Assistant.tsx` e `AssistantMessages.tsx`: referências ao `FeedbackBanner` e `FeedbackFab` removidas
+- **Teste `FeedbackFab.component.test.tsx`**: arquivo removido junto com o componente
+
+---
+
 ## [0.130.0] - 2026-06-06
 
 ### Adicionado

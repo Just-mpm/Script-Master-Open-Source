@@ -75,6 +75,7 @@ export const en: TranslationDictionary = {
     ariaMenu: 'Menu',
     ariaDrawerMenu: 'Navigation menu',
     logoAlt: 'Script Master — Go to homepage',
+    github: 'GitHub',
   },  footer: {
     description:
       'Turn scripts into YouTube videos with AI-generated narration, scenes, and subtitles.',
@@ -97,6 +98,7 @@ export const en: TranslationDictionary = {
       terms: 'Terms of Use',
       privacy: 'Privacy',
       cookies: 'Cookies',
+      github: 'GitHub',
       manageCookies: 'Manage cookies',
     },
   },
@@ -182,7 +184,7 @@ export const en: TranslationDictionary = {
     features: {
       title: 'From script to finished video',
       subtitle:
-        'The tools that move your content forward: narration, scenes, subtitles, assistant, and library in one workflow. Open source, BYOK, and browser-based.',
+        'The tools that move your content forward: narration, scenes, subtitles, assistant, and library in one workflow. Open source, with your own Google key and everything in the browser.',
     },
     featureCards: {
       voice: {
@@ -272,7 +274,7 @@ export const en: TranslationDictionary = {
     metrics: {
       title: 'Fewer steps between idea and publish',
       subtitle:
-        'Open source, BYOK model, everything in the browser — your Gemini key, your direct control in Google.',
+        'Open source, your Google key and everything in the browser — your direct control in Google.',
     },
     demo: {
       title: 'See your script take shape',
@@ -345,7 +347,7 @@ export const en: TranslationDictionary = {
     },
     cta: {
       title: 'Your next video can start with a script',
-      subtitle: 'Create your first narration, generate scenes, and test the flow for free. Open source and BYOK.',
+      subtitle: 'Create your first narration, generate scenes, and test the flow for free. Open source and free — use your own Google key.',
       button: 'Create my first video',
     },
   },
@@ -403,7 +405,7 @@ export const en: TranslationDictionary = {
     },
     cta: {
       title: 'Ready to turn a script into video?',
-      subtitle: 'Test the full workflow for free — open source and BYOK.',
+      subtitle: 'Test the full workflow for free — open source and free, with your own Google key.',
       button: 'Create my first video',
     },
   },
@@ -412,19 +414,19 @@ export const en: TranslationDictionary = {
   openSource: {
     hero: {
       title: 'Open source, free, and no artificial limits',
-      subtitle: 'Script Master is open source. Use your own Gemini API key (BYOK) and keep usage control directly in Google.',
+      subtitle: 'Script Master is open source. Use your own Gemini key and keep usage control directly in Google.',
       cta: 'Get started for free',
       ctaSecondary: 'How it works',
     },
     features: {
-      title: 'Clear control with BYOK',
-      subtitle: 'The BYOK model puts you in control: your key, your Google account, and no charge created by Script Master.',
+      title: 'Clear control with your own key',
+      subtitle: 'You stay in control: your key, your Google account, and no charge created by Script Master.',
       openSource: 'Open source and free',
       openSourceDesc: 'Script Master is open source. Download, use, audit, and contribute improvements for the community.',
-      byok: 'Bring Your Own Key',
-      byokDesc: 'Configure your Gemini API key once. Generations run on your Google account directly.',
+      byok: 'Your own Gemini key',
+      byokDesc: 'Configure your Gemini key once. Generations run on your Google account directly.',
       noHiddenFees: 'No Script Master charge',
-      noHiddenFeesDesc: 'Script Master does not intermediate payments. API usage stays in your own Google account.',
+      noHiddenFeesDesc: 'Script Master does not intermediate payments. Usage stays in your own Google account.',
     },
     howItWorks: {
       title: 'How to get started',
@@ -432,16 +434,16 @@ export const en: TranslationDictionary = {
       step1Title: 'Create your account',
       step1Desc: 'Sign in with Google or email to access the app. It\'s free.',
       step2Title: 'Configure your key',
-      step2Desc: 'Generate an API key on Google AI Studio and configure it in the app. Done — you\'re ready to create.',
+      step2Desc: 'Get a Gemini key on Google AI Studio and configure it in the app. Done — you\'re ready to create.',
       step3Title: 'Create with your key',
-      step3Desc: 'Generate narration, scenes, and videos using the Gemini API tied to your Google account.',
+      step3Desc: 'Generate narration, scenes, and videos using Gemini tied to your Google account.',
     },
     faq: {
-      title: 'Frequently asked questions about BYOK and open source',
+      title: 'Frequently asked questions about Gemini key and open source',
     },
     cta: {
       title: 'Start creating without paying Script Master',
-      subtitle: 'Create your account, configure your Gemini key, and test the full workflow. The only cost is direct API usage.',
+      subtitle: 'Create your account, configure your Gemini key, and test the full workflow. The only cost is your direct usage with Google.',
       button: 'Get started for free',
     },
     githubCta: 'View on GitHub',
@@ -451,14 +453,14 @@ export const en: TranslationDictionary = {
     hero: {
       title: 'Questions before creating your first video?',
       subtitle:
-        'Understand BYOK, safety, voice generation, images, and video before getting started.',
+        'Understand how the Gemini key works, safety, voice generation, images, and video before getting started.',
       cta: 'Get started for free',
-      ctaSecondary: 'View BYOK',
+      ctaSecondary: 'View how it works',
     },
     categories: {
       ariaLabel: 'FAQ categories',
       general: 'General',
-      openSource: 'BYOK & Open Source',
+      openSource: 'Gemini Key & Open Source',
       technical: 'Technical',
       account: 'Account',
     },
@@ -520,18 +522,6 @@ export const en: TranslationDictionary = {
       cancel: 'Cancel',
       hint: 'Select a category and describe with at least 10 characters to send.',
       closingHint: 'Closing automatically...',
-    },
-    fab: {
-      tooltip: 'Send feedback',
-      badgeLabel: '!',
-    },
-    banner: {
-      title: 'Help improve Script Master',
-      description: 'Send quick feedback about your experience.',
-      cta: 'Give feedback now',
-    },
-    emptyState: {
-      chipLabel: 'Send feedback',
     },
     navItem: {
       headerLabel: 'Feedback',
@@ -605,7 +595,7 @@ export const en: TranslationDictionary = {
     },
     cta: {
       title: 'Want to see it before sending a message?',
-      subtitle: 'Create your free account and test the workflow with a short script. Open source and BYOK.',
+      subtitle: 'Create your free account and test the workflow with a short script. Open source and free — use your own Google key.',
       button: 'Create my first video',
     },
   },
@@ -614,7 +604,7 @@ export const en: TranslationDictionary = {
     hero: {
       title: 'An open source tool to get scripts out of drafts',
       subtitle:
-        'Script Master was created to help creators move faster from idea to narration, scenes, and final video. Free and open source, with a BYOK model.',
+        'Script Master was created to help creators move faster from idea to narration, scenes, and final video. Free and open source — use your own Google key.',
       cta: 'Get started for free — open source',
       ctaSecondary: 'See tools',
       alt: 'Script Master illustration turning a script into video',
@@ -975,8 +965,8 @@ export const en: TranslationDictionary = {
       title: 'Video preview waiting for scenes',
       description: 'Generate audio and scenes in the studio to visualize the composition here.',
       goToStudio: 'Go to Studio',
-      renderError: 'Error rendering video',
-      renderErrorDescription: 'A problem occurred during composition. Try reloading.',
+      renderError: 'Error generating video',
+      renderErrorDescription: 'A problem occurred while assembling your video. Try reloading.',
       captionVisible: 'Caption visible',
       captionHidden: 'Caption hidden',
       showCaption: 'Show caption',
@@ -1015,11 +1005,11 @@ export const en: TranslationDictionary = {
     transcription: {
       title: 'Transcription & Captions',
       sourceSegmentTiming: 'audio segments',
-      sourceWhisperAligned: 'Whisper aligned',
+      sourceWhisperAligned: 'AI-aligned',
       sourceProportional: 'proportional',
       sourceManual: 'manual',
       staleWarning: 'The script changed after transcription. Generate again to update captions.',
-      whisperNotSupportedTitle: 'Whisper not supported in this browser',
+      whisperNotSupportedTitle: 'Speech recognition not available',
       whisperNotSupportedDescription: 'Captions will be generated automatically based on audio timing.',
       wordCount: '{count} caption(s)',
       regenerate: 'Generate again',
@@ -1028,7 +1018,7 @@ export const en: TranslationDictionary = {
     exportInfo: 'Video at {width}x{height} at {fps} fps',
     animateScenesTooltip: 'Animates each scene with a Speed Paint effect, transforming static images into progressive painting animation.',
     animateScenesLabel: 'Animate scenes (Speed Paint)',
-    htmlInCanvasWarning: 'Your browser does not support canvas capture. To export Speed Paint videos correctly, use Google Chrome with the chrome://flags/#canvas-draw-element flag enabled. Without it, animated scenes may appear blank.',
+    htmlInCanvasWarning: 'Your browser doesn\'t support the required capture. To export Speed Paint videos correctly, use Google Chrome. Otherwise, animated scenes may appear blank.',
     fileNameLabel: 'File name',
     fileNamePlaceholder: 'My video',
   },
@@ -1296,7 +1286,7 @@ export const en: TranslationDictionary = {
     deleteAudioTitle: 'Delete audio version?',
     deleteAudioLoading: 'Deleting audio...',
     deleteAudioConfirm: 'Delete',
-    deleteAudioDescription: 'This action permanently removes this audio version and its associated scenes from Storage.',
+    deleteAudioDescription: 'This action permanently removes this audio version and its associated scenes from cloud storage.',
     deleteSuccess: 'Project deleted successfully. The list was not automatically updated.',
     updateList: 'Update list',
     renameError: 'Could not rename the project. Try again.',
@@ -1385,9 +1375,9 @@ export const en: TranslationDictionary = {
     controlsExportImageError: 'Failed to export image. Please try again.',
     exportTitle: 'Export video',
     exportInfo: 'Video at {width}x{height} at {fps} fps',
-    exportBrowserWarning: 'Browser does not support video export. Use Chrome 94+ or Firefox 130+.',
+    exportBrowserWarning: 'Your browser can\'t export video. Use the latest version of Chrome or Firefox.',
     exportDismissError: 'Dismiss error',
-    htmlInCanvasWarning: 'Your browser does not support canvas capture. For the best Speed Paint experience, use Google Chrome with the chrome://flags/#canvas-draw-element flag enabled. Without it, the animation may appear blank in the exported video.',
+    htmlInCanvasWarning: 'Your browser doesn\'t support the required capture. To export Speed Paint videos correctly, use Google Chrome. Otherwise, the animation may appear blank in the exported video.',
     exportQualityAria: 'Export quality',
     exportFileName: 'File name',
     fileNamePlaceholder: 'My speed paint',
@@ -1476,7 +1466,7 @@ export const en: TranslationDictionary = {
     welcome: {
       title: 'Welcome to Script Master!',
       description: 'Transform your scripts into professional audio, visual scenes, and videos\nwith artificial intelligence. We\'ll show you how in a few steps.',
-      featureTTS: 'AI TTS',
+      featureTTS: 'AI Narration',
       featureScenes: 'Visual scenes',
       featureVideo: 'Automatic video',
       tourHint: 'Quick 1-minute tour — you can skip anytime',
@@ -1528,7 +1518,7 @@ export const en: TranslationDictionary = {
       founderTitle: 'A message from the creator',
       founderGreeting: "Hey, how's it going? My name is Matheus and I'm developing Script Master on my own, from scratch. This platform was born from my desire to help content creators produce more and better with artificial intelligence.",
       founderBody: "Since it's just me working on this project, your feedback is gold — it truly makes all the difference. If something pleases you, if something bugs you, or if you have a wild idea that could be amazing here... let me know!",
-      founderByok: "One important thing: Script Master is open source and uses the BYOK model. You configure your own Gemini key and track usage directly in Google AI Studio, with no charge created inside the app.",
+      founderByok: "One important thing: Script Master is open source and free. You configure your own Gemini key and track usage directly in Google AI Studio, with no charge created inside the app.",
       founderFeedback: 'You can send suggestions, criticism, or praise through the Contact page at script-master.pro/contato. I read everything myself. Welcome aboard — let\'s create something amazing together!',
       founderButton: "Let's go!",
     },
@@ -1538,7 +1528,7 @@ export const en: TranslationDictionary = {
   seo: {
     landing: {
       title: 'Create YouTube Videos with AI | Script Master',
-      description: 'Open source AI video generator that turns scripts into narration, scenes, subtitles, and YouTube-ready content. BYOK — use your own Gemini key.',
+      description: 'Open source AI video generator that turns scripts into narration, scenes, subtitles, and YouTube-ready content. Use your own Gemini key.',
     },
     about: {
       title: 'About Script Master',
@@ -1550,7 +1540,7 @@ export const en: TranslationDictionary = {
     },
     faq: {
       title: 'FAQ | Script Master',
-      description: 'Get answers about BYOK, open source, narration, scenes, subtitles, video generation, and safety in Script Master.',
+      description: 'Get answers about the Gemini key, open source, narration, scenes, subtitles, video generation, and safety in Script Master.',
     },
     features: {
       title: 'AI Video Generator | Script Master',
@@ -1558,7 +1548,7 @@ export const en: TranslationDictionary = {
     },
     openSource: {
       title: 'Open Source & Free | Script Master',
-      description: 'Script Master is open source and free. Use your own Gemini API key (BYOK) to create AI videos.',
+      description: 'Script Master is open source and free. Use your own Gemini key to create AI videos.',
     },
     onboarding: {
       title: 'Initial Setup | Script Master',
@@ -1579,7 +1569,7 @@ export const en: TranslationDictionary = {
       },
       2: {
         question: 'Is my data safe?',
-        answer: 'Yes. We use Google Firebase with encryption in transit and at rest. Your scripts and projects are stored securely and are never shared with third parties.',
+        answer: 'Yes. We use Google\'s secure infrastructure with encryption in transit and at rest. Your scripts and projects are stored securely and are never shared with third parties.',
       },
       3: {
         question: 'Does it work offline?',
@@ -1623,7 +1613,7 @@ export const en: TranslationDictionary = {
       },
       1: {
         question: 'Can I use it on multiple devices?',
-        answer: 'Yes! Your projects and settings are synced via Firebase. Just sign in on any device to access your content.',
+        answer: 'Yes! Your projects and settings are synced automatically. Just sign in on any device to access your content.',
       },
       2: {
         question: 'How do I delete my account?',
@@ -1678,8 +1668,8 @@ export const en: TranslationDictionary = {
   // ── Erros ────────────────────────────────────────────────────────────
   errors: {
     video: {
-      title: 'Error rendering video',
-      message: 'A problem occurred during composition. Try reloading the page.',
+      title: 'Error generating video',
+      message: 'A problem occurred while assembling your video. Try reloading the page.',
       retry: 'Try again',
     },
   },
@@ -1735,7 +1725,7 @@ export const en: TranslationDictionary = {
     generateScenesLabel: 'Generate scenes',
     sceneDensityLabel: 'Scene density',
     sceneRatioLabel: 'Aspect ratio',
-    visualFrameworkLabel: 'Visual framework',
+    visualFrameworkLabel: 'Visual style',
     imageTextLanguageLabel: 'Text language',
     emotionLabel: 'Emotion',
     multiSpeakerLabel: 'Multi-speaker',
@@ -1758,9 +1748,9 @@ export const en: TranslationDictionary = {
       secondSpeakerDefault: 'Second speaker (default)',
     },
     providerSettings: {
-      title: 'Gemini API',
-      description: 'To use AI features, you need an API key from Google AI Studio. The key is saved ONLY on this device.',
-      inputLabel: 'API Key',
+      title: 'Gemini Access',
+      description: 'To use AI features, you need an access key from Google AI Studio. The key is saved ONLY on this device.',
+      inputLabel: 'Access key',
       inputPlaceholder: 'Paste your key here (AIza...)',
       save: 'Save',
       test: 'Test',
@@ -1770,7 +1760,7 @@ export const en: TranslationDictionary = {
       testError: 'Invalid key. Check and try again.',
       warning: 'The key is stored locally in the browser and is never sent to our server for storage.',
       getApiKey: 'Get your key at Google AI Studio',
-      sectionDescription: 'Configure your Gemini API key (BYOK)',
+      sectionDescription: 'Configure your Gemini access key',
     },
   },
 
@@ -1779,7 +1769,7 @@ export const en: TranslationDictionary = {
     login: {
       seoTitle: 'Login',
       seoDesc: 'Log in to Script Master and transform scripts into audio, video, and images with artificial intelligence.',
-      benefitsTitle: 'Create with AI — open source and BYOK',
+      benefitsTitle: 'Create with AI — open source and free',
       benefitsDesc: 'Transform scripts into professional audio, video, and images. Use your own Gemini key.',
       title: 'Script Master',
       subtitle: 'Log in with Google or email',
@@ -1926,7 +1916,7 @@ export const en: TranslationDictionary = {
     unavailableText: 'Could not create preview right now. Try again in a moment.',
     confirmReady: 'All set to confirm generation.',
     durationLabel: 'Estimated duration',
-    chunksLabel: 'Chunks',
+    chunksLabel: 'Parts',
     scenesLabel: 'Planned scenes',
     confidenceLabel: 'Confidence',
     confidenceHigh: 'High',
@@ -1949,7 +1939,7 @@ export const en: TranslationDictionary = {
         voice: 'Main voice: {voice}.',
       },
       chunking: {
-        consistency: 'Pre-processing to keep TTS consistency.',
+        consistency: 'Pre-processing to keep narration consistency.',
         limit: 'Target limit: 500 characters per part.',
         included: 'This step is already included in audio processing.',
       },
@@ -1966,7 +1956,7 @@ export const en: TranslationDictionary = {
     notes: {
       freePreview: 'This preview does not call the model or start generation.',
       visualEstimate: 'The visual part uses a conservative estimate to reduce surprises in the scene count.',
-      audioOnly: 'No visual pipeline: generation proceeds only to audio synthesis.',
+      audioOnly: 'Audio only: generation will produce narration only, no images.',
     },
     scriptNamePrefix: 'Script',
     saveCloudSuccess: 'Audio successfully saved to the cloud!',

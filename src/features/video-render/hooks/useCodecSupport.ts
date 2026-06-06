@@ -119,7 +119,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
       setState(prev => ({
         ...prev,
         canRender: false,
-        supportError: 'WebCodecs não disponível neste navegador.',
+        supportError: 'Seu navegador não tem os recursos necessários para exportar vídeo.',
       }));
       return false;
     }
@@ -179,7 +179,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             resolvedVideoCodec: codec,
             resolvedContainer: 'webm',
             resolvedAudioCodec: null,
-            codecWarning: 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
+            codecWarning: 'Seu navegador está usando um formato de vídeo alternativo. Alguns programas podem não abrir este vídeo corretamente.',
             supportError: null,
           }));
           return true;
@@ -194,7 +194,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
         setState(prev => ({
           ...prev,
           canRender: false,
-          supportError: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
+          supportError: mainIssue?.message ?? 'Seu navegador não consegue exportar vídeo. Use a versão mais recente do Chrome ou do Firefox.',
         }));
         return false;
       } else {
@@ -284,7 +284,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
             resolvedVideoCodec: codec,
             resolvedContainer: 'webm',
             resolvedAudioCodec: vp8Result.resolvedAudioCodec,
-            codecWarning: 'Seu navegador usa VP8/WebM. Alguns players podem não suportar o formato.',
+            codecWarning: 'Seu navegador está usando um formato de vídeo alternativo. Alguns programas podem não abrir este vídeo corretamente.',
             supportError: null,
           }));
           return true;
@@ -299,7 +299,7 @@ export function useCodecSupport(options: UseCodecSupportOptions): CodecSupportRe
         setState(prev => ({
           ...prev,
           canRender: false,
-          supportError: mainIssue?.message ?? 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
+          supportError: mainIssue?.message ?? 'Seu navegador não consegue exportar vídeo. Use a versão mais recente do Chrome ou do Firefox.',
         }));
         return false;
       }

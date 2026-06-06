@@ -68,7 +68,7 @@ export interface FeedbackFormFieldsProps {
 
 /**
  * Componente puro de campos do form de feedback.
- * Reutilizado por FeedbackDialog, ContactPage e FeedbackBanner.
+  * Reutilizado por FeedbackDialog e ContactPage.
  */
 export function FeedbackFormFields({
   defaultScreenContext,

@@ -3,6 +3,7 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -21,6 +22,7 @@ import Mic from '@mui/icons-material/Mic';
 import Logout from '@mui/icons-material/Logout';
 import Login from '@mui/icons-material/Login';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import GitHub from '@mui/icons-material/GitHub';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale, LocaleSelector } from '../../features/i18n';
 import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
@@ -212,6 +214,23 @@ export function PublicHeader() {
               sx={{ flexShrink: 0, alignItems: 'center' }}
             >
               <LocaleSelector size="small" />
+              {/* GitHub — link para repositório open source */}
+              <Tooltip title={t('nav.github')} placement="bottom" arrow>
+                <IconButton
+                  component="a"
+                  href="https://github.com/Just-mpm/Script-Master-Open-Source"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('nav.github')}
+                  sx={{
+                    color: 'text.secondary',
+                    transition: 'color 0.2s ease',
+                    '&:hover': { color: 'text.primary' },
+                  }}
+                >
+                  <GitHub sx={{ fontSize: ICON_SIZE_LG }} />
+                </IconButton>
+              </Tooltip>
               {isMobile && (
                 <IconButton
                   color="inherit"
@@ -338,6 +357,28 @@ export function PublicHeader() {
               );
             })}
           </List>
+        </Box>
+
+        {/* GitHub no drawer mobile */}
+        <Divider sx={{ borderColor: APP_BORDER }} />
+        <Box sx={{ px: 1, py: 1 }}>
+          <ListItemButton
+            component="a"
+            href="https://github.com/Just-mpm/Script-Master-Open-Source"
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              borderRadius: RADIUS_XS,
+              color: 'text.secondary',
+              transition: 'color 0.2s ease, background-color 0.2s ease',
+              '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+              <GitHub sx={{ fontSize: ICON_SIZE_LG }} aria-hidden="true" />
+            </ListItemIcon>
+            <ListItemText primary={t('nav.github')} slotProps={{ primary: { variant: 'body2' } }} />
+          </ListItemButton>
         </Box>
 
         {user && (

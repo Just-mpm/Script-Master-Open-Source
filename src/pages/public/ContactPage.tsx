@@ -260,7 +260,7 @@ function ContactInfoPanel() {
 
 /** Formulário de feedback inline da página pública.
  * Reutiliza o componente FeedbackFormFields compartilhado com o FeedbackDialog
- * e o FeedbackFab. Após envio, mostra confirmação inline (mantida para SEO). */
+  * e o FeedbackDialog. Após envio, mostra confirmação inline (mantida para SEO). */
 function FeedbackForm() {
   const { t } = useLocale();
 

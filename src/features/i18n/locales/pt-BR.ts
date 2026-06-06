@@ -78,6 +78,7 @@ export const ptBR: TranslationDictionary = {
     ariaMenu: 'Menu',
     ariaDrawerMenu: 'Menu de navegação',
     logoAlt: 'Script Master — Ir para a página inicial',
+    github: 'GitHub',
   },
 
   // ── Footer ─────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ export const ptBR: TranslationDictionary = {
       terms: 'Termos de Uso',
       privacy: 'Privacidade',
       cookies: 'Cookies',
+      github: 'GitHub',
       manageCookies: 'Gerenciar cookies',
     },
   },
@@ -189,7 +191,7 @@ export const ptBR: TranslationDictionary = {
     features: {
       title: 'Do roteiro ao vídeo pronto',
       subtitle:
-        'As ferramentas que tiram seu conteúdo do papel: narração, cenas, legendas, assistente e biblioteca em um único fluxo. Open source, BYOK e no navegador.',
+        'As ferramentas que tiram seu conteúdo do papel: narração, cenas, legendas, assistente e biblioteca em um único fluxo. Open source, com sua chave do Google e tudo no navegador.',
     },
     featureCards: {
       voice: {
@@ -279,7 +281,7 @@ export const ptBR: TranslationDictionary = {
     metrics: {
       title: 'Menos etapas entre ideia e publicação',
       subtitle:
-        'Código aberto, modelo BYOK e tudo no navegador — sua chave Gemini, seu controle direto no Google.',
+        'Código aberto, sua chave do Google e tudo no navegador',
     },
     demo: {
       title: 'Veja seu roteiro ganhando forma',
@@ -352,7 +354,7 @@ export const ptBR: TranslationDictionary = {
     },
     cta: {
       title: 'Seu próximo vídeo pode começar pelo roteiro',
-      subtitle: 'Crie sua primeira narração, gere cenas e teste o fluxo gratuitamente. Open source e BYOK.',
+      subtitle: 'Crie sua primeira narração, gere cenas e teste o fluxo gratuitamente. Open source e gratuito — use sua própria chave do Google.',
       button: 'Criar meu primeiro vídeo',
     },
   },
@@ -411,26 +413,26 @@ export const ptBR: TranslationDictionary = {
     },
     cta: {
       title: 'Pronto para transformar roteiro em vídeo?',
-      subtitle: 'Teste o fluxo completo gratuitamente — open source e BYOK.',
+      subtitle: 'Teste o fluxo completo gratuitamente — open source e gratuito — use sua própria chave do Google.',
       button: 'Criar meu primeiro vídeo',
     },
   },
 
-  // ── Open Source & BYOK ────────────────────────────────────────────────
+  // ── Open Source & Chave do Gemini ─────────────────────────────────────
   openSource: {
     hero: {
       title: 'Open source, gratuito e sem limites artificiais',
-      subtitle: 'O Script Master é código aberto. Você usa sua própria chave de API do Gemini (BYOK) e mantém o controle do uso diretamente no Google.',
+      subtitle: 'O Script Master é código aberto. Você usa sua própria chave do Gemini e mantém o controle do uso diretamente no Google.',
       cta: 'Começar gratuitamente',
       ctaSecondary: 'Como funciona',
     },
     features: {
-      title: 'Controle claro com BYOK',
-      subtitle: 'O modelo BYOK coloca você no controle: sua chave, sua conta Google e nenhuma cobrança criada pelo Script Master.',
+title: 'Controle claro do seu uso',
+      subtitle: 'Você no controle: sua chave, sua conta Google e nenhuma cobrança criada pelo Script Master.',
       openSource: 'Código aberto e gratuito',
       openSourceDesc: 'O Script Master é open source. Baixe, use, audite e contribua com melhorias para a comunidade.',
       byok: 'Bring Your Own Key',
-      byokDesc: 'Configure sua chave de API do Gemini uma única vez. As gerações rodam na sua conta do Google diretamente.',
+      byokDesc: 'Configure sua chave do Gemini uma única vez. As gerações rodam na sua conta do Google diretamente.',
       noHiddenFees: 'Sem cobrança própria',
       noHiddenFeesDesc: 'O Script Master não intermedeia pagamentos. O uso da API fica na sua própria conta Google.',
     },
@@ -445,7 +447,7 @@ export const ptBR: TranslationDictionary = {
       step3Desc: 'Gere narração, cenas e vídeos usando a API do Gemini vinculada à sua conta Google.',
     },
     faq: {
-      title: 'Perguntas frequentes sobre BYOK e open source',
+      title: 'Perguntas frequentes sobre chave do Gemini e código aberto',
     },
     cta: {
       title: 'Comece a criar sem pagar nada ao Script Master',
@@ -460,14 +462,14 @@ export const ptBR: TranslationDictionary = {
     hero: {
       title: 'Dúvidas antes de criar seu primeiro vídeo?',
       subtitle:
-        'Entenda BYOK, segurança, geração de voz, imagens e vídeo antes de começar.',
+        'Entenda como funciona a chave do Google, segurança, geração de voz, imagens e vídeo antes de começar.',
       cta: 'Começar gratuitamente',
-      ctaSecondary: 'Ver BYOK',
+      ctaSecondary: 'Ver como funciona',
     },
     categories: {
       ariaLabel: 'Categorias de perguntas frequentes',
       general: 'Geral',
-      openSource: 'BYOK & Open Source',
+      openSource: 'Chave do Gemini & Open Source',
       technical: 'Técnico',
       account: 'Conta',
     },
@@ -529,18 +531,6 @@ export const ptBR: TranslationDictionary = {
       cancel: 'Cancelar',
       hint: 'Selecione uma categoria e descreva com pelo menos 10 caracteres para enviar.',
       closingHint: 'Fechando automaticamente...',
-    },
-    fab: {
-      tooltip: 'Enviar feedback',
-      badgeLabel: '!',
-    },
-    banner: {
-      title: 'Ajude a melhorar o Script Master',
-      description: 'Envie um feedback rápido sobre sua experiência.',
-      cta: 'Dar feedback agora',
-    },
-    emptyState: {
-      chipLabel: 'Enviar feedback',
     },
     navItem: {
       headerLabel: 'Feedback',
@@ -615,7 +605,7 @@ export const ptBR: TranslationDictionary = {
     },
     cta: {
       title: 'Quer ver antes de mandar mensagem?',
-      subtitle: 'Crie sua conta gratuita e teste o fluxo com um roteiro curto. Open source e BYOK.',
+      subtitle: 'Crie sua conta gratuita e teste o fluxo com um roteiro curto. Open source e gratuito — use sua própria chave do Google.',
       button: 'Criar meu primeiro vídeo',
     },
   },
@@ -625,7 +615,7 @@ export const ptBR: TranslationDictionary = {
     hero: {
       title: 'Uma ferramenta open source para tirar roteiros da gaveta',
       subtitle:
-        'O Script Master nasceu para ajudar criadores a sair mais rápido da ideia para a narração, as cenas e o vídeo final. Gratuito e open source, com modelo BYOK.',
+        'O Script Master nasceu para ajudar criadores a sair mais rápido da ideia para a narração, as cenas e o vídeo final. Gratuito e open source — use sua própria chave do Google.',
       cta: 'Começar gratuitamente — open source',
       ctaSecondary: 'Ver ferramentas',
       alt: 'Ilustração do Script Master transformando roteiro em vídeo',
@@ -989,8 +979,8 @@ export const ptBR: TranslationDictionary = {
       title: 'Preview de vídeo aguardando cenas',
       description: 'Gere o áudio e as cenas no estúdio para visualizar a montagem aqui.',
       goToStudio: 'Ir para o Estúdio',
-      renderError: 'Erro ao renderizar o vídeo',
-      renderErrorDescription: 'Ocorreu um problema durante a composição. Tente recarregar.',
+      renderError: 'Erro ao gerar o vídeo',
+      renderErrorDescription: 'Ocorreu um problema ao montar o vídeo. Tente recarregar.',
       captionVisible: 'Legenda visível',
       captionHidden: 'Legenda oculta',
       showCaption: 'Mostrar legenda',
@@ -1029,11 +1019,11 @@ export const ptBR: TranslationDictionary = {
     transcription: {
       title: 'Transcrição e Legendas',
       sourceSegmentTiming: 'segmentos do áudio',
-      sourceWhisperAligned: 'Whisper alinhado',
+      sourceWhisperAligned: 'Alinhado por IA',
       sourceProportional: 'proporcional',
       sourceManual: 'manual',
       staleWarning: 'O roteiro mudou depois da transcrição. Gere novamente para atualizar as legendas.',
-      whisperNotSupportedTitle: 'Whisper não suportado neste navegador',
+      whisperNotSupportedTitle: 'Reconhecimento de fala não disponível neste navegador',
       whisperNotSupportedDescription: 'As legendas serão geradas automaticamente com base no tempo do áudio.',
       wordCount: '{count} legenda(s)',
       regenerate: 'Gerar novamente',
@@ -1042,7 +1032,7 @@ export const ptBR: TranslationDictionary = {
     exportInfo: 'Vídeo em {width}x{height} a {fps} fps',
     animateScenesTooltip: 'Anima cada cena com efeito Speed Paint, transformando imagens estáticas em animação de pintura progressiva.',
     animateScenesLabel: 'Animar cenas (Speed Paint)',
-    htmlInCanvasWarning: 'Seu navegador não suporta captura de canvas. Para exportar vídeos com Speed Paint corretamente, use o Google Chrome com a flag chrome://flags/#canvas-draw-element habilitada. Sem isso, as cenas animadas podem aparecer em branco.',
+    htmlInCanvasWarning: 'Seu navegador não suporta a captura necessária. Para exportar vídeos com Speed Paint corretamente, use o Google Chrome. Sem isso, as cenas animadas podem aparecer em branco.',
     fileNameLabel: 'Nome do arquivo',
     fileNamePlaceholder: 'Meu video',
   },
@@ -1312,7 +1302,7 @@ export const ptBR: TranslationDictionary = {
     deleteAudioTitle: 'Excluir versão de áudio?',
     deleteAudioLoading: 'Excluindo áudio...',
     deleteAudioConfirm: 'Excluir',
-    deleteAudioDescription: 'Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do Storage.',
+    deleteAudioDescription: 'Esta ação remove permanentemente esta versão de áudio e suas cenas associadas do armazenamento na nuvem.',
     deleteSuccess: 'Projeto excluído com sucesso. A lista não foi atualizada automaticamente.',
     updateList: 'Atualizar lista',
     renameError: 'Não foi possível renomear o projeto. Tente novamente.',
@@ -1404,7 +1394,7 @@ export const ptBR: TranslationDictionary = {
     exportInfo: 'Vídeo em {width}x{height} a {fps} fps',
     exportBrowserWarning: 'Navegador não suporta exportação de vídeo. Use Chrome 94+ ou Firefox 130+.',
     exportDismissError: 'Dispensar erro',
-    htmlInCanvasWarning: 'Seu navegador não suporta captura de canvas. Para a melhor experiência com Speed Paint, use o Google Chrome com a flag chrome://flags/#canvas-draw-element habilitada. Sem isso, a animação pode aparecer em branco no vídeo exportado.',
+    htmlInCanvasWarning: 'Seu navegador não suporta a captura necessária. Para a melhor experiência com Speed Paint, use o Google Chrome. Sem isso, a animação pode aparecer em branco no vídeo exportado.',
     exportQualityAria: 'Qualidade de exportação',
     exportFileName: 'Nome do arquivo',
     fileNamePlaceholder: 'Meu speed paint',
@@ -1495,7 +1485,7 @@ export const ptBR: TranslationDictionary = {
     welcome: {
       title: 'Bem-vindo ao Script Master!',
       description: 'Transforme seus roteiros em áudio profissional, cenas visuais e vídeos\ncom inteligência artificial. Vamos te mostrar como em poucos passos.',
-      featureTTS: 'TTS com IA',
+      featureTTS: 'Narração com IA',
       featureScenes: 'Cenas visuais',
       featureVideo: 'Vídeo automático',
       tourHint: 'Tour rápido de 1 minuto — você pode pular quando quiser',
@@ -1547,7 +1537,7 @@ export const ptBR: TranslationDictionary = {
       founderTitle: 'Uma mensagem do criador',
       founderGreeting: 'Oi, tudo bem? Meu nome é Matheus e estou desenvolvendo o Script Master sozinho, do zero. Essa plataforma nasceu da minha vontade de ajudar criadores de conteúdo a produzirem mais e melhor com inteligência artificial.',
       founderBody: 'Como sou uma pessoa só no projeto, seu feedback é ouro — realmente faz toda a diferença. Se algo te agradar, se algo irritar, ou se tiver uma ideia maluca que poderia ser incrível aqui dentro... me conta!',
-      founderByok: 'Ah, uma coisa importante: o Script Master é open source e usa o modelo BYOK. Você configura sua própria chave do Gemini e acompanha o uso diretamente no Google AI Studio, sem cobrança criada dentro do app.',
+      founderByok: 'Ah, uma coisa importante: o Script Master é open source e você usa sua própria chave do Gemini e acompanha o uso diretamente no Google, sem cobrança criada dentro do app.',
       founderFeedback: 'Você pode enviar sugestões, críticas ou elogios pela página de Contato em script-master.pro/contato. Eu mesmo leio tudo. Bem-vindo(a) a bordo — vamos criar algo incrível juntos!',
       founderButton: 'Vamos lá!',
     },
@@ -1557,7 +1547,7 @@ export const ptBR: TranslationDictionary = {
   seo: {
     landing: {
       title: 'Criar vídeos para YouTube com IA | Script Master',
-      description: 'Gerador de vídeo open source com IA para transformar roteiro em narração, cenas, legendas e conteúdo para YouTube. BYOK — use sua própria chave do Gemini.',
+      description: 'Gerador de vídeo open source com IA para transformar roteiro em narração, cenas, legendas e conteúdo para YouTube. Use sua própria chave do Gemini.',
     },
     about: {
       title: 'Sobre o Script Master',
@@ -1569,7 +1559,7 @@ export const ptBR: TranslationDictionary = {
     },
     faq: {
       title: 'Perguntas Frequentes | Script Master',
-      description: 'Tire dúvidas sobre BYOK, open source, geração de narração, cenas, legendas, vídeo e segurança no Script Master.',
+      description: 'Tire dúvidas sobre a chave do Gemini, open source, geração de narração, cenas, legendas, vídeo e segurança no Script Master.',
     },
     features: {
       title: 'Gerador de vídeo com IA | Script Master',
@@ -1577,7 +1567,7 @@ export const ptBR: TranslationDictionary = {
     },
     openSource: {
       title: 'Open Source & Gratuito | Script Master',
-      description: 'Script Master é open source e gratuito. Use sua própria chave de API do Gemini (BYOK) para criar vídeos com IA.',
+      description: 'Script Master é open source e gratuito. Use sua própria chave de API do Gemini para criar vídeos com IA.',
     },
     onboarding: {
       title: 'Configuração Inicial | Script Master',
@@ -1598,7 +1588,7 @@ export const ptBR: TranslationDictionary = {
       },
       2: {
         question: 'Meus dados estão seguros?',
-        answer: 'Sim. Utilizamos o Firebase do Google com criptografia em trânsito e em repouso. Seus roteiros e projetos são armazenados de forma segura e nunca são compartilhados com terceiros.',
+        answer: 'Sim. Utilizamos a infraestrutura segura do Google, com criptografia em trânsito e em repouso. Seus roteiros e projetos são armazenados de forma segura e nunca são compartilhados com terceiros.',
       },
       3: {
         question: 'Funciona offline?',
@@ -1642,7 +1632,7 @@ export const ptBR: TranslationDictionary = {
       },
       1: {
         question: 'Posso usar em mais de um dispositivo?',
-        answer: 'Sim! Seus projetos e configurações são sincronizados via Firebase. Basta fazer login em qualquer dispositivo para acessar seu conteúdo.',
+        answer: 'Sim! Seus projetos e configurações são sincronizados automaticamente. Basta fazer login em qualquer dispositivo para acessar seu conteúdo.',
       },
       2: {
         question: 'Como excluo minha conta?',
@@ -1697,8 +1687,8 @@ export const ptBR: TranslationDictionary = {
   // ── Erros ────────────────────────────────────────────────────────────
   errors: {
     video: {
-      title: 'Erro ao renderizar o vídeo',
-      message: 'Ocorreu um problema durante a composição. Tente recarregar a página.',
+      title: 'Erro ao gerar o vídeo',
+      message: 'Ocorreu um problema ao montar o vídeo. Tente recarregar a página.',
       retry: 'Tentar novamente',
     },
   },
@@ -1754,7 +1744,7 @@ export const ptBR: TranslationDictionary = {
     generateScenesLabel: 'Gerar cenas',
     sceneDensityLabel: 'Densidade de cenas',
     sceneRatioLabel: 'Proporção',
-    visualFrameworkLabel: 'Framework visual',
+    visualFrameworkLabel: 'Estilo visual',
     imageTextLanguageLabel: 'Idioma dos textos',
     emotionLabel: 'Emoção',
     multiSpeakerLabel: 'Multi-locutor',
@@ -1778,7 +1768,7 @@ export const ptBR: TranslationDictionary = {
     },
     providerSettings: {
       title: 'API Gemini',
-      description: 'Para usar as funcionalidades de IA, você precisa de uma chave de API do Google AI Studio. A chave fica salva APENAS neste dispositivo.',
+      description: 'Para usar as funcionalidades de IA, você precisa de uma chave de acesso do Google AI Studio. A chave fica salva APENAS neste dispositivo.',
       inputLabel: 'Chave de API',
       inputPlaceholder: 'Cole sua chave aqui (AIza...)',
       save: 'Salvar',
@@ -1789,7 +1779,7 @@ export const ptBR: TranslationDictionary = {
       testError: 'Chave inválida. Verifique e tente novamente.',
       warning: 'A chave é armazenada localmente no navegador e nunca é enviada ao nosso servidor para armazenamento.',
       getApiKey: 'Obtenha sua chave no Google AI Studio',
-      sectionDescription: 'Configure sua chave de API do Gemini (BYOK)',
+      sectionDescription: 'Configure sua chave de API do Gemini',
     },
   },
 
@@ -1798,7 +1788,7 @@ export const ptBR: TranslationDictionary = {
     login: {
       seoTitle: 'Login',
       seoDesc: 'Faça login no Script Master e transforme roteiros em áudio, vídeo e imagens com inteligência artificial.',
-      benefitsTitle: 'Crie com IA — open source e BYOK',
+      benefitsTitle: 'Crie com IA — open source e gratuito',
       benefitsDesc: 'Transforme roteiros em áudio, vídeo e imagens profissionais. Use sua própria chave do Gemini.',
       title: 'Script Master',
       subtitle: 'Entre com Google ou email',
@@ -1945,7 +1935,7 @@ export const ptBR: TranslationDictionary = {
     unavailableText: 'Não foi possível montar a prévia agora. Tente novamente em instantes.',
     confirmReady: 'Tudo pronto para confirmar a geração.',
     durationLabel: 'Duração estimada',
-    chunksLabel: 'Chunks',
+    chunksLabel: 'Partes',
     scenesLabel: 'Cenas previstas',
     confidenceLabel: 'Confiança',
     confidenceHigh: 'Alta',
@@ -1968,7 +1958,7 @@ export const ptBR: TranslationDictionary = {
         voice: 'Voz principal: {voice}.',
       },
       chunking: {
-        consistency: 'Pré-processamento para manter consistência do TTS.',
+        consistency: 'Pré-processamento para manter consistência da narração.',
         limit: 'Limite alvo: 500 caracteres por parte.',
         included: 'Esta etapa já está incluída no processamento do áudio.',
       },
@@ -1985,7 +1975,7 @@ export const ptBR: TranslationDictionary = {
     notes: {
       freePreview: 'Esta prévia não chama o modelo nem inicia geração.',
       visualEstimate: 'A parte visual usa estimativa conservadora para reduzir surpresas na quantidade de cenas.',
-      audioOnly: 'Sem pipeline visual: a geração segue apenas para síntese de áudio.',
+      audioOnly: 'Apenas áudio: a geração vai produzir somente a narração, sem imagens.',
     },
     scriptNamePrefix: 'Roteiro',
     saveCloudSuccess: 'Áudio salvo na nuvem com sucesso!',
