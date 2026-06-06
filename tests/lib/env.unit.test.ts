@@ -10,7 +10,6 @@ describe('env', () => {
 
   it('getFirebaseEnvConfig retorna objeto com propriedades obrigatórias', async () => {
     // Stub todas as env vars necessárias ANTES de importar
-    vi.stubEnv('VITE_GEMINI_API_KEY', 'test-gemini');
     vi.stubEnv('VITE_FIREBASE_API_KEY', 'fb-key');
     vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'myapp.firebaseapp.com');
     vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'my-project');

@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:3000", "https://your-domain.com", "https://your-firebase-project-id.web.app", "https://your-firebase-project-id.firebaseapp.com"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Range", "Range", "Accept-Ranges", "Cross-Origin-Resource-Policy"],
+    "maxAgeSeconds": 3600
+  }
+]

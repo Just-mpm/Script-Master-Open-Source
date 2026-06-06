@@ -7,7 +7,8 @@ import { Navigate, Route } from 'react-router-dom';
  */
 export const publicCompatRedirects = [
   <Route key="r-features" path="/features" element={<Navigate to="/funcionalidades" replace />} />,
-  <Route key="r-pricing" path="/pricing" element={<Navigate to="/precos" replace />} />,
+  <Route key="r-pricing" path="/pricing" element={<Navigate to="/open-source" replace />} />,
+  <Route key="r-precos" path="/precos" element={<Navigate to="/open-source" replace />} />,
   <Route key="r-faq" path="/faq" element={<Navigate to="/perguntas-frequentes" replace />} />,
   <Route key="r-contact" path="/contact" element={<Navigate to="/contato" replace />} />,
   <Route key="r-about" path="/about" element={<Navigate to="/sobre" replace />} />,

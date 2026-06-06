@@ -224,7 +224,7 @@ Apresente este caminho antes das ferramentas opcionais.
 - No desktop, as áreas ficam na barra superior.
 - No celular, as áreas principais ficam na barra inferior.
 - As opções adicionais ficam em **Mais**.
-- O saldo de créditos aparece no topo da tela.
+- A configuração da chave Gemini fica em Configurações.
 
 Não descreva posições exatas de botões se elas puderem variar entre celular e desktop. Pergunte qual dispositivo o usuário está usando quando isso for importante.
 

@@ -19,19 +19,6 @@ const { mockStreamFn, mockHttpsCallable, mockCancelCallable } = vi.hoisted(() =>
   mockCancelCallable: vi.fn().mockResolvedValue({ data: { success: true } }),
 }));
 
-const mockCreditsState = vi.hoisted(() => ({
-  availableCredits: 100,
-  usedCredits: 0,
-  reservedCredits: 0,
-  baseCredits: 100,
-  bonusCredits: 0,
-  feedbackBonusGranted: false,
-  unlimitedCredits: false,
-  canEnforceBalance: true,
-  loading: false,
-  error: null as string | null,
-}));
-
 // --- Mocks ---
 
 vi.mock('firebase/functions', () => ({
@@ -71,10 +58,7 @@ vi.mock('../../src/lib/db', () => ({
 }));
 
 vi.mock('../../src/lib/env', () => ({
-  getGeminiApiKey: vi.fn().mockReturnValue('test-key'),
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
-  isBillingEnabled: vi.fn().mockReturnValue(false),
-  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
   getFirebaseEnvConfig: vi.fn().mockReturnValue({
     apiKey: 'mock-api-key',
     authDomain: 'mock.firebaseapp.com',
@@ -83,7 +67,6 @@ vi.mock('../../src/lib/env', () => ({
     messagingSenderId: '123',
     appId: '1:123:web:abc',
   }),
-  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
   getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -96,12 +79,12 @@ vi.mock('../../src/lib/logger', () => ({
   }),
 }));
 
-vi.mock('../../src/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { uid: 'test-uid', email: 'test@test.com' } }),
+vi.mock('../../src/features/provider-settings', () => ({
+  getProviderAuthFromStore: () => ({ provider: 'gemini', apiKey: 'AIza-test-mock-key' }),
 }));
 
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({ ...mockCreditsState }),
+vi.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { uid: 'test-uid', email: 'test@test.com' } }),
 }));
 
 import { useAssistant } from '../../src/hooks/useAssistant';
@@ -116,16 +99,6 @@ function createWrapper() {
 
 describe('useAssistant', () => {
   beforeEach(() => {
-    mockCreditsState.availableCredits = 100;
-    mockCreditsState.usedCredits = 0;
-    mockCreditsState.reservedCredits = 0;
-    mockCreditsState.baseCredits = 100;
-    mockCreditsState.bonusCredits = 0;
-    mockCreditsState.feedbackBonusGranted = false;
-    mockCreditsState.unlimitedCredits = false;
-    mockCreditsState.canEnforceBalance = true;
-    mockCreditsState.loading = false;
-    mockCreditsState.error = null;
     vi.clearAllMocks();
 
     // Stubs globais por teste (limpos no afterEach via unstubAllGlobals)
@@ -714,33 +687,5 @@ describe('useAssistant', () => {
     expect(mockCancelCallable).toHaveBeenCalledWith({
       requestId: '00000000-0000-4000-8000-000000000000',
     });
-  });
-
-  it('deve marcar créditos esgotados quando receber details estruturado do backend', async () => {
-    mockStreamFn.mockRejectedValue({
-      code: 'functions/failed-precondition',
-      message: 'Créditos insuficientes',
-      details: {
-        code: 'INSUFFICIENT_CREDITS',
-      },
-    });
-
-    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
-
-    await act(async () => {
-      await result.current.sendMessage('Mensagem que vai falhar por saldo');
-    });
-
-    expect(result.current.creditsExhausted).toBe(true);
-  });
-
-  it('não bloqueia por saldo quando o zero ainda não foi confirmado', () => {
-    mockCreditsState.availableCredits = 0;
-    mockCreditsState.canEnforceBalance = false;
-
-    const { result } = renderHook(() => useAssistant(), { wrapper: createWrapper() });
-
-    expect(result.current.creditBlockedByBalance).toBe(false);
-    expect(result.current.creditsExhausted).toBe(false);
   });
 });

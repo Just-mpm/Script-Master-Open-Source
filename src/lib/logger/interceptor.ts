@@ -91,7 +91,6 @@ function inferCategoryFromContext(context: string): LogCategory {
   if (ctx.includes('video') || ctx.includes('remotion')) return 'video';
   if (ctx.includes('genkit') || ctx.includes('assistant') || ctx.includes('ai')) return 'ai';
   if (ctx.includes('firestore') || ctx.includes('storage') || ctx.includes('indexeddb')) return 'storage';
-  if (ctx.includes('credit') || ctx.includes('billing') || ctx.includes('stripe')) return 'billing';
   if (ctx.includes('analytics')) return 'analytics';
   if (ctx.includes('pwa') || ctx.includes('firebase') || ctx.includes('app-check')) return 'infrastructure';
   return 'system';

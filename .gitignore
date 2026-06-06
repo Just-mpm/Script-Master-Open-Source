@@ -18,3 +18,21 @@ public/voice-previews/*.wav
 # Service account keys (nunca versionar)
 service-account.json
 *-service-account*.json
+Script-Master.md
+
+# Configuração específica do projeto (valores reais)
+# Os arquivos .example com placeholder são versionados para forks
+.firebaserc
+cors.json
+!.firebaserc.example
+!cors.json.example
+
+# SEO e crawlers (contêm domínio de produção)
+public/robots.txt
+public/sitemap.xml
+public/llms.txt
+public/llms-full.txt
+!public/robots.txt.example
+!public/sitemap.xml.example
+!public/llms.txt.example
+!public/llms-full.txt.example

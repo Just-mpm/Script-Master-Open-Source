@@ -7,11 +7,7 @@
  *
  * O submit chama a Cloud Function `feedback` que:
  * - Valida texto (mínimo 10 caracteres) + categoria
- * - Concede 250 créditos UMA vez (campo `feedbackBonusGranted` no Firestore)
- * - Cria documento `feedback_rewards/{rewardId}` para histórico
- *
- * Após sucesso, atualiza o store global de créditos via `refreshCredits()`
- * para que o `CreditIndicator` no Header reflita o novo saldo imediatamente.
+ * - Salva o feedback no Firestore para análise do time
  */
 import { useCallback, useState, type ChangeEvent } from 'react';
 import Alert from '@mui/material/Alert';
@@ -25,7 +21,6 @@ import Typography from '@mui/material/Typography';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../lib/firebase';
 import { removeUndefinedFields } from '../../lib/callable-utils';
-import { useCreditsStore } from '../../hooks/useCredits';
 import { useLocale } from '../../features/i18n';
 import { createLogger } from '../../lib/logger';
 import { trackAnalyticsEvent } from '../../lib/analytics';
@@ -47,14 +42,11 @@ interface FeedbackCallableInput {
 /** Resposta da Cloud Function (espelha FeedbackOutputSchema) */
 interface FeedbackCallableOutput {
   success: boolean;
-  bonusGranted: boolean;
-  availableCredits?: number;
 }
 
 /** Resultado de um envio bem-sucedido */
 export interface FeedbackSubmitResult {
-  bonusGranted: boolean;
-  availableCredits?: number;
+  success: boolean;
 }
 
 export interface FeedbackFormFieldsProps {
@@ -88,7 +80,6 @@ export function FeedbackFormFields({
   disabled = false,
 }: FeedbackFormFieldsProps) {
   const { t } = useLocale();
-  const refreshCredits = useCreditsStore((s) => s.refreshCredits);
 
   const [category, setCategory] = useState<FeedbackCategory | ''>('');
   const [text, setText] = useState('');
@@ -119,15 +110,11 @@ export function FeedbackFormFields({
 
       const data = result.data;
       const submitResult: FeedbackSubmitResult = {
-        bonusGranted: data.bonusGranted,
-        availableCredits: data.availableCredits,
+        success: data.success,
       };
 
       trackAnalyticsEvent('generate_lead', { source: 'feedback' });
-      log.info('feedback enviado', { category, bonusGranted: data.bonusGranted });
-
-      // Atualiza saldo global de créditos (CreditIndicator reflete o novo saldo)
-      void refreshCredits(false);
+      log.info('feedback enviado', { category });
 
       setSuccessResult(submitResult);
       onSubmitted?.(submitResult);
@@ -138,14 +125,10 @@ export function FeedbackFormFields({
     } finally {
       setIsSending(false);
     }
-  }, [category, text, screenContext, t, onSubmitted, refreshCredits]);
+  }, [category, text, screenContext, t, onSubmitted]);
 
   // Estado de sucesso inline (usado pelo ContactPage público)
   if (successResult && showSuccessInline) {
-    const message = successResult.bonusGranted
-      ? t('feedback.dialog.successWithBonus')
-      : t('feedback.dialog.successNoBonus');
-
     return (
       <Stack spacing={1.5} sx={{ alignItems: 'center', width: '100%' }}>
         {/* Fora do escopo StackedHeader: Snackbar/toast auto-hide (sucesso de envio) */}
@@ -159,7 +142,7 @@ export function FeedbackFormFields({
             boxShadow: `0 0 0 1px ${BRAND_SECONDARY_GLOW_SOFT}`,
           }}
         >
-          {message}
+          {t('feedback.dialog.success')}
         </Alert>
       </Stack>
     );

@@ -15,6 +15,37 @@
 import { type ToolRequestPart, z } from 'genkit';
 
 // ---------------------------------------------------------------------------
+// BYOK — Provider Auth
+// ---------------------------------------------------------------------------
+
+/** Schema de autenticação do provedor de IA (BYOK) */
+export const ProviderAuthSchema = z.object({
+  provider: z.enum(['gemini']).describe('Provedor de IA (atualmente apenas Gemini)'),
+  apiKey: z.string().min(1).max(200).describe('Chave de API do provedor'),
+});
+
+/** Tipo inferido do ProviderAuth */
+export type ProviderAuth = z.infer<typeof ProviderAuthSchema>;
+
+// ---------------------------------------------------------------------------
+// BYOK — Teste de API key
+// ---------------------------------------------------------------------------
+
+/** Input do flow testApiKey — recebe providerAuth e valida a chave via Gemini */
+export const TestApiKeyInputSchema = z.object({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
+
+/** Output do flow testApiKey */
+export const TestApiKeyOutputSchema = z.object({
+  valid: z.boolean().describe('Indica se a chave de API é válida'),
+  message: z.string().describe('Mensagem legível com o resultado da validação'),
+});
+
+export type TestApiKeyInput = z.infer<typeof TestApiKeyInputSchema>;
+export type TestApiKeyOutput = z.infer<typeof TestApiKeyOutputSchema>;
+
+// ---------------------------------------------------------------------------
 // ToolRequestPart — Schema que espelha o formato nativo do Genkit
 // (ToolRequestPartSchema não é re-exportado pelo pacote 'genkit').
 // Usado para serializar/desserializar interrupts no round-trip frontend.
@@ -279,11 +310,6 @@ export const AudioInputSchema = z.object({
   visualFramework: z.string().nullable().optional(),
   imageTextLanguage: z.string().nullable().optional(),
   referenceImage: z.string().nullable().optional(),
-  preflight: z.object({
-    availableCredits: z.number(),
-    totalPlanned: z.number(),
-    unlimited: z.boolean(),
-  }).nullable().optional(),
   requestId: z.string().nullable().optional(),
 });
 
@@ -307,7 +333,6 @@ export const AudioPreflightStepSchema = z.object({
   type: z.enum(['audio', 'chunking', 'scene_prompts', 'image']),
   label: z.string(),
   plannedCount: z.number(),
-  credits: z.number(),
   details: z.array(z.string()),
 });
 
@@ -320,28 +345,10 @@ export const AudioPreflightOutputSchema = z.object({
   estimatedSceneCount: z.number(),
   confidence: z.enum(['high', 'medium']),
   steps: z.array(AudioPreflightStepSchema),
-  credits: z.object({
-    available: z.number(),
-    totalPlanned: z.number(),
-    remainingAfter: z.number(),
-    unlimited: z.boolean(),
-  }),
   canProceed: z.boolean(),
   blockingReasonCode: z.string().nullable().optional(),
   blockingMessage: z.string().nullable().optional(),
   notes: z.array(z.string()),
-});
-
-export const CreditSnapshotOutputSchema = z.object({
-  availableCredits: z.number(),
-  usedCredits: z.number(),
-  baseCredits: z.number(),
-  bonusCredits: z.number(),
-  reservedCredits: z.number(),
-  feedbackBonusGranted: z.boolean(),
-  feedbackPromoSeen: z.boolean(),
-  unlimitedCredits: z.boolean(),
-  currentPeriodKey: z.string(),
 });
 
 // ---------------------------------------------------------------------------
@@ -429,8 +436,6 @@ export const FeedbackInputSchema = z.object({
 
 export const FeedbackOutputSchema = z.object({
   success: z.boolean(),
-  bonusGranted: z.boolean(),
-  availableCredits: z.number().nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -467,7 +472,6 @@ export type AudioInput = z.infer<typeof AudioInputSchema>;
 export type AudioOutput = z.infer<typeof AudioOutputSchema>;
 export type AudioPreflightInput = z.infer<typeof AudioPreflightInputSchema>;
 export type AudioPreflightOutput = z.infer<typeof AudioPreflightOutputSchema>;
-export type CreditSnapshotOutput = z.infer<typeof CreditSnapshotOutputSchema>;
 export type ImageInput = z.infer<typeof ImageInputSchema>;
 export type ImageOutput = z.infer<typeof ImageOutputSchema>;
 export type ScenePromptsInput = z.infer<typeof ScenePromptsInputSchema>;

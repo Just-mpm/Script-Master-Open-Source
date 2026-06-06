@@ -264,7 +264,7 @@ export function ProductDemoSection() {
             {t('landing.demo.tryFree')}
           </Button>
           <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: TEXT_SECONDARY }}>
-            {t('landing.demo.noCreditCard')}
+            {t('landing.demo.byokNote')}
           </Typography>
         </Box>
       </Container>

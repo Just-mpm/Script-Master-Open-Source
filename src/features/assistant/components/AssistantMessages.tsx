@@ -24,7 +24,6 @@ import Refresh from '@mui/icons-material/Refresh';
 import SmartToy from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useCredits } from '../../../hooks/useCredits';
 import { useFeedbackDialog } from '../../../components/feedback';
 import type { AssistantSettings, AssistantToolEvent, ChatMessage } from '../types';
 import { extractJsonSettings, stripJsonSettingsBlock } from '../utils';
@@ -355,11 +354,7 @@ const MessageBubble = React.memo(function MessageBubble({
 function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: string) => void }) {
   const { t } = useLocale();
   const { user } = useAuth();
-  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
   const openFeedback = useFeedbackDialog();
-
-  // Chip sempre presente (exceto ilimitados) — label muda após bônus
-  const showFeedbackCta = !!user && !unlimitedCredits;
 
   const handleFeedbackClick = useCallback(() => {
     openFeedback('/app/assistente');
@@ -409,12 +404,10 @@ function EmptyChatState({ onSuggestionClick }: { onSuggestionClick: (prompt: str
         ))}
 
         {/* CTA de feedback — abre o FeedbackDialog (não envia mensagem) */}
-        {showFeedbackCta ? (
+        {user ? (
           <Chip
             icon={<RateReviewIcon sx={{ fontSize: 16 }} />}
-            label={feedbackBonusGranted
-              ? t('feedback.emptyState.chipLabelAfterBonus')
-              : t('feedback.emptyState.chipLabel')}
+            label={t('feedback.emptyState.chipLabel')}
             size="small"
             variant="outlined"
             onClick={handleFeedbackClick}

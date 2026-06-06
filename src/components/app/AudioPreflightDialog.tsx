@@ -7,7 +7,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useLocale } from '../../features/i18n';
@@ -17,7 +16,6 @@ export interface AudioPreflightStep {
   type: 'audio' | 'chunking' | 'scene_prompts' | 'image';
   label: string;
   plannedCount: number;
-  credits: number;
   details: string[];
 }
 
@@ -28,12 +26,6 @@ export interface AudioPreflightSummary {
   estimatedSceneCount: number;
   confidence: 'high' | 'medium';
   steps: AudioPreflightStep[];
-  credits: {
-    available: number;
-    totalPlanned: number;
-    remainingAfter: number;
-    unlimited: boolean;
-  };
   canProceed: boolean;
   blockingReasonCode?: string;
   blockingMessage?: string;
@@ -82,7 +74,7 @@ export function AudioPreflightDialog({
 
   function getBlockingText(): string {
     if (!preflight) return '';
-    return preflight.blockingMessage ?? t('audioPreflight.insufficientCreditsError');
+    return preflight.blockingMessage ?? t('audioPreflight.blockedError');
   }
 
   function getStepLabel(type: AudioPreflightStepType): string {
@@ -127,18 +119,6 @@ export function AudioPreflightDialog({
         ? t('audioPreflight.notes.visualEstimate')
         : t('audioPreflight.notes.audioOnly'),
     ];
-  }
-
-  function formatCredits(value: number, unlimited: boolean): string {
-    if (unlimited || !Number.isFinite(value)) {
-      return t('audioPreflight.unlimited');
-    }
-
-    return t('audioPreflight.creditsSuffix', { value });
-  }
-
-  function formatStepCredits(value: number): string {
-    return value <= 0 ? t('audioPreflight.noCost') : t('audioPreflight.creditsSuffix', { value });
   }
 
   return (
@@ -204,17 +184,14 @@ export function AudioPreflightDialog({
                     py: 1.5,
                   }}
                 >
-                  <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        {getStepLabel(step.type)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {step.plannedCount} {t('audioPreflight.stepsLabel')}
-                      </Typography>
-                    </Box>
-                    <Chip label={formatStepCredits(step.credits)} color="primary" />
-                  </Stack>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {getStepLabel(step.type)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {step.plannedCount} {t('audioPreflight.stepsLabel')}
+                    </Typography>
+                  </Box>
 
                   <Stack spacing={0.5} sx={{ mt: 1.25 }}>
                     {getStepDetails(step).map((detail) => (
@@ -226,36 +203,6 @@ export function AudioPreflightDialog({
                 </Box>
               ))}
             </Stack>
-
-            <Divider />
-
-            <Stack spacing={1}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                {t('audioPreflight.creditsSectionTitle')}
-              </Typography>
-
-              <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">{t('audioPreflight.currentBalance')}</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  {formatCredits(preflight.credits.available, preflight.credits.unlimited)}
-                </Typography>
-              </Stack>
-
-              <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">{t('audioPreflight.predictedCost')}</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  {formatCredits(preflight.credits.totalPlanned, false)}
-                </Typography>
-              </Stack>
-
-              <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">{t('audioPreflight.balanceAfter')}</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  {formatCredits(preflight.credits.remainingAfter, preflight.credits.unlimited)}
-                </Typography>
-              </Stack>
-            </Stack>
-
             <Stack spacing={0.5}>
               {getNotes().map((note) => (
                 <Typography key={note} variant="caption" color="text.secondary">

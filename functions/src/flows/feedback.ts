@@ -1,21 +1,17 @@
 // ---------------------------------------------------------------------------
-// Flow de Feedback com bônus de créditos
+// Flow de Feedback
 // ---------------------------------------------------------------------------
 //
-// Permite que usuários autenticados enviem feedback sobre o produto e,
-// como incentivo, recebem um bônus único de 250 créditos.
-//
-// O bônus é concedido apenas UMA vez por usuário, controlado pelo campo
-// `feedbackBonusGranted` no documento `beta_access/current` do Firestore.
+// Permite que usuários autenticados enviem feedback sobre o produto.
 //
 // Protegido por:
 //   - authPolicy: isSignedIn()  → apenas usuários autenticados
 //   - enforceAppCheck: true     → apenas requests do app oficial
 //
 // Fluxo:
-//   1. Valida entrada (texto mínimo de 10 caracteres)
-//   2. Concede bônus de feedback via grantFeedbackBonus()
-//   3. Retorna status do bônus + saldo atualizado de créditos
+//   1. Valida entrada (texto mínimo de 10 caracteres, categoria obrigatória)
+//   2. Salva feedback no Firestore
+//   3. Retorna status de sucesso
 // ---------------------------------------------------------------------------
 
 import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
@@ -27,8 +23,6 @@ import {
   FeedbackOutputSchema,
 } from '../genkit/schemas/common.js';
 import {
-  grantFeedbackBonus,
-  getOrCreateBetaAccess,
   isRequestIdValid,
 } from '../usage/index.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
@@ -71,32 +65,28 @@ export const feedback = onCallGenkit(
         throw new HttpsError('invalid-argument', 'A categoria do feedback é obrigatória');
       }
 
-      // Instância do Firestore (admin já inicializado pelo index.ts)
       const db = getFirestore();
 
-      // Gera requestId se não fornecido (para rastreamento e idempotência)
       // Valida requestId enviado pelo cliente (deve ser UUID v4)
       if (input.requestId && !isRequestIdValid(input.requestId)) {
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
       }
       const requestId = input.requestId || crypto.randomUUID();
 
-      // Garante que o documento beta_access/current existe antes de conceder o bônus.
-      // Se o usuário nunca usou IA, o documento pode não existir e a transação falharia.
-      await getOrCreateBetaAccess(db, uid);
+      // Salva o feedback no Firestore
+      await db.collection('feedback').add({
+        userId: uid,
+        category: input.category,
+        text: input.text,
+        screenContext: input.screenContext ?? null,
+        requestId,
+        createdAt: Date.now(),
+      });
 
-      // Concede o bônus de feedback (controla se já foi concedido antes)
-      const bonusResult = await grantFeedbackBonus(db, uid, requestId);
-
-      // Busca o saldo atualizado de créditos para retornar ao cliente
-      const betaAccess = await getOrCreateBetaAccess(db, uid);
-
-      log.info('Feedback recebido', { uid, category: input.category, bonusGranted: bonusResult.bonusGranted, availableCredits: betaAccess.availableCredits });
+      log.info('Feedback recebido', { uid, category: input.category });
 
       return {
         success: true,
-        bonusGranted: bonusResult.bonusGranted,
-        availableCredits: betaAccess.availableCredits,
       };
     },
   ),

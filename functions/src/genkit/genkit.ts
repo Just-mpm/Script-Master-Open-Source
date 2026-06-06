@@ -3,22 +3,22 @@
 // ---------------------------------------------------------------------------
 //
 // Configura a instância única do Genkit com o plugin Google GenAI.
-// O plugin lê automaticamente a API key das variáveis de ambiente:
-//   GOOGLE_GENAI_API_KEY (preferencial) ou GEMINI_API_KEY (fallback)
 //
-// Também configura telemetria com Firebase (OpenTelemetry) e validação
-// de variáveis de ambiente na inicialização.
+// BYOK (Bring Your Own Key):
+//   O plugin é inicializado com googleAI({ apiKey: false }) — nenhuma API key
+//   global é configurada. Cada chamada de IA (ai.generate / ai.generateStream)
+//   DEVE fornecer config: { apiKey: userKey } no payload, extraído via helper
+//   extractApiKey() de '../utils/byok.js'.
+//
+// Também configura telemetria com Firebase (OpenTelemetry) e nível de log.
 //
 // Consumido por todos os flows e utilitários de IA no backend.
 // ---------------------------------------------------------------------------
-
-import { genkit, generateMiddleware } from 'genkit/beta';
+ 
+import { genkit } from 'genkit/beta';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/google-genai';
 import { logger } from 'genkit/logging';
-import { createLogger } from './utils/logger.js';
-
-const log = createLogger('genkit');
 
 // ---------------------------------------------------------------------------
 // Telemetria Firebase — OpenTelemetry para tracing, logging e métricas
@@ -55,10 +55,14 @@ if (process.env.ENABLE_FIREBASE_MONITORING === 'true') {
 // ---------------------------------------------------------------------------
 // Instância única do Genkit
 // ---------------------------------------------------------------------------
+//
+// BYOK: googleAI({ apiKey: false }) desabilita chave global no ambiente.
+// Cada chamada de IA deve fornecer config: { apiKey } com a key do usuário.
+// ---------------------------------------------------------------------------
 
 /** Instância única do Genkit compartilhada por todos os flows */
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [googleAI({ apiKey: false })],
 });
 
 // ---------------------------------------------------------------------------
@@ -68,71 +72,10 @@ export const ai = genkit({
 // O Genkit emite logs DEBUG para cada flow que não usa `defineSecret` com
 // Cloud Secret Manager. Como usamos variáveis de ambiente diretamente
 // (via .env local e env vars nas Cloud Functions), esses avisos são
-// falsos positivos — a API key já está disponível em process.env.
+// falsos positivos.
 //
 // Subindo o nível para 'warn', os DEBUGs e INFOs internos são suprimidos,
 // mantendo apenas warnings e erros reais.
 // ---------------------------------------------------------------------------
 
 logger.setLogLevel('warn');
-
-// ---------------------------------------------------------------------------
-// Validação de variáveis de ambiente na inicialização
-// ---------------------------------------------------------------------------
-//
-// Verifica se a API key do Gemini está configurada. O erro só apareceria
-// na primeira chamada a um flow — esta validação antecipa o diagnóstico.
-// Não lança erro para não quebrar o deploy, mas loga em stderr para
-// aparecer no Cloud Logging.
-// ---------------------------------------------------------------------------
-
-if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-  log.error('GOOGLE_GENAI_API_KEY não configurada — os flows de IA vão falhar');
-  log.error('Configure a variável no arquivo .env ou no ambiente de deploy');
-}
-
-// ---------------------------------------------------------------------------
-// Middleware de guard do Open Beta
-// ---------------------------------------------------------------------------
-//
-// Bloqueia chamadas aos flows de IA quando o beta aberto está desabilitado.
-// Controlado pela variável de ambiente OPEN_BETA_ENABLED.
-//
-// Uso: adicione `use: [openBetaGuard]` nas opções de ai.generate() ou
-// ai.generateStream() para bloquear chamadas quando o beta estiver fechado.
-//
-// Planejado (Fase 5): Aplicar este middleware em todos os flows de IA quando
-// o beta aberto terminar e a cobrança por créditos for ativada.
-// ---------------------------------------------------------------------------
-
-const OPEN_BETA_ENABLED = process.env.OPEN_BETA_ENABLED === 'true';
-
-if (!OPEN_BETA_ENABLED) {
-  log.warn('OPEN_BETA_ENABLED não está ativa — os flows de IA DEVEM ser protegidos pelo middleware openBetaGuard');
-}
-
-/**
- * Middleware que bloqueia chamadas ao modelo quando o beta aberto está
- * desabilitado (OPEN_BETA_ENABLED !== 'true').
- *
- * Aplica-se na fase `generate` (loop de alto nível do Genkit) para
- * interceptar qualquer tentativa de geração antes mesmo de chegar ao modelo.
- */
-export const openBetaGuard: ReturnType<typeof generateMiddleware> = generateMiddleware(
-  {
-    name: 'open-beta-guard',
-    description:
-      'Bloqueia chamadas aos modelos de IA quando o beta aberto está desabilitado',
-  },
-  () => ({
-    generate: async (_envelope, _ctx, next) => {
-      if (!OPEN_BETA_ENABLED) {
-        throw new Error(
-          'O beta aberto está temporariamente desabilitado. ' +
-          'Tente novamente em breve.',
-        );
-      }
-      return next(_envelope, _ctx);
-    },
-  }),
-);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ---------------------------------------------------------------------------
-// Script interativo para conceder admin e/ou créditos ilimitados
+// Script interativo para conceder admin
 // ---------------------------------------------------------------------------
 //
 // Uso:
@@ -13,16 +13,14 @@
 //     OU `gcloud auth application-default login` configurado
 //
 // O que faz:
-//   1. Pergunta qual ação (admin, créditos ilimitados, ou ambos)
-//   2. Pergunta o email do usuário (ou múltiplos separados por vírgula)
-//   3. Busca o usuário no Firebase Auth por email
-//   4. Aplica a alteração escolhida
-//   5. Reporta resultado
+//   1. Pergunta o email do usuário (ou múltiplos separados por vírgula)
+//   2. Busca o usuário no Firebase Auth por email
+//   3. Aplica o custom claim `admin: true`
+//   4. Reporta resultado
 // ---------------------------------------------------------------------------
 
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -60,13 +58,10 @@ function initializeFirebaseAdmin(): void {
 // Tipos
 // ---------------------------------------------------------------------------
 
-type AccessAction = 'admin' | 'credits' | 'both';
-
 interface ActionResult {
   email: string;
   uid: string;
   admin?: boolean;
-  unlimitedCredits?: boolean;
   error?: string;
 }
 
@@ -74,9 +69,8 @@ interface ActionResult {
 // Lógica principal
 // ---------------------------------------------------------------------------
 
-async function grantAccess(email: string, action: AccessAction): Promise<ActionResult> {
+async function grantAdminAccess(email: string): Promise<ActionResult> {
   const auth = getAuth();
-  const db = getFirestore();
 
   // 1. Buscar usuário por email
   let userRecord;
@@ -89,23 +83,11 @@ async function grantAccess(email: string, action: AccessAction): Promise<ActionR
   const uid = userRecord.uid;
   const result: ActionResult = { email, uid };
 
-  // 2. Aplicar alterações conforme ação
+  // 2. Preservar claims existentes e adicionar admin
   try {
-    if (action === 'admin' || action === 'both') {
-      // Preservar claims existentes e adicionar admin
-      const existingClaims = userRecord.customClaims ?? {};
-      await auth.setCustomUserClaims(uid, { ...existingClaims, admin: true });
-      result.admin = true;
-    }
-
-    if (action === 'credits' || action === 'both') {
-      // Setar entitlements.unlimitedCredits no Firestore
-      await db.doc(`users/${uid}`).set(
-        { entitlements: { unlimitedCredits: true } },
-        { merge: true },
-      );
-      result.unlimitedCredits = true;
-    }
+    const existingClaims = userRecord.customClaims ?? {};
+    await auth.setCustomUserClaims(uid, { ...existingClaims, admin: true });
+    result.admin = true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     result.error = msg;
@@ -142,29 +124,7 @@ async function main(): Promise<void> {
   const rlp = createInterface({ input, output });
 
   try {
-    // Perguntar ação
-    console.log('O que deseja conceder?');
-    console.log('  1) Admin (role de administrador)');
-    console.log('  2) Créditos ilimitados');
-    console.log('  3) Ambos (admin + créditos ilimitados)');
-    console.log('');
-
-    const actionInput = await rlp.question('Escolha (1/2/3): ');
-    const actionMap: Record<string, AccessAction> = { '1': 'admin', '2': 'credits', '3': 'both' };
-    const action = actionMap[actionInput.trim()];
-
-    if (!action) {
-      console.error('❌ Opção inválida. Use 1, 2 ou 3.');
-      process.exit(1);
-    }
-
-    const actionLabel: Record<AccessAction, string> = {
-      admin: 'Admin',
-      credits: 'Créditos Ilimitados',
-      both: 'Admin + Créditos Ilimitados',
-    };
-
-    console.log(`\n📋 Ação selecionada: ${actionLabel[action]}`);
+    console.log('Ação: conceder custom claim admin=true');
 
     // Perguntar emails
     console.log('\nDigite o(s) email(s) do(s) usuário(s).');
@@ -200,7 +160,7 @@ async function main(): Promise<void> {
 
     const results: ActionResult[] = [];
     for (const email of emails) {
-      const result = await grantAccess(email, action);
+      const result = await grantAdminAccess(email);
       results.push(result);
     }
 
@@ -221,7 +181,6 @@ async function main(): Promise<void> {
         console.log(`  ✅ ${r.email}`);
         console.log(`     UID: ${r.uid}`);
         if (r.admin) console.log('     → Admin: sim (custom claim)');
-        if (r.unlimitedCredits) console.log('     → Créditos ilimitados: sim (Firestore)');
         successCount++;
       }
       console.log('');

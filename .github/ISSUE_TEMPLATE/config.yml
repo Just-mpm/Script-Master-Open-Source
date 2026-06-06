@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: README
+    url: https://github.com/Just-mpm/Script-Master-Open-Source#readme
+    about: Project overview, setup instructions, and feature documentation.
+  - name: Security Policy
+    url: https://github.com/Just-mpm/Script-Master-Open-Source/blob/main/SECURITY.md
+    about: Report security vulnerabilities following our responsible disclosure policy.

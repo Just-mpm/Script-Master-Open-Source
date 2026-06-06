@@ -2,9 +2,9 @@
 // Serviço de validação de requestId para idempotência
 // ---------------------------------------------------------------------------
 //
-// Valida que um requestId tenha formato UUID v4 antes de ser usado
-// nos fluxos de crédito. A idempotência em si é gerenciada atomicamente
-// dentro das transações em credit-service.ts.
+// Valida que um requestId tenha formato UUID v4 antes de ser usado pelos
+// flows callable. A deduplicação persistente fica nos registros de request
+// de IA quando necessário.
 // ---------------------------------------------------------------------------
 
 /** Status de idempotência retornado pela verificação */

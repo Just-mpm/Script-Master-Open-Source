@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ContactSupportIcon from '@mui/icons-material/ContactSupport';
-import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
+import VpnKeyOutlined from '@mui/icons-material/VpnKeyOutlined';
 import BuildOutlined from '@mui/icons-material/BuildOutlined';
 import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
 import EmailIcon from '@mui/icons-material/Email';
@@ -22,7 +22,7 @@ import { FAQAccordion } from '../../components/public/FAQAccordion';
 import { CTASection } from '../../components/public/CTASection';
 import { BRAND_PRIMARY, TEXT_SECONDARY, BRAND_PRIMARY_GLOW_SOFT, RADIUS_SM, RADIUS_XS } from '../../theme/tokens';
 import { glassPanelSx } from '../../theme/surfaces';
-import { getLocalizedPricingFaq } from '../../data/pricingFaq';
+import { getLocalizedByokFaq } from '../../data/byokFaq';
 import { fadeInUp, fadeIn, VIEWPORT_ONCE } from '../../components/public/animations';
 import { useLocale } from '../../features/i18n';
 
@@ -89,7 +89,7 @@ export default function FaqPage() {
     { question: t('faqItems.account.2.question'), answer: t('faqItems.account.2.answer') },
   ];
 
-  const localizedPricingFaq = getLocalizedPricingFaq(locale);
+  const localizedByokFaq = getLocalizedByokFaq(locale);
 
   // ── Categorias de FAQ — dentro do componente para acessar t() ──
   const FAQ_CATEGORIES: readonly FaqCategory[] = [
@@ -100,10 +100,10 @@ export default function FaqPage() {
       items: GENERAL_FAQ_ITEMS,
     },
     {
-      id: 'precos',
-      label: t('faq.categories.pricing'),
-      icon: PaymentsOutlined,
-      items: localizedPricingFaq,
+      id: 'open-source',
+      label: t('faq.categories.openSource'),
+      icon: VpnKeyOutlined,
+      items: localizedByokFaq,
     },
     {
       id: 'tecnico',
@@ -137,7 +137,7 @@ export default function FaqPage() {
         title={t('faq.hero.title')}
         subtitle={t('faq.hero.subtitle')}
         primaryCta={{ label: t('faq.hero.cta'), to: '/cadastro' }}
-        secondaryCta={{ label: t('faq.hero.ctaSecondary'), to: '/precos' }}
+        secondaryCta={{ label: t('faq.hero.ctaSecondary'), to: '/open-source' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <QuestionAnswerIcon sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />

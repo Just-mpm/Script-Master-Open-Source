@@ -41,16 +41,6 @@ export function getCallableErrorInfo(error: unknown): CallableErrorInfo {
   };
 }
 
-export function isCreditCallableError(error: unknown): boolean {
-  const info = getCallableErrorInfo(error);
-  return (
-    info.detailCode === 'INSUFFICIENT_CREDITS' ||
-    info.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT' ||
-    info.message.toLowerCase().includes('crédito') ||
-    info.message.toLowerCase().includes('saldo')
-  );
-}
-
 export function isCallableCancelledError(error: unknown): boolean {
   const info = getCallableErrorInfo(error);
   return (

@@ -30,8 +30,8 @@ const FuncionalidadesPage = lazy(async () => {
   return { default: module.default };
 });
 
-const PricingPage = lazy(async () => {
-  const module = await import('../pages/public/PricingPage');
+const OpenSourcePage = lazy(async () => {
+  const module = await import('../pages/public/OpenSourcePage');
   return { default: module.default };
 });
 
@@ -250,7 +250,7 @@ export function AppRoutes({
 
         {/* Rotas públicas */}
         <Route path="/funcionalidades" element={<FuncionalidadesPage />} />
-        <Route path="/precos" element={<PricingPage />} />
+        <Route path="/open-source" element={<OpenSourcePage />} />
         <Route path="/perguntas-frequentes" element={<FaqPage />} />
         <Route path="/contato" element={<ContactPage />} />
         <Route path="/sobre" element={<AboutPage />} />

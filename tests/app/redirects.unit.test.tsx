@@ -22,8 +22,8 @@ function extractRedirect(element: ReactElement): { key: string; from: string; to
 // ─── Public redirects ─────────────────────────────────────────
 
 describe('publicCompatRedirects', () => {
-  it('deve conter exatamente 8 redirects públicos', () => {
-    expect(publicCompatRedirects).toHaveLength(8);
+  it('deve conter exatamente 9 redirects públicos', () => {
+    expect(publicCompatRedirects).toHaveLength(9);
   });
 
   it('todos devem usar replace=true (preserva SEO)', () => {
@@ -41,7 +41,8 @@ describe('publicCompatRedirects', () => {
 
   it.each([
     { key: 'r-features', from: '/features', to: '/funcionalidades' },
-    { key: 'r-pricing', from: '/pricing', to: '/precos' },
+    { key: 'r-pricing', from: '/pricing', to: '/open-source' },
+    { key: 'r-precos', from: '/precos', to: '/open-source' },
     { key: 'r-faq', from: '/faq', to: '/perguntas-frequentes' },
     { key: 'r-contact', from: '/contact', to: '/contato' },
     { key: 'r-about', from: '/about', to: '/sobre' },

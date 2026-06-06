@@ -21,7 +21,7 @@ type LogCategory =
   | 'audio'
   | 'video'
   | 'storage'
-  | 'billing'
+  | 'byok'
   | 'analytics'
   | 'infrastructure'
   | 'system';
@@ -85,7 +85,7 @@ const CATEGORY_LABEL: Record<LogCategory, string> = {
   audio: 'Áudio',
   video: 'Vídeo',
   storage: 'Armazenamento',
-  billing: 'Faturamento',
+  byok: 'API Key (BYOK)',
   analytics: 'Analytics',
   infrastructure: 'Infraestrutura',
   system: 'Sistema',

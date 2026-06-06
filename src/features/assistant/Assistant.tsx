@@ -35,7 +35,6 @@ import { fileToAttachment } from './utils';
 import { glassPanelSx } from '../../theme/surfaces';
 import { assistantMarkdownSx } from './components/assistantUi';
 import { DeleteConfirmationDialog } from '../../components/video-library/DeleteConfirmationDialog';
-import { CreditBlockedMessage } from '../../components/CreditBlockedMessage';
 import { APP_BORDER, APP_SURFACE_ELEVATED, BRAND_PRIMARY, ICON_SIZE_SM, RADIUS_XS, SHADOW_DEEP } from '../../theme/tokens';
 import { useLocale } from '../../features/i18n';
 import { StackedHeader } from '../../components/ui';
@@ -71,8 +70,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
     regenerateLastResponse,
     messagesEndRef,
     streamingMessageRef,
-    creditsExhausted,
-    creditBlockedByBalance,
     selectedModel,
     setSelectedModel,
     selectedThinkingLevel,
@@ -423,7 +420,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null }
 
-      {/* Banner de feedback — incentiva envio até o bônus de 250 ser concedido */}
+      {/* Banner de feedback — incentiva envio de sugestões do usuário */}
       <FeedbackBanner screenContext="/app/assistente" />
 
       {showMemories && (
@@ -490,13 +487,7 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         </Box>
       ) : null }
 
-      {creditsExhausted ? (
-        <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
-          <CreditBlockedMessage show={true} />
-        </Box>
-      ) : null }
-
-      {error && !creditsExhausted ? (
+      {error ? (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2.5 }}>
           <StackedHeader
             variant="alert"
@@ -631,7 +622,6 @@ export function Assistant({ onApplySettings, currentState }: AssistantProps) {
         pendingFiles={pendingFiles}
         isLoading={isLoading}
         isThinkActive={thinkingEnabled}
-        creditsBlocked={creditBlockedByBalance}
         interviewPending={!!interview }
         fileInputRef={fileInputRef}
         selectedModel={selectedModel}

@@ -1,7 +1,16 @@
 {
   "name": "script-master",
   "private": true,
-  "version": "0.129.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Just-mpm/Script-Master-Open-Source.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Just-mpm/Script-Master-Open-Source/issues"
+  },
+  "homepage": "https://script-master.pro",
+  "version": "0.130.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -44,7 +53,6 @@
     "@remotion/transitions": "4.0.448",
     "@remotion/web-renderer": "4.0.448",
     "@remotion/whisper-web": "4.0.448",
-    "@stripe/stripe-js": "^9.3.1",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase": "^12.12.0",
     "motion": "^12.38.0",

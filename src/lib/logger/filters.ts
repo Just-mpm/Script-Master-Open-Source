@@ -101,7 +101,7 @@ const MUI_PATTERNS: readonly string[] = [
   'MUI: ',
 ] as const;
 
-/** Erros específicos do Script Master (Remotion, WASM, Web Audio, Stripe). */
+/** Erros específicos do Script Master (Remotion, WASM, Web Audio). */
 const SCRIPT_MASTER_PATTERNS: readonly string[] = [
   'Remotion',
   'WebCodecs',
@@ -110,7 +110,6 @@ const SCRIPT_MASTER_PATTERNS: readonly string[] = [
   'SharedArrayBuffer',
   'COEP',
   'AudioContext was not allowed to start',
-  'Stripe.js not loaded',
 ] as const;
 
 /** Padrões genéricos que devem ser ignorados em qualquer contexto. */

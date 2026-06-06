@@ -1,17 +1,13 @@
 // ---------------------------------------------------------------------------
-// Flow de geração de imagens — Gemini Image via Genkit
+// Flow de geração de imagens — Gemini Image via Genkit (BYOK)
 // ---------------------------------------------------------------------------
-//
-// Substitui a lógica client-side do useImageGenerator.ts e generateImageFromPrompt().
 //
 // Pipeline:
 //   1. Valida autenticação (isSignedIn + App Check)
-//   2. Gera imagem com gemini-3.1-flash-image-preview
-//   3. Extrai inlineData da resposta como base64
-//   4. Retorna imagem como base64 + mimeType
-//
-// Créditos gerenciados manualmente via withCreditMetering() para permitir
-// cancelamento cooperativo e reconciliação consistente do requestId.
+//   2. Extrai API key do usuário (BYOK)
+//   3. Gera imagem com gemini-3.1-flash-image-preview
+//   4. Extrai inlineData da resposta como base64
+//   5. Retorna imagem como base64 + mimeType
 //
 // Suporta imagem de referência opcional (base64 data URL).
 //
@@ -26,20 +22,24 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
-import { ImageInputSchema, ImageOutputSchema } from '../genkit/schemas/common.js';
+import { ImageInputSchema, ImageOutputSchema, ProviderAuthSchema } from '../genkit/schemas/common.js';
 import {
-  calculateCreditCost,
   finishAiRequest,
   isRequestIdValid,
   startAiRequest,
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import { buildImageInstruction } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 import { createLogger } from '../genkit/utils/logger.js';
 
 const log = createLogger('images');
+
+/** Input schema estendido com providerAuth para BYOK */
+const ImageInputByokSchema = ImageInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -89,16 +89,12 @@ export const images = onCallGenkit(
   ai.defineFlow(
     {
       name: 'images',
-      inputSchema: ImageInputSchema,
+      inputSchema: ImageInputByokSchema,
       outputSchema: ImageOutputSchema,
     },
     async (input, flowContext) => {
       const uid = getCallableUidOrThrow(flowContext);
-
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
+      const apiKey = extractApiKey(input);
 
       const db = getFirestore();
       if (input.requestId && !isRequestIdValid(input.requestId)) {
@@ -126,24 +122,11 @@ export const images = onCallGenkit(
       }
 
       let requestStarted = false;
-      let creditsSettled = false;
-      let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
 
       try {
         await startAiRequest(db, uid, requestId, 'image');
         requestStarted = true;
         await throwIfAiCancellationRequested(db, uid, requestId);
-
-        creditMeter = await withCreditMetering(
-          db,
-          uid,
-          requestId,
-          'image',
-          {
-            prompt: input.prompt,
-            referenceImage: hasReference ? 'true' : undefined,
-          },
-        );
 
         // ------------------------------------------------------------------
         // 1. Monta o prompt e conteúdos
@@ -175,6 +158,7 @@ export const images = onCallGenkit(
           model: IMAGE_MODEL,
           prompt: promptParts,
           config: {
+            ...withApiKey(apiKey),
             responseModalities: ['IMAGE'],
             imageConfig: {
               aspectRatio: input.aspectRatio,
@@ -201,17 +185,6 @@ export const images = onCallGenkit(
           );
         }
 
-        const finalCredits = calculateCreditCost({
-          operationType: 'image',
-          hasReferenceImage: hasReference,
-        });
-
-        await creditMeter.confirm({
-          finalCredits,
-          outputSize: imageBase64.length,
-          model: IMAGE_MODEL,
-        });
-        creditsSettled = true;
         await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
           log.error('Falha ao finalizar ai_request com sucesso', {
             error: finishError instanceof Error ? finishError.message : 'desconhecido',
@@ -231,10 +204,6 @@ export const images = onCallGenkit(
         };
       } catch (error) {
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
-
-        if (creditMeter && !creditsSettled) {
-          await creditMeter.revert(errorCode);
-        }
 
         if (requestStarted) {
           await finishAiRequest(

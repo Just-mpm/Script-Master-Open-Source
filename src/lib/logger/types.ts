@@ -19,7 +19,6 @@ export type LogCategory =
   | 'audio'
   | 'video'
   | 'storage'
-  | 'billing'
   | 'analytics'
   | 'infrastructure'
   | 'system';

@@ -66,7 +66,7 @@ describe('FaqPage', () => {
   it('renderiza as 4 categorias de tabs', () => {
     render(<FaqPage />, { wrapper: Wrapper });
     expect(screen.getByRole('tab', { name: 'Geral' })).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Créditos' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'BYOK & Open Source' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Técnico' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Conta' })).toBeDefined();
   });

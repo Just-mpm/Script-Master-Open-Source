@@ -2,7 +2,8 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import { createLogger } from './logger';
 import { removeUndefinedFields } from './callable-utils';
-import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from './callable-errors';
+import { isCallableCancelledError } from './callable-errors';
+import { getProviderAuthFromStore } from '../features/provider-settings';
 
 import type { Locale } from '../features/i18n/types';
 
@@ -47,6 +48,11 @@ export async function generateScenePrompts(
   locale: Locale = 'pt-BR',
   requestId?: string,
 ): Promise<ScenePromptResult> {
+  const providerAuth = getProviderAuthFromStore();
+  if (!providerAuth) {
+    throw new Error('Configure sua chave de API do Gemini nas configurações.');
+  }
+
   try {
     const callable = httpsCallable<{
       script: string;
@@ -56,6 +62,7 @@ export async function generateScenePrompts(
       visualFramework: string;
       locale: string;
       requestId: string;
+      providerAuth: { provider: 'gemini'; apiKey: string };
     }, ScenePromptsFlowOutput>(functions, 'scenePrompts');
 
     const result = await callable({
@@ -66,6 +73,7 @@ export async function generateScenePrompts(
       visualFramework,
       locale,
       requestId: requestId ?? crypto.randomUUID(),
+      providerAuth,
     });
 
     const { prompts, isFallback } = result.data;
@@ -77,7 +85,7 @@ export async function generateScenePrompts(
     return { prompts, isFallback };
   } catch (error) {
     log.error('Erro ao gerar prompts de cena', { error });
-    if (isCreditCallableError(error) || isCallableCancelledError(error)) {
+    if (isCallableCancelledError(error)) {
       throw error;
     }
 
@@ -100,12 +108,18 @@ export async function generateImageFromPrompt(
   referenceImage?: string,
   requestId?: string,
 ): Promise<string | null> {
+  const providerAuth = getProviderAuthFromStore();
+  if (!providerAuth) {
+    throw new Error('Configure sua chave de API do Gemini nas configurações.');
+  }
+
   try {
     const callable = httpsCallable<{
       prompt: string;
       aspectRatio: string;
       referenceImage?: string;
       requestId: string;
+      providerAuth: { provider: 'gemini'; apiKey: string };
     }, ImagesFlowOutput>(functions, 'images');
 
     const result = await callable(removeUndefinedFields({
@@ -113,6 +127,7 @@ export async function generateImageFromPrompt(
       aspectRatio,
       referenceImage,
       requestId: requestId ?? crypto.randomUUID(),
+      providerAuth,
     }));
 
     const { imageBase64, mimeType } = result.data;
@@ -124,12 +139,7 @@ export async function generateImageFromPrompt(
     return `data:${mimeType};base64,${imageBase64}`;
   } catch (error) {
     log.error('Erro ao gerar imagem', { error });
-    const errorInfo = getCallableErrorInfo(error);
-    if (
-      isCallableCancelledError(error) ||
-      errorInfo.detailCode === 'INSUFFICIENT_CREDITS' ||
-      errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
-    ) {
+    if (isCallableCancelledError(error)) {
       throw error;
     }
     return null;

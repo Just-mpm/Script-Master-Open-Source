@@ -1,6 +1,6 @@
 /**
  * Testes unitários dos arquivos de dados localizados — metrics, testimonials, useCases,
- * authBenefits, pricingFaq.
+ * authBenefits, byokFaq.
  *
  * Testa: estrutura, getters locale-aware, fallback, consistência entre idiomas.
  */
@@ -11,7 +11,7 @@ import { getLocalizedMetrics, METRICS } from '../../src/data/metrics';
 import { getLocalizedTestimonials, TESTIMONIALS } from '../../src/data/testimonials';
 import { getLocalizedUseCases, USE_CASES } from '../../src/data/useCases';
 import { getLocalizedAuthBenefits, AUTH_BENEFITS } from '../../src/data/authBenefits';
-import { getLocalizedPricingFaq, PRICING_FAQ_ITEMS } from '../../src/data/pricingFaq';
+import { getLocalizedByokFaq, BYOK_FAQ_ITEMS } from '../../src/data/byokFaq';
 
 // ---------------------------------------------------------------------------
 // Metrics
@@ -81,9 +81,9 @@ describe('Metrics — dados localizados', () => {
     }
   });
 
-  it('última métrica é "Sem cartão" com value "0" e suffix vazio', () => {
+  it('última métrica é "Navegador" com value "0" e suffix vazio', () => {
     const last = METRICS[3];
-    expect(last.label).toBe('Sem cartão');
+    expect(last.label).toBe('Navegador');
     expect(last.value).toBe('0');
     expect(last.suffix).toBe('');
   });
@@ -242,46 +242,46 @@ describe('AuthBenefits — dados localizados', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Pricing FAQ
+// BYOK FAQ
 // ---------------------------------------------------------------------------
 
-describe('PricingFaq — dados localizados', () => {
-  it('PRICING_FAQ_ITEMS padrão tem 6 itens', () => {
-    expect(PRICING_FAQ_ITEMS).toHaveLength(6);
+describe('ByokFaq — dados localizados', () => {
+  it('BYOK_FAQ_ITEMS padrão tem 6 itens', () => {
+    expect(BYOK_FAQ_ITEMS).toHaveLength(6);
   });
 
   it('cada FAQ tem question e answer não-vazios', () => {
-    for (const faq of PRICING_FAQ_ITEMS) {
+    for (const faq of BYOK_FAQ_ITEMS) {
       expect(faq.question).toBeTruthy();
       expect(faq.answer).toBeTruthy();
     }
   });
 
-  it('getLocalizedPricingFaq retorna 6 itens para todos os idiomas', () => {
+  it('getLocalizedByokFaq retorna 6 itens para todos os idiomas', () => {
     const locales: Locale[] = ['pt-BR', 'en', 'es'];
     for (const locale of locales) {
-      expect(getLocalizedPricingFaq(locale)).toHaveLength(6);
+      expect(getLocalizedByokFaq(locale)).toHaveLength(6);
     }
   });
 
   it('perguntas diferem entre pt-BR e en', () => {
-    const pt = getLocalizedPricingFaq('pt-BR');
-    const en = getLocalizedPricingFaq('en');
+    const pt = getLocalizedByokFaq('pt-BR');
+    const en = getLocalizedByokFaq('en');
 
     const hasDifference = pt.some((faq, i) => faq.question !== en[i].question);
     expect(hasDifference).toBe(true);
   });
 
   it('respostas diferem entre pt-BR e es', () => {
-    const pt = getLocalizedPricingFaq('pt-BR');
-    const es = getLocalizedPricingFaq('es');
+    const pt = getLocalizedByokFaq('pt-BR');
+    const es = getLocalizedByokFaq('es');
 
     const hasDifference = pt.some((faq, i) => faq.answer !== es[i].answer);
     expect(hasDifference).toBe(true);
   });
 
   it('perguntas são strings com comprimento razoável', () => {
-    for (const faq of PRICING_FAQ_ITEMS) {
+    for (const faq of BYOK_FAQ_ITEMS) {
       expect(faq.question.length).toBeGreaterThan(5);
       expect(faq.question.length).toBeLessThan(200);
     }
@@ -305,9 +305,9 @@ describe('Fallback de locale para pt-BR', () => {
     expect(result).toEqual(ptBr);
   });
 
-  it('getLocalizedPricingFaq com locale inválido retorna pt-BR', () => {
-    const result = getLocalizedPricingFaq('de' as Locale);
-    const ptBr = getLocalizedPricingFaq('pt-BR');
+  it('getLocalizedByokFaq com locale inválido retorna pt-BR', () => {
+    const result = getLocalizedByokFaq('de' as Locale);
+    const ptBr = getLocalizedByokFaq('pt-BR');
     expect(result).toEqual(ptBr);
   });
 });

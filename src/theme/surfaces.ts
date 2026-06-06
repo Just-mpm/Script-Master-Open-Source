@@ -40,7 +40,7 @@ export const glassSurfaceSx = (theme: Theme): SystemStyleObject<Theme> => ({
   }),
 });
 
-/** TextField com fundo semi-transparente, borda sutil e focus state premium — para buscas e campos de texto */
+/** TextField com fundo semi-transparente, borda sutil e focus state refinado — para buscas e campos de texto */
 export const searchFieldSx: SxProps<Theme> = {
   '& .MuiOutlinedInput-root': {
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',

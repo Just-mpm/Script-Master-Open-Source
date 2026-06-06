@@ -1,15 +1,12 @@
 // ---------------------------------------------------------------------------
-// Flow de geração de prompts de cena — Gemini via Genkit com instrução em código
+// Flow de geração de prompts de cena — Gemini via Genkit com BYOK
 // ---------------------------------------------------------------------------
-//
-// Substitui a lógica client-side do generateScenePrompts() em src/lib/gemini.ts.
 //
 // Pipeline:
 //   1. Valida autenticação (isSignedIn + App Check)
-//   2. Reserva créditos via withCreditMetering() helper
+//   2. Extrai API key do usuário (BYOK)
 //   3. Gera prompts de cena com builder TypeScript + structured output
-//   4. Confirma ou reverte créditos conforme resultado
-//   5. Retorna array de { timestamp, prompt } + flag isFallback
+//   4. Retorna array de { timestamp, prompt } + flag isFallback
 //
 // Suporta dois frameworks visuais: 'general' (cinema/fotografia) e
 // 'whiteboard' (ilustrações + texto integrado).
@@ -29,26 +26,31 @@ import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import {
   ScenePromptsInputSchema,
   ScenePromptsOutputSchema,
+  ProviderAuthSchema,
 } from '../genkit/schemas/common.js';
 import {
-  calculateCreditCost,
   finishAiRequest,
   isRequestIdValid,
   startAiRequest,
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import { buildScenePromptsInstruction } from '../genkit/utils/assistant-context.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 import { createLogger } from '../genkit/utils/logger.js';
 
 const log = createLogger('scene-prompts');
 
+/** Input schema estendido com providerAuth para BYOK */
+const ScenePromptsInputByokSchema = ScenePromptsInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Constantes
 // ---------------------------------------------------------------------------
 
-/** Modelo usado para geração de prompts de cena (registro em credit_events) */
+/** Modelo usado para geração de prompts de cena */
 const SCENE_PROMPTS_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 /** Densidade padrão de cenas (em segundos) */
@@ -60,7 +62,6 @@ const DEFAULT_DENSITY_SECONDS = 15;
 
 /**
  * Mapa locale -> nome do idioma para instruções ao Gemini.
- * Usado para garantir que textos nas imagens estejam no idioma correto.
  */
 const LOCALE_LANGUAGE_MAP: Record<string, string> = {
   'pt-BR': 'português brasileiro',
@@ -84,16 +85,12 @@ export const scenePrompts = onCallGenkit(
   ai.defineFlow(
     {
       name: 'scenePrompts',
-      inputSchema: ScenePromptsInputSchema,
+      inputSchema: ScenePromptsInputByokSchema,
       outputSchema: ScenePromptsOutputSchema,
     },
     async (input, flowContext) => {
       const uid = getCallableUidOrThrow(flowContext);
-
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
+      const apiKey = extractApiKey(input);
 
       const db = getFirestore();
 
@@ -103,8 +100,6 @@ export const scenePrompts = onCallGenkit(
       }
       const requestId = input.requestId ?? randomUUID();
       let requestStarted = false;
-      let creditsSettled = false;
-      let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
 
       try {
         await startAiRequest(db, uid, requestId, 'scene_prompts');
@@ -112,22 +107,10 @@ export const scenePrompts = onCallGenkit(
         await throwIfAiCancellationRequested(db, uid, requestId);
 
         // ------------------------------------------------------------------
-        // 1. Reserva créditos via helper withCreditMetering()
+        // 1. Prepara variáveis para a instrução em código
         // ------------------------------------------------------------------
         const densitySeconds = Math.max(1, input.densitySeconds ?? DEFAULT_DENSITY_SECONDS);
         const imageCount = Math.max(1, Math.ceil(input.durationInSeconds / densitySeconds));
-
-        creditMeter = await withCreditMetering(
-          db,
-          uid,
-          requestId,
-          'scene_prompts',
-          { script: input.script, scenes: Array.from({ length: imageCount }) },
-        );
-
-        // ------------------------------------------------------------------
-        // 2. Prepara variáveis para a instrução em código
-        // ------------------------------------------------------------------
         const visualFramework = input.visualFramework ?? 'general';
         const locale = input.locale ?? 'pt-BR';
         const languageName = LOCALE_LANGUAGE_MAP[locale] ?? locale;
@@ -153,7 +136,7 @@ Regras estritas deste modo:
 As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estritamente a direção de arte e estilo configurados.`;
 
         // ------------------------------------------------------------------
-        // 3. Gera prompts de cena com structured output
+        // 2. Gera prompts de cena com structured output
         // ------------------------------------------------------------------
         try {
           const instruction = buildScenePromptsInstruction({
@@ -172,6 +155,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             model: SCENE_PROMPTS_MODEL,
             prompt: instruction,
             config: {
+              ...withApiKey(apiKey),
               temperature: 0.8,
               thinkingConfig: { thinkingLevel: 'high' },
             },
@@ -190,7 +174,6 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
           }
 
           // Combina timestamps do código com prompts do Gemini
-          // Se Gemini retornou menos prompts que o esperado, preenche com genéricos
           const prompts: Array<{ timestamp: number; prompt: string }> = [];
           for (let i = 0; i < imageCount; i++) {
             const geminiItem = geminiOutput[i];
@@ -201,22 +184,7 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
             });
           }
 
-          // ------------------------------------------------------------------
-          // 4. Confirma créditos (custo real baseado nos prompts gerados)
-          // ------------------------------------------------------------------
-          const finalCredits = calculateCreditCost({
-            operationType: 'scene_prompts',
-            itemCount: prompts.length,
-          });
-
-          await creditMeter.confirm({
-            finalCredits,
-            outputSize: JSON.stringify(prompts).length,
-            model: SCENE_PROMPTS_MODEL,
-          });
-          creditsSettled = true;
-
-          log.info('Geração concluída', { uid, prompts: prompts.length, framework: visualFramework, locale, credits: finalCredits });
+          log.info('Geração concluída', { uid, prompts: prompts.length, framework: visualFramework, locale });
 
           await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
             log.error('Falha ao finalizar ai_request com sucesso', { error: finishError instanceof Error ? finishError.message : 'desconhecido' });
@@ -235,12 +203,8 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
           const errorMessage = genErr instanceof Error ? genErr.message : 'Erro desconhecido';
           log.error('Falha na geração', { error: errorMessage });
 
-          // Reverte créditos em caso de falha
-          await creditMeter.revert('SCENE_PROMPTS_FAILED');
-          creditsSettled = true;
-
           // ------------------------------------------------------------------
-          // 5. Fallback genérico como último recurso
+          // 3. Fallback genérico como último recurso
           // ------------------------------------------------------------------
           const fallbackPrompts = codeTimestamps.map((ts, i) => ({
             timestamp: ts,
@@ -259,10 +223,6 @@ As imagens devem ser ricas e focar em fotografia, cinemática, ou seguir estrita
         }
       } catch (error) {
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
-
-        if (creditMeter && !creditsSettled) {
-          await creditMeter.revert(errorCode);
-        }
 
         if (requestStarted) {
           await finishAiRequest(

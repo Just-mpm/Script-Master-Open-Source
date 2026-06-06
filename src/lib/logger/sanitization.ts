@@ -14,7 +14,7 @@ const SENSITIVE_KEYS = [
   'password', 'pwd', 'secret', 'token', 'accesstoken',
   'refreshtoken', 'idtoken', 'apikey', 'appkey', 'privatekey',
   'authorization', 'cookie', 'sessionid', 'csrftoken',
-  'firebaseinstallationsid', 'stripe_token', 'paymentmethod',
+  'firebaseinstallationsid', 'paymenttoken', 'paymentmethod',
 ] as const;
 
 /** Regex para detecção de dados sensíveis em strings. */

@@ -66,7 +66,7 @@ export const ptBR: TranslationDictionary = {
   nav: {
     home: 'Home',
     features: 'Funcionalidades',
-    pricing: 'Beta',
+    openSource: 'Open Source',
     faq: 'FAQ',
     about: 'Sobre',
     contact: 'Contato',
@@ -92,7 +92,7 @@ export const ptBR: TranslationDictionary = {
     legalGroup: 'Legal',
     links: {
       features: 'Funcionalidades',
-      pricing: 'Beta',
+      openSource: 'Open Source',
       faq: 'Perguntas Frequentes',
       roadmap: 'Roadmap',
       changelog: 'Changelog',
@@ -177,7 +177,7 @@ export const ptBR: TranslationDictionary = {
     hero: {
       title: 'Nunca foi tão fácil criar vídeos para YouTube',
       subtitle:
-        'Cole seu roteiro e gere narração, cenas, legendas e vídeo em um só lugar, sem precisar gravar tudo do zero.',
+        'Cole seu roteiro e gere narração, cenas, legendas e vídeo em um só lugar. Open source — use sua própria chave do Gemini.',
       cta: 'Criar meu primeiro vídeo',
       ctaSecondary: 'Ver como funciona',
       alt: 'Interface do Script Master com roteiro pronto para gerar narração e vídeo',
@@ -189,7 +189,7 @@ export const ptBR: TranslationDictionary = {
     features: {
       title: 'Do roteiro ao vídeo pronto',
       subtitle:
-        'As ferramentas que tiram seu conteúdo do papel: narração, cenas, legendas, assistente e biblioteca em um único fluxo.',
+        'As ferramentas que tiram seu conteúdo do papel: narração, cenas, legendas, assistente e biblioteca em um único fluxo. Open source, BYOK e no navegador.',
     },
     featureCards: {
       voice: {
@@ -241,7 +241,7 @@ export const ptBR: TranslationDictionary = {
       benefits: {
         0: 'Duas vozes independentes para diálogos, entrevistas e narrações alternadas',
         1: 'Ritmo e emoção ajustáveis para combinar com o estilo do canal',
-        2: 'Prévia das vozes antes de gastar créditos na geração final',
+        2: 'Prévia das vozes antes de confirmar a geração final',
         3: 'Roteiros longos divididos automaticamente para manter consistência',
         4: 'Áudio em alta qualidade pronto para usar no vídeo',
       },
@@ -279,7 +279,7 @@ export const ptBR: TranslationDictionary = {
     metrics: {
       title: 'Menos etapas entre ideia e publicação',
       subtitle:
-        'Uma visão honesta do beta: créditos para testar, fluxo simples e feedback direto para melhorar o produto.',
+        'Código aberto, modelo BYOK e tudo no navegador — sua chave Gemini, seu controle direto no Google.',
     },
     demo: {
       title: 'Veja seu roteiro ganhando forma',
@@ -301,7 +301,7 @@ export const ptBR: TranslationDictionary = {
       },
       generateButton: 'Gerar narração',
       tryFree: 'Criar meu primeiro vídeo',
-      noCreditCard: 'Sem cartão de crédito · Configuração em 30 segundos',
+      byokNote: 'Open source e gratuito · Configure em 30 segundos',
     },
     testimonials: {
       title: 'Criadores que querem publicar mais',
@@ -352,7 +352,7 @@ export const ptBR: TranslationDictionary = {
     },
     cta: {
       title: 'Seu próximo vídeo pode começar pelo roteiro',
-      subtitle: 'Crie sua primeira narração, gere cenas e teste o fluxo gratuitamente. Sem cartão de crédito.',
+      subtitle: 'Crie sua primeira narração, gere cenas e teste o fluxo gratuitamente. Open source e BYOK.',
       button: 'Criar meu primeiro vídeo',
     },
   },
@@ -364,7 +364,7 @@ export const ptBR: TranslationDictionary = {
       subtitle:
         'Narração, imagens, legendas, montagem e assistente criativo para quem quer publicar mais sem depender de um fluxo complicado.',
       cta: 'Criar meu primeiro vídeo',
-      ctaSecondary: 'Ver beta',
+      ctaSecondary: 'Ver como funciona',
     },
     sections: {
       tts: 'Narração e Voz',
@@ -411,52 +411,48 @@ export const ptBR: TranslationDictionary = {
     },
     cta: {
       title: 'Pronto para transformar roteiro em vídeo?',
-      subtitle: 'Teste o fluxo completo gratuitamente enquanto o beta está aberto.',
+      subtitle: 'Teste o fluxo completo gratuitamente — open source e BYOK.',
       button: 'Criar meu primeiro vídeo',
     },
   },
 
-  // ── Beta Aberto ────────────────────────────────────────────────────────
-  pricing: {
+  // ── Open Source & BYOK ────────────────────────────────────────────────
+  openSource: {
     hero: {
-      title: 'Entre agora enquanto o beta está aberto',
-      subtitle: 'Crie vídeos com IA gratuitamente, teste o fluxo completo e ajude a moldar o Script Master com seu feedback.',
-      cta: 'Criar conta gratuita',
+      title: 'Open source, gratuito e sem limites artificiais',
+      subtitle: 'O Script Master é código aberto. Você usa sua própria chave de API do Gemini (BYOK) e mantém o controle do uso diretamente no Google.',
+      cta: 'Começar gratuitamente',
       ctaSecondary: 'Como funciona',
     },
-    popular: 'Popular',
-    credits: {
-      title: 'Créditos para criar sem pagar agora',
-      subtitle: 'Durante o beta, você recebe créditos mensais para testar narração, imagens, assistente e vídeo.',
-      monthly: '500 créditos mensais gratuitos',
-      monthlyDesc: 'Créditos renovados automaticamente todo início de mês.',
-      bonus: '+250 créditos ao enviar feedback',
-      bonusDesc: 'Envie feedback construtivo e ganhe um bônus de créditos.',
-      noPayment: 'Sem cartão de crédito',
-      noPaymentDesc: 'Nada de cartão de crédito. O beta é 100% gratuito.',
+    features: {
+      title: 'Controle claro com BYOK',
+      subtitle: 'O modelo BYOK coloca você no controle: sua chave, sua conta Google e nenhuma cobrança criada pelo Script Master.',
+      openSource: 'Código aberto e gratuito',
+      openSourceDesc: 'O Script Master é open source. Baixe, use, audite e contribua com melhorias para a comunidade.',
+      byok: 'Bring Your Own Key',
+      byokDesc: 'Configure sua chave de API do Gemini uma única vez. As gerações rodam na sua conta do Google diretamente.',
+      noHiddenFees: 'Sem cobrança própria',
+      noHiddenFeesDesc: 'O Script Master não intermedeia pagamentos. O uso da API fica na sua própria conta Google.',
     },
     howItWorks: {
-      title: 'Como começar no beta',
-      subtitle: 'Em poucos minutos você já pode testar seu primeiro roteiro.',
-      step1Title: 'Faça login',
-      step1Desc: 'Entre com sua conta Google ou email para acessar todas as ferramentas.',
-      step2Title: 'Teste seu roteiro',
-      step2Desc: 'Gere narração, cenas, legendas ou converse com o assistente usando seus créditos mensais.',
-      step3Title: 'Acompanhe seu saldo',
-      step3Desc: 'Seu saldo aparece no app para você saber quanto ainda pode criar no mês.',
-    },
-    notice: {
-      title: 'Pagamentos e assinaturas estão temporariamente pausados.',
-      description: 'Estamos focados em melhorar o produto com feedback real. Planos pagos voltarão no futuro, mas por enquanto você tem acesso completo sem custo.',
+      title: 'Como começar',
+      subtitle: 'Em poucos minutos você já pode gerar seu primeiro áudio.',
+      step1Title: 'Crie sua conta',
+      step1Desc: 'Entre com Google ou email para acessar o app. É gratuito.',
+      step2Title: 'Configure sua chave',
+      step2Desc: 'Gere uma chave de API no Google AI Studio e configure no app. Pronto — você já pode criar.',
+      step3Title: 'Crie com sua chave',
+      step3Desc: 'Gere narração, cenas e vídeos usando a API do Gemini vinculada à sua conta Google.',
     },
     faq: {
-      title: 'Perguntas frequentes sobre o beta',
+      title: 'Perguntas frequentes sobre BYOK e open source',
     },
     cta: {
-      title: 'Quer testar antes de virar plano pago?',
-      subtitle: 'Entre no beta aberto e crie sua primeira narração gratuitamente. Créditos renovados todo mês.',
-      button: 'Criar conta gratuita',
+      title: 'Comece a criar sem pagar nada ao Script Master',
+      subtitle: 'Crie sua conta, configure sua chave do Gemini e teste o fluxo completo. O único custo é o uso direto da API.',
+      button: 'Começar gratuitamente',
     },
+    githubCta: 'Ver no GitHub',
   },
 
   // ── FAQ ────────────────────────────────────────────────────────────────
@@ -464,14 +460,14 @@ export const ptBR: TranslationDictionary = {
     hero: {
       title: 'Dúvidas antes de criar seu primeiro vídeo?',
       subtitle:
-        'Entenda créditos, segurança, geração de voz, imagens e vídeo antes de entrar no beta.',
-      cta: 'Criar conta gratuita',
-      ctaSecondary: 'Ver créditos',
+        'Entenda BYOK, segurança, geração de voz, imagens e vídeo antes de começar.',
+      cta: 'Começar gratuitamente',
+      ctaSecondary: 'Ver BYOK',
     },
     categories: {
       ariaLabel: 'Categorias de perguntas frequentes',
       general: 'Geral',
-      pricing: 'Créditos',
+      openSource: 'BYOK & Open Source',
       technical: 'Técnico',
       account: 'Conta',
     },
@@ -483,14 +479,14 @@ export const ptBR: TranslationDictionary = {
     cta: {
       title: 'A melhor resposta é testar com um roteiro real',
       subtitle:
-        'Entre no beta, cole um roteiro curto e veja como voz, cenas e legendas funcionam no seu fluxo.',
+        'Crie sua conta, configure sua chave do Gemini e veja como voz, cenas e legendas funcionam no seu fluxo.',
       button: 'Criar meu primeiro vídeo',
     },
     feedback: {
-      title: 'Envie feedback e ganhe 250 créditos',
-      description: 'Sua opinião ajuda a melhorar o Script Master. Feedback construtivo vale créditos bônus.',
+      title: 'Envie feedback sobre o Script Master',
+      description: 'Sua opinião ajuda a melhorar o produto e priorizar os próximos ajustes.',
       button: 'Enviar feedback',
-      loginPrompt: 'Faça login para enviar feedback e ganhar créditos',
+      loginPrompt: 'Faça login para enviar feedback',
       categoryLabel: 'Categoria',
       categoryGeneral: 'Geral',
       categoryBugs: 'Bugs / Problemas',
@@ -502,8 +498,7 @@ export const ptBR: TranslationDictionary = {
       textPlaceholder: 'Descreva sua experiência, sugestões ou problemas (mínimo 10 caracteres)...',
       screenContextLabel: 'Tela atual (opcional)',
       sending: 'Enviando...',
-      successWithBonus: 'Feedback enviado! Você ganhou 250 créditos.',
-      successNoBonus: 'Feedback enviado! Obrigado.',
+      success: 'Feedback enviado! Obrigado.',
       error: 'Erro ao enviar feedback. Tente novamente.',
       tooShort: 'Mínimo de 10 caracteres.',
     },
@@ -512,9 +507,9 @@ export const ptBR: TranslationDictionary = {
   // ── Feedback (sistema global: FAB, dialog, banner, header) ───────────
   feedback: {
     dialog: {
-      title: 'Sua opinião vale créditos',
-      subtitle: 'Ganhe 250 créditos bônus',
-      description: 'Compartilhe sua experiência, sugira melhorias ou reporte problemas. O bônus de 250 créditos é creditado automaticamente na sua conta — uma vez por usuário.',
+      title: 'Sua opinião ajuda o produto',
+      subtitle: 'Compartilhe uma sugestão rápida',
+      description: 'Conte o que funcionou, o que atrapalhou ou que melhoria deixaria o Script Master mais útil.',
       categoryLabel: 'Categoria',
       categoryGeneral: 'Geral',
       categoryBugs: 'Bugs / Problemas',
@@ -528,8 +523,7 @@ export const ptBR: TranslationDictionary = {
       screenContextPlaceholder: 'Onde você estava quando isso aconteceu?',
       button: 'Enviar feedback',
       sending: 'Enviando...',
-      successWithBonus: 'Feedback enviado! Você ganhou 250 créditos. Obrigado por ajudar a melhorar o Script Master.',
-      successNoBonus: 'Feedback enviado! Obrigado por compartilhar.',
+      success: 'Feedback enviado! Obrigado por ajudar a melhorar o Script Master.',
       error: 'Erro ao enviar feedback. Tente novamente.',
       tooShort: 'Mínimo de 10 caracteres.',
       cancel: 'Cancelar',
@@ -537,22 +531,20 @@ export const ptBR: TranslationDictionary = {
       closingHint: 'Fechando automaticamente...',
     },
     fab: {
-      tooltip: 'Enviar feedback (+250 créditos)',
-      badgeLabel: '+250',
+      tooltip: 'Enviar feedback',
+      badgeLabel: '!',
     },
     banner: {
-      title: 'Sua opinião vale créditos bônus',
-      description: 'Envie um feedback rápido sobre sua experiência e ganhe 250 créditos automaticamente.',
+      title: 'Ajude a melhorar o Script Master',
+      description: 'Envie um feedback rápido sobre sua experiência.',
       cta: 'Dar feedback agora',
     },
     emptyState: {
-      chipLabel: 'Ganhe 250 créditos',
-      chipLabelAfterBonus: 'Enviar feedback',
+      chipLabel: 'Enviar feedback',
     },
     navItem: {
-      headerLabel: 'Feedback (+250)',
-      drawerLabel: 'Feedback (+250)',
-      labelAfterBonus: 'Feedback',
+      headerLabel: 'Feedback',
+      drawerLabel: 'Feedback',
     },
   },
 
@@ -562,8 +554,8 @@ export const ptBR: TranslationDictionary = {
       title: 'Fale direto com quem está construindo',
       subtitle:
         'Dúvida, sugestão, parceria ou bug: sua mensagem ajuda a deixar o Script Master mais útil para criadores reais.',
-      cta: 'Enviar minha mensagem',
-      ctaSecondary: 'Ver beta',
+      cta: 'Criar meu primeiro vídeo',
+      ctaSecondary: 'Ver open source',
     },
     info: {
       title: 'Informações de contato',
@@ -602,9 +594,9 @@ export const ptBR: TranslationDictionary = {
     },
     defaultSubject: 'Contato via Site',
     feedback: {
-      title: 'Envie feedback e ganhe 250 créditos',
-      description: 'Faça login para compartilhar sua experiência, sugerir melhorias e receber créditos bônus.',
-      loginPrompt: 'Faça login para enviar feedback e ganhar créditos',
+      title: 'Envie feedback sobre sua experiência',
+      description: 'Faça login para compartilhar sua experiência, sugerir melhorias ou reportar problemas.',
+      loginPrompt: 'Faça login para enviar feedback',
       categoryLabel: 'Categoria',
       categoryGeneral: 'Geral',
       categoryBugs: 'Bugs / Problemas',
@@ -617,14 +609,13 @@ export const ptBR: TranslationDictionary = {
       screenContextLabel: 'Tela atual (opcional)',
       button: 'Enviar feedback',
       sending: 'Enviando...',
-      successWithBonus: 'Feedback enviado! Você ganhou 250 créditos.',
-      successNoBonus: 'Feedback enviado! Obrigado.',
+      success: 'Feedback enviado! Obrigado.',
       error: 'Erro ao enviar feedback. Tente novamente.',
       tooShort: 'Mínimo de 10 caracteres.',
     },
     cta: {
       title: 'Quer ver antes de mandar mensagem?',
-      subtitle: 'Entre no beta e teste o fluxo com um roteiro curto. Sem compromisso, sem cartão.',
+      subtitle: 'Crie sua conta gratuita e teste o fluxo com um roteiro curto. Open source e BYOK.',
       button: 'Criar meu primeiro vídeo',
     },
   },
@@ -632,10 +623,10 @@ export const ptBR: TranslationDictionary = {
   // ── Sobre ──────────────────────────────────────────────────────────────
   about: {
     hero: {
-      title: 'Uma ferramenta feita para tirar roteiros da gaveta',
+      title: 'Uma ferramenta open source para tirar roteiros da gaveta',
       subtitle:
-        'O Script Master nasceu para ajudar criadores a sair mais rápido da ideia para a narração, as cenas e o vídeo final.',
-      cta: 'Testar o beta aberto',
+        'O Script Master nasceu para ajudar criadores a sair mais rápido da ideia para a narração, as cenas e o vídeo final. Gratuito e open source, com modelo BYOK.',
+      cta: 'Começar gratuitamente — open source',
       ctaSecondary: 'Ver ferramentas',
       alt: 'Ilustração do Script Master transformando roteiro em vídeo',
     },
@@ -650,7 +641,7 @@ export const ptBR: TranslationDictionary = {
     values: {
       title: 'Princípios do produto',
       subtitle:
-        'As decisões do beta seguem três princípios simples.',
+        'As decisões do produto seguem três princípios simples.',
       creativity: {
         title: 'Criatividade',
         description:
@@ -664,7 +655,7 @@ export const ptBR: TranslationDictionary = {
       innovation: {
         title: 'Inovação',
         description:
-          'O beta evolui com feedback real. Se uma ferramenta não ajuda o criador a publicar melhor, ela precisa melhorar.',
+          'O produto evolui com feedback real. Se uma ferramenta não ajuda o criador a publicar melhor, ela precisa melhorar.',
       },
     },
     team: {
@@ -673,7 +664,7 @@ export const ptBR: TranslationDictionary = {
         'O Script Master é desenvolvido pela Koda AI Studio, com leitura direta dos feedbacks de usuários para priorizar o que realmente reduz atrito na criação.',
     },
     roadmap: {
-      title: 'Roadmap do beta',
+      title: 'Roadmap',
       description: 'O que já sustenta o fluxo atual e o que ainda será refinado antes do lançamento oficial.',
       status: {
         done: 'Concluído',
@@ -695,15 +686,15 @@ export const ptBR: TranslationDictionary = {
         },
         3: {
           title: 'Privacidade e controle',
-          description: 'Exclusão de conta, dados de projeto e configurações com cuidado para quem está testando o beta',
+          description: 'Exclusão de conta, dados de projeto e configurações com cuidado e transparência',
         },
         4: {
           title: 'Exportação mais confiável',
           description: 'Melhorias contínuas em qualidade, formatos e estabilidade para vídeos maiores',
         },
         5: {
-          title: 'Planos justos',
-          description: 'Pagamentos voltam quando o produto provar valor suficiente para uma cobrança clara e honesta',
+          title: 'Comunidade e documentação',
+          description: 'Fortalecer o ecossistema open source com guias, exemplos e documentação para novos contribuidores',
         },
         6: {
           title: 'Lançamento oficial',
@@ -714,8 +705,8 @@ export const ptBR: TranslationDictionary = {
     cta: {
       title: 'Ajude a moldar o estúdio que você gostaria de usar',
       subtitle:
-        'Teste o beta com um roteiro real e mande feedback do que travou, encantou ou deveria existir.',
-      button: 'Testar o beta aberto',
+        'Teste o Script Master com um roteiro real e contribua com feedback ou código.',
+      button: 'Começar gratuitamente',
     },
   },
 
@@ -766,13 +757,6 @@ export const ptBR: TranslationDictionary = {
         dialogDeleting: 'Excluindo...',
       },
       login: 'Login',
-      credits: {
-        loading: 'Carregando créditos...',
-        error: 'Erro ao carregar créditos',
-        syncing: 'Sincronizando saldo de créditos...',
-        ariaLabel: 'Saldo de créditos: {credits}',
-        breakdown: 'Base: {base} | Bônus: {bonus} | Usados: {used}',
-      },
     },
     actionBar: {
       ariaLabel: 'Controles de áudio e geração',
@@ -1563,7 +1547,7 @@ export const ptBR: TranslationDictionary = {
       founderTitle: 'Uma mensagem do criador',
       founderGreeting: 'Oi, tudo bem? Meu nome é Matheus e estou desenvolvendo o Script Master sozinho, do zero. Essa plataforma nasceu da minha vontade de ajudar criadores de conteúdo a produzirem mais e melhor com inteligência artificial.',
       founderBody: 'Como sou uma pessoa só no projeto, seu feedback é ouro — realmente faz toda a diferença. Se algo te agradar, se algo irritar, ou se tiver uma ideia maluca que poderia ser incrível aqui dentro... me conta!',
-      founderCredits: 'Ah, uma coisa importante: como estou tocando o projeto sozinho, defini um número modesto de créditos gratuitos para cada pessoa testar à vontade. Se você gostar da experiência e quiser usar sem limitações, me mande um feedback! Isso me ajuda a entender que o produto tá no caminho certo e a planejar uma assinatura com preço justo e liberdade de verdade pra você usar como quiser.',
+      founderByok: 'Ah, uma coisa importante: o Script Master é open source e usa o modelo BYOK. Você configura sua própria chave do Gemini e acompanha o uso diretamente no Google AI Studio, sem cobrança criada dentro do app.',
       founderFeedback: 'Você pode enviar sugestões, críticas ou elogios pela página de Contato em script-master.pro/contato. Eu mesmo leio tudo. Bem-vindo(a) a bordo — vamos criar algo incrível juntos!',
       founderButton: 'Vamos lá!',
     },
@@ -1573,7 +1557,7 @@ export const ptBR: TranslationDictionary = {
   seo: {
     landing: {
       title: 'Criar vídeos para YouTube com IA | Script Master',
-      description: 'Gerador de vídeo com IA para transformar roteiro em narração, cenas, legendas e conteúdo para YouTube sem gravar tudo do zero.',
+      description: 'Gerador de vídeo open source com IA para transformar roteiro em narração, cenas, legendas e conteúdo para YouTube. BYOK — use sua própria chave do Gemini.',
     },
     about: {
       title: 'Sobre o Script Master',
@@ -1585,15 +1569,15 @@ export const ptBR: TranslationDictionary = {
     },
     faq: {
       title: 'Perguntas Frequentes | Script Master',
-      description: 'Tire dúvidas sobre créditos, beta aberto, geração de narração, cenas, legendas, vídeo e segurança no Script Master.',
+      description: 'Tire dúvidas sobre BYOK, open source, geração de narração, cenas, legendas, vídeo e segurança no Script Master.',
     },
     features: {
       title: 'Gerador de vídeo com IA | Script Master',
       description: 'Conheça as ferramentas do Script Master para criar narração, cenas, legendas e vídeos para YouTube a partir de roteiros.',
     },
-    pricing: {
-      title: 'Beta Aberto | Script Master',
-      description: 'Entre no beta aberto do Script Master e teste gratuitamente a criação de vídeos com IA usando 500 créditos mensais.',
+    openSource: {
+      title: 'Open Source & Gratuito | Script Master',
+      description: 'Script Master é open source e gratuito. Use sua própria chave de API do Gemini (BYOK) para criar vídeos com IA.',
     },
     onboarding: {
       title: 'Configuração Inicial | Script Master',
@@ -1719,64 +1703,6 @@ export const ptBR: TranslationDictionary = {
     },
   },
 
-  // ── Billing ──────────────────────────────────────────────────────────
-  billing: {
-    priceNotConfigured: 'Preço não configurado para este plano',
-    metrics: {
-      audioGenerations: 'Gerações de áudio',
-      imageGenerations: 'Gerações de imagem',
-      videoExports: 'Exportações de vídeo',
-      scriptChars: 'Caracteres de roteiro',
-    },
-    upgrade: {
-      title: 'Escolha seu plano',
-      monthly: 'Mensal',
-      yearly: 'Anual',
-      yearlyDiscount: '-20%',
-      month: 'mês',
-      year: 'ano',
-      currentPlan: 'Plano atual',
-      recommended: 'Recomendado',
-      notAvailable: 'Pagamentos não disponíveis no momento.',
-    },
-    badge: {
-      free: 'Gratuito',
-      pro: 'Pro',
-      business: 'Business',
-    },
-    portal: {
-      manageSubscription: 'Gerenciar assinatura',
-      openPortal: 'Minha assinatura',
-    },
-    usage: {
-      title: 'Uso do plano',
-      audioGenerations: 'Gerações de áudio',
-      imageGenerations: 'Gerações de imagem',
-      videoExports: 'Exportações de vídeo',
-      scriptChars: 'Caracteres de roteiro',
-      storageMb: 'Armazenamento (MB)',
-      unlimited: 'Ilimitado',
-      of: 'de',
-    },
-    entitlement: {
-      limitReached: 'Limite atingido',
-      upgradeRequired: 'Faça upgrade para continuar',
-      featureLocked: 'Funcionalidade disponível apenas nos planos pagos',
-      multiSpeakerLocked: 'Multi-speaker disponível no plano Pro ou superior',
-      emotionalTTSLocked: 'TTS emocional disponível no plano Pro ou superior',
-      stockMediaLocked: 'Mídia stock disponível no plano Pro ou superior',
-    },
-  },
-
-  // ── Créditos bloqueados ─────────────────────────────────────────────
-  credits: {
-    blocked: {
-      title: 'Créditos esgotados',
-      description: 'Você atingiu o limite de créditos deste mês. Seu saldo será renovado automaticamente no início do próximo mês.',
-      cta: 'Enviar feedback e ganhar +250 créditos',
-    },
-  },
-
   // ── Image Studio (aspect ratios) ────────────────────────────────────
   imageStudioRatios: {
     square: 'Quadrado (1:1)',
@@ -1798,7 +1724,6 @@ export const ptBR: TranslationDictionary = {
       retry: 'Tentar novamente',
       stream: 'Erro na transmissão da resposta. Tente novamente.',
       sessionSecurity: 'Erro de segurança da sessão. Recarregue a página e tente novamente.',
-      creditsInsufficient: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
     },
     welcome: 'Como posso ajudar?',
     defaultChatTitle: 'Nova conversa',
@@ -1851,6 +1776,21 @@ export const ptBR: TranslationDictionary = {
       multiSpeakerOff: 'Multi-locutor: Desligado',
       secondSpeakerDefault: 'Segundo locutor (padrão)',
     },
+    providerSettings: {
+      title: 'API Gemini',
+      description: 'Para usar as funcionalidades de IA, você precisa de uma chave de API do Google AI Studio. A chave fica salva APENAS neste dispositivo.',
+      inputLabel: 'Chave de API',
+      inputPlaceholder: 'Cole sua chave aqui (AIza...)',
+      save: 'Salvar',
+      test: 'Testar',
+      remove: 'Remover chave',
+      saved: 'Chave configurada',
+      testSuccess: 'Chave válida! Pronto para usar.',
+      testError: 'Chave inválida. Verifique e tente novamente.',
+      warning: 'A chave é armazenada localmente no navegador e nunca é enviada ao nosso servidor para armazenamento.',
+      getApiKey: 'Obtenha sua chave no Google AI Studio',
+      sectionDescription: 'Configure sua chave de API do Gemini (BYOK)',
+    },
   },
 
   // ── Autenticação (Login e Cadastro) ──────────────────────────────
@@ -1858,8 +1798,8 @@ export const ptBR: TranslationDictionary = {
     login: {
       seoTitle: 'Login',
       seoDesc: 'Faça login no Script Master e transforme roteiros em áudio, vídeo e imagens com inteligência artificial.',
-      benefitsTitle: 'Crie com IA no beta aberto',
-      benefitsDesc: 'Transforme roteiros em áudio, vídeo e imagens profissionais. Créditos mensais gratuitos inclusos.',
+      benefitsTitle: 'Crie com IA — open source e BYOK',
+      benefitsDesc: 'Transforme roteiros em áudio, vídeo e imagens profissionais. Use sua própria chave do Gemini.',
       title: 'Script Master',
       subtitle: 'Entre com Google ou email',
       googleBtn: 'Entrar com Google',
@@ -1996,12 +1936,12 @@ export const ptBR: TranslationDictionary = {
     homeBtn: 'Voltar ao início',
   },
 
-  // ── Prévia de Custos (AudioPreflightDialog) ───────────────
+  // ── Prévia técnica (AudioPreflightDialog) ───────────────
   audioPreflight: {
     loadingTitle: 'Analisando a geração',
     summaryTitle: 'Resumo da geração',
     unavailableTitle: 'Prévia indisponível',
-    loadingText: 'Verificando etapas, estimativa de créditos e saldo disponível...',
+    loadingText: 'Verificando etapas, duração estimada e quantidade de cenas...',
     unavailableText: 'Não foi possível montar a prévia agora. Tente novamente em instantes.',
     confirmReady: 'Tudo pronto para confirmar a geração.',
     durationLabel: 'Duração estimada',
@@ -2011,15 +1951,8 @@ export const ptBR: TranslationDictionary = {
     confidenceHigh: 'Alta',
     confidenceMedium: 'Muito próxima',
     stepsLabel: 'etapa(s) previstas',
-    creditsSectionTitle: 'Créditos',
-    currentBalance: 'Saldo atual',
-    predictedCost: 'Custo previsto',
-    balanceAfter: 'Saldo após concluir',
     closeBtn: 'Fechar',
     confirmBtn: 'Confirmar geração',
-    unlimited: 'Ilimitado',
-    creditsSuffix: '{value} créditos',
-    noCost: 'Sem custo adicional',
     summaryAudioOnly: 'Áudio pronto para confirmação.',
     summaryWithVisual: 'Áudio confirmado como etapa principal, com pacote visual estimado para confirmação.',
     stepLabels: {
@@ -2037,7 +1970,7 @@ export const ptBR: TranslationDictionary = {
       chunking: {
         consistency: 'Pré-processamento para manter consistência do TTS.',
         limit: 'Limite alvo: 500 caracteres por parte.',
-        included: 'Esta etapa já está incluída no processamento do áudio, sem custo adicional.',
+        included: 'Esta etapa já está incluída no processamento do áudio.',
       },
       scenePrompts: {
         estimate: 'Estimativa visual baseada em {count} cena(s) previstas.',
@@ -2045,20 +1978,20 @@ export const ptBR: TranslationDictionary = {
       },
       image: {
         count: '{count} imagem(ns) previstas.',
-        reference: 'Inclui custo extra de referência visual em cada imagem.',
-        noReference: 'Sem custo extra de referência visual.',
+        reference: 'Usa a imagem de referência configurada no estúdio.',
+        noReference: 'Sem imagem de referência configurada.',
       },
     },
     notes: {
-      freePreview: 'Esta prévia é gratuita e não reserva créditos.',
-      visualEstimate: 'A parte visual usa estimativa conservadora para reduzir surpresas no saldo, mas continua sujeita ao saldo disponível em cada etapa.',
-      audioOnly: 'Sem pipeline visual: o custo final deve ficar muito próximo desta prévia.',
+      freePreview: 'Esta prévia não chama o modelo nem inicia geração.',
+      visualEstimate: 'A parte visual usa estimativa conservadora para reduzir surpresas na quantidade de cenas.',
+      audioOnly: 'Sem pipeline visual: a geração segue apenas para síntese de áudio.',
     },
     scriptNamePrefix: 'Roteiro',
     saveCloudSuccess: 'Áudio salvo na nuvem com sucesso!',
     saveLocalSuccess: 'Áudio salvo na biblioteca local!',
     saveError: 'Erro ao salvar na biblioteca.',
-    insufficientCreditsError: 'Seu saldo atual não cobre todas as etapas previstas desta geração.',
+    blockedError: 'Não foi possível confirmar todas as etapas previstas desta geração.',
   },
 
   // ── Legais e Rodapé ──────────────────────────────────────

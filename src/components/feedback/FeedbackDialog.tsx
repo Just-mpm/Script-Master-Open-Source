@@ -6,8 +6,7 @@
  * customizado `OPEN_FEEDBACK_DIALOG_EVENT`).
  *
  * Após envio bem-sucedido, mostra confirmação dentro do próprio dialog
- * por 2.5s e fecha automaticamente. O bônus de 250 créditos já é refletido
- * no CreditIndicator do Header via refresh automático do useCreditsStore.
+ * por 2.5s e fecha automaticamente.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
@@ -138,9 +137,7 @@ export function FeedbackDialog({ open, onClose, defaultScreenContext }: Feedback
                 '& .MuiAlert-icon': { color: BRAND_SECONDARY },
               }}
             >
-              {submitted.bonusGranted
-                ? t('feedback.dialog.successWithBonus')
-                : t('feedback.dialog.successNoBonus')}
+              {t('feedback.dialog.success')}
             </Alert>
             <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
               {t('feedback.dialog.closingHint')}

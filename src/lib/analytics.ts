@@ -8,7 +8,6 @@ export const ANALYTICS_CONSENT_CHANGED_EVENT = 's2a-analytics-consent-changed';
 
 export type AnalyticsConsent = 'unknown' | 'granted' | 'denied';
 export type AnalyticsErrorCategory =
-  | 'credits'
   | 'app_check'
   | 'permission'
   | 'timeout'
@@ -86,8 +85,6 @@ export interface AnalyticsEventMap {
   library_audio_saved: { source: 'studio' };
   library_project_deleted: Record<string, never>;
   library_opened_in_speed_paint: { scene_count: number };
-  upgrade_dialog_opened: { plan_id?: string };
-  begin_checkout: { plan_id: string; billing_cycle: 'monthly' | 'yearly' };
   // ── Manual Project (feature v0.129.0) — wizard de upload de áudio + imagens ──
   /** Usuário abriu o wizard de projeto manual (clicou em "Criar projeto manual") */
   manual_project_started: Record<string, never>;
@@ -266,7 +263,6 @@ export function trackAnalyticsEvent<Name extends keyof AnalyticsEventMap>(
 
 export function categorizeAnalyticsError(error: unknown): AnalyticsErrorCategory {
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  if (message.includes('credit') || message.includes('crédito') || message.includes('saldo')) return 'credits';
   if (message.includes('app-check') || message.includes('appcheck')) return 'app_check';
   if (message.includes('permission') || message.includes('unauthorized')) return 'permission';
   if (message.includes('timeout') || message.includes('deadline') || message.includes('504')) return 'timeout';

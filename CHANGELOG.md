@@ -7,6 +7,89 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.130.0] - 2026-06-06
+
+### Adicionado
+
+- **Modelo BYOK (Bring Your Own Key)**: usuário fornece sua própria API key do Gemini, persistida apenas em IndexedDB local (nunca em Firestore). Backend com `googleAI({ apiKey: false })` — sem chave global. Helpers `extractApiKey`, `withApiKey`, `maskApiKeyForLog` em `functions/src/genkit/utils/byok.ts`. ProviderAuth injetado em cada chamada via `config: { apiKey }`.
+- **`testApiKey` flow** (`functions/src/flows/test-api-key.ts`): validação de API key do Gemini via chamada mínima (`gemini-3.1-flash-lite`)
+- **`ProviderSettingsSection`** no frontend (`src/features/provider-settings/`): UI para salvar/testar/remover a API key com integração no Configuracoes
+- **`ProviderAuthSchema`**, **`TestApiKeyInputSchema`**, **`TestApiKeyOutputSchema`** em `functions/src/genkit/schemas/common.ts` — schemas Zod para autenticação por provedor
+- **`PROVIDER_SETTINGS_STORE`** em `src/lib/db/shared.ts` — novo store name para persistência das settings de provedor (DB_VERSION 10 → 11)
+- **`hydrateProviderSettings()`** em `src/contexts/AuthContext.tsx` — carregamento automático das provider settings ao autenticar
+- **`getProviderAuthFromStore()`** em `src/features/provider-settings` — função utilitária para hooks obterem a API key
+- **`AudioInputByokSchema`**, **`AssistantInputByokSchema`**, **`ChunkingInputByokSchema`**, **`ImageInputByokSchema`**, **`InlineAssistantInputByokSchema`**, **`ScenePromptsInputByokSchema`** — schemas BYOK estendidos para cada flow
+- **Rota `/open-source`** com `OpenSourcePage` — substitui a rota `/precos` (PricingPage)
+- **Redirecionamentos de compatibilidade**: `/pricing` → `/open-source`, `/precos` → `/open-source` (9 rotas no total)
+- **Namespace i18n `openSource`** e **`providerSettings`** nos 3 locales — substituem o namespace `pricing`
+- **Arquivos open source** para governança do repositório: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, templates `.github/` (issue templates, PR template)
+- **Metadados no `package.json`**: campos `repository`, `bugs`, `homepage` para integração com GitHub
+- **FAQ sobre BYOK** (`src/data/byokFaq.ts`): perguntas frequentes sobre BYOK e open source — substitui `pricingFaq.ts`
+- **Link do GitHub** no `PublicFooter.tsx` e `ContactPage.tsx` (`GitHubIcon`)
+
+### Alterado
+
+- **Migração para BYOK finalizada**: backend sem Stripe/billing/créditos — cada flow extrai a key via `extractApiKey(input)` e injeta via `withApiKey(apiKey)` no `config` de `ai.generate()`. Logs usam `maskApiKeyForLog(apiKey)` (mostra apenas primeiros/últimos 4 caracteres).
+- **Namespace i18n `pricing` → `openSource`**: todas as chaves de tradução renomeadas em pt-BR, en e es. Namespaces `credits`, `billing`, `usage` removidos dos 3 locales.
+- **`.firebaserc`** apontado para placeholder `your-firebase-project-id`
+- **`serviceAccount`** em `functions/src/index.ts` tornado opcional com comentário
+- **Rotas e navegação pública**: links "Preços" removidos de `PublicHeader`, `PublicFooter`, `GuestMobileNav`, `FuncionalidadesPage` — substituídos por "Open Source" e "GitHub"
+- **`ProductDemoSection.tsx`**: texto "Sem cartão de crédito" alterado para "Open source e gratuito (sua API key)"
+- **`metrics.ts`**: métricas renomeadas — "Créditos mensais" → "Open source", "Bônus por feedback" → "BYOK", "Sem cartão" → "Privacidade"
+- **`seo.ts`**: JSON-LD `SoftwareApplication` sem `offers` (modelo gratuito/open source)
+- **`prerender.mjs`**: rota `/precos` substituída por `/open-source` na pre-renderização
+- **`export-error-logs.ts`**: categoria `billing` → `byok`
+- **`AccountContext.tsx`**: `useBillingInit` removido, `hydrateProviderSettings` adicionado no login
+- **`Sidebar.tsx`**, **`SidebarFooter.tsx`**, **`MobileBottomNav.tsx`**: `CreditIndicator` removido — sidebar simplificada sem indicador de créditos
+- **`FeedbackBanner.tsx`**, **`FeedbackFormFields.tsx`**, **`FeedbackDialog.tsx`**, **`FeedbackFab.tsx`**: toda lógica de bônus de créditos removida — feedback é apenas coleta de opinião
+- **`AudioPreflightDialog.tsx`**: seção de estimativa de créditos removida
+- **`AudioGenerationHandler.tsx`**: chamada de `preflight` removida
+- **`AssistantComposer.tsx`**: prop `creditsBlocked` removida
+- **`useAudioGenerator.ts`**, **`useImageGenerator.ts`**, **`useAssistant.ts`**, **`useInlineAssistant.ts`**: integração com `getProviderAuthFromStore()` — removidas dependências de `useCredits`
+- **`lib/env.ts`**: funções `getStripePublishableKey`, `isBillingEnabled`, `isOpenBetaEnabled` removidas
+- **`lib/callable-errors.ts`**: `isCreditCallableError` removido
+- **`lib/analytics.ts`**: eventos `upgrade_dialog_opened`, `begin_checkout` removidos
+- **`lib/logger/`**: contexto `billing` removido de `interceptor.ts`, `filters.ts`, `types.ts`, `index.ts`
+- **`lib/logger/sanitization.ts`**: `stripe_token` removido dos padrões de sanitização
+- **`StackedHeader.tsx`**: textos de bônus de feedback removidos dos comentários
+- **`account-cleanup.ts`**: cleanup de subscription do Stripe removido
+- **`ImageStudio.tsx`**: `CreditBlockedMessage` removido
+- **`InlineAIWidget.tsx`**: `CreditBlockedMessage` removido
+- **`Assistant.tsx`**: `CreditBlockedMessage` removido
+- **`FounderMessageDialog.tsx`**: texto de bônus de créditos → texto sobre BYOK
+- **`llms.txt`**, **`llms-full.txt`**, **`robots.txt`**, **`sitemap.xml`**: conteúdo atualizado — referências a "preços"/"créditos" removidas, foco em open source/BYOK
+- **`styles.scss` / surfaces / authStyles**: refinamentos de texto (premium → refinado) em comentários e descrições
+- **Testes de integração**: `i18n-integration.test.tsx`, `i18n.unit.test.ts`, `locales.completeness.unit.test.ts` — chaves `pricing`, `credits`, `billing` removidas; chaves `openSource`, `providerSettings` adicionadas
+- **Testes de páginas**: `AboutPage`, `FaqPage`, `LandingPage`, `FuncionalidadesPage`, `LoginPage`, `ProductDemoSection`, `PublicFooter`, `PublicHeader`, `MetricsSection` — textos e asserções atualizados de "créditos"/"beta"/"preços" para "open source"/"BYOK"
+- **Testes de dados**: `data.unit.test.ts`, `lib-data.unit.test.ts`, `shared.unit.test.ts` — referências a `/precos` → `/open-source`, DB_VERSION 10 → 11
+- **Testes de hooks**: `useAssistant.unit.test.tsx`, `useAudioGenerator.unit.test.ts`, `useImageGenerator.unit.test.ts`, `useAssistant.persistent-chat.unit.test.tsx`, `useAudioGenerator.unit.test.ts` — mocks de `useCredits` removidos
+- **Testes de componentes**: `Sidebar.component.test.tsx`, `Sidebar.features.test.tsx`, `FeedbackController.component.test.tsx`, `FeedbackFab.component.test.tsx`, `AssistantMessages.component.test.tsx`, `audioGenerationHandler.unit.test.tsx` — mocks e referências a créditos removidos
+- **Testes de libs**: `callable-errors.unit.test.ts` — `isCreditCallableError` removido; `env.unit.test.ts` — env vars de billing removidas; `gemini.unit.test.ts` — mocks simplificados
+- **Teste de i18n**: `locale-completeness.unit.test.ts`, `i18n-integration.test.tsx` — `pricing` → `openSource`, `Beta` → `Open Source`
+- **Testes de redirects**: `redirects.unit.test.tsx` — novo redirect `/precos` → `/open-source`, contagem 8 → 9
+
+### Removido
+
+- **Sistema de billing/créditos/Stripe completo**:
+  - Frontend: `src/features/billing/` (8+ arquivos — PlanBadge, UpgradeDialog, UsageIndicator, plans, store, types, usageUtils, hooks)
+  - Hooks: `src/hooks/useCredits.ts` (504 linhas — store Zustand com lógica de créditos)
+  - Componentes: `src/components/CreditIndicator.tsx`, `src/components/CreditBlockedMessage.tsx`
+  - Lib: `src/lib/stripe.ts` (integração Stripe.js)
+  - Backend: `functions/src/usage/` (credit-metering.ts, credit-service.ts, credit-policy.ts, credit-events.ts, period.ts, audio-preflight.ts, credit-estimator.ts, index.ts)
+  - Backend flows: `functions/src/flows/credit-snapshot.ts`
+  - Backend middlewares: `functions/src/genkit/middlewares/credit-metering.ts`
+  - Testes: `tests/billing/` (3 arquivos), `tests/hooks/useCredits.unit.test.tsx`, `tests/components/CreditIndicator.component.test.tsx`, `tests/pages/public/PricingPage.component.test.tsx`, `tests/components/public/PricingCard.component.test.tsx`, `tests/functions/credit-service.unit.test.ts`, `tests/functions/test-promo-bug.ts`
+- **Página de Preços**: `src/pages/public/PricingPage.tsx`, `src/components/public/PricingCard.tsx`, `src/data/pricingFaq.ts`
+- **`.firebaserc`**: resetado para placeholder (requer configuração do projeto Firebase)
+- **`cors.json`**: removido da raiz (configuração migrada para `functions/src/config/cors.ts`)
+- **`public/llms.txt`**, **`public/llms-full.txt`**, **`public/robots.txt`**, **`public/sitemap.xml`**: removidos e regerados com conteúdo atualizado
+
+### Corrigido
+
+- **Feedback flow**: comentário e lógica de bônus de 250 créditos removidos — feedback agora é apenas coleta de opinião, sem incentivo financeiro
+
+---
+
 ## [0.129.1] - 2026-06-05
 
 ### Alterado

@@ -66,7 +66,6 @@ const {
       estimatedSceneCount: 0,
       confidence: 'high',
       steps: [],
-      credits: { available: 100, totalPlanned: 10, remainingAfter: 90, unlimited: false },
       canProceed: true,
       notes: [],
     },
@@ -109,7 +108,6 @@ vi.mock('../../src/hooks/useAudioGenerator', () => ({
     handleCancel: mockHandleCancel,
     loadProjectData: vi.fn(),
     durationInSeconds: 0,
-    creditsExhausted: false,
   }),
 }));
 
@@ -294,11 +292,6 @@ describe('useAudioGenerationHandler', () => {
     expect(mockGenerateAudio).toHaveBeenCalledWith({
       script: 'opts',
       estimatedChunkCount: 1,
-      preflight: {
-        availableCredits: 100,
-        totalPlanned: 10,
-        unlimited: false,
-      },
     });
   });
 
@@ -314,12 +307,12 @@ describe('useAudioGenerationHandler', () => {
     expect(mockBuildGenerateOptions).toHaveBeenCalledWith(undefined, mockStudioState);
   });
 
-  it('deve bloquear confirmação quando a prévia retornar saldo insuficiente estruturado', async () => {
+  it('deve exibir erro genérico quando a prévia falhar', async () => {
     mockAudioPreflightCallable.mockRejectedValueOnce({
       code: 'functions/failed-precondition',
-      message: 'Saldo insuficiente',
+      message: 'Falha técnica',
       details: {
-        code: 'INSUFFICIENT_CREDITS',
+        code: 'PREFLIGHT_FAILED',
       },
     });
 
@@ -330,21 +323,20 @@ describe('useAudioGenerationHandler', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.preflightError).toContain('saldo atual');
+    expect(result.current.preflightError).toContain('prévia');
     expect(result.current.preflight).toBeNull();
     expect(mockGenerateAudio).not.toHaveBeenCalled();
   });
 
-  it('deve confirmar geração ilimitada sem trafegar Infinity', async () => {
+  it('deve confirmar geração com pacote visual estimado', async () => {
     mockAudioPreflightCallable.mockResolvedValueOnce({
       data: {
-        summary: 'Conta ilimitada',
+        summary: 'Pacote visual estimado',
         estimatedDurationSeconds: 42,
         estimatedChunkCount: 2,
         estimatedSceneCount: 3,
         confidence: 'medium',
         steps: [],
-        credits: { available: 0, totalPlanned: 25, remainingAfter: 0, unlimited: true },
         canProceed: true,
         notes: [],
       },
@@ -364,11 +356,6 @@ describe('useAudioGenerationHandler', () => {
     expect(mockGenerateAudio).toHaveBeenCalledWith({
       script: 'opts',
       estimatedChunkCount: 2,
-      preflight: {
-        availableCredits: 0,
-        totalPlanned: 25,
-        unlimited: true,
-      },
     });
   });
 
@@ -380,7 +367,6 @@ describe('useAudioGenerationHandler', () => {
       estimatedSceneCount: number;
       confidence: 'high' | 'medium';
       steps: [];
-      credits: { available: number; totalPlanned: number; remainingAfter: number; unlimited: boolean };
       canProceed: boolean;
       notes: [];
     } }) => void) | null = null;
@@ -416,7 +402,6 @@ describe('useAudioGenerationHandler', () => {
           estimatedSceneCount: 0,
           confidence: 'high',
           steps: [],
-          credits: { available: 100, totalPlanned: 10, remainingAfter: 90, unlimited: false },
           canProceed: true,
           notes: [],
         },

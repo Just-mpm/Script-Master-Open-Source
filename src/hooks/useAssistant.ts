@@ -27,9 +27,9 @@ import type {
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
-import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
-import { useCredits } from './useCredits';
+import { getCallableErrorInfo, isCallableCancelledError } from '../lib/callable-errors';
 import { categorizeAnalyticsError, getSizeBucket, trackAnalyticsEvent } from '../lib/analytics';
+import { getProviderAuthFromStore } from '../features/provider-settings';
 
 const log = createLogger('useAssistant');
 const STREAM_ABORTED = Symbol('assistant-stream-aborted');
@@ -72,10 +72,6 @@ function buildErrorMapper(t: (key: string) => string) {
         match: (m) => m.includes('abort') || m.includes('cancelled'),
         message: '',
       },
-      {
-        match: (m) => m.includes('saldo') || m.includes('crédito'),
-        message: t('assistantStrings.errors.creditsInsufficient'),
-      },
     ],
   });
 }
@@ -106,6 +102,7 @@ interface AssistantFlowInput {
   contextSummary?: string;
   compactionCount?: number;
   estimatedContextTokens?: number;
+  providerAuth: { provider: 'gemini'; apiKey: string };
 }
 
 interface AssistantFlowOutput {
@@ -224,7 +221,6 @@ function parseAssistantStreamMeta(chunkText: string): AssistantStreamMeta | null
 export function useAssistant(currentState?: AssistantStudioState) {
   const { user } = useAuth();
   const { t } = useLocale();
-  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
 
   // Mapeador de erros recriado quando locale muda
   const toUserFriendlyAssistantError = useMemo(() => buildErrorMapper(t), [t]);
@@ -247,7 +243,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
 
   // Sincroniza ref com estado para acesso sem stale closure
   useEffect(() => { interviewRef.current = interview; }, [interview]);
-  const [creditsExhausted, setCreditsExhausted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'fast' | 'specialist'>('fast');
   const [selectedThinkingLevel, setSelectedThinkingLevel] = useState<'minimal' | 'low' | 'medium' | 'high'>('medium');
   const [thinkingEnabled, setThinkingEnabled] = useState(true);
@@ -442,14 +437,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
     };
   }, [requestRemoteCancellation]);
 
-  const isCreditBlocked = !!user && canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
-
-  useEffect(() => {
-    if (!isCreditBlocked) {
-      setCreditsExhausted(false);
-    }
-  }, [isCreditBlocked]);
-
   // Auto-save session (após streaming, evita centenas de saves por segundo)
   useEffect(() => {
     if (isStreaming) return;
@@ -641,6 +628,13 @@ export function useAssistant(currentState?: AssistantStudioState) {
     resume?: InterviewResumeData,
   ) => {
     if (!text.trim() && (!attachments || attachments.length === 0) && !resume) return;
+
+    const providerAuth = getProviderAuthFromStore();
+    if (!providerAuth) {
+      setError('Configure sua chave de API do Gemini nas configurações.');
+      return;
+    }
+
     const analyticsParams = {
       size_bucket: getSizeBucket(text.length),
       mode: selectedModel,
@@ -659,7 +653,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
     setMessages(prev => [...sanitizeChatMessageAttachments(prev), newUserMsg]);
     setIsLoading(true);
     setError(null);
-    setCreditsExhausted(false);
     setJsonSettings(null);
     setPendingSettings(null);
     setToolEvents([]);
@@ -713,6 +706,7 @@ export function useAssistant(currentState?: AssistantStudioState) {
         contextSummary: contextSummaryRef.current || undefined,
         compactionCount: compactionCountRef.current || undefined,
         estimatedContextTokens: estimatedContextTokensRef.current || undefined,
+        providerAuth,
       };
       const input = removeUndefinedFields(rawInput);
 
@@ -892,10 +886,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
       });
       const errorMessage = toUserFriendlyAssistantError(err);
 
-      if (isCreditCallableError(err) || errorMessage.includes('crédito') || errorMessage.includes('saldo')) {
-        setCreditsExhausted(true);
-      }
-
       if (errorMessage) {
         setError(errorMessage);
       }
@@ -1039,8 +1029,6 @@ export function useAssistant(currentState?: AssistantStudioState) {
     respondResult,
     clearPendingSettings,
     clearInterview,
-    creditBlockedByBalance: isCreditBlocked,
-    creditsExhausted: creditsExhausted || isCreditBlocked,
     selectedModel,
     setSelectedModel,
     selectedThinkingLevel,

@@ -28,6 +28,9 @@ describe('imageTextLanguage — generateScenePrompts propaga locale', () => {
     vi.doMock('../../src/lib/firebase', () => ({
       functions: { /* stub */ },
     }));
+    vi.doMock('../../src/features/provider-settings', () => ({
+      getProviderAuthFromStore: () => ({ provider: 'gemini', apiKey: 'AIza-test-mock-key' }),
+    }));
     vi.doMock('firebase/functions', () => ({
       httpsCallable: vi.fn(() => mockCallable),
     }));
@@ -39,6 +42,7 @@ describe('imageTextLanguage — generateScenePrompts propaga locale', () => {
   afterEach(() => {
     vi.doUnmock('../../src/lib/logger');
     vi.doUnmock('../../src/lib/firebase');
+    vi.doUnmock('../../src/features/provider-settings');
     vi.doUnmock('firebase/functions');
     vi.unstubAllGlobals();
     vi.resetModules();

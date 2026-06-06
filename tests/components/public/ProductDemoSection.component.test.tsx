@@ -94,8 +94,8 @@ describe('ProductDemoSection', () => {
     expect(ctaLink.getAttribute('href')).toBe('/cadastro');
   });
 
-  it('renderiza texto sobre configuração rápida', () => {
+  it('renderiza texto sobre open source e configuração rápida', () => {
     render(<ProductDemoSection />, { wrapper: Wrapper });
-    expect(screen.getByText(/Sem cartão de crédito/)).toBeDefined();
+    expect(screen.getByText(/Open source e gratuito/)).toBeDefined();
   });
 });

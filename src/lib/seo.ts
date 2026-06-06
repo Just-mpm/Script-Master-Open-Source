@@ -3,7 +3,7 @@ import logos from '../assets/logos';
 const SITE_URL = 'https://script-master.pro';
 const SITE_NAME = 'Script Master';
 const DEFAULT_DESCRIPTION =
-  'Transforme roteiros em áudio profissional com IA. Geração de voz, imagens e vídeos com inteligência artificial.';
+  'Transforme roteiros em áudio e vídeo com IA. Open source e BYOK: use sua própria chave do Gemini.';
 const OG_IMAGE_URL = `${SITE_URL}${logos.ogImage}`;
 
 interface SeoMeta {
@@ -30,7 +30,7 @@ export interface SeoData {
 }
 
 /** Tipos de JSON-LD disponíveis por página */
-export type JsonLdType = 'software' | 'software-with-offers' | 'webpage';
+export type JsonLdType = 'software' | 'webpage';
 
 interface SeoProps {
   title: string;
@@ -84,8 +84,8 @@ function buildBreadcrumbSchema(path: string, title: string): string {
   return JSON.stringify(schema);
 }
 
-/** Schema SoftwareApplication para landing, funcionalidades e preços */
-function buildSoftwareAppSchema(description: string, withOffers: boolean): string {
+/** Schema SoftwareApplication para landing, funcionalidades e página open source */
+function buildSoftwareAppSchema(description: string): string {
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -94,19 +94,9 @@ function buildSoftwareAppSchema(description: string, withOffers: boolean): strin
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web',
     description,
-    offers: withOffers
-      ? {
-          '@type': 'Offer',
-          name: 'Beta Aberto',
-          price: '0',
-          priceCurrency: 'BRL',
-          availability: 'https://schema.org/InStock',
-        }
-      : {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'BRL',
-        },
+    isAccessibleForFree: true,
+    license: 'https://opensource.org/licenses/MIT',
+    codeRepository: 'https://github.com/Just-mpm/Script-Master-Open-Source',
   };
 
   return JSON.stringify(schema);
@@ -139,10 +129,7 @@ function buildJsonLd(type: JsonLdType, path: string, title: string, description:
 
   switch (type) {
     case 'software':
-      schemas.push(JSON.parse(buildSoftwareAppSchema(description, false)));
-      break;
-    case 'software-with-offers':
-      schemas.push(JSON.parse(buildSoftwareAppSchema(description, true)));
+      schemas.push(JSON.parse(buildSoftwareAppSchema(description)));
       break;
     case 'webpage':
       schemas.push(JSON.parse(buildWebPageSchema(path, title, description)));

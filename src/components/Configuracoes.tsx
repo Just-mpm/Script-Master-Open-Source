@@ -38,6 +38,7 @@ import { createPaceOptions, createVisualFrameworkOptions, createSceneRatioOption
 import { useAuth } from '../contexts/AuthContext';
 import { saveUserSettings } from '../lib/db';
 import { createLogger } from '../lib/logger';
+import { ProviderSettingsSection } from '../features/provider-settings';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -453,6 +454,9 @@ export function Configuracoes() {
         </Stack>
       </Paper>
       </Collapse>
+
+      {/* -- Seção BYOK (API Gemini) -- */}
+      <ProviderSettingsSection />
 
       {/* -- Secao Voz -- */}
       <CollapsibleSection

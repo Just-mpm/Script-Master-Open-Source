@@ -7,6 +7,64 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.130.0] - 2026-06-06
+
+### Adicionado
+
+- **Arquivos open source para governança do repositório** (+~350 linhas):
+  - `SECURITY.md`: política de segurança e reporte responsável de vulnerabilidades
+  - `CONTRIBUTING.md`: guia de contribuição com setup, padrões de código, commits e PR
+  - `CODE_OF_CONDUCT.md`: código de conduta baseado no Contributor Covenant
+  - `.github/ISSUE_TEMPLATE/`: templates para bug report, feature request e pergunta
+  - `.github/PULL_REQUEST_TEMPLATE.md`: template padronizado para pull requests
+  - `.github/FUNDING.yml`: configuração de sponsorship
+
+- **Metadados no `package.json`**: campos `repository` (`git+https://github.com/matheusrc/script-master.git`), `bugs` (`https://github.com/matheusrc/script-master/issues`), `homepage` (`https://script-master.pro`) — integração com GitHub e visibilidade do projeto
+
+- **Rota `/open-source` com `OpenSourcePage`** (`src/pages/public/OpenSourcePage.tsx`): nova página pública que substitui `/precos` (PricingPage) — conteúdo focado em modelo BYOK, instruções de fork e contribuição
+
+- **Namespace i18n `openSource`** nos 3 locales (`pt-BR.ts`, `en.ts`, `es.ts`): substitui o namespace `pricing` — todas as chaves de tradução renomeadas
+
+- **`testApiKey` flow** (`functions/src/flows/test-api-key.ts`, +45 linhas): Cloud Function callable que faz uma chamada mínima ao Gemini (`gemini-3.1-flash-lite`) para validar a API key do usuário — retorna sucesso/erro com mensagem descritiva
+
+- **`ProviderSettingsSection`** no frontend (`src/features/provider-settings/`, 3 arquivos): UI completa para o usuário salvar, testar e remover a API key do Gemini — persistida em IndexedDB local (escopada por `uid`), nunca enviada ao Firestore
+
+### Alterado
+
+- **Migração para BYOK finalizada** — backend sem Stripe, billing ou sistema de créditos:
+  - `functions/src/genkit/genkit.ts`: `googleAI({ apiKey: false })` — nenhuma chave global
+  - `functions/src/genkit/utils/byok.ts`: helpers `extractApiKey(input)`, `withApiKey(apiKey)`, `maskApiKeyForLog(apiKey)` centralizados
+  - Cada flow extrai a key do payload via `extractApiKey(input)` e injeta via `withApiKey(apiKey)` no `config` de `ai.generate()`
+  - Logs usam `maskApiKeyForLog(apiKey)` (mostra apenas primeiros/últimos 4 caracteres)
+
+- **Namespace i18n `pricing` → `openSource`**: todas as chaves de tradução renomeadas em pt-BR, en e es — referências atualizadas em componentes e rotas
+
+- **`.firebaserc`** apontado para placeholder `your-firebase-project-id` — forks precisam configurar o próprio projeto
+
+- **`serviceAccount`** em `functions/src/index.ts` tornado opcional com comentário — facilita fork sem service account local
+
+- **Documentação atualizada** (AGENTS.md, CLAUDE.md, Script-Master.md): `/precos` → `/open-source`, `PricingPage` → `OpenSourcePage`, menções a billing/pricing removidas
+
+### Removido
+
+- **Diretórios e arquivos de billing** (~2.500 linhas removidas):
+  - `src/features/billing/` (diretório completo: componentes de planos, upgrade dialog, pricing cards)
+  - `src/hooks/useCredits.ts` (hook de gestão de créditos)
+  - `src/components/CreditIndicator.tsx` (indicador de créditos no header/sidebar)
+  - `src/components/CreditBlockedMessage.tsx` (mensagem de bloqueio por créditos)
+  - `src/lib/stripe.ts` (integração com Stripe)
+  - `functions/src/usage/credit-*` (serviços de crédito: credit-service, credit-snapshot, credit-utils)
+  - `functions/src/usage/period.ts` (cálculo de períodos de billing)
+  - `functions/src/usage/audio-preflight.ts` (validação de créditos antes de gerar áudio)
+  - `functions/src/flows/credit-snapshot.ts` (flow de snapshot de créditos)
+  - `functions/src/genkit/middlewares/credit-metering.ts` (middleware de medição de créditos)
+
+- **Mocks mortos em testes**: limpeza de mocks não utilizados em arquivos de teste — remoção de imports e setup de mocks que referenciavam módulos de billing já deletados
+
+- **Resquícios de pricing em código e documentação**: todas as referências a `/precos`, `PricingPage` e namespace `pricing` removidas de AGENTS.md, CLAUDE.md e Script-Master.md
+
+---
+
 ## [0.120.0] - 2026-06-01
 
 ### Adicionado

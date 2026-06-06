@@ -193,12 +193,12 @@ describe('getPageSeo — estrutura', () => {
     const seo = getPageSeo({
       title: 'Test',
       description: 'Desc',
-      path: '/precos',
+      path: '/open-source',
     });
 
     expect(seo.link.length).toBeGreaterThanOrEqual(1);
     expect(seo.link[0].rel).toBe('canonical');
-    expect(seo.link[0].href).toBe('https://script-master.pro/precos');
+    expect(seo.link[0].href).toBe('https://script-master.pro/open-source');
 
     // hreflang alternates para i18n
     const hreflangs = seo.link.filter((l) => l.rel === 'alternate');

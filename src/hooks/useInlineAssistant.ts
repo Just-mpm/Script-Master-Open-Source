@@ -4,32 +4,22 @@ import { functions } from '../lib/firebase';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
 import { useLocale } from '../features/i18n';
-import { isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
-import { useCredits } from './useCredits';
+import { isCallableCancelledError } from '../lib/callable-errors';
+import { getProviderAuthFromStore } from '../features/provider-settings';
 
 const log = createLogger('useInlineAssistant');
 
 export function useInlineAssistant() {
   const { t } = useLocale();
-  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [creditsExhausted, setCreditsExhausted] = useState(false);
   const activeRequestIdRef = useRef<string | null>(null);
   const cancelledRequestIdsRef = useRef<Set<string>>(new Set());
   const cancelAiRequestCallable = useMemo(
     () => httpsCallable<{ requestId: string }, { success: boolean }>(functions, 'cancelAiRequest'),
     [],
   );
-
-  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
-
-  useEffect(() => {
-    if (!isCreditBlocked) {
-      setCreditsExhausted(false);
-    }
-  }, [isCreditBlocked]);
 
   const requestRemoteCancellation = useCallback((requestId?: string | null) => {
     if (!requestId) return;
@@ -55,10 +45,6 @@ export function useInlineAssistant() {
         match: (m) => m.includes('app-check') || m.includes('AppCheck') || m.includes('permission-denied'),
         message: 'Erro de segurança da sessão. Recarregue a página e tente novamente.',
       },
-      {
-        match: (m) => m.includes('saldo') || m.includes('crédito'),
-        message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
-      },
     ],
   });
 
@@ -66,9 +52,14 @@ export function useInlineAssistant() {
     async (selectedText: string, instruction: string, fullScript: string): Promise<string | null> => {
       if (!selectedText.trim() || !instruction.trim()) return null;
 
+      const providerAuth = getProviderAuthFromStore();
+      if (!providerAuth) {
+        setError('Configure sua chave de API do Gemini nas configurações.');
+        return null;
+      }
+
       setIsProcessing(true);
       setError(null);
-      setCreditsExhausted(false);
 
       try {
         const callable = httpsCallable<{
@@ -76,6 +67,7 @@ export function useInlineAssistant() {
           instruction: string;
           fullScript: string;
           requestId: string;
+          providerAuth: { provider: 'gemini'; apiKey: string };
         }, { rewrittenText: string }>(functions, 'inlineAssistant');
         const requestId = crypto.randomUUID();
         activeRequestIdRef.current = requestId;
@@ -85,6 +77,7 @@ export function useInlineAssistant() {
           instruction,
           fullScript,
           requestId,
+          providerAuth,
         });
         if (cancelledRequestIdsRef.current.has(requestId)) {
           return null;
@@ -103,9 +96,6 @@ export function useInlineAssistant() {
         }
         log.error('Erro na geração inline', { error: err });
         const mappedError = errorMapper(err);
-        if (isCreditCallableError(err) || mappedError.includes('crédito') || mappedError.includes('saldo')) {
-          setCreditsExhausted(true);
-        }
         setError(mappedError);
         return null;
       } finally {
@@ -130,6 +120,5 @@ export function useInlineAssistant() {
     error,
     rewrite,
     stopProcessing,
-    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

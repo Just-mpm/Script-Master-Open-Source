@@ -19,6 +19,5 @@ export {
   FEEDBACK_CATEGORIES,
   OPEN_FEEDBACK_DIALOG_EVENT,
   FEEDBACK_FAB_Z_INDEX,
-  FEEDBACK_BONUS_DISPLAY,
 } from './constants';
 export type { FeedbackCategory } from './constants';

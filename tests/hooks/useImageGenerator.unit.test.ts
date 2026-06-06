@@ -7,26 +7,10 @@ const { mockImageCallable, mockCancelCallable, mockHttpsCallable } = vi.hoisted(
   mockHttpsCallable: vi.fn(),
 }));
 
-const mockCreditsState = vi.hoisted(() => ({
-  availableCredits: 100,
-  usedCredits: 0,
-  reservedCredits: 0,
-  baseCredits: 100,
-  bonusCredits: 0,
-  feedbackBonusGranted: false,
-  unlimitedCredits: false,
-  canEnforceBalance: true,
-  loading: false,
-  error: null as string | null,
-}));
-
 // --- Mocks ---
 
 vi.mock('../../src/lib/env', () => ({
-  getGeminiApiKey: vi.fn().mockReturnValue('test-key'),
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
-  isBillingEnabled: vi.fn().mockReturnValue(false),
-  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
   getFirebaseEnvConfig: vi.fn().mockReturnValue({
     apiKey: 'mock-api-key',
     authDomain: 'mock.firebaseapp.com',
@@ -35,7 +19,6 @@ vi.mock('../../src/lib/env', () => ({
     messagingSenderId: '123',
     appId: '1:123:web:abc',
   }),
-  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
   getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -57,10 +40,6 @@ vi.mock('../../src/lib/logger', () => ({
   setLoggerUserId: vi.fn(),
 }));
 
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({ ...mockCreditsState }),
-}));
-
 vi.mock('firebase/functions', () => ({
   httpsCallable: mockHttpsCallable,
 }));
@@ -69,20 +48,14 @@ vi.mock('../../src/lib/firebase', () => ({
   functions: {},
 }));
 
+vi.mock('../../src/features/provider-settings', () => ({
+  getProviderAuthFromStore: () => ({ provider: 'gemini', apiKey: 'AIza-test-mock-key' }),
+}));
+
 import { useImageGenerator } from '../../src/hooks/useImageGenerator';
 
 describe('useImageGenerator', () => {
   beforeEach(() => {
-    mockCreditsState.availableCredits = 100;
-    mockCreditsState.usedCredits = 0;
-    mockCreditsState.reservedCredits = 0;
-    mockCreditsState.baseCredits = 100;
-    mockCreditsState.bonusCredits = 0;
-    mockCreditsState.feedbackBonusGranted = false;
-    mockCreditsState.unlimitedCredits = false;
-    mockCreditsState.canEnforceBalance = true;
-    mockCreditsState.loading = false;
-    mockCreditsState.error = null;
     vi.clearAllMocks();
     mockHttpsCallable.mockImplementation((_: unknown, callableName: string) => {
       if (callableName === 'cancelAiRequest') {
@@ -151,14 +124,5 @@ describe('useImageGenerator', () => {
     expect(mockCancelCallable).toHaveBeenCalledWith({
       requestId: expect.any(String),
     });
-  });
-
-  it('não bloqueia imagem quando o saldo zero ainda não foi confirmado', () => {
-    mockCreditsState.availableCredits = 0;
-    mockCreditsState.canEnforceBalance = false;
-
-    const { result } = renderHook(() => useImageGenerator());
-
-    expect(result.current.creditsExhausted).toBe(false);
   });
 });

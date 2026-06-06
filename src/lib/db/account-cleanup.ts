@@ -74,14 +74,6 @@ export async function deleteAllUserData(userId: string): Promise<string[]> {
     errors.push('configurações');
   }
 
-  // Remove documento de subscription (Stripe) — evita dados órfãos
-  try {
-    await deleteDocument('users', userId, 'subscription', 'current');
-  } catch (error) {
-    log.error('Falha ao deletar subscription', { error });
-    errors.push('subscription');
-  }
-
   // Storage: a limpeza dos Storage objects é feita inline durante a exclusão
   // dos documentos Firestore (deleteProjectsAndSubcollections e deleteCollectionGroup).
   // Diretórios vazios são removidos automaticamente pelo Firebase Storage.
@@ -257,23 +249,12 @@ async function deleteCollectionGroup(
 
 /**
  * Deleta um documento único por ID.
- * Suporta tanto coleção simples quanto subcoleção.
- *
  * Ex: deleteDocument('user_settings', userId)
  *     → user_settings/{userId}
- * Ex: deleteDocument('users', userId, 'subscription', 'current')
- *     → users/{userId}/subscription/current
  */
 async function deleteDocument(
   collectionName: string,
   docId: string,
-  ...subPath: string[]
 ): Promise<void> {
-  if (subPath.length > 0) {
-    // Subcoleção: doc(db, collection, docId, subCollection, subDocId)
-    await deleteDoc(doc(db, collectionName, docId, ...subPath));
-  } else {
-    // Coleção simples
-    await deleteDoc(doc(db, collectionName, docId));
-  }
+  await deleteDoc(doc(db, collectionName, docId));
 }

@@ -74,7 +74,7 @@ describe('i18n — integração com componentes públicos', () => {
       render(<PublicHeader />, { wrapper: Wrapper });
       expect(screen.getAllByText('Home').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Funcionalidades').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Beta').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Open Source').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('FAQ').length).toBeGreaterThanOrEqual(1);
     });
 
@@ -160,7 +160,7 @@ describe('i18n — troca de locale', () => {
       return (
         <>
           <span data-testid="locale">{locale}</span>
-          <span data-testid="text">{t('nav.pricing')}</span>
+          <span data-testid="text">{t('nav.openSource')}</span>
           <button onClick={() => setLocale('es')}>Trocar</button>
         </>
       );
@@ -168,12 +168,12 @@ describe('i18n — troca de locale', () => {
 
     render(<TestComponent />, { wrapper: Wrapper });
 
-    expect(screen.getByTestId('text').textContent).toBe('Beta');
+    expect(screen.getByTestId('text').textContent).toBe('Open Source');
 
     await userEvent.click(screen.getByText('Trocar'));
 
     expect(screen.getByTestId('locale').textContent).toBe('es');
-    expect(screen.getByTestId('text').textContent).toBe('Beta');
+    expect(screen.getByTestId('text').textContent).toBe('Open Source');
   });
 
   it('persiste locale no localStorage', async () => {

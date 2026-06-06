@@ -23,10 +23,7 @@ type OptionalEnvName =
   | 'VITE_FIREBASE_MEASUREMENT_ID'
   | 'VITE_FIREBASE_ANALYTICS_ENABLED'
   | 'VITE_FIREBASE_FIRESTORE_DATABASE_ID'
-  | 'VITE_STRIPE_PUBLISHABLE_KEY'
   | 'VITE_PEXELS_API_KEY'
-  | 'VITE_BILLING_ENABLED'
-  | 'VITE_OPEN_BETA_ENABLED'
   | 'VITE_APP_CHECK_DEBUG_TOKEN'
   | 'VITE_USE_EMULATORS'
   | 'VITE_EMULATOR_AUTH'
@@ -60,22 +57,6 @@ export function getRecaptchaSiteKey(): string | undefined {
 /** Chave da API Pexels (opcional — sem ela, stock media usa placeholder local) */
 export function getPexelsApiKey(): string | undefined {
   return readOptionalEnv('VITE_PEXELS_API_KEY');
-}
-
-/** Chave pública do Stripe (opcional — sem ela, o app funciona no plano Free) */
-export function getStripePublishableKey(): string | undefined {
-  return readOptionalEnv('VITE_STRIPE_PUBLISHABLE_KEY');
-}
-
-/** Modo de operação: billing habilitado (processamento Stripe ativo) */
-export function isBillingEnabled(): boolean {
-  return import.meta.env.VITE_BILLING_ENABLED === 'true';
-}
-
-/** Modo de operação: beta aberto com acesso gratuito */
-export function isOpenBetaEnabled(): boolean {
-  // Se não definida, default true (beta aberto)
-  return (import.meta.env.VITE_OPEN_BETA_ENABLED as string) !== 'false';
 }
 
 /** Token de depuração do App Check (desenvolvimento apenas — nunca em produção) */

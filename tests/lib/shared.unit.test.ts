@@ -29,8 +29,8 @@ describe('db/shared', () => {
       expect(DB_NAME).toBe('GeminiVoiceStudioDB');
     });
 
-    it('DB_VERSION deve ser 10', () => {
-      expect(DB_VERSION).toBe(10);
+    it('DB_VERSION deve ser 11', () => {
+      expect(DB_VERSION).toBe(11);
     });
 
     it('nomes de store devem ser strings não vazias', () => {

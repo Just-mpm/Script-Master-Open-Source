@@ -1,19 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-const mockCreditsState = vi.hoisted(() => ({
-  availableCredits: 100,
-  usedCredits: 0,
-  reservedCredits: 0,
-  baseCredits: 100,
-  bonusCredits: 0,
-  feedbackBonusGranted: false,
-  unlimitedCredits: false,
-  canEnforceBalance: true,
-  loading: false,
-  error: null as string | null,
-}));
-
 // --- Mocks de todas as dependências externas ---
 
 vi.mock('../../src/lib/audio', () => ({
@@ -51,11 +38,8 @@ vi.mock('../../src/lib/db/audio-segments', () => ({
 }));
 
 vi.mock('../../src/lib/env', () => ({
-  getGeminiApiKey: vi.fn().mockReturnValue('test-api-key'),
   getAppCheckDebugToken: vi.fn().mockReturnValue(undefined),
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
-  isBillingEnabled: vi.fn().mockReturnValue(false),
-  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
   isEmulatorEnabled: vi.fn().mockReturnValue(false),
   getActiveEmulators: vi.fn().mockReturnValue([]),
   getFirebaseEnvConfig: vi.fn().mockReturnValue({
@@ -66,7 +50,6 @@ vi.mock('../../src/lib/env', () => ({
     messagingSenderId: '123',
     appId: '1:123:web:abc',
   }),
-  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
   getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -95,25 +78,12 @@ vi.mock('../../src/lib/logger', () => ({
 
 vi.mock('../../src/features/studio/store/studioStore', () => ({}));
 vi.mock('../../src/features/studio/store/studio.utils', () => ({}));
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({ ...mockCreditsState }),
-}));
 
 import { useAudioGenerator } from '../../src/hooks/useAudioGenerator';
 import { useAudioGeneratorStore } from '../../src/features/studio/store';
 
 describe('useAudioGenerator', () => {
   beforeEach(() => {
-    mockCreditsState.availableCredits = 100;
-    mockCreditsState.usedCredits = 0;
-    mockCreditsState.reservedCredits = 0;
-    mockCreditsState.baseCredits = 100;
-    mockCreditsState.bonusCredits = 0;
-    mockCreditsState.feedbackBonusGranted = false;
-    mockCreditsState.unlimitedCredits = false;
-    mockCreditsState.canEnforceBalance = true;
-    mockCreditsState.loading = false;
-    mockCreditsState.error = null;
     // Reseta o store Zustand entre testes
     useAudioGeneratorStore.getState().resetGeneration();
     vi.clearAllMocks();
@@ -277,14 +247,5 @@ describe('useAudioGenerator', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.audioUrl).toBeNull();
     expect(result.current.scenes).toEqual([]);
-  });
-
-  it('não bloqueia geração quando o saldo zero ainda não foi confirmado', () => {
-    mockCreditsState.availableCredits = 0;
-    mockCreditsState.canEnforceBalance = false;
-
-    const { result } = renderHook(() => useAudioGenerator());
-
-    expect(result.current.creditsExhausted).toBe(false);
   });
 });

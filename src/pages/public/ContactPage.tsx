@@ -15,6 +15,7 @@ import SendIcon from '@mui/icons-material/Send';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import XIcon from '@mui/icons-material/X';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import LoginIcon from '@mui/icons-material/Login';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import type { ReactNode } from 'react';
@@ -88,6 +89,11 @@ const SOCIAL_LINKS: readonly SocialLink[] = [
     label: 'Twitter/X',
     href: 'https://x.com/scriptmaster',
     icon: <XIcon aria-hidden="true" />,
+  },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/Just-mpm/Script-Master-Open-Source',
+    icon: <GitHubIcon aria-hidden="true" />,
   },
 ] as const;
 
@@ -452,7 +458,7 @@ export default function ContactPage() {
         title={t('contact.hero.title')}
         subtitle={t('contact.hero.subtitle')}
         primaryCta={{ label: t('contact.hero.cta'), to: '#form' }}
-        secondaryCta={{ label: t('contact.hero.ctaSecondary'), to: '/precos' }}
+        secondaryCta={{ label: t('contact.hero.ctaSecondary'), to: '/open-source' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <EmailIcon aria-hidden="true" sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />
@@ -473,7 +479,7 @@ export default function ContactPage() {
         </Grid>
       </Box>
 
-      {/* ── Seção de Feedback (créditos bônus) ── */}
+      {/* ── Seção de Feedback ── */}
       <Box sx={{ pb: { xs: 8, md: 12 } }}>
         <Box
           sx={(theme) => ({

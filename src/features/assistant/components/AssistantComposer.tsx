@@ -69,7 +69,6 @@ interface AssistantComposerProps {
   pendingFiles: File[];
   isLoading: boolean;
   isThinkActive: boolean;
-  creditsBlocked?: boolean;
   interviewPending?: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   selectedModel: 'fast' | 'specialist';
@@ -106,7 +105,6 @@ function AssistantComposerInner(
     pendingFiles,
     isLoading,
     isThinkActive,
-    creditsBlocked = false,
     interviewPending = false,
     fileInputRef,
     selectedModel,
@@ -192,7 +190,7 @@ function AssistantComposerInner(
     }
   };
 
-  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !creditsBlocked && !interviewPending;
+  const canSend = (input.trim().length > 0 || pendingFiles.length > 0) && !isLoading && !interviewPending;
 
   // Letter animation variants — blur + translateY com spring suave
   const letterVariants = {
@@ -329,7 +327,6 @@ function AssistantComposerInner(
               edge="start"
               aria-label={t('assistant.composer.attachFileAria')}
               size="small"
-              disabled={creditsBlocked}
               sx={{
                 color: TEXT_DISABLED,
                 '&:hover': { color: 'text.secondary', backgroundColor: alpha(WHITE_06, 0.5) },
@@ -382,7 +379,7 @@ function AssistantComposerInner(
                 if (related && wrapperRef.current?.contains(related)) return;
                 setIsFocused(false);
               }}
-              disabled={creditsBlocked || interviewPending }
+              disabled={interviewPending}
               style={{
                 position: 'relative',
                 zIndex: 1,

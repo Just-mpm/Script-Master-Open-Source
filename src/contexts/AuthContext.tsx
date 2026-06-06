@@ -6,10 +6,9 @@ import { DataMigrationDialog } from '../components/DataMigrationDialog';
 import { isMigrationAlreadyHandled } from '../lib/db/migration';
 import { deleteAllUserData } from '../lib/db/account-cleanup';
 import { getUserSettings } from '../lib/db/user-settings';
-import { useBillingInit } from '../features/billing/hooks';
-import { isBillingEnabled } from '../lib/env';
 import type { StudioDraftState } from '../features/studio/types';
 import { useStudioStore } from '../features/studio/store';
+import { useProviderStore } from '../features/provider-settings/store/useProviderStore';
 import { setAnalyticsUserProperties, syncAnalyticsUser, trackAnalyticsEvent } from '../lib/analytics';
 import { authActionCodeSettings } from '../lib/auth-action-settings';
 
@@ -56,6 +55,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function hydrateProviderSettings(uid: string): Promise<void> {
+  await useProviderStore.getState().loadProviderSettings(uid);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,10 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Flag que indica se o login foi disparado ativamente (via popup).
   // Usada para diferenciar login ativo de restauração de sessão.
   const wasLoginRequested = useRef(false);
-
-  // Inicializa billing quando auth estiver pronto (apenas se billing habilitado)
-  const billingEnabled = isBillingEnabled();
-  useBillingInit(billingEnabled ? !loading : false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
@@ -110,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Sessão restaurada: verifica localStorage + Firestore antes de decidir
         if (!onboardingCompleted) {
           try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
-          getUserSettings(authUser.uid).then((settings) => {
+          getUserSettings(authUser.uid).then(async (settings) => {
             const actuallyCompleted = settings && (settings.name || settings.goals?.length);
             if (actuallyCompleted) {
               localStorage.setItem('s2a_onboarding_completed', 'true');
@@ -139,13 +138,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!actuallyCompleted && window.location.pathname !== '/onboarding') {
               window.location.href = '/onboarding';
             } else {
+              await hydrateProviderSettings(authUser.uid);
               setLoading(false);
             }
-          }).catch(() => {
+          }).catch(async () => {
             // Carregar settings falhou — continuar com localStorage
             if (window.location.pathname !== '/onboarding') {
               window.location.href = '/onboarding';
             } else {
+              await hydrateProviderSettings(authUser.uid);
               setLoading(false);
             }
           });
@@ -154,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Onboarding já concluído — carregar settings do estúdio do Firestore antes de liberar a UI
         try { await ensureAppCheck(); } catch { /* App Check falhou — chamadas podem falhar, mas app não trava */ }
-        getUserSettings(authUser.uid).then((settings) => {
+        getUserSettings(authUser.uid).then(async (settings) => {
           if (settings) {
             const studioFields: Record<string, unknown> = {};
             const studioKeys = [
@@ -173,12 +174,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               useStudioStore.getState().loadFromFirestore(studioFields as Partial<StudioDraftState>);
             }
           }
+          await hydrateProviderSettings(authUser.uid);
           setLoading(false);
-        }).catch((err: unknown) => {
+        }).catch(async (err: unknown) => {
           log.warn('Falha ao carregar settings do Firestore — usando localStorage', { error: err });
+          await hydrateProviderSettings(authUser.uid);
           setLoading(false);
         });
       } else {
+        useProviderStore.getState().reset();
         setLoading(false);
       }
 

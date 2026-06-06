@@ -22,6 +22,3 @@ export const OPEN_FEEDBACK_DIALOG_EVENT = 's2a-open-feedback-dialog';
 
 /** Z-index do FAB — entre MobileBottomNav (1200) e ActionBar (1400) */
 export const FEEDBACK_FAB_Z_INDEX = 1250;
-
-/** Valor de bônus de créditos exibido no badge (espelha FEEDBACK_BONUS_CREDITS do backend) */
-export const FEEDBACK_BONUS_DISPLAY = 250;

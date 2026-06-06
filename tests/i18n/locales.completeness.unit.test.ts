@@ -70,7 +70,7 @@ describe('dicionários — chaves obrigatórias por seção', () => {
     'footer',
     'landing',
     'features',
-    'pricing',
+    'openSource',
     'faq',
     'contact',
     'about',
@@ -102,7 +102,7 @@ describe('dicionários — chaves obrigatórias por seção', () => {
 });
 
 describe('dicionários — chaves de navegação completas', () => {
-  const navKeys = ['home', 'features', 'pricing', 'faq', 'about', 'contact', 'login', 'register'];
+  const navKeys = ['home', 'features', 'openSource', 'faq', 'about', 'contact', 'login', 'register'];
 
   for (const key of navKeys) {
     it(`nav.${key} existe em todos os locales`, () => {
@@ -114,7 +114,7 @@ describe('dicionários — chaves de navegação completas', () => {
 });
 
 describe('dicionários — chaves de páginas públicas', () => {
-  const pages = ['landing', 'features', 'pricing', 'faq', 'contact', 'about'];
+  const pages = ['landing', 'features', 'openSource', 'faq', 'contact', 'about'];
 
   for (const page of pages) {
     it(`${page}.hero.title existe em todos os locales`, () => {
@@ -180,11 +180,11 @@ describe('dicionários — valores são strings', () => {
     }
   });
 
-  it('pricing.credits.monthly é preenchido em todos os locales', () => {
+  it('openSource.features.openSource é preenchido em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const value = getNestedValue(
         dictionaries[locale],
-        'pricing.credits.monthly',
+        'openSource.features.openSource',
       );
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
@@ -232,16 +232,16 @@ describe('dicionários — chaves numéricas (FAQ items, feature items, etc.)', 
     }
   });
 
-  it('pricing.credits possui as 3 chaves nos locales', () => {
+  it('openSource.features possui as 3 chaves nos locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(
-        getNestedValue(dictionaries[locale], 'pricing.credits.monthly'),
+        getNestedValue(dictionaries[locale], 'openSource.features.openSource'),
       ).toBeDefined();
       expect(
-        getNestedValue(dictionaries[locale], 'pricing.credits.bonus'),
+        getNestedValue(dictionaries[locale], 'openSource.features.byok'),
       ).toBeDefined();
       expect(
-        getNestedValue(dictionaries[locale], 'pricing.credits.noPayment'),
+        getNestedValue(dictionaries[locale], 'openSource.features.noHiddenFees'),
       ).toBeDefined();
     }
   });

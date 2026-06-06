@@ -12,7 +12,7 @@ import { createLogger } from '../logger';
 const log = createLogger('shared');
 
 export const DB_NAME = 'GeminiVoiceStudioDB';
-export const DB_VERSION = 10;
+export const DB_VERSION = 11;
 
 export const STORE_NAME = 'generations';
 export const IMAGE_STORE = 'image_generations';
@@ -24,6 +24,7 @@ export const CHAT_STORE = 'chats';
 export const SETTING_STORE = 'user_settings';
 export const VIDEOS_STORE = 'videos';
 export const TRANSCRIPTIONS_STORE = 'transcriptions';
+export const PROVIDER_SETTINGS_STORE = 'provider_settings';
 
 // Removido no v0.9.0: EDITING_PLAN_STORE ('editing_plans')
 // Feature de planos de edição foi removida. A store pode existir em bancos antigos
@@ -40,6 +41,7 @@ const STORE_DEFINITIONS = [
   SETTING_STORE,
   VIDEOS_STORE,
   TRANSCRIPTIONS_STORE,
+  PROVIDER_SETTINGS_STORE,
 ] as const;
 
 enum OperationType {

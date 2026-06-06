@@ -1,18 +1,15 @@
 // ---------------------------------------------------------------------------
-// Flow de geração de áudio — TTS com Gemini via Genkit
+// Flow de geração de áudio — TTS com Gemini via Genkit (BYOK)
 // ---------------------------------------------------------------------------
-//
-// Substitui a lógica client-side do useAudioGenerator.ts.
 //
 // Pipeline:
 //   1. Valida autenticação (isSignedIn + App Check)
-//   2. Reserva créditos via withCreditMetering() helper
+//   2. Extrai API key do usuário (BYOK)
 //   3. Divide roteiro em chunks (Gemini ou fallback programático)
 //   4. Gera áudio PCM para cada chunk (gemini-2.5-flash-preview-tts)
 //   5. Concatena PCM, cria header WAV (24kHz mono 16-bit)
 //   6. Se WAV > 8MB: faz upload para Firebase Storage e retorna URL signed
 //      Se WAV ≤ 8MB: retorna base64 diretamente na resposta
-//   7. Confirma ou reverte créditos conforme resultado
 //
 // Protegido por:
 //   - authPolicy: isSignedIn()  → apenas usuários autenticados
@@ -27,16 +24,14 @@ import { getStorage } from 'firebase-admin/storage';
 import { randomUUID } from 'node:crypto';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
-import { AudioInputSchema, AudioOutputSchema } from '../genkit/schemas/common.js';
+import { AudioInputSchema, AudioOutputSchema, ProviderAuthSchema } from '../genkit/schemas/common.js';
 import {
-  calculateCreditCost,
   finishAiRequest,
-  getCreditAvailabilitySnapshot,
   isRequestIdValid,
   startAiRequest,
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import {
   CHUNK_LIMIT,
   PACE_INSTRUCTIONS,
@@ -54,6 +49,11 @@ import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
 import { createLogger } from '../genkit/utils/logger.js';
 
 const log = createLogger('audio');
+
+/** Input schema estendido com providerAuth para BYOK */
+const AudioInputByokSchema = AudioInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
 
 interface AudioSegment {
   text: string;
@@ -91,7 +91,7 @@ const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
  * trailingSentence é sempre computado programaticamente via extractTrailingSentence().
  * Se o Gemini falhar, usa fallback programático com metadados básicos.
  */
-async function chunkScript(script: string, limit: number): Promise<EnrichedChunk[]> {
+async function chunkScript(script: string, limit: number, apiKey: string): Promise<EnrichedChunk[]> {
   if (script.length <= limit) {
     return [{
       text: script,
@@ -105,6 +105,7 @@ async function chunkScript(script: string, limit: number): Promise<EnrichedChunk
       model: CHUNKING_MODEL,
       prompt: buildChunkingInstruction(script, limit),
       config: {
+        ...withApiKey(apiKey),
         temperature: 0,
       },
       output: {
@@ -192,10 +193,6 @@ function createWavBuffer(pcmData: Buffer, sampleRate: number): Buffer {
 }
 
 /**
- * Extrai os dados PCM do Data URL retornado pelo Genkit.
- * O Genkit retorna o áudio como Data URL (data:audio/wav;base64,... ou data:;base64,...).
- */
-/**
  * Extrai bytes PCM de uma Data URL de áudio.
  *
  * O Gemini TTS retorna Data URLs com MIME type multi-parâmetro:
@@ -261,16 +258,12 @@ export const audio = onCallGenkit(
   ai.defineFlow(
     {
       name: 'audio',
-      inputSchema: AudioInputSchema,
+      inputSchema: AudioInputByokSchema,
       outputSchema: AudioOutputSchema,
     },
     async (input, flowContext) => {
       const uid = getCallableUidOrThrow(flowContext);
-
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
+      const apiKey = extractApiKey(input);
 
       const db = getFirestore();
 
@@ -279,61 +272,22 @@ export const audio = onCallGenkit(
         throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
       }
       const requestId = input.requestId ?? randomUUID();
-      const creditSnapshot = await getCreditAvailabilitySnapshot(db, uid);
       let requestStarted = false;
-      let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
-      let creditsSettled = false;
 
       try {
         await startAiRequest(db, uid, requestId, 'audio');
         requestStarted = true;
 
-        if (
-          input.preflight &&
-          !creditSnapshot.unlimitedCredits &&
-          input.preflight.unlimited === false &&
-          creditSnapshot.availableCredits < input.preflight.totalPlanned &&
-          input.preflight.availableCredits >= input.preflight.totalPlanned
-        ) {
-          throw new HttpsError(
-            'failed-precondition',
-            'Seu saldo mudou depois da prévia. Revise a geração antes de continuar.',
-            {
-              code: 'CREDITS_CHANGED_AFTER_PREFLIGHT',
-              currentAvailableCredits: creditSnapshot.availableCredits,
-              expectedAvailableCredits: input.preflight.availableCredits,
-              plannedTotalCredits: input.preflight.totalPlanned,
-            },
-          );
-        }
-
         await throwIfAiCancellationRequested(db, uid, requestId);
 
         // ------------------------------------------------------------------
-        // 1. Reserva créditos via helper withCreditMetering()
-        //
-        // Usa o helper manual em vez do middleware porque o fluxo de áudio
-        // tem múltiplas chamadas internas a ai.generate() (chunking + TTS
-        // por chunk) que NÃO devem disparar metering individual.
-        // ------------------------------------------------------------------
-        creditMeter = await withCreditMetering(
-          db,
-          uid,
-          requestId,
-          'audio',
-          { script: input.script },
-        );
-
-        // ------------------------------------------------------------------
-        // 2. Divide o script em chunks enriquecidos
+        // 1. Divide o script em chunks enriquecidos
         // ------------------------------------------------------------------
         let enrichedChunks: EnrichedChunk[];
         try {
-          enrichedChunks = await chunkScript(input.script, CHUNK_LIMIT);
+          enrichedChunks = await chunkScript(input.script, CHUNK_LIMIT, apiKey);
         } catch (chunkErr) {
           log.error('Falha no chunking', { error: chunkErr instanceof Error ? chunkErr.message : 'desconhecido' });
-          await creditMeter.revert('CHUNKING_FAILED');
-          creditsSettled = true;
           throw new HttpsError(
             'internal',
             'Falha ao dividir o roteiro em partes. Tente novamente.',
@@ -341,7 +295,7 @@ export const audio = onCallGenkit(
         }
         await throwIfAiCancellationRequested(db, uid, requestId);
 
-        // Validação de chunks (Fase 1.4) — log de chunks potencialmente truncados
+        // Validação de chunks — log de chunks potencialmente truncados
         for (let v = 0; v < enrichedChunks.length; v++) {
           if (isTruncatedChunk(enrichedChunks[v].text) && v < enrichedChunks.length - 1) {
             log.warn(
@@ -352,7 +306,7 @@ export const audio = onCallGenkit(
         }
 
         // ------------------------------------------------------------------
-        // 3. Prepara o prompt base (instruções comuns)
+        // 2. Prepara o prompt base (instruções comuns)
         // ------------------------------------------------------------------
         const {
           voiceConfig,
@@ -376,17 +330,17 @@ export const audio = onCallGenkit(
         ? `* ${emotionInstructionText} Intensidade: ${(emotionIntensity * 100).toFixed(0)}%.`
         : '';
 
-      // Audio tags globais (Fase 3.1) — emoção e ritmo mapeados para tags inline
+      // Audio tags globais — emoção e ritmo mapeados para tags inline
       const globalEmotionTag = EMOTION_TO_AUDIO_TAGS[emotion] ?? '';
       const globalPaceTag = PACE_TO_AUDIO_TAG[pace] ?? '';
 
-      // Nome do locutor para Audio Profile estruturado (Fase 5.2)
+      // Nome do locutor para Audio Profile estruturado
       const speakerName = isMultiSpeaker
         ? (multiSpeakerConfig?.speakerAName || 'Speaker A')
         : undefined;
 
         // ------------------------------------------------------------------
-        // 4. Configura speechConfig (single ou multi-speaker)
+        // 3. Configura speechConfig (single ou multi-speaker)
         // ------------------------------------------------------------------
         const speechConfig = isMultiSpeaker
         ? {
@@ -416,7 +370,7 @@ export const audio = onCallGenkit(
           };
 
         // ------------------------------------------------------------------
-        // 5. Gera áudio para cada chunk (com retry e continuidade enriquecida)
+        // 4. Gera áudio para cada chunk (com retry e continuidade enriquecida)
         // ------------------------------------------------------------------
         const pcmBuffers: Buffer[] = [];
         const generatedSegments: AudioSegment[] = [];
@@ -470,7 +424,7 @@ export const audio = onCallGenkit(
         });
 
         // ------------------------------------------------------------------
-        // Retry automático (Fase 4.1)
+        // Retry automático
         // O Gemini TTS ocasionalmente retorna text tokens em vez de audio tokens
         // (erro 500), áudio quase vazio (PCM muito curto) ou silêncio puro.
         // Retry até TTS_MAX_RETRIES vezes antes de falhar.
@@ -492,6 +446,7 @@ export const audio = onCallGenkit(
               model: TTS_MODEL,
               prompt: finalPrompt,
               config: {
+                ...withApiKey(apiKey),
                 speechConfig,
                 responseModalities: ['AUDIO'],
               } as Record<string, unknown>,
@@ -562,9 +517,6 @@ export const audio = onCallGenkit(
 
         if (!pcmBuffer || pcmBuffer.length < MIN_TTS_PCM_BYTES) {
           // Todas as tentativas falharam — sem dados, PCM curto ou corrompido
-          await creditMeter.revert('TTS_CHUNK_FAILED');
-          creditsSettled = true;
-
           throw new HttpsError(
             'internal',
             `Falha ao gerar áudio (parte ${i + 1} de ${enrichedChunks.length}) após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
@@ -575,9 +527,6 @@ export const audio = onCallGenkit(
         // retornar silêncio em TODAS as tentativas. Se passou desapercebido
         // (isLastAttempt = true + break), rejeitamos aqui.
         if (isSilentPcm(pcmBuffer)) {
-          await creditMeter.revert('TTS_SILENT_AUDIO');
-          creditsSettled = true;
-
           throw new HttpsError(
             'internal',
             `Chunk ${i + 1}/${enrichedChunks.length} gerou áudio silencioso após ${TTS_MAX_RETRIES + 1} tentativas. Tente novamente.`,
@@ -598,7 +547,7 @@ export const audio = onCallGenkit(
         }
 
         // ------------------------------------------------------------------
-        // 6. Concatena PCM e cria WAV
+        // 5. Concatena PCM e cria WAV
         // ------------------------------------------------------------------
         const combinedPcm = Buffer.concat(pcmBuffers);
         const wavBuffer = createWavBuffer(combinedPcm, SAMPLE_RATE);
@@ -608,7 +557,7 @@ export const audio = onCallGenkit(
         const durationInSeconds = totalPcmLength / (SAMPLE_RATE * 2); // 2 bytes por amostra (16-bit)
 
       // ------------------------------------------------------------------
-      // 7. Decide entre base64 (resposta direta) ou Storage (URL signed)
+      // 6. Decide entre base64 (resposta direta) ou Storage (URL signed)
       //
       // httpsCallable do Firebase Functions tem limite de ~10MB de resposta.
       // Áudio base64 WAV 24kHz de 5 minutos ≈ 19MB. Para evitar quebrar,
@@ -643,20 +592,6 @@ export const audio = onCallGenkit(
           audioBase64 = wavBuffer.toString('base64');
         }
 
-        // ------------------------------------------------------------------
-        // 8. Confirma créditos com o custo real
-        // ------------------------------------------------------------------
-        const finalCredits = calculateCreditCost({
-          operationType: 'audio',
-          inputChars: input.script.length,
-        });
-
-        await creditMeter.confirm({
-          finalCredits,
-          outputSize: totalPcmLength,
-          model: TTS_MODEL,
-        });
-        creditsSettled = true;
         await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
           log.error('Falha ao finalizar ai_request com sucesso', {
             error: finishError instanceof Error ? finishError.message : 'desconhecido',
@@ -668,7 +603,6 @@ export const audio = onCallGenkit(
           chunks: enrichedChunks.length,
           durationSec: durationInSeconds.toFixed(1),
           pcmBytes: totalPcmLength,
-          credits: finalCredits,
           viaStorage: audioUrl ? 'sim' : 'não',
         });
 
@@ -682,10 +616,6 @@ export const audio = onCallGenkit(
         };
       } catch (error) {
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
-
-        if (creditMeter && !creditsSettled) {
-          await creditMeter.revert(errorCode);
-        }
 
         if (requestStarted) {
           await finishAiRequest(

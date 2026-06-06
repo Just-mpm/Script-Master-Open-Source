@@ -2,47 +2,36 @@ import { describe, expect, it } from 'vitest';
 import {
   getCallableErrorInfo,
   isCallableCancelledError,
-  isCreditCallableError,
 } from '../../src/lib/callable-errors';
 
 describe('callable-errors', () => {
   it('deve ler details no nível principal do erro callable', () => {
     const info = getCallableErrorInfo({
-      code: 'functions/failed-precondition',
-      message: 'Saldo insuficiente',
+      code: 'functions/invalid-argument',
+      message: 'Payload inválido',
       details: {
-        code: 'INSUFFICIENT_CREDITS',
-        availableCredits: 3,
+        code: 'INVALID_PAYLOAD',
+        field: 'script',
       },
     });
 
-    expect(info.firebaseCode).toBe('functions/failed-precondition');
-    expect(info.detailCode).toBe('INSUFFICIENT_CREDITS');
-    expect(info.details?.availableCredits).toBe(3);
+    expect(info.firebaseCode).toBe('functions/invalid-argument');
+    expect(info.detailCode).toBe('INVALID_PAYLOAD');
+    expect(info.details?.field).toBe('script');
   });
 
   it('deve manter compatibilidade defensiva com customData.details', () => {
     const info = getCallableErrorInfo({
-      code: 'functions/failed-precondition',
-      message: 'Saldo insuficiente',
+      code: 'functions/invalid-argument',
+      message: 'Payload inválido',
       customData: {
         details: {
-          code: 'INSUFFICIENT_CREDITS',
+          code: 'INVALID_PAYLOAD',
         },
       },
     });
 
-    expect(info.detailCode).toBe('INSUFFICIENT_CREDITS');
-  });
-
-  it('deve reconhecer erros estruturados de crédito', () => {
-    expect(isCreditCallableError({
-      code: 'functions/failed-precondition',
-      message: 'Saldo insuficiente',
-      details: {
-        code: 'CREDITS_CHANGED_AFTER_PREFLIGHT',
-      },
-    })).toBe(true);
+    expect(info.detailCode).toBe('INVALID_PAYLOAD');
   });
 
   it('deve reconhecer cancelamento estruturado', () => {

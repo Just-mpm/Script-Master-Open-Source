@@ -28,28 +28,6 @@
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "credit_events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "credit_events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "requestId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "credit_events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": [
@@ -119,20 +97,6 @@
         {
           "order": "ASCENDING",
           "queryScope": "COLLECTION_GROUP"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "fieldPath": "stripeCustomerId",
-      "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
         }
       ]
     }

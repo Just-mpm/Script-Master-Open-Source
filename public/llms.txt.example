@@ -1,0 +1,36 @@
+# Script Master
+
+> Ferramenta web open source para transformar roteiros em vídeos para YouTube com narração por IA, cenas, legendas e organização de projetos.
+
+Script Master é open source e gratuito. Usa o modelo BYOK (Bring Your Own Key): você configura sua própria chave de API do Gemini e usa a API pela sua conta Google. O Script Master não cria cobrança própria nem intermedeia consumo. Funciona no navegador.
+
+## Funcionalidades Principais
+
+- [Criar vídeos para YouTube com IA](https://your-domain.com/funcionalidades): roteiro, narração, cenas, legendas e exportação em um fluxo único
+- [Texto para narração](https://your-domain.com/funcionalidades): gere narrações a partir de roteiros longos, com vozes e estilos diferentes
+- [Cenas e imagens](https://your-domain.com/funcionalidades): crie imagens ou organize visuais para acompanhar cada trecho do roteiro
+- [Vídeo montado no navegador](https://your-domain.com/funcionalidades): combine narração, cenas e legendas em um arquivo pronto para publicar
+- [Assistente de criação](https://your-domain.com/funcionalidades): refine ideias, melhore roteiros e organize o plano de produção
+- [Biblioteca de projetos](https://your-domain.com/funcionalidades): mantenha roteiros, áudios, cenas e vídeos salvos e organizados
+
+## Open Source & BYOK
+
+- [Código Aberto](https://github.com/Just-mpm/Script-Master-Open-Source): open source, gratuito e baseado em BYOK com sua própria chave de API do Gemini
+
+## Empresa
+
+- [Sobre](https://your-domain.com/sobre): produto criado pela Koda AI Studio para simplificar a produção de vídeos narrados
+- [Contato](https://your-domain.com/contato): suporte, feedback e contato direto com o time
+
+## Tecnologia
+
+- IA para narração, imagens, assistente e apoio ao roteiro
+- Renderização de vídeo no navegador
+- Firebase para autenticação, armazenamento e backend serverless
+- Interface em pt-BR, en e es
+
+## Optional
+
+- [Termos de Uso](https://your-domain.com/termos)
+- [Política de Privacidade](https://your-domain.com/privacidade)
+- [Cookies](https://your-domain.com/cookies)

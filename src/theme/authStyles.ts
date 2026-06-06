@@ -6,7 +6,7 @@ import {
   TEXT_SECONDARY,
 } from './tokens';
 
-/** TextField com bordas visíveis e focus state premium para dark theme */
+/** TextField com bordas visíveis e focus state refinado para dark theme */
 export const authTextFieldSx: SxProps<Theme> = {
   '& .MuiOutlinedInput-root': {
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',

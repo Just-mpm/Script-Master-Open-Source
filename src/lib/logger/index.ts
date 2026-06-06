@@ -169,8 +169,6 @@ function inferCategory(context: string): LogCategory {
     ctx.includes('db')
   )
     return 'storage';
-  if (ctx.includes('credit') || ctx.includes('billing') || ctx.includes('stripe'))
-    return 'billing';
   if (ctx.includes('analytics')) return 'analytics';
   if (ctx.includes('pwa') || ctx.includes('firebase') || ctx.includes('app-check'))
     return 'infrastructure';

@@ -296,7 +296,7 @@ export const assistantSuggestionChipSx = {
 };
 
 // ─── Attachment Chip ────────────────────────────────────────────
-// Chip de anexo com estilo premium
+// Chip de anexo com estilo refinado
 
 export const assistantAttachmentChipSx = {
   maxWidth: '100%',
@@ -484,7 +484,7 @@ export const assistantComposerControlsSx = {
 };
 
 // ─── Segmented Control (ToggleButtonGroup) ────────────────────
-// Estilo premium para seletores segmentados no header do assistente
+// Estilo refinado para seletores segmentados no header do assistente
 
 export const assistantSegmentedControlSx = (theme: Theme) => ({
   backgroundColor: alpha(theme.palette.common.white, 0.04),

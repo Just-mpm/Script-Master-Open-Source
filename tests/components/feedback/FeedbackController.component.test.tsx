@@ -17,22 +17,9 @@ import { FeedbackController, OPEN_FEEDBACK_DIALOG_EVENT } from '../../../src/com
 
 // Mock do Firebase Functions (usado pelo FeedbackFormFields via httpsCallable)
 vi.mock('firebase/functions', () => ({
-  httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { success: true, bonusGranted: true } })),
+  httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { success: true } })),
   getFunctions: vi.fn(),
   connectFunctionsEmulator: vi.fn(),
-}));
-
-// Mock do useCredits (hook público usado em outros lugares) e do store
-vi.mock('../../../src/hooks/useCredits', () => ({
-  useCredits: () => ({
-    availableCredits: 500,
-    feedbackBonusGranted: false,
-    unlimitedCredits: false,
-    loading: false,
-  }),
-  useCreditsStore: () => ({
-    refreshCredits: vi.fn().mockResolvedValue(undefined),
-  }),
 }));
 
 const darkTheme = createTheme({ palette: { mode: 'dark' } });
@@ -62,7 +49,7 @@ describe('FeedbackController', () => {
       </Wrapper>,
     );
     // Dialog não está aberto → título não deve estar visível
-    expect(screen.queryByText('Sua opinião vale créditos')).toBeNull();
+    expect(screen.queryByText('Sua opinião ajuda o produto')).toBeNull();
   });
 
   it('abre o dialog ao receber o evento OPEN_FEEDBACK_DIALOG_EVENT', async () => {
@@ -80,8 +67,8 @@ describe('FeedbackController', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Dialog do MUI renderiza em um portal
-    expect(screen.getByText('Sua opinião vale créditos')).toBeDefined();
-    expect(screen.getByText('Ganhe 250 créditos bônus')).toBeDefined();
+    expect(screen.getByText('Sua opinião ajuda o produto')).toBeDefined();
+    expect(screen.getByText('Compartilhe uma sugestão rápida')).toBeDefined();
   });
 
   it('repassa o screenContext via event.detail', () => {
@@ -132,7 +119,7 @@ describe('FeedbackController', () => {
     });
 
     // Dialog ainda abre
-    expect(screen.getByText('Sua opinião vale créditos')).toBeDefined();
+    expect(screen.getByText('Sua opinião ajuda o produto')).toBeDefined();
     const screenContextInput = screen.getByLabelText('Tela atual (opcional)') as HTMLInputElement;
     expect(screenContextInput.value).toBe('');
   });
@@ -148,14 +135,14 @@ describe('FeedbackController', () => {
       window.dispatchEvent(new CustomEvent(OPEN_FEEDBACK_DIALOG_EVENT));
     });
 
-    expect(screen.getByText('Sua opinião vale créditos')).toBeDefined();
+    expect(screen.getByText('Sua opinião ajuda o produto')).toBeDefined();
 
     const cancelButton = screen.getByRole('button', { name: /Cancelar/i });
     fireEvent.click(cancelButton);
 
     // Após fechar, título some (Dialog tem animação de saída)
     await waitFor(() => {
-      expect(screen.queryByText('Sua opinião vale créditos')).toBeNull();
+      expect(screen.queryByText('Sua opinião ajuda o produto')).toBeNull();
     });
   });
 
@@ -173,7 +160,7 @@ describe('FeedbackController', () => {
       window.dispatchEvent(new CustomEvent(OPEN_FEEDBACK_DIALOG_EVENT));
     });
 
-    expect(screen.queryByText('Sua opinião vale créditos')).toBeNull();
+    expect(screen.queryByText('Sua opinião ajuda o produto')).toBeNull();
   });
 
   it('renderiza os campos do form dentro do dialog', () => {

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Helpers utilitários compartilhados entre flows e módulos de crédito
+// Helpers utilitários compartilhados entre flows
 // ---------------------------------------------------------------------------
 
 /** Converte valor desconhecido para string de forma segura */

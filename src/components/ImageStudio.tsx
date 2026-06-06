@@ -41,7 +41,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
 import { glassPanelSx, insetPanelSx, searchFieldSx } from '../theme/surfaces';
 import { DeleteConfirmationDialog } from './video-library/DeleteConfirmationDialog';
-import { CreditBlockedMessage } from './CreditBlockedMessage';
 import { StockMediaPicker } from '../features/studio/components/StockMediaPicker';
 import type { StockImage } from '../lib/stockMedia';
 import { downloadStockImage } from '../lib/stockMedia';
@@ -102,7 +101,7 @@ export function ImageStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel, creditsExhausted } = useImageGenerator();
+  const { isGenerating, imageUrl, imageBlob, error, setError, generateImage, handleCancel } = useImageGenerator();
 
   // Carrega imagens salvas na biblioteca
   const loadSavedImages = useCallback(async () => {
@@ -450,7 +449,7 @@ export function ImageStudio() {
                     ) : (
                       <Button
                         onClick={handleGenerate}
-                        disabled={!prompt.trim() || creditsExhausted }
+                        disabled={!prompt.trim() }
                         variant="contained"
                         size="large"
                         startIcon={<Sparkles sx={{ fontSize: ICON_SIZE_MD }} />}
@@ -551,9 +550,8 @@ export function ImageStudio() {
                 )}
               </Box>
 
-              {creditsExhausted ? <CreditBlockedMessage show={true} /> : null }
               {/* GAP-07: Alert de erro migrado para StackedHeader. Texto do erro é o `title` (sem descrição separada). */}
-              {error && !creditsExhausted ? (
+              {error ? (
                 <StackedHeader
                   variant="alert"
                   severity="error"

@@ -1,15 +1,11 @@
 // ---------------------------------------------------------------------------
-// Flow do Assistente Inline — Reescrita de trechos de texto
+// Flow do Assistente Inline — Reescrita de trechos de texto (BYOK)
 // ---------------------------------------------------------------------------
-//
-// Substitui useInlineAssistant.ts do frontend, movendo a reescrita de
-// trechos selecionados do roteiro para o backend via Genkit.
 //
 // Funcionalidades:
 //   - Reescrita inline (expandir, resumir, reescrever) sem streaming
 //   - Contexto completo do roteiro para manter tom e coerência
 //   - Resposta limpa: apenas o trecho reescrito, sem markdown ou explicações
-//   - Gestão transacional de créditos via helper withCreditMetering()
 //
 // Protegido por:
 //   - authPolicy: isSignedIn()  → apenas usuários autenticados
@@ -24,17 +20,17 @@ import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
 import {
   InlineAssistantInputSchema,
   InlineAssistantOutputSchema,
+  ProviderAuthSchema,
   type InlineAssistantInput,
   type InlineAssistantOutput,
 } from '../genkit/schemas/common.js';
 import {
-  calculateCreditCost,
   isRequestIdValid,
   finishAiRequest,
   startAiRequest,
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import {
   buildInlineAssistantInstruction,
   buildCustomPromptBlock,
@@ -51,6 +47,11 @@ import { createLogger } from '../genkit/utils/logger.js';
 // ---------------------------------------------------------------------------
 
 const log = createLogger('inlineAssistant');
+
+/** Input schema estendido com providerAuth para BYOK */
+const InlineAssistantInputByokSchema = InlineAssistantInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -98,16 +99,12 @@ export const inlineAssistant = onCallGenkit(
   ai.defineFlow(
     {
       name: 'inlineAssistant',
-      inputSchema: InlineAssistantInputSchema,
+      inputSchema: InlineAssistantInputByokSchema,
       outputSchema: InlineAssistantOutputSchema,
     },
     async (input: InlineAssistantInput, flowContext): Promise<InlineAssistantOutput> => {
       const uid = getCallableUidOrThrow(flowContext);
-
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
+      const apiKey = extractApiKey(input);
 
       const db = getFirestore();
 
@@ -150,21 +147,10 @@ export const inlineAssistant = onCallGenkit(
       const customPromptBlock = buildCustomPromptBlock(userSettings);
       const userProfileBlock = buildUserProfileBlock(userSettings);
 
-      // -----------------------------------------------------------------------
-      // 2. Reserva créditos via helper withCreditMetering()
-      // -----------------------------------------------------------------------
-
-      const creditMeter = await withCreditMetering(
-        db,
-        uid,
-        requestId,
-        'inline_assistant',
-        { message: input.selectedText },
-      );
       await throwIfAiCancellationRequested(db, uid, requestId);
 
       // -----------------------------------------------------------------------
-      // 3. Geração via instrução em código (sem streaming)
+      // 2. Geração via instrução em código (sem streaming)
       // -----------------------------------------------------------------------
 
       try {
@@ -187,6 +173,7 @@ export const inlineAssistant = onCallGenkit(
           model: resolvedModel,
           prompt: instruction,
           config: {
+            ...withApiKey(apiKey),
             temperature: 0.7,
             ...(thinkingConfig ? { thinkingConfig } : {}),
           },
@@ -202,43 +189,15 @@ export const inlineAssistant = onCallGenkit(
         const rewrittenText = cleanMarkdown(text);
         await throwIfAiCancellationRequested(db, uid, requestId);
 
-        // -------------------------------------------------------------------
-        // 4. Confirma créditos com o custo real
-        // -------------------------------------------------------------------
-
-        const inputChars = input.selectedText.length + (input.fullScript?.length ?? 0) + input.instruction.length;
-        const outputChars = rewrittenText.length;
-
-        const finalCredits = calculateCreditCost({
-          operationType: 'inline_assistant',
-          inputChars,
-          outputChars,
-        });
-
-        await creditMeter.confirm({
-          finalCredits,
-          outputSize: outputChars,
-          model: resolvedModel,
-        });
-
         log.info('Texto reescrito', {
-          uid, requestId, inputChars, outputChars, credits: finalCredits,
+          uid, requestId, inputChars: input.selectedText.length, outputChars: rewrittenText.length,
         });
         await finishAiRequest(db, uid, requestId, 'completed');
 
         return { rewrittenText };
 
       } catch (error) {
-        // -------------------------------------------------------------------
-        // 5. Reverte créditos em caso de erro
-        // -------------------------------------------------------------------
-
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
-
-        // creditMeter pode não existir se o erro aconteceu antes da reserva
-        if (typeof creditMeter !== 'undefined' && creditMeter !== null) {
-          await (creditMeter as { revert: (code: string) => Promise<void> }).revert(errorCode).catch(() => {});
-        }
         const finalStatus = error instanceof HttpsError && error.code === 'cancelled'
           ? 'cancelled'
           : 'failed';

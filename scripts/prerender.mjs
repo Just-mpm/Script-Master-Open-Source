@@ -21,7 +21,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const ROUTES = [
   '/',
   '/funcionalidades',
-  '/precos',
+  '/open-source',
   '/perguntas-frequentes',
   '/contato',
   '/sobre',

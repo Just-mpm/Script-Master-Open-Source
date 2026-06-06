@@ -1,15 +1,11 @@
 // ---------------------------------------------------------------------------
-// Flow do Assistente — Chat principal com streaming
+// Flow do Assistente — Chat principal com streaming (BYOK)
 // ---------------------------------------------------------------------------
-//
-// Substitui useAssistant.ts do frontend, movendo toda a lógica de IA
-// para o backend via Genkit + Cloud Functions.
 //
 // Funcionalidades:
 //   - Chat com streaming de texto (Server-Sent Events)
 //   - Suporte a anexos (imagens e documentos via media data URL)
 //   - Extração de configurações JSON sugeridas (```json)
-//   - Gestão transacional de créditos via helper withCreditMetering()
 //   - Contexto dinâmico: memórias, vozes, ritmos, estado do estúdio
 //
 // Protegido por:
@@ -33,6 +29,7 @@ import {
   GetMemoriesInputSchema,
   GetStudioStateInputSchema,
   InterviewInputSchema,
+  ProviderAuthSchema,
   RespondInputSchema,
   UpdatePlanInputSchema,
   UpdateStudioInputSchema,
@@ -45,13 +42,12 @@ import {
   type RespondInput,
 } from '../genkit/schemas/common.js';
 import {
-  calculateCreditCost,
   finishAiRequest,
   isRequestIdValid,
   startAiRequest,
   throwIfAiCancellationRequested,
 } from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import {
   buildAssistantSystemInstruction,
   buildCustomPromptBlock,
@@ -76,11 +72,14 @@ import {
 // Constantes
 // ---------------------------------------------------------------------------
 
-const TOKEN_CREDIT_RATE = 1000;
-const MAX_HISTORY_MESSAGES_FOR_ESTIMATION = 10;
 const MAX_ASSISTANT_PAYLOAD_CHARS = 20_000_000;
 
 const log = createLogger('assistant');
+
+/** Input schema estendido com providerAuth para BYOK */
+const AssistantInputByokSchema = AssistantInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Middleware de skills — instanciado uma vez na inicialização (não por request)
@@ -96,10 +95,6 @@ const skillsMiddleware = createSkillsMiddleware({
 
 // ---------------------------------------------------------------------------
 // Interrupt de entrevista — registrado uma vez no escopo do módulo.
-// O Node avalia módulos uma única vez por processo, então o `const` no
-// escopo do módulo já garante inicialização única (não há risco de
-// re-registro no Genkit registry em invocações subsequentes da mesma
-// instância da Cloud Function).
 // ---------------------------------------------------------------------------
 
 const interviewInterrupt = ai.defineInterrupt({
@@ -124,7 +119,6 @@ const interviewInterrupt = ai.defineInterrupt({
  * Procura por ```json ... ``` e retorna o objeto parseado.
  */
 function extractJsonSettings(text: string): Record<string, unknown> | undefined {
-  // Regex para capturar bloco ```json ... ```
   const jsonBlockRegex = /```json\s*([\s\S]*?)```/i;
   const match = jsonBlockRegex.exec(text);
 
@@ -134,13 +128,11 @@ function extractJsonSettings(text: string): Record<string, unknown> | undefined 
 
   try {
     const parsed = JSON.parse(match[1].trim());
-    // Garante que o resultado é um objeto válido (não array, não primitivo)
     if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
     return undefined;
   } catch (err: unknown) {
-    // JSON inválido — ignora silenciosamente
     log.warn('JSON inválido ao extrair settings do assistente', { error: String(err) });
     return undefined;
   }
@@ -148,31 +140,9 @@ function extractJsonSettings(text: string): Record<string, unknown> | undefined 
 
 /**
  * Remove o bloco ```json ... ``` do texto antes de retornar ao frontend.
- * Evita que o usuário veja JSON cru na mensagem do assistente.
  */
 function stripJsonSettingsBlock(text: string): string {
   return text.replace(/```json\s*[\s\S]*?```\s*/gi, '').trim();
-}
-
-function buildMeteringHistoryText(input: AssistantInput): string {
-  // Trunca histórico para estimativa — últimas N mensagens são suficientes
-  const history = input.history ?? [];
-  const truncated = history.slice(-MAX_HISTORY_MESSAGES_FOR_ESTIMATION);
-
-  return JSON.stringify(
-    truncated.map((message) => ({
-      role: message.role,
-      text: message.text,
-      attachments: (message.attachments ?? []).map((attachment) => ({
-        mimeType: attachment.mimeType,
-        name: attachment.name ?? '',
-      })),
-    })),
-  );
-}
-
-function buildMeteringMessagesText(messages: AssistantHistoryMessage[]): string {
-  return JSON.stringify(messages.slice(-MAX_HISTORY_MESSAGES_FOR_ESTIMATION));
 }
 
 function appendContextSummary(systemInstruction: string, contextSummary: string): string {
@@ -251,22 +221,6 @@ function getChunkParts(chunk: unknown): unknown[] {
   return Array.isArray(content) ? content : [];
 }
 
-function calculateAssistantCreditsFromUsage(
-  totalTokens: number | undefined,
-  inputChars: number,
-  outputChars: number,
-): number {
-  if (typeof totalTokens === 'number' && Number.isFinite(totalTokens) && totalTokens > 0) {
-    return Math.max(1, Math.ceil(totalTokens / TOKEN_CREDIT_RATE));
-  }
-
-  return calculateCreditCost({
-    operationType: 'assistant',
-    inputChars,
-    outputChars,
-  });
-}
-
 function assertAssistantPayloadSize(input: AssistantInput): void {
   if (JSON.stringify(input).length > MAX_ASSISTANT_PAYLOAD_CHARS) {
     throw new HttpsError('invalid-argument', 'Payload do assistente excede o limite permitido.');
@@ -288,19 +242,15 @@ export const assistant = onCallGenkit(
   ai.defineFlow(
     {
       name: 'assistant',
-      inputSchema: AssistantInputSchema,
+      inputSchema: AssistantInputByokSchema,
       outputSchema: AssistantOutputSchema,
       streamSchema: AssistantStreamSchema,
     },
     async (input: AssistantInput, flowContext): Promise<AssistantOutput> => {
       const uid = getCallableUidOrThrow(flowContext);
       const { sendChunk } = flowContext;
+      const apiKey = extractApiKey(input);
       assertAssistantPayloadSize(input);
-
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
 
       const db = getFirestore();
 
@@ -311,8 +261,6 @@ export const assistant = onCallGenkit(
       const requestId = input.requestId || crypto.randomUUID();
       let requestStarted = false;
       let requestFinished = false;
-      let creditsSettled = false;
-      let creditMeter: Awaited<ReturnType<typeof withCreditMetering>> | null = null;
 
       try {
         await startAiRequest(db, uid, requestId, 'assistant');
@@ -355,21 +303,7 @@ export const assistant = onCallGenkit(
         const studioBlock = buildStudioBlock(input.studioState ?? undefined);
 
         // -----------------------------------------------------------------------
-        // 2. Reserva créditos via helper withCreditMetering()
-        // -----------------------------------------------------------------------
-
-        let historyText = buildMeteringHistoryText(input);
-
-        creditMeter = await withCreditMetering(
-          db,
-          uid,
-          requestId,
-          'assistant',
-          { message: input.message, history: historyText },
-        );
-
-        // -----------------------------------------------------------------------
-        // 3. Constrói mensagens para o modelo
+        // 2. Constrói mensagens para o modelo
         // -----------------------------------------------------------------------
 
         // Converte anexos para o formato canônico de mídia do Genkit.
@@ -402,8 +336,6 @@ export const assistant = onCallGenkit(
         // de retomada usando a API oficial do Genkit (preserva thought signatures)
         let genkitResume: ReturnType<typeof interviewInterrupt.respond> | undefined;
         if (input.resume && input.interruptToolRequest) {
-          // Constrói a resposta do interrupt usando o helper do Genkit
-          // Isso garante que o function call ID e thought signatures sejam preservados
           const outputData = input.resume.answers && input.resume.answers.length > 0
             ? {
                 status: 'awaiting_input' as const,
@@ -431,11 +363,7 @@ export const assistant = onCallGenkit(
           ],
         };
 
-        // Base do histórico: fullHistory (com tool context preservado) ou history simplificado (backward compat)
-        // Filtra mensagens 'system' do fullHistory pois o system instruction é passado
-        // separadamente via parâmetro 'system' no generateStream — o Genkit inclui a mensagem
-        // de sistema no response.messages, e sem filtrar ela duplica causando erro no Gemini:
-        // "system role is only supported for a single message in the first position"
+        // Base do histórico: fullHistory (com tool context preservado) ou history simplificado
         let historyBase: AssistantHistoryMessage[] = (input.fullHistory && input.fullHistory.length > 0)
           ? input.fullHistory.filter((msg: { role?: string }) => msg.role !== 'system')
           : historyMessages;
@@ -443,7 +371,7 @@ export const assistant = onCallGenkit(
         let messages: AssistantHistoryMessage[] = [...historyBase, currentMessage];
 
         // -----------------------------------------------------------------------
-        // 4. Geração com streaming via instrução em código
+        // 3. Geração com streaming via instrução em código
         // -----------------------------------------------------------------------
 
         const baseSystemInstruction = buildAssistantSystemInstruction({
@@ -473,9 +401,7 @@ export const assistant = onCallGenkit(
 
         /**
          * Yield para o event loop do Node.js — força o flush do buffer HTTP
-         * entre chunks de streaming. Sem isso, múltiplos sendChunk() em
-         * sequência rápida (tool_call → tool_result → texto) são agrupados
-         * pelo runtime e entregues ao cliente como um único bloco.
+         * entre chunks de streaming.
          */
         const forceFlush = () => new Promise<void>((resolve) => setImmediate(resolve));
 
@@ -508,6 +434,9 @@ export const assistant = onCallGenkit(
                 const response = await ai.generate({
                   model: MODEL_FAST,
                   prompt,
+                  config: {
+                    ...withApiKey(apiKey),
+                  },
                 });
                 return {
                   text: response.text,
@@ -552,17 +481,10 @@ export const assistant = onCallGenkit(
         }
 
         messages = [...historyBase, currentMessage];
-        historyText = buildMeteringMessagesText(messages);
         const systemInstruction = appendContextSummary(baseSystemInstruction, contextSummary);
 
         // -----------------------------------------------------------------
         // Middleware de recovery — captura ValidationErrors do Genkit
-        // -----------------------------------------------------------------
-        // O Genkit valida o inputSchema ANTES de executar o handler.
-        // Se falhar, lança ValidationError e quebra o stream.
-        // Este middleware intercepta TODAS as tools (dynamicTools,
-        // interrupts, skills) e converte ValidationErrors em
-        // toolResponse amigável — o modelo autocorrige no próximo turno.
         // -----------------------------------------------------------------
 
         const toolValidationRecovery = generateMiddleware(
@@ -572,15 +494,12 @@ export const assistant = onCallGenkit(
               try {
                 return await next(req, ctx);
               } catch (err: unknown) {
-                // Re-lança signal de interrupt — o Genkit captura ToolInterruptError
-                // internamente para pausar o loop e retornar response.interrupts.
-                // Se engolirmos aqui, o interrupt nunca é processado.
-                // Dupla verificação espelhando resolve-tool-requests do Genkit.
+                // Re-lança signal de interrupt
                 if (err instanceof ToolInterruptError || (err instanceof Error && err.name === 'ToolInterruptError')) {
                   throw err;
                 }
 
-                // Re-lança cancelamento do usuário — deve propagar para abortar o flow
+                // Re-lança cancelamento do usuário
                 if (err instanceof HttpsError && err.code === 'cancelled') {
                   throw err;
                 }
@@ -594,7 +513,6 @@ export const assistant = onCallGenkit(
                   const toolName = req.toolRequest?.name ?? 'unknown';
                   const rawMessage = err instanceof Error ? err.message : 'Input inválido';
 
-                  // Extrai só as linhas relevantes do erro (parse errors)
                   const parseErrors = rawMessage.split('\n')
                     .filter((line: string) => line.trim().startsWith('-') || line.trim().startsWith('•'))
                     .map((line: string) => `• ${line.trim().replace(/^[-•]\s*/, '')}`)
@@ -617,7 +535,7 @@ export const assistant = onCallGenkit(
                   };
                 }
 
-                // Outros erros de runtime nas tools — converte para resultado amigável
+                // Outros erros de runtime nas tools
                 const toolName = req.toolRequest?.name ?? 'unknown';
                 const message = err instanceof Error ? err.message.slice(0, 300) : 'Erro desconhecido';
                 log.warn(`Tool ${toolName} falhou em runtime — modelo receberá erro como resultado`, { error: message });
@@ -756,6 +674,7 @@ export const assistant = onCallGenkit(
             model: resolvedModel,
             prompt: `Pesquise e resuma objetivamente, com foco em fontes verificáveis: ${toolInput.query}`,
             config: {
+              ...withApiKey(apiKey),
               googleSearchRetrieval: {},
             },
           });
@@ -787,7 +706,10 @@ export const assistant = onCallGenkit(
             use: [toolValidationRecovery(), skillsMiddleware()],
             maxTurns: 20,
             resume: genkitResume,
-            config: thinkingConfig ? { thinkingConfig } : undefined,
+            config: {
+              ...(thinkingConfig ? { thinkingConfig } : {}),
+              ...withApiKey(apiKey),
+            },
           });
 
           // Itera sobre chunks de texto e metadados de tools do modelo
@@ -820,8 +742,6 @@ export const assistant = onCallGenkit(
                   sendChunk(chunkText);
                   await forceFlush();
                 } catch (err: unknown) {
-                  // Cliente desconectou — aborta o streaming localmente,
-                  // mas confirma créditos parciais pelo texto já gerado
                   sendFailed = true;
                   log.warn('sendChunk falhou — cliente pode ter desconectado', { error: String(err) });
                   break;
@@ -832,40 +752,10 @@ export const assistant = onCallGenkit(
             if (sendFailed) break;
           }
 
-          // Se cliente desconectou durante o streaming, confirma custo parcial
+          // Se cliente desconectou durante o streaming
           if (sendFailed) {
-            // Aborta o stream pendente (não bloqueia)
             streamResponse.catch(() => {});
 
-            if (fullText.length > 0) {
-              const messageChars = input.message.length;
-              const historyChars = historyText.length;
-              const outputChars = fullText.length;
-
-              const partialCredits = calculateCreditCost({
-                operationType: 'assistant',
-                inputChars: messageChars + historyChars,
-                outputChars,
-              });
-
-              await creditMeter.confirm({
-                finalCredits: partialCredits,
-                outputSize: outputChars,
-                model: resolvedModel,
-              });
-              creditsSettled = true;
-
-              log.info('Streaming abortado por desconexão do cliente', {
-                uid, requestId, chars: outputChars, credits: partialCredits,
-              });
-            } else {
-              // Nada foi gerado — reverte reserva
-              await creditMeter.revert('CLIENT_DISCONNECTED');
-              creditsSettled = true;
-            }
-
-            // Retorna o texto parcial (cliente já desconectado, mas mantém consistência)
-            const jsonSettings = extractJsonSettings(fullText);
             await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
               log.error('Falha ao finalizar ai_request após desconexão', {
                 error: finishError instanceof Error ? finishError.message : 'desconhecido',
@@ -874,7 +764,7 @@ export const assistant = onCallGenkit(
             requestFinished = true;
             return {
               text: stripJsonSettingsBlock(fullText),
-              jsonSettings,
+              jsonSettings: extractJsonSettings(fullText),
               plan: currentPlan,
               appliedSettings: pendingStudioSettings,
               interview: undefined,
@@ -893,39 +783,16 @@ export const assistant = onCallGenkit(
           const interrupts = response.interrupts ?? [];
 
           if (interrupts.length > 0) {
-            // O Genkit preservou automaticamente o contexto em response.messages
-            // (incluindo thought signatures e function call IDs do Gemini 3)
             const interrupt = interrupts[0];
-            // ToolRequestPart: { toolRequest: { name, ref?, input? }, metadata?, ... }
             const interruptToolReq = (interrupt as { toolRequest?: { name?: string; ref?: string; input?: unknown } }).toolRequest;
             const interruptInput = interruptToolReq?.input as InterviewInput | undefined;
 
             // Emite metadado para o frontend
             await sendMetaChunk('interview', { interview: interruptInput });
 
-            // Confirma créditos pelo texto gerado até agora (se houver)
-            if (fullText.length > 0) {
-              const partialCredits = calculateCreditCost({
-                operationType: 'assistant',
-                inputChars: input.message.length + historyText.length,
-                outputChars: fullText.length,
-              });
-              await creditMeter.confirm({
-                finalCredits: partialCredits,
-                outputSize: fullText.length,
-                model: resolvedModel,
-              });
-              creditsSettled = true;
-            } else {
-              await creditMeter.revert('INTERVIEW_INTERRUPT');
-              creditsSettled = true;
-            }
-
             await finishAiRequest(db, uid, requestId, 'completed').catch(() => {});
             requestFinished = true;
 
-            // Retorna com response.messages — preserva tool context completo
-            // incluindo a mensagem original do usuário, thought signatures, etc.
             const sanitizedInterruptHistory = sanitizeHistoryAttachments(
               response.messages as AssistantHistoryMessage[],
             );
@@ -943,34 +810,13 @@ export const assistant = onCallGenkit(
           }
 
           // -------------------------------------------------------------------
-          // 5. Extrai configurações JSON da resposta
+          // 4. Extrai configurações JSON da resposta
           // -------------------------------------------------------------------
 
           const jsonSettings = extractJsonSettings(fullText);
 
-          // -------------------------------------------------------------------
-          // 6. Confirma créditos com o custo real
-          // -------------------------------------------------------------------
-
-          const messageChars = input.message.length;
-          const historyChars = historyText.length;
-          const outputChars = fullText.length;
-
-          const finalCredits = calculateAssistantCreditsFromUsage(
-            response.usage?.totalTokens,
-            messageChars + historyChars,
-            outputChars,
-          );
-
-          await creditMeter.confirm({
-            finalCredits,
-            outputSize: outputChars,
-            model: resolvedModel,
-          });
-          creditsSettled = true;
-
           log.info('Resposta gerada', {
-            uid, requestId, chars: outputChars, credits: finalCredits,
+            uid, requestId, chars: fullText.length,
           });
 
           await finishAiRequest(db, uid, requestId, 'completed').catch((finishError: unknown) => {
@@ -996,16 +842,8 @@ export const assistant = onCallGenkit(
           };
 
         } catch (error) {
-          // -------------------------------------------------------------------
-          // 7. Reverte créditos em caso de erro
-          // -------------------------------------------------------------------
-
           const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
 
-          if (!creditsSettled) {
-            await creditMeter.revert(errorCode);
-            creditsSettled = true;
-          }
           await finishAiRequest(
             db,
             uid,
@@ -1025,10 +863,6 @@ export const assistant = onCallGenkit(
         }
       } catch (error) {
         const errorCode = error instanceof Error ? error.message.slice(0, 200) : 'erro_desconhecido';
-
-        if (creditMeter && !creditsSettled) {
-          await creditMeter.revert(errorCode);
-        }
 
         if (requestStarted && !requestFinished) {
           await finishAiRequest(

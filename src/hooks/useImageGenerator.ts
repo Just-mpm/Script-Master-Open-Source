@@ -5,9 +5,9 @@ import { removeUndefinedFields } from '../lib/callable-utils';
 import { base64ToBlob } from '../lib/audio';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
-import { isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
-import { useCredits } from './useCredits';
+import { isCallableCancelledError } from '../lib/callable-errors';
 import { categorizeAnalyticsError, getSizeBucket, trackAnalyticsEvent } from '../lib/analytics';
+import { getProviderAuthFromStore } from '../features/provider-settings';
 
 const log = createLogger('useImageGenerator');
 
@@ -32,10 +32,6 @@ const toUserFriendlyImageError = createErrorMapper({
       match: (m) => m.includes('safety') || m.includes('blocked'),
       message: 'Conteúdo bloqueado por filtros de segurança. Altere o prompt e tente novamente.',
     },
-    {
-      match: (m) => m.includes('saldo') || m.includes('crédito'),
-      message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
-    },
   ],
 });
 
@@ -55,6 +51,7 @@ interface ImagesFlowInput {
   aspectRatio: string;
   referenceImage?: string;
   requestId: string;
+  providerAuth: { provider: 'gemini'; apiKey: string };
 }
 
 interface ImagesFlowOutput {
@@ -69,12 +66,10 @@ interface ImagesFlowOutput {
 const CANCEL_ERROR_MESSAGE = 'Geração cancelada pelo usuário.';
 
 export function useImageGenerator() {
-  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [creditsExhausted, setCreditsExhausted] = useState(false);
 
   // Referência para revogar blob URL anterior (tech #6)
   const imageUrlRef = useRef<string | null>(null);
@@ -111,14 +106,6 @@ export function useImageGenerator() {
     };
   }, [cancelAiRequestCallable]);
 
-  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
-
-  useEffect(() => {
-    if (!isCreditBlocked) {
-      setCreditsExhausted(false);
-    }
-  }, [isCreditBlocked]);
-
   const generateImage = async (options: ImageGenerationOptions) => {
     const analyticsParams = {
       size_bucket: getSizeBucket(options.prompt.length),
@@ -129,7 +116,6 @@ export function useImageGenerator() {
     cancelRef.current = false;
     setIsGenerating(true);
     setError(null);
-    setCreditsExhausted(false);
 
     // Revoga blob URL anterior antes de gerar nova imagem
     if (imageUrlRef.current) {
@@ -157,6 +143,11 @@ export function useImageGenerator() {
 
       if (cancelRef.current) throw new Error(CANCEL_ERROR_MESSAGE);
 
+      const providerAuth = getProviderAuthFromStore();
+      if (!providerAuth) {
+        throw new Error('Configure sua chave de API do Gemini nas configurações.');
+      }
+
       const callable = httpsCallable<ImagesFlowInput, ImagesFlowOutput>(functions, 'images');
       const requestId = crypto.randomUUID();
       activeRequestIdRef.current = requestId;
@@ -166,6 +157,7 @@ export function useImageGenerator() {
         aspectRatio: options.aspectRatio,
         referenceImage: referenceBase64,
         requestId,
+        providerAuth,
       }));
 
       if (cancelRef.current) {
@@ -200,9 +192,6 @@ export function useImageGenerator() {
         error_category: categorizeAnalyticsError(err),
       });
       const friendlyMessage = toUserFriendlyImageError(err);
-      if (isCreditCallableError(err) || friendlyMessage.includes('crédito') || friendlyMessage.includes('saldo')) {
-        setCreditsExhausted(true);
-      }
       setError(friendlyMessage);
       // Auto-dismiss após 8 segundos (UX-3)
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -245,6 +234,5 @@ export function useImageGenerator() {
     generateImage,
     handleCancel,
     clearImage,
-    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

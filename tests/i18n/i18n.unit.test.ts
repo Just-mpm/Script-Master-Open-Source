@@ -175,7 +175,7 @@ describe('dicionários', () => {
   it('possui chaves de navegação em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(getNestedValue(dictionaries[locale], 'nav.features')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'nav.pricing')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'nav.openSource')).toBeDefined();
       expect(getNestedValue(dictionaries[locale], 'nav.faq')).toBeDefined();
     }
   });
@@ -188,11 +188,11 @@ describe('dicionários', () => {
     }
   });
 
-  it('possui chaves de pricing em todos os locales', () => {
+  it('possui chaves de openSource em todos os locales', () => {
     for (const locale of SUPPORTED_LOCALES) {
-      expect(getNestedValue(dictionaries[locale], 'pricing.hero.title')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'pricing.credits.monthly')).toBeDefined();
-      expect(getNestedValue(dictionaries[locale], 'pricing.howItWorks.step1Title')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'openSource.hero.title')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'openSource.features.openSource')).toBeDefined();
+      expect(getNestedValue(dictionaries[locale], 'openSource.howItWorks.step1Title')).toBeDefined();
     }
   });
 

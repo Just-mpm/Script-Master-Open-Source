@@ -12,7 +12,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { useInlineAssistant } from '../../../hooks/useInlineAssistant';
 import { useLocale } from '../../i18n';
-import { CreditBlockedMessage } from '../../../components/CreditBlockedMessage';
+
 import { BRAND_PRIMARY, BRAND_PRIMARY_GLOW, RADIUS_SM, RADIUS_XS } from '../../../theme/tokens';
 import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -54,7 +54,7 @@ export function InlineAIWidget({
   onRegisterForceOpen,
 }: InlineAIWidgetProps) {
   const { t } = useLocale();
-  const { isProcessing, rewrite, stopProcessing, creditsExhausted } = useInlineAssistant();
+  const { isProcessing, rewrite, stopProcessing } = useInlineAssistant();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -327,8 +327,6 @@ export function InlineAIWidget({
 
   return (
     <>
-      <CreditBlockedMessage show={creditsExhausted} />
-
       {/* Popover de Input da IA — ancorado via Virtual Element nas coordenadas do mouse */}
       <Popover
         open={isPopoverOpen}

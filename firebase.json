@@ -9,7 +9,8 @@
     "cleanUrls": true,
     "redirects": [
       { "source": "/features", "destination": "/funcionalidades", "type": 301 },
-      { "source": "/pricing", "destination": "/precos", "type": 301 },
+      { "source": "/pricing", "destination": "/open-source", "type": 301 },
+      { "source": "/precos", "destination": "/open-source", "type": 301 },
       { "source": "/faq", "destination": "/perguntas-frequentes", "type": 301 },
       { "source": "/contact", "destination": "/contato", "type": 301 },
       { "source": "/about", "destination": "/sobre", "type": 301 },

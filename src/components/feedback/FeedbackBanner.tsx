@@ -1,20 +1,17 @@
 /**
- * FeedbackBanner — banner inline para destacar o bônus de feedback.
+ * FeedbackBanner — banner inline para destacar o feedback.
  *
- * Renderizado dentro do Assistant (acima das mensagens), aparece enquanto
- * o usuário NÃO tiver recebido o bônus de 250 créditos. Some automaticamente
- * quando `feedbackBonusGranted === true` (via listener do useCredits).
+ * Renderizado dentro do Assistant (acima das mensagens), aparece para
+ * usuários autenticados. Funciona como lembrete permanente.
  *
  * Visual: StackedHeader variant="alert" severity="success" com ícone
- * `RateReview` e botão de ação. Cor de destaque: secondary (laranja) para
- * alinhar com o conceito de bônus.
+ * `RateReview` e botão de ação.
  */
 import { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCredits } from '../../hooks/useCredits';
 import { useLocale } from '../../features/i18n';
 import { useFeedbackDialog } from './useFeedbackDialog';
 import { StackedHeader } from '../ui';
@@ -27,11 +24,10 @@ export interface FeedbackBannerProps {
 
 /**
  * Banner de feedback para o topo do Assistant.
- * Aparece condicionalmente baseado em auth + bônus não concedido.
+ * Aparece para usuários autenticados.
  */
 export function FeedbackBanner({ screenContext = '/app/assistente' }: FeedbackBannerProps) {
   const { user } = useAuth();
-  const { feedbackBonusGranted, feedbackPromoSeen, unlimitedCredits } = useCredits();
   const { t } = useLocale();
   const openFeedback = useFeedbackDialog();
 
@@ -39,8 +35,7 @@ export function FeedbackBanner({ screenContext = '/app/assistente' }: FeedbackBa
     openFeedback(screenContext);
   }, [openFeedback, screenContext]);
 
-  // Só mostra se: autenticado + sem bônus + sem créditos ilimitados + já zerou créditos (promo seen)
-  if (!user || feedbackBonusGranted || unlimitedCredits || !feedbackPromoSeen) return null;
+  if (!user) return null;
 
   return (
     <Box sx={{ px: { xs: 2, md: 3 }, pt: 1.5 }}>

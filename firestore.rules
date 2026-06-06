@@ -252,35 +252,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && userId == request.auth.uid;
       allow write: if isAdmin();
-
-      match /subscription/{docId} {
-        allow read: if isAuthenticated() && userId == request.auth.uid;
-        allow write: if isAdmin();
-      }
-
-      // Beta Access — resumo do acesso beta do usuário
-      match /beta_access/{docId} {
-        allow read: if isAuthenticated() && userId == request.auth.uid;
-        allow write: if isAdmin();
-      }
-
-      // Credit Months — agregador mensal de créditos
-      match /credit_months/{docId} {
-        allow read: if isAuthenticated() && userId == request.auth.uid;
-        allow write: if isAdmin();
-      }
-
-      // Credit Events — log de auditoria de consumo de créditos
-      match /credit_events/{docId} {
-        allow read: if isAuthenticated() && userId == request.auth.uid;
-        allow write: if isAdmin();
-      }
-
-      // Feedback Rewards — garantia de bônus único por usuário
-      match /feedback_rewards/{docId} {
-        allow read: if isAuthenticated() && userId == request.auth.uid;
-        allow write: if isAdmin();
-      }
     }
   }
 }

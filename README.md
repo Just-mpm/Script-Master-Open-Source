@@ -1,146 +1,154 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Script Master
 
-Script Master é uma SPA em **React + Vite** para transformar roteiros em áudio com **Gemini TTS**, com geração opcional de imagens/cenas, biblioteca de projetos e um assistente conversacional.
+Script Master e uma SPA open source para transformar roteiros em audio, cenas, imagens e videos com IA. O modelo de uso e **BYOK (Bring Your Own Key)**: cada usuario configura a propria chave do Gemini no app e paga o consumo diretamente ao Google.
+
+O projeto nao tem Stripe, planos pagos, creditos internos ou billing. As chamadas de IA passam por Firebase Cloud Functions/Genkit, recebendo a chave do usuario no payload `providerAuth`.
 
 ## Stack
 
-- React 19
-- Vite
-- MUI v7
-- Firebase Auth + Firestore + Storage
-- IndexedDB local para modo anônimo
-- `@google/genai` no cliente
+- React 19 + Vite 8
+- MUI v9
+- Firebase Auth, Firestore, Storage, Hosting, App Check e Cloud Functions v2
+- Genkit + Gemini
+- Remotion 4 para renderizacao de video no cliente
+- Zustand, Motion, Vitest e Testing Library
 
-## Rodar localmente
+## Como o BYOK funciona
 
-Pré-requisitos:
+- A chave Gemini e salva apenas no IndexedDB do navegador, escopada pelo `uid`.
+- A chave nao e salva no Firestore, nao vai para `localStorage` e nao fica no bundle.
+- Em cada geracao, o frontend envia `providerAuth: { provider: 'gemini', apiKey }` para a callable Function.
+- O backend usa `googleAI({ apiKey: false })` e injeta a chave por chamada com `config: { apiKey }`.
+
+## Requisitos
 
 - Bun
-- Firebase CLI (apenas para deploy)
+- Node.js 24
+- Firebase CLI
+- Um projeto Firebase com Auth, Firestore, Storage, Hosting, Functions e App Check configurados
+- Uma chave Gemini criada pelo usuario em [Google AI Studio](https://aistudio.google.com)
 
-### 1. Instale as dependências
+## Setup local
+
+Instale as dependencias do frontend:
 
 ```bash
 bun install
 ```
 
-### 2. Configure o ambiente
+Instale as dependencias das Functions:
 
-Copie `.env.example` para `.env.local` e preencha as variáveis:
+```bash
+cd functions
+npm install
+cd ..
+```
 
-- `VITE_GEMINI_API_KEY`
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-- `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
-- `VITE_FIREBASE_ANALYTICS_ENABLED` (opcional; padrão ativo somente em produção)
-- `VITE_FIREBASE_FIRESTORE_DATABASE_ID` (opcional)
+Copie os exemplos de ambiente:
 
-### 3. Inicie o projeto
+```bash
+cp .firebaserc.example .firebaserc
+cp cors.json.example cors.json
+cp .env.example .env.local
+cp functions/.env.example functions/.env
+cp public/robots.txt.example public/robots.txt
+cp public/sitemap.xml.example public/sitemap.xml
+cp public/llms.txt.example public/llms.txt
+cp public/llms-full.txt.example public/llms-full.txt
+```
+
+Preencha `.env.local` com as variaveis publicas do Firebase Web SDK e `.firebaserc` com o ID do seu projeto Firebase. Nao crie variavel Gemini no frontend: a chave Gemini e configurada pelo usuario dentro do app.
+
+## App Check
+
+As callable Functions usam `enforceAppCheck: true`. Para desenvolvimento local voce tem duas opcoes:
+
+- Usar emuladores (`VITE_USE_EMULATORS=true` e flags `VITE_EMULATOR_*`).
+- Usar backend real com um debug token registrado no Firebase Console e definido localmente em `VITE_APP_CHECK_DEBUG_TOKEN`.
+
+Nunca commite um debug token real. Em producao, configure `VITE_RECAPTCHA_SITE_KEY` com uma chave reCAPTCHA v3 autorizada para o seu dominio.
+
+## CORS para forks
+
+As Functions aceitam localhost e os dominios padrao do Firebase Hosting do proprio projeto (`<project-id>.web.app` e `<project-id>.firebaseapp.com`). Para dominio customizado, defina em `functions/.env`:
+
+```bash
+APP_CORS_ORIGINS=https://seu-dominio.com,https://seu-projeto.web.app,http://localhost:3000
+```
+
+## Rodar
+
+Frontend:
 
 ```bash
 bun run dev
 ```
 
-O app roda em:
-
-- `http://localhost:3000`
-
-Em produção, o domínio oficial é `https://script-master.pro`. Se você quiser alinhar o Firebase Auth ao domínio customizado, use `VITE_FIREBASE_AUTH_DOMAIN="script-master.pro"` e mantenha esse domínio em `Authorized domains` no Firebase Console.
-
-## Scripts disponíveis
+Emuladores:
 
 ```bash
-bun run dev      # dev server
-bun run lint     # ESLint 10 (flat config)
-bun run lint:fix # corrige problemas auto-fixáveis
-bun run typecheck # TypeScript sem emitir arquivos
-bun run build    # lint + typecheck + build de produção
-bun run preview  # preview local do build
+bun run emulators:all
 ```
 
-## Build de produção
+Functions:
 
 ```bash
+cd functions
+npm run build
+cd ..
+```
+
+## Scripts principais
+
+```bash
+bun run lint
+bun run typecheck
+bun run test
 bun run build
-bun run preview
+bun run build:full
+bun run deploy
 ```
 
-O build gera arquivos estáticos em `dist/`.
+Functions:
+
+```bash
+cd functions
+npm run lint
+npm run build
+npm run grant-access
+```
 
 ## Deploy
 
-O projeto foi preparado para **Firebase Hosting tradicional (SPA)**.
+Antes do primeiro deploy, aponte a `.firebaserc` para o seu projeto:
 
 ```bash
-bun run build
-firebase deploy --only hosting
+cp .firebaserc.example .firebaserc
+# Edite .firebaserc e troque "your-firebase-project-id" pelo ID do seu projeto
 ```
 
-## Arquitetura de deploy
+Deploy completo:
 
-- Sem Express em produção
-- Sem App Hosting
-- Rotas SPA resolvidas por `rewrites` do Firebase Hosting
-- Prévias de voz salvas no Firebase Storage (`previews/{voiceId}.wav`)
-- Downloads feitos direto no cliente
-
-## Configuração e ambiente
-
-- O Firebase Web SDK usa config pública via `VITE_FIREBASE_*`
-- `firebase-applet-config.json` foi removido do runtime
-- `firebase-blueprint.json` permanece apenas como documentação/schema
-- Leituras de env são centralizadas em `src/lib/env.ts`
-
-### Observação importante sobre segurança
-
-Como o projeto usa Gemini diretamente no frontend, `VITE_GEMINI_API_KEY` vai para o bundle final. Isso é aceito neste projeto por simplicidade e contexto privado.
-
-## Persistência
-
-O projeto usa um padrão de **dual storage**:
-
-- **Usuário autenticado:** Firestore + Firebase Storage
-- **Usuário anônimo:** IndexedDB local
-
-Camada atual:
-
-- `src/lib/db.ts` → fachada compatível
-- `src/lib/db/*` → implementação modular
-
-## Estrutura principal
-
-```txt
-src/
-  pages/
-  features/
-    assistant/
-    studio/
-  components/
-  contexts/
-  hooks/
-  lib/
-    db/
-  theme/
+```bash
+bun run deploy
 ```
 
-## UI
+Deploys parciais:
 
-- MUI v7 como stack visual principal
-- Tema global em `src/theme/appTheme.ts`
-- Tokens visuais em `src/theme/tokens.ts`
-- CSS global mínimo em `src/index.css`
+```bash
+bun run deploy:hosting
+bun run deploy:functions
+bun run deploy:firestore
+bun run deploy:storage
+```
 
-## Observações
+## Seguranca antes de publicar
 
-- UI em pt-BR
-- Prompts de imagem em inglês
-- O app usa lazy loading por rota para reduzir o bundle inicial
-- Atualmente não há test runner configurado
+- Nao copie `.env`, `.env.local`, `.env.production` ou service accounts para o repo.
+- Rode secret scan antes do push publico.
+- Rotacione chaves expostas por historico antigo antes de publicar um repo novo.
+- Se for criar repo novo, copie apenas arquivos rastreados/intencionais e mantenha `.gitignore`.
+
+## Licenca
+
+MIT. Veja [LICENSE](LICENSE).

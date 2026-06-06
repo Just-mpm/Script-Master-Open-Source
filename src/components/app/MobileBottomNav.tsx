@@ -33,10 +33,7 @@ import Sparkles from '@mui/icons-material/AutoAwesome';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCredits } from '../../hooks/useCredits';
-import { isOpenBetaEnabled } from '../../lib/env';
 import { useFeedbackDialog } from '../feedback';
-import { CreditIndicator } from '../CreditIndicator';
 import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
 import type { Locale } from '../../features/i18n/types';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
@@ -78,7 +75,6 @@ export const BOTTOM_NAV_HEIGHT = 56;
 
 export function MobileBottomNav() {
   const { user, logout } = useAuth();
-  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
   const openFeedback = useFeedbackDialog();
   const { t, locale, setLocale } = useLocale();
   const location = useLocation();
@@ -103,30 +99,21 @@ export function MobileBottomNav() {
     { to: '/app/estudio', label: t('studio.header.nav.studio'), icon: Mic },
   ], [t]);
 
-  // CTA de feedback aparece sempre (exceto créditos ilimitados)
-  // Label muda após o bônus ser concedido
-  const showFeedbackInDrawer = !unlimitedCredits;
-
   // ── Itens do drawer (secundários + conta) ──
-  // O item de feedback é omitido quando o bônus já foi concedido
   const drawerItems = useMemo(() => {
     const items: Array<{ to: string; label: string; icon: ElementType; action?: 'feedback' }> = [
       { to: '/app/imagens', label: t('studio.header.nav.image'), icon: ImageIcon },
       { to: '/app/pintura-rapida', label: t('studio.header.nav.speedPaint'), icon: Palette },
       { to: '/app/configuracoes', label: t('studio.header.nav.settings'), icon: Settings },
-    ];
-    if (showFeedbackInDrawer) {
-      items.push({
+      {
         to: '__feedback__',
-        label: feedbackBonusGranted
-          ? t('feedback.navItem.labelAfterBonus')
-          : t('feedback.navItem.drawerLabel'),
+        label: t('feedback.navItem.drawerLabel'),
         icon: RateReviewIcon,
         action: 'feedback',
-      });
-    }
+      },
+    ];
     return items;
-  }, [t, showFeedbackInDrawer, feedbackBonusGranted]);
+  }, [t]);
 
   // ── Handlers ──
   const handleMoreClick = useCallback(() => {
@@ -410,14 +397,6 @@ export function MobileBottomNav() {
                 </Stack>
               </Stack>
             </Paper>
-
-            {/* ── CreditIndicator — apenas durante o beta aberto ──
-                Espelha o desktop (SidebarFooter) para consistência entre breakpoints. */}
-            {isOpenBetaEnabled() && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <CreditIndicator />
-              </Box>
-            )}
           </Stack>
         </Box>
 

@@ -98,7 +98,7 @@ export default function FuncionalidadesPage() {
         title={t('features.hero.title')}
         subtitle={t('features.hero.subtitle')}
         primaryCta={{ label: t('features.hero.cta'), to: '/cadastro' }}
-        secondaryCta={{ label: t('features.hero.ctaSecondary'), to: '/precos' }}
+        secondaryCta={{ label: t('features.hero.ctaSecondary'), to: '/open-source' }}
         visual={
           <Box sx={{ textAlign: 'center', py: 3 }}>
             <Mic sx={{ fontSize: 80, color: BRAND_PRIMARY, opacity: 0.85 }} />

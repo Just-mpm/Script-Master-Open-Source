@@ -8,7 +8,6 @@ import { MAX_CHARS } from '../../lib/constants';
 import { saveGeneration, type SavedAudio } from '../../lib/db';
 import { createLogger } from '../../lib/logger';
 import { functions } from '../../lib/firebase';
-import { getCallableErrorInfo } from '../../lib/callable-errors';
 import { useStudioStore, VIDEO_FPS, buildGenerateOptions } from '../../features/studio/store';
 import type { SceneItem } from '../../features/studio/store';
 import { useVideoRenderBridge } from '../../features/video-render/store/videoRenderBridge';
@@ -54,8 +53,6 @@ interface AudioGenerationHandlerReturn {
   toggleAudioPlayer: (source: 'studio') => void;
   // Estado de salvamento
   isSaved: boolean;
-  // Créditos esgotados
-  creditsExhausted: boolean;
   isPreparingPreflight: boolean;
   isPreflightOpen: boolean;
   preflight: AudioPreflightSummary | null;
@@ -124,7 +121,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     generateAudio,
     handleCancel,
     durationInSeconds,
-    creditsExhausted,
   } = useAudioGenerator();
 
   // ─── Estado de config do store (Zustand) ──────────────────
@@ -145,7 +141,7 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
   const preflightRequestTokenRef = useRef(0);
 
   // Derivações para ActionBar e atalhos
-  const isGenerateDisabled = isGenerating || isPreparingPreflight || creditsExhausted || !script.trim() || script.length > MAX_CHARS;
+  const isGenerateDisabled = isGenerating || isPreparingPreflight || !script.trim() || script.length > MAX_CHARS;
   const durationInFrames = useMemo(
     () => Math.round(durationInSeconds * VIDEO_FPS),
     [durationInSeconds],
@@ -212,23 +208,15 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
       .catch((preflightErr: unknown) => {
         if (preflightRequestTokenRef.current !== requestToken) return;
         log.error('Erro ao preparar prévia da geração', { error: preflightErr });
-        const errorInfo = getCallableErrorInfo(preflightErr);
         if (SHOULD_SKIP_BROKEN_PREFLIGHT_IN_DEV) {
-          const isBusinessBlock = errorInfo.detailCode === 'INSUFFICIENT_CREDITS';
-          if (!isBusinessBlock) {
-            setIsPreflightOpen(false);
-            setPreflight(null);
-            setPreflightError(null);
-            setPendingGenerateOptions(null);
-            generateAudio(options);
-            return;
-          }
+          setIsPreflightOpen(false);
+          setPreflight(null);
+          setPreflightError(null);
+          setPendingGenerateOptions(null);
+          generateAudio(options);
+          return;
         }
-        setPreflightError(
-          errorInfo.detailCode === 'INSUFFICIENT_CREDITS'
-            ? t('audioPreflight.insufficientCreditsError')
-            : t('audioPreflight.unavailableText'),
-        );
+        setPreflightError(t('audioPreflight.unavailableText'));
       })
       .finally(() => {
         if (preflightRequestTokenRef.current !== requestToken) return;
@@ -251,11 +239,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     const nextOptions: GenerateOptions = {
       ...pendingGenerateOptions,
       estimatedChunkCount: preflight.estimatedChunkCount,
-      preflight: {
-        availableCredits: preflight.credits.available,
-        totalPlanned: preflight.credits.totalPlanned,
-        unlimited: preflight.credits.unlimited,
-      },
     };
 
     setIsPreflightOpen(false);
@@ -371,7 +354,6 @@ export function useAudioGenerationHandler(): AudioGenerationHandlerReturn {
     videoExportProgress,
     toggleAudioPlayer: toggleAudioPlayerCallback,
     isSaved,
-    creditsExhausted,
     isPreparingPreflight,
     isPreflightOpen,
     preflight,

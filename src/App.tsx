@@ -22,7 +22,7 @@ import { MobileBottomNav } from './components/app/MobileBottomNav';
 import { Sidebar } from './components/app/Sidebar';
 import { SidebarNetworkBanner } from './components/app/SidebarNetworkBanner';
 import { ToastManager } from './components/toast/ToastProvider';
-import { CreditBlockedMessage } from './components/CreditBlockedMessage';
+
 import { FeedbackController, FeedbackFab } from './components/feedback';
 import { AppRoutes } from './router/routes';
 import { VIDEO_FPS } from './features/studio/store';
@@ -78,7 +78,6 @@ export default function App() {
     videoExportProgress,
     toggleAudioPlayer,
     isSaved,
-    creditsExhausted,
     isPreparingPreflight,
     isPreflightOpen,
     preflight,
@@ -204,19 +203,6 @@ export default function App() {
           overflow: 'auto',
         }}
       >
-        {/* Créditos esgotados — exibido no estúdio e página de vídeo */}
-        {showAppLayout && !isAssistantRoute && (
-          <Container
-            maxWidth={false}
-            sx={{
-              maxWidth: APP_MAX_WIDTH,
-              px: { xs: 2, sm: 3, lg: 4 },
-            }}
-          >
-            <CreditBlockedMessage show={creditsExhausted} />
-          </Container>
-        )}
-
         {showContainerLayout ? (
           routesElement
         ) : isAssistantRoute ? (
@@ -290,7 +276,7 @@ export default function App() {
       {/* Bottom Nav mobile — apenas em rotas /app/* (não onboarding) */}
       {showAppLayout && <MobileBottomNav />}
 
-      {/* FAB de feedback — auto-gestão de visibilidade por rota/auth/bônus */}
+      {/* FAB de feedback — auto-gestão de visibilidade por rota/auth */}
       {showAppLayout && <FeedbackFab />}
 
       {/* Banner de status de rede — sobreposto no topo (retorna null quando online) */}

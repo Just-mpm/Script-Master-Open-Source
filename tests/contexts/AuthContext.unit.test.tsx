@@ -13,6 +13,9 @@ const mockSendPasswordResetEmail = vi.fn();
 const mockSendEmailVerification = vi.fn();
 const mockDeleteUser = vi.fn();
 const mockSignOut = vi.fn();
+const mockLoadProviderSettings = vi.fn().mockResolvedValue(undefined);
+const mockResetProviderSettings = vi.fn();
+const mockGetUserSettings = vi.fn().mockResolvedValue(null);
 
 vi.mock('../../src/lib/firebase', () => ({
   auth: { currentUser: null },
@@ -55,8 +58,17 @@ vi.mock('../../src/lib/db/migration', () => ({
   isMigrationAlreadyHandled: vi.fn().mockReturnValue(true),
 }));
 
-vi.mock('../../src/features/billing/hooks', () => ({
-  useBillingInit: vi.fn(),
+vi.mock('../../src/lib/db/user-settings', () => ({
+  getUserSettings: (...args: unknown[]) => mockGetUserSettings(...args),
+}));
+
+vi.mock('../../src/features/provider-settings/store/useProviderStore', () => ({
+  useProviderStore: {
+    getState: () => ({
+      loadProviderSettings: (...args: unknown[]) => mockLoadProviderSettings(...args),
+      reset: (...args: unknown[]) => mockResetProviderSettings(...args),
+    }),
+  },
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -83,6 +95,9 @@ import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.removeItem('s2a_onboarding_completed');
+    mockLoadProviderSettings.mockResolvedValue(undefined);
+    mockGetUserSettings.mockResolvedValue(null);
   });
 
   it('deve renderizar AuthProvider sem crash', () => {
@@ -122,6 +137,35 @@ describe('AuthContext', () => {
     );
 
     expect(screen.getByTestId('user').textContent).toBe('null');
+  });
+
+  it('deve hidratar provider settings ao restaurar sessão autenticada', async () => {
+    localStorage.setItem('s2a_onboarding_completed', 'true');
+    const restoredUser = { uid: 'restored-uid', email: 'user@test.com' };
+    const { onAuthStateChanged } = await import('../../src/lib/firebase');
+
+    (onAuthStateChanged as ReturnType<typeof vi.fn>).mockImplementation(
+      (_auth: unknown, callback: (user: unknown) => void) => {
+        void callback(restoredUser);
+        return mockUnsubscribe;
+      },
+    );
+
+    function LoadingChecker() {
+      const { loading } = useAuth();
+      return <span data-testid="loading">{String(loading)}</span>;
+    }
+
+    render(
+      <AuthProvider>
+        <LoadingChecker />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockLoadProviderSettings).toHaveBeenCalledWith('restored-uid');
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
   });
 
   it('deve expor login, signup, loginWithEmail, resetPassword e logout como funções', () => {

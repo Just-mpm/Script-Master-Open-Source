@@ -6,7 +6,7 @@ import { NetworkStatusIndicator } from '../NetworkStatusIndicator';
  *
  * Aparece no topo da página, centralizado, apenas quando o usuário está
  * offline. Substitui a posição que o `NetworkStatusIndicator` ocupava
- * dentro do Header (que será removido na Fase 5 do plano).
+ * dentro do Header (layout legado, substituído pela Sidebar).
  *
  * O container externo usa `pointer-events: none` para que o banner não
  * bloqueie cliques no conteúdo abaixo quando o indicador estiver

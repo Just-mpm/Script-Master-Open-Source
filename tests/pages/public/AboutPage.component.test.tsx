@@ -59,9 +59,9 @@ describe('AboutPage', () => {
     localStorage.setItem('s2a_locale', 'pt-BR');
   });
 
-  it('renderiza título "Uma ferramenta feita para tirar roteiros da gaveta"', () => {
+  it('renderiza título "Uma ferramenta open source para tirar roteiros da gaveta"', () => {
     render(<AboutPage />, { wrapper: Wrapper });
-    expect(screen.getByText('Uma ferramenta feita para tirar roteiros da gaveta')).toBeDefined();
+    expect(screen.getByText('Uma ferramenta open source para tirar roteiros da gaveta')).toBeDefined();
   });
 
   it('renderiza seção de missão e visão', () => {
@@ -82,7 +82,7 @@ describe('AboutPage', () => {
     expect(screen.getByText('Entrada simples e segura')).toBeDefined();
     expect(screen.getByText('Cenas e vídeo no navegador')).toBeDefined();
     expect(screen.getByText('Estúdio de Produção')).toBeDefined();
-    expect(screen.getByText('Planos justos')).toBeDefined();
+    expect(screen.getByText('Privacidade e controle')).toBeDefined();
     expect(screen.getByText('Lançamento oficial')).toBeDefined();
   });
 

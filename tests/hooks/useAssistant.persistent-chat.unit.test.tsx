@@ -56,19 +56,6 @@ const { mockStreamFn, mockHttpsCallable, mockCancelCallable } = vi.hoisted(() =>
   mockCancelCallable: vi.fn().mockResolvedValue({ data: { success: true } }),
 }));
 
-const mockCreditsState = vi.hoisted(() => ({
-  availableCredits: 100,
-  usedCredits: 0,
-  reservedCredits: 0,
-  baseCredits: 100,
-  bonusCredits: 0,
-  feedbackBonusGranted: false,
-  unlimitedCredits: false,
-  canEnforceBalance: true,
-  loading: false,
-  error: null as string | null,
-}));
-
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -80,6 +67,10 @@ vi.mock('firebase/functions', () => ({
 vi.mock('../../src/lib/firebase', () => ({
   functions: {},
   db: {},
+}));
+
+vi.mock('../../src/features/provider-settings', () => ({
+  getProviderAuthFromStore: () => ({ provider: 'gemini', apiKey: 'AIza-test-mock-key' }),
 }));
 
 vi.mock('../../src/lib/error-mapping', () => ({
@@ -124,10 +115,7 @@ vi.mock('../../src/lib/db', () => ({
 }));
 
 vi.mock('../../src/lib/env', () => ({
-  getGeminiApiKey: vi.fn().mockReturnValue('test-key'),
   getRecaptchaSiteKey: vi.fn().mockReturnValue(undefined),
-  isBillingEnabled: vi.fn().mockReturnValue(false),
-  isOpenBetaEnabled: vi.fn().mockReturnValue(true),
   getFirebaseEnvConfig: vi.fn().mockReturnValue({
     apiKey: 'mock-api-key',
     authDomain: 'mock.firebaseapp.com',
@@ -136,7 +124,6 @@ vi.mock('../../src/lib/env', () => ({
     messagingSenderId: '123',
     appId: '1:123:web:abc',
   }),
-  getStripePublishableKey: vi.fn().mockReturnValue(undefined),
   getPexelsApiKey: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -151,10 +138,6 @@ vi.mock('../../src/lib/logger', () => ({
 
 vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({ user: authState.user }),
-}));
-
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({ ...mockCreditsState }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -201,13 +184,6 @@ describe('useAssistant — chat persistente e tour de boas-vindas', () => {
     sessionsState.sessions = [];
     sessionsState.shouldReject = false;
     saveState.calls = [];
-
-    // Estado de créditos
-    mockCreditsState.availableCredits = 100;
-    mockCreditsState.unlimitedCredits = false;
-    mockCreditsState.canEnforceBalance = true;
-    mockCreditsState.loading = false;
-    mockCreditsState.error = null;
 
     // localStorage limpo e locale pt-BR para evitar fallback para en
     localStorage.clear();

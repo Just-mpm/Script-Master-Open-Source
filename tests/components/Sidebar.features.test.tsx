@@ -22,15 +22,10 @@ import { useSidebarStore } from '../../src/features/sidebar/store';
 // ─── Mocks ────────────────────────────────────────────────────
 
 const mockUseAuth = vi.fn();
-const mockUseCredits = vi.fn();
 const mockNavigate = vi.fn();
 
 vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
-}));
-
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => mockUseCredits(),
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -42,8 +37,6 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 vi.mock('../../src/lib/env', () => ({
-  isOpenBetaEnabled: () => true,
-  isBillingEnabled: () => false,
   readRequiredEnv: (key: string) => `mock-${key}`,
   readOptionalEnv: () => undefined,
   getGeminiApiKey: () => 'mock-api-key',
@@ -97,18 +90,6 @@ describe('Sidebar (features)', () => {
       login: vi.fn(),
       logout: vi.fn(),
       deleteAccount: vi.fn(),
-    });
-    mockUseCredits.mockReturnValue({
-      availableCredits: 320,
-      usedCredits: 80,
-      reservedCredits: 0,
-      baseCredits: 300,
-      bonusCredits: 100,
-      feedbackBonusGranted: false,
-      unlimitedCredits: false,
-      canEnforceBalance: true,
-      loading: false,
-      error: null,
     });
   });
 

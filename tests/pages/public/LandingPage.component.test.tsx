@@ -147,9 +147,9 @@ describe('LandingPage', () => {
   it('renderiza a seção de Métricas (MetricsSection)', () => {
     render(<LandingPage />, { wrapper: Wrapper });
     expect(screen.getByText('Fluxo em 3 etapas')).toBeDefined();
-    expect(screen.getByText('Créditos mensais')).toBeDefined();
-    expect(screen.getByText('Bônus por feedback')).toBeDefined();
-    expect(screen.getByText('Sem cartão')).toBeDefined();
+    expect(screen.getByText('Open source')).toBeDefined();
+    expect(screen.getByText('BYOK')).toBeDefined();
+    expect(screen.getByText('Navegador')).toBeDefined();
   });
 
   it('renderiza a seção de Demo do Produto (ProductDemoSection)', () => {

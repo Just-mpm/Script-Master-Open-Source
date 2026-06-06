@@ -20,7 +20,6 @@ import { useStore } from 'zustand';
 import { useLocation } from 'react-router-dom';
 import { useLocale } from '../../features/i18n';
 import { useSidebarStore } from '../../features/sidebar/store';
-import { useCredits } from '../../hooks/useCredits';
 import { useFeedbackDialog } from '../../components/feedback';
 import { useVideoRenderController } from '../../features/video-render/store/videoRenderController';
 import { useSpeedPaintRenderController } from '../../features/speed-paint/store/speedPaintRenderController';
@@ -64,7 +63,7 @@ interface NavItem {
  * 1. `SidebarHeader` — logo + botão de toggle
  * 2. `Divider`
  * 3. Lista de `SidebarNavItem` (scroll interno)
- * 4. `SidebarFooter` — avatar, créditos, locale, cookies, logout
+ * 4. `SidebarFooter` — avatar, locale, cookies, logout
  *
  * Inclui o `DeleteAccountDialog` e escuta o evento
  * `open-delete-account-dialog` disparado pelo `MobileBottomNav`
@@ -75,7 +74,6 @@ export function Sidebar() {
   const theme = useTheme();
   const { t } = useLocale();
   const location = useLocation();
-  const { feedbackBonusGranted, unlimitedCredits } = useCredits();
   const openFeedback = useFeedbackDialog();
   const { collapsed, toggle } = useSidebarStore(
     useShallow((s) => ({ collapsed: s.collapsed, toggle: s.toggle })),
@@ -92,10 +90,6 @@ export function Sidebar() {
   const spIsRendering = useStore(useSpeedPaintRenderController, (s) => s.isRendering);
   const spStatus = useStore(useSpeedPaintRenderController, (s) => s.status);
 
-  // CTA de feedback aparece sempre (exceto créditos ilimitados)
-  // Label muda após o bônus ser concedido
-  const showFeedbackCta = !unlimitedCredits;
-
   // ── Lista de itens de navegação (espelha o que existia no Header) ──
   const navItems = useMemo<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -106,20 +100,16 @@ export function Sidebar() {
       { to: '/app/assistente', label: t('studio.header.nav.ai'), icon: AutoAwesome, accent: true },
       { to: '/app/biblioteca', label: t('studio.header.nav.library'), icon: LocalLibrary },
       { to: '/app/configuracoes', label: t('studio.header.nav.settings'), icon: Settings },
-    ];
-    // Item especial: abre o FeedbackDialog (não navega)
-    if (showFeedbackCta) {
-      items.push({
+      // Item especial: abre o FeedbackDialog (não navega)
+      {
         to: '__feedback__',
-        label: feedbackBonusGranted
-          ? t('feedback.navItem.labelAfterBonus')
-          : t('feedback.navItem.drawerLabel'),
+        label: t('feedback.navItem.headerLabel'),
         icon: RateReviewIcon,
         action: 'feedback',
-      });
-    }
+      },
+    ];
     return items;
-  }, [t, showFeedbackCta, feedbackBonusGranted]);
+  }, [t]);
 
   // ── Handler de ação para itens especiais (ex: feedback) ──
   const handleItemAction = useCallback(
@@ -264,7 +254,7 @@ export function Sidebar() {
           </List>
         </Box>
 
-        {/* Footer — avatar, créditos, locale, cookies, logout (já inclui seu Divider) */}
+        {/* Footer — avatar, locale, cookies, logout (já inclui seu Divider) */}
         <SidebarFooter collapsed={collapsed} />
       </Drawer>
 

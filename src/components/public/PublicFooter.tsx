@@ -25,8 +25,9 @@ export function PublicFooter() {
       title: t('footer.productGroup'),
       links: [
         { label: t('footer.links.features'), href: '/funcionalidades' },
-        { label: t('footer.links.pricing'), href: '/precos' },
+        { label: t('footer.links.openSource'), href: '/open-source' },
         { label: t('footer.links.faq'), href: '/perguntas-frequentes' },
+        { label: 'GitHub', href: 'https://github.com/Just-mpm/Script-Master-Open-Source', external: true },
       ],
     },
     {
@@ -106,8 +107,9 @@ export function PublicFooter() {
                 {group.links.map((link) => (
                   <Link
                     key={link.href}
-                    component={RouterLink}
-                    to={link.href}
+                    {...('external' in link && link.external
+                      ? { href: link.href, target: '_blank', rel: 'noopener noreferrer' }
+                      : { component: RouterLink, to: link.href })}
                     variant="body2"
                     sx={{
                       color: TEXT_SECONDARY,

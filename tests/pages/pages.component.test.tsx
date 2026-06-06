@@ -504,9 +504,9 @@ describe('Pages — Renderização', () => {
       expect(screen.getByText('Ideias, revisão e direção de cena')).toBeTruthy();
     });
 
-    it('deve exibir o título "Crie com IA no beta aberto"', () => {
+    it('deve exibir o título "Script Master"', () => {
       renderWithRouter(<LoginPage />);
-      expect(screen.getByText('Crie com IA no beta aberto')).toBeTruthy();
+      expect(screen.getByText('Script Master')).toBeTruthy();
     });
 
     it('deve exibir "Entre com Google ou email" no card', () => {

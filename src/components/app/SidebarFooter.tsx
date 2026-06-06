@@ -16,8 +16,6 @@ import Logout from '@mui/icons-material/Logout';
 import Person from '@mui/icons-material/Person';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale, LocaleSelector, LOCALE_CONFIGS } from '../../features/i18n';
-import { isOpenBetaEnabled } from '../../lib/env';
-import { CreditIndicator } from '../CreditIndicator';
 import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
 import {
@@ -40,10 +38,9 @@ interface SidebarFooterProps {
  *
  * Renderiza, do topo para o fundo:
  * 1. Card do usuário (expandido) ou Avatar circular (colapsado) — navega para /app/configuracoes
- * 2. CreditIndicator — apenas durante o beta aberto
- * 3. LocaleSelector — com Tooltip no colapsado, item de lista no expandido
- * 4. Botão de cookies — abre o dialog de consentimento de analytics
- * 5. Botão de logout — confirma via LogoutConfirmDialog
+ * 2. LocaleSelector — com Tooltip no colapsado, item de lista no expandido
+ * 3. Botão de cookies — abre o dialog de consentimento de analytics
+ * 4. Botão de logout — confirma via LogoutConfirmDialog
  */
 export function SidebarFooter({ collapsed }: SidebarFooterProps) {
   const { user, logout } = useAuth();
@@ -163,21 +160,6 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
               </Stack>
             </Stack>
           </Paper>
-        )}
-
-        {/* ── CreditIndicator — apenas durante o beta aberto ── */}
-        {isOpenBetaEnabled() && (
-          collapsed ? (
-            <Tooltip title={currentLocaleLabel || 'Créditos'} placement="right" arrow>
-              <Box sx={{ alignSelf: 'center' }}>
-                <CreditIndicator />
-              </Box>
-            </Tooltip>
-          ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <CreditIndicator />
-            </Box>
-          )
         )}
 
         {/* ── LocaleSelector + Cookies + Logout ── */}

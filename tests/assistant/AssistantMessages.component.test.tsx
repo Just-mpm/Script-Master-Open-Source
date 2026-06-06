@@ -75,22 +75,12 @@ vi.mock('react-markdown', () => ({
   default: ({ children }: { children: string }) => <div data-testid="markdown">{children}</div>,
 }));
 
-// Mock do AuthContext — o EmptyChatState usa useAuth para checar bônus de feedback
+// Mock do AuthContext — o EmptyChatState usa useAuth para exibir o CTA de feedback
 vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { uid: 'test-user', email: 'test@example.com' },
     loading: false,
     authError: null,
-  }),
-}));
-
-// Mock do useCredits — também usado pelo EmptyChatState (feedbackBonusGranted)
-vi.mock('../../src/hooks/useCredits', () => ({
-  useCredits: () => ({
-    availableCredits: 500,
-    feedbackBonusGranted: false,
-    unlimitedCredits: false,
-    loading: false,
   }),
 }));
 

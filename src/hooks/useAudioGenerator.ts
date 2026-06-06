@@ -1,4 +1,4 @@
-import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
+import { useCallback, useRef, useMemo, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import { base64ToBlob } from '../lib/audio';
@@ -14,10 +14,9 @@ import { validateSceneTimestamps, buildUniformTimestamps } from '../lib/audio-an
 import { validateImageIsDecodable } from '../lib/validateImage';
 import { createLogger } from '../lib/logger';
 import { createErrorMapper, sharedErrorRules } from '../lib/error-mapping';
-import { getCallableErrorInfo, isCallableCancelledError, isCreditCallableError } from '../lib/callable-errors';
-import { useAudioGeneratorStore, getAudioDurationSeconds } from '../features/studio/store';
-import type { SceneItem } from '../features/studio/store';
-import { useCredits } from './useCredits';
+import { isCallableCancelledError } from '../lib/callable-errors';
+import { useAudioGeneratorStore, getAudioDurationSeconds, type SceneItem } from '../features/studio/store';
+import { getProviderAuthFromStore } from '../features/provider-settings';
 
 const log = createLogger('useAudioGenerator');
 const USER_CANCELLED_MESSAGE = 'Geração cancelada pelo usuário.';
@@ -42,10 +41,6 @@ const toUserFriendlyError = createErrorMapper({
     {
       match: (m) => m.includes('safety') || m.includes('blocked'),
       message: 'Conteúdo bloqueado por filtros de segurança. Altere o roteiro e tente novamente.',
-    },
-    {
-      match: (m) => m.includes('saldo') || m.includes('crédito'),
-      message: 'Créditos insuficientes. Seu saldo será renovado no início do próximo mês.',
     },
   ],
 });
@@ -78,12 +73,8 @@ export interface AudioFlowInput {
   visualFramework?: string;
   imageTextLanguage?: string;
   referenceImage?: string | null;
-  preflight?: {
-    availableCredits: number;
-    totalPlanned: number;
-    unlimited: boolean;
-  };
   requestId: string;
+  providerAuth?: { provider: 'gemini'; apiKey: string };
 }
 
 interface AudioFlowOutput {
@@ -118,11 +109,6 @@ export interface GenerateOptions {
   locale?: Locale;
   /** Número estimado de chunks de áudio (vem do preflight, usado para simular progresso) */
   estimatedChunkCount?: number;
-  preflight?: {
-    availableCredits: number;
-    totalPlanned: number;
-    unlimited: boolean;
-  };
 }
 
 export function buildAudioFlowInput(options: GenerateOptions, requestId: string): AudioFlowInput {
@@ -145,7 +131,6 @@ export function buildAudioFlowInput(options: GenerateOptions, requestId: string)
     visualFramework,
     referenceImage,
     locale,
-    preflight,
   } = options;
 
   const input: AudioFlowInput = {
@@ -204,10 +189,6 @@ export function buildAudioFlowInput(options: GenerateOptions, requestId: string)
     input.imageTextLanguage = locale;
   }
 
-  if (preflight) {
-    input.preflight = preflight;
-  }
-
   return input;
 }
 
@@ -242,7 +223,6 @@ function getDefaultProjectName(locale: Locale): string {
  * - Funções de geração (generateAudio, handleCancel)
  */
 export function useAudioGenerator() {
-  const { availableCredits, unlimitedCredits, canEnforceBalance, loading: creditsLoading, error: creditsError } = useCredits();
   // Seletores primitivos — cada um re-renderiza apenas quando seu campo muda
   const isGenerating = useAudioGeneratorStore((s) => s.isGenerating);
   const statusText = useAudioGeneratorStore((s) => s.statusText);
@@ -258,8 +238,6 @@ export function useAudioGenerator() {
   const loadProjectData = useAudioGeneratorStore((s) => s.loadProjectData);
   const audioDuration = useAudioGeneratorStore((s) => s.audioDuration);
 
-  // Flag de créditos esgotados — persiste até nova geração com sucesso
-  const [creditsExhausted, setCreditsExhausted] = useState(false);
   const cancelAiRequestCallable = useMemo(
     () => httpsCallable<{ requestId: string }, { success: boolean }>(functions, 'cancelAiRequest'),
     [],
@@ -297,14 +275,6 @@ export function useAudioGenerator() {
       }
     };
   }, []);
-
-  const isCreditBlocked = canEnforceBalance && !creditsLoading && !creditsError && !unlimitedCredits && availableCredits <= 0;
-
-  useEffect(() => {
-    if (!isCreditBlocked) {
-      setCreditsExhausted(false);
-    }
-  }, [isCreditBlocked]);
 
   const handleCancel = () => {
     cancelRef.current = true;
@@ -370,8 +340,13 @@ export function useAudioGenerator() {
       return;
     }
 
+    const providerAuth = getProviderAuthFromStore();
+    if (!providerAuth) {
+      storeApi.getState().setError('Configure sua chave de API do Gemini nas configurações.');
+      return;
+    }
+
     cancelRef.current = false;
-    setCreditsExhausted(false);
     storeApi.getState().setIsGenerating(true);
     storeApi.getState().setGenerationProgress(0);
     storeApi.getState().setError(null);
@@ -464,6 +439,7 @@ export function useAudioGenerator() {
       const audioRequestId = crypto.randomUUID();
       activeRequestIdRef.current = audioRequestId;
       const audioInput = buildAudioFlowInput(options, audioRequestId);
+      audioInput.providerAuth = providerAuth;
 
       const audioCallable = httpsCallable<AudioFlowInput, AudioFlowOutput>(functions, 'audio', {
         timeout: 1_800_000,
@@ -695,7 +671,6 @@ export function useAudioGenerator() {
           };
         } catch (sceneError: unknown) {
           log.warn('Pipeline visual interrompido após gerar o áudio', { error: sceneError });
-          const errorInfo = getCallableErrorInfo(sceneError);
           const wasCancelled = cancelRef.current || isCallableCancelledError(sceneError);
 
           if (wasCancelled) {
@@ -712,32 +687,14 @@ export function useAudioGenerator() {
               audioSegments: generatedSegments,
               projectId: currentProjectId,
             };
-          } else if (isCreditCallableError(sceneError)) {
-            storeApi.getState().setScenes(generatedScenes);
-            setCreditsExhausted(true);
-            storeApi.getState().setSceneGenerationWarning(
-              errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
-                ? generatedScenes.length > 0
-                  ? 'O áudio foi gerado, mas o saldo mudou depois da prévia. As cenas já prontas foram mantidas.'
-                  : 'O áudio foi gerado, mas o saldo mudou depois da prévia e o pacote visual não pôde continuar.'
-                : generatedScenes.length > 0
-                  ? 'O áudio foi gerado, mas faltaram créditos para concluir o pacote visual. As cenas já prontas foram mantidas.'
-                  : 'O áudio foi gerado, mas o pacote visual não pôde continuar por falta de créditos.',
-            );
-            lastSuccessfulStateRef.current = {
-              audioUrl: url,
-              audioBlob: wavBlob,
-              scenes: generatedScenes,
-              audioSegments: generatedSegments,
-              projectId: currentProjectId,
-            };
           } else {
+            // Erro genérico de cena — manter cenas já geradas e avisar
+            storeApi.getState().setScenes(generatedScenes);
             storeApi.getState().setSceneGenerationWarning(
               generatedScenes.length > 0
                 ? 'O áudio foi gerado, mas houve uma falha técnica antes de concluir todas as cenas. As cenas já prontas foram mantidas.'
                 : 'O áudio foi gerado, mas houve uma falha técnica ao montar o pacote visual. Você pode tentar gerar as cenas novamente.',
             );
-            storeApi.getState().setScenes(generatedScenes);
             lastSuccessfulStateRef.current = {
               audioUrl: url,
               audioBlob: wavBlob,
@@ -785,14 +742,7 @@ export function useAudioGenerator() {
         ...analyticsParams,
         error_category: categorizeAnalyticsError(err),
       });
-      const errorInfo = getCallableErrorInfo(err);
-      const errorMessage = errorInfo.detailCode === 'CREDITS_CHANGED_AFTER_PREFLIGHT'
-        ? 'Seu saldo mudou depois da prévia. Revise a geração antes de confirmar novamente.'
-        : toUserFriendlyError(err);
-
-      if (isCreditCallableError(err)) {
-        setCreditsExhausted(true);
-      }
+      const errorMessage = toUserFriendlyError(err);
 
       if (generatedAudioUrl && generatedAudioUrl.startsWith('blob:')) {
         URL.revokeObjectURL(generatedAudioUrl);
@@ -841,6 +791,5 @@ export function useAudioGenerator() {
     handleCancel,
     loadProjectData,
     durationInSeconds,
-    creditsExhausted: creditsExhausted || isCreditBlocked,
   };
 }

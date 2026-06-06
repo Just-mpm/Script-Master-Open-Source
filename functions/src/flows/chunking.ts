@@ -1,17 +1,14 @@
 // ---------------------------------------------------------------------------
-// Flow utilitário de chunking — divisão inteligente de scripts com instrução em código
+// Flow utilitário de chunking — divisão inteligente de scripts com BYOK
 // ---------------------------------------------------------------------------
-//
-// Substitui a lógica client-side de chunking do useAudioGenerator.ts.
 //
 // Pipeline:
 //   1. Valida autenticação (isSignedIn + App Check)
-//   2. Reserva créditos via withCreditMetering() helper
+//   2. Extrai API key do usuário (BYOK)
 //   3. Se script <= limit: retorna array com 1 elemento
 //   4. Se script > limit: usa builder TypeScript + structured output
 //   5. Fallback: divisão programática por sentenças
-//   6. Confirma ou reverte créditos conforme resultado
-//   7. Retorna array de strings (chunks)
+//   6. Retorna array de strings (chunks) + enrichedChunks
 //
 // Protegido por:
 //   - authPolicy: isSignedIn()  → apenas usuários autenticados
@@ -20,17 +17,11 @@
 // ---------------------------------------------------------------------------
 
 import { z } from 'genkit';
-import { onCallGenkit, isSignedIn, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
-import { randomUUID } from 'node:crypto';
+import { onCallGenkit, isSignedIn } from 'firebase-functions/v2/https';
 import { ai } from '../genkit/genkit.js';
 import { APP_ALLOWED_CORS_ORIGINS } from '../config/cors.js';
-import { ChunkingInputSchema, ChunkingOutputSchema } from '../genkit/schemas/common.js';
-import {
-  calculateCreditCost,
-  isRequestIdValid,
-} from '../usage/index.js';
-import { withCreditMetering } from '../genkit/middlewares/credit-metering.js';
+import { ChunkingInputSchema, ChunkingOutputSchema, ProviderAuthSchema } from '../genkit/schemas/common.js';
+import { extractApiKey, withApiKey } from '../genkit/utils/byok.js';
 import { buildChunkingInstruction } from '../genkit/utils/assistant-context.js';
 import { splitTextProgrammatically, extractTrailingSentence } from '../genkit/utils/chunking.js';
 import { getCallableUidOrThrow } from '../genkit/utils/callable-auth.js';
@@ -38,11 +29,16 @@ import { createLogger } from '../genkit/utils/logger.js';
 
 const log = createLogger('chunking');
 
+/** Input schema estendido com providerAuth para BYOK */
+const ChunkingInputByokSchema = ChunkingInputSchema.extend({
+  providerAuth: ProviderAuthSchema.nullable().optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Constantes
 // ---------------------------------------------------------------------------
 
-/** Modelo usado para chunking (registro em credit_events) */
+/** Modelo usado para chunking */
 const CHUNKING_MODEL = 'googleai/gemini-3.1-flash-lite';
 
 /** Limite padrão de caracteres por chunk */
@@ -63,24 +59,13 @@ export const chunking = onCallGenkit(
   ai.defineFlow(
     {
       name: 'chunking',
-      inputSchema: ChunkingInputSchema,
+      inputSchema: ChunkingInputByokSchema,
       outputSchema: ChunkingOutputSchema,
     },
     async (input, flowContext) => {
       const uid = getCallableUidOrThrow(flowContext);
+      const apiKey = extractApiKey(input);
 
-      // Guard do beta aberto — bloqueia acesso quando beta fechado
-      if (process.env.OPEN_BETA_ENABLED !== 'true') {
-        throw new HttpsError('unavailable', 'O beta aberto está temporariamente desabilitado. Tente novamente em breve.');
-      }
-
-      const db = getFirestore();
-
-      // Valida requestId enviado pelo cliente (deve ser UUID v4)
-      if (input.requestId && !isRequestIdValid(input.requestId)) {
-        throw new HttpsError('invalid-argument', 'requestId inválido — deve ser UUID v4');
-      }
-      const requestId = input.requestId ?? randomUUID();
       const limit = input.limit ?? DEFAULT_CHUNK_LIMIT;
 
       // ------------------------------------------------------------------
@@ -91,24 +76,14 @@ export const chunking = onCallGenkit(
       }
 
       // ------------------------------------------------------------------
-      // 2. Reserva créditos via helper withCreditMetering()
-      // ------------------------------------------------------------------
-      const creditMeter = await withCreditMetering(
-        db,
-        uid,
-        requestId,
-        'chunking',
-        { script: input.script, limit },
-      );
-
-      // ------------------------------------------------------------------
-      // 3. Chunking via builder TypeScript + structured output enriquecido
+      // 2. Chunking via builder TypeScript + structured output enriquecido
       // ------------------------------------------------------------------
       try {
         const response = await ai.generate({
           model: CHUNKING_MODEL,
           prompt: buildChunkingInstruction(input.script, limit),
           config: {
+            ...withApiKey(apiKey),
             temperature: 0,
           },
           output: {
@@ -136,7 +111,6 @@ export const chunking = onCallGenkit(
         }> = [];
         for (const item of enrichedItems) {
           if (item.text.length > limit) {
-            // Re-divide o chunk excedido e marca os sub-chunks como continuação
             const subChunks = splitTextProgrammatically(item.text, limit);
             for (let j = 0; j < subChunks.length; j++) {
               validatedItems.push({
@@ -157,25 +131,10 @@ export const chunking = onCallGenkit(
         const finalItems = validatedItems.filter((item) => item.text.trim().length > 0);
         const finalChunks = finalItems.map((item) => item.text);
 
-        // ------------------------------------------------------------------
-        // 4. Confirma créditos com o custo real
-        // ------------------------------------------------------------------
-        const finalCredits = calculateCreditCost({
-          operationType: 'chunking',
-          itemCount: finalChunks.length,
-        });
-
-        await creditMeter.confirm({
-          finalCredits,
-          outputSize: input.script.length,
-          model: CHUNKING_MODEL,
-        });
-
         log.info('Divisão concluída via Gemini', {
           uid,
           scriptLen: input.script.length,
           chunks: finalChunks.length,
-          credits: finalCredits,
         });
 
         return {
@@ -187,19 +146,11 @@ export const chunking = onCallGenkit(
         const errorMessage = genErr instanceof Error ? genErr.message : 'Erro desconhecido';
         log.error('Falha no chunking via Gemini', { error: errorMessage });
 
-        // Reverte créditos em caso de falha
-        await creditMeter.revert('CHUNKING_FAILED');
-
         // ------------------------------------------------------------------
-        // 5. Fallback programático
-        //
-        // No beta aberto, o fallback é gratuito — o usuário não pagou pela
-        // IA então não consome créditos. Se a API Gemini falhar, o resultado
-        // de fallback (menos preciso) é entregue sem custo.
+        // 3. Fallback programático
         // ------------------------------------------------------------------
         const fallbackChunks = splitTextProgrammatically(input.script, limit);
 
-        // Gera enrichedChunks básicos para o fallback (sem emotionTag do Gemini)
         const fallbackEnriched = fallbackChunks.map((text, idx) => ({
           text,
           isContinuation: idx > 0,

@@ -412,8 +412,8 @@ export interface StackedHeaderProps {
  *   variant="alert"
  *   severity="success"
  *   icon={<RateReviewIcon />}
- *   title="Sua opinião vale créditos bônus"
- *   description="Envie um feedback e ganhe 250 créditos."
+ *   title="Sua opinião ajuda o produto"
+ *   description="Envie um feedback rápido sobre sua experiência."
  *   action={<Button color="secondary">Dar feedback agora</Button>}
  * />
  * ```

@@ -60,7 +60,7 @@ export function PublicHeader() {
   const navItems = [
     { to: '/', label: t('nav.home') },
     { to: '/funcionalidades', label: t('nav.features') },
-    { to: '/precos', label: t('nav.pricing') },
+    { to: '/open-source', label: t('nav.openSource') },
     { to: '/perguntas-frequentes', label: t('nav.faq') },
     { to: '/sobre', label: t('nav.about') },
     { to: '/contato', label: t('nav.contact') },

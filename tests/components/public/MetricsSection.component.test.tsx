@@ -49,24 +49,24 @@ describe('MetricsSection', () => {
 
   it('renderiza as 4 métricas de social proof', () => {
     render(<MetricsSection />, { wrapper: Wrapper });
-    // Métricas pt-BR: Fluxo em 3 etapas, Créditos mensais, Bônus por feedback, Sem cartão
+    // Métricas pt-BR: Fluxo em 3 etapas, Open source, BYOK, Navegador
     expect(screen.getByText('Fluxo em 3 etapas')).toBeDefined();
-    expect(screen.getByText('Créditos mensais')).toBeDefined();
-    expect(screen.getByText('Bônus por feedback')).toBeDefined();
-    expect(screen.getByText('Sem cartão')).toBeDefined();
+    expect(screen.getByText('Open source')).toBeDefined();
+    expect(screen.getByText('BYOK')).toBeDefined();
+    expect(screen.getByText('Navegador')).toBeDefined();
   });
 
-  it('renderiza os valores numéricos das métricas', () => {
+  it('renderiza os valores das métricas', () => {
     render(<MetricsSection />, { wrapper: Wrapper });
     expect(screen.getByText('3')).toBeDefined();
-    expect(screen.getByText('500')).toBeDefined();
-    expect(screen.getByText('+250')).toBeDefined();
+    expect(screen.getByText('∞')).toBeDefined();
+    expect(screen.getByText('🔑')).toBeDefined();
     expect(screen.getByText('0')).toBeDefined();
   });
 
   it('não renderiza sufixos K+ nas métricas (valores brutos)', () => {
     render(<MetricsSection />, { wrapper: Wrapper });
-    // Os novos valores são brutos: 3, 500, +250, 0 (sem K+).
+    // Os novos valores são brutos: 3, ∞, 🔑, 0 (sem K+).
     expect(screen.queryByText('K+')).toBeNull();
     expect(screen.queryByText('/5')).toBeNull();
   });
@@ -74,26 +74,26 @@ describe('MetricsSection', () => {
   it('renderiza as descrições de cada métrica', () => {
     render(<MetricsSection />, { wrapper: Wrapper });
     expect(screen.getByText('Roteiro, geração e exportação no mesmo lugar')).toBeDefined();
-    expect(screen.getByText('Para testar narração, imagens, assistente e vídeo')).toBeDefined();
-    expect(screen.getByText('Ajude a melhorar o beta e ganhe mais espaço para criar')).toBeDefined();
-    expect(screen.getByText('Acesso gratuito enquanto o beta aberto estiver ativo')).toBeDefined();
+    expect(screen.getByText('Código aberto, gratuito e com contribuição da comunidade')).toBeDefined();
+    expect(screen.getByText('Use sua própria chave Gemini e mantenha controle direto no Google')).toBeDefined();
+    expect(screen.getByText('Tudo roda no navegador, sem instalar nada')).toBeDefined();
   });
 
   it('renderiza em inglês quando locale é "en"', () => {
     localStorage.setItem('s2a_locale', 'en');
     render(<MetricsSection />, { wrapper: Wrapper });
     expect(screen.getByText('3-step workflow')).toBeDefined();
-    expect(screen.getByText('Monthly credits')).toBeDefined();
-    expect(screen.getByText('Feedback bonus')).toBeDefined();
-    expect(screen.getByText('No card')).toBeDefined();
+    expect(screen.getByText('Open source')).toBeDefined();
+    expect(screen.getByText('BYOK')).toBeDefined();
+    expect(screen.getByText('Browser')).toBeDefined();
   });
 
   it('renderiza em espanhol quando locale é "es"', () => {
     localStorage.setItem('s2a_locale', 'es');
     render(<MetricsSection />, { wrapper: Wrapper });
     expect(screen.getByText('Flujo en 3 etapas')).toBeDefined();
-    expect(screen.getByText('Créditos mensuales')).toBeDefined();
-    expect(screen.getByText('Bono por feedback')).toBeDefined();
-    expect(screen.getByText('Sin tarjeta')).toBeDefined();
+    expect(screen.getByText('Open source')).toBeDefined();
+    expect(screen.getByText('BYOK')).toBeDefined();
+    expect(screen.getByText('Navegador')).toBeDefined();
   });
 });
