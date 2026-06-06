@@ -4,7 +4,7 @@
 [![Licença](https://img.shields.io/badge/licença-MIT-green)](LICENSE)
 [![Idiomas](https://img.shields.io/badge/idiomas-pt--BR%20%7C%20en%20%7C%20es-orange)](#)
 
-**Leia em outros idiomas:** [English](README-en.md) | [Español](README-es.md) | **Português**
+**Leia em outros idiomas:** [English](README.md) | [Español](README-es.md) | **Português**
 
 ---
 
@@ -185,6 +185,13 @@ bun run deploy:preview    # hosting channel:deploy preview
 - Rode secret scan antes do push público
 - Rotacione chaves expostas por histórico antigo antes de publicar um repo novo
 - Se for criar repo novo, copie apenas arquivos rastreados/intencionais e mantenha `.gitignore`
+
+## Documentação
+
+- [Guia de Contribuição](CONTRIBUTING.md) — Como contribuir com o Script Master
+- [Política de Segurança](SECURITY.md) — Como reportar vulnerabilidades
+- [Código de Conduta](CODE_OF_CONDUCT.md) — Diretrizes da comunidade
+- [Changelog](CHANGELOG.md) — Histórico completo de versões
 
 ## Licença
 

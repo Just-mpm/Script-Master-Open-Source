@@ -186,6 +186,13 @@ bun run deploy:preview    # hosting channel:deploy preview
 - Rotate keys exposed in old history before publishing a new repo
 - If creating a new repo, copy only tracked/intentional files and maintain `.gitignore`
 
+## Documentation
+
+- [Contributing Guide](CONTRIBUTING.md) — How to contribute to Script Master
+- [Security Policy](SECURITY.md) — How to report vulnerabilities
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community guidelines
+- [Changelog](CHANGELOG.md) — Full release history
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

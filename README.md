@@ -1,42 +1,76 @@
 # Script Master
 
-Script Master e uma SPA open source para transformar roteiros em audio, cenas, imagens e videos com IA. O modelo de uso e **BYOK (Bring Your Own Key)**: cada usuario configura a propria chave do Gemini no app e paga o consumo diretamente ao Google.
+[![Version](https://img.shields.io/badge/version-0.130.0-blue)](https://github.com/Just-mpm/Script-Master-Open-Source)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Languages](https://img.shields.io/badge/languages-pt--BR%20%7C%20en%20%7C%20es-orange)](#)
 
-O projeto nao tem Stripe, planos pagos, creditos internos ou billing. As chamadas de IA passam por Firebase Cloud Functions/Genkit, recebendo a chave do usuario no payload `providerAuth`.
+**Read in other languages:** **English** | [Português](README-pt.md) | [Español](README-es.md)
+
+---
+
+Script Master is an **open source** SPA that transforms scripts into audio, scenes, images, and videos with AI. The usage model is **BYOK (Bring Your Own Key)**: each user configures their own Gemini API key in the app and pays for usage directly to Google.
+
+The project has **no** Stripe, paid plans, internal credits, or billing. All AI calls go through Firebase Cloud Functions/Genkit, receiving the user's key in the `providerAuth` payload.
+
+## Features
+
+- **TTS (Text-to-Speech)** — Transform scripts into audio with Gemini voices, multi-speaker support, and automatic chunking
+- **Image generation** — Create visual scenes from scripts with optimized prompts
+- **Video rendering** — Remotion renders videos client-side with subtitles (Whisper WASM) and codec fallback
+- **Speed Paint** — Real-time painting-style animation with edge detection and sketch/reveal phases
+- **AI Assistant** — Conversational chat with tools (web search, plans, studio integration)
+- **Project library** — Full project management with audio, images, and videos
+- **Manual project** — Upload your own audio and images to create projects from scratch
+- **Internationalization** — UI in 3 languages (pt-BR, en, es)
+- **PWA** — Installable as a native app with service worker and offline cache
 
 ## Stack
 
-- React 19 + Vite 8
-- MUI v9
-- Firebase Auth, Firestore, Storage, Hosting, App Check e Cloud Functions v2
-- Genkit + Gemini
-- Remotion 4 para renderizacao de video no cliente
-- Zustand, Motion, Vitest e Testing Library
+| Technology | Usage |
+|-----------|-------|
+| React 19 + Vite 8 | Frontend SPA with lazy-loaded routes |
+| MUI v9 | Components and theme (dark mode) |
+| Firebase | Auth, Firestore, Storage, Hosting, App Check, Cloud Functions v2 |
+| Genkit + Gemini | AI backend (TTS, images, assistant, chunking) |
+| Remotion 4 | Client-side video rendering (WebCodecs) |
+| Zustand | Global state with localStorage persistence |
+| Motion | Animations and transitions |
+| Vitest + Testing Library | Unit and component tests |
 
-## Como o BYOK funciona
+## How BYOK works
 
-- A chave Gemini e salva apenas no IndexedDB do navegador, escopada pelo `uid`.
-- A chave nao e salva no Firestore, nao vai para `localStorage` e nao fica no bundle.
-- Em cada geracao, o frontend envia `providerAuth: { provider: 'gemini', apiKey }` para a callable Function.
-- O backend usa `googleAI({ apiKey: false })` e injeta a chave por chamada com `config: { apiKey }`.
+1. The user creates a Gemini API key at [Google AI Studio](https://aistudio.google.com)
+2. The key is saved **only** in the browser's IndexedDB, scoped by `uid`
+3. The key is **not** saved in Firestore, not stored in `localStorage`, and not included in the bundle
+4. On each generation, the frontend sends `providerAuth: { provider: 'gemini', apiKey }` to the callable Function
+5. The backend uses `googleAI({ apiKey: false })` and injects the key per call with `config: { apiKey }`
 
-## Requisitos
+## Gemini Models
 
-- Bun
-- Node.js 24
-- Firebase CLI
-- Um projeto Firebase com Auth, Firestore, Storage, Hosting, Functions e App Check configurados
-- Uma chave Gemini criada pelo usuario em [Google AI Studio](https://aistudio.google.com)
+| Model | Usage |
+|-------|-------|
+| `gemini-3.1-flash-tts-preview` | Text-to-speech |
+| `gemini-3.1-flash-image-preview` | Image generation |
+| `gemini-3.1-flash-lite` | Chunking, scene prompts, assistant (fast mode) |
+| `gemini-3.5-flash` | Assistant (specialist mode) |
 
-## Setup local
+## Requirements
 
-Instale as dependencias do frontend:
+- [Bun](https://bun.sh)
+- [Node.js 24](https://nodejs.org)
+- [Firebase CLI](https://firebase.google.com/docs/cli) (`npm install -g firebase-tools`)
+- A Firebase project with Auth, Firestore, Storage, Hosting, Functions, and App Check configured
+- A Gemini API key created at [Google AI Studio](https://aistudio.google.com)
+
+## Local setup
+
+Install frontend dependencies:
 
 ```bash
 bun install
 ```
 
-Instale as dependencias das Functions:
+Install Functions dependencies:
 
 ```bash
 cd functions
@@ -44,7 +78,7 @@ npm install
 cd ..
 ```
 
-Copie os exemplos de ambiente:
+Copy environment examples:
 
 ```bash
 cp .firebaserc.example .firebaserc
@@ -57,26 +91,26 @@ cp public/llms.txt.example public/llms.txt
 cp public/llms-full.txt.example public/llms-full.txt
 ```
 
-Preencha `.env.local` com as variaveis publicas do Firebase Web SDK e `.firebaserc` com o ID do seu projeto Firebase. Nao crie variavel Gemini no frontend: a chave Gemini e configurada pelo usuario dentro do app.
+Fill `.env.local` with your Firebase Web SDK public variables and `.firebaserc` with your Firebase project ID. **Do not create a Gemini variable in the frontend**: the Gemini key is configured by the user inside the app.
 
 ## App Check
 
-As callable Functions usam `enforceAppCheck: true`. Para desenvolvimento local voce tem duas opcoes:
+Callable Functions use `enforceAppCheck: true`. For local development you have two options:
 
-- Usar emuladores (`VITE_USE_EMULATORS=true` e flags `VITE_EMULATOR_*`).
-- Usar backend real com um debug token registrado no Firebase Console e definido localmente em `VITE_APP_CHECK_DEBUG_TOKEN`.
+- Use emulators (`VITE_USE_EMULATORS=true` and `VITE_EMULATOR_*` flags).
+- Use real backend with a debug token registered in the Firebase Console and set locally as `VITE_APP_CHECK_DEBUG_TOKEN`.
 
-Nunca commite um debug token real. Em producao, configure `VITE_RECAPTCHA_SITE_KEY` com uma chave reCAPTCHA v3 autorizada para o seu dominio.
+Never commit a real debug token. In production, configure `VITE_RECAPTCHA_SITE_KEY` with a reCAPTCHA v3 key authorized for your domain.
 
-## CORS para forks
+## CORS for forks
 
-As Functions aceitam localhost e os dominios padrao do Firebase Hosting do proprio projeto (`<project-id>.web.app` e `<project-id>.firebaseapp.com`). Para dominio customizado, defina em `functions/.env`:
+Functions accept localhost and the default Firebase Hosting domains of your project (`<project-id>.web.app` and `<project-id>.firebaseapp.com`). For a custom domain, set it in `functions/.env`:
 
 ```bash
-APP_CORS_ORIGINS=https://seu-dominio.com,https://seu-projeto.web.app,http://localhost:3000
+APP_CORS_ORIGINS=https://your-domain.com,https://your-project.web.app,http://localhost:3000
 ```
 
-## Rodar
+## Running
 
 Frontend:
 
@@ -84,13 +118,13 @@ Frontend:
 bun run dev
 ```
 
-Emuladores:
+Emulators:
 
 ```bash
 bun run emulators:all
 ```
 
-Functions:
+Functions (build):
 
 ```bash
 cd functions
@@ -98,15 +132,17 @@ npm run build
 cd ..
 ```
 
-## Scripts principais
+## Main scripts
 
 ```bash
-bun run lint
-bun run typecheck
-bun run test
-bun run build
-bun run build:full
-bun run deploy
+bun run lint          # ESLint
+bun run lint:fix      # ESLint with auto-fix
+bun run typecheck     # TypeScript (tsc -b)
+bun run test          # Vitest (single run)
+bun run test:watch    # Vitest (watch mode)
+bun run build         # lint + typecheck + build (~1s)
+bun run build:full    # build + pre-render public routes (~25s)
+bun run deploy        # build:full + functions build + firebase deploy
 ```
 
 Functions:
@@ -115,40 +151,48 @@ Functions:
 cd functions
 npm run lint
 npm run build
-npm run grant-access
+npm run grant-access  # grants admin flag via custom claim
 ```
 
 ## Deploy
 
-Antes do primeiro deploy, aponte a `.firebaserc` para o seu projeto:
+Before the first deploy, point `.firebaserc` to your project:
 
 ```bash
 cp .firebaserc.example .firebaserc
-# Edite .firebaserc e troque "your-firebase-project-id" pelo ID do seu projeto
+# Edit .firebaserc and replace "your-firebase-project-id" with your project ID
 ```
 
-Deploy completo:
+Full deploy:
 
 ```bash
 bun run deploy
 ```
 
-Deploys parciais:
+Partial deploys:
 
 ```bash
-bun run deploy:hosting
-bun run deploy:functions
-bun run deploy:firestore
-bun run deploy:storage
+bun run deploy:hosting    # build:full + hosting
+bun run deploy:functions  # functions build + deploy
+bun run deploy:firestore  # rules and indexes
+bun run deploy:storage    # Storage rules
+bun run deploy:preview    # hosting channel:deploy preview
 ```
 
-## Seguranca antes de publicar
+## Security before publishing
 
-- Nao copie `.env`, `.env.local`, `.env.production` ou service accounts para o repo.
-- Rode secret scan antes do push publico.
-- Rotacione chaves expostas por historico antigo antes de publicar um repo novo.
-- Se for criar repo novo, copie apenas arquivos rastreados/intencionais e mantenha `.gitignore`.
+- Do not copy `.env`, `.env.local`, `.env.production`, or service accounts into the repo
+- Run a secret scan before public push
+- Rotate keys exposed in old history before publishing a new repo
+- If creating a new repo, copy only tracked/intentional files and maintain `.gitignore`
 
-## Licenca
+## Documentation
 
-MIT. Veja [LICENSE](LICENSE).
+- [Contributing Guide](CONTRIBUTING.md) — How to contribute to Script Master
+- [Security Policy](SECURITY.md) — How to report vulnerabilities
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community guidelines
+- [Changelog](CHANGELOG.md) — Full release history
+
+## License
+
+MIT. See [LICENSE](LICENSE).
