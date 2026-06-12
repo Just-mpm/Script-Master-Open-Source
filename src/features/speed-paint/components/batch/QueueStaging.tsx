@@ -6,7 +6,6 @@ import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
-import Collapse from '@mui/material/Collapse';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -15,7 +14,6 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { alpha } from '@mui/material/styles';
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
-import { TransitionGroup } from 'react-transition-group';
 import { useAnimationStore } from '../../store/animationStore';
 import type { QueuedImage } from '../../types';
 import { useLocale, pluralKey } from '../../../i18n';
@@ -40,6 +38,7 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
   const { ref, handleRef, isDragging, isDropTarget } = useSortable({
     id: img.id,
     index,
+    group: 'speed-paint-queue',
   });
 
   return (
@@ -275,16 +274,13 @@ export function QueueStaging() {
             pb: 1,
           }}
         >
-          <TransitionGroup component={null}>
-            {queue.map((img, index) => (
-              <Collapse key={img.id} timeout={300}>
-                <SortableQueueImage
-                  img={img}
-                  index={index}
-                />
-              </Collapse>
-            ))}
-          </TransitionGroup>
+          {queue.map((img, index) => (
+            <SortableQueueImage
+              key={img.id}
+              img={img}
+              index={index}
+            />
+          ))}
         </Box>
 
         <DragOverlay>

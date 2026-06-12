@@ -7,28 +7,19 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [0.130.1] - 2026-06-06
+## [0.130.2] - 2026-06-12
+
+### Corrigido
+
+- **Drag-and-drop de imagens em lote no SpeedPaint** (`QueueStaging.tsx`): wrappers `<TransitionGroup>` + `<Collapse>` ao redor de cada `SortableQueueImage` removidos — o `OptimisticSortingPlugin` do `@dnd-kit` usa `insertAdjacentElement` para mover fisicamente os elementos DOM durante o drag, mas os wrappers extras do Collapse (3 divs aninhadas) faziam com que o plugin arrancasse o `<Box>` de dentro do Collapse, quebrando o layout e a estrutura do grid. Agora os itens são filhos diretos da grid, permitindo o funcionamento correto do sorting visual. Adicionado `group: 'speed-paint-queue'` no `useSortable` para explicitar o escopo sortável. Imports de `@mui/material/Collapse` e `react-transition-group` removidos.
 
 ### Adicionado
 
-- **Link do GitHub na navegação**: ícone GitHub adicionado ao `SidebarFooter.tsx`, `PublicFooter.tsx` e `PublicHeader.tsx` — acesso direto ao repositório de qualquer página
+- **Docs de auditoria**: `docs/audits/queue-staging-2026-06-12.md` (code-validator) e `docs/scan/queue-staging-correcao-2026-06-12.md` (gap-finder) — documentação da correção com vereditos, verificações detalhadas e análise de lacunas
 
-### Alterado
+---
 
-- **READMEs padronizados** (`README.md`, `README-en.md`, `README-es.md`, `README-pt.md`): conteúdo reescrito em inglês no principal, badges de versão/licença/idiomas, seção de documentação com links para CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/CHANGELOG, tabela de tecnologias, instruções BYOK — consistência entre os 3 idiomas
-- **`byokFaq.ts`**: textos da FAQ BYOK atualizados e refinados nos 3 idiomas
-- **`useCodecSupport.ts`**: mensagens de erro e aviso de codec atualizadas para clareza e precisão técnica
-- **Namespaces i18n `feedback`**: chaves `fab`, `banner` e `emptyState` removidas dos 3 locales (pt-BR, en, es) — componentes correspondentes removidos
-- **`ContactPage.tsx`**: comentário atualizado (referência a `FeedbackFab` → `FeedbackDialog`)
-- **`OpenSourcePage.tsx`**: import não utilizado de `Stack` removido
-
-### Removido
-
-- **`FeedbackFab.tsx`** e **`FeedbackBanner.tsx`**: componentes de feedback FAB e banner removidos — não eram mais necessários após a remoção do sistema de bônus de créditos (v0.130.0). O `FeedbackDialog` permanece como único ponto de entrada de feedback via `FeedbackController` e `useFeedbackDialog()`
-- **`FEEDBACK_FAB_Z_INDEX`** de `feedback/constants.ts`: constante órfã removida
-- **Exports de `FeedbackFab` e `FeedbackBanner`** do barrel `feedback/index.ts`
-- **Imports de feedback** em `Assistant.tsx` e `AssistantMessages.tsx`: referências ao `FeedbackBanner` e `FeedbackFab` removidas
-- **Teste `FeedbackFab.component.test.tsx`**: arquivo removido junto com o componente
+## [0.130.1] - 2026-06-06
 
 ---
 

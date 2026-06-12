@@ -197,8 +197,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 ## Version
 
-- **Current:** `0.130.1`
-- **Last release:** 2026-06-06
+- **Current:** `0.130.2`
+- **Last release:** 2026-06-12
 
 ### Últimas mudanças (atualizado por /fast)
 
@@ -206,8 +206,8 @@ MUI v9 + Emotion com CSS layers. Dark mode (light existe mas idêntico). Fontes:
 
 | Versão | Resumo |
 |--------|--------|
+| `0.130.2` | **Correção de drag-and-drop em lote no SpeedPaint:** wrappers `TransitionGroup` + `Collapse` removidos do `QueueStaging.tsx` — o `OptimisticSortingPlugin` do `@dnd-kit` não conseguia mover elementos DOM através das divs extras do Collapse. `group: 'speed-paint-queue'` adicionado ao `useSortable`. Imports de `@mui/material/Collapse` e `react-transition-group` removidos. Auditado e validado por code-validator e gap-finder |
 | `0.130.1` | **Limpeza pós-BYOK:** `FeedbackFab` e `FeedbackBanner` removidos (bônus de créditos não existe mais); chaves i18n `fab`/`banner`/`emptyState` removidas dos 3 locales; link do GitHub adicionado ao `SidebarFooter`, `PublicFooter`, `PublicHeader`; READMEs padronizados em 4 arquivos com badges/seção de documentação/tabela de tecnologias; `byokFaq.ts` refinado; mensagens de codec em `useCodecSupport.ts` atualizadas |
 | `0.130.0` | **Migração para BYOK (Bring Your Own Key) finalizada:** backend sem Stripe/billing/créditos — `testApiKey` flow (`functions/src/flows/test-api-key.ts`) valida a API key do Gemini via chamada mínima; `ProviderSettingsSection` no frontend (`src/features/provider-settings/`); diretórios e arquivos de billing removidos (`src/features/billing/`, `src/hooks/useCredits.ts`, `src/components/CreditIndicator.tsx`, `src/components/CreditBlockedMessage.tsx`, `src/lib/stripe.ts`, `functions/src/usage/credit-*`, `functions/src/usage/period.ts`, `functions/src/usage/audio-preflight.ts`, `functions/src/flows/credit-snapshot.ts`, `functions/src/genkit/middlewares/credit-metering.ts`); `.firebaserc` apontado para placeholder `your-firebase-project-id`; `serviceAccount` em `functions/src/index.ts` tornado opcional com comentário; AGENTS.md/CLAUDE.md atualizados (sem Stripe, com BYOK) |
 | `0.129.1` | **Projeto Manual — UI refinada:** descrições redundantes removidas dos 3 steps do wizard (`ManualProjectStepName`, `ManualProjectStepAudio`, `ManualProjectStepImages`) — redução de 16 linhas, wizard mais limpo e direto |
 | `0.129.0` | **Projeto Manual** (wizard `/app/projeto/novo`) — upload de áudio (≤50MB) + imagens (≤30) com validação MIME/decode/dimensões, reordenação drag-and-drop (`@dnd-kit`) + botões ↑↓, persistência dual via `saveProject`/`saveAudioToProject`/`saveImageToProject`; integração com Speed Paint e Vídeo via novo campo `script` no `useAudioGeneratorStore` (NÃO polui `useStudioStore`); CORS do Firebase Storage configurado (`storage-cors.json` + `Cross-Origin-Resource-Policy`); 9 eventos analytics novos; namespace `manualProject.*` em pt-BR/en/es; 61 testes Vitest (5 arquivos); nova rota lazy + botão na Library |
-| `0.128.0` | Migração de vídeos do Storage para IndexedDB local (`videos.ts`, `projects.ts`, `shared.ts`, `migration.ts`) — novas escritas de vídeo bloqueadas no Storage/Firestore, leitura legada preservada; lazy loading de composições Remotion nos controllers (`createExportableComposition()`, `createExportableSpeedPaintComposition()`, `createExportableBatchSpeedPaintComposition()`); padronização visual `letterSpacing: 0` em ~50 componentes; UI responsiva de Login/Cadastro; i18n da biblioteca atualizada (`noVideos`, `openVideoExporter`); scroll suave pós-navegação com `requestAnimationFrame`; template literals aninhados corrigidos; auditoria de product design removida; testes expandidos (+388 linhas) |
