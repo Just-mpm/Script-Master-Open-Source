@@ -49,16 +49,29 @@ export function ImageUpload() {
     }
   }, [setQueue, setCurrentIndex, setBatchMode]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp'],
     },
+    noClick: true,
+    noKeyboard: true,
   });
 
   return (
     <Box
-      {...getRootProps()}
+      {...getRootProps({
+        onClick: open,
+        role: 'button',
+        tabIndex: 0,
+        'aria-label': t('speedPaint.uploadPrompt'),
+        onKeyDown: (event: React.KeyboardEvent) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            open();
+          }
+        },
+      })}
       sx={(theme) => ({
         width: '100%',
         maxWidth: 672,
@@ -91,6 +104,9 @@ export function ImageUpload() {
         },
       })}
     >
+      {/* Input file oculto — necessário para o react-dropzone */}
+      <input {...getInputProps()} style={{ display: 'none' }} />
+
       {/* Ícone de upload */}
       <Box
         sx={{
@@ -115,9 +131,12 @@ export function ImageUpload() {
       </Typography>
       {/* Botão de escolha de arquivo */}
       <Button
-        component="label"
         variant="outlined"
         startIcon={<CloudUploadIcon />}
+        onClick={(e) => {
+          e.stopPropagation();
+          open();
+        }}
         sx={{
           mt: 2,
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -128,7 +147,6 @@ export function ImageUpload() {
         }}
       >
         {t('speedPaint.chooseFiles')}
-        <input {...getInputProps()} style={{ display: 'none' }} />
       </Button>
     </Box>
   );

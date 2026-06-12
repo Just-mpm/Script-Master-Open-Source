@@ -21,17 +21,20 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 // Mock do react-dropzone — captura onDrop para disparar manualmente
 let capturedOnDrop: ((files: File[]) => void) | null = null;
+const mockOpen = vi.fn();
 
 vi.mock('react-dropzone', () => ({
-  useDropzone: ({ onDrop }: { onDrop: (files: File[]) => void }) => {
-    capturedOnDrop = onDrop;
+  useDropzone: (config: { onDrop: (files: File[]) => void; noClick?: boolean; noKeyboard?: boolean }) => {
+    capturedOnDrop = config.onDrop ?? null;
     return {
-      getRootProps: () => ({
+      getRootProps: (props: Record<string, unknown> = {}) => ({
         'data-testid': 'dropzone-root',
         onClick: () => {},
+        ...props,
       }),
       getInputProps: () => ({ 'data-testid': 'dropzone-input' }),
       isDragActive: false,
+      open: mockOpen,
     };
   },
 }));
@@ -50,6 +53,7 @@ vi.mock('../../src/theme/tokens', async (importOriginal) => {
 describe('ImageUpload', () => {
   beforeEach(() => {
     capturedOnDrop = null;
+    mockOpen.mockClear();
     localStorage.setItem('s2a_locale', 'pt-BR');
     useAnimationStore.getState().clearQueue();
     useAnimationStore.getState().resetJob();
@@ -153,5 +157,56 @@ describe('ImageUpload', () => {
     });
 
     expect(useAnimationStore.getState().queue).toHaveLength(0);
+  });
+
+  // --------------------------------------------------------------------------
+  // GAP-02: Acessibilidade
+  // --------------------------------------------------------------------------
+
+  it('dropzone root tem role="button" e tabIndex={0}', () => {
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    const root = screen.getByTestId('dropzone-root');
+    expect(root.getAttribute('role')).toBe('button');
+    expect(root.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('dropzone root tem aria-label', () => {
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    const root = screen.getByTestId('dropzone-root');
+    expect(root.getAttribute('aria-label')).toBe('Envie uma ou mais imagens');
+  });
+
+  it('abre file dialog ao pressionar Enter no dropzone root', () => {
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    const root = screen.getByTestId('dropzone-root');
+    fireEvent.keyDown(root, { key: 'Enter' });
+
+    expect(mockOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('abre file dialog ao pressionar Espaço no dropzone root', () => {
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    const root = screen.getByTestId('dropzone-root');
+    fireEvent.keyDown(root, { key: ' ' });
+
+    expect(mockOpen).toHaveBeenCalledTimes(1);
+  });
+
+  // --------------------------------------------------------------------------
+  // GAP-01: open() via botão
+  // --------------------------------------------------------------------------
+
+  it('chama open ao clicar no botão Escolher arquivos', () => {
+    render(<ImageUpload />, { wrapper: Wrapper });
+
+    const button = screen.getByText('Escolher arquivos');
+    fireEvent.click(button);
+
+    // O botão tem stopPropagation + open
+    expect(mockOpen).toHaveBeenCalledTimes(1);
   });
 });

@@ -10,7 +10,7 @@
     "url": "https://github.com/Just-mpm/Script-Master-Open-Source/issues"
   },
   "homepage": "https://script-master.pro",
-  "version": "0.130.2",
+  "version": "0.130.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",

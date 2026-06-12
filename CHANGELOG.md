@@ -7,6 +7,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.130.3] - 2026-06-12
+
+### Corrigido
+
+- **Flash visual no DragOverlay ao soltar imagem no SpeedPaint** (`QueueStaging.tsx`): `dropAnimation={null}` adicionado ao `<DragOverlay>` do `@dnd-kit/react` — desabilita a animação default de 250ms que reposicionava o overlay com `transform`, causando um salto visual indesejado ao soltar o item. Transição CSS alterada de `transform` para `box-shadow` para consistência com a ausência de animação de drop.
+- **Botão "Escolher arquivos" do ImageUpload não abria o seletor de arquivos** (`ImageUpload.tsx`): o uso simultâneo de `<Button component="label">` e a zona de clique do `react-dropzone` (`noClick: false`) criava um conflito onde o evento de clique no botão era engolido pelo dropzone sem abrir o seletor. Corrigido extraindo `open()` do `useDropzone` com `noClick: true` e `noKeyboard: true`, substituindo `<Button component="label">` + `<input hidden>` por `<Button onClick={open}>` — o drag-and-drop continua funcional pela zona do dropzone.
+
+### Alterado
+
+- **Testes do ImageUpload** (`ImageUpload.component.test.tsx`): mock do `useDropzone` atualizado para expor `open`, `noClick` e `noKeyboard`; 5 novos testes adicionados — 4 de acessibilidade (role `button`, `tabIndex={0}`, `aria-label`, atalhos de teclado Enter/Espaço) e 1 de clique no botão "Escolher arquivos". Teste de renderização ajustado para usar data-testid.
+
+### Adicionado
+
+- **Docs de auditoria e análise** (4 arquivos): `docs/audits/image-upload-2026-06-12.md` (code-validator), `docs/audits/speed-paint-flash-correction-2026-06-12.md` (code-validator), `docs/scan/dropanimation-flash-speedpaint-2026-06-12.md` (gap-finder), `docs/scan/imageupload-correcao-vs-problema-2026-06-12.md` (gap-finder) — documentação completa das correções com vereditos, verificações de tipo, análise de lacunas e gaps priorizados.
+
+---
+
 ## [0.130.2] - 2026-06-12
 
 ### Corrigido
