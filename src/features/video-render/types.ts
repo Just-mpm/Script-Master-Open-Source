@@ -1,5 +1,5 @@
 import type { StudioScene } from '../studio/types';
-import type { StrokeAnimation } from '../speed-paint/types';
+import type { StrokeAnimation, VetorialAnimation } from '../speed-paint/types';
 
 /** Qualidade de exportação do vídeo */
 export type VideoExportQuality = '720p' | '1080p' | '1440p' | '4k';
@@ -34,8 +34,10 @@ export interface VideoScene extends StudioScene {
   durationInFrames: number;
   /** Legenda opcional para esta cena */
   subtitle?: string;
-  /** Dados de animação speed paint — se presente, a cena é animada via canvas */
-  strokeAnimation?: StrokeAnimation;
+  /** Dados de animação speed paint — se presente, a cena é animada via canvas.
+   *  Pode ser `StrokeAnimation` (modo `'mask'`) ou `VetorialAnimation` (modo
+   *  `'vetorial'`, Fase 2.1). O consumidor deve discriminar por propriedades. */
+  strokeAnimation?: StrokeAnimation | VetorialAnimation;
 }
 
 /** Props da Composition Remotion */

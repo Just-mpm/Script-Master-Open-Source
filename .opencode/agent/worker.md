@@ -1,6 +1,6 @@
 ---
 name: worker
-description: Use para implementar código de forma focada e proporcional ao escopo respeitando padrões do projeto. 
+description: Use SEMPRE que for criar código novo (componentes, serviços, hooks, páginas, APIs) a partir de especificação clara. Nunca use para corrigir bugs (→ `fixer`), criar testes (→ `test`), refatorar (→ `refactor`) ou auditar (→ `code-validator`). 
 permission:
   read: allow
   edit: allow

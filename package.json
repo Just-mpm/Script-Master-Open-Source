@@ -10,7 +10,7 @@
     "url": "https://github.com/Just-mpm/Script-Master-Open-Source/issues"
   },
   "homepage": "https://script-master.pro",
-  "version": "0.130.3",
+  "version": "0.131.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -49,12 +49,14 @@
     "@remotion/captions": "4.0.448",
     "@remotion/media": "4.0.448",
     "@remotion/media-utils": "4.0.448",
+    "@remotion/paths": "4.0.448",
     "@remotion/player": "4.0.448",
     "@remotion/transitions": "4.0.448",
     "@remotion/web-renderer": "4.0.448",
     "@remotion/whisper-web": "4.0.448",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase": "^12.12.0",
+    "imagetracerjs": "1.2.6",
     "motion": "^12.38.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

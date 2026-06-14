@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { StrokeAnimation } from '../../src/features/speed-paint/types';
 
 // ─── Mock do Firebase para evitar re-inicialização após vi.resetModules() ──
 // Cadeia de imports: imageProcessing → logger → batch-processor → firebase
@@ -179,7 +180,7 @@ describe('generateStrokesFromImage', () => {
     const promise = generateStrokesFromImage('data:image/png;base64,test', vi.fn());
     triggerLoad();
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
 
     expect(result).toBeDefined();
     expect(result.id).toBeTruthy();
@@ -218,7 +219,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     const revealStrokes = result.strokes.filter((s) => s.type === 'reveal');
@@ -238,7 +239,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     expect(result.totalFrames).toBe(result.strokes.length);
@@ -252,7 +253,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(1000);
@@ -266,7 +267,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     const ids = result.strokes.map((s) => s.id);
@@ -286,7 +287,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     expect(result.canvasWidth).toBeLessThanOrEqual(1920);
@@ -301,7 +302,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     // ratio = min(1920/4000, 1080/3000) = min(0.48, 0.36) = 0.36
@@ -317,7 +318,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     expect(result.canvasWidth).toBe(800);
@@ -332,7 +333,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     if (result.revealThreshold !== undefined && result.strokes.length > 0) {
@@ -366,7 +367,7 @@ describe('generateStrokesFromImage', () => {
     triggerLoad();
     await vi.advanceTimersByTimeAsync(200);
 
-    const result = await promise;
+    const result = (await promise) as StrokeAnimation;
     vi.useRealTimers();
 
     for (const stroke of result.strokes) {

@@ -1,6 +1,6 @@
 ---
 name: code-validator
-description: Use para fazer auditoria estática do código, investigar problemas, bugs e auditoria focada.
+description: Use SEMPRE depois de implementações ou modificações para revisar qualidade do código. SOLID, tipos, riscos técnicos, padrões do projeto. Foco no código que já foi escrito. Diferente do `gap-finder` (escopo vs implementação), do `security` (vulnerabilidades) e do `fixer` (já aplica correção).
 permission:
   read: allow
   edit: allow
@@ -29,6 +29,8 @@ permission:
     "git rm*": "deny"
     "del*": "deny"
 mode: "subagent"
+model: opencode-go/deepseek-v4-flash
+variant: "max"
 ---
 
 Você é o **Code Validator**: o auditor estático padrão desta bateria.

@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { arrayMove } from '@dnd-kit/helpers';
-import type { PaintingJob, QueuedImage } from '../types';
+import type { PaintingJob, QueuedImage, SpeedPaintRenderMode, VetorialPreset } from '../types';
 
 // ---------------------------------------------------------------------------
 // Estado padrão dos novos campos
@@ -14,6 +14,12 @@ import type { PaintingJob, QueuedImage } from '../types';
 const DEFAULT_ANIMATION_DURATION = 15;
 const DEFAULT_SHOW_DRAW_TOOL = true;
 const DEFAULT_CANVAS_COLOR = 'white' as const;
+// `mask` mantém retrocompatibilidade com projetos existentes.
+// O default só vira `vetorial` após a Fase 5 validada em produção.
+const DEFAULT_RENDER_MODE: SpeedPaintRenderMode = 'mask';
+// `artistic1` é o preset padrão escolhido em 2026-06-14 — bom equilíbrio
+// entre fidelidade visual e quantidade de paths para a animação fluir.
+const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'artistic1';
 
 function revokeQueuedImageUrl(item: QueuedImage): void {
   if (item.shouldRevokeObjectUrl && item.dataUrl.startsWith('blob:')) {
@@ -64,6 +70,14 @@ interface AnimationState {
   setShowDrawTool: (show: boolean) => void;
   canvasColor: 'white' | 'black';
   setCanvasColor: (color: 'white' | 'black') => void;
+
+  // Modo de renderização (Fase 1.3 — feature flag do pipeline vetorial).
+  // Default `mask` para preservar o comportamento atual; a UI trocará para
+  // `vetorial` quando o usuário escolher explicitamente.
+  renderMode: SpeedPaintRenderMode;
+  setRenderMode: (mode: SpeedPaintRenderMode) => void;
+  vetorialPreset: VetorialPreset;
+  setVetorialPreset: (preset: VetorialPreset) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +103,8 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
     animationDuration: DEFAULT_ANIMATION_DURATION,
     showDrawTool: DEFAULT_SHOW_DRAW_TOOL,
     canvasColor: DEFAULT_CANVAS_COLOR,
+    renderMode: DEFAULT_RENDER_MODE,
+    vetorialPreset: DEFAULT_VETORIAL_PRESET,
   }),
 
   queue: [],
@@ -115,6 +131,8 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
       animationDuration: DEFAULT_ANIMATION_DURATION,
       showDrawTool: DEFAULT_SHOW_DRAW_TOOL,
       canvasColor: DEFAULT_CANVAS_COLOR,
+      renderMode: DEFAULT_RENDER_MODE,
+      vetorialPreset: DEFAULT_VETORIAL_PRESET,
     };
   }),
   reorderQueue: (oldIndex, newIndex) =>
@@ -169,4 +187,10 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
   setShowDrawTool: (showDrawTool) => set({ showDrawTool }),
   canvasColor: DEFAULT_CANVAS_COLOR,
   setCanvasColor: (canvasColor) => set({ canvasColor }),
+
+  // Modo de renderização (Fase 1.3)
+  renderMode: DEFAULT_RENDER_MODE,
+  setRenderMode: (renderMode) => set({ renderMode }),
+  vetorialPreset: DEFAULT_VETORIAL_PRESET,
+  setVetorialPreset: (vetorialPreset) => set({ vetorialPreset }),
 }));

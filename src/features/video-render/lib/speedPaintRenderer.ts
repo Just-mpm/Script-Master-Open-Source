@@ -1,4 +1,4 @@
-import type { StrokeAnimation } from '../../speed-paint/types';
+import type { StrokeAnimation, VetorialAnimation } from '../../speed-paint/types';
 import type { SpeedPaintMultipliers } from '../types';
 import { getStrokeAnimation, setStrokeAnimation } from './strokeCache';
 import {
@@ -261,7 +261,7 @@ export async function generateScenesWithSpeedPaint(
   scenes: { imageUrl: string }[],
   onProgress?: (progress: number) => void,
   options?: GenerateSpeedPaintOptions,
-): Promise<Array<{ animation: StrokeAnimation | undefined; sceneIndex: number; error?: string }>> {
+): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   if (scenes.length === 0) return [];
 
   const log = createLogger('speedPaintRenderer');
@@ -289,9 +289,9 @@ export async function generateScenesWithSpeedPaint(
 async function generateWithWorker(
   scenes: { imageUrl: string }[],
   onProgress?: (progress: number) => void,
-): Promise<Array<{ animation: StrokeAnimation | undefined; sceneIndex: number; error?: string }>> {
+): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   const { generateStrokesFromImage } = await import('../../speed-paint/lib/imageProcessing');
-  const results: Array<{ animation: StrokeAnimation | undefined; sceneIndex: number; error?: string }> =
+  const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(scenes.length);
 
   let worker: Worker | null = null;
@@ -334,7 +334,11 @@ async function generateWithWorker(
         // Worker falhou — fallback para main thread
         try {
           const animation = await generateStrokesFromImage(scene.imageUrl, () => {});
-          await setStrokeAnimation(scene.imageUrl, animation);
+          // O fallback da main thread preserva o modo `'mask'` (default do
+          // `generateStrokesFromImage`), então `animation` é `StrokeAnimation`.
+          // O cast é seguro aqui — o `setStrokeAnimation` aceita a union e
+          // decide em runtime com base no `mode` (aqui `undefined` → `'mask'`).
+          await setStrokeAnimation(scene.imageUrl, animation as StrokeAnimation);
           results[i] = { animation, sceneIndex: i };
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -369,13 +373,13 @@ async function generateWithWorker(
 async function generateWithBatch(
   scenes: { imageUrl: string }[],
   onProgress?: (progress: number) => void,
-): Promise<Array<{ animation: StrokeAnimation | undefined; sceneIndex: number; error?: string }>> {
+): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   const { generateStrokesFromImage } = await import('../../speed-paint/lib/imageProcessing');
 
   const BATCH_SIZE = 2;
   let completedCount = 0;
   const totalScenes = scenes.length;
-  const results: Array<{ animation: StrokeAnimation | undefined; sceneIndex: number; error?: string }> =
+  const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(totalScenes);
 
   // Processa em batches de 2 cenas para não congelar a UI
@@ -396,8 +400,8 @@ async function generateWithBatch(
           const animation = await generateStrokesFromImage(scene.imageUrl, () => {
             // Progresso interno não é granular o suficiente — usamos contagem de cenas
           });
-          // Armazena no cache para futuras reutilizações
-          await setStrokeAnimation(scene.imageUrl, animation);
+          // Armazena no cache para futuras reutilizações — caminho mask (default).
+          await setStrokeAnimation(scene.imageUrl, animation as StrokeAnimation);
           return { animation, sceneIndex };
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Erro desconhecido';

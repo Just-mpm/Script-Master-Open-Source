@@ -1,6 +1,6 @@
 ---
 name: ui-designer
-description: Use para analisar e implementar refinamentos visuais e de experiência em componentes e telas.
+description: Use SEMPRE que a tarefa for sobre aparência, layout, animação, acessibilidade, responsividade ou UX de um componente já especificado. Nunca use para definir comportamento de produto, lógica de negócio ou criar componentes do zero sem especificação visual (→ `worker`).
 permission:
   read: allow
   edit: allow

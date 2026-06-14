@@ -12,9 +12,16 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import ArrowBack from '@mui/icons-material/ArrowBack';
+import BrushOutlined from '@mui/icons-material/BrushOutlined';
+import FormatPaintOutlined from '@mui/icons-material/FormatPaintOutlined';
+import GestureOutlined from '@mui/icons-material/GestureOutlined';
+import { alpha } from '@mui/material/styles';
 import { useShallow } from 'zustand/react/shallow';
 import { useAnimationStore } from '../features/speed-paint/store/animationStore';
 import { BatchOrchestrator } from '../features/speed-paint/components/batch/BatchOrchestrator';
@@ -29,19 +36,25 @@ import { ImageUpload } from '../features/speed-paint/components/upload/ImageUplo
 import { useLocale, pluralKey } from '../features/i18n';
 import { DocumentHead } from '../components/DocumentHead';
 import { getPageSeo } from '../lib/seo';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import type { SpeedPaintTimingMode } from '../features/video-render/lib/speedPaintTimings';
+import type { SpeedPaintRenderMode } from '../features/speed-paint/types';
 import {
   BRAND_GRADIENT,
+  BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_PRIMARY_LIGHT,
   EMPTY_WRAPPER_MAX_WIDTH,
   EMPTY_WRAPPER_PADDING_MD,
+  GAP_COMPACT,
   GAP_DEFAULT,
   GAP_MEDIUM,
+  ICON_SIZE_MD,
   RADIUS_CHIP,
+  RADIUS_SM,
+  RADIUS_XS,
   WHITE_08,
   WHITE_14,
-  RADIUS_SM,
 } from '../theme/tokens';
 import { glassSurfaceSx } from '../theme/surfaces';
 import { StackedHeader } from '../components/ui';
@@ -72,7 +85,11 @@ export function SpeedPaintPage() {
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
-  const { job, queue, currentIndex, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor } =
+  // `renderMode` é lido da store (Fase 1.3) para alimentar o seletor de modo
+  // adicionado na Fase 4.1. `vetorialPreset` ainda não é usado aqui — será
+  // adicionado ao seletor na Fase 4.2, evitando destruturação de campo não
+  // consumido (lint `no-unused-vars`).
+  const { job, queue, currentIndex, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor, renderMode } =
     useAnimationStore(
       useShallow((s) => ({
         job: s.job,
@@ -85,15 +102,17 @@ export function SpeedPaintPage() {
         animationDuration: s.animationDuration,
         showDrawTool: s.showDrawTool,
         canvasColor: s.canvasColor,
+        renderMode: s.renderMode,
       })),
     );
 
-  const { setAnimationDuration, setShowDrawTool, setCanvasColor, resetJob, clearQueue } =
+  const { setAnimationDuration, setShowDrawTool, setCanvasColor, setRenderMode, resetJob, clearQueue } =
     useAnimationStore(
       useShallow((s) => ({
         setAnimationDuration: s.setAnimationDuration,
         setShowDrawTool: s.setShowDrawTool,
         setCanvasColor: s.setCanvasColor,
+        setRenderMode: s.setRenderMode,
         resetJob: s.resetJob,
         clearQueue: s.clearQueue,
       })),
@@ -112,7 +131,16 @@ export function SpeedPaintPage() {
 
   // Duração fixa — unificada com a velocidade (sliders controlam o ritmo, não o container)
   const durationInFrames = useMemo(() => Math.round(animationDuration * FPS), [animationDuration]);
-  const revealThreshold = job.animation?.revealThreshold;
+  // `job.animation` é `StrokeAnimation | VetorialAnimation | undefined`. O player
+  // e o export panel agora aceitam a união (GAP-01/GAP-02 da reauditoria F5.5)
+  // — o `SpeedPaintPlayer` discrimina via `'paths' in animation` e renderiza
+  // `WhiteboardComposition` (vetorial) ou `SpeedPaintComposition` (mask).
+  // O `ExportPanel` propaga para `useSpeedPaintExporter.startRender`, que
+  // também opera com a união. Sem cast — narrowing real dentro dos filhos.
+  const revealThreshold =
+    job.animation && 'revealThreshold' in job.animation
+      ? job.animation.revealThreshold
+      : undefined;
 
   // -------------------------------------------------------------------------
   // Auto-switch para aba de export quando renderização iniciar
@@ -258,6 +286,24 @@ export function SpeedPaintPage() {
     setIsBatchRecording(false);
     batchRenderStartedRef.current = false;
     useAnimationStore.getState().setBatchMode('record');
+  };
+
+  // -------------------------------------------------------------------------
+  // Modo de renderização (Fase 4.1) — handler do seletor Clássico/Desenho
+  // -------------------------------------------------------------------------
+
+  // Callback do `ToggleButtonGroup` de modo. Quando o usuário escolhe `null`
+  // (clicando no botão já ativo) o `onChange` retorna `null`; nesse caso
+  // mantemos o valor atual sem disparar `setRenderMode` (comportamento padrão
+  // de grupos `exclusive` do MUI).
+  const handleRenderModeChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newMode: SpeedPaintRenderMode | null,
+  ) => {
+    if (newMode == null) return;
+    setRenderMode(newMode);
+    // Analytics: entender qual modo (mask vs vetorial) é mais popular.
+    trackAnalyticsEvent('speed_paint_mode_changed', { mode: newMode });
   };
 
   // -------------------------------------------------------------------------
@@ -646,6 +692,8 @@ export function SpeedPaintPage() {
           <Grid size={{ xs: 12, md: 7 }}>
             <SpeedPaintPlayer
               ref={playerRef}
+              // `isCompleted` garante que `job.animation` está definido aqui
+              // em runtime; non-null assertion é segura pelo contexto.
               animation={job.animation!}
               imageSource={job.animation!.resizedImage || job.inputImage }
               showDrawTool={showDrawTool}
@@ -696,6 +744,8 @@ export function SpeedPaintPage() {
 
               {activeTab === 'export' && (
                 <SpeedPaintExportPanel
+                  // `isCompleted` garante que `job.animation` está definido
+                  // aqui em runtime; non-null assertion é segura pelo contexto.
                   animation={job.animation!}
                   imageSource={job.animation!.resizedImage || job.inputImage }
                   animationDuration={animationDuration}
@@ -733,6 +783,100 @@ export function SpeedPaintPage() {
                       label={t('speedPaint.pageConfigDrawTool')}
                       sx={{ typography: 'body2', color: 'text.secondary' }}
                     />
+
+                    {/* Modo de renderização (Fase 4.1) — Clássico (mask) ou Desenho (vetorial).
+                        Padrão visual espelha o `AnimationDurationSelector` (Stack + ícone
+                        overline + helper text + ToggleButtonGroup com tokens de marca).
+                        Fase 4.3: ícones distintos por modo, Tooltip com `describeChild`
+                        para preservar aria-label + `aria-describedby` apontando para a
+                        descrição textual (helper text compartilhado). */}
+                    <Stack spacing={GAP_DEFAULT}>
+                      <Stack spacing={GAP_COMPACT}>
+                        <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                          <BrushOutlined sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                          <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                            {t('speedPaint.modeLabel')}
+                          </Typography>
+                        </Stack>
+                        <Typography
+                          id="speed-paint-mode-description"
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ lineHeight: 1.7 }}
+                        >
+                          {t('speedPaint.modeDescription')}
+                        </Typography>
+                      </Stack>
+                      <Box>
+                        <ToggleButtonGroup
+                          value={renderMode}
+                          exclusive
+                          onChange={handleRenderModeChange}
+                          aria-label={t('speedPaint.modeLabel')}
+                          aria-describedby="speed-paint-mode-description"
+                          sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 1,
+                            '& .MuiToggleButtonGroup-grouped': {
+                              borderRadius: RADIUS_XS,
+                              border: `1px solid ${WHITE_14}`,
+                              px: 2,
+                              py: 1.25,
+                              fontWeight: 700,
+                              textTransform: 'none',
+                              color: 'text.secondary',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                              '&:hover': {
+                                borderColor: alpha(BRAND_PRIMARY, 0.4),
+                                backgroundColor: alpha(BRAND_PRIMARY, 0.04),
+                              },
+                              '&.Mui-selected': {
+                                color: BRAND_PRIMARY_LIGHT,
+                                borderColor: alpha(BRAND_PRIMARY, 0.6),
+                                backgroundColor: alpha(BRAND_PRIMARY, 0.12),
+                                boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}, inset 0 0 0 1px ${alpha(BRAND_PRIMARY, 0.3)}`,
+                              },
+                              '&.Mui-selected:hover': {
+                                backgroundColor: alpha(BRAND_PRIMARY, 0.18),
+                                borderColor: BRAND_PRIMARY,
+                              },
+                              '&.Mui-focusVisible': {
+                                outline: `2px solid ${BRAND_PRIMARY_LIGHT}`,
+                                outlineOffset: 2,
+                              },
+                            },
+                          }}
+                        >
+                          <Tooltip
+                            title={t('speedPaint.modeDescription')}
+                            describeChild
+                            placement="top"
+                            arrow
+                          >
+                            <ToggleButton value="mask" aria-label={t('speedPaint.modeClassic')}>
+                              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                <FormatPaintOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                <span>{t('speedPaint.modeClassic')}</span>
+                              </Stack>
+                            </ToggleButton>
+                          </Tooltip>
+                          <Tooltip
+                            title={t('speedPaint.modeDescription')}
+                            describeChild
+                            placement="top"
+                            arrow
+                          >
+                            <ToggleButton value="vetorial" aria-label={t('speedPaint.modeVetorial')}>
+                              <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                <GestureOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                <span>{t('speedPaint.modeVetorial')}</span>
+                              </Stack>
+                            </ToggleButton>
+                          </Tooltip>
+                        </ToggleButtonGroup>
+                      </Box>
+                    </Stack>
 
                     {/* Cor do canvas */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -320,7 +320,7 @@ describe('I18nProvider', () => {
         wrapper: createWrapper('pt-BR'),
       });
       expect(result.current.t('errors.video.title')).toBe(
-        'Erro ao renderizar o vídeo',
+        'Erro ao gerar o vídeo',
       );
     });
 

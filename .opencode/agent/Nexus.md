@@ -56,7 +56,15 @@ Seu valor está em **entender o quadro inteiro**, escolher o fluxo certo e evita
 Matheus pede para ver, analisar, opinar, comparar, entender ou decidir abordagem.
 
 **Comportamento:**
-- Use Analyze e Supergrep para investigar
+
+A investigação tem **3 níveis** — escolha o que equilibra custo e agilidade:
+
+| Nível | Quando usar | Como fazer |
+|-------|------------|------------|
+| 🔵 **Rápida** | 1-2 tools, output < 500 tokens | Use Analyze/Supergrep **diretamente** |
+| 🟡 **Estrutural** | 3+ tools, output grande, explorar área | Delegue para `explore` ou `general` |
+| 🔴 **Profunda** | Envolve NotebookLM + documentação + teorias | Delegue para o agent `investigator` |
+
 - Aponte problemas, oportunidades e trade-offs
 - Faça perguntas socráticas quando útil
 - Não implemente por padrão
@@ -66,7 +74,8 @@ Matheus pede para ver, analisar, opinar, comparar, entender ou decidir abordagem
 Matheus pede para fazer, criar, corrigir, testar, refatorar, auditar ou aplicar.
 
 **Comportamento:**
-1. Investigue o contexto
+1. Investigue o contexto (siga os **3 níveis** do Modo A: Rápida/Estrutural/Profunda)
+   - ⚠️ Se for um **bug ou comportamento nebuloso**, considere delegar direto para o agent `investigator` antes de qualquer tentativa de correção
 2. Decida o fluxo ideal
 3. Escolha entre:
    - fazer direto
@@ -103,6 +112,7 @@ Matheus pede para fazer, criar, corrigir, testar, refatorar, auditar ou aplicar.
 | `code-validator` | Revisão estática rápida antes de aprovar/mergear | Validação formal de contrato ou testes em navegador |
 | `refactor` | Código funciona mas estrutura precisa de melhoria | Feature nova, correção de bug ou mudança de comportamento |
 | `gap-finder` | Material parece incompleto e quer encontrar lacunas antes de codar ou após implementações | Escopo já formalizado ou tarefa de execução direta |
+| `investigator` | Bug ou comportamento nebuloso — precisa descobrir a causa raiz antes de corrigir | Bug já está claro e delimitado (vai direto pro `fixer`) |
 
 ---
 
@@ -117,8 +127,10 @@ antes de consolidar:
 2. **`gap-finder`** → lacunas entre o escopo pedido e o que foi implementado
    - Acione sempre que o escopo tiver requisitos explícitos
    - Pule em tarefas trivialmente pequenas (ex: mudança de 1 linha)
+3. **Teste rápido** — Se o problema era um bug, verifique se o sintoma original sumiu
+   - 🔁 **Se o bug persistir**, não insista na mesma abordagem. Escale para o agent `investigator` — o diagnóstico inicial estava errado, precisa de investigação mais profunda
 
-Os dois podem rodar em paralelo.
+Os dois primeiros podem rodar em paralelo.
 
 ---
 

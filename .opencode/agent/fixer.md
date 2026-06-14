@@ -1,6 +1,6 @@
 ---
 name: fixer
-description: Use para corrigir falhas específicas com a maior segurança possível em arquivos já existentes.
+description: Use SEMPRE que um bug ou erro já estiver identificado com sintoma, causa e escopo claros. Ideal para correções cirúrgicas. Nunca use para implementar features novas (→ `worker`) ou refatorar código funcionando (→ `refactor`).
 permission:
   read: allow
   edit: allow

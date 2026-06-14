@@ -1407,6 +1407,10 @@ export const en: TranslationDictionary = {
     sketchAriaLabel: 'Sketch speed',
     revealLabel: 'Coloring',
     revealSpeed: 'Coloring speed',
+    modeLabel: 'Render mode',
+    modeClassic: 'Classic Mode',
+    modeVetorial: 'Drawing Mode',
+    modeDescription: 'Classic: mask reveal (fast, ideal for photos). Drawing: vector animation with SVG paths (more expressive, ideal for illustrations).',
     speedLabels: {
       verySlow: 'very slow',
       slow: 'slow',

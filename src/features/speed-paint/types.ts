@@ -37,5 +37,27 @@ export interface PaintingJob {
   inputImage: string; // data URL
   status: 'idle' | 'processing' | 'completed' | 'failed';
   progress: number;
-  animation?: StrokeAnimation;
+  /**
+   * Animação gerada pelo `generateStrokesFromImage`. Pode ser:
+   * - `StrokeAnimation` (modo `'mask'`, default retrocompatível)
+   * - `VetorialAnimation` (modo `'vetorial'`, vetorização com `imagetracerjs`)
+   *
+   * GAP-03 (Fase 1.5): estendido para aceitar `VetorialAnimation` na Fase 2.1.
+   * O consumidor deve discriminar por propriedades presentes (ex: `'paths' in
+   * animation` vs `'strokes' in animation`).
+   */
+  animation?: StrokeAnimation | VetorialAnimation;
 }
+
+// Tipos do modo de renderização vetorial (criados na Fase 1.1).
+// Importado aqui para uso local no `PaintingJob` e re-exportado para
+// consumidores externos — evita import circular entre `types.ts` e
+// `types/vetorial.ts` (consumidores devem importar de `../types`).
+import type { VetorialAnimation } from './types/vetorial';
+
+export type {
+  SpeedPaintRenderMode,
+  VetorialPreset,
+  VetorialPath,
+  VetorialAnimation,
+} from './types/vetorial';

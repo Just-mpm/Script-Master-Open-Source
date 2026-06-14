@@ -29,7 +29,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import type { StrokeAnimation } from '../types';
+import type { StrokeAnimation, VetorialAnimation } from '../types';
 import type { VideoExportQuality } from '../../video-render/types';
 import { useCodecSupport } from '../../video-render/hooks/useCodecSupport';
 import { downloadFile } from '../../../lib/download';
@@ -43,9 +43,27 @@ import {
 // Tipos públicos (contrato preservado)
 // ---------------------------------------------------------------------------
 
-/** Opções para iniciar a exportação de speed paint */
+/**
+ * Opções para iniciar a exportação de speed paint.
+ *
+ * `animation` aceita a união `StrokeAnimation | VetorialAnimation` —
+ * GAP-02 (reauditoria F5.5). A fachada apenas delega para o
+ * `speedPaintRenderController` que já discrimina via `'paths' in animation`
+ * em runtime. A tipagem reflete a realidade do controller (que opera com a
+ * união desde a Fase 2.1), removendo o cast `as StrokeAnimation` que
+ * "engenhariava" o consumidor.
+ *
+ * **O que o controller faz com a união:**
+ * - Modo `'mask'` + `StrokeAnimation` → `createExportableSpeedPaintComposition`
+ * - Modo `'vetorial'` + `VetorialAnimation` → `createExportableWhiteboardComposition`
+ * - Modo divergente (ex: `'vetorial'` mas só `StrokeAnimation`) → fallback mask
+ *
+ * `imageSource` permanece obrigatório em ambos os modos porque a página
+ * sempre passa `resizedImage || inputImage` (campos comuns aos dois tipos).
+ * O controller valida `!isVetorial && !imageSource` antes de prosseguir.
+ */
 export interface SpeedPaintExportOptions {
-  animation: StrokeAnimation;
+  animation: StrokeAnimation | VetorialAnimation;
   imageSource: string;
   fps: number;
   /** Duração total em frames */

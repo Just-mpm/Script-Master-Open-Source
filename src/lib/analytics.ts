@@ -82,6 +82,15 @@ export interface AnalyticsEventMap {
   speed_paint_export_failed: ExportParams;
   speed_paint_export_cancelled: ExportParams;
   speed_paint_downloaded: ExportParams;
+  /**
+   * Disparado quando o usuário troca o modo de renderização do Speed Paint
+   * (mask ↔ vetorial). Usado para entender qual modo é mais popular.
+   *
+   * Modos:
+   * - 'mask' — revelação por máscara (edge detection + reveal)
+   * - 'vetorial' — animação vetorial com paths SVG animados
+   */
+  speed_paint_mode_changed: { mode: 'mask' | 'vetorial' };
   library_audio_saved: { source: 'studio' };
   library_project_deleted: Record<string, never>;
   library_opened_in_speed_paint: { scene_count: number };

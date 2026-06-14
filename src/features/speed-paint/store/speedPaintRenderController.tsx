@@ -45,7 +45,7 @@
  */
 import { create } from 'zustand';
 import type { ComponentType, ReactNode } from 'react';
-import type { RenderMediaOnWebProgress } from '@remotion/web-renderer';
+import { renderMediaOnWeb, type RenderMediaOnWebProgress, type RenderMediaOnWebResult } from '@remotion/web-renderer';
 import { getSpeedPaintSequenceTiming, type SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import { patchCanvasFontStretch } from '../../video-render/lib/canvasFontStretchPatch';
 import { isCancellationError, toUserFriendlyError } from '../../video-render/lib/exportUtils';
@@ -64,7 +64,8 @@ import {
   type SpeedPaintExportOptions,
   type SpeedPaintBatchExportOptions,
 } from '../hooks/useSpeedPaintExporter';
-import type { StrokeAnimation } from '../types';
+import { useAnimationStore } from './animationStore';
+import type { StrokeAnimation, VetorialAnimation } from '../types';
 
 // ---------------------------------------------------------------------------
 // Tipos auxiliares
@@ -72,14 +73,22 @@ import type { StrokeAnimation } from '../types';
 
 /** Props da composição de speed paint para exportação (single) */
 interface SpeedPaintCompositionProps {
-  animation: StrokeAnimation;
+  animation: StrokeAnimation | VetorialAnimation;
   imageSource: string;
+  showDrawTool: boolean;
+}
+
+/** Props da composição de speed paint VETORIAL (whiteboard) para exportação.
+ *  Não consome `imageSource` — a imagem original já foi vetorizada em
+ *  `animation.paths` pelo pipeline `imageProcessing.ts` (Fase 2.1). */
+interface WhiteboardRenderProps {
+  animation: VetorialAnimation;
   showDrawTool: boolean;
 }
 
 /** Item de uma composição batch — par (animação, imagem) */
 interface BatchSpeedPaintCompositionItem {
-  animation: StrokeAnimation;
+  animation: StrokeAnimation | VetorialAnimation;
   imageSource: string;
 }
 
@@ -97,7 +106,14 @@ interface BatchSpeedPaintCompositionProps {
  * `Props extends Record<string, unknown>` exigida pelo `renderMediaOnWeb`.
  */
 type ExportableSpeedPaintProps = SpeedPaintCompositionProps & { [key: string]: unknown };
+type ExportableWhiteboardProps = WhiteboardRenderProps & { [key: string]: unknown };
 type ExportableBatchSpeedPaintProps = BatchSpeedPaintCompositionProps & { [key: string]: unknown };
+
+/** `compositionId` único por modo — Remotion precisa de IDs distintos para
+ *  cada composição, mesmo que renderizem o mesmo componente base. */
+const COMPOSITION_ID_MASK = 'script-master-speed-paint-export';
+const COMPOSITION_ID_VETORIAL = 'script-master-speed-paint-vetorial-export';
+const COMPOSITION_ID_BATCH = 'script-master-speed-paint-batch-export';
 
 // ---------------------------------------------------------------------------
 // Composições React (exportáveis pelo Remotion)
@@ -121,7 +137,7 @@ async function createExportableSpeedPaintComposition(): Promise<ComponentType<Ex
     return (
       <AbsoluteFill style={{ backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000' }}>
         <SpeedPaintScene
-          animation={animation}
+          animation={animation as StrokeAnimation}
           imageSource={imageSource}
           durationInFrames={durationInFrames}
           showDrawTool={showDrawTool}
@@ -157,7 +173,7 @@ async function createExportableBatchSpeedPaintComposition(): Promise<ComponentTy
             durationInFrames={sceneDurationInFrames}
           >
             <SpeedPaintScene
-              animation={item.animation}
+              animation={item.animation as StrokeAnimation}
               imageSource={item.imageSource}
               durationInFrames={sceneDurationInFrames}
               showDrawTool={showDrawTool}
@@ -168,6 +184,58 @@ async function createExportableBatchSpeedPaintComposition(): Promise<ComponentTy
             />
           </Sequence>
         ))}
+      </AbsoluteFill>
+    );
+  };
+}
+
+/**
+ * Composição lazy para o modo **vetorial** (whiteboard).
+ *
+ * Análoga a `createExportableSpeedPaintComposition()` (modo máscara), mas
+ * envolvendo `WhiteboardScene` (Fase 3.1) em vez de `SpeedPaintScene`. O modo
+ * vetorial é selecionado quando `useAnimationStore.getState().renderMode ===
+ * 'vetorial'` e o `animation` discriminado por `'paths' in animation`
+ * (campo exclusivo de `VetorialAnimation`).
+ *
+ * **Por que `WhiteboardScene` direto (sem `WhiteboardComposition`)?**
+ * Segue o mesmo padrão da máscara: a função retorna um componente anônimo
+ * que renderiza o JSX inline. O `WhiteboardComposition` em
+ * `src/features/speed-paint/components/` existe para uso fora do controller
+ * (ex: Remotion Studio), mas aqui o lazy import direto de `WhiteboardScene`
+ * preserva o split de bundle (evita trazer o `WhiteboardComposition` para o
+ * chunk de export).
+ *
+ * **Não consome `imageSource`** — a imagem original já foi vetorizada em
+ * `animation.paths` pelo pipeline `imageProcessing.ts` (Fase 2.1).
+ */
+async function createExportableWhiteboardComposition(): Promise<ComponentType<ExportableWhiteboardProps>> {
+  const [{ AbsoluteFill, useVideoConfig }, { WhiteboardScene }] = await Promise.all([
+    import('remotion'),
+    import('../../video-render/components/WhiteboardScene'),
+  ]);
+
+  /**
+   * Wrapper de WhiteboardScene para exportação single (modo vetorial). Usa
+   * `useVideoConfig` para obter `durationInFrames` calculado pelo Remotion, e
+   * renderiza WhiteboardScene com `isExporting=true` para desabilitar overlays
+   * de debug (placeholder da Fase 3.1, ainda sem badges de preview).
+   */
+  return function ExportableWhiteboardComposition(props: ExportableWhiteboardProps): ReactNode {
+    const { animation, showDrawTool } = props;
+    const { durationInFrames } = useVideoConfig();
+
+    return (
+      <AbsoluteFill
+        style={{ backgroundColor: animation.canvasColor === 'white' ? '#fff' : '#000' }}
+      >
+        <WhiteboardScene
+          animation={animation}
+          durationInFrames={durationInFrames}
+          showDrawTool={showDrawTool}
+          isLastScene
+          isExporting
+        />
       </AbsoluteFill>
     );
   };
@@ -382,6 +450,60 @@ export const useSpeedPaintRenderController = create<SpeedPaintRenderControllerSt
 // Implementação: render single
 // ---------------------------------------------------------------------------
 
+/**
+ * Helper genérico para chamar `renderMediaOnWeb` preservando o tipo concreto
+ * de `Props` (mask **ou** vetorial). O TS rejeita uniões em
+ * `composition.component` por variância (um `ComponentType<A>` não é
+ * subtipo de `ComponentType<A | B>` nem vice-versa) — esta função resolve
+ * isso inferindo `P` a partir do argumento `Component`, garantindo que
+ * `inputProps` e `component` sejam do mesmo tipo em cada chamada.
+ *
+ * @param Component  - Componente lazy tipado (`ComponentType<P>`).
+ * @param inputProps - Props correspondentes ao componente.
+ * @param compositionId - ID único da composição (`mask` ou `vetorial`).
+ * @param resolution - Resolução de saída (width/height em pixels).
+ * @param fps        - FPS da composição.
+ * @param durationInFrames - Duração total em frames.
+ * @param signal     - `AbortSignal` para cancelamento.
+ * @param codec      - Codec de vídeo resolvido pelo `useCodecSupport`.
+ * @param container  - Container de saída (`mp4` ou `webm`).
+ * @param onProgress - Callback de progresso (0.0–1.0).
+ */
+async function invokeRenderMediaOnWeb<P extends Record<string, unknown>>(
+  Component: ComponentType<P>,
+  inputProps: P,
+  compositionId: string,
+  resolution: { width: number; height: number },
+  fps: number,
+  durationInFrames: number,
+  signal: AbortSignal,
+  codec: 'h264' | 'vp8' | 'vp9' | 'h265' | 'av1',
+  container: 'mp4' | 'webm',
+  onProgress: (progress: RenderMediaOnWebProgress) => void,
+): Promise<RenderMediaOnWebResult> {
+  return renderMediaOnWeb({
+    composition: {
+      component: Component,
+      id: compositionId,
+      width: resolution.width,
+      height: resolution.height,
+      fps,
+      durationInFrames,
+      defaultProps: inputProps,
+    },
+    inputProps,
+    videoCodec: codec,
+    audioCodec: null, // Sem áudio — speed paint é mudo
+    container,
+    licenseKey: 'free-license',
+    signal,
+    // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
+    // O drawElementImage (Chromium experimental) não captura canvas 2D
+    // de forma confiável. O software renderer lê pixels via drawImage(canvas).
+    onProgress,
+  });
+}
+
 /** Renderiza uma única cena de speed paint. Migrado de useSpeedPaintExporter.startRender. */
 async function runSingleRender(
   set: SetFn,
@@ -405,24 +527,38 @@ async function runSingleRender(
   // 2. Cacheia fileName em escopo de módulo (usado por autoDownload e handleDownload)
   currentExportFileName = fileName ?? '';
 
-  // 3. Validação — antes de criar AbortController
-  if (!imageSource) return;
+  // 3. Decide o modo de renderização (Fase 3.2) **antes** de validar
+  //    `imageSource`. A fachada `useSpeedPaintExporter` propaga a união
+  //    `StrokeAnimation | VetorialAnimation` (GAP-02 da reauditoria F5.5)
+  //    — `options.animation` já é o tipo discriminado. Aqui apenas
+  //    confirmamos via type guard real (`'paths' in animation`) se o modo
+  //    'vetorial' foi pedido e a animação tem paths de fato. Sem cast:
+  //    o tipo de `animation` é a união declarada em
+  //    `SpeedPaintExportOptions.animation`.
+  const renderMode = useAnimationStore.getState().renderMode;
+  const isVetorial = renderMode === 'vetorial' && 'paths' in animation;
 
-  // 4. Cancela render anterior se existir (2ª exportação cancela 1ª)
+  // 4. Validação — antes de criar AbortController.
+  //    Modo máscara exige `imageSource` (raspadinha usa a imagem de fundo).
+  //    Modo vetorial dispensa — a imagem já foi vetorizada em
+  //    `animation.paths` pelo pipeline `imageProcessing.ts` (Fase 2.1).
+  if (!isVetorial && !imageSource) return;
+
+  // 5. Cancela render anterior se existir (2ª exportação cancela 1ª)
   if (abortController) {
     log.warn('Renderização já em andamento — abortando anterior antes de iniciar nova');
     abortController.abort();
     abortController = null;
   }
 
-  // 5. Cria novo AbortController em escopo de módulo
+  // 6. Cria novo AbortController em escopo de módulo
   abortController = new AbortController();
   const signal = abortController.signal;
 
-  // 6. Reseta throttle do percentual
+  // 7. Reseta throttle do percentual
   lastReportedPercentRef.current = -1;
 
-  // 7. Reseta estado para "preparing" — feedback visual imediato
+  // 8. Reseta estado para "preparing" — feedback visual imediato
   set({
     ...INITIAL_STATE,
     kind: 'speed-paint' as RenderKind,
@@ -441,22 +577,47 @@ async function runSingleRender(
   const analyticsParams = { quality, mode: 'single' as const };
   trackAnalyticsEvent('speed_paint_export_started', analyticsParams);
 
-  const exportableInputProps: ExportableSpeedPaintProps = {
-    animation,
-    imageSource,
-    showDrawTool,
-  };
+  // 9. Seleciona composição lazy + inputProps baseado em `renderMode` e na
+  //    presença de `paths` na animação. O `compositionId` precisa ser único
+  //    por composição (constraint do `renderMediaOnWeb`) — usa IDs distintos
+  //    para mask e vetorial. A chamada `invokeRenderMediaOnWeb` é feita
+  //    dentro de cada branch para que o generic `P` seja inferido
+  //    corretamente (o TS rejeita uniões em `composition.component` por
+  //    variância).
+  let inputProps: ExportableSpeedPaintProps | ExportableWhiteboardProps;
+  let compositionId: string;
+  let ExportableComposition:
+    | ComponentType<ExportableSpeedPaintProps>
+    | ComponentType<ExportableWhiteboardProps>;
 
-  // 8. Carrega Remotion lazy
-  let renderMediaOnWeb: typeof import('@remotion/web-renderer').renderMediaOnWeb;
-  let ExportableSpeedPaintComposition: ComponentType<ExportableSpeedPaintProps>;
+  // 10. Carrega Remotion lazy + composição lazy conforme o modo
   try {
-    const [module, exportableComposition] = await Promise.all([
-      loadRenderImpl(),
-      createExportableSpeedPaintComposition(),
-    ]);
-    renderMediaOnWeb = module.renderMediaOnWeb;
-    ExportableSpeedPaintComposition = exportableComposition;
+    if (isVetorial) {
+      // Modo vetorial (whiteboard) — `paths` foi confirmado pelo type guard.
+      // Narrowing real: o `isVetorial` acima estreita `animation` para
+      // `VetorialAnimation` em runtime (mesmo que o TS ainda veja a união
+      // declarada em `SpeedPaintExportOptions`).
+      inputProps = {
+        animation,
+        showDrawTool,
+      };
+      compositionId = COMPOSITION_ID_VETORIAL;
+      ExportableComposition = await createExportableWhiteboardComposition();
+    } else {
+      // Modo máscara (default) — comportamento atual idêntico ao legado.
+      // O cast `as StrokeAnimation` aqui é inevitável: o generic `P` de
+      // `ExportableSpeedPaintProps` exige `StrokeAnimation` apenas, e o TS
+      // não consegue inferir narrowing reverso (ausência de `paths` não
+      // garante `StrokeAnimation`). O controller valida via `'paths' in
+      // animation` em runtime, então o cast é seguro.
+      inputProps = {
+        animation: animation as StrokeAnimation,
+        imageSource,
+        showDrawTool,
+      };
+      compositionId = COMPOSITION_ID_MASK;
+      ExportableComposition = await createExportableSpeedPaintComposition();
+    }
   } catch (err) {
     log.error('Falha ao carregar módulo de renderização speed paint', { error: err });
     if (currentRenderId !== renderId) return;
@@ -471,74 +632,80 @@ async function runSingleRender(
     return;
   }
 
-  // 9. Aplica patch que traduz fontStretch percentual → keyword para a Canvas API
+  // 11. Aplica patch que traduz fontStretch percentual → keyword para a Canvas API
   patchCanvasFontStretch();
 
-  // 10. Atualiza status para 'rendering'
+  // 12. Atualiza status para 'rendering'
   set({
     status: 'rendering' as RenderStatus,
     renderStatusText: 'Renderizando...',
   });
 
   try {
-    const composition: {
-      component: ComponentType<ExportableSpeedPaintProps>;
-      id: string;
-      width: number;
-      height: number;
-      fps: number;
-      durationInFrames: number;
-      defaultProps: ExportableSpeedPaintProps;
-    } = {
-      component: ExportableSpeedPaintComposition,
-      id: 'script-master-speed-paint-export',
-      width: resolution.width,
-      height: resolution.height,
-      fps,
-      durationInFrames,
-      defaultProps: exportableInputProps,
+    // Callback de progresso compartilhado entre as duas branches.
+    const onProgress = (progress: RenderMediaOnWebProgress): void => {
+      const percent = Math.round(progress.progress * 100);
+      reportProgress(
+        set,
+        percent,
+        percent < 100 ? `Renderizando... ${percent}%` : 'Finalizando exportação...',
+      );
     };
+    const codec = get().codec as 'h264' | 'vp8' | 'vp9' | 'h265' | 'av1';
+    const container = get().container as 'mp4' | 'webm';
 
-    const result = await renderMediaOnWeb({
-      composition,
-      inputProps: exportableInputProps,
-      videoCodec: get().codec as 'h264' | 'vp8' | 'vp9' | 'h265' | 'av1',
-      audioCodec: null, // Sem áudio — speed paint é mudo
-      container: get().container as 'mp4' | 'webm',
-      licenseKey: 'free-license',
-      signal,
-      // DESABILITADO: allowHtmlInCanvas causa flashs pretos no speed paint.
-      // O drawElementImage (Chromium experimental) não captura canvas 2D
-      // de forma confiável. O software renderer lê pixels via drawImage(canvas).
-      onProgress: (progress: RenderMediaOnWebProgress) => {
-        const percent = Math.round(progress.progress * 100);
-        reportProgress(
-          set,
-          percent,
-          percent < 100 ? `Renderizando... ${percent}%` : 'Finalizando exportação...',
-        );
-      },
-    });
+    // Branch dedicada para `renderMediaOnWeb` — cada uma tem tipo concreto
+    // (sem uniões) para que o generic `P` do `invokeRenderMediaOnWeb` infira
+    // corretamente. As branches compartilham o mesmo try/catch e o resto
+    // do fluxo (blob, download, etc.) é idêntico.
+    let result: RenderMediaOnWebResult;
+    if (isVetorial) {
+      result = await invokeRenderMediaOnWeb(
+        ExportableComposition as ComponentType<ExportableWhiteboardProps>,
+        inputProps as ExportableWhiteboardProps,
+        compositionId,
+        resolution,
+        fps,
+        durationInFrames,
+        signal,
+        codec,
+        container,
+        onProgress,
+      );
+    } else {
+      result = await invokeRenderMediaOnWeb(
+        ExportableComposition as ComponentType<ExportableSpeedPaintProps>,
+        inputProps as ExportableSpeedPaintProps,
+        compositionId,
+        resolution,
+        fps,
+        durationInFrames,
+        signal,
+        codec,
+        container,
+        onProgress,
+      );
+    }
 
-    // 11. Obtém blob final (assíncrono)
+    // 13. Obtém blob final (assíncrono)
     const blob = await result.getBlob();
     const localUrl = URL.createObjectURL(blob);
 
-    // 12. Edge case: se outra renderização sobrescreveu, não substituir estado
+    // 14. Edge case: se outra renderização sobrescreveu, não substituir estado
     if (currentRenderId !== renderId) {
       URL.revokeObjectURL(localUrl);
       log.warn('Render obsoleto — URL local descartada');
       return;
     }
 
-    // 13. Auto-download se solicitado
+    // 15. Auto-download se solicitado
     if (autoDownload) {
       const ext = get().container === 'webm' ? 'webm' : 'mp4';
       const name = currentExportFileName || `speed-paint-${Date.now()}`;
       await downloadFile(localUrl, `${name}.${ext}`);
     }
 
-    // 14. Render concluído com sucesso
+    // 16. Render concluído com sucesso
     set({
       status: 'completed' as RenderStatus,
       isRendering: false,
@@ -586,7 +753,20 @@ async function runSingleRender(
 // Implementação: render batch
 // ---------------------------------------------------------------------------
 
-/** Renderiza múltiplas cenas encadeadas em uma única composição. Migrado de useSpeedPaintExporter.startBatchRender. */
+/**
+ * Renderiza múltiplas cenas encadeadas em uma única composição. Migrado de
+ * useSpeedPaintExporter.startBatchRender.
+ *
+ * **Limitação Fase 3.2 (decisão de escopo):** esta função **NÃO suporta o
+ * modo vetorial em batch**. Apenas o modo máscara (`StrokeAnimation`) é
+ * processado. O batch sempre usa `createExportableBatchSpeedPaintComposition`
+ * e `compositionId = COMPOSITION_ID_BATCH`.
+ *
+ * Casos mistos (mask + vetorial) caem no fallback mask — documentado aqui
+ * para evitar comportamento inesperado. A integração completa do batch
+ * vetorial está fora do escopo desta task (Fase 3.2) e poderá ser
+ * implementada em uma fase futura se houver demanda.
+ */
 async function runBatchRender(
   set: SetFn,
   get: GetFn,
@@ -741,7 +921,7 @@ async function runBatchRender(
       defaultProps: ExportableBatchSpeedPaintProps;
     } = {
       component: ExportableBatchSpeedPaintComposition,
-      id: 'script-master-speed-paint-batch-export',
+      id: COMPOSITION_ID_BATCH,
       width: resolution.width,
       height: resolution.height,
       fps,

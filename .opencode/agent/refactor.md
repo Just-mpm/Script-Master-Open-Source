@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Use quando o código funciona, mas a estrutura está ruim. Melhora legibilidade, organização e manutenção de um arquivo sem mudar comportamento. 
+description: Use SEMPRE que o código funcionar mas estiver difícil de ler, manter ou estender. Extrai funções, simplifica, renomeia, organiza. Nunca muda comportamento, adiciona features, corrige bugs (→ `fixer`) ou implementa código novo (→ `worker`). 
 permission:
   read: allow
   edit: allow

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps, VideoScene, SpeedPaintMultipliers } from '../types';
+import type { StrokeAnimation } from '../../speed-paint/types';
 import { SPEED_PAINT_MULTIPLIERS } from '../types';
 import type { SpeedPaintSpeed } from '../types';
 import { getSpeedPaintOverlapFrames } from '../lib/speedPaintTimings';
@@ -80,7 +81,7 @@ const SceneItem = React.memo(function SceneItem({
     >
       {scene.strokeAnimation ? (
         <SpeedPaintScene
-          animation={scene.strokeAnimation}
+          animation={scene.strokeAnimation as StrokeAnimation}
           imageSource={scene.imageUrl}
           durationInFrames={adjustedDuration}
           isLastScene={isLastScene}

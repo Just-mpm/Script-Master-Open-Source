@@ -33,6 +33,8 @@ export interface StudioUserSettings {
   emotion?: string;
   emotionIntensity?: number;
   imageTextLanguage?: string;
+  /** Modo de renderização preferido do Speed Paint (Fase 4.2). */
+  speedPaintRenderMode?: 'mask' | 'vetorial';
 }
 
 const userSettingConverter = createFirestoreConverter<UserSetting>();

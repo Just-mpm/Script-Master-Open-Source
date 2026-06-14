@@ -252,6 +252,26 @@ Paths específicos mais prováveis de mudança:
 
 ## Instruções de Execução
 
+### Documento de Execução
+- O **Tracker** (`docs/plan/{slug}-tracker.md`) é o documento de execução que deve ser **seguido e atualizado** durante todo o processo
+- Este plano define **o que** fazer; o tracker define **como** executar passo a passo
+
+### Tracker como Documento Vivo
+Inclua esta seção no plano final para instruir o orquestrador:
+
+```md
+### Tracker de Execução (Documento Vivo)
+
+O **Tracker** (`docs/plan/{slug}-tracker.md`) é o documento de execução que deve ser **seguido e atualizado** durante todo o processo:
+
+- **Siga a ordem das levas** — cada leva tem agents, notebooks e dependências definidos; não pule levas nem mude a ordem sem registrar o motivo
+- **Marque tarefas concluídas** — após cada leva ser finalizada (execução + validações), atualize o tracker com o status real
+- **Registre desvios** — se precisar mudar a ordem, adicionar tarefa, pular algo ou ajustar escopo, documente no tracker para rastreabilidade
+- **Mantenha sincronizado** — o tracker deve refletir o estado real da execução, não só o planejado; se um passo levou mais tempo ou precisou de agent extra, anote
+- **Use como checklist de release** — ao final de cada release, confira se todas as levas da release estão marcadas como concluídas antes de rodar o `pre-deploy-check`
+- **Reabrir se necessário** — se o `gap-finder` ou `code-validator` apontarem problemas numa leva já marcada como concluída, reabra-a, corrija e valide novamente
+```
+
 ### Investigação
 Antes de modificar, use `suggest reads`, `impact analysis` e `file context` nos arquivos listados. Consulte os Notebooks Relevantes para confirmar padrões.
 
@@ -275,6 +295,34 @@ Antes de modificar, use `suggest reads`, `impact analysis` e `file context` nos 
 
 ---
 
+## Fase 7.5: Gerar Tracker de Execução
+
+Após o plano final consolidado e **antes do Gate de Qualidade**, delegue ao agent `tracker-generator` a geração do tracker de execução. O tracker mapeia cada fase da implementação com agents, notebooks e tarefas — é o que o orquestrador (Nexus) vai seguir para executar o plano.
+
+**Importante:** O plano final deve referenciar o tracker como **documento vivo** de execução (seção "Tracker de Execução (Documento Vivo)" nas Instruções de Execução).
+
+### Handoff para o tracker-generator Agent
+
+```markdown
+### Handoff: tracker-generator
+
+**Objetivo:** Gerar tracker de execução em `docs/plan/{slug}-tracker.md`
+
+**Contexto:**
+- Plano final: `docs/plan/{slug}-plano-final.md`
+- Arquivos intermediários: todos os arquivos em `docs/plan/` com prefixo `{slug}-`
+```
+
+### Validação
+
+Após o `tracker-generator` gerar o arquivo:
+1. Leia o tracker gerado
+2. Confira se respeita as regras de paralelismo e qualidade
+3. Se houver violações grosseiras (ex: 3 agents em paralelo, agent de planejamento no tracker), ajuste manualmente
+4. Só então prossiga para o Gate de Qualidade
+
+---
+
 ## Fase 8: Gate de Qualidade
 
 Antes de entregar, valide o plano contra os critérios abaixo:
@@ -292,6 +340,9 @@ Antes de entregar, valide o plano contra os critérios abaixo:
 - [ ] **Reutilização**: identificou explicitamente o que NÃO criar do zero?
 - [ ] **Tokens**: cada passo cabe no budget do agent (~50K tokens)?
 - [ ] **Contradições**: requirements vs architecture foram harmonizados?
+- [ ] **Tracker**: foi gerado (`docs/plan/{slug}-tracker.md`) e respeita as regras de paralelismo/qualidade?
+- [ ] **Fases**: o tracker organiza as tarefas em fases lógicas com agentes, notebooks e dependências explícitas?
+- [ ] **Documento Vivo**: o plano final tem a seção "Tracker de Execução (Documento Vivo)" nas Instruções de Execução, instruindo o orquestrador a seguir e atualizar o tracker?
 ```
 
 **Fluxo:**

@@ -7,6 +7,44 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.131.0] - 2026-06-14
+
+### Adicionado
+
+- **Modo "Desenho" (vetorial) no Speed Paint** (`/app/pintura-rapida`): novo modo de renderização que substitui a revelação por máscara (raspadinha) por uma animação whiteboard — paths SVG crescendo sequencialmente com `strokeDashoffset` e caneta SVG seguindo a ponta do traço via `getPointAtLength()`. Vetorização via `imagetracerjs@1.2.6` (16 presets disponíveis) + `getLength()` do `@remotion/paths@4.0.448` para pré-cálculo determinístico. Retrocompatível: `renderMode: 'mask'` é default; projetos existentes continuam no modo "Clássico" sem alteração.
+- **Seletor de modo na UI** (`SpeedPaintPage.tsx`): `ToggleButtonGroup` com ícones distintos (`FormatPaintOutlined` para Clássico, `GestureOutlined` para Desenho), glow no estado ativo, `aria-label` + `aria-describedby` + `Tooltip describeChild` para acessibilidade WCAG 2.1 AA. Troca de modo dispara `trackAnalyticsEvent('speed_paint_mode_changed', { mode })`.
+- **Persistência do modo de renderização** em `UserSettings` (dual storage Firestore/IndexedDB): novo campo `speedPaintRenderMode: 'mask' | 'vetorial'` em `UserSetting` e `StudioUserSettings`; hook `useSyncSpeedPaintRenderMode` em `App.tsx` sincroniza com debounce 2s, mesmo padrão de `useAutoSaveStudioSettings`.
+- **`WhiteboardScene.tsx`** (`src/features/video-render/components/`): componente Remotion determinístico que renderiza paths SVG animados + caneta SVG inline (portada de `drawTool()` Canvas 2D). Usa `useCurrentFrame` + `interpolate` + matemática pura — zero `useState`/`useEffect`/`useRef` no caminho de render. Caneta cai no fim do último path completo durante gaps entre paths (Premissa #13). Suporta `canvasColor: 'white' | 'black'` (Premissa #14).
+- **`WhiteboardComposition.tsx`** (`src/features/speed-paint/components/`): wrapper Remotion do `WhiteboardScene`, análogo ao `SpeedPaintComposition`. Composição lazy `createExportableWhiteboardComposition()` no `speedPaintRenderController.tsx` selecionada automaticamente quando `renderMode === 'vetorial'`, com `compositionId` único (`'script-master-speed-paint-vetorial-export'`) para constraint do Remotion.
+- **`SpeedPaintPlayer` estendido**: aceita `animation: StrokeAnimation | VetorialAnimation` e discrimina em runtime via type guard real (`'paths' in animation`) — sub-componentes `MaskPlayer`/`VetorialPlayer` com SRP; `imageSource` tornado opcional com fallback `''` no mask. `SpeedPaintExportPanel` e `useSpeedPaintExporter.tsx` (`SpeedPaintExportOptions.animation`) também estendidos para a união.
+- **`vectorizer.ts`** (`src/features/speed-paint/lib/`): wrapper assíncrono de `imagetracerjs.imagedataToSVG()` com parser regex (compatível com Web Worker — sem `DOMParser`), pré-cálculo de `getLength()` por path, `AbortSignal` cooperativo (checagem a cada 50 paths), `PATHOMIT_BY_PRESET` heurístico (presets "ricos" como `'detailed'`/`'artistic4'` têm `pathomit` mais alto), `MAX_PATHS_PER_SCENE = 500` com truncamento e `log.warn` para prevenir travamento do Remotion.
+- **Tipos `vetorial.ts`**: `SpeedPaintRenderMode` (discriminated union `'mask' | 'vetorial'`), `VetorialPreset` (16 valores), `VetorialPath` (d, length, color, strokeWidth) e `VetorialAnimation` (id, canvasWidth/Height, paths, totalLength, fps, sourcePreset, etc.). Re-exportados de `types.ts` para evitar import circular.
+- **Cache LRU generalizada** (`strokeCache.ts`): chave SHA-256 agora inclui `{ mode, preset }` para evitar colisão entre animações mask e vetorial da mesma imagem (Premissa #10). Discriminated union `CachedAnimation` com type guards `isVetorialAnimation`/`isStrokeAnimation`. Function overloads em `getStrokeAnimation`/`setStrokeAnimation` correlacionando `mode` com tipo de retorno.
+- **i18n** (3 locales, 4 chaves no namespace `speedPaint`): `modeLabel`, `modeClassic`, `modeVetorial`, `modeDescription` em pt-BR, en e es.
+- **Eventos analytics** (`src/lib/analytics.ts`): `speed_paint_mode_changed: { mode: 'mask' | 'vetorial' }` adicionado ao `AnalyticsEventMap`.
+- **33 novos testes** (4 arquivos): `tests/speed-paint/vectorizer.unit.test.ts` (22 testes: vetorização básica, pathomit, presets, validação, AbortSignal, defaults), `tests/speed-paint/imageProcessing.vetorial.integration.test.ts` (9 testes: pipeline end-to-end), `tests/speed-paint/imageProcessing.vetorial.e2e.test.ts` (2 testes: 10 imagens diversas + fallback mask), `tests/speed-paint/SpeedPaintPlayer.component.test.tsx` (4 testes: mask render, vetorial render, type guard, fallback). Cobertura: 2268/2268 testes passando, 151 arquivos.
+- **Dependências adicionadas**: `imagetracerjs@1.2.6` e `@remotion/paths@4.0.448` (ambas em `dependencies`).
+- **Declarações de tipo** (`src/types/imagetracerjs.d.ts`): tipagem mínima da API `ImageTracer.imagedataToSVG()` com subset de opções e preset enum.
+- **Documentação do plano e auditorias** (15+ arquivos em `docs/plan/`, `docs/audits/`, `docs/scan/`, `docs/test/`, `docs/handoffs/`): plano fonte, tracker de execução, 8 relatórios de auditoria dos agents (gap-finder, code-validator, security — F1, F2, F3, F4, F5 + 3 reauditorias), 5 handoffs de execução, 1 documento de ideia relacionada (Superfícies & Estilos de Mão).
+
+### Alterado
+
+- **`imageProcessing.ts`**: novo branch `renderMode === 'vetorial'` em `generateStrokesFromImage()` chama `processVetorialOnMainThread()` (vetorização na main thread com yields via `async` + `AbortSignal` cooperativo — `imagetracerjs` é lib de 290 KB, inviável em Blob URL de Web Worker inline). Retorno da função pública agora é `Promise<StrokeAnimation | VetorialAnimation>`.
+- **`speedPaintRenderController.tsx`**: seleção automática de composição baseada em `renderMode` lido do `useAnimationStore` via `getState()`. Discriminação por `'paths' in animation` para narrow de tipo. Constantes `COMPOSITION_ID_MASK`/`COMPOSITION_ID_VETORIAL`/`COMPOSITION_ID_BATCH` para constraint do Remotion.
+- **`PaintingJob.animation`** (`types.ts`): estendido de `StrokeAnimation | undefined` para `StrokeAnimation | VetorialAnimation | undefined` (consumidor discrimina por propriedades presentes).
+- **`animationStore.ts`**: novos campos `renderMode: 'mask' | 'vetorial'` (default `'mask'`) e `vetorialPreset: VetorialPreset` (default `'artistic1'`), com setters correspondentes. Defaults respeitados por `resetJob()` e `clearQueue()`.
+- **`VideoComposition.tsx`**: import de `StrokeAnimation` adicionado em uso.
+- **`speedPaintRenderer.ts`**: tipagem alinhada com `types.ts` atualizado.
+- **`types/vetorial.ts` (video-render)`: atualizado para suportar o novo tipo.
+
+### Limitado (documentado, fora do escopo)
+
+- **Batch vetorial não suportado** nesta versão: `runBatchRender()` no controller documenta explicitamente que apenas mask é suportado. Casos mistos caem no fallback mask. Pendência: criar `createExportableBatchWhiteboardComposition()` em versão futura se houver demanda.
+- **Snapshot/render de componente Remotion fora do escopo** (Premissa #15): testes do `WhiteboardScene` cobrem o pipeline (`processVetorialOnMainThread`) mas não renderizam frames específicos. Pioneirismo no projeto.
+- **`loadSpeedPaintRenderMode` sem runtime validation** (sugestão LOW do security): valor inválido do Firestore cai em fallback mask seguro, mas validação runtime explícita poderia ser adicionada em fase futura.
+
+---
+
 ## [0.130.3] - 2026-06-12
 
 ### Corrigido

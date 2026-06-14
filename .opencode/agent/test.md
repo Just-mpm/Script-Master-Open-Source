@@ -1,6 +1,6 @@
 ---
 name: test
-description: Use para criar testes automatizados com Vitest. após implementação ou aumentar cobertura de testes.
+description: Use SEMPRE que envolver criar, modificar ou corrigir testes automatizados (Vitest, emuladores, integração). Nunca implemente lógica de produção aqui. Se um teste revelar bug real, reporte mas não corrija o código de produção — isso é trabalho do `fixer` ou `worker`.
 permission:
   read: allow
   edit: allow

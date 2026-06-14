@@ -1,5 +1,6 @@
-import type { Stroke, StrokeAnimation } from '../types';
+import type { SpeedPaintRenderMode, Stroke, StrokeAnimation, VetorialAnimation, VetorialPreset } from '../types';
 import { createLogger } from '../../../lib/logger';
+import { vectorizeImage } from './vectorizer';
 
 const log = createLogger('imageProcessing');
 
@@ -281,6 +282,10 @@ function createImageProcessingWorker(): Worker {
 
 export interface GenerateStrokesOptions {
   signal?: AbortSignal;
+  /** Modo de renderização (default: `'mask'` para retrocompatibilidade). */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset do `imagetracerjs` (usado só quando `renderMode === 'vetorial'`). */
+  vetorialPreset?: VetorialPreset;
 }
 
 function createAbortError(): DOMException {
@@ -291,7 +296,7 @@ export async function generateStrokesFromImage(
   dataUrl: string,
   onProgress: (p: number) => void,
   options: GenerateStrokesOptions = {},
-): Promise<StrokeAnimation> {
+): Promise<StrokeAnimation | VetorialAnimation> {
   const { signal } = options;
 
   return new Promise((resolve, reject) => {
@@ -316,7 +321,7 @@ export async function generateStrokesFromImage(
       reject(error);
     };
 
-    const resolveOnce = (value: StrokeAnimation) => {
+    const resolveOnce = (value: StrokeAnimation | VetorialAnimation) => {
       if (settled) return;
       settled = true;
       cleanupAbortListener();
@@ -383,6 +388,33 @@ export async function generateStrokesFromImage(
 
       onProgress(0.3);
 
+      // -------------------------------------------------------------------------
+      // Branch: renderização vetorial (Fase 2.1)
+      // -------------------------------------------------------------------------
+      // O modo vetorial usa `imagetracerjs` (~290 KB de JS puro) para converter
+      // pixels em paths SVG. NÃO é executado em Web Worker inline porque
+      // `importScripts` não funciona em Blob URL e seria frágil inlinear uma
+      // lib desse tamanho. A vetorização roda na main thread com yields via
+      // `async` e respeita `signal.aborted` a cada 50 paths (no `vectorizer.ts`),
+      // mantendo a UI responsiva. Imagens 1920×1080 vetorizam em < 500 ms em
+      // hardware moderno — aceitável.
+      const renderMode: SpeedPaintRenderMode = options.renderMode ?? 'mask';
+      if (renderMode === 'vetorial') {
+        const preset: VetorialPreset = options.vetorialPreset ?? 'artistic1';
+        processVetorialOnMainThread(
+          imageData,
+          width,
+          height,
+          resizedImage,
+          preset,
+          onProgress,
+          resolveOnce,
+          rejectOnce,
+          signal,
+        );
+        return;
+      }
+
       // Cria Worker e delega o processamento pesado
       try {
         worker = createImageProcessingWorker();
@@ -439,6 +471,83 @@ export async function generateStrokesFromImage(
     img.onerror = () => rejectOnce(new Error('Failed to load image'));
     img.src = dataUrl;
   });
+}
+
+/**
+ * Processa vetorização na main thread via `vectorizeImage()`.
+ *
+ * ## Decisão técnica (Fase 2.1)
+ *
+ * Diferente do modo máscara (que tem Worker inline + fallback de main thread),
+ * o modo vetorial **NÃO usa Worker inline** — o `imagetracerjs` é uma lib de
+ * ~290 KB e `importScripts` não funciona em Blob URL sem origin. Vetorizar
+ * direto na main thread é mais simples e suficiente: o `vectorizeImage` já é
+ * `async` e checa `signal.aborted` a cada 50 paths, mantendo a UI responsiva.
+ *
+ * @param imageData   - Pixels extraídos do canvas (RGBA, `width × height`).
+ * @param width       - Largura do canvas em pixels.
+ * @param height      - Altura do canvas em pixels.
+ * @param resizedImage - Data URL JPEG 0.9 (fallback/comparação na UI).
+ * @param preset      - Preset do `imagetracerjs` (estilo da vetorização).
+ * @param onProgress  - Callback de progresso (0.0–1.0).
+ * @param resolve     - Resolve a Promise externa com a `VetorialAnimation`.
+ * @param reject      - Rejeita a Promise externa com o erro ocorrido.
+ * @param signal      - `AbortSignal` opcional para cancelamento cooperativo.
+ */
+async function processVetorialOnMainThread(
+  imageData: ImageData,
+  width: number,
+  height: number,
+  resizedImage: string,
+  preset: VetorialPreset,
+  onProgress: (p: number) => void,
+  resolve: (value: VetorialAnimation) => void,
+  reject: (error: Error) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) {
+    reject(createAbortError());
+    return;
+  }
+
+  try {
+    onProgress(0.3);
+
+    // Vetorização pesada (síncrona dentro do `vectorizeImage`, mas exposta como
+    // `Promise` com yields via `async` + checagem de abort a cada 50 paths).
+    const paths = await vectorizeImage(imageData, { preset, signal });
+    if (signal?.aborted) {
+      reject(createAbortError());
+      return;
+    }
+
+    onProgress(0.8);
+
+    // Pré-calcula `totalLength` (soma dos comprimentos) e `totalDurationMs`
+    // com base na quantidade de paths — mantém consistência com a fórmula
+    // usada no modo máscara (`Math.max(1000, strokes.length * 8)`).
+    const totalLength = paths.reduce((sum, p) => sum + p.length, 0);
+    const totalDurationMs = Math.max(2000, paths.length * 80);
+
+    const animation: VetorialAnimation = {
+      id: Math.random().toString(36).substring(7),
+      canvasWidth: width,
+      canvasHeight: height,
+      canvasColor: 'white',
+      paths,
+      totalLength,
+      fps: 60,
+      totalDurationMs,
+      sourcePreset: preset,
+      resizedImage,
+    };
+
+    onProgress(1.0);
+    resolve(animation);
+  } catch (err) {
+    // Repassa `AbortError` e qualquer outro erro do `vectorizeImage`/`ensureNotAborted`
+    reject(err instanceof Error ? err : new Error(String(err)));
+  }
 }
 
 /**

@@ -17,12 +17,14 @@
         "@remotion/captions": "4.0.448",
         "@remotion/media": "4.0.448",
         "@remotion/media-utils": "4.0.448",
+        "@remotion/paths": "4.0.448",
         "@remotion/player": "4.0.448",
         "@remotion/transitions": "4.0.448",
         "@remotion/web-renderer": "4.0.448",
         "@remotion/whisper-web": "4.0.448",
         "@vitejs/plugin-react": "^5.0.4",
         "firebase": "^12.12.0",
+        "imagetracerjs": "1.2.6",
         "motion": "^12.38.0",
         "react": "^19.2.5",
         "react-dom": "^19.2.5",
@@ -1438,6 +1440,8 @@
     "ieee754": ["ieee754@1.2.1", "", {}, "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA=="],
 
     "ignore": ["ignore@5.3.2", "", {}, ""],
+
+    "imagetracerjs": ["imagetracerjs@1.2.6", "", {}, "sha512-LKJlnKmXFzDdh6IZtXTyBxXcCLTAkwgKYS+NMiPXiXVnlTLjQC8fq7U89laUSgHtypJB3TdMMDK4ecG5NI/Cgw=="],
 
     "import-fresh": ["import-fresh@3.3.1", "", { "dependencies": { "parent-module": "^1.0.0", "resolve-from": "^4.0.0" } }, ""],
 

@@ -91,6 +91,12 @@ export interface UserSetting {
   updatedAt: number;
   /** Flag persistente por usuário — tour de boas-vindas do assistente já foi exibido */
   tourSeen?: boolean;
+  /**
+   * Modo de renderização preferido do Speed Paint.
+   * Default: 'mask' (retrocompatibilidade com projetos existentes).
+   * Sincronizado via dual storage (Firestore/IndexedDB) pelo padrão do projeto.
+   */
+  speedPaintRenderMode?: 'mask' | 'vetorial';
   // Preferências do estúdio (opcionais — sincronizadas via Firestore)
   selectedVoice?: string;
   isMultiSpeaker?: boolean;

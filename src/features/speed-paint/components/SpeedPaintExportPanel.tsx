@@ -16,7 +16,7 @@ import VideoFile from '@mui/icons-material/VideoFile';
 import WarningAmber from '@mui/icons-material/WarningAmber';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
-import type { StrokeAnimation } from '../types';
+import type { StrokeAnimation, VetorialAnimation } from '../types';
 import type { VideoExportQuality } from '../../video-render/types';
 import { estimateFileSize, DEFAULT_EXPORT_QUALITY } from '../../video-render/lib/videoUtils';
 import { ExportQualitySelector } from '../../video-render/components/export/ExportQualitySelector';
@@ -56,8 +56,14 @@ const SPEED_PAINT_QUALITY_OPTIONS: { value: VideoExportQuality; label: string }[
 // ---------------------------------------------------------------------------
 
 interface SpeedPaintExportPanelProps {
-  /** Dados da animação de speed paint */
-  animation: StrokeAnimation;
+  /**
+   * Animação a ser exportada. Aceita a união `StrokeAnimation | VetorialAnimation`
+   * (GAP-02 reauditoria F5.5). O painel apenas lê campos comuns
+   * (`fps`, `canvasWidth`, `canvasHeight`, `resizedImage`) e propaga para
+   * o `exporter.startRender`, que discrimina via type guard real no
+   * controller.
+   */
+  animation: StrokeAnimation | VetorialAnimation;
   /** URL da imagem de origem */
   imageSource: string;
   /** Duração escolhida para a animação (em segundos) */
