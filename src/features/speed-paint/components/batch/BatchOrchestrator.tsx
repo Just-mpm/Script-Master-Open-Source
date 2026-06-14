@@ -35,7 +35,13 @@ export function BatchOrchestrator() {
   const processingIdRef = useRef<string | null>(null);
   const skipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // `currentImg` é o item atualmente em processamento. Mantemos o id estável
+  // nas deps do effect abaixo (em vez do objeto inteiro) para que updates
+  // internos do store — como `setQueue` mudando o status do item para
+  // 'processing' — não cancelem o processamento em andamento. A leitura de
+  // `dataUrl` é feita via `getState()` para evitar closure stale.
   const currentImg = queue[currentIndex];
+  const currentImgId = currentImg?.id ?? null;
 
   useEffect(() => {
     if (batchMode === 'watch' && queue.length > 0) return;
@@ -56,44 +62,53 @@ export function BatchOrchestrator() {
     if (batchMode !== 'watch' || queue.length === 0) return;
 
     // Fim da fila — volta ao estado idle
-    if (!currentImg) {
+    if (!currentImgId) {
       setBatchMode('idle');
       return;
     }
 
     // Processa apenas imagens novas (evita re-processar a mesma)
-    if (currentImageIdRef.current !== currentImg.id) {
-      currentImageIdRef.current = currentImg.id;
+    if (currentImageIdRef.current !== currentImgId) {
+      currentImageIdRef.current = currentImgId;
 
       // Marca o ID do item sendo processado para checagem de cancelamento
-      const processId = currentImg.id;
+      const processId = currentImgId;
       processingIdRef.current = processId;
       abortControllerRef.current?.abort();
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
+      // Lê o dataUrl via getState() para evitar closure stale — o item da fila
+      // é recriado pelo `setQueue` abaixo (status → 'processing'), então a
+      // referência capturada pode estar desatualizada antes do efeito rodar.
+      const dataUrl = useAnimationStore.getState().queue.find((q) => q.id === processId)?.dataUrl;
+      if (!dataUrl) {
+        log.warn('Item da fila desapareceu antes do processamento iniciar', { id: processId });
+        return;
+      }
+
       setJob({
-        id: currentImg.id,
-        inputImage: currentImg.dataUrl,
+        id: processId,
+        inputImage: dataUrl,
         status: 'processing',
         progress: 0,
       });
       setQueue((prev) => prev.map((item) => (
-        item.id === currentImg.id
+        item.id === processId
           ? { ...item, status: 'processing' }
           : item
       )));
 
-      generateStrokesFromImage(currentImg.dataUrl, (p) => {
+      generateStrokesFromImage(dataUrl, (p) => {
         if (processingIdRef.current !== processId) return;
         setJob({ progress: p });
       }, { signal: abortController.signal }).then((animation) => {
         // Se a fila foi limpa durante o processamento, ignora o resultado
         if (processingIdRef.current !== processId) return;
         // Marca job como concluído — o SpeedPaintPlayer detecta e auto-play
-        setJob({ id: currentImg.id, status: 'completed', animation, progress: 0 });
+        setJob({ id: processId, status: 'completed', animation, progress: 0 });
         setQueue((prev) => prev.map((item) => (
-          item.id === currentImg.id
+          item.id === processId
             ? { ...item, status: 'completed' }
             : item
         )));
@@ -102,9 +117,9 @@ export function BatchOrchestrator() {
         // Se a fila foi limpa durante o processamento, ignora o erro
         if (processingIdRef.current !== processId) return;
         log.error('Falha ao processar imagem em lote', { error: err });
-        setJob({ id: currentImg.id, status: 'failed' });
+        setJob({ id: processId, status: 'failed' });
         setQueue((prev) => prev.map((item) => (
-          item.id === currentImg.id
+          item.id === processId
             ? { ...item, status: 'failed' }
             : item
         )));
@@ -128,7 +143,7 @@ export function BatchOrchestrator() {
         skipTimeoutRef.current = null;
       }
     };
-  }, [batchMode, currentIndex, currentImg, queue.length, setJob, setCurrentIndex, setBatchMode, setQueue]);
+  }, [batchMode, currentIndex, currentImgId, queue.length, setJob, setCurrentIndex, setBatchMode, setQueue]);
 
   if (job.status === 'failed' && batchMode !== 'idle') {
     const nextInQueue = currentIndex + 1 < queue.length;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { BatchOrchestrator } from '../../src/features/speed-paint/components/batch/BatchOrchestrator';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -343,5 +343,132 @@ describe('BatchOrchestrator', () => {
 
     expect(useAnimationStore.getState().job.status).toBe('completed');
     expect(useAnimationStore.getState().queue[0]?.status).toBe('completed');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Regressão: o signal não pode ser abortado por re-renders do próprio effect.
+  // O effect chama `setJob` e `setQueue` (atualiza o status do item para
+  // 'processing'), o que muda a identidade de `currentImg` (= queue[currentIndex])
+  // e dispara o effect novamente. O cleanup do effect anterior aborta o signal,
+  // o worker é terminado e a promise rejeita com AbortError, deixando o job
+  // travado em `status: 'processing'` e `progress: 0` para sempre.
+  // ---------------------------------------------------------------------------
+
+  it('NÃO aborta o signal durante o processing por re-render do próprio effect (regressão)', async () => {
+    const receivedSignals: AbortSignal[] = [];
+    let resolveGeneration: ((value: {
+      id: string;
+      canvasWidth: number;
+      canvasHeight: number;
+      canvasColor: 'white';
+      totalFrames: number;
+      fps: number;
+      totalDurationMs: number;
+      strokes: never[];
+    }) => void) | null = null;
+
+    mockGenerateStrokesFromImage.mockImplementationOnce((_dataUrl, _onProgress, opts: { signal?: AbortSignal } = {}) => {
+      if (opts.signal) receivedSignals.push(opts.signal);
+      return new Promise((resolve) => {
+        resolveGeneration = resolve;
+      });
+    });
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'test.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    // Espera microtasks para que o effect rode, dispare setJob/setQueue,
+    // o componente re-renderize (currentImg muda de identidade) e o React
+    // execute o cleanup do effect anterior.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // O signal da primeira (e única) chamada NÃO pode ter sido abortado
+    // por re-render do próprio effect.
+    expect(receivedSignals).toHaveLength(1);
+    expect(receivedSignals[0]?.aborted).toBe(false);
+
+    // O job deve estar em processing — o signal segue vivo.
+    expect(useAnimationStore.getState().job.status).toBe('processing');
+
+    // Resolve a promise → o job deve virar completed normalmente.
+    await act(async () => {
+      resolveGeneration?.({
+        id: 'anim-1',
+        canvasWidth: 100,
+        canvasHeight: 100,
+        canvasColor: 'white',
+        totalFrames: 10,
+        fps: 30,
+        totalDurationMs: 1000,
+        strokes: [],
+      });
+      await Promise.resolve();
+    });
+
+    expect(useAnimationStore.getState().job.status).toBe('completed');
+  });
+
+  it('avança para próxima imagem sem abortar o signal da atual por mudança de identidade', async () => {
+    // Garante que mudar o status do item atual (de pending → processing) não
+    // dispara re-processamento da mesma imagem. O id permanece estável.
+    const calls: string[] = [];
+    let resolveFirst: ((value: {
+      id: string;
+      canvasWidth: number;
+      canvasHeight: number;
+      canvasColor: 'white';
+      totalFrames: number;
+      fps: number;
+      totalDurationMs: number;
+      strokes: never[];
+    }) => void) | null = null;
+
+    mockGenerateStrokesFromImage.mockImplementation((dataUrl: string) => {
+      calls.push(dataUrl);
+      return new Promise((resolve) => {
+        resolveFirst = resolve;
+      });
+    });
+
+    useAnimationStore.getState().setQueue([
+      { id: '1', dataUrl: 'data:image/png;base64,abc', filename: 'a.png', status: 'pending' },
+      { id: '2', dataUrl: 'data:image/png;base64,def', filename: 'b.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Apenas 1 chamada (id 1). O re-render causado pelo setQueue não deve
+    // disparar uma segunda chamada para o mesmo id.
+    expect(calls).toHaveLength(1);
+
+    // Resolve a primeira imagem → job vira completed.
+    await act(async () => {
+      resolveFirst?.({
+        id: 'anim-1',
+        canvasWidth: 100,
+        canvasHeight: 100,
+        canvasColor: 'white',
+        totalFrames: 10,
+        fps: 30,
+        totalDurationMs: 1000,
+        strokes: [],
+      });
+      await Promise.resolve();
+    });
+
+    expect(useAnimationStore.getState().job.status).toBe('completed');
   });
 });
