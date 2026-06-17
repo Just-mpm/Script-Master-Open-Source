@@ -1,6 +1,7 @@
 import type { SpeedPaintRenderMode, Stroke, StrokeAnimation, VetorialAnimation, VetorialPreset } from '../types';
+import type { VetorialPathSortOrder } from '../types/vetorial';
 import { createLogger } from '../../../lib/logger';
-import { vectorizeImage } from './vectorizer';
+import { filterPathsByBackgroundContrast, vectorizeImage } from './vectorizer';
 
 const log = createLogger('imageProcessing');
 
@@ -286,6 +287,28 @@ export interface GenerateStrokesOptions {
   renderMode?: SpeedPaintRenderMode;
   /** Preset do `imagetracerjs` (usado só quando `renderMode === 'vetorial'`). */
   vetorialPreset?: VetorialPreset;
+  /**
+   * Ordem de desenho dos paths SVG (L9, RF-09). Usada só quando
+   * `renderMode === 'vetorial'`. Quando omitida, o `vectorizeImage` mantém
+   * a ordem original do `imagetracerjs`.
+   */
+  vetorialSortOrder?: VetorialPathSortOrder;
+  /**
+   * Threshold alto normalizado 0..1 para Canny no pipeline edge+bezier.
+   * Usado só quando `renderMode === 'vetorial'` e o preset é da família
+   * `edge-*`. Quando omitido, o `vectorizeImage` usa o valor default do preset.
+   *
+   * @see `EDGE_PRESET_CONFIG[preset].highThreshold`
+   */
+  edgeThreshold?: number;
+  /**
+   * Tolerância Ramer-Douglas-Peucker em pixels (pipeline edge+bezier).
+   * Usada só quando `renderMode === 'vetorial'` e o preset é da família
+   * `edge-*`. Quando omitida, o `vectorizeImage` usa o valor default do preset.
+   *
+   * @see `EDGE_PRESET_CONFIG[preset].epsilon`
+   */
+  contourEpsilon?: number;
 }
 
 function createAbortError(): DOMException {
@@ -401,12 +424,16 @@ export async function generateStrokesFromImage(
       const renderMode: SpeedPaintRenderMode = options.renderMode ?? 'mask';
       if (renderMode === 'vetorial') {
         const preset: VetorialPreset = options.vetorialPreset ?? 'artistic1';
+        const sortOrder: VetorialPathSortOrder | undefined = options.vetorialSortOrder;
         processVetorialOnMainThread(
           imageData,
           width,
           height,
           resizedImage,
           preset,
+          sortOrder,
+          options.edgeThreshold,
+          options.contourEpsilon,
           onProgress,
           resolveOnce,
           rejectOnce,
@@ -488,7 +515,13 @@ export async function generateStrokesFromImage(
  * @param width       - Largura do canvas em pixels.
  * @param height      - Altura do canvas em pixels.
  * @param resizedImage - Data URL JPEG 0.9 (fallback/comparação na UI).
- * @param preset      - Preset do `imagetracerjs` (estilo da vetorização).
+ * @param preset      - Preset do vetorizador (estilo da vetorização).
+ * @param sortOrder   - Ordem de desenho dos paths (L9, RF-09). `undefined`
+ *                       mantém a ordem original do vetorizador.
+ * @param edgeThreshold - Threshold alto normalizado 0..1 para Canny
+ *                       (pipeline edge+bezier, opcional).
+ * @param contourEpsilon - Tolerância Ramer-Douglas-Peucker em pixels
+ *                       (pipeline edge+bezier, opcional).
  * @param onProgress  - Callback de progresso (0.0–1.0).
  * @param resolve     - Resolve a Promise externa com a `VetorialAnimation`.
  * @param reject      - Rejeita a Promise externa com o erro ocorrido.
@@ -500,6 +533,9 @@ async function processVetorialOnMainThread(
   height: number,
   resizedImage: string,
   preset: VetorialPreset,
+  sortOrder: VetorialPathSortOrder | undefined,
+  edgeThreshold: number | undefined,
+  contourEpsilon: number | undefined,
   onProgress: (p: number) => void,
   resolve: (value: VetorialAnimation) => void,
   reject: (error: Error) => void,
@@ -515,19 +551,40 @@ async function processVetorialOnMainThread(
 
     // Vetorização pesada (síncrona dentro do `vectorizeImage`, mas exposta como
     // `Promise` com yields via `async` + checagem de abort a cada 50 paths).
-    const paths = await vectorizeImage(imageData, { preset, signal });
+    // O `vectorizeImage` decide o pipeline automaticamente: presets `edge-*`
+    // usam o novo pipeline edge+bezier (v0.132.0) e os demais usam o legado
+    // `imagetracerjs`. Options opcionais (`edgeThreshold`, `contourEpsilon`)
+    // são repassadas para permitir tuning fino no pipeline edge+bezier.
+    const rawPaths = await vectorizeImage(imageData, {
+      preset,
+      sortOrder,
+      signal,
+      edgeThreshold,
+      contourEpsilon,
+    });
     if (signal?.aborted) {
       reject(createAbortError());
       return;
     }
 
+    // Filtra paths cuja cor é próxima do fundo do canvas. O `imagetracerjs`
+    // inclui a cor de fundo na paleta quantizada — esses paths ficam
+    // invisíveis (branco sobre branco / preto sobre preto) e o pencil
+    // se move sem traço aparecer. Filtro transparente para imagens com
+    // bom contraste.
+    const paths = filterPathsByBackgroundContrast(rawPaths, 'white');
+
     onProgress(0.8);
 
     // Pré-calcula `totalLength` (soma dos comprimentos) e `totalDurationMs`
-    // com base na quantidade de paths — mantém consistência com a fórmula
-    // usada no modo máscara (`Math.max(1000, strokes.length * 8)`).
+    // com base na quantidade de paths — recalibrado para o pipeline
+    // edge+bezier (Leva 3.2 / D8 §10.4). A nova fórmula (3000ms base,
+    // 120ms por path) compensa paths mais longos porém menos numerosos
+    // gerados pelo Canny → RDP → Bezier (v0.132.0). A fórmula antiga
+    // (2000ms base, 80ms/path) foi calibrada para o pipeline legado
+    // `imagetracerjs` (v0.131.0).
     const totalLength = paths.reduce((sum, p) => sum + p.length, 0);
-    const totalDurationMs = Math.max(2000, paths.length * 80);
+    const totalDurationMs = Math.max(3000, paths.length * 120);
 
     const animation: VetorialAnimation = {
       id: Math.random().toString(36).substring(7),

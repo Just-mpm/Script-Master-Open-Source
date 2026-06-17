@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { Audio } from '@remotion/media';
 import type { CaptionWord, VideoCompositionProps, VideoScene, SpeedPaintMultipliers } from '../types';
-import type { StrokeAnimation } from '../../speed-paint/types';
 import { SPEED_PAINT_MULTIPLIERS } from '../types';
 import type { SpeedPaintSpeed } from '../types';
 import { getSpeedPaintOverlapFrames } from '../lib/speedPaintTimings';
 import { msToFrames } from '../lib/videoUtils';
+import { isVetorialAnimation } from '../lib/strokeCache';
 import { SceneSequence } from './SceneSequence';
 import { SpeedPaintScene } from './SpeedPaintScene';
+import { WhiteboardScene } from './WhiteboardScene';
 import { SubtitleOverlay } from './SubtitleOverlay';
 import { WaveformOverlay } from './WaveformOverlay';
 
@@ -80,17 +81,28 @@ const SceneItem = React.memo(function SceneItem({
       durationInFrames={adjustedDuration}
     >
       {scene.strokeAnimation ? (
-        <SpeedPaintScene
-          animation={scene.strokeAnimation as StrokeAnimation}
-          imageSource={scene.imageUrl}
-          durationInFrames={adjustedDuration}
-          isLastScene={isLastScene}
-          speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier }
-          drawSpeed={speedPaintMultipliers?.sketch }
-          paintSpeed={speedPaintMultipliers?.reveal }
-          isExporting={isExporting}
-          showDrawTool={showDrawTool}
-        />
+        isVetorialAnimation(scene.strokeAnimation) ? (
+          <WhiteboardScene
+            animation={scene.strokeAnimation}
+            durationInFrames={adjustedDuration}
+            isLastScene={isLastScene}
+            isExporting={isExporting}
+            showDrawTool={showDrawTool}
+            canvasColor={scene.strokeAnimation.canvasColor}
+          />
+        ) : (
+          <SpeedPaintScene
+            animation={scene.strokeAnimation}
+            imageSource={scene.imageUrl}
+            durationInFrames={adjustedDuration}
+            isLastScene={isLastScene}
+            speedMultiplier={speedPaintMultipliers ? undefined : globalSpeedMultiplier }
+            drawSpeed={speedPaintMultipliers?.sketch }
+            paintSpeed={speedPaintMultipliers?.reveal }
+            isExporting={isExporting}
+            showDrawTool={showDrawTool}
+          />
+        )
       ) : (
         <SceneSequence
           imageUrl={scene.imageUrl}

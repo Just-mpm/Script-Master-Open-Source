@@ -12,6 +12,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { VideoScene } from '../types';
 import { enhanceScenesWithSpeedPaint, type SpeedPaintEnhanceResult } from '../lib/speedPaintService';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../../speed-paint/types';
 import { createLogger } from '../../../lib/logger';
 
 const log = createLogger('speed-paint-enhancer');
@@ -26,6 +27,13 @@ export interface UseSpeedPaintEnhancerOptions {
   enabled?: boolean;
   /** Callback de progresso normalizado 0→1 */
   onProgress?: (progress: number) => void;
+  /** Modo de renderização do speed paint. `undefined` ou `'mask'` preserva o
+   *  comportamento legado (raspadinha); `'vetorial'` aciona a vetorização
+   *  whiteboard via `imagetracerjs`. */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset do `imagetracerjs` (só aplicado quando `renderMode === 'vetorial'`).
+   *  Ignorado em modo `'mask'`. */
+  vetorialPreset?: VetorialPreset;
 }
 
 export interface UseSpeedPaintEnhancerResult {
@@ -59,7 +67,7 @@ export function useSpeedPaintEnhancer(
   scenes: VideoScene[],
   options?: UseSpeedPaintEnhancerOptions,
 ): UseSpeedPaintEnhancerResult {
-  const { enabled = true, onProgress } = options ?? {};
+  const { enabled = true, onProgress, renderMode, vetorialPreset } = options ?? {};
 
   const [result, setResult] = useState<SpeedPaintEnhanceResult>({
     scenes,
@@ -101,6 +109,8 @@ export function useSpeedPaintEnhancer(
             onProgress?.(p);
           },
           signal: abortController.signal,
+          renderMode,
+          vetorialPreset,
         });
 
         // Só atualiza se esta ainda é a renderização atual (proteção contra race condition)
@@ -120,7 +130,7 @@ export function useSpeedPaintEnhancer(
         }
       }
     },
-    [onProgress],
+    [onProgress, renderMode, vetorialPreset],
   );
 
   useEffect(() => {

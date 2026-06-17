@@ -1,6 +1,16 @@
-import type { StrokeAnimation, VetorialAnimation } from '../../speed-paint/types';
+import type {
+  SpeedPaintRenderMode,
+  StrokeAnimation,
+  VetorialAnimation,
+  VetorialPreset,
+} from '../../speed-paint/types';
 import type { SpeedPaintMultipliers } from '../types';
-import { getStrokeAnimation, setStrokeAnimation } from './strokeCache';
+import {
+  getStrokeAnimation,
+  isStrokeAnimation,
+  isVetorialAnimation,
+  setStrokeAnimation,
+} from './strokeCache';
 import {
   createStrokeWorker,
   terminateStrokeWorker,
@@ -36,6 +46,14 @@ export interface SpeedPaintFrameOptions {
 export interface GenerateSpeedPaintOptions {
   /** Usar Web Worker para processamento (recomendado para >5 cenas) */
   useWorker?: boolean;
+  /** Modo de renderização do speed paint. `undefined` ou `'mask'` preserva o
+   *  comportamento legado (raspadinha via strokes). `'vetorial'` aciona a
+   *  vetorização whiteboard via `imagetracerjs`. Propagado para o cache LRU
+   *  (a chave SHA-256 inclui `mode` + `preset` para evitar colisão). */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset do `imagetracerjs` (só aplicado quando `renderMode === 'vetorial'`).
+   *  Ignorado em modo `'mask'`. */
+  vetorialPreset?: VetorialPreset;
 }
 
 /**
@@ -266,15 +284,17 @@ export async function generateScenesWithSpeedPaint(
 
   const log = createLogger('speedPaintRenderer');
   const useWorker = options?.useWorker ?? false;
+  const renderMode = options?.renderMode;
+  const vetorialPreset = options?.vetorialPreset;
   const canUseWorker = useWorker && supportsStrokeWorker() && scenes.length > 5;
 
   if (canUseWorker) {
     log.info('Usando Web Worker para processamento de strokes', { sceneCount: scenes.length });
-    return generateWithWorker(scenes, onProgress);
+    return generateWithWorker(scenes, onProgress, { renderMode, vetorialPreset });
   }
 
   log.info('Usando batch async para processamento de strokes', { sceneCount: scenes.length });
-  return generateWithBatch(scenes, onProgress);
+  return generateWithBatch(scenes, onProgress, { renderMode, vetorialPreset });
 }
 
 // ---------------------------------------------------------------------------
@@ -285,14 +305,25 @@ export async function generateScenesWithSpeedPaint(
  * Processa cenas usando Web Worker com OffscreenCanvas.
  * Cenas são processadas uma a uma no Worker (sequencial) para não sobrecarregar.
  * Verifica cache LRU antes de cada cena.
+ *
+ * @param context - Contexto discriminador de modo de renderização (`renderMode`
+ *                  + `vetorialPreset` opcionais). `undefined` em ambos = modo
+ *                  `'mask'` retrocompatível.
  */
 async function generateWithWorker(
   scenes: { imageUrl: string }[],
   onProgress?: (progress: number) => void,
+  context: { renderMode?: SpeedPaintRenderMode; vetorialPreset?: VetorialPreset } = {},
 ): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   const { generateStrokesFromImage } = await import('../../speed-paint/lib/imageProcessing');
   const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(scenes.length);
+
+  // Modo efetivo: `undefined` cai para `'mask'` (comportamento legado).
+  // `renderMode === 'vetorial'` exige `vetorialPreset` para discriminar o cache
+  // — quando ausente, o cache aplica o default `'artistic1'` internamente.
+  const effectiveMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
+  const effectivePreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
 
   let worker: Worker | null = null;
 
@@ -302,8 +333,12 @@ async function generateWithWorker(
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
 
-      // Verifica cache antes de processar
-      const cached = await getStrokeAnimation(scene.imageUrl);
+      // Verifica cache antes de processar — chave SHA-256 inclui `mode`+`preset`.
+      // Branch discriminada para satisfazer os overloads literais de
+      // `getStrokeAnimation` (`{ mode: 'vetorial' }` vs `{ mode: 'mask' }`).
+      const cached = effectiveMode === 'vetorial'
+        ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: effectivePreset })
+        : await getStrokeAnimation(scene.imageUrl, { mode: 'mask' });
       if (cached) {
         results[i] = { animation: cached, sceneIndex: i };
         onProgress?.((i + 1) / scenes.length);
@@ -314,7 +349,8 @@ async function generateWithWorker(
       const workerResult = await processSceneInWorker(worker, scene.imageUrl, i);
 
       if (workerResult) {
-        // Monta StrokeAnimation com os dados do Worker
+        // Monta StrokeAnimation com os dados do Worker (modo `'mask'` — Worker
+        // só gera strokes raster, vetorização não roda no Worker).
         const animation: StrokeAnimation = {
           id: Math.random().toString(36).substring(7),
           canvasWidth: workerResult.canvasWidth,
@@ -327,18 +363,34 @@ async function generateWithWorker(
           strokes: workerResult.strokes,
         };
 
-        // Armazena no cache
-        await setStrokeAnimation(scene.imageUrl, animation);
+        // Armazena no cache com contexto discriminador (modo `mask`).
+        await setStrokeAnimation(scene.imageUrl, animation, { mode: 'mask' });
         results[i] = { animation, sceneIndex: i };
       } else {
         // Worker falhou — fallback para main thread
         try {
-          const animation = await generateStrokesFromImage(scene.imageUrl, () => {});
-          // O fallback da main thread preserva o modo `'mask'` (default do
-          // `generateStrokesFromImage`), então `animation` é `StrokeAnimation`.
-          // O cast é seguro aqui — o `setStrokeAnimation` aceita a union e
-          // decide em runtime com base no `mode` (aqui `undefined` → `'mask'`).
-          await setStrokeAnimation(scene.imageUrl, animation as StrokeAnimation);
+          const animation = await generateStrokesFromImage(scene.imageUrl, () => {}, {
+            renderMode: effectiveMode,
+            vetorialPreset: effectivePreset,
+          });
+          // O `setStrokeAnimation` exige o tipo correto por `mode` — usamos
+          // type guards reais (de `./strokeCache`) para narrowar a union
+          // retornada por `generateStrokesFromImage` sem `as` bypass.
+          if (effectiveMode === 'vetorial') {
+            if (!isVetorialAnimation(animation)) {
+              throw new TypeError(
+                `Modo 'vetorial' esperava VetorialAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
+              );
+            }
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: effectivePreset });
+          } else {
+            if (!isStrokeAnimation(animation)) {
+              throw new TypeError(
+                `Modo 'mask' esperava StrokeAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
+              );
+            }
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'mask' });
+          }
           results[i] = { animation, sceneIndex: i };
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -369,10 +421,15 @@ async function generateWithWorker(
 /**
  * Processa cenas em batches de 2 na main thread.
  * Verifica cache LRU antes de processar cada cena.
+ *
+ * @param context - Contexto discriminador de modo de renderização (`renderMode`
+ *                  + `vetorialPreset` opcionais). `undefined` em ambos = modo
+ *                  `'mask'` retrocompatível.
  */
 async function generateWithBatch(
   scenes: { imageUrl: string }[],
   onProgress?: (progress: number) => void,
+  context: { renderMode?: SpeedPaintRenderMode; vetorialPreset?: VetorialPreset } = {},
 ): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   const { generateStrokesFromImage } = await import('../../speed-paint/lib/imageProcessing');
 
@@ -382,6 +439,12 @@ async function generateWithBatch(
   const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(totalScenes);
 
+  // Modo efetivo: `undefined` cai para `'mask'` (comportamento legado).
+  // `renderMode === 'vetorial'` exige `vetorialPreset` para discriminar o cache
+  // — quando ausente, o cache aplica o default `'artistic1'` internamente.
+  const effectiveMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
+  const effectivePreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
+
   // Processa em batches de 2 cenas para não congelar a UI
   for (let batchStart = 0; batchStart < totalScenes; batchStart += BATCH_SIZE) {
     const batchEnd = Math.min(batchStart + BATCH_SIZE, totalScenes);
@@ -390,8 +453,12 @@ async function generateWithBatch(
       scenes.slice(batchStart, batchEnd).map(async (scene, batchIndex) => {
         const sceneIndex = batchStart + batchIndex;
 
-        // Verifica cache antes de processar
-        const cached = await getStrokeAnimation(scene.imageUrl);
+        // Verifica cache antes de processar — chave SHA-256 inclui `mode`+`preset`.
+        // Branch discriminada para satisfazer os overloads literais de
+        // `getStrokeAnimation` (`{ mode: 'vetorial' }` vs `{ mode: 'mask' }`).
+        const cached = effectiveMode === 'vetorial'
+          ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: effectivePreset })
+          : await getStrokeAnimation(scene.imageUrl, { mode: 'mask' });
         if (cached) {
           return { animation: cached, sceneIndex };
         }
@@ -399,9 +466,28 @@ async function generateWithBatch(
         try {
           const animation = await generateStrokesFromImage(scene.imageUrl, () => {
             // Progresso interno não é granular o suficiente — usamos contagem de cenas
+          }, {
+            renderMode: effectiveMode,
+            vetorialPreset: effectivePreset,
           });
-          // Armazena no cache para futuras reutilizações — caminho mask (default).
-          await setStrokeAnimation(scene.imageUrl, animation as StrokeAnimation);
+          // O `setStrokeAnimation` exige o tipo correto por `mode` — usamos
+          // type guards reais (de `./strokeCache`) para narrowar a union
+          // retornada por `generateStrokesFromImage` sem `as` bypass.
+          if (effectiveMode === 'vetorial') {
+            if (!isVetorialAnimation(animation)) {
+              throw new TypeError(
+                `Modo 'vetorial' esperava VetorialAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
+              );
+            }
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: effectivePreset });
+          } else {
+            if (!isStrokeAnimation(animation)) {
+              throw new TypeError(
+                `Modo 'mask' esperava StrokeAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
+              );
+            }
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'mask' });
+          }
           return { animation, sceneIndex };
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Erro desconhecido';

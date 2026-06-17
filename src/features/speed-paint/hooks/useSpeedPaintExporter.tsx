@@ -84,9 +84,19 @@ export interface SpeedPaintBatchExportOptions {
   items: SpeedPaintBatchExportItem[];
   fps: number;
   quality: VideoExportQuality;
-  showDrawTool?: boolean;
-  fileName?: string;
-  sceneDurationSeconds?: number;
+  showDrawTool: boolean;
+  fileName: string;
+  sceneDurationSeconds: number;
+  /**
+   * Modo de renderização uniforme para o lote (D04: lote uniforme, não misto).
+   * Default `undefined` = comportamento legado (mask).
+   */
+  renderMode?: import('../types').SpeedPaintRenderMode;
+  /**
+   * Preset vetorial (só usado quando `renderMode === 'vetorial'`).
+   * Default `undefined` = `'artistic1'` (default da `animationStore`).
+   */
+  vetorialPreset?: import('../types').VetorialPreset;
 }
 
 // ---------------------------------------------------------------------------

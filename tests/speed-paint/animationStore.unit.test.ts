@@ -407,4 +407,134 @@ it('não altera fila quando oldIndex === newIndex', () => {
        revokeSpy.mockRestore();
      });
    });
+
+   // ─── Modo vetorial (v0.131.0) ──────────────────────────────────────
+   // Campos adicionados na release v0.131.0 (Fase 1.3): renderMode, vetorialPreset,
+   // easing. Cada describe abaixo isola seu próprio reset para não interferir
+   // com o beforeEach global (que reseta apenas os campos legados).
+
+   describe('easing (L10, RF-10)', () => {
+     beforeEach(() => {
+       // Garante estado inicial do campo `easing` antes de cada teste deste bloco.
+       useAnimationStore.getState().setEasing('smooth');
+     });
+
+     it('estado inicial tem easing "smooth" (padrão InstaDoodle)', () => {
+       // Limpa interferência de outros describes: reset via clearQueue
+       // (que também restaura easing para o default).
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().easing).toBe('smooth');
+     });
+
+     it('setEasing aceita "linear"', () => {
+       useAnimationStore.getState().setEasing('linear');
+       expect(useAnimationStore.getState().easing).toBe('linear');
+     });
+
+     it('setEasing aceita "smooth"', () => {
+       useAnimationStore.getState().setEasing('linear');
+       useAnimationStore.getState().setEasing('smooth');
+       expect(useAnimationStore.getState().easing).toBe('smooth');
+     });
+
+     it('setEasing aceita "bounce"', () => {
+       useAnimationStore.getState().setEasing('bounce');
+       expect(useAnimationStore.getState().easing).toBe('bounce');
+     });
+
+     it('clearQueue restaura easing para o default "smooth"', () => {
+       useAnimationStore.getState().setEasing('bounce');
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().easing).toBe('smooth');
+     });
+
+     it('resetJob restaura easing para o default "smooth"', () => {
+       useAnimationStore.getState().setEasing('linear');
+       useAnimationStore.getState().resetJob();
+       expect(useAnimationStore.getState().easing).toBe('smooth');
+     });
+   });
+
+   describe('renderMode (Fase 1.3)', () => {
+     beforeEach(() => {
+       useAnimationStore.getState().setRenderMode('mask');
+     });
+
+     it('estado inicial tem renderMode "mask" (retrocompatibilidade)', () => {
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().renderMode).toBe('mask');
+     });
+
+     it('setRenderMode aceita "vetorial"', () => {
+       useAnimationStore.getState().setRenderMode('vetorial');
+       expect(useAnimationStore.getState().renderMode).toBe('vetorial');
+     });
+
+     it('setRenderMode aceita "mask"', () => {
+       useAnimationStore.getState().setRenderMode('vetorial');
+       useAnimationStore.getState().setRenderMode('mask');
+       expect(useAnimationStore.getState().renderMode).toBe('mask');
+     });
+
+     it('clearQueue restaura renderMode para o default "mask"', () => {
+       useAnimationStore.getState().setRenderMode('vetorial');
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().renderMode).toBe('mask');
+     });
+
+     it('resetJob restaura renderMode para o default "mask"', () => {
+       useAnimationStore.getState().setRenderMode('vetorial');
+       useAnimationStore.getState().resetJob();
+       expect(useAnimationStore.getState().renderMode).toBe('mask');
+     });
+   });
+
+   describe('vetorialPreset (Fase 1.3)', () => {
+     beforeEach(() => {
+       useAnimationStore.getState().setVetorialPreset('artistic1');
+     });
+
+     it('estado inicial tem vetorialPreset "artistic1" (sweet spot)', () => {
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+     });
+
+     it('setVetorialPreset aceita os 16 valores do union VetorialPreset', () => {
+       const presets = [
+         'default',
+         'posterized1',
+         'posterized2',
+         'posterized3',
+         'curvy',
+         'sharp',
+         'detailed',
+         'smoothed',
+         'grayscale',
+         'fixedpalette',
+         'randomsampling1',
+         'randomsampling2',
+         'artistic1',
+         'artistic2',
+         'artistic3',
+         'artistic4',
+       ] as const;
+
+       for (const preset of presets) {
+         useAnimationStore.getState().setVetorialPreset(preset);
+         expect(useAnimationStore.getState().vetorialPreset).toBe(preset);
+       }
+     });
+
+     it('clearQueue restaura vetorialPreset para o default "artistic1"', () => {
+       useAnimationStore.getState().setVetorialPreset('detailed');
+       useAnimationStore.getState().clearQueue();
+       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+     });
+
+     it('resetJob restaura vetorialPreset para o default "artistic1"', () => {
+       useAnimationStore.getState().setVetorialPreset('grayscale');
+       useAnimationStore.getState().resetJob();
+       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+     });
+   });
 });

@@ -16,6 +16,7 @@
  */
 
 import type { VideoScene } from '../types';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../../speed-paint/types';
 import { generateScenesWithSpeedPaint } from './speedPaintRenderer';
 import { createLogger } from '../../../lib/logger';
 
@@ -28,6 +29,13 @@ export interface SpeedPaintEnhanceOptions {
   onProgress?: (progress: number) => void;
   /** Sinal para cancelamento cooperativo (AbortController.signal) */
   signal?: AbortSignal;
+  /** Modo de renderização do speed paint. Quando `undefined` ou `'mask'`
+   *  preserva o comportamento legado (raspadinha via strokes). Quando
+   *  `'vetorial'` aciona a vetorização whiteboard via `imagetracerjs`. */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset do `imagetracerjs` (só aplicado quando `renderMode === 'vetorial'`).
+   *  Ignorado em modo `'mask'`. */
+  vetorialPreset?: VetorialPreset;
 }
 
 export interface SpeedPaintEnhanceResult {
@@ -72,7 +80,7 @@ export async function enhanceScenesWithSpeedPaint(
     return { scenes: [], warnings: [] };
   }
 
-  const { onProgress, signal } = options ?? {};
+  const { onProgress, signal, renderMode, vetorialPreset } = options ?? {};
   const warnings: string[] = [];
 
   // Proteção contra race condition: se outra chamada iniciar, esta deve ser ignorada
@@ -94,7 +102,7 @@ export async function enhanceScenesWithSpeedPaint(
     const results = await generateScenesWithSpeedPaint(
       scenes.map((scene) => ({ imageUrl: scene.imageUrl })),
       onProgress,
-      { useWorker: true },
+      { useWorker: true, renderMode, vetorialPreset },
     );
 
     // Se foi abortado durante o processamento, ignora resultados

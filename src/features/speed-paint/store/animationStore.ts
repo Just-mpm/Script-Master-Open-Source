@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import { arrayMove } from '@dnd-kit/helpers';
 import type { PaintingJob, QueuedImage, SpeedPaintRenderMode, VetorialPreset } from '../types';
+import type { VetorialEasingType, VetorialPathSortOrder } from '../types/vetorial';
 
 // ---------------------------------------------------------------------------
 // Estado padrão dos novos campos
@@ -20,6 +21,14 @@ const DEFAULT_RENDER_MODE: SpeedPaintRenderMode = 'mask';
 // `artistic1` é o preset padrão escolhido em 2026-06-14 — bom equilíbrio
 // entre fidelidade visual e quantidade de paths para a animação fluir.
 const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'artistic1';
+// `smooth` (Easing.inOut(Easing.ease)) é o padrão InstaDoodle —
+// fluido e natural. Linear e bounce ficam disponíveis para experimentação
+// (L10, RF-10).
+const DEFAULT_EASING: VetorialEasingType = 'smooth';
+// `top-down` é o default para a ordem de desenho dos paths SVG (L9, RF-09) —
+// fluxo natural de leitura (cima → baixo) compatível com a maioria dos
+// desenhos vetoriais. As outras ordens ficam disponíveis para experimentação.
+const DEFAULT_VETORIAL_SORT_ORDER: VetorialPathSortOrder = 'top-down';
 
 function revokeQueuedImageUrl(item: QueuedImage): void {
   if (item.shouldRevokeObjectUrl && item.dataUrl.startsWith('blob:')) {
@@ -78,6 +87,14 @@ interface AnimationState {
   setRenderMode: (mode: SpeedPaintRenderMode) => void;
   vetorialPreset: VetorialPreset;
   setVetorialPreset: (preset: VetorialPreset) => void;
+  // Easing da animação vetorial (L10, RF-10). Default `smooth` —
+  // visual fluido estilo InstaDoodle.
+  easing: VetorialEasingType;
+  setEasing: (easing: VetorialEasingType) => void;
+  // Ordem de desenho dos paths SVG (L9, RF-09). Default `top-down` —
+  // fluxo de leitura natural. Reprocessa a imagem quando alterado.
+  vetorialSortOrder: VetorialPathSortOrder;
+  setVetorialSortOrder: (order: VetorialPathSortOrder) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +122,8 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
     canvasColor: DEFAULT_CANVAS_COLOR,
     renderMode: DEFAULT_RENDER_MODE,
     vetorialPreset: DEFAULT_VETORIAL_PRESET,
+    easing: DEFAULT_EASING,
+    vetorialSortOrder: DEFAULT_VETORIAL_SORT_ORDER,
   }),
 
   queue: [],
@@ -133,6 +152,8 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
       canvasColor: DEFAULT_CANVAS_COLOR,
       renderMode: DEFAULT_RENDER_MODE,
       vetorialPreset: DEFAULT_VETORIAL_PRESET,
+      easing: DEFAULT_EASING,
+      vetorialSortOrder: DEFAULT_VETORIAL_SORT_ORDER,
     };
   }),
   reorderQueue: (oldIndex, newIndex) =>
@@ -193,4 +214,10 @@ export const useAnimationStore = create<AnimationState>()((set) => ({
   setRenderMode: (renderMode) => set({ renderMode }),
   vetorialPreset: DEFAULT_VETORIAL_PRESET,
   setVetorialPreset: (vetorialPreset) => set({ vetorialPreset }),
+  // Easing da animação vetorial (L10, RF-10)
+  easing: DEFAULT_EASING,
+  setEasing: (easing) => set({ easing }),
+  // Ordem de desenho dos paths SVG (L9, RF-09)
+  vetorialSortOrder: DEFAULT_VETORIAL_SORT_ORDER,
+  setVetorialSortOrder: (vetorialSortOrder) => set({ vetorialSortOrder }),
 }));

@@ -619,8 +619,9 @@ describe('imageProcessing — pipeline vetorial e2e (10 imagens)', () => {
         expect(path.length).toBeGreaterThanOrEqual(0);
       }
 
-      // totalDurationMs: Math.max(2000, paths.length * 80)
-      const expectedDuration = Math.max(2000, animation.paths.length * 80);
+      // totalDurationMs: Math.max(3000, paths.length * 120) — Leva 3.2 recalibrou
+      // a fórmula para o pipeline edge+bezier (v0.132.0).
+      const expectedDuration = Math.max(3000, animation.paths.length * 120);
       expect(animation.totalDurationMs).toBe(expectedDuration);
 
       results.push({

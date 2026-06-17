@@ -91,6 +91,35 @@ export interface AnalyticsEventMap {
    * - 'vetorial' — animação vetorial com paths SVG animados
    */
   speed_paint_mode_changed: { mode: 'mask' | 'vetorial' };
+  /**
+   * Disparado quando o usuário troca o preset do `imagetracerjs` no modo
+   * vetorial do Speed Paint (RF-03 / Fase 4.2). Usado para entender
+   * qual estilo de vetorização é mais popular.
+   *
+   * O `preset` é um dos 16 valores de `VetorialPreset`
+   * (`default`, `posterized1..3`, `curvy`, `sharp`, `detailed`,
+   * `smoothed`, `grayscale`, `fixedpalette`, `randomsampling1..2`,
+   * `artistic1..4`).
+   */
+  speed_paint_preset_changed: { preset: string };
+  /**
+   * Disparado quando o usuário troca a ordem de desenho dos paths SVG
+   * no modo vetorial do Speed Paint (L9, RF-09). A troca dispara
+   * reprocessamento da imagem com a nova ordenação.
+   *
+   * O `sortOrder` é um dos 4 valores de `VetorialPathSortOrder`
+   * (`top-down`, `center-out`, `big-first`, `random`).
+   */
+  speed_paint_sort_order_changed: { sortOrder: string };
+  /**
+   * Disparado quando o usuário troca a curva de progressão (easing) da
+   * animação vetorial do Speed Paint (L10, RF-10). A troca é reativa —
+   * não dispara reprocessamento.
+   *
+   * O `easing` é um dos 3 valores de `VetorialEasingType`
+   * (`linear`, `smooth`, `bounce`).
+   */
+  speed_paint_easing_changed: { easing: string };
   library_audio_saved: { source: 'studio' };
   library_project_deleted: Record<string, never>;
   library_opened_in_speed_paint: { scene_count: number };

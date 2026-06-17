@@ -755,17 +755,15 @@ async function runSingleRender(
 
 /**
  * Renderiza múltiplas cenas encadeadas em uma única composição. Migrado de
- * useSpeedPaintExporter.startBatchRender.
+ * `useSpeedPaintExporter.startBatchRender`.
  *
- * **Limitação Fase 3.2 (decisão de escopo):** esta função **NÃO suporta o
- * modo vetorial em batch**. Apenas o modo máscara (`StrokeAnimation`) é
- * processado. O batch sempre usa `createExportableBatchSpeedPaintComposition`
- * e `compositionId = COMPOSITION_ID_BATCH`.
- *
- * Casos mistos (mask + vetorial) caem no fallback mask — documentado aqui
- * para evitar comportamento inesperado. A integração completa do batch
- * vetorial está fora do escopo desta task (Fase 3.2) e poderá ser
- * implementada em uma fase futura se houver demanda.
+ * **L8 (RF-07):** O batch agora aceita `renderMode`/`vetorialPreset` e gera
+ * `VetorialAnimation` por item quando `renderMode === 'vetorial'`. A
+ * composição (`createExportableBatchSpeedPaintComposition`) já aceita a
+ * união `StrokeAnimation | VetorialAnimation` em `BatchSpeedPaintCompositionItem.animation`,
+ * e o `VideoComposition` (que renderiza cada cena) já discrimina via type
+ * guard real (L2) — sem cast, sem `as` bypass. Lote uniforme (D04): todas
+ * as cenas usam o mesmo modo vigente na exportação.
  */
 async function runBatchRender(
   set: SetFn,
@@ -779,6 +777,8 @@ async function runBatchRender(
     showDrawTool = true,
     fileName,
     sceneDurationSeconds = 15,
+    renderMode,
+    vetorialPreset,
   } = options;
 
   // 1. Identifica esta renderização
@@ -842,7 +842,14 @@ async function runBatchRender(
             `Gerando animações... ${index + 1 }/${items.length}`,
           );
         },
-        { signal },
+        {
+          signal,
+          // L8: propaga modo+preset uniformes para o lote. `vetorialPreset`
+          // só é enviado no modo vetorial (economiza payload e evita warning
+          // do cache por chave sem discriminator).
+          ...(renderMode !== undefined ? { renderMode } : {}),
+          ...(renderMode === 'vetorial' && vetorialPreset !== undefined ? { vetorialPreset } : {}),
+        },
       );
 
       batchAnimations.push({

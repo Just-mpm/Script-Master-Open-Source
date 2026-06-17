@@ -1,5 +1,6 @@
 /**
- * Helpers de persistência do `renderMode` do Speed Paint em UserSettings.
+ * Helpers de persistência do `renderMode` e `vetorialSortOrder` do Speed Paint
+ * em UserSettings.
  *
  * Usa o padrão dual storage do projeto:
  * - Usuário logado → Firestore (`user_settings/{uid}`)
@@ -11,7 +12,7 @@
  */
 
 import { getUserSettings, saveUserSettings } from '../../../lib/db';
-import type { SpeedPaintRenderMode } from '../types/vetorial';
+import type { SpeedPaintRenderMode, VetorialPathSortOrder } from '../types/vetorial';
 
 /**
  * Lê o `speedPaintRenderMode` salvo no UserSettings.
@@ -34,4 +35,27 @@ export async function saveSpeedPaintRenderMode(
   userId?: string,
 ): Promise<void> {
   await saveUserSettings('', userId, undefined, { speedPaintRenderMode: mode });
+}
+
+/**
+ * Lê o `speedPaintVetorialSortOrder` salvo no UserSettings (L9, RF-09).
+ * Retorna `undefined` se não houver valor salvo (ex.: primeira visita).
+ */
+export async function loadSpeedPaintVetorialSortOrder(
+  userId?: string,
+): Promise<VetorialPathSortOrder | undefined> {
+  const settings = await getUserSettings(userId);
+  return settings?.speedPaintVetorialSortOrder;
+}
+
+/**
+ * Salva o `speedPaintVetorialSortOrder` no UserSettings (merge com campos
+ * existentes). O `customSystemPrompt` é preservado via `saveUserSettings` —
+ * passamos string vazia para forçar fallback ao prompt já persistido.
+ */
+export async function saveSpeedPaintVetorialSortOrder(
+  order: VetorialPathSortOrder,
+  userId?: string,
+): Promise<void> {
+  await saveUserSettings('', userId, undefined, { speedPaintVetorialSortOrder: order });
 }

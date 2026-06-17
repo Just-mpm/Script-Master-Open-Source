@@ -7,6 +7,108 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.132.0] - 2026-06-16
+
+### Adicionado
+
+- **Pipeline edge+bezier — novo motor de vetorização para o modo Desenho** (`src/features/speed-paint/lib/`):
+  - `edgeDetection.ts` (+580 linhas): detecção de bordas Canny simplificada com suporte a 6 presets de borda (`EdgePresetName` — `low`, `medium`, `high`, `fine`, `thick`, `custom`)
+  - `contourTracing.ts` (+412 linhas): Moore-Neighbor contour tracing com regra de Jacob Eliosoff — rastreia contornos a partir da imagem de bordas
+  - `bezierFitting.ts` (+584 linhas): ajuste de curvas Bézier cúbicas para contornos — produz paths SVG (`d` attributes) suaves e com menos pontos
+  - `vectorizer.ts` (+650/-63 linhas): reestruturado — `vectorizeImageEdgeBezier()` (novo pipeline), `vectorizeImageLegacy()` (imagetracerjs preservado), `sortPaths()` com 4 estratégias (`top-down`, `center-out`, `big-first`, `natural`), `filterPathsByBackgroundContrast()` (filtro heurístico de paths de fundo)
+  - O pipeline edge+bezier coexiste com o legado `imagetracerjs` — o seletor de preset decide qual motor usar (`edge-*` family → edge+bezier, demais → imagetracerjs)
+  - `constants/vetorialPresets.ts` (+143 linhas): 20 valores de `VetorialPreset` agrupados em 7 grupos para a UI (Clássico, Posterizado, Artístico, Detalhado, Borda-fina, Borda-média, Borda-grossa)
+  - Novos tipos: `EdgePresetName`, `VetorialPathSortOrder` (`'top-down' | 'center-out' | 'big-first' | 'natural'`), `VetorialEasingType` (`'linear' | 'smooth' | 'bounce'`)
+
+- **Controles UI do modo Desenho expandidos** (`SpeedPaintPage.tsx`, +545 linhas):
+  - **Seletor de preset** (`<Select>` com `ListSubheader`): 20 presets em 7 grupos — Label + descrição, ícone temático (AutoAwesome, Shuffle, SportsBaseball, Water, Timeline, CenterFocusStrong, KeyboardArrowDown)
+  - **Seletor de ordem de desenho** (`VetorialPathSortOrder`): `<Select>` com 4 opções — `top-down` (cima pra baixo), `center-out` (centro pra fora), `big-first` (maiores primeiro), `natural` (ordem de tracing)
+  - **Seletor de easing** (`VetorialEasingType`): `<Select>` com 3 opções — `linear`, `smooth`, `bounce`
+  - `handleRenderModeChange` reescrito com race protection, cache lookup antes de generate e reprocessamento automático
+  - Guardas de runtime (`isVetorialPreset`, `isVetorialSortOrder`, `isVetorialEasingType`) para validar valores de selects
+  - Acessibilidade: `aria-describedby` com helper text descritivo, labels nos selects
+
+- **Persistência da ordem de desenho** (dual storage):
+  - Campo `speedPaintVetorialSortOrder` em `UserSetting` (types.ts) e `StudioUserSettings` (user-settings.ts)
+  - `loadSpeedPaintVetorialSortOrder()` / `saveSpeedPaintVetorialSortOrder()` em `userSettings.ts`
+  - `useSyncSpeedPaintVetorialSortOrder.ts` (+73 linhas): hook em `App.tsx` com debounce 2s
+  - `animationStore.ts`: defaults `DEFAULT_EASING`, `DEFAULT_VETORIAL_SORT_ORDER`
+
+- **Batch vetorial suportado** (L5, RF-08):
+  - `BatchOrchestrator.tsx` (+13/-1): lê `renderMode`/`vetorialPreset` da store via `getState()` com race protection (`processingIdRef`)
+  - `speedPaintRenderController.tsx`: comentário de limitação de batch vetorial removido — batch agora aceita ambos os modos
+  - `speedPaintRenderer.ts` (+105/-19): `context` estendido com `renderMode` e `vetorialPreset`
+
+- **Propagação de modo+preset no pipeline de vídeo** (L1+L7, RF-04+RF-06):
+  - `videoRenderBridge.ts` (+19 linhas): estado `renderMode`/`vetorialPreset` sincronizado
+  - `videoRenderController.tsx` (+7 linhas): propagação do bridge para o pipeline
+  - `videoExportPanel.tsx` (+144 linhas): toggle de modo de renderização integrado
+  - `speedPaintService.ts` (+10/-2): aceita `context` com renderMode/vetorialPreset
+  - `speedPaintRenderer.ts`: geração condicional baseada em modo
+  - `useSpeedPaintEnhancer.ts` (+12/-2): tipos estendidos
+  - `useVideoExporter.tsx` (+9 linhas): `SpeedPaintRenderMode` e `VetorialPreset` nos tipos
+
+- **WhiteboardScene aprimorado** (`src/features/video-render/components/WhiteboardScene.tsx`, +262/-18):
+  - `safeGetPointAtLength()`: fallback seguro para `getPointAtLength` (retorna `{x:0, y:0}` se path for inválido)
+  - **Motion blur** no caneta: gaussian blur da ponta baseado na velocidade do traço (`computeBlurStdDev`)
+  - **Tremor orgânico**: `Math.sin(frame * 0.5 + seed * 100) * 0.3` na ponta da caneta para efeito de mão humana
+  - Easing function plugável: `getEasing(type)` suporta `linear`, `smooth`, `bounce`
+  - Logger `createLogger('WhiteboardScene')` integrado
+
+- **3 novos eventos analytics** (`src/lib/analytics.ts`):
+  - `speed_paint_preset_changed: { preset: string }`
+  - `speed_paint_sort_order_changed: { sortOrder: string }`
+  - `speed_paint_easing_changed: { easing: string }`
+
+- **i18n** (3 locales, +56-57 cada):
+  - `speedPaint.presetGroups`: labels dos 7 grupos (`classic`, `posterized`, `artistic`, `detailed`, `edgeFine`, `edgeMedium`, `edgeHeavy`)
+  - `speedPaint.presets`: labels individuais para cada um dos 20 presets
+  - Namespace `speedPaint` expandido com chaves `sortOrder*` e `easing*`
+
+- **Testes** (14 novos arquivos, +5417 linhas líquidas):
+  - `tests/speed-paint/edgeDetection.unit.test.ts` (+495 linhas): Canny edge detection
+  - `tests/speed-paint/contourTracing.unit.test.ts` (+755 linhas): Moore-Neighbor tracing
+  - `tests/speed-paint/bezierFitting.unit.test.ts` (+716 linhas): Bézier curve fitting
+  - `tests/speed-paint/vectorizer.unit.test.ts` (+447 linhas): 22 testes expandidos
+  - `tests/speed-paint/SpeedPaintPage.component.test.tsx` (+1019 linhas): L3 (RF-01 + RF-02)
+  - `tests/speed-paint/edge-vs-imagetracer.comparative.test.ts` (+1070 linhas): comparação pipelines
+  - `tests/speed-paint/vectorizer.backgroundFilter.test.ts` (+310 linhas): filtro de fundo
+  - `tests/speed-paint/vectorizer.landscape.regression.test.ts` (+248 linhas): regressão landscape
+  - `tests/speed-paint/vetorialPresets.unit.test.ts` (+271 linhas): presets agrupados
+  - `tests/speed-paint/BatchOrchestrator.component.test.tsx` (+129 linhas): batch vetorial
+  - `tests/speed-paint/animationStore.unit.test.ts` (+130 linhas): easing + sort order na store
+  - `tests/video-render/WhiteboardScene.component.test.tsx` (+420 linhas): caneta, blur, easing
+  - `tests/video-render/VideoExportPanel.unit.test.tsx` (+72 linhas): toggle de modo
+  - `tests/video-render/speedPaintRenderer.unit.test.ts` (+558 linhas): contexto estendido
+  - `tests/video-render/videoComposition.component.test.tsx` (+253 linhas): branch vetorial
+  - `tests/video-render/videoRenderBridge.unit.test.ts` (+51 linhas): bridge state
+  - Testes existentes atualizados: `useSpeedPaintExporter.unit.test.tsx` (+7), `VideoPage.component.test.tsx` (+1), `imageProcessing.vetorial.e2e.test.ts` (fórmula de duração atualizada de 80→120ms, mínimo 2000→3000ms), `imageProcessing.vetorial.integration.test.ts` (asserções atualizadas)
+
+- **Documentação técnica** (15+ novos arquivos):
+  - `docs/plan/edge-detection-whiteboard-architecture.md` (+1002 linhas): arquitetura completa do pipeline edge+bezier com diagramas, trade-offs e análise de complexidade
+  - `docs/audits/`: 10+ relatórios de auditoria — code-validator (L1, L2, L3, L5, holístico), gap-finder (holístico), security (L1, L3, holístico)
+
+### Alterado
+
+- **`SpeedPaintPlayer`** (`SpeedPaintPlayer.tsx`): type guard real `'paths' in animation` expandido para novos modos — `showDrawTool` e `fileName` agora obrigatórios (não mais opcionais)
+- **`useSpeedPaintExporter.tsx`** (+13/-3): props `showDrawTool` e `fileName` tornadas obrigatórias (`required: true`) — eliminam `undefined` no tipo
+- **`imageProcessing.ts`** (+63/-6): `renderMode`/`vetorialPreset` propagados para o pipeline; import de `VetorialPathSortOrder`
+- **`strokeCache.ts`** (+41/-24): `isVetorialAnimation`/`isStrokeAnimation` type guards atualizados; `speedPaintVetorialSortOrder` incluído nas assinaturas
+- **`videoComposition.tsx`** (+24/-12): branch triplo real — `WhiteboardScene` / `SpeedPaintScene` / legado, sem `as` bypass, com type guard `isVetorialAnimation`
+- **`exportUtils.ts`** (+13/-3): log de erro de exportação detalhado (nome + stack + mensagem)
+- **Testes de duração do vetorial**: fórmula `totalDurationMs` alterada de `max(2000, length * 80)` para `max(3000, length * 120)` — reflete maior custo do pipeline edge+bezier
+
+### Corrigido
+
+- **Bug "landscape sem traços"** (Teoria 1): `filterPathsByBackgroundContrast()` adicionado em `vectorizer.ts` — filtra paths de fundo com base em contraste de cor, com fallback `EDGE_FALLBACK_COLOR` se >50% dos paths forem filtrados
+- **Race condition no batch**: `BatchOrchestrator.tsx` agora lê `renderMode`/`vetorialPreset` via `getState()` em vez de closure — elimina stale closure quando o usuário troca de modo durante o processamento do batch
+
+### Limitado (documentado, fora do escopo)
+
+- **UI de easing não exposta na interface do Speed Paint** (RF-10): easing está implementado no motor (`WhiteboardScene.getEasing()`) e na store (`animationStore`), mas o seletor de easing não foi adicionado à `SpeedPaintPage.tsx`. O easing default `smooth` é usado em todas as animações. Pendência documentada no gap-finder holístico da release.
+
+---
+
 ## [0.131.0] - 2026-06-14
 
 ### Adicionado

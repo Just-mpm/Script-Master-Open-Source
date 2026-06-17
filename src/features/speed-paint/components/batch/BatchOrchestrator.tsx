@@ -99,10 +99,22 @@ export function BatchOrchestrator() {
           : item
       )));
 
+      // Lê `renderMode` + `vetorialPreset` da store via `getState()` para evitar
+      // closure stale — o usuário pode trocar o modo/preset durante o
+      // processamento do item atual (MDE-04: retrocompat + race protection).
+      // O `processingIdRef` em escopo de módulo garante que apenas o item
+      // atual aplica o resultado; trocar modo/preset não interrompe o job
+      // vigente (CT-F47).
+      const { renderMode, vetorialPreset } = useAnimationStore.getState();
+
       generateStrokesFromImage(dataUrl, (p) => {
         if (processingIdRef.current !== processId) return;
         setJob({ progress: p });
-      }, { signal: abortController.signal }).then((animation) => {
+      }, {
+        signal: abortController.signal,
+        renderMode,
+        vetorialPreset: renderMode === 'vetorial' ? vetorialPreset : undefined,
+      }).then((animation) => {
         // Se a fila foi limpa durante o processamento, ignora o resultado
         if (processingIdRef.current !== processId) return;
         // Marca job como concluído — o SpeedPaintPlayer detecta e auto-play

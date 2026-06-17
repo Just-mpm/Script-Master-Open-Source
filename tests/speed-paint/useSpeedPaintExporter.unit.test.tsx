@@ -134,7 +134,9 @@ describe('useSpeedPaintExporter', () => {
         ],
         fps: 30,
         quality: '1080p',
+        showDrawTool: true,
         fileName: 'fila-completa',
+        sceneDurationSeconds: 15,
       });
     });
 
@@ -157,6 +159,7 @@ describe('useSpeedPaintExporter', () => {
         ],
         fps: 30,
         quality: '1080p',
+        showDrawTool: true,
         fileName: 'fila-lenta',
         sceneDurationSeconds: 30,
       });
@@ -212,7 +215,9 @@ describe('useSpeedPaintExporter', () => {
         items: [{ imageSource: 'data:image/png;base64,aaa' }],
         fps: 30,
         quality: '1080p',
+        showDrawTool: true,
         fileName: 'cancelado-geracao',
+        sceneDurationSeconds: 15,
       });
 
       result.current.handleCancel();
@@ -248,7 +253,9 @@ describe('useSpeedPaintExporter', () => {
         items: [{ imageSource: 'data:image/png;base64,aaa' }],
         fps: 30,
         quality: '1080p',
+        showDrawTool: true,
         fileName: 'cancelado-render',
+        sceneDurationSeconds: 15,
       });
 
       await Promise.resolve();

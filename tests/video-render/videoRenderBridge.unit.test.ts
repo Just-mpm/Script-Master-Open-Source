@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useVideoRenderBridge } from '../../src/features/video-render/store/videoRenderBridge';
+import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
 
 describe('videoRenderBridge (Zustand store)', () => {
   beforeEach(() => {
@@ -16,6 +17,30 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.transcriptionStatusText).toBe('');
     expect(state.currentFrame).toBe(0);
     expect(state.isPlaying).toBe(false);
+    // L7 (RF-06) — defaults alinhados com animationStore
+    expect(state.renderMode).toBe('mask');
+    expect(state.vetorialPreset).toBe('artistic1');
+  });
+
+  it('syncRenderMode atualiza modo + preset em uma única chamada', () => {
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'artistic3');
+    const state = useVideoRenderBridge.getState();
+    expect(state.renderMode).toBe('vetorial');
+    expect(state.vetorialPreset).toBe('artistic3');
+
+    // Volta para mask com outro preset
+    useVideoRenderBridge.getState().syncRenderMode('mask', 'default');
+    const state2 = useVideoRenderBridge.getState();
+    expect(state2.renderMode).toBe('mask');
+    expect(state2.vetorialPreset).toBe('default');
+  });
+
+  it('resetBridge restaura os defaults de L7 (mask + artistic1)', () => {
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'detailed');
+    useVideoRenderBridge.getState().resetBridge();
+    const state = useVideoRenderBridge.getState();
+    expect(state.renderMode).toBe('mask');
+    expect(state.vetorialPreset).toBe('artistic1');
   });
 
   it('syncExportState atualiza estado de exportação', () => {
@@ -55,6 +80,7 @@ describe('videoRenderBridge (Zustand store)', () => {
     useVideoRenderBridge.getState().syncTranscriptionState(true, 50, 'Status');
     useVideoRenderBridge.getState().syncCurrentFrame(120);
     useVideoRenderBridge.getState().syncIsPlaying(true);
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'curvy');
     useVideoRenderBridge.getState().resetBridge();
     const state = useVideoRenderBridge.getState();
     expect(state.isExportingVideo).toBe(false);
@@ -64,6 +90,8 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.transcriptionStatusText).toBe('');
     expect(state.currentFrame).toBe(0);
     expect(state.isPlaying).toBe(false);
+    expect(state.renderMode).toBe('mask');
+    expect(state.vetorialPreset).toBe('artistic1');
   });
 
   it('exportação e transcrição são independentes', () => {
@@ -112,5 +140,28 @@ describe('videoRenderBridge (Zustand store)', () => {
     useVideoRenderBridge.getState().syncExportState(false, 100);
     expect(useVideoRenderBridge.getState().currentFrame).toBe(200);
     expect(useVideoRenderBridge.getState().isPlaying).toBe(true);
+  });
+
+  // L7 (RF-06) — CT-T05: sync inicial ao montar a VideoPage popula a bridge
+  // com o estado vigente da `animationStore` global. Valida o pattern usado
+  // pelo useEffect de mount da VideoPage.
+  it('CT-T05: sync inicial popula a bridge com o estado da animationStore', () => {
+    // Arrange — reseta a bridge para os defaults
+    useVideoRenderBridge.getState().resetBridge();
+    expect(useVideoRenderBridge.getState().renderMode).toBe('mask');
+    expect(useVideoRenderBridge.getState().vetorialPreset).toBe('artistic1');
+
+    // Act — simula o pattern do useEffect: lê da animationStore global e
+    // empurra para a bridge via syncRenderMode.
+    const animationState = useAnimationStore.getState();
+    useVideoRenderBridge.getState().syncRenderMode(
+      animationState.renderMode,
+      animationState.vetorialPreset,
+    );
+
+    // Assert — a bridge reflete o estado da animationStore
+    const bridgeState = useVideoRenderBridge.getState();
+    expect(bridgeState.renderMode).toBe(animationState.renderMode);
+    expect(bridgeState.vetorialPreset).toBe(animationState.vetorialPreset);
   });
 });

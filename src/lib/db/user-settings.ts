@@ -35,6 +35,11 @@ export interface StudioUserSettings {
   imageTextLanguage?: string;
   /** Modo de renderização preferido do Speed Paint (Fase 4.2). */
   speedPaintRenderMode?: 'mask' | 'vetorial';
+  /**
+   * Ordem de desenho dos paths SVG no modo vetorial do Speed Paint
+   * (L9, RF-09). Default: 'top-down'.
+   */
+  speedPaintVetorialSortOrder?: 'top-down' | 'center-out' | 'big-first' | 'random';
 }
 
 const userSettingConverter = createFirestoreConverter<UserSetting>();

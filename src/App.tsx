@@ -29,6 +29,7 @@ import { VIDEO_FPS } from './features/studio/store';
 import { APP_MAX_WIDTH, WHITE_08 } from './theme/tokens';
 import { useAutoSaveStudioSettings } from './hooks/useAutoSaveStudioSettings';
 import { useSyncSpeedPaintRenderMode } from './features/speed-paint/hooks/useSyncSpeedPaintRenderMode';
+import { useSyncSpeedPaintVetorialSortOrder } from './features/speed-paint/hooks/useSyncSpeedPaintVetorialSortOrder';
 import { useGlobalAudioActions, useAudioActiveId } from './contexts/AudioContext';
 import { setAnalyticsUserProperties } from './lib/analytics';
 
@@ -51,6 +52,8 @@ export default function App() {
 
   // ─── Sincroniza o renderMode do Speed Paint com UserSettings ──
   useSyncSpeedPaintRenderMode();
+  // ─── Sincroniza o vetorialSortOrder do Speed Paint com UserSettings (L9, RF-09) ──
+  useSyncSpeedPaintVetorialSortOrder();
 
   // ─── AudioContext — play e activeId para atalhos de teclado ─
   const { play: playGlobalAudio } = useGlobalAudioActions();

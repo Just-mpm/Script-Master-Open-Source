@@ -46,12 +46,22 @@ export function toUserFriendlyError(err: unknown, logger?: ReturnType<typeof cre
 
   const msg = err.message.toLowerCase();
 
-  // Loga o erro real para diagnóstico
-  ctx.error('Erro original na exportação', { error: err.message });
+  // Loga o erro completo com stack para diagnóstico (o nome + stack ajudam
+  // a identificar se é WebCodecs, getPointAtLength, memória, etc.)
+  ctx.error('Erro original na exportação', {
+    error: err.message,
+    name: err.name,
+    stack: err.stack,
+  });
 
   if (msg.includes('webcodecs') || msg.includes('videoencoder') || msg.includes('not supported')) {
     return `Navegador não suporta exportação de vídeo: ${err.message}`;
   }
 
-  return 'Erro ao exportar vídeo. Tente novamente.';
+  // Inclui o tipo e a mensagem original para diagnóstico do usuário.
+  // Ex: "Erro ao exportar vídeo. (TypeError: Cannot read properties of undefined)"
+  const originalMsg = err.message.length > 120
+    ? `${err.message.substring(0, 120)}...`
+    : err.message;
+  return `Erro ao exportar vídeo. (${err.name}: ${originalMsg})`;
 }

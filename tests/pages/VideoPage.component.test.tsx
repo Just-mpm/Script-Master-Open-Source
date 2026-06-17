@@ -93,6 +93,7 @@ vi.mock('../../src/features/video-render/hooks/useTranscription', () => ({
 const bridgeFns = {
   syncExportState: vi.fn(),
   syncTranscriptionState: vi.fn(),
+  syncRenderMode: vi.fn(),
   resetBridge: vi.fn(),
 };
 

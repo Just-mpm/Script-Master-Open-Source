@@ -1428,6 +1428,62 @@ title: 'Controle claro do seu uso',
     modeClassic: 'Modo Clássico',
     modeVetorial: 'Modo Desenho',
     modeDescription: 'Clássico: revelação por máscara (rápido, ideal para fotos). Desenho: animação vetorial com paths SVG (mais expressivo, ideal para ilustrações).',
+    modeClassicTooltip: 'Revelação por máscara — rápida e ideal para fotos.',
+    modeVetorialTooltip: 'Animação vetorial com paths SVG — mais expressivo, ideal para ilustrações e line art.',
+    modeProcessingError: 'Falha ao reprocessar a imagem no modo selecionado.',
+    modeProcessingRetry: 'Tentar novamente',
+    processingLabel: 'Reprocessando imagem',
+    // Seletor de `vetorialPreset` (RF-03 / Fase 4.2) — visível apenas no modo
+    // "Desenho" (vetorial). Tooltip (D08) avisa que fotos podem não ficar
+    // ideais. 16 opções em 6 grupos (decisão D05: `presets.{name}` + `presetGroups.{group}`).
+    vetorialPresetLabel: 'Estilo do desenho',
+    vetorialPresetTooltip: 'Modo Desenho funciona melhor com ilustrações e line art. Fotos podem não ficar ideais.',
+    // Seletor de `vetorialSortOrder` (L9, RF-09) — ordem de desenho dos paths
+    // SVG no modo "Desenho" (vetorial). 4 opções discretas; troca reprocessa
+    // a imagem atual com a nova ordenação.
+    sortOrderLabel: 'Ordem de Desenho',
+    sortOrderTopDown: 'Cima para Baixo',
+    sortOrderCenterOut: 'Centro para Fora',
+    sortOrderBigFirst: 'Maiores Primeiro',
+    sortOrderRandom: 'Aleatório',
+    // Seletor de `easing` (L10, RF-10) — curva de progressão da animação no
+    // modo "Desenho" (vetorial). 3 opções discretas; troca é reativa (a
+    // próxima renderização do player já usa a nova curva, sem reprocessar).
+    easingLabel: 'Suavização',
+    easingLinear: 'Linear',
+    easingSmooth: 'Suave',
+    easingBounce: 'Bounce',
+    presetGroups: {
+      'edge-detection': 'Detecção de bordas',
+      artistic: 'Artístico',
+      posterized: 'Posterizado',
+      smoothed: 'Suavizado',
+      detailed: 'Detalhado',
+      grayscale: 'Escala de cinza',
+      sampling: 'Amostragem',
+    },
+    presets: {
+      default: 'Padrão',
+      posterized1: 'Posterizado 1',
+      posterized2: 'Posterizado 2',
+      posterized3: 'Posterizado 3',
+      curvy: 'Curvas',
+      sharp: 'Nítido',
+      detailed: 'Detalhado',
+      smoothed: 'Suavizado',
+      grayscale: 'Cinza',
+      fixedpalette: 'Paleta fixa',
+      randomsampling1: 'Amostra 1',
+      randomsampling2: 'Amostra 2',
+      artistic1: 'Artístico 1',
+      artistic2: 'Artístico 2',
+      artistic3: 'Artístico 3',
+      artistic4: 'Artístico 4',
+      'edge-default': 'Borda padrão',
+      'edge-detailed': 'Borda detalhada',
+      'edge-bold': 'Borda grossa',
+      'edge-sketch': 'Borda esboço',
+    },
     speedLabels: {
       verySlow: 'muito lento',
       slow: 'lento',

@@ -1411,6 +1411,62 @@ export const en: TranslationDictionary = {
     modeClassic: 'Classic Mode',
     modeVetorial: 'Drawing Mode',
     modeDescription: 'Classic: mask reveal (fast, ideal for photos). Drawing: vector animation with SVG paths (more expressive, ideal for illustrations).',
+    modeClassicTooltip: 'Mask reveal — fast and ideal for photos.',
+    modeVetorialTooltip: 'Vector animation with SVG paths — more expressive, ideal for illustrations and line art.',
+    modeProcessingError: 'Failed to reprocess the image in the selected mode.',
+    modeProcessingRetry: 'Try again',
+    processingLabel: 'Reprocessing image',
+    // `vetorialPreset` selector (RF-03 / Phase 4.2) — visible only in Drawing
+    // mode (vetorial). Tooltip (D08) warns that photos may not look ideal.
+    // 16 options in 6 groups (D05: `presets.{name}` + `presetGroups.{group}`).
+    vetorialPresetLabel: 'Drawing style',
+    vetorialPresetTooltip: 'Drawing mode works best with illustrations and line art. Photos may not look ideal.',
+    // `vetorialSortOrder` selector (L9, RF-09) — drawing order of SVG paths
+    // in Drawing mode (vetorial). 4 discrete options; switching reprocesses
+    // the current image with the new order.
+    sortOrderLabel: 'Drawing Order',
+    sortOrderTopDown: 'Top to Bottom',
+    sortOrderCenterOut: 'Center Out',
+    sortOrderBigFirst: 'Biggest First',
+    sortOrderRandom: 'Random',
+    // `easing` selector (L10, RF-10) — animation progression curve in
+    // Drawing mode (vetorial). 3 discrete options; switching is reactive
+    // (next player render uses the new curve, no reprocessing needed).
+    easingLabel: 'Easing',
+    easingLinear: 'Linear',
+    easingSmooth: 'Smooth',
+    easingBounce: 'Bounce',
+    presetGroups: {
+      'edge-detection': 'Edge detection',
+      artistic: 'Artistic',
+      posterized: 'Posterized',
+      smoothed: 'Smoothed',
+      detailed: 'Detailed',
+      grayscale: 'Grayscale',
+      sampling: 'Sampling',
+    },
+    presets: {
+      default: 'Default',
+      posterized1: 'Posterized 1',
+      posterized2: 'Posterized 2',
+      posterized3: 'Posterized 3',
+      curvy: 'Curvy',
+      sharp: 'Sharp',
+      detailed: 'Detailed',
+      smoothed: 'Smoothed',
+      grayscale: 'Grayscale',
+      fixedpalette: 'Fixed palette',
+      randomsampling1: 'Sampling 1',
+      randomsampling2: 'Sampling 2',
+      artistic1: 'Artistic 1',
+      artistic2: 'Artistic 2',
+      artistic3: 'Artistic 3',
+      artistic4: 'Artistic 4',
+      'edge-default': 'Edge default',
+      'edge-detailed': 'Edge detailed',
+      'edge-bold': 'Edge bold',
+      'edge-sketch': 'Edge sketch',
+    },
     speedLabels: {
       verySlow: 'very slow',
       slow: 'slow',

@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
 import LinearProgress from '@mui/material/LinearProgress';
+import ListSubheader from '@mui/material/ListSubheader';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Tab from '@mui/material/Tab';
@@ -17,10 +22,18 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import ArrowBack from '@mui/icons-material/ArrowBack';
+import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import BrushOutlined from '@mui/icons-material/BrushOutlined';
+import CenterFocusStrongOutlined from '@mui/icons-material/CenterFocusStrongOutlined';
 import FormatPaintOutlined from '@mui/icons-material/FormatPaintOutlined';
 import GestureOutlined from '@mui/icons-material/GestureOutlined';
+import KeyboardArrowDownOutlined from '@mui/icons-material/KeyboardArrowDownOutlined';
+import ShuffleOutlined from '@mui/icons-material/ShuffleOutlined';
+import SportsBaseballOutlined from '@mui/icons-material/SportsBaseballOutlined';
+import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
+import WaterOutlined from '@mui/icons-material/WaterOutlined';
 import { alpha } from '@mui/material/styles';
 import { useShallow } from 'zustand/react/shallow';
 import { useAnimationStore } from '../features/speed-paint/store/animationStore';
@@ -30,6 +43,7 @@ import { SpeedPaintPlayer } from '../features/speed-paint/components/SpeedPaintP
 import { SpeedPaintPlayerControls } from '../features/speed-paint/components/SpeedPaintPlayerControls';
 import { SpeedPaintExportPanel } from '../features/speed-paint/components/SpeedPaintExportPanel';
 import { useSpeedPaintExporter } from '../features/speed-paint/hooks/useSpeedPaintExporter';
+import { VETORIAL_PRESETS_GROUPED } from '../features/speed-paint/constants/vetorialPresets';
 import { ExportProgressBar } from '../features/video-render/components/export/ExportProgressBar';
 import { ExportResultActions } from '../features/video-render/components/export/ExportResultActions';
 import { ImageUpload } from '../features/speed-paint/components/upload/ImageUpload';
@@ -37,8 +51,11 @@ import { useLocale, pluralKey } from '../features/i18n';
 import { DocumentHead } from '../components/DocumentHead';
 import { getPageSeo } from '../lib/seo';
 import { trackAnalyticsEvent } from '../lib/analytics';
+import { createLogger } from '../lib/logger';
+import { getStrokeAnimation, isStrokeAnimation, isVetorialAnimation, setStrokeAnimation } from '../features/video-render/lib/strokeCache';
 import type { SpeedPaintTimingMode } from '../features/video-render/lib/speedPaintTimings';
-import type { SpeedPaintRenderMode } from '../features/speed-paint/types';
+import type { SpeedPaintRenderMode, StrokeAnimation, VetorialAnimation, VetorialPreset } from '../features/speed-paint/types';
+import type { VetorialEasingType, VetorialPathSortOrder } from '../features/speed-paint/types/vetorial';
 import {
   BRAND_GRADIENT,
   BRAND_PRIMARY,
@@ -66,10 +83,92 @@ import { useCollapsibleSection } from '../hooks/useCollapsibleSection';
 
 const FPS = 30;
 
+// Conjunto das 4 opções de `vetorialSortOrder` (L9, RF-09). Espelha o padrão
+// de `VETORIAL_PRESET_VALUES` no topo do arquivo — fonte única de verdade
+// para discriminação em runtime via type guard, sem `as VetorialPathSortOrder`
+// bypass no handler do `ToggleButtonGroup`.
+const VETORIAL_SORT_ORDER_VALUES: ReadonlySet<string> = new Set<VetorialPathSortOrder>([
+  'top-down',
+  'center-out',
+  'big-first',
+  'random',
+]);
+
+function isVetorialSortOrder(value: string): value is VetorialPathSortOrder {
+  return VETORIAL_SORT_ORDER_VALUES.has(value);
+}
+
+const VETORIAL_EASING_VALUES: ReadonlySet<string> = new Set<VetorialEasingType>([
+  'linear',
+  'smooth',
+  'bounce',
+]);
+
+function isVetorialEasingType(value: string): value is VetorialEasingType {
+  return VETORIAL_EASING_VALUES.has(value);
+}
+
+/**
+ * `sx` compartilhado entre os `ToggleButtonGroup`s do modo vetorial
+ * (ordem de desenho + easing). Espelha o estilo do seletor de modo de
+ * renderização (linhas próximas a `renderMode`) — mesma marca visual:
+ * glow no estado ativo, hover com borda da marca, focus visível com
+ * outline. Centralizado para evitar duplicação e garantir consistência
+ * quando algum dos seletores mudar de estilo.
+ */
+const vetorialToggleButtonGroupSx = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 1,
+  '& .MuiToggleButtonGroup-grouped': {
+    borderRadius: RADIUS_XS,
+    border: `1px solid ${WHITE_14}`,
+    px: 2,
+    py: 1.25,
+    fontWeight: 700,
+    textTransform: 'none',
+    color: 'text.secondary',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    '&:hover': {
+      borderColor: alpha(BRAND_PRIMARY, 0.4),
+      backgroundColor: alpha(BRAND_PRIMARY, 0.04),
+    },
+    '&.Mui-selected': {
+      color: BRAND_PRIMARY_LIGHT,
+      borderColor: alpha(BRAND_PRIMARY, 0.6),
+      backgroundColor: alpha(BRAND_PRIMARY, 0.12),
+      boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}, inset 0 0 0 1px ${alpha(BRAND_PRIMARY, 0.3)}`,
+    },
+    '&.Mui-selected:hover': {
+      backgroundColor: alpha(BRAND_PRIMARY, 0.18),
+      borderColor: BRAND_PRIMARY,
+    },
+    '&.Mui-focusVisible': {
+      outline: `2px solid ${BRAND_PRIMARY_LIGHT}`,
+      outlineOffset: 2,
+    },
+  },
+} as const;
+
 function getCombinedBatchExportFileName(queueLength: number): string {
   const timestamp = new Date().toISOString().slice(0, 10);
   return `speed-paint-lote-${queueLength}itens-${timestamp}`;
 }
+
+// Type guard para narrowing real em compile-time de `string` para o union
+// `VetorialPreset` no handler do `<Select>` de presets. O Set é derivado de
+// `VETORIAL_PRESETS_GROUPED` (fonte única de verdade do agrupamento) e
+// elimina o `as VetorialPreset` bypass que existia no handler — narrowing
+// autêntico via discriminated check em runtime, sem `as`/any.
+const VETORIAL_PRESET_VALUES: ReadonlySet<string> = new Set(
+  VETORIAL_PRESETS_GROUPED.flatMap((group) => group.presets),
+);
+
+function isVetorialPreset(value: string): value is VetorialPreset {
+  return VETORIAL_PRESET_VALUES.has(value);
+}
+
+const log = createLogger('speed-paint-page');
 
 // ---------------------------------------------------------------------------
 // Componente principal
@@ -81,15 +180,22 @@ export function SpeedPaintPage() {
   const speedPaintExporter = useSpeedPaintExporter();
   const [isBatchRecording, setIsBatchRecording] = useState(false);
   const batchRenderStartedRef = useRef(false);
+  // Refs para race protection no reprocessamento por troca de modo de renderização
+  // (padrão do `BatchOrchestrator.tsx:33-35` — `processingIdRef` + `abortControllerRef`).
+  const processingIdRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  // Estado de erro de reprocessamento (exibido em `Alert` com `role="alert"` para WCAG 2.1 AA).
+  const [modeProcessingError, setModeProcessingError] = useState<string | null>(null);
   const configSection = useCollapsibleSection(true);
   const [activeTab, setActiveTab] = useState<'controls' | 'export'>('controls');
 
   // Store selectors (useShallow para evitar re-renders desnecessários)
   // `renderMode` é lido da store (Fase 1.3) para alimentar o seletor de modo
-  // adicionado na Fase 4.1. `vetorialPreset` ainda não é usado aqui — será
-  // adicionado ao seletor na Fase 4.2, evitando destruturação de campo não
-  // consumido (lint `no-unused-vars`).
-  const { job, queue, currentIndex, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor, renderMode } =
+  // adicionado na Fase 4.1. `vetorialPreset` (Fase 4.2) alimenta o seletor
+  // de estilo do modo Desenho — só visível quando `renderMode === 'vetorial'`.
+  // `vetorialSortOrder` (L9, RF-09) e `easing` (L10, RF-10) seguem o mesmo
+  // padrão — só visíveis no modo `vetorial`.
+  const { job, queue, currentIndex, batchMode, queueSource, queueSourceProjectName, queueSourceNotice, animationDuration, showDrawTool, canvasColor, renderMode, vetorialPreset, vetorialSortOrder, easing } =
     useAnimationStore(
       useShallow((s) => ({
         job: s.job,
@@ -103,20 +209,31 @@ export function SpeedPaintPage() {
         showDrawTool: s.showDrawTool,
         canvasColor: s.canvasColor,
         renderMode: s.renderMode,
+        vetorialPreset: s.vetorialPreset,
+        vetorialSortOrder: s.vetorialSortOrder,
+        easing: s.easing,
       })),
     );
 
-  const { setAnimationDuration, setShowDrawTool, setCanvasColor, setRenderMode, resetJob, clearQueue } =
+  const { setAnimationDuration, setShowDrawTool, setCanvasColor, resetJob, clearQueue } =
     useAnimationStore(
       useShallow((s) => ({
         setAnimationDuration: s.setAnimationDuration,
         setShowDrawTool: s.setShowDrawTool,
         setCanvasColor: s.setCanvasColor,
-        setRenderMode: s.setRenderMode,
         resetJob: s.resetJob,
         clearQueue: s.clearQueue,
       })),
     );
+  // Seletores individuais (reconhecidos como estáveis pelo `react-hooks/exhaustive-deps`).
+  // Padrão do `BatchOrchestrator.tsx:28-31`. `useShallow` esconde as referências de
+  // setters em um objeto intermediário, então o lint não consegue inferir que são
+  // estáveis — declarar via `useStore(selector)` resolve.
+  const setRenderMode = useAnimationStore((s) => s.setRenderMode);
+  const setVetorialPreset = useAnimationStore((s) => s.setVetorialPreset);
+  const setVetorialSortOrder = useAnimationStore((s) => s.setVetorialSortOrder);
+  const setEasing = useAnimationStore((s) => s.setEasing);
+  const setJob = useAnimationStore((s) => s.setJob);
 
   const queueLength = queue.length;
   const eligibleBatchQueue = useMemo(
@@ -289,22 +406,202 @@ export function SpeedPaintPage() {
   };
 
   // -------------------------------------------------------------------------
-  // Modo de renderização (Fase 4.1) — handler do seletor Clássico/Desenho
+  // Reprocessamento (Fase 4.1 + 4.2) — handler do seletor Clássico/Desenho
+  // e do seletor de `vetorialPreset` (RF-02 + RF-03).
   // -------------------------------------------------------------------------
 
-  // Callback do `ToggleButtonGroup` de modo. Quando o usuário escolhe `null`
-  // (clicando no botão já ativo) o `onChange` retorna `null`; nesse caso
-  // mantemos o valor atual sem disparar `setRenderMode` (comportamento padrão
-  // de grupos `exclusive` do MUI).
-  const handleRenderModeChange = (
+  /**
+   * Reprocessa a imagem atual no `mode` informado, reaproveitando o cache
+   * LRU. Extraído de `handleRenderModeChange` na Fase 4.2 para evitar
+   * duplicação com `handlePresetChange` (mesma lógica: abort anterior,
+   * cache, gerar, cachear).
+   *
+   * Comportamento:
+   * 1) aborta o `AbortController` do processamento anterior;
+   * 2) marca novo `processId` em `processingIdRef` (race protection —
+   *    padrão do `BatchOrchestrator.tsx`);
+   * 3) consulta o cache LRU antes de reprocessar;
+   * 4) em cache miss, delega para `generateStrokesFromImage` via dynamic
+   *    import (mantém o bundle da página enxuto);
+   * 5) salva o resultado no cache para evitar reprocessamento futuro.
+   *
+   * O `vetorialPreset` é lido via `useAnimationStore.getState()` no
+   * momento da chamada (não via closure) para evitar estado obsoleto
+   * quando o usuário troca o preset entre dois cliques no ToggleButton.
+   */
+  const reprocessCurrentImage = useCallback(async (mode: SpeedPaintRenderMode): Promise<void> => {
+    const { job, vetorialPreset: currentPreset, vetorialSortOrder: currentSortOrder } = useAnimationStore.getState();
+    if (!job.inputImage || job.status === 'processing') return;
+
+    // 1. Abortar processamento anterior
+    abortControllerRef.current?.abort();
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
+
+    // 2. Marca ID para race protection
+    const processId = `${Date.now()}-${Math.random()}`;
+    processingIdRef.current = processId;
+    setJob({ status: 'processing', progress: 0 });
+
+    try {
+      // 3. Consulta cache primeiro (evita reprocessamento desnecessário).
+      // Branches separados para narrowar `mode` aos literais exigidos pelas
+      // overloads de `getStrokeAnimation` (sem `as` bypass) — narrowing real
+      // em compile-time via discriminação por igualdade de literal.
+      // A chave do cache inclui `preset` (Premissa #10) E `sortOrder`
+      // (L9, RF-09) para evitar colisão entre ordenações diferentes.
+      const cached: StrokeAnimation | VetorialAnimation | null = mode === 'vetorial'
+        ? await getStrokeAnimation(job.inputImage, { mode: 'vetorial', preset: currentPreset, sortOrder: currentSortOrder })
+        : await getStrokeAnimation(job.inputImage, { mode: 'mask' });
+      if (processingIdRef.current !== processId) return;
+      if (cached) {
+        setJob({ animation: cached, status: 'completed', progress: 1 });
+        return;
+      }
+
+      // 4. Cache miss — gera e cacheia
+      const { generateStrokesFromImage } = await import('../features/speed-paint/lib/imageProcessing');
+      const animation = await generateStrokesFromImage(
+        job.inputImage,
+        (p) => {
+          if (processingIdRef.current !== processId) return;
+          setJob({ progress: p });
+        },
+        {
+          renderMode: mode,
+          vetorialPreset: mode === 'vetorial' ? currentPreset : undefined,
+          vetorialSortOrder: mode === 'vetorial' ? currentSortOrder : undefined,
+          signal: ac.signal,
+        },
+      );
+      if (processingIdRef.current !== processId) return;
+      setJob({ status: 'completed', animation, progress: 1 });
+      // Persiste no cache — branches discriminam o tipo de `animation` via
+      // type guards de `strokeCache` (`isVetorialAnimation`/`isStrokeAnimation`),
+      // narrowing real em compile-time sem `as` bypass.
+      if (mode === 'vetorial' && isVetorialAnimation(animation)) {
+        await setStrokeAnimation(job.inputImage, animation, { mode: 'vetorial', preset: currentPreset, sortOrder: currentSortOrder });
+      } else if (mode === 'mask' && isStrokeAnimation(animation)) {
+        await setStrokeAnimation(job.inputImage, animation, { mode: 'mask' });
+      }
+    } catch (err) {
+      if (ac.signal.aborted) return;
+      if (processingIdRef.current !== processId) return;
+      log.error('Falha ao reprocessar imagem', { error: err });
+      setJob({ status: 'failed' });
+      // Exibe feedback visual (Alert com `role="alert"` para WCAG 2.1 AA).
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setModeProcessingError(errorMessage);
+    }
+  }, [setJob]);
+
+  /**
+   * Lógica pura de reprocessamento por troca de modo — extraída de
+   * `handleRenderModeChange` para que o botão de "Reprocessar" do Alert
+   * de erro (`role="alert"`, severity="error") possa chamá-la sem
+   * precisar forjar um `MouseEvent` sintético. O `ToggleButtonGroup`
+   * continua usando `handleRenderModeChange` para satisfazer a
+   * assinatura do `onChange`, mas a lógica vive aqui.
+   */
+  const reprocessInMode = useCallback(async (newMode: SpeedPaintRenderMode): Promise<void> => {
+    // Limpa erro de tentativa anterior antes de iniciar novo reprocessamento
+    setModeProcessingError(null);
+
+    // Persistir na store IMEDIATAMENTE (UI feedback) antes do reprocessamento.
+    setRenderMode(newMode);
+    trackAnalyticsEvent('speed_paint_mode_changed', { mode: newMode });
+
+    await reprocessCurrentImage(newMode);
+    // Deps: `setRenderMode` e `reprocessCurrentImage` vêm de referências
+    // estáveis (seletor individual Zustand / `useCallback` com deps internas
+    // já estáveis). `setJob` é capturado via closure de `reprocessCurrentImage`.
+  }, [setRenderMode, reprocessCurrentImage]);
+
+  /**
+   * Callback do `ToggleButtonGroup` de modo. Quando o usuário escolhe `null`
+   * (clicando no botão já ativo) o `onChange` retorna `null`; nesse caso
+   * mantemos o valor atual sem disparar `setRenderMode` (comportamento padrão
+   * de grupos `exclusive` do MUI). A lógica de reprocessamento vive em
+   * `reprocessInMode` — este handler só faz o guard de `null` e delega.
+   */
+  const handleRenderModeChange = useCallback(async (
     _event: React.MouseEvent<HTMLElement>,
     newMode: SpeedPaintRenderMode | null,
   ) => {
     if (newMode == null) return;
-    setRenderMode(newMode);
-    // Analytics: entender qual modo (mask vs vetorial) é mais popular.
-    trackAnalyticsEvent('speed_paint_mode_changed', { mode: newMode });
-  };
+    await reprocessInMode(newMode);
+  }, [reprocessInMode]);
+
+  /**
+   * Handler do seletor de `vetorialPreset` (RF-03 / Fase 4.2). Visível
+   * apenas quando `renderMode === 'vetorial'`. Persiste o novo preset na
+   * store, dispara evento de analytics e reprocessa a imagem atual usando
+   * o helper compartilhado `reprocessCurrentImage` (mesma lógica de race
+   * protection + cache LRU do `handleRenderModeChange`).
+   */
+  const handlePresetChange = useCallback(async (event: SelectChangeEvent<VetorialPreset>): Promise<void> => {
+    // Narrowing real via type guard — `event.target.value` chega como
+    // `string` (MUI expõe o overload do DOM); o type guard filtra para o
+    // union `VetorialPreset` em compile-time, eliminando o `as` bypass.
+    const newPreset = event.target.value;
+    if (!isVetorialPreset(newPreset)) return;
+
+    // Limpa erro de tentativa anterior antes de iniciar novo reprocessamento
+    setModeProcessingError(null);
+
+    // Persistir na store IMEDIATAMENTE (UI feedback)
+    setVetorialPreset(newPreset);
+    trackAnalyticsEvent('speed_paint_preset_changed', { preset: newPreset });
+
+    // Reaproveita o helper compartilhado — seletor só fica visível no modo
+    // vetorial, mas o guard interno já cobre o caso defensivo.
+    await reprocessCurrentImage('vetorial');
+  }, [setVetorialPreset, reprocessCurrentImage]);
+
+  /**
+   * Handler do `ToggleButtonGroup` de `vetorialSortOrder` (L9, RF-09). Visível
+   * apenas quando `renderMode === 'vetorial'`. Quando o usuário escolhe `null`
+   * (clicando no botão já ativo) o `onChange` retorna `null`; nesse caso
+   * mantemos o valor atual sem disparar `setVetorialSortOrder` (comportamento
+   * padrão de grupos `exclusive` do MUI). Persiste o novo valor na store,
+   * dispara evento de analytics e reprocessa a imagem atual reaproveitando o
+   * helper `reprocessCurrentImage` — a chave do cache LRU inclui `sortOrder`,
+   * então uma ordenação diferente gera uma entrada distinta (sem colisão).
+   */
+  const handleSortOrderChange = useCallback(async (
+    _event: React.MouseEvent<HTMLElement>,
+    newOrder: VetorialPathSortOrder | null,
+  ) => {
+    if (newOrder == null) return;
+    if (newOrder === vetorialSortOrder) return;
+
+    // Limpa erro de tentativa anterior antes de iniciar novo reprocessamento
+    setModeProcessingError(null);
+
+    // Persistir na store IMEDIATAMENTE (UI feedback)
+    setVetorialSortOrder(newOrder);
+    trackAnalyticsEvent('speed_paint_sort_order_changed', { sortOrder: newOrder });
+
+    // Reprocessa a imagem atual com a nova ordenação.
+    await reprocessCurrentImage('vetorial');
+  }, [vetorialSortOrder, setVetorialSortOrder, reprocessCurrentImage]);
+
+  /**
+   * Handler do `ToggleButtonGroup` de `easing` (L10, RF-10). Visível apenas
+   * quando `renderMode === 'vetorial'`. Como o easing é aplicado em runtime
+   * pelo `WhiteboardScene` (curva de progressão do `interpolate` do Remotion),
+   * a troca é REATIVA — não precisa reprocessar a imagem. Persistir na store
+   * basta; a próxima renderização do player já consome o novo valor.
+   */
+  const handleEasingChange = useCallback((
+    _event: React.MouseEvent<HTMLElement>,
+    newEasing: VetorialEasingType | null,
+  ) => {
+    if (newEasing == null) return;
+    if (newEasing === easing) return;
+    setEasing(newEasing);
+    trackAnalyticsEvent('speed_paint_easing_changed', { easing: newEasing });
+  }, [easing, setEasing]);
 
   // -------------------------------------------------------------------------
   // Render
@@ -434,6 +731,7 @@ export function SpeedPaintPage() {
         >
           <CircularProgress
             size={56}
+            aria-label={t('speedPaint.processingLabel')}
             sx={{
               color: 'primary.main',
               mb: 2,
@@ -849,7 +1147,7 @@ export function SpeedPaintPage() {
                           }}
                         >
                           <Tooltip
-                            title={t('speedPaint.modeDescription')}
+                            title={t('speedPaint.modeClassicTooltip')}
                             describeChild
                             placement="top"
                             arrow
@@ -862,7 +1160,7 @@ export function SpeedPaintPage() {
                             </ToggleButton>
                           </Tooltip>
                           <Tooltip
-                            title={t('speedPaint.modeDescription')}
+                            title={t('speedPaint.modeVetorialTooltip')}
                             describeChild
                             placement="top"
                             arrow
@@ -876,6 +1174,233 @@ export function SpeedPaintPage() {
                           </Tooltip>
                         </ToggleButtonGroup>
                       </Box>
+
+                      {/* Seletor de estilo do modo Desenho (RF-03 / Fase 4.2).
+                          Visível APENAS quando `renderMode === 'vetorial'` — fora
+                          desse modo o preset é irrelevante (modo máscara usa
+                          rasterização fixa). 16 opções em 6 grupos, agrupadas
+                          via `<ListSubheader>`. O tooltip D08 (D08-texto) avisa
+                          sobre a limitação: fotos podem não ficar ideais. */}
+                      {renderMode === 'vetorial' && (
+                        <FormControl
+                          fullWidth
+                          size="small"
+                          title={t('speedPaint.vetorialPresetTooltip')}
+                        >
+                          <InputLabel id="vetorial-preset-label">
+                            {t('speedPaint.vetorialPresetLabel')}
+                          </InputLabel>
+                          <Select
+                            labelId="vetorial-preset-label"
+                            id="vetorial-preset"
+                            value={vetorialPreset}
+                            label={t('speedPaint.vetorialPresetLabel')}
+                            onChange={(event) => void handlePresetChange(event)}
+                            aria-label={t('speedPaint.vetorialPresetLabel')}
+                          >
+                            {VETORIAL_PRESETS_GROUPED.map((group) => [
+                              <ListSubheader
+                                key={`group-${group.id}`}
+                                sx={{
+                                  bgcolor: 'transparent',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.08em',
+                                  lineHeight: 2,
+                                  color: 'text.secondary',
+                                }}
+                              >
+                                {t(`speedPaint.presetGroups.${group.id}` as const)}
+                              </ListSubheader>,
+                              ...group.presets.map((preset) => (
+                                <MenuItem
+                                  key={preset}
+                                  value={preset}
+                                  sx={{ pl: 4 /* indent sob o subheader */ }}
+                                >
+                                  {t(`speedPaint.presets.${preset}` as const)}
+                                </MenuItem>
+                              )),
+                            ])}
+                          </Select>
+                        </FormControl>
+                      )}
+
+                      {/* Seletor de ordem de desenho dos paths SVG (L9, RF-09).
+                          Visível APENAS quando `renderMode === 'vetorial'`. 4 opções
+                          discretas via `ToggleButtonGroup` (mesmo padrão visual do
+                          seletor de modo de renderização). A troca dispara
+                          reprocessamento da imagem com a nova ordenação. */}
+                      {renderMode === 'vetorial' && (
+                        <Stack spacing={GAP_DEFAULT}>
+                          <Stack spacing={GAP_COMPACT}>
+                            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                              <ShuffleOutlined sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                              <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                                {t('speedPaint.sortOrderLabel')}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                          <Box>
+                            <ToggleButtonGroup
+                              value={vetorialSortOrder}
+                              exclusive
+                              onChange={(event, value: VetorialPathSortOrder | null) => {
+                                if (value != null && !isVetorialSortOrder(value)) return;
+                                void handleSortOrderChange(event, value);
+                              }}
+                              aria-label={t('speedPaint.sortOrderLabel')}
+                              sx={vetorialToggleButtonGroupSx}
+                            >
+                              <Tooltip
+                                title={t('speedPaint.sortOrderTopDown')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="top-down" aria-label={t('speedPaint.sortOrderTopDown')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <KeyboardArrowDownOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.sortOrderTopDown')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={t('speedPaint.sortOrderCenterOut')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="center-out" aria-label={t('speedPaint.sortOrderCenterOut')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <CenterFocusStrongOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.sortOrderCenterOut')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={t('speedPaint.sortOrderBigFirst')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="big-first" aria-label={t('speedPaint.sortOrderBigFirst')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <AutoAwesomeOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.sortOrderBigFirst')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={t('speedPaint.sortOrderRandom')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="random" aria-label={t('speedPaint.sortOrderRandom')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <ShuffleOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.sortOrderRandom')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                            </ToggleButtonGroup>
+                          </Box>
+                        </Stack>
+                      )}
+
+                      {/* Seletor de curva de progressão (easing) da animação
+                          vetorial (L10, RF-10). Visível APENAS quando
+                          `renderMode === 'vetorial'`. 3 opções discretas via
+                          `ToggleButtonGroup` — troca é REATIVA (a próxima
+                          renderização do player já consome o novo valor, sem
+                          reprocessamento). */}
+                      {renderMode === 'vetorial' && (
+                        <Stack spacing={GAP_DEFAULT}>
+                          <Stack spacing={GAP_COMPACT}>
+                            <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                              <WaterOutlined sx={{ fontSize: ICON_SIZE_MD, color: BRAND_PRIMARY }} />
+                              <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.18em' }}>
+                                {t('speedPaint.easingLabel')}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                          <Box>
+                            <ToggleButtonGroup
+                              value={easing}
+                              exclusive
+                              onChange={(event, value: VetorialEasingType | null) => {
+                                if (value != null && !isVetorialEasingType(value)) return;
+                                handleEasingChange(event, value);
+                              }}
+                              aria-label={t('speedPaint.easingLabel')}
+                              sx={vetorialToggleButtonGroupSx}
+                            >
+                              <Tooltip
+                                title={t('speedPaint.easingLinear')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="linear" aria-label={t('speedPaint.easingLinear')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <TimelineOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.easingLinear')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={t('speedPaint.easingSmooth')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="smooth" aria-label={t('speedPaint.easingSmooth')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <WaterOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.easingSmooth')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={t('speedPaint.easingBounce')}
+                                describeChild
+                                placement="top"
+                                arrow
+                              >
+                                <ToggleButton value="bounce" aria-label={t('speedPaint.easingBounce')}>
+                                  <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                                    <SportsBaseballOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                                    <span>{t('speedPaint.easingBounce')}</span>
+                                  </Stack>
+                                </ToggleButton>
+                              </Tooltip>
+                            </ToggleButtonGroup>
+                          </Box>
+                        </Stack>
+                      )}
+                      {/* Feedback de erro de reprocessamento (WCAG 2.1 AA — `role="alert"`).
+                          Aparece quando `handleRenderModeChange` falha e o `status` vira `failed`. */}
+                      {modeProcessingError != null && (
+                        <Alert
+                          severity="error"
+                          variant="outlined"
+                          role="alert"
+                          onClose={() => setModeProcessingError(null)}
+                          action={(
+                            <Button
+                              color="inherit"
+                              size="small"
+                              onClick={() => {
+                                void reprocessInMode(renderMode);
+                              }}
+                            >
+                              {t('speedPaint.modeProcessingRetry')}
+                            </Button>
+                          )}
+                        >
+                          {t('speedPaint.modeProcessingError')}
+                        </Alert>
+                      )}
                     </Stack>
 
                     {/* Cor do canvas */}

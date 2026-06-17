@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -9,9 +9,14 @@ import Tooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { alpha } from '@mui/material/styles';
 import Close from '@mui/icons-material/Close';
 import VideoFile from '@mui/icons-material/VideoFile';
 import WarningAmber from '@mui/icons-material/WarningAmber';
+import FormatPaintOutlined from '@mui/icons-material/FormatPaintOutlined';
+import GestureOutlined from '@mui/icons-material/GestureOutlined';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { VideoExportOptions, VideoExporter } from '../hooks/useVideoExporter';
@@ -21,12 +26,14 @@ import { ExportProgressBar } from './export/ExportProgressBar';
 import { ExportResultActions } from './export/ExportResultActions';
 import { glassSurfaceSx } from '../../../theme/surfaces';
 import {
+  GAP_COMPACT,
   GAP_DEFAULT,
   GAP_MEDIUM,
   ICON_SIZE_MD,
   BRAND_GRADIENT,
   BRAND_GRADIENT_HOVER,
   BRAND_GLOW,
+  BRAND_PRIMARY,
   BRAND_PRIMARY_GLOW_SOFT,
   BRAND_PRIMARY_LIGHT,
   WHITE_14,
@@ -34,8 +41,10 @@ import {
   ERROR_BG_SUBTLE, RADIUS_XS } from '../../../theme/tokens';
 import type { SceneRatio } from '../../studio/types';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
+import type { SpeedPaintRenderMode } from '../../speed-paint/types/vetorial';
 import { useLocale } from '../../i18n';
 import { StackedHeader } from '../../../components/ui';
+import { useVideoRenderBridge } from '../store/videoRenderBridge';
 
 // ---------------------------------------------------------------------------
 // Constantes
@@ -104,6 +113,27 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
 }: VideoExportPanelProps) {
   const { t } = useLocale();
 
+  // --- Bridge store: modo de renderização (L7 — RF-06) ---
+  // `renderMode` é override local da VideoPage (sincronizado da
+  // `useAnimationStore` no mount via `useEffect` na VideoPage). A escrita
+  // é feita pela action `syncRenderMode(mode, preset)` que atualiza o
+  // bridge sem propagar para a `SpeedPaintPage` (escopo de sessão).
+  // Seletores primitivos evitam re-render em cascata durante progresso.
+  const renderMode = useVideoRenderBridge((s) => s.renderMode);
+  const vetorialPreset = useVideoRenderBridge((s) => s.vetorialPreset);
+
+  // Handler do ToggleButtonGroup. `null` indica que o usuário clicou no
+  // botão já ativo (MUI ToggleButton deseleciona ao re-clicar). Ignoramos
+  // para não desabilitar o toggle por acidente. Preserva o `vetorialPreset`
+  // vigente (não troca junto — preset tem UI dedicada em L4).
+  const handleRenderModeChange = useCallback(
+    (_e: React.MouseEvent<HTMLElement>, next: SpeedPaintRenderMode | null) => {
+      if (next == null) return;
+      useVideoRenderBridge.getState().syncRenderMode(next, vetorialPreset);
+    },
+    [vetorialPreset],
+  );
+
   // --- State local de opções de exportação (elimina re-renders em cascata no pai) ---
   const [quality, setQuality] = useState<VideoExportQuality>(DEFAULT_EXPORT_QUALITY);
   const [fileName, setFileName] = useState('');
@@ -148,6 +178,14 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
   const handleStartExport = () => {
     if (!isDurationReady) return;
 
+    // L7 (RF-06): propaga o `renderMode`/`vetorialPreset` vigentes na bridge
+    // para o pipeline. Lê o estado atual do bridge (não o capturado em
+    // render) para evitar closure stale quando o usuário troca o modo
+    // entre o clique no botão e o dispatch.
+    const bridgeState = useVideoRenderBridge.getState();
+    const activeRenderMode: SpeedPaintRenderMode = bridgeState.renderMode;
+    const activeVetorialPreset = bridgeState.vetorialPreset;
+
     const options: VideoExportOptions = {
       scenes,
       audioUrl: audioUrl!,
@@ -162,6 +200,8 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
       fileName: fileName || undefined,
       animateScenes,
       showDrawTool: true,
+      renderMode: activeRenderMode,
+      vetorialPreset: activeVetorialPreset,
     };
     void exporter.startRender(options);
   };
@@ -273,6 +313,109 @@ export const VideoExportPanel = React.memo(function VideoExportPanel({
               }
               sx={{ mr: 0 }}
             />
+
+            {/* L7 (RF-06): seletor de modo (Clássico | Desenho) — aparece APENAS
+                quando a animação com Speed Paint está ligada (CT-F37). Override
+                local da sessão — NÃO propaga para a `SpeedPaintPage` (cada rota
+                tem contexto próprio). Reutiliza as chaves `speedPaint.*`
+                existentes nos 3 locales para evitar duplicação. */}
+            {animateScenes === true && (
+              <Stack spacing={GAP_COMPACT}>
+                <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                  <Typography
+                    id="video-export-mode-label"
+                    variant="overline"
+                    sx={{ fontWeight: 700, letterSpacing: '0.18em', color: 'text.secondary' }}
+                  >
+                    {t('speedPaint.modeLabel')}
+                  </Typography>
+                  <Typography
+                    id="video-export-mode-description"
+                    variant="caption"
+                    sx={{ color: 'text.secondary', lineHeight: 1.5 }}
+                  >
+                    {t('speedPaint.modeDescription')}
+                  </Typography>
+                </Stack>
+                <ToggleButtonGroup
+                  value={renderMode}
+                  exclusive
+                  size="small"
+                  onChange={handleRenderModeChange}
+                  aria-labelledby="video-export-mode-label"
+                  aria-describedby="video-export-mode-description"
+                  data-testid="video-export-mode-toggle"
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    '& .MuiToggleButtonGroup-grouped': {
+                      borderRadius: RADIUS_XS,
+                      border: `1px solid ${WHITE_14}`,
+                      px: 1.5,
+                      py: 0.75,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      color: 'text.secondary',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        borderColor: alpha(BRAND_PRIMARY, 0.4),
+                        backgroundColor: alpha(BRAND_PRIMARY, 0.04),
+                      },
+                      '&.Mui-selected': {
+                        color: BRAND_PRIMARY_LIGHT,
+                        borderColor: alpha(BRAND_PRIMARY, 0.6),
+                        backgroundColor: alpha(BRAND_PRIMARY, 0.12),
+                        boxShadow: `0 0 0 3px ${BRAND_PRIMARY_GLOW_SOFT}, inset 0 0 0 1px ${alpha(BRAND_PRIMARY, 0.3)}`,
+                      },
+                      '&.Mui-selected:hover': {
+                        backgroundColor: alpha(BRAND_PRIMARY, 0.18),
+                        borderColor: BRAND_PRIMARY,
+                      },
+                      '&.Mui-focusVisible': {
+                        outline: `2px solid ${BRAND_PRIMARY_LIGHT}`,
+                        outlineOffset: 2,
+                      },
+                    },
+                  }}
+                >
+                  <Tooltip
+                    title={t('speedPaint.modeClassicTooltip')}
+                    describeChild
+                    placement="top"
+                    arrow
+                  >
+                    <ToggleButton
+                      value="mask"
+                      aria-label={t('speedPaint.modeClassic')}
+                      data-testid="video-export-mode-mask"
+                    >
+                      <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                        <FormatPaintOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                        <span>{t('speedPaint.modeClassic')}</span>
+                      </Stack>
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip
+                    title={t('speedPaint.modeVetorialTooltip')}
+                    describeChild
+                    placement="top"
+                    arrow
+                  >
+                    <ToggleButton
+                      value="vetorial"
+                      aria-label={t('speedPaint.modeVetorial')}
+                      data-testid="video-export-mode-vetorial"
+                    >
+                      <Stack direction="row" spacing={GAP_DEFAULT} sx={{ alignItems: 'center' }}>
+                        <GestureOutlined sx={{ fontSize: ICON_SIZE_MD }} />
+                        <span>{t('speedPaint.modeVetorial')}</span>
+                      </Stack>
+                    </ToggleButton>
+                  </Tooltip>
+                </ToggleButtonGroup>
+              </Stack>
+            )}
 
             {/* Seletor de qualidade */}
             <ExportQualitySelector

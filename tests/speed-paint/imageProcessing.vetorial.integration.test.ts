@@ -13,7 +13,10 @@
  * (6) Retrocompatibilidade do modo mask (sem `renderMode` → `StrokeAnimation`)
  * (7) `renderMode: 'mask'` explícito → `StrokeAnimation`
  * (8) `totalLength` = soma dos `length` de cada path
- * (9) `totalDurationMs` = `max(2000, paths.length * 80)`
+ * (9) `totalDurationMs` = `max(3000, paths.length * 120)` (Leva 3.2 — recalibrado)
+ * (10) Pipeline edge+bezier (v0.132.0): presets `edge-*` produzem `VetorialAnimation`
+ *     sem rejeição — `strokeWidth` vem de `EDGE_PRESET_CONFIG` (>= 6)
+ * (11) `edgeThreshold`/`contourEpsilon` opcionais não quebram a chamada
  *
  * ## Decisão de escopo (Premissa #15 do tracker)
  *
@@ -412,7 +415,7 @@ describe('generateStrokesFromImage — modo vetorial', () => {
     }
   });
 
-  it('totalDurationMs é >= 2000 (mínimo) e proporcional a paths.length', async () => {
+  it('totalDurationMs é >= 3000 (mínimo) e proporcional a paths.length', async () => {
     // Arrange
     const { triggerLoad } = createImageMock(100, 100);
 
@@ -427,13 +430,165 @@ describe('generateStrokesFromImage — modo vetorial', () => {
 
     // Assert
     if ('paths' in animation) {
-      // Mínimo absoluto: 2000ms
-      expect(animation.totalDurationMs).toBeGreaterThanOrEqual(2000);
-      // Fórmula: Math.max(2000, paths.length * 80)
-      const expected = Math.max(2000, animation.paths.length * 80);
+      // Mínimo absoluto: 3000ms (Leva 3.2 — recalibrado de 2000 → 3000)
+      expect(animation.totalDurationMs).toBeGreaterThanOrEqual(3000);
+      // Fórmula: Math.max(3000, paths.length * 120) — calibrada para o
+      // pipeline edge+bezier (v0.132.0) que gera menos paths porém mais longos.
+      const expected = Math.max(3000, animation.paths.length * 120);
       expect(animation.totalDurationMs).toBe(expected);
     } else {
       throw new Error('Tipo inesperado: esperado VetorialAnimation');
     }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Leva 3.2 — testes da nova fórmula + pipeline edge+bezier (v0.132.0)
+  // ---------------------------------------------------------------------------
+
+  it('totalDurationMs escala com número de paths (consistência monotônica)', async () => {
+    // Arrange — duas imagens: menor (80x80) e maior (120x120).
+    // A maior gera mais paths → totalDurationMs >= da menor.
+    const { triggerLoad } = createImageMock(80, 80);
+    const promiseSmall = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial' },
+    );
+    triggerLoad();
+    const animSmall = (await promiseSmall) as VetorialAnimation;
+
+    const { triggerLoad: triggerLoad2 } = createImageMock(120, 120);
+    const promiseLarge = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial' },
+    );
+    triggerLoad2();
+    const animLarge = (await promiseLarge) as VetorialAnimation;
+
+    // Assert — consistência monotônica: maior duração ↔ maior (ou igual) quantidade de paths
+    if ('paths' in animSmall && 'paths' in animLarge) {
+      expect(animLarge.paths.length).toBeGreaterThanOrEqual(animSmall.paths.length);
+      expect(animLarge.totalDurationMs).toBeGreaterThanOrEqual(animSmall.totalDurationMs);
+      // Garante que a fórmula nova é respeitada em ambos os casos
+      expect(animSmall.totalDurationMs).toBe(Math.max(3000, animSmall.paths.length * 120));
+      expect(animLarge.totalDurationMs).toBe(Math.max(3000, animLarge.paths.length * 120));
+    } else {
+      throw new Error('Tipo inesperado: esperado VetorialAnimation');
+    }
+  });
+
+  it('totalDurationMs é >= 3000 mesmo com poucos paths (mínimo absoluto)', async () => {
+    // Arrange — imagem mínima 40x40 (gera paths pequenos, mas >= 1)
+    const { triggerLoad } = createImageMock(40, 40);
+
+    // Act
+    const promise = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial' },
+    );
+    triggerLoad();
+    const animation = (await promise) as VetorialAnimation;
+
+    // Assert
+    if ('paths' in animation) {
+      // Independente da quantidade de paths, mínimo absoluto é 3000ms
+      expect(animation.totalDurationMs).toBeGreaterThanOrEqual(3000);
+      // Confirma que a fórmula usa o floor de 3000 quando paths.length * 120 < 3000
+      if (animation.paths.length * 120 < 3000) {
+        expect(animation.totalDurationMs).toBe(3000);
+      }
+    } else {
+      throw new Error('Tipo inesperado: esperado VetorialAnimation');
+    }
+  });
+
+  it('vetorialPreset: edge-default produz paths com strokeWidth >= 6 (pipeline edge+bezier)', async () => {
+    // Arrange — preset `edge-default` usa novo pipeline Canny → RDP → Bezier
+    // (EDGE_PRESET_CONFIG['edge-default'].strokeWidth === 8)
+    const { triggerLoad } = createImageMock(100, 100);
+
+    // Act
+    const promise = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial', vetorialPreset: 'edge-default' },
+    );
+    triggerLoad();
+    const animation = (await promise) as VetorialAnimation;
+
+    // Assert — Leva 3.2: o orquestrador não rejeita mais presets `edge-*`
+    expect(animation.sourcePreset).toBe('edge-default');
+    if ('paths' in animation) {
+      // Cada path deve ter strokeWidth consistente com EDGE_PRESET_CONFIG
+      // (>= 6 conforme premissa do pipeline edge+bezier — range 6..12)
+      for (const path of animation.paths) {
+        expect(path.strokeWidth).toBeGreaterThanOrEqual(6);
+      }
+    } else {
+      throw new Error('Tipo inesperado: esperado VetorialAnimation');
+    }
+  });
+
+  it('vetorialPreset: edge-detailed funciona (smoke test do pipeline edge+bezier)', async () => {
+    // Arrange — `edge-detailed` tem strokeWidth 6, epsilon 1.0 (mais paths granulares)
+    const { triggerLoad } = createImageMock(100, 100);
+
+    // Act — não deve rejeitar nem lançar exceção
+    const promise = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial', vetorialPreset: 'edge-detailed' },
+    );
+    triggerLoad();
+    const animation = (await promise) as VetorialAnimation;
+
+    // Assert — apenas garantir que completa sem erro
+    expect(animation.sourcePreset).toBe('edge-detailed');
+    expect(animation.id).toBeTruthy();
+    expect(animation.totalDurationMs).toBeGreaterThanOrEqual(3000);
+  });
+
+  it('AbortSignal cancela pipeline edge+bezier (rejeita com AbortError)', async () => {
+    // Arrange — preset `edge-bold` (strokeWidth 12, pipeline edge+bezier pesado)
+    const { triggerLoad } = createImageMock(100, 100);
+    const controller = new AbortController();
+    controller.abort();
+
+    // Act
+    const promise = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      { renderMode: 'vetorial', vetorialPreset: 'edge-bold', signal: controller.signal },
+    );
+    triggerLoad();
+
+    // Assert — mesmo padrão do teste análogo para mask/legado
+    await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('aceita edgeThreshold e contourEpsilon opcionais sem quebrar', async () => {
+    // Arrange — passar opções extras do pipeline edge+bezier não deve quebrar
+    // o contrato da API (são opcionais e ignoradas em outros pipelines)
+    const { triggerLoad } = createImageMock(100, 100);
+
+    // Act
+    const promise = generateStrokesFromImage(
+      'data:image/png;base64,test',
+      () => {},
+      {
+        renderMode: 'vetorial',
+        vetorialPreset: 'edge-default',
+        edgeThreshold: 0.35,
+        contourEpsilon: 2.5,
+      },
+    );
+    triggerLoad();
+    const animation = (await promise) as VetorialAnimation;
+
+    // Assert — apenas garantir que completa sem rejeitar
+    expect(animation.sourcePreset).toBe('edge-default');
+    expect(animation.totalDurationMs).toBeGreaterThanOrEqual(3000);
   });
 });

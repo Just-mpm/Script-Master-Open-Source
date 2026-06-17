@@ -5,17 +5,19 @@
  * - `kind: 'mask'`     → `StrokeAnimation` (raspadinha, modo legado)
  * - `kind: 'vetorial'` → `VetorialAnimation` (path animation, modo novo)
  *
- * A chave SHA-256 inclui `renderMode` + `vetorialPreset` além da URL.
- * Isso garante que a mesma imagem processada em modos diferentes tem
- * chaves distintas no cache — sem isso, ler uma imagem no modo errado
- * retornaria a animação errada (colisão de cache). Veja Premissa #10
- * do tracker `docs/plan/tracker-speed-paint-vetorial-2026-06-14.md`.
+ * A chave SHA-256 inclui `renderMode` + `vetorialPreset` + `vetorialSortOrder`
+ * além da URL. Isso garante que a mesma imagem processada com parâmetros
+ * diferentes tem chaves distintas no cache — sem isso, ler uma imagem
+ * com outra ordenação retornaria a animação errada (colisão de cache).
+ * Veja Premissa #10 e L9/RF-09 do tracker
+ * `docs/plan/tracker-speed-paint-vetorial-2026-06-14.md`.
  *
  * Usa hash SHA-256 via SubtleCrypto (async) como chave.
  * Limitado a 20 entradas — ao exceder, remove a mais antiga (por timestamp).
  */
 
 import type { StrokeAnimation, VetorialAnimation, VetorialPreset } from '../../speed-paint/types';
+import type { VetorialPathSortOrder } from '../../speed-paint/types/vetorial';
 import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
@@ -29,7 +31,7 @@ import { createLogger } from '../../../lib/logger';
  */
 type CachedAnimation =
   | { kind: 'mask'; animation: StrokeAnimation }
-  | { kind: 'vetorial'; animation: VetorialAnimation; preset: VetorialPreset };
+  | { kind: 'vetorial'; animation: VetorialAnimation; preset: VetorialPreset; sortOrder?: VetorialPathSortOrder };
 
 interface CacheEntry {
   data: CachedAnimation;
@@ -45,6 +47,11 @@ interface CacheStats {
 interface CacheContext {
   mode: 'mask' | 'vetorial';
   preset?: VetorialPreset;
+  /**
+   * Ordem de desenho dos paths SVG no modo vetorial (L9, RF-09). Ignorado
+   * no modo `mask` (a ordenação é uma no-op para `StrokeAnimation`).
+   */
+  sortOrder?: VetorialPathSortOrder;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,8 +78,9 @@ const cache = new Map<string, CacheEntry>();
  * Gera hash SHA-256 hex digest de `url + JSON.stringify(context)`.
  * Usar crypto.subtle.digest — disponível em contextos seguros (HTTPS/local).
  *
- * Incluir `mode` + `preset` no payload é o que evita colisão entre
- * animações de modos diferentes da mesma imagem (Premissa #10).
+ * Incluir `mode` + `preset` + `sortOrder` no payload é o que evita colisão
+ * entre animações de modos diferentes (Premissa #10) ou com ordenações
+ * diferentes (L9, RF-09) da mesma imagem.
  */
 async function buildCacheKey(imageUrl: string, context: CacheContext): Promise<string> {
   const encoder = new TextEncoder();
@@ -120,7 +128,7 @@ const log = createLogger('strokeCache');
  * via campo exclusivo `totalLength` (existe em `VetorialAnimation`, ausente em
  * `StrokeAnimation`). Type guard do TS — narrowing real em compile-time.
  */
-function isVetorialAnimation(
+export function isVetorialAnimation(
   animation: StrokeAnimation | VetorialAnimation,
 ): animation is VetorialAnimation {
   return 'totalLength' in animation;
@@ -131,7 +139,7 @@ function isVetorialAnimation(
  * via campo exclusivo `totalFrames` (existe em `StrokeAnimation`, ausente em
  * `VetorialAnimation`). Type guard do TS — narrowing real em compile-time.
  */
-function isStrokeAnimation(
+export function isStrokeAnimation(
   animation: StrokeAnimation | VetorialAnimation,
 ): animation is StrokeAnimation {
   return 'totalFrames' in animation;
@@ -153,12 +161,12 @@ export async function getStrokeAnimation(imageUrl: string): Promise<StrokeAnimat
  * Busca uma animação vetorial no cache, discriminada por `mode: 'vetorial'`.
  *
  * @param imageUrl - URL da imagem (chave de busca)
- * @param context - Contexto discriminador: `mode: 'vetorial'` + `preset` opcional
+ * @param context - Contexto discriminador: `mode: 'vetorial'` + `preset`/`sortOrder` opcionais
  * @returns A animação `VetorialAnimation` em cache, ou null
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context: { mode: 'vetorial'; preset?: VetorialPreset },
+  context: { mode: 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
 ): Promise<VetorialAnimation | null>;
 
 /**
@@ -170,7 +178,7 @@ export async function getStrokeAnimation(
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context: { mode: 'mask'; preset?: never },
+  context: { mode: 'mask'; preset?: never; sortOrder?: never },
 ): Promise<StrokeAnimation | null>;
 
 /**
@@ -180,26 +188,28 @@ export async function getStrokeAnimation(
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset },
+  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
 ): Promise<StrokeAnimation | VetorialAnimation | null> {
   const mode = context?.mode ?? 'mask';
   // Aplica default do preset só no modo vetorial — no modo mask é irrelevante
   const preset = mode === 'vetorial' ? (context?.preset ?? DEFAULT_VETORIAL_PRESET) : context?.preset;
+  // `sortOrder` só é considerado no modo vetorial (no mask a ordenação é no-op)
+  const sortOrder = mode === 'vetorial' ? context?.sortOrder : undefined;
 
   try {
-    const key = await buildCacheKey(imageUrl, { mode, preset });
+    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder });
     const entry = cache.get(key);
 
     if (entry) {
       // Atualiza timestamp para LRU — entradas acessadas recentemente não são evictadas primeiro
       entry.timestamp = Date.now();
-      log.debug('Cache hit', { imageUrl: imageUrl.substring(0, 60), mode, preset });
+      log.debug('Cache hit', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder });
       // Discrimina por `kind` — a discriminated union `CachedAnimation` narrowa
       // o tipo de `entry.data.animation` automaticamente (sem `as`).
       return entry.data.animation;
     }
 
-    log.debug('Cache miss', { imageUrl: imageUrl.substring(0, 60), mode, preset });
+    log.debug('Cache miss', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder });
     return null;
   } catch (err: unknown) {
     // crypto.subtle indisponível (contexto inseguro) — ignora cache
@@ -213,12 +223,12 @@ export async function getStrokeAnimation(
  *
  * @param imageUrl - URL da imagem (chave de armazenamento)
  * @param animation - `VetorialAnimation` a ser armazenada
- * @param context - Contexto com `mode: 'vetorial'` + `preset` opcional
+ * @param context - Contexto com `mode: 'vetorial'` + `preset`/`sortOrder` opcionais
  */
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: VetorialAnimation,
-  context: { mode: 'vetorial'; preset?: VetorialPreset },
+  context: { mode: 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
 ): Promise<void>;
 
 /**
@@ -231,7 +241,7 @@ export async function setStrokeAnimation(
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: StrokeAnimation,
-  context?: { mode?: 'mask'; preset?: never },
+  context?: { mode?: 'mask'; preset?: never; sortOrder?: never },
 ): Promise<void>;
 
 /**
@@ -242,13 +252,15 @@ export async function setStrokeAnimation(
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: StrokeAnimation | VetorialAnimation,
-  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset },
+  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
 ): Promise<void> {
   const mode = context?.mode ?? 'mask';
   const preset = mode === 'vetorial' ? (context?.preset ?? DEFAULT_VETORIAL_PRESET) : context?.preset;
+  // `sortOrder` só é considerado no modo vetorial (no mask a ordenação é no-op)
+  const sortOrder = mode === 'vetorial' ? context?.sortOrder : undefined;
 
   try {
-    const key = await buildCacheKey(imageUrl, { mode, preset });
+    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder });
 
     // Eviction antes de inserir se necessário
     if (cache.size >= MAX_CACHE_SIZE && !cache.has(key)) {
@@ -269,7 +281,12 @@ export async function setStrokeAnimation(
         );
       }
       // animation narrowou para VetorialAnimation via type guard
-      data = { kind: 'vetorial', animation, preset: preset ?? DEFAULT_VETORIAL_PRESET };
+      data = {
+        kind: 'vetorial',
+        animation,
+        preset: preset ?? DEFAULT_VETORIAL_PRESET,
+        ...(sortOrder !== undefined ? { sortOrder } : {}),
+      };
     } else {
       if (!isStrokeAnimation(animation)) {
         throw new TypeError(
@@ -281,7 +298,7 @@ export async function setStrokeAnimation(
     }
 
     cache.set(key, { data, timestamp: Date.now() });
-    log.debug('Cache set', { imageUrl: imageUrl.substring(0, 60), mode, preset, cacheSize: cache.size });
+    log.debug('Cache set', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder, cacheSize: cache.size });
   } catch (err: unknown) {
     // Shape mismatch (TypeError) é erro do caller — propaga para que o
     // problema seja visível em desenvolvimento. Outros erros (ex: crypto

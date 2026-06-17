@@ -29,7 +29,11 @@ import {
   getVisibleStrokeCount,
   loadImageElement,
 } from '../../src/features/video-render/lib/speedPaintRenderer';
-import type { StrokeAnimation } from '../../src/features/speed-paint/types';
+import type {
+  StrokeAnimation,
+  VetorialAnimation,
+  VetorialPreset,
+} from '../../src/features/speed-paint/types';
 
 // ---------------------------------------------------------------------------
 // Helpers de mock para Canvas 2D
@@ -883,5 +887,558 @@ describe('generateScenesWithSpeedPaint', () => {
     expect(results[0].animation).toBeDefined();
 
     vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — generateScenesWithSpeedPaint: propagação de renderMode/vetorialPreset
+// Leiva L1 (RF-04) — Plano §Arquitetura M2 / §Estratégia 6.2
+// Critérios cobertos: CT-F25, CT-F26, CT-F27, CT-F28, CT-F29, CT-F30, CT-B07
+// ---------------------------------------------------------------------------
+
+/**
+ * Tipo local que reflete o shape completo de `GenerateSpeedPaintOptions`
+ * **após** a implementação da L1 (RF-04). O `GenerateSpeedPaintOptions` de
+ * produção hoje só declara `useWorker` — `renderMode` e `vetorialPreset`
+ * ainda serão adicionados pela L1. Este tipo é a fonte de verdade dos testes
+ * e serve como regression test para que a refatoração de produção mantenha
+ * este contrato.
+ */
+type L1GenerateSpeedPaintOptions = {
+  useWorker?: boolean;
+  renderMode?: 'mask' | 'vetorial';
+  vetorialPreset?: VetorialPreset;
+};
+
+/**
+ * Helper para construir options de `generateScenesWithSpeedPaint` com os
+ * campos da L1 sem disparar erro de TypeScript antes da refatoração de
+ * produção. O cast duplo (`as unknown as ...`) é necessário porque o
+ * `GenerateSpeedPaintOptions` atual não conhece `renderMode`/`vetorialPreset`.
+ *
+ * Quando a L1 for implementada, este cast pode ser removido e o tipo
+ * exportado de produção pode substituir `L1GenerateSpeedPaintOptions`.
+ */
+function makeL1Options(
+  opts: L1GenerateSpeedPaintOptions,
+): Parameters<typeof import('../../src/features/video-render/lib/speedPaintRenderer').generateScenesWithSpeedPaint>[2] {
+  return opts as unknown as Parameters<
+    typeof import('../../src/features/video-render/lib/speedPaintRenderer').generateScenesWithSpeedPaint
+  >[2];
+}
+
+/**
+ * Stub mínimo de `VetorialAnimation` para uso nos testes de propagação.
+ * Espelha os campos obrigatórios de `VetorialAnimation` (definidos em
+ * `src/features/speed-paint/types/vetorial.ts:67-87`) e permite que o
+ * type guard `isVetorialAnimation` faça narrowing corretamente.
+ */
+function createMinimalVetorialAnimation(
+  overrides?: Partial<VetorialAnimation>,
+): VetorialAnimation {
+  return {
+    id: 'vetorial-test-1',
+    canvasWidth: 100,
+    canvasHeight: 100,
+    canvasColor: 'white',
+    paths: [],
+    totalLength: 0,
+    fps: 30,
+    totalDurationMs: 333,
+    sourcePreset: 'artistic1',
+    ...overrides,
+  };
+}
+
+describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
+  beforeEach(() => {
+    // Limpa cache de módulos para que cada teste receba mocks atualizados
+    vi.resetModules();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Bloco A — Propagação de renderMode/vetorialPreset
+  // ---------------------------------------------------------------------------
+
+  it('CT-F25: renderMode=vetorial + vetorialPreset=detailed → getStrokeAnimation recebe { mode: vetorial, preset: detailed }', async () => {
+    // Arrange — mock do strokeCache e imageProcessing (cena vai para cache miss)
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalVetorialAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      // Type guards reais (espelham os de strokeCache.ts) para narrowar a union
+      // antes de chamar setStrokeAnimation — sem isso o narrow falha no mock
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    // Re-importa o módulo sob teste após resetModules + doMock
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+    );
+
+    // Assert — cache lookup DEVE ser discriminado por mode+preset (Premissa #10)
+    expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', {
+      mode: 'vetorial',
+      preset: 'detailed',
+    });
+    expect(mockGetStroke).toHaveBeenCalledTimes(1);
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F26: renderMode=mask → getStrokeAnimation recebe { mode: mask } (sem preset)', async () => {
+    // Arrange
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'mask', useWorker: false }),
+    );
+
+    // Assert — modo mask DEVE propagar { mode: 'mask' } mesmo sem preset
+    expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', { mode: 'mask' });
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F27: renderMode undefined → cache lookup com { mode: mask } (retrocompat CT-C05)', async () => {
+    // Arrange — sem options ou sem renderMode, comportamento deve cair em mask
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act — sem options (use case legado v0.131.0)
+    await generateScenesWithSpeedPaint([{ imageUrl: 'scene1.png' }]);
+
+    // Assert — a L1 cai para `effectiveMode = 'mask'` e DEVE passar o context
+    // { mode: 'mask' } (a chave SHA-256 do cache inclui mode, evitando colisão).
+    // Garante retrocompatibilidade (CT-C05): projetos v0.131.0 continuam
+    // funcionando porque o modo mask é o default.
+    expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', { mode: 'mask' });
+    expect(mockGetStroke).toHaveBeenCalledTimes(1);
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F28: renderMode=vetorial + cache miss → generateStrokesFromImage recebe { renderMode, vetorialPreset }', async () => {
+    // Arrange — cache miss → fluxo cai em generateStrokesFromImage
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalVetorialAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'curvy', useWorker: false }),
+    );
+
+    // Assert — generateStrokesFromImage DEVE receber os options de L1
+    expect(mockGenerateStrokes).toHaveBeenCalledWith(
+      'scene1.png',
+      expect.any(Function), // onProgress callback
+      expect.objectContaining({
+        renderMode: 'vetorial',
+        vetorialPreset: 'curvy',
+      }),
+    );
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F29: renderMode=vetorial → setStrokeAnimation recebe { mode: vetorial, preset: X } ao cachear', async () => {
+    // Arrange
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalVetorialAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'artistic1', useWorker: false }),
+    );
+
+    // Assert — setStrokeAnimation DEVE receber o context discriminado
+    expect(mockSetStroke).toHaveBeenCalledWith(
+      'scene1.png',
+      expect.any(Object), // VetorialAnimation
+      { mode: 'vetorial', preset: 'artistic1' },
+    );
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Bloco B — Casos de borda
+  // ---------------------------------------------------------------------------
+
+  it('CT-F30: renderMode=vetorial sem vetorialPreset → preset fica undefined no spy (default aplicado internamente pelo cache)', async () => {
+    // Arrange — sem vetorialPreset, o `speedPaintRenderer` propaga `undefined`
+    // para o cache. O default 'artistic1' (DEFAULT_VETORIAL_PRESET) é aplicado
+    // INTERNAMENTE em `getStrokeAnimation` (strokeCache.ts:187).
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalVetorialAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', useWorker: false }),
+    );
+
+    // Assert — o spy recebe o `preset: undefined` que o renderer propaga.
+    // A camada do cache (não mockada) é que aplica o default 'artistic1' —
+    // este comportamento é coberto em `tests/video-render/strokeCache.unit.test.ts`.
+    expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', {
+      mode: 'vetorial',
+      preset: undefined,
+    });
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-B07: renderMode=mask ignora vetorialPreset mesmo se passado', async () => {
+    // Arrange — modo mask com vetorialPreset não deve vazar para o cache
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(createMinimalAnimation());
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act — passa vetorialPreset mas com renderMode=mask
+    await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'mask', vetorialPreset: 'detailed', useWorker: false }),
+    );
+
+    // Assert — cache lookup DEVE ser mask puro, sem vazar o preset vetorial
+    // A assinatura do overload do `getStrokeAnimation` ({ mode: 'mask'; preset?: never })
+    // garante que o TypeScript rejeita preset em modo mask em compile-time.
+    expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', { mode: 'mask' });
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Bloco C — Cobertura adicional: cache hit + type guards
+  // ---------------------------------------------------------------------------
+
+  it('CT-F31: cache hit em modo vetorial → generateStrokesFromImage NÃO é chamado (linha 463)', async () => {
+    // Arrange — mock do strokeCache retorna cache hit (VetorialAnimation)
+    const cachedVetorial = createMinimalVetorialAnimation({ id: 'cached' });
+    const mockGetStroke = vi.fn().mockResolvedValue(cachedVetorial);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn();
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    const results = await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+    );
+
+    // Assert — cache hit evita reprocessamento (CT-F13 do plano §L3)
+    expect(mockGenerateStrokes).not.toHaveBeenCalled();
+    expect(mockSetStroke).not.toHaveBeenCalled(); // também não grava (já está em cache)
+    expect(results).toHaveLength(1);
+    expect(results[0].animation).toBe(cachedVetorial);
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F32: type guard detecta shape errado em modo vetorial → graceful degradation', async () => {
+    // Arrange — generateStrokesFromImage retorna shape errado (StrokeAnimation
+    // em vez de VetorialAnimation) — o type guard de runtime deve capturar.
+    const wrongShape = createMinimalAnimation({ id: 'wrong-shape' });
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(wrongShape);
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    const results = await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+    );
+
+    // Assert — falha do type guard é capturada pelo try/catch e vira
+    // graceful degradation (animation undefined + error message)
+    expect(mockSetStroke).not.toHaveBeenCalled(); // cache não foi poluído
+    expect(results).toHaveLength(1);
+    expect(results[0].animation).toBeUndefined();
+    expect(results[0].error).toContain("esperava VetorialAnimation");
+    expect(results[0].sceneIndex).toBe(0);
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
+  });
+
+  it('CT-F33: type guard detecta shape errado em modo mask → graceful degradation', async () => {
+    // Arrange — generateStrokesFromImage retorna shape errado (VetorialAnimation
+    // em vez de StrokeAnimation) — o type guard de runtime deve capturar.
+    const wrongShape = createMinimalVetorialAnimation({ id: 'wrong-shape-mask' });
+    const mockGetStroke = vi.fn().mockResolvedValue(null);
+    const mockSetStroke = vi.fn().mockResolvedValue(undefined);
+    const mockGenerateStrokes = vi.fn().mockResolvedValue(wrongShape);
+
+    vi.doMock('../../src/features/video-render/lib/strokeCache', () => ({
+      getStrokeAnimation: mockGetStroke,
+      setStrokeAnimation: mockSetStroke,
+      isVetorialAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalLength' in a,
+      isStrokeAnimation: (a: unknown) =>
+        typeof a === 'object' && a !== null && 'totalFrames' in a,
+    }));
+    vi.doMock('../../src/features/speed-paint/lib/imageProcessing', () => ({
+      generateStrokesFromImage: mockGenerateStrokes,
+    }));
+    vi.doMock('../../src/features/video-render/lib/strokeWorker', () => ({
+      createStrokeWorker: vi.fn(),
+      terminateStrokeWorker: vi.fn(),
+      processSceneInWorker: vi.fn().mockResolvedValue(null),
+      supportsStrokeWorker: vi.fn().mockReturnValue(false),
+    }));
+
+    const { generateScenesWithSpeedPaint } = await import(
+      '../../src/features/video-render/lib/speedPaintRenderer'
+    );
+
+    // Act
+    const results = await generateScenesWithSpeedPaint(
+      [{ imageUrl: 'scene1.png' }],
+      undefined,
+      makeL1Options({ renderMode: 'mask', useWorker: false }),
+    );
+
+    // Assert — falha do type guard em modo mask é capturada
+    expect(mockSetStroke).not.toHaveBeenCalled();
+    expect(results).toHaveLength(1);
+    expect(results[0].animation).toBeUndefined();
+    expect(results[0].error).toContain("esperava StrokeAnimation");
+    expect(results[0].sceneIndex).toBe(0);
+
+    vi.doUnmock('../../src/features/video-render/lib/strokeCache');
+    vi.doUnmock('../../src/features/speed-paint/lib/imageProcessing');
+    vi.doUnmock('../../src/features/video-render/lib/strokeWorker');
   });
 });

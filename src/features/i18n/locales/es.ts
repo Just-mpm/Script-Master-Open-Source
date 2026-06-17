@@ -1411,6 +1411,63 @@ export const es: TranslationDictionary = {
     modeClassic: 'Modo Clásico',
     modeVetorial: 'Modo Dibujo',
     modeDescription: 'Clásico: revelación por máscara (rápido, ideal para fotos). Dibujo: animación vectorial con paths SVG (más expresivo, ideal para ilustraciones).',
+    modeClassicTooltip: 'Revelado por máscara — rápido e ideal para fotos.',
+    modeVetorialTooltip: 'Animación vectorial con paths SVG — más expresivo, ideal para ilustraciones y line art.',
+    modeProcessingError: 'Error al reprocesar la imagen en el modo seleccionado.',
+    modeProcessingRetry: 'Reintentar',
+    processingLabel: 'Reprocesando imagen',
+    // Selector de `vetorialPreset` (RF-03 / Fase 4.2) — visible solo en el
+    // modo Dibujo (vetorial). Tooltip (D08) avisa que las fotos pueden no
+    // verse ideales. 16 opciones en 6 grupos (D05: `presets.{name}` + `presetGroups.{group}`).
+    vetorialPresetLabel: 'Estilo del dibujo',
+    vetorialPresetTooltip: 'El modo Dibujo funciona mejor con ilustraciones y line art. Las fotos pueden no verse ideales.',
+    // Selector de `vetorialSortOrder` (L9, RF-09) — orden de dibujo de los
+    // paths SVG en el modo Dibujo (vetorial). 4 opciones discretas; el
+    // cambio reprocesa la imagen actual con la nueva ordenación.
+    sortOrderLabel: 'Orden de Dibujo',
+    sortOrderTopDown: 'Arriba a Abajo',
+    sortOrderCenterOut: 'Centro hacia Afuera',
+    sortOrderBigFirst: 'Más Grandes Primero',
+    sortOrderRandom: 'Aleatorio',
+    // Selector de `easing` (L10, RF-10) — curva de progresión de la
+    // animación en el modo Dibujo (vetorial). 3 opciones discretas; el
+    // cambio es reactivo (la próxima renderización del reproductor ya usa
+    // la nueva curva, sin reprocesar).
+    easingLabel: 'Suavizado',
+    easingLinear: 'Lineal',
+    easingSmooth: 'Suave',
+    easingBounce: 'Rebote',
+    presetGroups: {
+      'edge-detection': 'Detección de bordes',
+      artistic: 'Artístico',
+      posterized: 'Posterizado',
+      smoothed: 'Suavizado',
+      detailed: 'Detallado',
+      grayscale: 'Escala de grises',
+      sampling: 'Muestreo',
+    },
+    presets: {
+      default: 'Predeterminado',
+      posterized1: 'Posterizado 1',
+      posterized2: 'Posterizado 2',
+      posterized3: 'Posterizado 3',
+      curvy: 'Curvas',
+      sharp: 'Nítido',
+      detailed: 'Detallado',
+      smoothed: 'Suavizado',
+      grayscale: 'Escala de grises',
+      fixedpalette: 'Paleta fija',
+      randomsampling1: 'Muestreo 1',
+      randomsampling2: 'Muestreo 2',
+      artistic1: 'Artístico 1',
+      artistic2: 'Artístico 2',
+      artistic3: 'Artístico 3',
+      artistic4: 'Artístico 4',
+      'edge-default': 'Borde predeterminado',
+      'edge-detailed': 'Borde detallado',
+      'edge-bold': 'Borde grueso',
+      'edge-sketch': 'Borde boceto',
+    },
     speedLabels: {
       verySlow: 'muy lento',
       slow: 'lento',

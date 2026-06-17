@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
+import { useVideoRenderBridge } from '../../src/features/video-render/store/videoRenderBridge';
+import { useAnimationStore } from '../../src/features/speed-paint/store/animationStore';
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -410,6 +413,75 @@ it('chama startRender ao clicar em exportar', () => {
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} audioUrl={null} exporter={exporter} />);
       expect(exporter.checkSupport).not.toHaveBeenCalled();
+    });
+  });
+
+  // --- L7 (RF-06): seletor de modo (Clássico | Desenho) ---
+
+  describe('L7 — seletor de modo Clássico/Desenho', () => {
+    it('CT-F36: ToggleButtonGroup aparece quando animateScenes === true', () => {
+      // Arrange — defaultProps tem animateScenes = true (prop default)
+      render(<VideoExportPanel {...defaultProps} />);
+      // Assert
+      expect(screen.getByTestId('video-export-mode-toggle')).toBeInTheDocument();
+      // Botões individuais existem
+      expect(screen.getByTestId('video-export-mode-mask')).toBeInTheDocument();
+      expect(screen.getByTestId('video-export-mode-vetorial')).toBeInTheDocument();
+    });
+
+    it('CT-F37: ToggleButtonGroup NÃO aparece quando animateScenes === false', () => {
+      // Arrange — animação desligada explicitamente
+      render(<VideoExportPanel {...defaultProps} animateScenes={false} />);
+      // Assert — toggle sumiu
+      expect(screen.queryByTestId('video-export-mode-toggle')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('video-export-mode-mask')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('video-export-mode-vetorial')).not.toBeInTheDocument();
+    });
+
+    it('CT-F38: clicar em "Desenho" dispara syncRenderMode da videoRenderBridge (override local)', () => {
+      // Arrange — reset do bridge para estado conhecido
+      useVideoRenderBridge.getState().resetBridge();
+      const initialAnimationRenderMode = useAnimationStore.getState().renderMode;
+      const initialAnimationPreset = useAnimationStore.getState().vetorialPreset;
+      const initialBridgePreset = useVideoRenderBridge.getState().vetorialPreset;
+
+      render(<VideoExportPanel {...defaultProps} />);
+
+      // Act — clica no botão "Desenho" (vetorial)
+      act(() => {
+        fireEvent.click(screen.getByTestId('video-export-mode-vetorial'));
+      });
+
+      // Assert — bridge foi atualizada para vetorial
+      const bridgeState = useVideoRenderBridge.getState();
+      expect(bridgeState.renderMode).toBe('vetorial');
+      // Preset vigente é preservado (não troca junto)
+      expect(bridgeState.vetorialPreset).toBe(initialBridgePreset);
+
+      // Assert — animationStore global NÃO foi tocada (escopo de sessão)
+      const animationState = useAnimationStore.getState();
+      expect(animationState.renderMode).toBe(initialAnimationRenderMode);
+      expect(animationState.vetorialPreset).toBe(initialAnimationPreset);
+    });
+
+    it('CT-F39: renderMode e vetorialPreset da bridge são propagados para startRender', () => {
+      // Arrange — força modo vetorial na bridge
+      useVideoRenderBridge.getState().resetBridge();
+      useVideoRenderBridge.getState().syncRenderMode('vetorial', 'curvy');
+      const exporter = makeExporter();
+      render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
+
+      // Act — clica em exportar
+      const exportBtn = screen.getByRole('button', { name: /exportar vídeo/i });
+      act(() => {
+        fireEvent.click(exportBtn);
+      });
+
+      // Assert — options do startRender carregam renderMode + vetorialPreset
+      expect(exporter.startRender).toHaveBeenCalledTimes(1);
+      const callArgs = exporter.startRender.mock.calls[0][0] as Record<string, unknown>;
+      expect(callArgs.renderMode).toBe('vetorial');
+      expect(callArgs.vetorialPreset).toBe('curvy');
     });
   });
 });

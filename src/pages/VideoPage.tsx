@@ -34,6 +34,7 @@ import { useVideoRenderBridge } from '../features/video-render/store/videoRender
 import { DEFAULT_SUBTITLE_STYLE } from '../features/video-render/types';
 import type { SubtitleStyle, SubtitlePosition } from '../features/video-render/types';
 import { useStudioStore, VIDEO_FPS, useAudioGeneratorStore, getAudioDurationSeconds } from '../features/studio/store';
+import { useAnimationStore } from '../features/speed-paint/store/animationStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale } from '../features/i18n';
@@ -222,6 +223,16 @@ export function VideoPage({
   useEffect(() => {
     useVideoRenderBridge.getState().syncTranscriptionState(isTranscribing, transcriptionProgress, transcriptionStatusText);
   }, [isTranscribing, transcriptionProgress, transcriptionStatusText]);
+
+  // --- L7 (RF-06) — sincronização inicial do modo de renderização ---
+  // Ao montar a VideoPage, copia `renderMode` + `vetorialPreset` da
+  // `useAnimationStore` (global) para a `videoRenderBridge` (escopo de
+  // sessão). Override local NÃO vaza para a `SpeedPaintPage` (D03 — MDE-12).
+  // O array de deps vazio garante que o sync roda apenas no mount.
+  useEffect(() => {
+    const { renderMode, vetorialPreset } = useAnimationStore.getState();
+    useVideoRenderBridge.getState().syncRenderMode(renderMode, vetorialPreset);
+  }, []);
 
   // --- Efeitos locais ---
 

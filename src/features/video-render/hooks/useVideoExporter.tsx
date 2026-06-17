@@ -27,6 +27,7 @@ import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { CaptionWord, SubtitleStyle, VideoExportQuality } from '../types';
 import type { SpeedPaintSpeed, SpeedPaintMultipliers } from '../types';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../../speed-paint/types';
 import type { SceneRatio, StudioScene } from '../../studio/types';
 import { useCodecSupport } from './useCodecSupport';
 import { downloadFile } from '../../../lib/download';
@@ -56,6 +57,14 @@ export interface VideoExportOptions {
   animateScenes?: boolean;
   /** Exibe o lápis/pincel animado durante o speed paint */
   showDrawTool?: boolean;
+  /** Modo de renderização do Speed Paint (L7 / RF-06). `undefined` ou
+   *  `'mask'` preserva o comportamento legado (raspadinha). `'vetorial'`
+   *  aciona a animação whiteboard via `imagetracerjs`. Lido da
+   *  `videoRenderBridge` na `VideoPage` para manter escopo de sessão. */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset do `imagetracerjs` (só aplicado quando `renderMode === 'vetorial'`).
+   *  Ignorado em modo `'mask'`. Lido da `videoRenderBridge` na `VideoPage`. */
+  vetorialPreset?: VetorialPreset;
   /** Velocidade da animação speed paint (default: 'normal') */
   speedPaintSpeed?: SpeedPaintSpeed;
   /** Multiplicadores de velocidade separados para sketch/reveal — se fornecido, sobrepõe speedPaintSpeed */

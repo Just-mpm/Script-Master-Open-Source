@@ -29,9 +29,16 @@
  */
 
 import React from 'react';
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import {
+  AbsoluteFill,
+  Easing,
+  interpolate,
+  useCurrentFrame,
+  type EasingFunction,
+} from 'remotion';
 import { getPointAtLength } from '@remotion/paths';
 import type { VetorialAnimation, VetorialPath } from '../../speed-paint/types/vetorial';
+import { createLogger } from '../../../lib/logger';
 
 // ---------------------------------------------------------------------------
 // Tipos auxiliares
@@ -45,6 +52,84 @@ interface PathPoint {
 
 /** Cor de fundo do canvas — consistente com `StrokeAnimation.canvasColor`. */
 type CanvasColor = 'white' | 'black';
+
+// ---------------------------------------------------------------------------
+// Logger
+// ---------------------------------------------------------------------------
+
+const log = createLogger('WhiteboardScene');
+
+// ---------------------------------------------------------------------------
+// Helper seguro para getPointAtLength
+// ---------------------------------------------------------------------------
+
+/**
+ * Wrapper à prova de falhas em torno de `getPointAtLength` do `@remotion/paths`.
+ *
+ * ## Por que este wrapper é necessário
+ *
+ * O `getPointAtLength(path.d, length)` pode lançar exceção se:
+ * - O path `d` for malformado (edge case raro do `imagetracerjs`)
+ * - O `length` for negativo ou exceder o comprimento do path (floating-point)
+ *
+ * Quando `getPointAtLength` falha síncrono dentro do componente React,
+ * o erro borbulha para o ErrorBoundary do Remotion, que interrompe a
+ * renderização do frame e propaga para `renderMediaOnWeb` como erro
+ * de exportação. Este wrapper captura a exceção e retorna `{ x: 0, y: 0 }`
+ * como fallback, preservando a renderização mesmo em caso de path inválido.
+ *
+ * @param d - Atributo `d` do path SVG.
+ * @param length - Comprimento ao longo do path (0 = início).
+ * @returns Coordenada do ponto, ou `{ x: 0, y: 0 }` em caso de erro.
+ */
+function safeGetPointAtLength(d: string, length: number): PathPoint {
+  try {
+    return getPointAtLength(d, length);
+  } catch (err) {
+    log.error('getPointAtLength falhou — usando fallback (0,0)', {
+      d: `${d.substring(0, 80)}...`,
+      length,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { x: 0, y: 0 };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Constantes de motion blur e tremor (L11, RF-11 + RF-12)
+// ---------------------------------------------------------------------------
+
+/**
+ * Limite de velocidade (px/frame) para ativar o motion blur na caneta
+ * (L11, RF-12). Abaixo desse valor a caneta parece "parada" e o blur
+ * fica imperceptível — manter filtro inativo preserva FPS.
+ */
+const BLUR_THRESHOLD = 1.5;
+
+/**
+ * `stdDeviation` máximo (em pixels SVG) do `feGaussianBlur`. Limite
+ * superior evita degradação visual e mantém performance aceitável
+ * em frames de exportação (RF-12 + RNF-02).
+ */
+const MAX_BLUR_STD_DEVIATION = 3;
+
+/**
+ * Coeficiente de conversão de velocidade (px/frame) em `stdDeviation`.
+ * `stdDeviation = min(speed * BLUR_COEFFICIENT, MAX_BLUR_STD_DEVIATION)`.
+ */
+const BLUR_COEFFICIENT = 0.05;
+
+/**
+ * Amplitude do tremor determinístico (RF-11) — em pixels SVG. Valor
+ * pequeno (0.3) para parecer "mão humana" sem distrair do desenho.
+ */
+const PEN_TREMOR_AMPLITUDE = 0.3;
+
+/**
+ * Frequência angular do tremor — combinada com `frame` e `pathIndex`
+ * para que cada path tenha tremor único, sem repetição visível.
+ */
+const PEN_TREMOR_FREQUENCY = 0.5;
 
 // ---------------------------------------------------------------------------
 // Props
@@ -63,6 +148,25 @@ export interface WhiteboardSceneProps {
   showDrawTool?: boolean;
   /** Override da cor de fundo — default: `animation.canvasColor` (Premissa #14). */
   canvasColor?: CanvasColor;
+  /**
+   * Easing da progressão da animação (L10, RF-10). Default: `Easing.inOut(Easing.ease)`
+   * (curva `smooth` estilo InstaDoodle). O consumidor pode passar `Easing.linear` para
+   * velocidade constante ou `Easing.out(Easing.bounce)` para o efeito quicado.
+   */
+  easing?: EasingFunction;
+  /**
+   * Escala da caneta SVG (`Pencil`). Default derivado do `strokeWidth` do
+   * primeiro path: `(animation.paths[0]?.strokeWidth ?? 2) / 4`.
+   * - `strokeWidth` 8 → `penScale` 2 (caneta 2× maior)
+   * - `strokeWidth` 2 → `penScale` 0.5 (caneta menor)
+   * - `paths` vazio → `penScale` 0.5 (fallback)
+   *
+   * Ajuste manual para caneta custom (ex: `0.5` = menor, `3` = gigante).
+   * A escala é aplicada a partir do **centro** do `<Pencil>` via
+   * `transformBox: 'fill-box'` + `transformOrigin: 'center center'` —
+   * evita que a caneta "voe" para fora da ponta do traço ao escalar.
+   */
+  penScale?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,8 +207,21 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
   // API pública (placeholders para uso futuro pelo `WhiteboardComposition`
   // da Fase 3.2) mas não são usados aqui — não desestruturamos para evitar
   // warning de `no-unused-vars`.
-  const { animation, durationInFrames, showDrawTool = true, canvasColor } = props;
+  const {
+    animation,
+    durationInFrames,
+    showDrawTool = true,
+    canvasColor,
+    easing,
+    // `penScale` tem default calculado a partir de `strokeWidth` (abaixo) —
+    // não usar destructuring default porque depende de `animation.paths[0]`.
+  } = props;
   const frame = useCurrentFrame();
+
+  // `penScale` efetivo: prop explícita do consumidor OU derivado do `strokeWidth`
+  // do primeiro path (RF-19 — escala da caneta proporcional ao traço).
+  // `paths[0]?.strokeWidth ?? 2` cobre o caso `paths` vazio (fallback 0.5).
+  const effectivePenScale = props.penScale ?? (animation.paths[0]?.strokeWidth ?? 2) / 4;
 
   // 1. Comprimentos pré-calculados (Fase 1.2 já populou `path.length`).
   //    O `useMemo` evita criar um novo array a cada frame — estável enquanto
@@ -120,11 +237,18 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
   const totalDrawingLength = animation.totalLength;
 
   // 2. Quanto já foi desenhado neste frame? (0 → totalDrawingLength).
+  //    L10 (RF-10): `easing` opcional controla a curva de progressão.
+  //    Default `smooth` = `Easing.inOut(Easing.ease)` (padrão InstaDoodle).
   const drawnLength = interpolate(
     frame,
-    [0, durationInFrames],
+    [0, durationInFrames - 1],
     [0, totalDrawingLength],
-    { extrapolateRight: 'clamp' },
+    {
+      // `durationInFrames - 1` evita `drawnLength === totalDrawingLength`
+      // prematuramente (Remotion usa range inclusivo no `interpolate`).
+      easing: easing ?? Easing.inOut(Easing.ease),
+      extrapolateRight: 'clamp',
+    },
   );
 
   // 3. Classifica cada path em completo / parcial / não começado.
@@ -156,6 +280,12 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
   //    - Antes do primeiro path: caneta escondida
   let showPen = showDrawTool && totalDrawingLength > 0;
   let penPosition: PathPoint = { x: 0, y: 0 };
+  // Posição da caneta no frame anterior — usada por L11 (RF-12) para
+  // calcular a velocidade tangencial e aplicar motion blur proporcional.
+  let prevPenPosition: PathPoint = { x: 0, y: 0 };
+  // Índice do path ativo (em progresso). Alimenta o tremor determinístico
+  // da caneta (RF-11) — diferente para cada path, evita tremor "global".
+  let activePathIndex = -1;
 
   // Procura o path parcial (em progresso) — apenas 1 por definição.
   const activePath = renderedPaths.find(
@@ -163,7 +293,16 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
   );
 
   if (activePath) {
-    penPosition = getPointAtLength(activePath.path.d, activePath.visibleLength);
+    const activeIndex = renderedPaths.indexOf(activePath);
+    activePathIndex = activeIndex;
+    penPosition = safeGetPointAtLength(activePath.path.d, activePath.visibleLength);
+    // Posição "anterior" usada para calcular a tangente (delta por frame).
+    // Usamos `visibleLength - delta` onde `delta = totalDrawingLength / frames`
+    // é a distância percorrida estimada por frame. Se ficar negativo, fica
+    // em (0, 0) — não há path visível antes do início.
+    const deltaPerFrame = durationInFrames > 0 ? totalDrawingLength / durationInFrames : 0;
+    const prevVisible = Math.max(0, activePath.visibleLength - deltaPerFrame);
+    prevPenPosition = safeGetPointAtLength(activePath.path.d, prevVisible);
   } else {
     // Fallback: último path COMPLETO com comprimento > 0.
     // Itera de trás pra frente — O(N) no pior caso, mas tipicamente
@@ -179,7 +318,11 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
     if (lastCompleteIdx >= 0) {
       const complete = renderedPaths[lastCompleteIdx];
       if (complete) {
-        penPosition = getPointAtLength(complete.path.d, complete.pathLen);
+        activePathIndex = lastCompleteIdx;
+        penPosition = safeGetPointAtLength(complete.path.d, complete.pathLen);
+        // Em path completo, a caneta está parada na ponta — prev = current
+        // (velocidade 0, motion blur desativado).
+        prevPenPosition = penPosition;
       } else {
         showPen = false;
       }
@@ -188,7 +331,35 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
     }
   }
 
+  // Velocidade tangencial (px/frame) — RF-12. Quando speed > threshold
+  // (1.5px/frame), aplica motion blur na caneta. Quando speed é 0
+  // (caneta parada na ponta de path completo), o filtro fica inativo.
+  const speed = Math.hypot(
+    penPosition.x - prevPenPosition.x,
+    penPosition.y - prevPenPosition.y,
+  );
+  // `stdDeviation` calculado aqui (L11, RF-12) e propagado para o
+  // `<Pencil>` — facilita a composição do filtro no `<defs>` do `<svg>`
+  // raiz (best practice SVG) sem duplicar lógica.
+  const stdDeviation =
+    speed > BLUR_THRESHOLD
+      ? Math.min(speed * BLUR_COEFFICIENT, MAX_BLUR_STD_DEVIATION)
+      : 0;
+
   const effectiveCanvasColor: CanvasColor = canvasColor ?? animation.canvasColor;
+
+  // Early return: sem paths para desenhar. Evita que `interpolate` receba
+  // range `[0, totalDrawingLength]` com `totalDrawingLength = 0` e também
+  // previne `<svg>` vazio de causar problemas no WebCodecs.
+  if (totalDrawingLength <= 0) {
+    return (
+      <AbsoluteFill
+        style={{
+          backgroundColor: effectiveCanvasColor === 'white' ? '#fff' : '#000',
+        }}
+      />
+    );
+  }
 
   return (
     <AbsoluteFill
@@ -204,6 +375,27 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
         // Acessibilidade: descreve a cena para leitores de tela.
         aria-label={`Animação whiteboard com ${animation.paths.length} traços vetoriais`}
       >
+        {/* Defs do SVG: filtros compartilhados. `<defs>` no `<svg>` raiz
+            (best practice) garante que `url(#id)` resolva de qualquer
+            ponto do documento. Não tem impacto visual (defs não renderiza). */}
+        <defs>
+          {/* Filtro composto da caneta (L11, RF-11 + RF-12): motion blur
+              proporcional à velocidade + sombra suave. O `<feGaussianBlur>`
+              é condicional — só é emitido quando `stdDeviation > 0` para
+              evitar custo desnecessário em frames de caneta parada. */}
+          <filter id="pencil-fx" x="-50%" y="-50%" width="200%" height="200%">
+            {stdDeviation > 0 && (
+              <feGaussianBlur in="SourceGraphic" stdDeviation={stdDeviation} />
+            )}
+            <feDropShadow
+              dx="5"
+              dy="5"
+              stdDeviation="5"
+              floodColor="#000000"
+              floodOpacity="0.3"
+            />
+          </filter>
+        </defs>
         {/* Paths animados: cada um desenha progressivamente via strokeDashoffset. */}
         {renderedPaths.map(({ path, visibleLength, pathLen }, i) => {
           if (visibleLength === 0) return null;
@@ -223,13 +415,25 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
           );
         })}
 
-        {/* Caneta SVG inline — portabilidade total dentro do mesmo <svg>. */}
+        {/* Caneta SVG inline — portabilidade total dentro do mesmo <svg>.
+            Wrapper externo aplica `scale(penScale)` a partir do CENTRO do
+            conteúdo (via `transformBox: 'fill-box' + transformOrigin: 'center'`)
+            para que a caneta escale uniformemente sem "voar" para fora da
+            ponta do traço. A transformação interna do `<Pencil>`
+            (`translate(x y) rotate(-45)`) continua inalterada. */}
         {showPen && (
-          <Pencil
-            x={penPosition.x}
-            y={penPosition.y}
-            canvasColor={effectiveCanvasColor}
-          />
+          <g
+            transform={`scale(${effectivePenScale})`}
+            style={{ transformBox: 'fill-box', transformOrigin: 'center center' }}
+          >
+            <Pencil
+              x={penPosition.x}
+              y={penPosition.y}
+              canvasColor={effectiveCanvasColor}
+              frame={frame}
+              pathIndex={activePathIndex}
+            />
+          </g>
         )}
       </svg>
     </AbsoluteFill>
@@ -247,6 +451,10 @@ interface PencilProps {
   y: number;
   /** Cor do canvas — usado para escolher a paleta da caneta (contraste). */
   canvasColor: CanvasColor;
+  /** Frame atual do Remotion (usado no tremor determinístico — RF-11). */
+  frame: number;
+  /** Índice do path ativo (-1 se nenhum) — usado no tremor (RF-11). */
+  pathIndex: number;
 }
 
 /**
@@ -258,7 +466,7 @@ interface PencilProps {
  * | Canvas 2D                          | SVG                                |
  * |------------------------------------|------------------------------------|
  * | `ctx.translate(x, y)` + `rotate()` | `transform="translate(...) rotate(-45)"` |
- * | `ctx.shadowColor/Blur/OffsetX/Y`   | `filter="drop-shadow(...)"`        |
+ * | `ctx.shadowColor/Blur/OffsetX/Y`   | `<feDropShadow>` no `<defs>` (L11) |
  * | `ctx.fillStyle` + `fillRect`       | `<rect fill="..." />`              |
  * | `ctx.beginPath()` + `lineTo`       | `<polygon points="..." fill="..." />` |
  *
@@ -266,10 +474,26 @@ interface PencilProps {
  * externo, mantém o estilo visual já validado do `SpeedPaintScene`, e
  * permite que a caneta reaja dinamicamente às coordenadas dos paths.
  *
- * **Determinismo:** o efeito de "bob" (flutuação) é puramente matemático
- * (`Math.sin(x * 0.1 + y * 0.1) * 2`) — mesmo x/y → mesma flutuação.
+ * **Determinismo:** o efeito de "bob" (flutuação) e o tremor (RF-11) são
+ * puramente matemáticos a partir de `frame`, `pathIndex`, `x` e `y`
+ * — sem `Math.random()` em momento algum. Mesmos inputs → mesma saída
+ * em qualquer renderização (compatível com export determinístico).
+ *
+ * **L11 — RF-11 (caneta realista):** tremor subpixel `Math.sin(frame * F + pathIndex) * A`
+ * (F = `PEN_TREMOR_FREQUENCY`, A = `PEN_TREMOR_AMPLITUDE`). O `pathIndex`
+ * faz cada path ter tremor único, evitando sincronia artificial.
+ *
+ * **L11 — RF-12 (motion blur):** filtro `<feGaussianBlur>` no `<g>` da
+ * caneta com `stdDeviation = min(speed * 0.05, 3)`, ativo apenas quando
+ * `speed > 1.5px/frame`. Mantém performance em frames de caneta parada.
  */
-function Pencil({ x, y, canvasColor }: PencilProps): React.ReactElement {
+function Pencil({
+  x,
+  y,
+  canvasColor,
+  frame,
+  pathIndex,
+}: PencilProps): React.ReactElement {
   // Efeito de flutuação sutil — idêntico ao Canvas original.
   const bob = Math.sin(x * 0.1 + y * 0.1) * 2;
 
@@ -278,10 +502,30 @@ function Pencil({ x, y, canvasColor }: PencilProps): React.ReactElement {
   const isInverted = canvasColor === 'black';
   const bodyColor = isInverted ? '#fbbf24' : '#eab308';
 
+  // Tremor determinístico (RF-11) — quando `pathIndex >= 0`, o tremor
+  // é único por path. Quando `-1` (sem path ativo), tremor é zero
+  // (caneta não renderiza, mas defensivo). Combinação `frame` + `pathIndex`
+  // garante que cada path tem padrão próprio, sincronizado com o
+  // render mas sem repetição visível durante a animação.
+  const tremor =
+    pathIndex >= 0
+      ? Math.sin(frame * PEN_TREMOR_FREQUENCY + pathIndex) * PEN_TREMOR_AMPLITUDE
+      : 0;
+
+  // Inclinação fixa em -45° (estável) — preserva o visual validado do
+  // Canvas original. Quando evoluir para tangente dinâmica, calcular
+  // `Math.atan2(dy, dx)` da tangente do path ativo aqui.
+  const rotation = -45;
+
   return (
     <g
-      transform={`translate(${x} ${y + bob}) rotate(-45)`}
-      style={{ filter: 'drop-shadow(rgba(0,0,0,0.3) 5px 5px 5px)' }}
+      transform={`translate(${x + tremor} ${y + bob}) rotate(${rotation})`}
+      // Filtro SVG composto (`motion blur` + `sombra`) declarado no
+      // `<defs>` do `<svg>` raiz — aplicado APENAS neste `<g>` (não no
+      // `<svg>` inteiro — evita corte de sombra/blur nas bordas do canvas,
+      // CT-F67). O `feGaussianBlur` interno é condicional (omitido quando
+      // `stdDeviation === 0`).
+      filter="url(#pencil-fx)"
     >
       {/* Borracha (topo do lápis) */}
       <rect x={-8} y={-120} width={16} height={10} fill="#fca5a5" />

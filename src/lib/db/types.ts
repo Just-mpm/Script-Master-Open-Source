@@ -97,6 +97,11 @@ export interface UserSetting {
    * Sincronizado via dual storage (Firestore/IndexedDB) pelo padrão do projeto.
    */
   speedPaintRenderMode?: 'mask' | 'vetorial';
+  /**
+   * Ordem de desenho dos paths SVG no modo vetorial do Speed Paint (L9, RF-09).
+   * Default: 'top-down'. Sincronizado via dual storage (Firestore/IndexedDB).
+   */
+  speedPaintVetorialSortOrder?: 'top-down' | 'center-out' | 'big-first' | 'random';
   // Preferências do estúdio (opcionais — sincronizadas via Firestore)
   selectedVoice?: string;
   isMultiSpeaker?: boolean;

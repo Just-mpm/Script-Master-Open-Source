@@ -471,4 +471,133 @@ describe('BatchOrchestrator', () => {
 
     expect(useAnimationStore.getState().job.status).toBe('completed');
   });
+
+  // ---------------------------------------------------------------------------
+  // L5 (RF-08): propagação de `renderMode` + `vetorialPreset` da store.
+  //
+  // O `BatchOrchestrator` lê `renderMode` e `vetorialPreset` da store via
+  // `useAnimationStore.getState()` (linhas 102-108) para evitar closure stale
+  // e passa para `generateStrokesFromImage` no terceiro argumento. Esses
+  // testes fixam o comportamento e protegem contra regressão.
+  // ---------------------------------------------------------------------------
+
+  it('CT-T05: propaga renderMode "vetorial" + vetorialPreset para generateStrokesFromImage', async () => {
+    // Arrange: store configurada para modo vetorial com preset artistic1
+    useAnimationStore.setState({
+      renderMode: 'vetorial',
+      vetorialPreset: 'artistic1',
+      job: { id: '', inputImage: '', status: 'idle', progress: 0 },
+    });
+    useAnimationStore.getState().setQueue([
+      { id: 'img-1', dataUrl: 'data:image/png;base64,xxx', filename: 'a.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    // Act: renderiza e espera o effect rodar
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Assert: a chamada para generateStrokesFromImage inclui renderMode e vetorialPreset
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledTimes(1);
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledWith(
+      'data:image/png;base64,xxx',
+      expect.any(Function),
+      expect.objectContaining({
+        renderMode: 'vetorial',
+        vetorialPreset: 'artistic1',
+        signal: expect.any(AbortSignal),
+      }),
+    );
+  });
+
+  it('propaga renderMode "mask" e força vetorialPreset=undefined mesmo se store tiver preset definido', async () => {
+    // Arrange: store com vetorialPreset setado, mas renderMode='mask' deve descartá-lo
+    useAnimationStore.setState({
+      renderMode: 'mask',
+      vetorialPreset: 'detailed',
+      job: { id: '', inputImage: '', status: 'idle', progress: 0 },
+    });
+    useAnimationStore.getState().setQueue([
+      { id: 'img-1', dataUrl: 'data:image/png;base64,xxx', filename: 'a.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    // Act
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Assert: renderMode='mask' e vetorialPreset=undefined (preset da store é ignorado)
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledTimes(1);
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledWith(
+      'data:image/png;base64,xxx',
+      expect.any(Function),
+      expect.objectContaining({
+        renderMode: 'mask',
+        vetorialPreset: undefined,
+      }),
+    );
+  });
+
+  it('CT-F47: trocar renderMode durante o processamento NÃO interrompe o job atual (race protection)', async () => {
+    // Arrange: começa em modo vetorial com preset artistic1
+    useAnimationStore.setState({
+      renderMode: 'vetorial',
+      vetorialPreset: 'artistic1',
+      job: { id: '', inputImage: '', status: 'idle', progress: 0 },
+    });
+    useAnimationStore.getState().setQueue([
+      { id: 'img-1', dataUrl: 'data:image/png;base64,xxx', filename: 'a.png', status: 'pending' },
+    ]);
+    useAnimationStore.getState().setBatchMode('watch');
+
+    // Act: renderiza e espera o effect rodar (inicia processamento)
+    render(<BatchOrchestrator />, { wrapper: Wrapper });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Assert intermediário: a chamada inicial foi feita com os valores ORIGINAIS
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledTimes(1);
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledWith(
+      'data:image/png;base64,xxx',
+      expect.any(Function),
+      expect.objectContaining({
+        renderMode: 'vetorial',
+        vetorialPreset: 'artistic1',
+      }),
+    );
+
+    // Act: usuário troca o modo/preset enquanto o job está em andamento
+    act(() => {
+      useAnimationStore.getState().setRenderMode('mask');
+      useAnimationStore.getState().setVetorialPreset('curvy');
+    });
+
+    // Assert: a chamada NÃO é refeita e mantém os valores ORIGINAIS
+    // (race protection via getState() síncrono dentro do effect — ler
+    //  `processingIdRef.current` no callback de progresso preserva o job atual)
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledTimes(1);
+    expect(mockGenerateStrokesFromImage).toHaveBeenCalledWith(
+      'data:image/png;base64,xxx',
+      expect.any(Function),
+      expect.objectContaining({
+        renderMode: 'vetorial',
+        vetorialPreset: 'artistic1',
+      }),
+    );
+    // Confirma que a store realmente mudou (a race protection é apenas sobre
+    //  o job em voo, não sobre o estado da store)
+    expect(useAnimationStore.getState().renderMode).toBe('mask');
+    expect(useAnimationStore.getState().vetorialPreset).toBe('curvy');
+  });
 });

@@ -205,6 +205,8 @@ export const useVideoRenderController = create<VideoRenderControllerStore>()((se
       fileName,
       animateScenes = false,
       showDrawTool = true,
+      renderMode,
+      vetorialPreset,
     } = options;
 
     // 1. Identifica esta renderização — catch/finally de renders antigos serão ignorados
@@ -277,6 +279,11 @@ export const useVideoRenderController = create<VideoRenderControllerStore>()((se
             const pct = Math.round(progress * SPEED_PAINT_PHASE_WEIGHT);
             reportProgress(set, pct, `Gerando animações... ${pct}%`);
           },
+          // L7: propaga modo+preset do bridge para o pipeline. Sem isso, o
+          // gerador sempre cai no default `mask` independente da escolha do
+          // usuário na VideoPage (RF-06). Defaults seguros: undefined = mask.
+          ...(renderMode !== undefined ? { renderMode } : {}),
+          ...(renderMode === 'vetorial' && vetorialPreset !== undefined ? { vetorialPreset } : {}),
           signal,
         });
         mappedScenes = enhanceResult.scenes;
