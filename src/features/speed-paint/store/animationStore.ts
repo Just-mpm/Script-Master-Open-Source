@@ -18,9 +18,10 @@ const DEFAULT_CANVAS_COLOR = 'white' as const;
 // `mask` mantém retrocompatibilidade com projetos existentes.
 // O default só vira `vetorial` após a Fase 5 validada em produção.
 const DEFAULT_RENDER_MODE: SpeedPaintRenderMode = 'mask';
-// `artistic1` é o preset padrão escolhido em 2026-06-14 — bom equilíbrio
-// entre fidelidade visual e quantidade de paths para a animação fluir.
-const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'artistic1';
+// v0.133.1: `edge-default` é o novo preset padrão. Pipeline edge+bezier
+// roda no Web Worker (`vetorialWorker.ts`); bom equilíbrio entre
+// fidelidade visual e tempo de processamento.
+const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'edge-default';
 // `smooth` (Easing.inOut(Easing.ease)) é o padrão InstaDoodle —
 // fluido e natural. Linear e bounce ficam disponíveis para experimentação
 // (L10, RF-10).

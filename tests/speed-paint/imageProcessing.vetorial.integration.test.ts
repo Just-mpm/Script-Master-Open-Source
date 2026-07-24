@@ -6,7 +6,7 @@
  *
  * Cobre:
  * (1) Tipo discriminado `VetorialAnimation` (tem `paths`, NÃO tem `strokes`)
- * (2) Presets customizados (`vetorialPreset: 'detailed'`)
+ * (2) Presets customizados (`vetorialPreset: 'edge-detailed'`)
  * (3) Default do preset (`'artistic1'`)
  * (4) `onProgress` chamado com valores 0..1
  * (5) `AbortSignal` abortado rejeita com `AbortError`
@@ -275,17 +275,17 @@ describe('generateStrokesFromImage — modo vetorial', () => {
     const promise = generateStrokesFromImage(
       'data:image/png;base64,test',
       () => {},
-      { renderMode: 'vetorial', vetorialPreset: 'detailed' },
+      { renderMode: 'vetorial', vetorialPreset: 'edge-detailed' },
     );
     triggerLoad();
 
     const animation = (await promise) as VetorialAnimation;
 
     // Assert
-    expect(animation.sourcePreset).toBe('detailed');
+    expect(animation.sourcePreset).toBe('edge-detailed');
   });
 
-  it('default preset é artistic1 quando não fornecido', async () => {
+  it('default preset é edge-default quando não fornecido', async () => {
     // Arrange
     const { triggerLoad } = createImageMock(100, 100);
 
@@ -300,7 +300,7 @@ describe('generateStrokesFromImage — modo vetorial', () => {
     const animation = (await promise) as VetorialAnimation;
 
     // Assert
-    expect(animation.sourcePreset).toBe('artistic1');
+    expect(animation.sourcePreset).toBe('edge-default');
   });
 
   it('chama onProgress com valores 0..1 e termina em 1', async () => {

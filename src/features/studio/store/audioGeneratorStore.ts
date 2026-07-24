@@ -12,6 +12,7 @@
 
 import { create } from 'zustand';
 import type { AudioSegment } from '../../../lib/db/types';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../../speed-paint/types/vetorial';
 import { calculateDurationFromWav } from '../../video-render/lib/videoUtils';
 import { createLogger } from '../../../lib/logger';
 
@@ -21,7 +22,19 @@ const log = createLogger('audioGeneratorStore');
 // Tipos
 // ---------------------------------------------------------------------------
 
-export type SceneItem = { imageUrl: string; timestamp: number };
+/**
+ * Cena gerada pelo Gemini (roteiro → cenas).
+ *
+ * v0.133.1: campos opcionais `renderMode` / `vetorialPreset` permitem
+ * misturar modos Clássico/Desenho num mesmo vídeo. Quando ausentes,
+ * herdam do global da `SpeedPaintBridge` no momento da geração.
+ */
+export type SceneItem = {
+  imageUrl: string;
+  timestamp: number;
+  renderMode?: SpeedPaintRenderMode;
+  vetorialPreset?: VetorialPreset;
+};
 
 export interface AudioGeneratorState {
   // Estado de geração
@@ -121,23 +134,24 @@ export const useAudioGeneratorStore = create<AudioGeneratorState>()((set, get) =
       URL.revokeObjectURL(audioUrl);
     }
 
-    // Revoga imageUrls blob URLs das cenas anteriores. Cada loadProjectData
-    // cria N novos blob URLs via `buildVideoScenesFromDraft` (manual project) ou
-    // similar — sem revogação dos anteriores, há memory leak cumulativo
-    // ao trocar de projeto na VideoLibrary. URLs externas (https://, gs://)
-    // são ignoradas.
-    for (const scene of previousScenes) {
-      if (scene.imageUrl && scene.imageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(scene.imageUrl);
-      }
-    }
-
     set({
       audioUrl: url,
       scenes: scenesData,
       projectId: id ?? null,
       audioDuration: 0, // reseta duração ao carregar novo projeto
       script: projectScript ?? null,
+    });
+
+    // Revoga os blob URLs das cenas anteriores somente após o React
+    // processar a re-render e desmontar as composições Remotion antigas.
+    // Chamar de forma assíncrona criava race condition: a composição Remotion ainda
+    // montava com as URLs antigas que já tinham sido revogadas.
+    queueMicrotask(() => {
+      for (const scene of previousScenes) {
+        if (scene.imageUrl && scene.imageUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(scene.imageUrl);
+        }
+      }
     });
 
     if (audioBlobData) {

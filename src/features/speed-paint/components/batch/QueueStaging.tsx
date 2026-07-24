@@ -11,6 +11,8 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import CancelIcon from '@mui/icons-material/Cancel';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import FormatPaintIcon from '@mui/icons-material/FormatPaintOutlined';
+import GestureIcon from '@mui/icons-material/GestureOutlined';
 import { alpha } from '@mui/material/styles';
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { useSortable, isSortable } from '@dnd-kit/react/sortable';
@@ -23,6 +25,7 @@ import {
   BRAND_SECONDARY,
   BRAND_SECONDARY_LIGHT,
   BRAND_SECONDARY_GLOW_SOFT,
+  WHITE_14,
   WHITE_06, RADIUS_XS } from '../../../../theme/tokens';
 import { glassPanelSx } from '../../../../theme/surfaces';
 import { AnimationDurationSelector } from '../AnimationDurationSelector';
@@ -35,11 +38,31 @@ interface SortableQueueImageProps {
 function SortableQueueImage({ img, index }: SortableQueueImageProps) {
   const { t } = useLocale();
   const removeFromQueue = useAnimationStore((s) => s.removeFromQueue);
+  const setQueue = useAnimationStore((s) => s.setQueue);
   const { ref, handleRef, isDragging, isDropTarget } = useSortable({
     id: img.id,
     index,
     group: 'speed-paint-queue',
   });
+
+  // v0.133.1: resolve o `renderMode` efetivo do item (próprio ou herdado
+  // do global da store). Usado para exibir a badge de modo no card.
+  const globalRenderMode = useAnimationStore((s) => s.renderMode);
+  const effectiveRenderMode = img.renderMode ?? globalRenderMode;
+  const isVetorial = effectiveRenderMode === 'vetorial';
+
+  /**
+   * Cicla o `renderMode` do item entre `'mask'` (Clássico) e `'vetorial'`
+   * (Desenho). v0.133.1: permite misturar modos num mesmo batch.
+   */
+  const handleToggleMode = (e: React.MouseEvent): void => {
+    e.stopPropagation();
+    setQueue((prev) => prev.map((item) => (
+      item.id === img.id
+        ? { ...item, renderMode: isVetorial ? 'mask' : 'vetorial' }
+        : item
+    )));
+  };
 
   return (
     <Box
@@ -120,6 +143,40 @@ function SortableQueueImage({ img, index }: SortableQueueImageProps) {
         alt={img.filename}
         sx={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
       />
+
+      {/* v0.133.1: badge + botão de modo (Clássico/Desenho) por item */}
+      <Tooltip
+        title={isVetorial
+          ? t('speedPaint.queueModeBadgeVetorial') ?? 'Modo Desenho (clique para trocar)'
+          : t('speedPaint.queueModeBadgeMask') ?? 'Modo Clássico (clique para trocar)'}
+      >
+        <IconButton
+          onClick={handleToggleMode}
+          size="small"
+          aria-label={t('speedPaint.queueToggleModeAria', { filename: img.filename })}
+          data-testid={`queue-item-mode-toggle-${img.id}`}
+          sx={{
+            position: 'absolute',
+            top: 6,
+            right: 40,
+            width: 28,
+            height: 28,
+            minHeight: 'unset',
+            minWidth: 'unset',
+            bgcolor: isVetorial
+              ? alpha(BRAND_PRIMARY, 0.85)
+              : alpha(WHITE_06, 0.85),
+            color: 'common.white',
+            border: `1px solid ${isVetorial ? BRAND_PRIMARY : WHITE_14}`,
+            '&:hover': {
+              bgcolor: isVetorial ? BRAND_PRIMARY : alpha(WHITE_14, 0.85),
+            },
+            '& .MuiSvgIcon-root': { fontSize: 14 },
+          }}
+        >
+          {isVetorial ? <GestureIcon /> : <FormatPaintIcon />}
+        </IconButton>
+      </Tooltip>
 
       <Tooltip title={t('speedPaint.queueRemoveImage')}>
         <span>

@@ -13,7 +13,7 @@
  * `docs/plan/tracker-speed-paint-vetorial-2026-06-14.md`.
  *
  * Usa hash SHA-256 via SubtleCrypto (async) como chave.
- * Limitado a 20 entradas — ao exceder, remove a mais antiga (por timestamp).
+ * Limitado a 50 entradas — ao exceder, remove a mais antiga (por timestamp).
  */
 
 import type { StrokeAnimation, VetorialAnimation, VetorialPreset } from '../../speed-paint/types';
@@ -59,10 +59,10 @@ interface CacheContext {
 // ---------------------------------------------------------------------------
 
 /** Número máximo de entradas no cache antes de eviction */
-const MAX_CACHE_SIZE = 20;
+const MAX_CACHE_SIZE = 50;
 
-/** Preset default do modo vetorial (decisão Matheus — Premissa #4 do tracker) */
-const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'artistic1';
+/** Preset default do modo vetorial (v0.133.1: `edge-default` — pipeline edge+bezier) */
+const DEFAULT_VETORIAL_PRESET: VetorialPreset = 'edge-default';
 
 // ---------------------------------------------------------------------------
 // Estado interno

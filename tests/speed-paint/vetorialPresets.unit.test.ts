@@ -2,13 +2,15 @@
  * Testes unitários para as constantes de presets vetoriais do Speed Paint.
  *
  * A constante `VETORIAL_PRESETS_GROUPED` é a ÚNICA fonte de verdade para
- * o agrupamento dos 20 `VetorialPreset` em 7 grupos, exibidos no `<Select>`
+ * o agrupamento dos 4 `VetorialPreset` em 2 grupos, exibidos no `<Select>`
  * da `SpeedPaintPage.tsx`. Estes testes protegem:
- * (a) cardinalidade (7 grupos, 20 presets totais)
+ * (a) cardinalidade (2 grupos, 4 presets totais)
  * (b) unicidade dos `id` de grupo e dos `presets` na lista completa
  * (c) consistência com os tipos `VetorialPreset` e `VetorialPresetGroupId`
  * (d) integridade estrutural de cada `VetorialPresetGroup`
  * (e) presença do grupo `edge-detection` em PRIMEIRO lugar (v0.132.0)
+ *
+ * v0.133.1: simplificação de 7 grupos / 20 presets para 2 grupos / 4 presets.
  *
  * @see `src/features/speed-paint/constants/vetorialPresets.ts`
  */
@@ -25,16 +27,16 @@ import type { VetorialPreset } from '../../src/features/speed-paint/types/vetori
 
 describe('VETORIAL_PRESETS_GROUPED', () => {
   describe('cardinalidade', () => {
-    it('tem exatamente 7 grupos', () => {
-      expect(VETORIAL_PRESETS_GROUPED).toHaveLength(7);
+    it('tem exatamente 2 grupos', () => {
+      expect(VETORIAL_PRESETS_GROUPED).toHaveLength(2);
     });
 
-    it('tem exatamente 20 presets no total (soma de todos os grupos)', () => {
+    it('tem exatamente 4 presets no total (soma de todos os grupos)', () => {
       const total = VETORIAL_PRESETS_GROUPED.reduce(
         (sum, group) => sum + group.presets.length,
         0,
       );
-      expect(total).toBe(20);
+      expect(total).toBe(4);
     });
 
     it('cada grupo tem pelo menos 1 preset', () => {
@@ -59,29 +61,13 @@ describe('VETORIAL_PRESETS_GROUPED', () => {
   });
 
   describe('cobertura do union VetorialPreset', () => {
-    it('todos os 20 valores de VetorialPreset estão presentes nos grupos', () => {
-      // Lista canônica de todos os 20 valores de VetorialPreset
+    it('todos os 4 valores de VetorialPreset estão presentes nos grupos', () => {
+      // Lista canônica dos 4 valores de VetorialPreset (v0.133.1)
       const allExpectedPresets: VetorialPreset[] = [
         'default',
-        'posterized1',
-        'posterized2',
-        'posterized3',
-        'curvy',
-        'sharp',
-        'detailed',
-        'smoothed',
-        'grayscale',
-        'fixedpalette',
-        'randomsampling1',
-        'randomsampling2',
-        'artistic1',
-        'artistic2',
-        'artistic3',
-        'artistic4',
         'edge-default',
         'edge-detailed',
         'edge-bold',
-        'edge-sketch',
       ];
 
       const actualPresets = VETORIAL_PRESETS_GROUPED.flatMap((g) => g.presets);
@@ -116,15 +102,7 @@ describe('VETORIAL_PRESETS_GROUPED', () => {
 
   describe('cobertura do union VetorialPresetGroupId', () => {
     it('todos os IDs de grupo pertencem ao union VetorialPresetGroupId', () => {
-      const validIds: VetorialPresetGroupId[] = [
-        'edge-detection',
-        'artistic',
-        'posterized',
-        'smoothed',
-        'detailed',
-        'grayscale',
-        'sampling',
-      ];
+      const validIds: VetorialPresetGroupId[] = ['edge-detection', 'legacy'];
 
       const actualIds = VETORIAL_PRESETS_GROUPED.map((g) => g.id);
       for (const id of actualIds) {
@@ -157,25 +135,10 @@ describe('VETORIAL_PRESETS_GROUPED', () => {
   });
 
   describe('grupos específicos (sanity)', () => {
-    it('grupo "artistic" contém artistic1..4', () => {
-      const artistic = VETORIAL_PRESETS_GROUPED.find((g) => g.id === 'artistic');
-      expect(artistic?.presets).toEqual([
-        'artistic1',
-        'artistic2',
-        'artistic3',
-        'artistic4',
-      ]);
-    });
-
-    it('grupo "grayscale" tem exatamente 1 preset', () => {
-      const grayscale = VETORIAL_PRESETS_GROUPED.find((g) => g.id === 'grayscale');
-      expect(grayscale?.presets).toEqual(['grayscale']);
-      expect(grayscale?.presets).toHaveLength(1);
-    });
-
-    it('existe um grupo "sampling" com 2 presets randomsampling', () => {
-      const sampling = VETORIAL_PRESETS_GROUPED.find((g) => g.id === 'sampling');
-      expect(sampling?.presets).toEqual(['randomsampling1', 'randomsampling2']);
+    it('grupo "legacy" contém apenas "default"', () => {
+      const legacy = VETORIAL_PRESETS_GROUPED.find((g) => g.id === 'legacy');
+      expect(legacy?.presets).toEqual(['default']);
+      expect(legacy?.presets).toHaveLength(1);
     });
 
     it('grupo "edge-detection" é o PRIMEIRO do array (default da v0.132.0)', () => {
@@ -184,7 +147,6 @@ describe('VETORIAL_PRESETS_GROUPED', () => {
         'edge-default',
         'edge-detailed',
         'edge-bold',
-        'edge-sketch',
       ]);
     });
   });
@@ -200,12 +162,11 @@ describe('VETORIAL_PRESETS_GROUPED', () => {
 
 describe('EDGE_PRESET_CONFIG', () => {
   describe('cobertura', () => {
-    it('tem entrada para os 4 EdgePresetName', () => {
+    it('tem entrada para os 3 EdgePresetName', () => {
       const expectedKeys: EdgePresetName[] = [
         'edge-default',
         'edge-detailed',
         'edge-bold',
-        'edge-sketch',
       ];
       const actualKeys = Object.keys(EDGE_PRESET_CONFIG) as EdgePresetName[];
       expect(actualKeys.sort()).toEqual(expectedKeys.sort());
@@ -213,7 +174,7 @@ describe('EDGE_PRESET_CONFIG', () => {
   });
 
   describe('integridade dos parâmetros', () => {
-    it('cada preset tem os 4 campos numéricos esperados', () => {
+    it('cada preset tem os 5 campos numéricos esperados (incluindo filterSpeckle)', () => {
       for (const [name, config] of Object.entries(EDGE_PRESET_CONFIG) as [
         EdgePresetName,
         EdgePresetConfig,
@@ -235,36 +196,50 @@ describe('EDGE_PRESET_CONFIG', () => {
         expect(Number.isFinite(config.blurSigma)).toBe(true);
         expect(config.blurSigma).toBeGreaterThan(0);
 
+        expect(typeof config.filterSpeckle).toBe('number');
+        expect(Number.isFinite(config.filterSpeckle)).toBe(true);
+
         // Usa `name` para silenciar unused-var sem perder a checagem
         expect(name.length).toBeGreaterThan(0);
       }
     });
 
-    it('valores por preset batem com o plano D8 §8.3', () => {
+    it('valores por preset batem com o plano D8 §8.3 (+ filterSpeckle v0.133.0)', () => {
+      // `filterSpeckle` foi adicionado em v0.133.0 para o filtro de
+      // compacidade. Calibração 2026-06-17: `0.0001` (v0.133.0) para
+      // contornar o Canny 1px que gera compactness baixa para formas
+      // legítimas — só remove patológicos com compacidade praticamente 0.
       expect(EDGE_PRESET_CONFIG['edge-default']).toEqual({
         strokeWidth: 8,
         highThreshold: 0.3,
         epsilon: 2.0,
         blurSigma: 1.0,
+        filterSpeckle: 0.0001,
       });
       expect(EDGE_PRESET_CONFIG['edge-detailed']).toEqual({
         strokeWidth: 6,
         highThreshold: 0.2,
         epsilon: 1.0,
         blurSigma: 0.8,
+        filterSpeckle: 0.0001,
       });
       expect(EDGE_PRESET_CONFIG['edge-bold']).toEqual({
         strokeWidth: 12,
         highThreshold: 0.4,
         epsilon: 3.0,
         blurSigma: 1.2,
+        filterSpeckle: 0.0001,
       });
-      expect(EDGE_PRESET_CONFIG['edge-sketch']).toEqual({
-        strokeWidth: 6,
-        highThreshold: 0.25,
-        epsilon: 1.5,
-        blurSigma: 1.0,
-      });
+    });
+
+    it('filterSpeckle está em [0, 1] para todos os presets (0 = filtro desabilitado, 1 = círculo perfeito)', () => {
+      for (const [, config] of Object.entries(EDGE_PRESET_CONFIG) as [
+        EdgePresetName,
+        EdgePresetConfig,
+      ][]) {
+        expect(config.filterSpeckle).toBeGreaterThanOrEqual(0);
+        expect(config.filterSpeckle).toBeLessThanOrEqual(1);
+      }
     });
   });
 });

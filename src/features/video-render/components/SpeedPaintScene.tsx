@@ -214,7 +214,12 @@ export const SpeedPaintScene = React.memo(function SpeedPaintScene({
         continueRender(loadHandle);
       } catch (err) {
         if (!cancelled) {
-          cancelRender(err instanceof Error ? err : new Error('Falha ao carregar imagem do speed paint'));
+          try {
+            cancelRender(err instanceof Error ? err : new Error('Falha ao carregar imagem do speed paint'));
+          } catch {
+            // cancelRender sempre throw — armazena erro em window.remotion_cancelledError
+            // catch silencioso evita unhandledrejection
+          }
         }
       }
     };

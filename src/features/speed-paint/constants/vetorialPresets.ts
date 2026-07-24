@@ -31,14 +31,7 @@
 import type { VetorialPreset } from '../types/vetorial';
 
 /** Identificador de grupo do seletor de preset (chave i18n em `presetGroups`). */
-export type VetorialPresetGroupId =
-  | 'edge-detection'
-  | 'artistic'
-  | 'posterized'
-  | 'smoothed'
-  | 'detailed'
-  | 'grayscale'
-  | 'sampling';
+export type VetorialPresetGroupId = 'edge-detection' | 'legacy';
 
 /** Grupo de presets do `imagetracerjs` com mesmo estilo visual. */
 export interface VetorialPresetGroup {
@@ -49,22 +42,18 @@ export interface VetorialPresetGroup {
 }
 
 /**
- * Lista imutável dos 7 grupos com os 20 presets totalizados. Consumida
- * pelo `<Select>` em `SpeedPaintPage.tsx` para renderizar `<ListSubheader>`
- * + `<MenuItem>` por grupo.
+ * Lista imutável dos 2 grupos com os 4 presets totalizados (v0.133.1).
+ * Consumida pelo `<Select>` em `SpeedPaintPage.tsx` para renderizar
+ * `<ListSubheader>` + `<MenuItem>` por grupo.
  *
- * O grupo `edge-detection` é o PRIMEIRO do array (será o grupo default
- * na v0.132.0) — os presets `edge-*` são a nova família do pipeline
- * edge+bezier e ficam em destaque no topo do dropdown.
+ * v0.133.1: simplificação de 7 grupos / 20 presets para 2 grupos / 4 presets.
+ * Mantém os 3 presets do pipeline edge+bezier (`edge-default`, `edge-detailed`,
+ * `edge-bold`) + 1 preset legado (`default`) como fallback. O pipeline
+ * edge+bezier roda no Web Worker (`vetorialWorker.ts`).
  */
 export const VETORIAL_PRESETS_GROUPED: ReadonlyArray<VetorialPresetGroup> = [
-  { id: 'edge-detection', presets: ['edge-default', 'edge-detailed', 'edge-bold', 'edge-sketch'] },
-  { id: 'artistic', presets: ['artistic1', 'artistic2', 'artistic3', 'artistic4'] },
-  { id: 'posterized', presets: ['posterized1', 'posterized2', 'posterized3'] },
-  { id: 'smoothed', presets: ['smoothed', 'curvy', 'sharp'] },
-  { id: 'detailed', presets: ['detailed', 'default', 'fixedpalette'] },
-  { id: 'grayscale', presets: ['grayscale'] },
-  { id: 'sampling', presets: ['randomsampling1', 'randomsampling2'] },
+  { id: 'edge-detection', presets: ['edge-default', 'edge-detailed', 'edge-bold'] },
+  { id: 'legacy', presets: ['default'] },
 ];
 
 /**
@@ -75,7 +64,7 @@ export const VETORIAL_PRESETS_GROUPED: ReadonlyArray<VetorialPresetGroup> = [
  */
 export type EdgePresetName = Extract<
   VetorialPreset,
-  'edge-default' | 'edge-detailed' | 'edge-bold' | 'edge-sketch'
+  'edge-default' | 'edge-detailed' | 'edge-bold'
 >;
 
 /**
@@ -125,6 +114,25 @@ export interface EdgePresetConfig {
   epsilon: number;
   /** Desvio padrão (em pixels) do Gaussian Blur aplicado antes do Canny. */
   blurSigma: number;
+  /**
+   * Compacidade mínima (razão isoperimétrica `4π·A/P²`) para aceitar um
+   * contour gerado por Canny. Valores em [0, 1] — círculo = 1.
+   *
+   * Calibração 2026-06-17 (v0.133.0): contours de Canny com compacidade
+   * abaixo deste valor são tipicamente fragmentos lineares finos (linhas
+   * espúrias com 1-3px de espessura) que viram paths degenerados após
+   * o RDP. O filtro é aplicado em `vectorizeImageEdgeBezier` antes do
+   * `fitBezierPaths` para reduzir o volume que chega ao fitting.
+   *
+   * Valores típicos:
+   * - `0.0001` (default v0.133.0) — só remove patológicos com compactness
+   *   praticamente 0 (linhas espúrias). Necessário porque o Canny deste
+   *   projeto gera contours de 1px onde até formas legítimas (lados de
+   *   quadrados, contornos de letras) têm compactness baixa.
+   * - `0.02` (perm.) — preserva mais detalhes, gera mais paths
+   * - `0.05` (agress.) — descarta contornos alongados, só blobs densos
+   */
+  filterSpeckle: number;
 }
 
 /**
@@ -132,11 +140,12 @@ export interface EdgePresetConfig {
  * edge+bezier nas Fases 2 e 3. Presets legados (`artistic1` etc.) não
  * têm entrada aqui — serão tratados no branch do `imagetracerjs`.
  *
- * Valores conforme D8 §8.3 do plano de implementação da v0.132.0.
+ * Valores conforme D8 §8.3 do plano de implementação da v0.132.0, com
+ * `filterSpeckle` adicionado em 2026-06-17 (v0.133.0) para a calibração
+ * do pipeline edge+bezier (ver `vectorizeImageEdgeBezier`).
  */
 export const EDGE_PRESET_CONFIG: Readonly<Record<EdgePresetName, EdgePresetConfig>> = {
-  'edge-default': { strokeWidth: 8, highThreshold: 0.3, epsilon: 2.0, blurSigma: 1.0 },
-  'edge-detailed': { strokeWidth: 6, highThreshold: 0.2, epsilon: 1.0, blurSigma: 0.8 },
-  'edge-bold': { strokeWidth: 12, highThreshold: 0.4, epsilon: 3.0, blurSigma: 1.2 },
-  'edge-sketch': { strokeWidth: 6, highThreshold: 0.25, epsilon: 1.5, blurSigma: 1.0 },
+  'edge-default': { strokeWidth: 8, highThreshold: 0.3, epsilon: 2.0, blurSigma: 1.0, filterSpeckle: 0.0001 },
+  'edge-detailed': { strokeWidth: 6, highThreshold: 0.2, epsilon: 1.0, blurSigma: 0.8, filterSpeckle: 0.0001 },
+  'edge-bold': { strokeWidth: 12, highThreshold: 0.4, epsilon: 3.0, blurSigma: 1.2, filterSpeckle: 0.0001 },
 };

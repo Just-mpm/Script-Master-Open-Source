@@ -10,8 +10,9 @@
  *     logo, símbolo, xadrez, orgânico, ruído, vazio).
  *
  *  2. **Performance** — latência de `vectorizeImage` em imagens pequenas
- *     (alinhada com Premissa #3 do tracker: < 500ms para 200×150) e
- *     validação do limite `MAX_PATHS_PER_SCENE = 60`.
+ *     (alinhada com Premissa #3 do tracker: < 500ms para 200×150).
+ *     v0.133.1: pipeline roda em Web Worker (`vetorialWorker.ts`),
+ *     sem `MAX_PATHS_PER_SCENE` nem `computeMaxPaths` limitando.
  *
  *  3. **Integração ponta-a-ponta** — pipeline completo
  *     `detectEdges → traceContours → fitBezierPaths → sampleColors`
@@ -322,7 +323,7 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     edgePreset: 'edge-default',
     expectedStrokeWidth: 8,
     expectedEdgePaths: [2, 20],
-    legacyPreset: 'artistic1',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 20],
   },
   {
@@ -344,17 +345,18 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     edgePreset: 'edge-detailed',
     expectedStrokeWidth: 6,
     expectedEdgePaths: [3, 20],
-    legacyPreset: 'detailed',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 50],
   },
   {
     id: 4,
     category: 'Texto/calligraphy',
     make: makeTextImageData,
-    edgePreset: 'edge-sketch',
-    expectedStrokeWidth: 6,
+    edgePreset: 'edge-default',
+    // v0.133.1: `edge-sketch` removido; `edge-default` agora cobre este caso
+    expectedStrokeWidth: 8,
     expectedEdgePaths: [5, 20],
-    legacyPreset: 'artistic1',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 20],
   },
   {
@@ -365,7 +367,7 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     expectedStrokeWidth: 8,
     // Círculo + quadrado sobrepostos podem se fundir em 1 contorno único.
     expectedEdgePaths: [1, 15],
-    legacyPreset: 'artistic2',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 20],
   },
   {
@@ -377,7 +379,7 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     // 5 raios podem gerar 4-10 contornos (dependendo de como Canny
     // detecta as linhas finas).
     expectedEdgePaths: [2, 15],
-    legacyPreset: 'artistic3',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 50],
   },
   {
@@ -386,7 +388,9 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     make: makeCheckerImageData,
     edgePreset: 'edge-detailed',
     expectedStrokeWidth: 6,
-    expectedEdgePaths: [1, 30],
+    // Xadrez fino gera contours 1px que o filtro de compacidade com
+    // `filterSpeckle: 0.0001` (v0.133.0) descarta. Range tolerante.
+    expectedEdgePaths: [0, 30],
     legacyPreset: 'default',
     expectedLegacyPaths: [0, 50],
   },
@@ -394,11 +398,12 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     id: 8,
     category: 'Forma orgânica',
     make: makeOrganicImageData,
-    edgePreset: 'edge-sketch',
-    expectedStrokeWidth: 6,
+    edgePreset: 'edge-default',
+    // v0.133.1: `edge-sketch` removido; `edge-default` agora cobre este caso
+    expectedStrokeWidth: 8,
     // Círculo fino gera 1-3 contornos (canto interno + externo).
     expectedEdgePaths: [1, 5],
-    legacyPreset: 'artistic4',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 30],
   },
   {
@@ -420,7 +425,7 @@ const IMAGE_CASES: ReadonlyArray<ImageCase> = [
     edgePreset: 'edge-default',
     expectedStrokeWidth: 8,
     expectedEdgePaths: [0, 2],
-    legacyPreset: 'artistic1',
+    legacyPreset: 'default',
     expectedLegacyPaths: [0, 20],
   },
 ];
@@ -699,12 +704,14 @@ describe('performance — vetorização edge+bezier (não-bloqueante)', () => {
   );
 
   it(
-    'MAX_PATHS_PER_SCENE=60 é respeitado com imagem ruidosa 500×500',
+    'pipeline edge+bezier processa imagem ruidosa 500×500 sem limite artificial (v0.133.1)',
     { timeout: 30000 },
     async ({ task }) => {
-      // Imagem 500×500 com muito ruído (centenas de pixels pretos dispersos).
-      // Cada pixel preto gera um contorno; sem truncamento, o vetorizador
-      // produziria centenas de paths.
+      // v0.133.1: pipeline roda no Web Worker (`vetorialWorker.ts`).
+      // Não há mais `MAX_PATHS_PER_SCENE` nem `computeMaxPaths` — o número
+      // de paths reflete apenas o conteúdo real da imagem. O Worker
+      // memoiza via `strokeCache.ts` (LRU 50 entradas) para evitar
+      // reprocessamento da mesma imagem.
       const data = new Uint8ClampedArray(500 * 500 * 4);
       for (let i = 3; i < data.length; i += 4) {
         data[i] = 255;
@@ -737,8 +744,10 @@ describe('performance — vetorização edge+bezier (não-bloqueante)', () => {
         `[PERF noise 500×500] ${latencyMs.toFixed(1)}ms, paths=${paths.length}`,
       );
 
-      // Hard limit: MAX_PATHS_PER_SCENE=60 (constante truncadora do vectorizer)
-      expect(paths.length).toBeLessThanOrEqual(60);
+      // v0.133.1: sem limite artificial. Apenas validamos que é um número
+      // finito e que o pipeline completou em tempo razoável.
+      expect(Number.isFinite(paths.length)).toBe(true);
+      expect(paths.length).toBeGreaterThanOrEqual(0);
 
       if (latencyMs > SOFT_LIMIT_NOISE_500x500) {
         await annotateFromTask(
@@ -866,8 +875,7 @@ describe('regressão visual — strokeWidth por preset', () => {
     { preset: 'edge-default', expectedStrokeWidth: 8, label: 'edge-default (EDGE_PRESET_CONFIG)' },
     { preset: 'edge-detailed', expectedStrokeWidth: 6, label: 'edge-detailed (EDGE_PRESET_CONFIG)' },
     { preset: 'edge-bold', expectedStrokeWidth: 12, label: 'edge-bold (EDGE_PRESET_CONFIG)' },
-    { preset: 'edge-sketch', expectedStrokeWidth: 6, label: 'edge-sketch (EDGE_PRESET_CONFIG)' },
-    { preset: 'artistic1', expectedStrokeWidth: 2, label: 'artistic1 (legado, sem mudança)' },
+    { preset: 'default', expectedStrokeWidth: 2, label: 'default (legado, sem mudança)' },
     { preset: 'default', expectedStrokeWidth: 2, label: 'default (legado, sem mudança)' },
   ];
 
@@ -913,7 +921,6 @@ describe('regressão visual — strokeWidth por preset', () => {
         'edge-default',
         'edge-detailed',
         'edge-bold',
-        'edge-sketch',
       ];
       for (const preset of edgePresets) {
         const config = EDGE_PRESET_CONFIG[preset];

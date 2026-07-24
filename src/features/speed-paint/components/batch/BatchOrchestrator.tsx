@@ -5,6 +5,7 @@ import { alpha } from '@mui/material/styles';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { useAnimationStore } from '../../store/animationStore';
 import { generateStrokesFromImage } from '../../lib/imageProcessing';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../../types/vetorial';
 import { createLogger } from '../../../../lib/logger';
 import { useLocale } from '../../../i18n';
 import {
@@ -81,7 +82,8 @@ export function BatchOrchestrator() {
       // Lê o dataUrl via getState() para evitar closure stale — o item da fila
       // é recriado pelo `setQueue` abaixo (status → 'processing'), então a
       // referência capturada pode estar desatualizada antes do efeito rodar.
-      const dataUrl = useAnimationStore.getState().queue.find((q) => q.id === processId)?.dataUrl;
+      const currentItem = useAnimationStore.getState().queue.find((q) => q.id === processId);
+      const dataUrl = currentItem?.dataUrl;
       if (!dataUrl) {
         log.warn('Item da fila desapareceu antes do processamento iniciar', { id: processId });
         return;
@@ -105,15 +107,23 @@ export function BatchOrchestrator() {
       // O `processingIdRef` em escopo de módulo garante que apenas o item
       // atual aplica o resultado; trocar modo/preset não interrompe o job
       // vigente (CT-F47).
-      const { renderMode, vetorialPreset } = useAnimationStore.getState();
+      // v0.133.1: cada item da fila pode ter seu próprio `renderMode`/
+      // `vetorialPreset` (`QueuedImage.renderMode?`). Quando ausente, herda
+      // do global da store — retrocompatível com filas antigas.
+      const globalStore = useAnimationStore.getState();
+      const itemRenderMode: SpeedPaintRenderMode =
+        currentItem.renderMode ?? globalStore.renderMode;
+      const itemVetorialPreset: VetorialPreset | undefined =
+        currentItem.vetorialPreset ??
+        (itemRenderMode === 'vetorial' ? globalStore.vetorialPreset : undefined);
 
       generateStrokesFromImage(dataUrl, (p) => {
         if (processingIdRef.current !== processId) return;
         setJob({ progress: p });
       }, {
         signal: abortController.signal,
-        renderMode,
-        vetorialPreset: renderMode === 'vetorial' ? vetorialPreset : undefined,
+        renderMode: itemRenderMode,
+        vetorialPreset: itemRenderMode === 'vetorial' ? itemVetorialPreset : undefined,
       }).then((animation) => {
         // Se a fila foi limpa durante o processamento, ignora o resultado
         if (processingIdRef.current !== processId) return;

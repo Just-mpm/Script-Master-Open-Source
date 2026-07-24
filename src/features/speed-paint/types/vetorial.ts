@@ -69,28 +69,14 @@ export type VetorialPathSortOrder = 'top-down' | 'center-out' | 'big-first' | 'r
  * @see `EDGE_PRESET_CONFIG` em `constants/vetorialPresets.ts`
  */
 export type VetorialPreset =
-  // Legados (imagetracerjs) — 16 valores
+  // Legado (imagetracerjs) — 1 valor mantido como fallback (v0.133.1)
+  // Outros 15 valores legados foram removidos em v0.133.1 — ver
+  // `VETORIAL_PRESETS_GROUPED` em `constants/vetorialPresets.ts`.
   | 'default'
-  | 'posterized1'
-  | 'posterized2'
-  | 'posterized3'
-  | 'curvy'
-  | 'sharp'
-  | 'detailed'
-  | 'smoothed'
-  | 'grayscale'
-  | 'fixedpalette'
-  | 'randomsampling1'
-  | 'randomsampling2'
-  | 'artistic1'
-  | 'artistic2'
-  | 'artistic3'
-  | 'artistic4'
-  // Edge (pipeline edge+bezier) — 4 valores adicionados na v0.132.0
+  // Edge (pipeline edge+bezier) — 3 valores do novo pipeline (v0.133.1)
   | 'edge-default'
   | 'edge-detailed'
-  | 'edge-bold'
-  | 'edge-sketch';
+  | 'edge-bold';
 
 /** Path SVG individual extraído de uma imagem vetorizada. */
 export interface VetorialPath {

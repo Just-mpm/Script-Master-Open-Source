@@ -467,7 +467,7 @@ it('chama startRender ao clicar em exportar', () => {
     it('CT-F39: renderMode e vetorialPreset da bridge são propagados para startRender', () => {
       // Arrange — força modo vetorial na bridge
       useVideoRenderBridge.getState().resetBridge();
-      useVideoRenderBridge.getState().syncRenderMode('vetorial', 'curvy');
+      useVideoRenderBridge.getState().syncRenderMode('vetorial', 'edge-bold');
       const exporter = makeExporter();
       render(<VideoExportPanel {...defaultProps} exporter={exporter} />);
 
@@ -481,7 +481,7 @@ it('chama startRender ao clicar em exportar', () => {
       expect(exporter.startRender).toHaveBeenCalledTimes(1);
       const callArgs = exporter.startRender.mock.calls[0][0] as Record<string, unknown>;
       expect(callArgs.renderMode).toBe('vetorial');
-      expect(callArgs.vetorialPreset).toBe('curvy');
+      expect(callArgs.vetorialPreset).toBe('edge-bold');
     });
   });
 });

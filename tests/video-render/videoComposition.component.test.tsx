@@ -112,7 +112,7 @@ function makeVetorialScene(overrides?: Partial<VetorialAnimation>): VetorialAnim
     totalLength: 100,
     fps: 30,
     totalDurationMs: 2000,
-    sourcePreset: 'artistic1',
+    sourcePreset: 'edge-default',
     ...overrides,
   };
 }
@@ -500,7 +500,7 @@ describe('VideoComposition', () => {
               { d: 'M 200 200 L 300 300', length: 141.42, color: '#222', strokeWidth: 2 },
             ],
             totalLength: 282.84,
-            sourcePreset: 'detailed',
+            sourcePreset: 'edge-detailed',
           }),
         },
       ];
@@ -532,7 +532,7 @@ describe('VideoComposition', () => {
               { d: 'M 40 40 L 50 50', length: 14.14, color: '#fff', strokeWidth: 1 },
             ],
             totalLength: 42.42,
-            sourcePreset: 'posterized2',
+            sourcePreset: 'edge-bold',
           }),
         },
       ];
@@ -555,7 +555,7 @@ describe('VideoComposition', () => {
       // animation.totalLength repassado
       expect(wbScene.getAttribute('data-total-length')).toBe('42.42');
       // animation.sourcePreset repassado
-      expect(wbScene.getAttribute('data-source-preset')).toBe('posterized2');
+      expect(wbScene.getAttribute('data-source-preset')).toBe('edge-bold');
       // isExporting=true propagado
       expect(wbScene.getAttribute('data-exporting')).toBe('true');
       // showDrawTool=false propagado
@@ -606,7 +606,7 @@ describe('VideoComposition', () => {
             id: 'vet-mix',
             paths: [{ d: 'M 0 0 L 10 10', length: 14.14, color: '#000', strokeWidth: 1 }],
             totalLength: 14.14,
-            sourcePreset: 'artistic1',
+            sourcePreset: 'edge-default',
           }),
         },
         // Cena 1: StrokeAnimation → SpeedPaintScene

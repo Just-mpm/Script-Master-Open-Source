@@ -1,3 +1,5 @@
+import type { SpeedPaintRenderMode, VetorialPreset } from './types/vetorial';
+
 export interface Stroke {
   id: number;
   layer: number;
@@ -30,6 +32,17 @@ export interface QueuedImage {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   /** Revoga blob URLs temporárias quando o item sai da fila. */
   shouldRevokeObjectUrl?: boolean;
+  /**
+   * Modo de renderização do item (v0.133.1). Se ausente, herda o
+   * `renderMode` global da `useAnimationStore` no momento do processamento.
+   * Permite misturar cenas Clássico e Desenho num mesmo batch.
+   */
+  renderMode?: SpeedPaintRenderMode;
+  /**
+   * Preset vetorial do item (v0.133.1). Aplicado quando `renderMode === 'vetorial'`.
+   * Se ausente, herda o `vetorialPreset` global da store.
+   */
+  vetorialPreset?: VetorialPreset;
 }
 
 export interface PaintingJob {

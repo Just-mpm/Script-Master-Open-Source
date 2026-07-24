@@ -600,7 +600,7 @@ describe('imageProcessing — pipeline vetorial e2e (10 imagens)', () => {
       expect(animation.canvasHeight).toBeLessThanOrEqual(1080);
       expect(animation.fps).toBe(60);
       expect(animation.canvasColor).toBe('white');
-      expect(animation.sourcePreset).toBe('artistic1');
+      expect(animation.sourcePreset).toBe('edge-default');
       expect(animation.id).toBeTruthy();
       expect(animation.resizedImage).toBeTruthy();
 

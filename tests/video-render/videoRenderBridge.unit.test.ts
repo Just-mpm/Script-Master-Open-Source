@@ -19,14 +19,14 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.isPlaying).toBe(false);
     // L7 (RF-06) — defaults alinhados com animationStore
     expect(state.renderMode).toBe('mask');
-    expect(state.vetorialPreset).toBe('artistic1');
+    expect(state.vetorialPreset).toBe('edge-default');
   });
 
   it('syncRenderMode atualiza modo + preset em uma única chamada', () => {
-    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'artistic3');
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'edge-detailed');
     const state = useVideoRenderBridge.getState();
     expect(state.renderMode).toBe('vetorial');
-    expect(state.vetorialPreset).toBe('artistic3');
+    expect(state.vetorialPreset).toBe('edge-detailed');
 
     // Volta para mask com outro preset
     useVideoRenderBridge.getState().syncRenderMode('mask', 'default');
@@ -35,12 +35,12 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state2.vetorialPreset).toBe('default');
   });
 
-  it('resetBridge restaura os defaults de L7 (mask + artistic1)', () => {
-    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'detailed');
+  it('resetBridge restaura os defaults de L7 (mask + edge-default)', () => {
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'edge-bold');
     useVideoRenderBridge.getState().resetBridge();
     const state = useVideoRenderBridge.getState();
     expect(state.renderMode).toBe('mask');
-    expect(state.vetorialPreset).toBe('artistic1');
+    expect(state.vetorialPreset).toBe('edge-default');
   });
 
   it('syncExportState atualiza estado de exportação', () => {
@@ -80,7 +80,7 @@ describe('videoRenderBridge (Zustand store)', () => {
     useVideoRenderBridge.getState().syncTranscriptionState(true, 50, 'Status');
     useVideoRenderBridge.getState().syncCurrentFrame(120);
     useVideoRenderBridge.getState().syncIsPlaying(true);
-    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'curvy');
+    useVideoRenderBridge.getState().syncRenderMode('vetorial', 'edge-bold');
     useVideoRenderBridge.getState().resetBridge();
     const state = useVideoRenderBridge.getState();
     expect(state.isExportingVideo).toBe(false);
@@ -91,7 +91,7 @@ describe('videoRenderBridge (Zustand store)', () => {
     expect(state.currentFrame).toBe(0);
     expect(state.isPlaying).toBe(false);
     expect(state.renderMode).toBe('mask');
-    expect(state.vetorialPreset).toBe('artistic1');
+    expect(state.vetorialPreset).toBe('edge-default');
   });
 
   it('exportação e transcrição são independentes', () => {
@@ -149,7 +149,7 @@ describe('videoRenderBridge (Zustand store)', () => {
     // Arrange — reseta a bridge para os defaults
     useVideoRenderBridge.getState().resetBridge();
     expect(useVideoRenderBridge.getState().renderMode).toBe('mask');
-    expect(useVideoRenderBridge.getState().vetorialPreset).toBe('artistic1');
+    expect(useVideoRenderBridge.getState().vetorialPreset).toBe('edge-default');
 
     // Act — simula o pattern do useEffect: lê da animationStore global e
     // empurra para a bridge via syncRenderMode.

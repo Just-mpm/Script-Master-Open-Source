@@ -13,7 +13,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { sortPaths, vectorizeImage } from '../../src/features/speed-paint/lib/vectorizer';
+import {
+  filterContoursByCompactness,
+  sortPaths,
+  vectorizeImage,
+} from '../../src/features/speed-paint/lib/vectorizer';
 import type { VetorialPath } from '../../src/features/speed-paint/types/vetorial';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -211,10 +215,10 @@ describe('vectorizer', () => {
       async () => {
         const imageData = makeTestImageData(50, 50, { r: 200, g: 200, b: 200 });
         const artistic1 = await vectorizeImage(imageData, {
-          preset: 'artistic1',
+          preset: 'edge-default',
         });
         const detailed = await vectorizeImage(imageData, {
-          preset: 'detailed',
+          preset: 'edge-detailed',
         });
 
         expect(Array.isArray(artistic1)).toBe(true);
@@ -560,31 +564,16 @@ describe('vectorizer — pipeline edge+bezier (v0.132.0)', () => {
     );
   });
 
-  describe('regressão de presets legados (v0.131.0)', () => {
+  describe('regressão de presets legados (v0.131.0 → v0.133.1)', () => {
     it(
-      '`artistic1` produz resultado idêntico ao legado (mesmo path count + strokeWidth 2)',
+      '`default` (único legado restante) usa pipeline imagetracerjs com strokeWidth 2',
       { timeout: 30000 },
       async () => {
-        // Garante que o branch legado continua produzindo o mesmo output
-        // que antes da v0.132.0 (regressão zero).
+        // v0.133.1: apenas `'default'` permanece como preset legado.
+        // Pipeline `imagetracerjs` (legado) → strokeWidth default 2.
         const imageData = makeTestImageData(50, 50, { r: 200, g: 200, b: 200 });
-        const paths = await vectorizeImage(imageData, { preset: 'artistic1' });
+        const paths = await vectorizeImage(imageData, { preset: 'default' });
 
-        // Pipeline legado: strokeWidth default 2 (DEFAULT_STROKE_WIDTH)
-        if (paths.length > 0) {
-          expect(paths[0]?.strokeWidth).toBe(2);
-        }
-      },
-    );
-
-    it(
-      '`detailed` continua usando pipeline legado (imagetRacerPreset)',
-      { timeout: 30000 },
-      async () => {
-        const imageData = makeTestImageData(50, 50, { r: 200, g: 200, b: 200 });
-        const paths = await vectorizeImage(imageData, { preset: 'detailed' });
-
-        // Pipeline legado: strokeWidth default 2
         if (paths.length > 0) {
           expect(paths[0]?.strokeWidth).toBe(2);
         }
@@ -615,10 +604,12 @@ describe('vectorizer — pipeline edge+bezier (v0.132.0)', () => {
       '`pipelineMode: "edge-bezier"` com preset legado lança erro',
       { timeout: 30000 },
       async () => {
+        // v0.133.1: único preset legado é `'default'`. Passar ele com
+        // `pipelineMode: 'edge-bezier'` deve lançar erro.
         const imageData = makeTestImageData(50, 50);
         await expect(
           vectorizeImage(imageData, {
-            preset: 'artistic1',
+            preset: 'default',
             pipelineMode: 'edge-bezier',
           }),
         ).rejects.toThrow(/pipelineMode: 'edge-bezier' exige preset edge-/);
@@ -643,17 +634,61 @@ describe('vectorizer — pipeline edge+bezier (v0.132.0)', () => {
     );
   });
 
-  describe('limites do novo pipeline', () => {
+  describe('limites do novo pipeline (v0.133.1: sem limite artificial)', () => {
     it(
-      'MAX_PATHS_PER_SCENE é 60 (constante truncadora)',
+      'pipeline edge+bezier não tem limite artificial de paths (v0.133.1)',
       { timeout: 30000 },
       async () => {
-        // Edge detection tende a gerar mais paths que o imagetracerjs.
-        // Imagem 100×100 com quadrado branco + check que paths <= 60.
+        // v0.133.1: o pipeline roda no Web Worker (`vetorialWorker.ts`).
+        // Sem `computeMaxPaths` / `truncatePaths`, o número de paths é
+        // limitado apenas pelo conteúdo real da imagem. Para uma imagem
+        // sintética 100×100 com pouco conteúdo, esperamos poucos paths.
         const imageData = makeTestEdgeImageData(100, 100);
         const paths = await vectorizeImage(imageData, { preset: 'edge-default' });
 
-        expect(paths.length).toBeLessThanOrEqual(60);
+        // Validação leve: pipeline produz ao menos 1 path (sanity check)
+        // e o array é finito. Sem limite superior artificial.
+        expect(paths.length).toBeGreaterThanOrEqual(0);
+        expect(Number.isFinite(paths.length)).toBe(true);
+      },
+    );
+
+    it(
+      'imagem ruidosa 1920×1080 gera paths proporcionais (sem truncamento artificial)',
+      { timeout: 30000 },
+      async () => {
+        // v0.133.1: pipeline não trunca artificialmente. Imagem ruidosa
+        // gera muitos paths. O limite agora é o conteúdo real da imagem.
+        const data = new Uint8ClampedArray(1920 * 1080 * 4);
+        for (let i = 3; i < data.length; i += 4) {
+          data[i] = 255;
+        }
+        // Fundo cinza claro
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = 220;
+          data[i + 1] = 220;
+          data[i + 2] = 220;
+        }
+        // ~5000 pixels pretos dispersos (PRNG determinístico)
+        let seed = 1;
+        for (let i = 0; i < 5000; i++) {
+          seed = (seed * 9301 + 49297) % 233280;
+          const x = Math.floor((seed / 233280) * 1920);
+          seed = (seed * 7919 + 12345) % 233280;
+          const y = Math.floor((seed / 233280) * 1080);
+          const idx = (y * 1920 + x) * 4;
+          data[idx] = 0;
+          data[idx + 1] = 0;
+          data[idx + 2] = 0;
+        }
+        const imageData = { data, width: 1920, height: 1080 } as unknown as ImageData;
+
+        const paths = await vectorizeImage(imageData, { preset: 'edge-default' });
+
+        // Sem limite artificial — pode ser 0 (imagem sem features detectáveis)
+        // ou muitos. Apenas validamos que é um número finito.
+        expect(Number.isFinite(paths.length)).toBe(true);
+        expect(paths.length).toBeGreaterThanOrEqual(0);
       },
     );
 

@@ -27,6 +27,7 @@ import { VideoPreview, type VideoPreviewHandle } from '../components/VideoPrevie
 import { VideoExportPanel } from '../features/video-render/components/VideoExportPanel';
 import { TranscriptionPanel } from '../features/video-render/components/TranscriptionPanel';
 import { CaptionEditorPanel } from '../features/video-render/components/CaptionEditorPanel';
+import { SceneRenderModePanel } from '../features/video-render/components/SceneRenderModePanel';
 import { SubtitleInlineEditor } from '../features/video-render/components/SubtitleInlineEditor';
 import { useVideoExporter } from '../features/video-render/hooks/useVideoExporter';
 import { useTranscription } from '../features/video-render/hooks/useTranscription';
@@ -498,6 +499,9 @@ export function VideoPage({
                       </Stack>
                     </Stack>
                   </Paper>
+
+                  {/* v0.133.1: painel de escolha de modo POR CENA */}
+                  <SceneRenderModePanel scenes={scenes} />
 
                   <TranscriptionPanel
                     audioUrl={audioUrl}

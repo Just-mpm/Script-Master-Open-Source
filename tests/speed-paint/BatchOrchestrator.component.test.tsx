@@ -485,7 +485,7 @@ describe('BatchOrchestrator', () => {
     // Arrange: store configurada para modo vetorial com preset artistic1
     useAnimationStore.setState({
       renderMode: 'vetorial',
-      vetorialPreset: 'artistic1',
+      vetorialPreset: 'edge-default',
       job: { id: '', inputImage: '', status: 'idle', progress: 0 },
     });
     useAnimationStore.getState().setQueue([
@@ -508,7 +508,7 @@ describe('BatchOrchestrator', () => {
       expect.any(Function),
       expect.objectContaining({
         renderMode: 'vetorial',
-        vetorialPreset: 'artistic1',
+        vetorialPreset: 'edge-default',
         signal: expect.any(AbortSignal),
       }),
     );
@@ -518,7 +518,7 @@ describe('BatchOrchestrator', () => {
     // Arrange: store com vetorialPreset setado, mas renderMode='mask' deve descartá-lo
     useAnimationStore.setState({
       renderMode: 'mask',
-      vetorialPreset: 'detailed',
+      vetorialPreset: 'edge-detailed',
       job: { id: '', inputImage: '', status: 'idle', progress: 0 },
     });
     useAnimationStore.getState().setQueue([
@@ -550,7 +550,7 @@ describe('BatchOrchestrator', () => {
     // Arrange: começa em modo vetorial com preset artistic1
     useAnimationStore.setState({
       renderMode: 'vetorial',
-      vetorialPreset: 'artistic1',
+      vetorialPreset: 'edge-default',
       job: { id: '', inputImage: '', status: 'idle', progress: 0 },
     });
     useAnimationStore.getState().setQueue([
@@ -573,14 +573,14 @@ describe('BatchOrchestrator', () => {
       expect.any(Function),
       expect.objectContaining({
         renderMode: 'vetorial',
-        vetorialPreset: 'artistic1',
+        vetorialPreset: 'edge-default',
       }),
     );
 
     // Act: usuário troca o modo/preset enquanto o job está em andamento
     act(() => {
       useAnimationStore.getState().setRenderMode('mask');
-      useAnimationStore.getState().setVetorialPreset('curvy');
+      useAnimationStore.getState().setVetorialPreset('edge-bold');
     });
 
     // Assert: a chamada NÃO é refeita e mantém os valores ORIGINAIS
@@ -592,12 +592,12 @@ describe('BatchOrchestrator', () => {
       expect.any(Function),
       expect.objectContaining({
         renderMode: 'vetorial',
-        vetorialPreset: 'artistic1',
+        vetorialPreset: 'edge-default',
       }),
     );
     // Confirma que a store realmente mudou (a race protection é apenas sobre
     //  o job em voo, não sobre o estado da store)
     expect(useAnimationStore.getState().renderMode).toBe('mask');
-    expect(useAnimationStore.getState().vetorialPreset).toBe('curvy');
+    expect(useAnimationStore.getState().vetorialPreset).toBe('edge-bold');
   });
 });

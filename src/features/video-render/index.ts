@@ -35,6 +35,7 @@ export { WaveformOverlay } from './components/WaveformOverlay';
 export { VideoExportPanel } from './components/VideoExportPanel';
 export { SpeedPaintControls } from './components/SpeedPaintControls';
 export { CaptionEditorPanel } from './components/CaptionEditorPanel';
+export { SceneRenderModePanel } from './components/SceneRenderModePanel';
 
 // ─── Libs ────────────────────────────────────────────────
 export { renderSpeedPaintFrame, generateScenesWithSpeedPaint } from './lib/speedPaintRenderer';

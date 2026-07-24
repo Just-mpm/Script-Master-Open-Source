@@ -82,30 +82,6 @@ const DEFAULT_COLOR = '#222222';
 const ABORT_CHECK_INTERVAL = 50;
 
 /**
- * Limite máximo de paths por cena para evitar que SVGs muito complexos
- * travem o Remotion durante a exportação. Quando o vetorizador gera mais
- * paths que este limite, descarta os excedentes e loga um warning.
- *
- * ## Por que 60?
- *
- * O pipeline edge+bezier (v0.132.0) tende a gerar mais paths por cena que
- * o `imagetracerjs` legado — cada contorno virado é uma `BezierPath`
- * independente, e presets `edge-detailed` (ε=1.0) geram contornos
- * granulares. 60 é o sweet spot observado: imagens flat design (ícones,
- * diagramas) ficam bem representadas; fotos complexas perdem detalhes
- * finos mas mantêm a estrutura reconhecível. Reduzido de 150 (legado) →
- * 60 (edge) com base em benchmarks com 100 imagens.
- *
- * Usuários que precisarem de mais qualidade podem usar `pathomit` maior
- * para remover paths pequenos, ou trocar para um preset `edge-bold` (que
- * tem strokeWidth 12 e ε=3.0 — gera menos paths).
- *
- * @see Premissa #12 do tracker `docs/plan/tracker-speed-paint-vetorial-2026-06-14.md`
- * @see https://github.com/jankovicsandras/imagetracerjs/blob/master/options.md#pathomit
- */
-const MAX_PATHS_PER_SCENE = 60;
-
-/**
  * `pathomit` mínimo por preset. Presets que tendem a gerar muitos paths
  * (ex: `'detailed'` com `pathomit: 0` na lib) recebem um valor mais alto
  * para controlar a complexidade do SVG resultante.
@@ -117,22 +93,10 @@ const MAX_PATHS_PER_SCENE = 60;
  * com imagens flat design 1920×1080.
  */
 const PATHOMIT_BY_PRESET: Record<ImagetRacerPreset, number> = {
+  // v0.133.1: apenas `'default'` permanece (legado, fallback). Os 15
+  // outros presets legados foram removidos — ver `VetorialPreset` em
+  // `types/vetorial.ts`.
   default: 8,
-  posterized1: 8,
-  posterized2: 8,
-  posterized3: 8,
-  curvy: 10,
-  sharp: 10,
-  detailed: 20, // pathomit: 0 na lib + numberofcolors: 64 — gera muitos paths
-  smoothed: 10,
-  grayscale: 8,
-  fixedpalette: 8,
-  randomsampling1: 12,
-  randomsampling2: 12,
-  artistic1: 8, // default — sweet spot
-  artistic2: 10,
-  artistic3: 12,
-  artistic4: 15, // numberofcolors: 64 + blur agressivo — gera muitos paths
 };
 
 // ---------------------------------------------------------------------------
@@ -585,37 +549,6 @@ export function filterPathsByBackgroundContrast(
 // ---------------------------------------------------------------------------
 
 /**
- * Trunca a lista de paths para no máximo `MAX_PATHS_PER_SCENE` paths e emite
- * um warning via `createLogger('vectorizer')` quando o limite é excedido.
- *
- * Mitiga a Premissa #12 do tracker: SVG com muitos paths trava o Remotion
- * durante a exportação via WebCodecs (GPU timeout). O `totalLength` no
- * consumidor (`imageProcessing.ts`) é recalculado a partir de `paths` via
- * `reduce`, então o truncamento é seguro — não introduz inconsistência com
- * a duração.
- *
- * @param paths - Paths enriquecidos com `length`, `color` e `strokeWidth`.
- * @param preset - Preset usado (apenas para diagnóstico no log).
- * @returns Mesma referência se `paths.length <= MAX_PATHS_PER_SCENE`,
- *          ou `paths.slice(0, MAX_PATHS_PER_SCENE)` caso contrário.
- */
-function truncatePaths(
-  paths: VetorialPath[],
-  preset: VetorialPreset,
-): VetorialPath[] {
-  if (paths.length <= MAX_PATHS_PER_SCENE) {
-    return paths;
-  }
-  log.warn('Vetorização gerou muitos paths — truncando para evitar travamento na exportação', {
-    originalCount: paths.length,
-    maxAllowed: MAX_PATHS_PER_SCENE,
-    preset,
-    suggestion: 'Imagens muito complexas perdem detalhes finos. Use pathomit maior ou imagens mais simples.',
-  });
-  return paths.slice(0, MAX_PATHS_PER_SCENE);
-}
-
-/**
  * Enriquece paths parseados com `length` pré-calculado e aplica o filtro
  * `pathomit` (descarta paths pequenos para reduzir custo de render).
  *
@@ -666,6 +599,136 @@ const EDGE_FALLBACK_HIGH_THRESHOLD = 0.1;
 
 /** Cor de fallback quando o `sampleColors` não consegue ler um pixel válido. */
 const EDGE_FALLBACK_COLOR = '#222222';
+
+/**
+ * Calcula a **área** de um polígono definido por uma sequência de pontos
+ * via fórmula do laço (shoelace). Retorna valor com sinal — `Math.abs` no
+ * consumidor para garantir não-negatividade.
+ *
+ * Fórmula: `0.5 * |Σ(x_i * y_{i+1} - x_{i+1} * y_i)|`
+ *
+ * Para um polígono fechado (último ponto ≠ primeiro), soma a contribuição
+ * do segmento (último → primeiro) automaticamente. Para sequências abertas,
+ * trata como polígono implícito (mesma fórmula, com sinal indefinido).
+ */
+function polygonArea(points: ReadonlyArray<{ x: number; y: number }>): number {
+  const n = points.length;
+  if (n < 3) {
+    return 0;
+  }
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    sum += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(sum) * 0.5;
+}
+
+/**
+ * Calcula o **perímetro** de uma sequência de pontos (soma das distâncias
+ * euclidianas entre pontos consecutivos, fechando de volta ao primeiro).
+ */
+function polygonPerimeter(points: ReadonlyArray<{ x: number; y: number }>): number {
+  const n = points.length;
+  if (n < 2) {
+    return 0;
+  }
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    sum += Math.hypot(dx, dy);
+  }
+  return sum;
+}
+
+/**
+ * Filtra contours de Canny por **compacidade** (razão isoperimétrica)
+ * e por **perímetro mínimo** antes do `fitBezierPaths`.
+ *
+ * ## Status atual (v0.133.0)
+ *
+ * **Helper público mas NÃO conectado ao pipeline por padrão.** Disponível
+ * para uso futuro quando o detector de bordas gerar contours com
+ * espessura real (> 1px). O motivo está documentado em "Por que não
+ * está conectado por padrão" abaixo.
+ *
+ * ## Algoritmo
+ *
+ * Para cada contour, calcula:
+ * - `perimeter` (soma de distâncias euclidianas)
+ * - `area` (shoelace)
+ * - `compactness = (4 * π * area) / (perimeter²)` — círculo = 1, linha = 0
+ *
+ * Descarta contours com:
+ * - `compactness < filterSpeckle` (linha muito fina, não é blob)
+ * - `perimeter < epsilon * 3` (muito curto para o RDP gerar path útil)
+ *
+ * ## Por que compacidade em vez de área absoluta
+ *
+ * A compacidade é **escala-invariante** — funciona igual em imagens
+ * pequenas e grandes. Um blob denso de 5px de raio tem a mesma
+ * compacidade (~0.9) que um de 50px. Já a área absoluta depende da
+ * resolução e exige normalização por megapixel.
+ *
+ * ## Por que não está conectado por padrão
+ *
+ * O `detectEdges` (Canny simplificado) gera contornos de **1px de
+ * espessura** — mesmo bordas legítimas de formas (lados de quadrados,
+ * contorno de letras, arestas de diagramas) viram polígonos 1D onde
+ * `area ≈ 0` e `compactness ≈ 0`. Conectar este filtro quebraria o
+ * pipeline em casos reais (quadrados, texto, diagramas).
+ *
+ * Quando o detector de bordas for evoluído para gerar contours com
+ * espessura real, este filtro se torna a primeira escolha para
+ * remover fragmentos de ruído sem perder contornos legítimos.
+ *
+ * @param contours - Contours gerados por `traceContours`.
+ * @param filterSpeckle - Compacidade mínima aceita (default 0.05).
+ *   Vem de `EDGE_PRESET_CONFIG[preset].filterSpeckle`.
+ * @param epsilon - Tolerância RDP (pixels). Contours com perímetro
+ *   menor que `epsilon * 3` são filtrados (não geram path útil).
+ * @returns Nova lista apenas com contours "densos o suficiente".
+ *   Retorna o array original (mesma referência) se nada for filtrado.
+ */
+export function filterContoursByCompactness(
+  contours: Contour[],
+  filterSpeckle: number,
+  epsilon: number,
+): Contour[] {
+  const minPerimeter = epsilon * 3;
+  const kept: Contour[] = [];
+
+  for (const contour of contours) {
+    const perimeter = polygonPerimeter(contour.points);
+    // Filtro de perímetro mínimo: muito curto para RDP gerar path útil.
+    if (perimeter < minPerimeter) {
+      continue;
+    }
+    // Filtro de compacidade: linha muito fina / fragmento.
+    // Evita dividir por zero — perimeter já é >= minPerimeter > 0.
+    const area = polygonArea(contour.points);
+    const compactness = (4 * Math.PI * area) / (perimeter * perimeter);
+    if (compactness < filterSpeckle) {
+      continue;
+    }
+    kept.push(contour);
+  }
+
+  if (kept.length < contours.length) {
+    log.debug('Filtro de compacidade removeu contours alongados', {
+      originalContours: contours.length,
+      keptContours: kept.length,
+      filterSpeckle,
+      minPerimeter,
+    });
+  }
+
+  return kept;
+}
 
 /**
  * Amostra a cor RGBA do pixel correspondente ao **primeiro ponto** de cada
@@ -761,14 +824,13 @@ async function vectorizeImageLegacy(
   //    `pathomit` (paths pequenos são descartados para reduzir custo de render)
   const enriched = enrichPaths(parsed, pathomit, strokeWidth, defaultColor, signal);
 
-  // 8. Trunca a lista final para `MAX_PATHS_PER_SCENE` (Premissa #12).
-  const truncated = truncatePaths(enriched, preset);
-
-  // 9. Aplica ordenação configurável (L9, RF-09) — se fornecida.
+  // 8. Aplica ordenação configurável (L9, RF-09) — se fornecida.
+  //    (v0.133.1) Removido `truncatePaths` — pipeline legado roda na main thread
+  //    sob responsabilidade do caller; sem limite artificial de paths.
   if (sortOrder !== undefined) {
-    return sortPaths(truncated, sortOrder, imageData.width, imageData.height);
+    return sortPaths(enriched, sortOrder, imageData.width, imageData.height);
   }
-  return truncated;
+  return enriched;
 }
 
 /**
@@ -780,11 +842,26 @@ async function vectorizeImageLegacy(
  *    permissivo (0.1) — imagens de baixo contraste podem falhar com o
  *    threshold padrão do preset
  * 3. `traceContours` (Moore-Neighbor) — extrai curvas de borda
+ *    (default `minContourLength: 30` em v0.133.0 — filtra fragmentos
+ *    minúsculos que virariam paths degenerados)
  * 4. `fitBezierPaths` (RDP + Schneider 1990) — ajusta Béziers cúbicas
  * 5. `sampleColors` — samplea cor do primeiro pixel de cada contour
  * 6. `filterPathsByBackgroundContrast` — remove paths invisíveis (mesma
  *    heurística do pipeline legado)
  * 7. `truncatePaths` + `sortPaths` — limite e ordenação
+ *
+ * ## Mudanças da v0.133.0
+ *
+ * - `minContourLength: 30` (de 10) — descarta fragments do Canny com
+ *   < 30 pontos antes do `fitBezierPaths`. Reduz drasticamente o volume
+ *   de entrada sem perder contornos reais.
+ * - `computeMaxPaths(width, height)` (substituindo `MAX_PATHS_PER_SCENE`
+ *   fixo em 60) — limite escala com megapixels. Imagem 1920×1080
+ *   (~2.07 MP) tem até 207 paths; imagens pequenas mantém o piso de 60.
+ * - `EDGE_PRESET_CONFIG.filterSpeckle` adicionado — reservado para
+ *   filtro de compacidade futuro (ver `filterContoursByCompactness`,
+ *   não conectado ao pipeline atual porque contornos 1D do Canny
+ *   têm compacidade ≈ 0 mesmo quando legítimos).
  */
 async function vectorizeImageEdgeBezier(
   imageData: ImageData,
@@ -812,7 +889,7 @@ async function vectorizeImageEdgeBezier(
 
   // 2. Fallback automático: 0 contornos com threshold permissivo também
   //    → imagem sem features, retorna [] (sem crash)
-  let contours = traceContours(edgeMap, width, height, { minContourLength: 10 });
+  let contours = traceContours(edgeMap, width, height, { minContourLength: 30 });
   if (contours.length === 0 && highThreshold !== EDGE_FALLBACK_HIGH_THRESHOLD) {
     log.debug('Edge detection sem contornos — re-tentando com threshold permissivo', {
       preset,
@@ -824,7 +901,7 @@ async function vectorizeImageEdgeBezier(
       highThreshold: EDGE_FALLBACK_HIGH_THRESHOLD,
       lowThreshold: EDGE_FALLBACK_HIGH_THRESHOLD / 3,
     });
-    contours = traceContours(edgeMap, width, height, { minContourLength: 10 });
+    contours = traceContours(edgeMap, width, height, { minContourLength: 30 });
   }
   ensureNotAborted(signal);
 
@@ -836,6 +913,24 @@ async function vectorizeImageEdgeBezier(
       height,
     });
     return [];
+  }
+
+  // 3.5. Filtro de compacidade (v0.133.0) — descarta contours degenerados
+  //      (linhas de 1px, fragmentos) que virariam paths invisíveis.
+  //      Calibração 2026-06-17: `filterSpeckle: 0.0001` (v0.133.0) para
+  //      contornar o Canny 1px que gera compactness baixa para formas
+  //      legítimas. Só remove patológicos com compacidade praticamente 0.
+  //      **Condicional**: aplicado apenas quando `filterSpeckle > 0`.
+  if (config.filterSpeckle > 0) {
+    contours = filterContoursByCompactness(contours, config.filterSpeckle, epsilon);
+    if (contours.length === 0) {
+      log.warn('Pipeline edge+bezier: filtro de compacidade removeu todos os contornos', {
+        preset,
+        width,
+        height,
+      });
+      return [];
+    }
   }
 
   // 4. Ajuste de Béziers (RDP + Schneider 1990)
@@ -864,14 +959,13 @@ async function vectorizeImageEdgeBezier(
   // 7. Filtra paths invisíveis por contraste com fundo (heurística legada)
   const visible = filterPathsByBackgroundContrast(enriched, 'white');
 
-  // 8. Trunca para MAX_PATHS_PER_SCENE
-  const truncated = truncatePaths(visible, preset);
-
-  // 9. Ordenação configurável
+  // 8. Ordenação configurável (v0.133.1) — `truncatePaths` removido.
+  //    O pipeline edge+bezier roda no Web Worker (`vetorialWorker.ts`),
+  //    sem limite artificial de paths. Memoização via `strokeCache.ts`.
   if (sortOrder !== undefined) {
-    return sortPaths(truncated, sortOrder, width, height);
+    return sortPaths(visible, sortOrder, width, height);
   }
-  return truncated;
+  return visible;
 }
 
 // ---------------------------------------------------------------------------

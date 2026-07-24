@@ -55,7 +55,14 @@ export const SceneSequence = React.memo(function SceneSequence({
           src={imageUrl}
           alt=""
           onLoad={() => continueRender(handle)}
-          onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
+          onError={() => {
+            try {
+              cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`));
+            } catch {
+              // cancelRender sempre throw — armazena erro em window.remotion_cancelledError
+              // catch silencioso evita unhandledrejection
+            }
+          }}
           style={{
             width: '100%',
             height: '100%',
@@ -78,7 +85,14 @@ export const SceneSequence = React.memo(function SceneSequence({
           src={imageUrl}
           alt=""
           onLoad={() => continueRender(handle)}
-          onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
+          onError={() => {
+            try {
+              cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`));
+            } catch {
+              // cancelRender sempre throw — armazena erro em window.remotion_cancelledError
+              // catch silencioso evita unhandledrejection
+            }
+          }}
           style={{
             width: '100%',
             height: '100%',
@@ -97,18 +111,25 @@ export const SceneSequence = React.memo(function SceneSequence({
 
   return (
     <AbsoluteFill style={{ opacity }}>
-      <Img
-        src={imageUrl}
-        alt=""
-        onLoad={() => continueRender(handle)}
-        onError={() => cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`))}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
-        }}
-      />
+<Img
+          src={imageUrl}
+          alt=""
+          onLoad={() => continueRender(handle)}
+          onError={() => {
+            try {
+              cancelRender(new Error(`${t('video.failLoadImage')}: ${imageUrl}`));
+            } catch {
+              // cancelRender sempre throw — armazena erro em window.remotion_cancelledError
+              // catch silencioso evita unhandledrejection
+            }
+          }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
     </AbsoluteFill>
   );
 });

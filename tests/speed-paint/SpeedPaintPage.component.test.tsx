@@ -235,7 +235,7 @@ function createStrokeAnimation(): StrokeAnimation {
   };
 }
 
-function createVetorialAnimation(preset: VetorialPreset = 'artistic1'): VetorialAnimation {
+function createVetorialAnimation(preset: VetorialPreset = 'edge-default'): VetorialAnimation {
   return {
     id: 'anim-vetorial-1',
     canvasWidth: 1920,
@@ -318,7 +318,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
   describe('Bloco A — comportamento básico', () => {
     it('A.1 — sucesso em cache miss: clica em "Desenho" chama generateStrokesFromImage com renderMode=vetorial + vetorialPreset, e popula job.animation', async () => {
       // Arrange
-      const VETORIAL_PRESET: VetorialPreset = 'detailed';
+      const VETORIAL_PRESET: VetorialPreset = 'edge-detailed';
       const VETORIAL_ANIMATION = createVetorialAnimation(VETORIAL_PRESET);
       setupCompletedJob({ preset: VETORIAL_PRESET, initialRenderMode: 'mask' });
 
@@ -376,8 +376,8 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
 
     it('A.2 — sucesso em cache hit: generateStrokesFromImage NÃO é chamado (animação vem do cache)', async () => {
       // Arrange
-      const CACHED_VETORIAL: VetorialAnimation = createVetorialAnimation('artistic1');
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'mask' });
+      const CACHED_VETORIAL: VetorialAnimation = createVetorialAnimation('edge-default');
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'mask' });
 
       // Cache HIT — devolve a animação sem precisar do gerador.
       mocks.getStrokeAnimation.mockResolvedValue(CACHED_VETORIAL);
@@ -414,7 +414,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
       // altere o valor e dispare o `onChange` do ToggleButtonGroup
       // (em modo `exclusive`, clicar no já-ativo retorna `null`).
       const MASK_ANIMATION: StrokeAnimation = createStrokeAnimation();
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'vetorial' });
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'vetorial' });
 
       mocks.getStrokeAnimation.mockResolvedValue(null);
       mocks.generateStrokesFromImage.mockResolvedValue(MASK_ANIMATION);
@@ -447,7 +447,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
   describe('Bloco B — race protection', () => {
     it('B.1 — cliques sequenciais: cada processamento completa e o último resultado aplicado prevalece na store', async () => {
       // Arrange
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'mask' });
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'mask' });
 
       // O segundo `generateStrokesFromImage` (modo Clássico) é o que vai
       // prevalecer — asserção principal do teste.
@@ -465,7 +465,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
         ) => {
           // Retorna a animação correspondente ao modo solicitado.
           if (options.renderMode === 'vetorial') {
-            return createVetorialAnimation('artistic1');
+            return createVetorialAnimation('edge-default');
           }
           return FINAL_MASK_ANIMATION;
         },
@@ -506,7 +506,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
 
     it('B.2 — AbortError causado por signal abortado externamente: status do job NÃO vira failed', async () => {
       // Arrange
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'mask' });
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'mask' });
 
       mocks.getStrokeAnimation.mockResolvedValue(null);
 
@@ -593,7 +593,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
   describe('Bloco C — erros', () => {
     it('C.1 — erro genérico em generateStrokesFromImage: status do job vira failed', async () => {
       // Arrange
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'mask' });
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'mask' });
 
       mocks.getStrokeAnimation.mockResolvedValue(null);
       // Erro genérico (não AbortError) — o handler deve marcar failed.
@@ -623,7 +623,7 @@ describe('SpeedPaintPage — handleRenderModeChange (L3)', () => {
   describe('Bloco D — acessibilidade', () => {
     it('D.1 — tooltips distintos: aria-label do botão Clássico é diferente do aria-label do botão Desenho', async () => {
       // Arrange
-      setupCompletedJob({ preset: 'artistic1', initialRenderMode: 'mask' });
+      setupCompletedJob({ preset: 'edge-default', initialRenderMode: 'mask' });
 
       // Act
       const { SpeedPaintPage } = await import('../../src/pages/SpeedPaintPage');
@@ -707,7 +707,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
 
   /**
    * Configura a store com job completado + input image no modo `vetorial`.
-   * `vetorialPreset` é fixado no default (`'artistic1'`) para que o
+   * `vetorialPreset` é fixado no default (`'edge-default'`) para que o
    * `Select` mostre essa opção como selecionada inicialmente.
    */
   function setupVetorialMode(): void {
@@ -783,7 +783,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
   // ===========================================================================
 
   describe('Bloco B — conteúdo do dropdown', () => {
-    it('B.1 — 20 opções (MenuItem) renderizadas — distinguidas por data-value', async () => {
+    it('B.1 — 4 opções (MenuItem) renderizadas — distinguidas por data-value', async () => {
       // Arrange
       setupVetorialMode();
 
@@ -793,31 +793,20 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       // Act — abre o dropdown do Select
       openPresetSelect();
 
-      // Assert — 20 `<MenuItem>` (que carregam o atributo `data-value` com
-      // o id do preset) estão renderizados dentro do listbox: 16 presets
-      // legados do `imagetracerjs` + 4 presets `edge-*` (v0.132.0).
-      //
-      // Por que `data-value` em vez de `getAllByRole('option')`?
-      //   No jsdom o MUI `<ListSubheader>` é renderizado como `<li>` com
-      //   `role="option"` (não `role="presentation"`), o que faz com que
-      //   `findAllByRole('option')` retorne 27 elementos (20 MenuItem +
-      //   7 ListSubheader). Os MenuItem, porém, são os únicos que recebem
-      //   o atributo `data-value` pelo componente `MenuItem` da lib,
-      //   tornando essa a estratégia confiável para contar apenas as
-      //   opções selecionáveis.
+      // Assert — 4 `<MenuItem>` (que carregam o atributo `data-value` com
+      // o id do preset) estão renderizados dentro do listbox: 3 presets
+      // `edge-*` (v0.132.0) + 1 preset legado `default` (fallback).
+      // v0.133.1: simplificação de 20 presets / 7 grupos para 4 / 2.
       const listbox = await screen.findByRole('listbox');
       const menuItems = listbox.querySelectorAll('li[data-value]');
-      expect(menuItems).toHaveLength(20);
+      expect(menuItems).toHaveLength(4);
 
-      // Verifica que todos os 20 `VetorialPreset` estão presentes.
+      // Verifica que todos os 4 `VetorialPreset` estão presentes.
       const expectedPresets = [
-        'artistic1', 'artistic2', 'artistic3', 'artistic4',
-        'posterized1', 'posterized2', 'posterized3',
-        'smoothed', 'curvy', 'sharp',
-        'detailed', 'default', 'fixedpalette',
-        'grayscale',
-        'randomsampling1', 'randomsampling2',
-        'edge-default', 'edge-detailed', 'edge-bold', 'edge-sketch',
+        'edge-default',
+        'edge-detailed',
+        'edge-bold',
+        'default',
       ] as const;
       const actualValues = Array.from(menuItems).map(
         (el) => el.getAttribute('data-value') ?? '',
@@ -827,7 +816,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       }
     });
 
-    it('B.2 — 7 grupos (ListSubheader) renderizados como <li> sem data-value', async () => {
+    it('B.2 — 2 grupos (ListSubheader) renderizados como <li> sem data-value', async () => {
       // Arrange
       setupVetorialMode();
 
@@ -837,24 +826,18 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       // Act — abre o dropdown
       openPresetSelect();
 
-      // Assert — os 7 `<ListSubheader>` aparecem como `<li>` dentro do
+      // Assert — os 2 `<ListSubheader>` aparecem como `<li>` dentro do
       // listbox, distinguidos dos MenuItem por NÃO terem `data-value`.
-      // O novo grupo `edge-detection` (v0.132.0) é o PRIMEIRO do array
-      // `VETORIAL_PRESETS_GROUPED` e aparece no topo do dropdown.
+      // v0.133.1: 2 grupos (`edge-detection` primeiro, depois `legacy`).
       const listbox = await screen.findByRole('listbox');
       const allLi = Array.from(listbox.querySelectorAll('li'));
       const subheaders = allLi.filter((li) => !li.hasAttribute('data-value'));
-      expect(subheaders).toHaveLength(7);
+      expect(subheaders).toHaveLength(2);
 
-      // Os textos dos 7 grupos devem estar presentes nos subheaders.
+      // Os textos dos 2 grupos devem estar presentes nos subheaders.
       const expectedGroups = [
         'Detecção de bordas',
-        'Artístico',
-        'Posterizado',
-        'Suavizado',
-        'Detalhado',
-        'Escala de cinza',
-        'Amostragem',
+        'Legado',
       ] as const;
       const subheaderTexts = subheaders.map((el) => el.textContent ?? '');
       for (const groupLabel of expectedGroups) {
@@ -870,7 +853,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
   describe('Bloco C — comportamento ao trocar preset', () => {
     it('C.1 — clicar numa opção dispara generateStrokesFromImage com novo vetorialPreset e analytics', async () => {
       // Arrange
-      const NEW_PRESET: VetorialPreset = 'detailed';
+      const NEW_PRESET: VetorialPreset = 'edge-detailed';
       const NEW_ANIMATION = createVetorialAnimation(NEW_PRESET);
       setupVetorialMode();
 
@@ -881,14 +864,14 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       const { SpeedPaintPage } = await import('../../src/pages/SpeedPaintPage');
       render(<SpeedPaintPage />, { wrapper: Wrapper });
 
-      // Act — abre o dropdown e clica no MenuItem com data-value="detailed".
-      // Usamos `[data-value="detailed"]` em vez de `getByRole('option', { name: 'Detalhado' })`
-      // porque o `<ListSubheader>` do grupo "Detalhado" também é renderizado
-      // como `<li role="option">` com o texto "Detalhado" — a busca por
-      // `data-value` desambigua o MenuItem do subheader.
+      // Act — abre o dropdown e clica no MenuItem com data-value="edge-detailed".
+      // Usamos `[data-value="edge-detailed"]` em vez de `getByRole('option', { name: '...' })`
+      // porque o `<ListSubheader>` do grupo "Detecção de bordas" também é
+      // renderizado como `<li role="option">` — a busca por `data-value`
+      // desambigua o MenuItem do subheader.
       openPresetSelect();
       const listbox = await screen.findByRole('listbox');
-      const detailedOption = listbox.querySelector<HTMLElement>('li[data-value="detailed"]');
+      const detailedOption = listbox.querySelector<HTMLElement>('li[data-value="edge-detailed"]');
       expect(detailedOption).not.toBeNull();
       fireEvent.click(detailedOption!);
 
@@ -942,7 +925,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       // `Select` do preset está oculto, nenhum handler `onChange` é
       // disparado pela mudança da store — `reprocessCurrentImage` só
       // é chamado pelo `handlePresetChange` do Select.
-      useAnimationStore.getState().setVetorialPreset('detailed');
+      useAnimationStore.getState().setVetorialPreset('edge-detailed');
 
       // Aguarda microtasks para garantir que nenhum callback assíncrono
       // seja disparado pela simples mudança da store.
@@ -956,7 +939,7 @@ describe('SpeedPaintPage — seletor de vetorialPreset (L4 RF-03)', () => {
       expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
 
       // O preset foi persistido na store (efeito colateral esperado do setter).
-      expect(useAnimationStore.getState().vetorialPreset).toBe('detailed');
+      expect(useAnimationStore.getState().vetorialPreset).toBe('edge-detailed');
     });
   });
 

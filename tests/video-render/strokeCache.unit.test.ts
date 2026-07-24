@@ -78,43 +78,43 @@ describe('strokeCache', () => {
   });
 
   describe('eviction', () => {
-    it('remove a entrada mais antiga quando excede 20 entradas', async () => {
-      // Preenche o cache com 20 entradas
-      for (let i = 0; i < 20; i++) {
+    it('remove a entrada mais antiga quando excede 50 entradas', async () => {
+      // Preenche o cache com 50 entradas
+      for (let i = 0; i < 50; i++) {
         await setStrokeAnimation(`https://example.com/img-${i}.jpg`, createMinimalAnimation({ id: `anim-${i}` }));
       }
 
-      expect(getStrokeCacheStats().size).toBe(20);
+      expect(getStrokeCacheStats().size).toBe(50);
 
-      // A 21ª entrada deve remover a mais antiga (img-0)
-      await setStrokeAnimation('https://example.com/img-21.jpg', createMinimalAnimation({ id: 'anim-21' }));
+      // A 51ª entrada deve remover a mais antiga (img-0)
+      await setStrokeAnimation('https://example.com/img-51.jpg', createMinimalAnimation({ id: 'anim-51' }));
 
-      expect(getStrokeCacheStats().size).toBe(20);
+      expect(getStrokeCacheStats().size).toBe(50);
 
       // A entrada mais antiga (img-0) deve ter sido removida
       const oldest = await getStrokeAnimation('https://example.com/img-0.jpg');
       expect(oldest).toBeNull();
 
       // A entrada mais recente deve existir
-      const newest = await getStrokeAnimation('https://example.com/img-21.jpg');
-      expect(newest?.id).toBe('anim-21');
+      const newest = await getStrokeAnimation('https://example.com/img-51.jpg');
+      expect(newest?.id).toBe('anim-51');
 
       // Entradas intermediárias ainda existem
-      const mid = await getStrokeAnimation('https://example.com/img-10.jpg');
-      expect(mid?.id).toBe('anim-10');
+      const mid = await getStrokeAnimation('https://example.com/img-25.jpg');
+      expect(mid?.id).toBe('anim-25');
     });
 
     it('não evicta quando a chave já existe no cache', async () => {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 50; i++) {
         await setStrokeAnimation(`https://example.com/img-${i}.jpg`, createMinimalAnimation({ id: `anim-${i}` }));
       }
 
       // Atualizar uma entrada existente NÃO deve causar eviction
       await setStrokeAnimation('https://example.com/img-0.jpg', createMinimalAnimation({ id: 'anim-0-updated' }));
 
-      expect(getStrokeCacheStats().size).toBe(20);
+      expect(getStrokeCacheStats().size).toBe(50);
 
-      // Todas as 20 devem existir
+      // Todas as 50 devem existir
       const result = await getStrokeAnimation('https://example.com/img-0.jpg');
       expect(result?.id).toBe('anim-0-updated');
     });
@@ -147,7 +147,7 @@ describe('strokeCache', () => {
     it('retorna tamanho correto e maxSize', () => {
       const stats = getStrokeCacheStats();
       expect(stats.size).toBe(0);
-      expect(stats.maxSize).toBe(20);
+      expect(stats.maxSize).toBe(50);
     });
   });
 });

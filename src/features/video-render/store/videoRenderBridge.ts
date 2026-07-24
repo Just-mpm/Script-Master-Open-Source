@@ -52,7 +52,7 @@ const INITIAL_BRIDGE_STATE = {
   currentFrame: 0,
   isPlaying: false,
   renderMode: 'mask' as SpeedPaintRenderMode,
-  vetorialPreset: 'artistic1' as VetorialPreset,
+  vetorialPreset: 'edge-default' as VetorialPreset,
 };
 
 export const useVideoRenderBridge = create<VideoRenderBridgeState>()((set) => ({

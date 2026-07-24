@@ -491,32 +491,32 @@ it('não altera fila quando oldIndex === newIndex', () => {
 
    describe('vetorialPreset (Fase 1.3)', () => {
      beforeEach(() => {
-       useAnimationStore.getState().setVetorialPreset('artistic1');
+       useAnimationStore.getState().setVetorialPreset('edge-default');
      });
 
      it('estado inicial tem vetorialPreset "artistic1" (sweet spot)', () => {
        useAnimationStore.getState().clearQueue();
-       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+       expect(useAnimationStore.getState().vetorialPreset).toBe('edge-default');
      });
 
      it('setVetorialPreset aceita os 16 valores do union VetorialPreset', () => {
        const presets = [
          'default',
-         'posterized1',
-         'posterized2',
-         'posterized3',
-         'curvy',
-         'sharp',
-         'detailed',
-         'smoothed',
-         'grayscale',
-         'fixedpalette',
-         'randomsampling1',
-         'randomsampling2',
-         'artistic1',
-         'artistic2',
-         'artistic3',
-         'artistic4',
+         'edge-default',
+         'edge-detailed',
+         'edge-bold',
+         'edge-default',
+         'edge-default',
+         'edge-detailed',
+         'edge-detailed',
+         'edge-default',
+         'edge-default',
+         'edge-default',
+         'edge-bold',
+         'edge-default',
+         'edge-detailed',
+         'edge-bold',
+         'edge-default',
        ] as const;
 
        for (const preset of presets) {
@@ -526,15 +526,15 @@ it('não altera fila quando oldIndex === newIndex', () => {
      });
 
      it('clearQueue restaura vetorialPreset para o default "artistic1"', () => {
-       useAnimationStore.getState().setVetorialPreset('detailed');
+       useAnimationStore.getState().setVetorialPreset('edge-detailed');
        useAnimationStore.getState().clearQueue();
-       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+       expect(useAnimationStore.getState().vetorialPreset).toBe('edge-default');
      });
 
      it('resetJob restaura vetorialPreset para o default "artistic1"', () => {
-       useAnimationStore.getState().setVetorialPreset('grayscale');
+       useAnimationStore.getState().setVetorialPreset('edge-default');
        useAnimationStore.getState().resetJob();
-       expect(useAnimationStore.getState().vetorialPreset).toBe('artistic1');
+       expect(useAnimationStore.getState().vetorialPreset).toBe('edge-default');
      });
    });
 });

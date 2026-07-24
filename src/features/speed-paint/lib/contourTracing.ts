@@ -48,7 +48,7 @@
  * - `width !== edgeMap.length / height` → lança `Error` (sanity check)
  * - Pixel inicial já visitado (após fork) → ignorado
  * - Contorno degenerado (1 pixel) → descartado pelo filtro de
- *   `minContourLength` (default 10)
+ *   `minContourLength` (default 30)
  *
  * @see `src/features/speed-paint/lib/edgeDetection.ts` — entrada (Leva 1.2)
  * @see `src/features/speed-paint/lib/bezierFitting.ts` — próximo estágio (Leva 2.2)
@@ -86,10 +86,18 @@ const DIRECTION_MASK = DIRECTION_COUNT - 1;
 
 /**
  * Default do filtro `minContourLength` (descarta contornos com menos pontos
- * que este mínimo). Valor escolhido empiricamente — contornos menores
- * geralmente são ruído da edge detection e não geram bezier útil.
+ * que este mínimo).
+ *
+ * Valor 30 (calibrado em 2026-06-17, v0.133.0) — contornos com menos de 30
+ * pontos quase sempre são fragmentos de Canny ou ruído residual (vértices
+ * isolados, arestas curtas). VTracer usa filtro de área mínima em vez de
+ * contagem de pontos, mas a abordagem por pontos é mais determinística
+ * para o pipeline whiteboard. O aumento de 10 → 30 reduz drasticamente
+ * a quantidade de contours que chegam ao `fitBezierPaths` (que, sem
+ * filtro de área pré-bezier, gera paths degenerados para contornos
+ * pequenos — ver `vectorizeImageEdgeBezier`).
  */
-const DEFAULT_MIN_CONTOUR_LENGTH = 10;
+const DEFAULT_MIN_CONTOUR_LENGTH = 30;
 
 /**
  * Guard contra loops infinitos em casos degenerados. Cada pixel contribui
@@ -118,7 +126,7 @@ export interface Contour {
 
 /** Opções de configuração do tracer. */
 export interface ContourTracingOptions {
-  /** Descartar contornos com menos pontos que este mínimo (default: 10). */
+  /** Descartar contornos com menos pontos que este mínimo (default: 30). */
   minContourLength?: number;
 }
 

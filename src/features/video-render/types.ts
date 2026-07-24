@@ -38,6 +38,8 @@ export interface VideoScene extends StudioScene {
    *  Pode ser `StrokeAnimation` (modo `'mask'`) ou `VetorialAnimation` (modo
    *  `'vetorial'`, Fase 2.1). O consumidor deve discriminar por propriedades. */
   strokeAnimation?: StrokeAnimation | VetorialAnimation;
+  // v0.133.1: `renderMode` e `vetorialPreset` por cena são herdados de
+  // `StudioScene`. Documentado aqui para clareza.
 }
 
 /** Props da Composition Remotion */

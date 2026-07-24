@@ -2,6 +2,8 @@ import type { SpeedPaintRenderMode, Stroke, StrokeAnimation, VetorialAnimation, 
 import type { VetorialPathSortOrder } from '../types/vetorial';
 import { createLogger } from '../../../lib/logger';
 import { filterPathsByBackgroundContrast, vectorizeImage } from './vectorizer';
+import { isEdgePreset } from '../constants/vetorialPresets';
+import { supportsVetorialWorker, type VetorialWorkerRequest, type VetorialWorkerResponse } from './vetorialWorker';
 
 const log = createLogger('imageProcessing');
 
@@ -412,19 +414,39 @@ export async function generateStrokesFromImage(
       onProgress(0.3);
 
       // -------------------------------------------------------------------------
-      // Branch: renderização vetorial (Fase 2.1)
+      // Branch: renderização vetorial
       // -------------------------------------------------------------------------
-      // O modo vetorial usa `imagetracerjs` (~290 KB de JS puro) para converter
-      // pixels em paths SVG. NÃO é executado em Web Worker inline porque
-      // `importScripts` não funciona em Blob URL e seria frágil inlinear uma
-      // lib desse tamanho. A vetorização roda na main thread com yields via
-      // `async` e respeita `signal.aborted` a cada 50 paths (no `vectorizer.ts`),
-      // mantendo a UI responsiva. Imagens 1920×1080 vetorizam em < 500 ms em
-      // hardware moderno — aceitável.
+      // O modo vetorial tem dois pipelines:
+      // - `edge-*` (v0.132.0) → roda em Web Worker (`vetorialWorker.ts`) porque
+      //   o pipeline edge+bezier é pesado (Canny + Moore-Neighbor + RDP + Schneider).
+      //   Sem Worker, a UI travava e o `computeMaxPaths` limitava a qualidade.
+      // - Legado (`imagetracerjs`) → continua na main thread porque a lib usa
+      //   `importScripts`/window que não funcionam em Worker.
       const renderMode: SpeedPaintRenderMode = options.renderMode ?? 'mask';
       if (renderMode === 'vetorial') {
-        const preset: VetorialPreset = options.vetorialPreset ?? 'artistic1';
+        const preset: VetorialPreset = options.vetorialPreset ?? 'edge-default';
         const sortOrder: VetorialPathSortOrder | undefined = options.vetorialSortOrder;
+        const useEdgeWorker = isEdgePreset(preset) && supportsVetorialWorker();
+
+        if (useEdgeWorker) {
+          processVetorialInWorker(
+            imageData,
+            width,
+            height,
+            resizedImage,
+            preset,
+            sortOrder,
+            options.edgeThreshold,
+            options.contourEpsilon,
+            onProgress,
+            resolveOnce,
+            rejectOnce,
+            signal,
+          );
+          return;
+        }
+
+        // Legado (imagetracerjs) ou browser sem suporte — main thread
         processVetorialOnMainThread(
           imageData,
           width,
@@ -527,6 +549,109 @@ export async function generateStrokesFromImage(
  * @param reject      - Rejeita a Promise externa com o erro ocorrido.
  * @param signal      - `AbortSignal` opcional para cancelamento cooperativo.
  */
+
+/**
+ * Processa vetorização no Web Worker (`vetorialWorker.ts`).
+ *
+ * Usado quando o preset é da família `edge-*` e o browser suporta Worker com
+ * módulos. O pipeline pesado (Canny → Moore-Neighbor → RDP → Schneider) roda
+ * fora da main thread, mantendo a UI responsiva e permitindo gerar o número
+ * de paths que a imagem precisar (sem `computeMaxPaths` limitando).
+ *
+ * O `ImageData` é transferido como cópia (clonando o buffer) para que o
+ * Worker tenha sua própria versão e o caller possa descartar a referência.
+ * Não usamos `Transferable` para o `Uint8ClampedArray` porque o vetor `data`
+ * é parte de `ImageData` e a clonagem é mais simples de manter.
+ */
+function processVetorialInWorker(
+  imageData: ImageData,
+  width: number,
+  height: number,
+  resizedImage: string,
+  preset: VetorialPreset,
+  sortOrder: VetorialPathSortOrder | undefined,
+  edgeThreshold: number | undefined,
+  contourEpsilon: number | undefined,
+  onProgress: (p: number) => void,
+  resolve: (value: VetorialAnimation) => void,
+  reject: (error: Error) => void,
+  signal?: AbortSignal,
+): void {
+  if (signal?.aborted) {
+    reject(createAbortError());
+    return;
+  }
+
+  // Cria o Worker via URL relativa (padrão Vite). Vite resolve os imports
+  // TS automaticamente, então o Worker pode usar `import` normal de módulos.
+  const worker = new Worker(new URL('./vetorialWorker.ts', import.meta.url), {
+    type: 'module',
+    name: `vetorial-worker-${Math.random().toString(36).slice(2, 8)}`,
+  });
+
+  const cleanup = (): void => {
+    worker.terminate();
+    if (signal) {
+      signal.removeEventListener('abort', handleAbort);
+    }
+  };
+
+  const handleAbort = (): void => {
+    worker.terminate();
+    reject(createAbortError());
+  };
+
+  signal?.addEventListener('abort', handleAbort, { once: true });
+
+  worker.onmessage = (e: MessageEvent<VetorialWorkerResponse>): void => {
+    const msg = e.data;
+    if (msg.type === 'progress') {
+      onProgress(0.3 + msg.ratio * 0.7);
+      return;
+    }
+    if (msg.type === 'result') {
+      cleanup();
+      resolve(msg.animation);
+      return;
+    }
+    if (msg.type === 'error') {
+      cleanup();
+      reject(new Error(msg.error));
+    }
+  };
+
+  worker.onerror = (e: ErrorEvent): void => {
+    cleanup();
+    reject(new Error(e.message || 'Erro no Web Worker vetorial'));
+  };
+
+  // Mensagem inicial
+  onProgress(0.3);
+
+  // Clona o ImageData para que o Worker tenha sua própria versão
+  const dataCopy = new Uint8ClampedArray(imageData.data);
+  const imageDataCopy: ImageData = {
+    data: dataCopy,
+    width,
+    height,
+    colorSpace: imageData.colorSpace,
+  } as ImageData;
+
+  const request: VetorialWorkerRequest = {
+    type: 'process',
+    imageData: imageDataCopy,
+    width,
+    height,
+    preset,
+    sortOrder,
+    edgeThreshold,
+    contourEpsilon,
+    canvasColor: 'white',
+    resizedImage,
+  };
+
+  worker.postMessage(request);
+}
 async function processVetorialOnMainThread(
   imageData: ImageData,
   width: number,

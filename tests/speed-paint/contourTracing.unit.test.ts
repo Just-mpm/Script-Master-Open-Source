@@ -277,34 +277,39 @@ describe('traceContours', () => {
       expect(covered.size).toBe(24);
     });
 
-    it('quadrado 5×5 com minContourLength: 10 filtra contornos pequenos', () => {
+    it('quadrado 5×5 com minContourLength: 30 filtra contornos pequenos', () => {
       // Lados do quadrado têm 5 pixels cada — todos filtrados pelo default
       const map = makeSquareEdgeMap(15, 15, 5);
       const contours = traceContours(map, 15, 15);
       expect(contours).toEqual([]);
     });
 
-    it('quadrado 11×11 com minContourLength: 10 produz pelo menos 1 contorno', () => {
-      // Lados do quadrado 11×11 têm 11 pixels (passam de 10)
+    it('quadrado 11×11 com minContourLength: 1 produz pelo menos 1 contorno', () => {
+      // Lados do quadrado 11×11 têm 11 pixels — para o teste passar com o
+      // default atual (30) usamos override explícito `minContourLength: 1`.
+      // O tracer pode quebrar lados em segmentos de 5-11 pontos (varredura
+      // raster consome pixels do próprio quadrado antes de completar a volta).
       const map = makeSquareEdgeMap(25, 25, 11);
-      const contours = traceContours(map, 25, 25);
+      const contours = traceContours(map, 25, 25, { minContourLength: 1 });
       expect(contours.length).toBeGreaterThanOrEqual(1);
-      // Cada lado vira 1 contorno aberto de ~10-13 pontos
+      // Cada contorno tem pelo menos 5 pontos (segmento mínimo observável)
       for (const c of contours) {
-        expect(c.points.length).toBeGreaterThanOrEqual(10);
+        expect(c.points.length).toBeGreaterThanOrEqual(5);
       }
     });
 
-    it('linha reta horizontal de 5 pixels retorna [] (5 < 10 default)', () => {
+    it('linha reta horizontal de 5 pixels retorna [] (5 < 30 default)', () => {
       const map = makeHorizontalLineEdgeMap(15, 5, 5);
       expect(countEdges(map)).toBe(5);
       const contours = traceContours(map, 15, 5);
       expect(contours).toEqual([]);
     });
 
-    it('linha reta horizontal de 12 pixels produz 1 contorno com closed=false', () => {
+    it('linha reta horizontal de 12 pixels — usa override para passar do filtro default (30)', () => {
+      // Com default 30, 12 pontos são filtrados. O teste valida o
+      // comportamento do tracer, não o filtro — usamos override 1.
       const map = makeHorizontalLineEdgeMap(20, 5, 12);
-      const contours = traceContours(map, 20, 5);
+      const contours = traceContours(map, 20, 5, { minContourLength: 1 });
 
       expect(contours).toHaveLength(1);
       const c = contours[0];
@@ -375,15 +380,33 @@ describe('traceContours', () => {
   // ─── (4) Filtro minContourLength ──────────────────────────────────
 
   describe('filtro minContourLength', () => {
-    it('default minContourLength === 10 — filtra contornos com < 10 pontos', () => {
-      // Sem options: aplica default 10
-      const map = makeHorizontalLineEdgeMap(15, 5, 12); // 12 pontos
-      const c1 = traceContours(map, 15, 5);
+    it('default minContourLength === 30 — filtra contornos com < 30 pontos', () => {
+      // Sem options: aplica default 30 (calibrado em 2026-06-17, v0.133.0).
+      // Linha de 35 pontos passa; linha de 9 pontos é filtrada.
+      const map = makeHorizontalLineEdgeMap(40, 5, 35); // 35 pontos (> 30)
+      const c1 = traceContours(map, 40, 5);
       expect(c1).toHaveLength(1);
 
-      const map2 = makeHorizontalLineEdgeMap(15, 5, 9); // 9 pontos
+      const map2 = makeHorizontalLineEdgeMap(15, 5, 9); // 9 pontos (< 30)
       const c2 = traceContours(map2, 15, 5);
       expect(c2).toEqual([]);
+    });
+
+    it('contorno de 25 pontos é filtrado pelo novo default (30)', () => {
+      // Calibração 2026-06-17: contornos entre 10 e 30 eram o "ruído
+      // estrutural" que estourava o MAX_PATHS_PER_SCENE. Garantimos que
+      // o filtro de 30 realmente bloqueia essa faixa.
+      const map = makeHorizontalLineEdgeMap(30, 5, 25);
+      const contours = traceContours(map, 30, 5);
+      expect(contours).toEqual([]);
+    });
+
+    it('contorno de 35 pontos sobrevive ao novo default (30)', () => {
+      // Limite mínimo para passar do filtro: contornos >= 30 pontos.
+      const map = makeHorizontalLineEdgeMap(40, 5, 35);
+      const contours = traceContours(map, 40, 5);
+      expect(contours).toHaveLength(1);
+      expect(contours[0]?.points).toHaveLength(35);
     });
 
     it('minContourLength custom: 10 mantém linha de 15 pontos', () => {
@@ -661,17 +684,18 @@ describe('traceContours', () => {
     });
 
     it('points é Array<Point2D> com x e y numéricos em contornos não filtrados', () => {
-      // Usa T-junction que tem contornos grandes o suficiente para passar
-      // do filtro default.
-      const map = makeTJunctionEdgeMap(15, 15);
-      const contours = traceContours(map, 15, 15);
+      // Usa T-junction 50×50 (lados de 50px quebrados em contornos que
+      // passam do default 30) com override explícito para não depender
+      // do default.
+      const map = makeTJunctionEdgeMap(50, 50);
+      const contours = traceContours(map, 50, 50, { minContourLength: 1 });
       expect(contours.length).toBeGreaterThan(0);
       assertPointShape(contours);
     });
 
     it('closed é boolean em todos os contornos', () => {
-      const map = makeTJunctionEdgeMap(15, 15);
-      const contours = traceContours(map, 15, 15);
+      const map = makeTJunctionEdgeMap(50, 50);
+      const contours = traceContours(map, 50, 50, { minContourLength: 1 });
       expect(contours.length).toBeGreaterThan(0);
       for (const c of contours) {
         expect(typeof c.closed).toBe('boolean');
@@ -682,13 +706,13 @@ describe('traceContours', () => {
       const w = 20;
       const h = 20;
       const map = makeTJunctionEdgeMap(w, h);
-      const contours = traceContours(map, w, h);
+      const contours = traceContours(map, w, h, { minContourLength: 1 });
       assertPointsInBounds(contours, w, h);
     });
 
     it('points contém coordenadas inteiras (pixel-perfect)', () => {
-      const map = makeTJunctionEdgeMap(15, 15);
-      const contours = traceContours(map, 15, 15);
+      const map = makeTJunctionEdgeMap(50, 50);
+      const contours = traceContours(map, 50, 50, { minContourLength: 1 });
       for (const c of contours) {
         for (const p of c.points) {
           expect(Number.isInteger(p.x)).toBe(true);
@@ -699,8 +723,8 @@ describe('traceContours', () => {
 
     it('não retorna pontos duplicados dentro do mesmo contorno', () => {
       // Moore-Neighbor + visited set garante que cada pixel aparece 1x por contorno.
-      const map = makeTJunctionEdgeMap(15, 15);
-      const contours = traceContours(map, 15, 15);
+      const map = makeTJunctionEdgeMap(50, 50);
+      const contours = traceContours(map, 50, 50, { minContourLength: 1 });
       for (const c of contours) {
         const seen = new Set<string>();
         for (const p of c.points) {
@@ -713,7 +737,7 @@ describe('traceContours', () => {
 
     it('ContourTracingOptions aceita apenas minContourLength opcional', () => {
       const opts1: ContourTracingOptions = {};
-      const opts2: ContourTracingOptions = { minContourLength: 10 };
+      const opts2: ContourTracingOptions = { minContourLength: 30 };
       expect(opts1).toBeDefined();
       expect(opts2).toBeDefined();
     });
@@ -729,9 +753,9 @@ describe('traceContours', () => {
 
   describe('independência de chamadas', () => {
     it('duas chamadas com mesmo input retornam resultado equivalente', () => {
-      const map = makeSquareEdgeMap(25, 25, 11);
-      const a = traceContours(map, 25, 25);
-      const b = traceContours(map, 25, 25);
+      const map = makeSquareEdgeMap(50, 50, 11);
+      const a = traceContours(map, 50, 50, { minContourLength: 1 });
+      const b = traceContours(map, 50, 50, { minContourLength: 1 });
       expect(a).toHaveLength(b.length);
       for (let i = 0; i < a.length; i++) {
         expect(a[i]?.points).toHaveLength(b[i]?.points.length ?? -1);

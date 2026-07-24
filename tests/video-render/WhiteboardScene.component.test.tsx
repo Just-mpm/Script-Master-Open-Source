@@ -105,7 +105,7 @@ function makeAnimation(overrides?: Partial<VetorialAnimation>): VetorialAnimatio
     totalLength: 100,
     fps: 30,
     totalDurationMs: 2000,
-    sourcePreset: 'artistic1',
+    sourcePreset: 'edge-default',
     ...overrides,
   };
 }

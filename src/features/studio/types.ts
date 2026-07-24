@@ -1,4 +1,5 @@
 import type { Locale } from '../i18n/types';
+import type { SpeedPaintRenderMode, VetorialPreset } from '../speed-paint/types/vetorial';
 
 export type SceneRatio = '16:9' | '9:16' | '1:1';
 
@@ -22,6 +23,14 @@ export interface StudioScene {
   timestamp: number;
   /** Prompt descritivo da cena (usado no plano de edição) */
   prompt?: string;
+  /**
+   * v0.133.1: modo de renderização do speed paint POR CENA.
+   * Quando ausente, herda do global (`renderMode`/`vetorialPreset` da
+   * bridge). Permite misturar Clássico e Desenho num mesmo vídeo.
+   */
+  renderMode?: SpeedPaintRenderMode;
+  /** v0.133.1: preset vetorial por cena (só aplicado quando `renderMode === 'vetorial'`). */
+  vetorialPreset?: VetorialPreset;
 }
 
 export interface StudioDraftState {

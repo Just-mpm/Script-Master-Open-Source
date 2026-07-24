@@ -46,13 +46,32 @@ export interface SpeedPaintFrameOptions {
 export interface GenerateSpeedPaintOptions {
   /** Usar Web Worker para processamento (recomendado para >5 cenas) */
   useWorker?: boolean;
-  /** Modo de renderização do speed paint. `undefined` ou `'mask'` preserva o
-   *  comportamento legado (raspadinha via strokes). `'vetorial'` aciona a
+  /** Modo de renderização global (fallback). `undefined` ou `'mask'` preserva
+   *  o comportamento legado (raspadinha via strokes). `'vetorial'` aciona a
    *  vetorização whiteboard via `imagetracerjs`. Propagado para o cache LRU
-   *  (a chave SHA-256 inclui `mode` + `preset` para evitar colisão). */
+   *  (a chave SHA-256 inclui `mode` + `preset` para evitar colisão).
+   *
+   *  v0.133.1: usado como **fallback** quando a cena não tem
+   *  `renderMode` próprio (`SceneWithRenderMode.renderMode`). */
   renderMode?: SpeedPaintRenderMode;
   /** Preset do `imagetracerjs` (só aplicado quando `renderMode === 'vetorial'`).
-   *  Ignorado em modo `'mask'`. */
+   *  Ignorado em modo `'mask'`. Usado como **fallback** quando a cena não
+   *  tem `vetorialPreset` próprio. */
+  vetorialPreset?: VetorialPreset;
+}
+
+/**
+ * v0.133.1: cena com modo de renderização opcional POR ITEM.
+ *
+ * Quando `renderMode` é fornecido, sobrescreve o fallback do
+ * `GenerateSpeedPaintOptions`. Permite misturar cenas Clássico e Desenho
+ * no mesmo lote de exportação.
+ */
+export interface SceneWithRenderMode {
+  imageUrl: string;
+  /** Modo desta cena. Quando ausente, herda o fallback global. */
+  renderMode?: SpeedPaintRenderMode;
+  /** Preset desta cena (só aplicado quando `renderMode === 'vetorial'`). */
   vetorialPreset?: VetorialPreset;
 }
 
@@ -238,7 +257,10 @@ export function createBufferCanvas(animation: StrokeAnimation): HTMLCanvasElemen
  * Carrega e decodifica uma imagem de forma assíncrona.
  * Retorna o elemento HTMLImageElement pronto para desenho.
  *
- * Usa crossOrigin anonymous para compatibilidade com blob URLs.
+ * Usa crossOrigin anonymous para compatibilidade com imagens remotas.
+ * Blob URLs são ignoradas (mesma origem) — crossOrigin nelas pode causar
+ * falha em navegadores com políticas COEP/COOP restritivas (Chrome 148+).
+ *
  * Chama img.decode() após onload para garantir que os pixels estão
  * prontos para renderização em canvas (previne EncodingError em
  * navegadores Chromium que fazem decodificação lazy).
@@ -246,7 +268,11 @@ export function createBufferCanvas(animation: StrokeAnimation): HTMLCanvasElemen
 export function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // crossOrigin é necessário para imagens remotas (CORS), mas
+    // causa falha em blob URLs em alguns navegadores (COEP restritivo).
+    if (!src.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = async () => {
       try {
         await img.decode();
@@ -276,7 +302,7 @@ export function loadImageElement(src: string): Promise<HTMLImageElement> {
  * @returns Array com animação e status de cada cena
  */
 export async function generateScenesWithSpeedPaint(
-  scenes: { imageUrl: string }[],
+  scenes: SceneWithRenderMode[],
   onProgress?: (progress: number) => void,
   options?: GenerateSpeedPaintOptions,
 ): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
@@ -284,17 +310,26 @@ export async function generateScenesWithSpeedPaint(
 
   const log = createLogger('speedPaintRenderer');
   const useWorker = options?.useWorker ?? false;
-  const renderMode = options?.renderMode;
-  const vetorialPreset = options?.vetorialPreset;
+  // v0.133.1: fallback global (mantido retrocompatível). Cada cena pode
+  // sobrescrever via `scene.renderMode` / `scene.vetorialPreset`.
+  const fallbackRenderMode = options?.renderMode;
+  const fallbackPreset = options?.vetorialPreset;
   const canUseWorker = useWorker && supportsStrokeWorker() && scenes.length > 5;
 
   if (canUseWorker) {
     log.info('Usando Web Worker para processamento de strokes', { sceneCount: scenes.length });
-    return generateWithWorker(scenes, onProgress, { renderMode, vetorialPreset });
+    // Worker path — propaga `renderMode`/`preset` por cena serializados.
+    return generateWithWorker(scenes, onProgress, {
+      renderMode: fallbackRenderMode,
+      vetorialPreset: fallbackPreset,
+    });
   }
 
   log.info('Usando batch async para processamento de strokes', { sceneCount: scenes.length });
-  return generateWithBatch(scenes, onProgress, { renderMode, vetorialPreset });
+  return generateWithBatch(scenes, onProgress, {
+    renderMode: fallbackRenderMode,
+    vetorialPreset: fallbackPreset,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -306,24 +341,44 @@ export async function generateScenesWithSpeedPaint(
  * Cenas são processadas uma a uma no Worker (sequencial) para não sobrecarregar.
  * Verifica cache LRU antes de cada cena.
  *
+ * v0.133.1: aceita `SceneWithRenderMode[]`. Se QUALQUER cena tiver
+ * `renderMode === 'vetorial'`, redireciona para `generateWithBatch` (Worker
+ * atual só gera strokes raster).
+ *
  * @param context - Contexto discriminador de modo de renderização (`renderMode`
  *                  + `vetorialPreset` opcionais). `undefined` em ambos = modo
- *                  `'mask'` retrocompatível.
+ *                  `'mask'` retrocompatível. Usado como fallback por cena.
  */
 async function generateWithWorker(
-  scenes: { imageUrl: string }[],
+  scenes: SceneWithRenderMode[],
   onProgress?: (progress: number) => void,
   context: { renderMode?: SpeedPaintRenderMode; vetorialPreset?: VetorialPreset } = {},
 ): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
   const { generateStrokesFromImage } = await import('../../speed-paint/lib/imageProcessing');
+  const log = createLogger('speedPaintRenderer');
   const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(scenes.length);
 
-  // Modo efetivo: `undefined` cai para `'mask'` (comportamento legado).
-  // `renderMode === 'vetorial'` exige `vetorialPreset` para discriminar o cache
-  // — quando ausente, o cache aplica o default `'artistic1'` internamente.
-  const effectiveMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
-  const effectivePreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
+  // v0.133.1: fallback global — usado quando a cena não tem `renderMode`
+  // próprio. O Worker `strokeWorker` só gera strokes raster (modo `mask`).
+  // Para cenas com `renderMode === 'vetorial'`, fallback para `generateWithBatch`.
+  const fallbackMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
+  const fallbackPreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
+
+  // Se alguma cena exige modo vetorial, redireciona para `generateWithBatch`
+  // (Worker atual só gera strokes raster). v0.133.1: quando TODAS as cenas
+  // são mask, usa Worker; caso contrário, cai pro batch (mais lento mas
+  // suporta modo misto).
+  const anyVetorial = scenes.some((s) => (s.renderMode ?? fallbackMode) === 'vetorial');
+  if (anyVetorial) {
+    log.info('Cena(s) com renderMode=vetorial detectada — redirecionando para main thread', {
+      sceneCount: scenes.length,
+    });
+    return generateWithBatch(scenes, onProgress, context);
+  }
+
+  const effectiveMode: SpeedPaintRenderMode = fallbackMode;
+  const effectivePreset = fallbackPreset;
 
   let worker: Worker | null = null;
 
@@ -333,11 +388,14 @@ async function generateWithWorker(
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
 
+      // v0.133.1: resolve modo desta cena. Quando há mistura, o worker
+      // path já foi descartado acima — `effectiveMode` aqui vale para todos.
+      const sceneMode: SpeedPaintRenderMode = scene.renderMode ?? effectiveMode;
+      const scenePreset: VetorialPreset | undefined = scene.vetorialPreset ?? effectivePreset;
+
       // Verifica cache antes de processar — chave SHA-256 inclui `mode`+`preset`.
-      // Branch discriminada para satisfazer os overloads literais de
-      // `getStrokeAnimation` (`{ mode: 'vetorial' }` vs `{ mode: 'mask' }`).
-      const cached = effectiveMode === 'vetorial'
-        ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: effectivePreset })
+      const cached = sceneMode === 'vetorial'
+        ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: scenePreset })
         : await getStrokeAnimation(scene.imageUrl, { mode: 'mask' });
       if (cached) {
         results[i] = { animation: cached, sceneIndex: i };
@@ -370,19 +428,19 @@ async function generateWithWorker(
         // Worker falhou — fallback para main thread
         try {
           const animation = await generateStrokesFromImage(scene.imageUrl, () => {}, {
-            renderMode: effectiveMode,
-            vetorialPreset: effectivePreset,
+            renderMode: sceneMode,
+            vetorialPreset: sceneMode === 'vetorial' ? scenePreset : undefined,
           });
           // O `setStrokeAnimation` exige o tipo correto por `mode` — usamos
           // type guards reais (de `./strokeCache`) para narrowar a union
           // retornada por `generateStrokesFromImage` sem `as` bypass.
-          if (effectiveMode === 'vetorial') {
+          if (sceneMode === 'vetorial') {
             if (!isVetorialAnimation(animation)) {
               throw new TypeError(
                 `Modo 'vetorial' esperava VetorialAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
               );
             }
-            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: effectivePreset });
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: scenePreset });
           } else {
             if (!isStrokeAnimation(animation)) {
               throw new TypeError(
@@ -427,7 +485,7 @@ async function generateWithWorker(
  *                  `'mask'` retrocompatível.
  */
 async function generateWithBatch(
-  scenes: { imageUrl: string }[],
+  scenes: SceneWithRenderMode[],
   onProgress?: (progress: number) => void,
   context: { renderMode?: SpeedPaintRenderMode; vetorialPreset?: VetorialPreset } = {},
 ): Promise<Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }>> {
@@ -439,11 +497,10 @@ async function generateWithBatch(
   const results: Array<{ animation: StrokeAnimation | VetorialAnimation | undefined; sceneIndex: number; error?: string }> =
     new Array(totalScenes);
 
-  // Modo efetivo: `undefined` cai para `'mask'` (comportamento legado).
-  // `renderMode === 'vetorial'` exige `vetorialPreset` para discriminar o cache
-  // — quando ausente, o cache aplica o default `'artistic1'` internamente.
-  const effectiveMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
-  const effectivePreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
+  // v0.133.1: fallback global — usado quando a cena não tem `renderMode`
+  // próprio. Retrocompatível com chamadas que só passam `context.renderMode`.
+  const fallbackMode: SpeedPaintRenderMode = context.renderMode ?? 'mask';
+  const fallbackPreset = context.renderMode === 'vetorial' ? context.vetorialPreset : undefined;
 
   // Processa em batches de 2 cenas para não congelar a UI
   for (let batchStart = 0; batchStart < totalScenes; batchStart += BATCH_SIZE) {
@@ -453,11 +510,19 @@ async function generateWithBatch(
       scenes.slice(batchStart, batchEnd).map(async (scene, batchIndex) => {
         const sceneIndex = batchStart + batchIndex;
 
+        // v0.133.1: resolve o modo desta cena (próprio ou fallback global).
+        // Cada cena pode misturar Clássico/Desenho num mesmo batch.
+        const sceneMode: SpeedPaintRenderMode = scene.renderMode ?? fallbackMode;
+        const scenePreset: VetorialPreset | undefined =
+          scene.renderMode === 'vetorial'
+            ? scene.vetorialPreset ?? fallbackPreset
+            : scene.renderMode === undefined && fallbackMode === 'vetorial'
+              ? scene.vetorialPreset ?? fallbackPreset
+              : undefined;
+
         // Verifica cache antes de processar — chave SHA-256 inclui `mode`+`preset`.
-        // Branch discriminada para satisfazer os overloads literais de
-        // `getStrokeAnimation` (`{ mode: 'vetorial' }` vs `{ mode: 'mask' }`).
-        const cached = effectiveMode === 'vetorial'
-          ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: effectivePreset })
+        const cached = sceneMode === 'vetorial'
+          ? await getStrokeAnimation(scene.imageUrl, { mode: 'vetorial', preset: scenePreset })
           : await getStrokeAnimation(scene.imageUrl, { mode: 'mask' });
         if (cached) {
           return { animation: cached, sceneIndex };
@@ -467,19 +532,19 @@ async function generateWithBatch(
           const animation = await generateStrokesFromImage(scene.imageUrl, () => {
             // Progresso interno não é granular o suficiente — usamos contagem de cenas
           }, {
-            renderMode: effectiveMode,
-            vetorialPreset: effectivePreset,
+            renderMode: sceneMode,
+            vetorialPreset: sceneMode === 'vetorial' ? scenePreset : undefined,
           });
           // O `setStrokeAnimation` exige o tipo correto por `mode` — usamos
           // type guards reais (de `./strokeCache`) para narrowar a union
           // retornada por `generateStrokesFromImage` sem `as` bypass.
-          if (effectiveMode === 'vetorial') {
+          if (sceneMode === 'vetorial') {
             if (!isVetorialAnimation(animation)) {
               throw new TypeError(
                 `Modo 'vetorial' esperava VetorialAnimation, recebeu outra forma (imageUrl=${scene.imageUrl})`,
               );
             }
-            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: effectivePreset });
+            await setStrokeAnimation(scene.imageUrl, animation, { mode: 'vetorial', preset: scenePreset });
           } else {
             if (!isStrokeAnimation(animation)) {
               throw new TypeError(

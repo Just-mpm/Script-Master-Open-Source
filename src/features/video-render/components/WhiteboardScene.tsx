@@ -303,6 +303,43 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
     const deltaPerFrame = durationInFrames > 0 ? totalDrawingLength / durationInFrames : 0;
     const prevVisible = Math.max(0, activePath.visibleLength - deltaPerFrame);
     prevPenPosition = safeGetPointAtLength(activePath.path.d, prevVisible);
+
+    // v0.133.1 — correção do "salto" do lápis entre paths:
+    // Quando o path ativo recém começou (visibleLength muito pequeno),
+    // o lápis está no INÍCIO do path, mas visualmente o usuário ainda
+    // vê o último path COMPLETO desenhado (longe). Isso causa a
+    // sensação de "salto" do lápis entre o fim do path anterior e o
+    // início do novo. Para suavizar: durante uma curta janela de
+    // transição no início de cada path, interpolamos entre o FIM do
+    // path anterior e o ponto atual do path novo.
+    const TRANSITION_FRACTION = 0.05; // 5% do comprimento do path novo
+    if (activePath.visibleLength < activePath.pathLen * TRANSITION_FRACTION) {
+      // Procura o último path completo antes do atual
+      let prevCompleteIdx = -1;
+      for (let i = activeIndex - 1; i >= 0; i--) {
+        const item = renderedPaths[i];
+        if (item && item.pathLen > 0 && item.visibleLength === item.pathLen) {
+          prevCompleteIdx = i;
+          break;
+        }
+      }
+      if (prevCompleteIdx >= 0) {
+        const prevComplete = renderedPaths[prevCompleteIdx];
+        if (prevComplete) {
+          const endOfPrev = safeGetPointAtLength(prevComplete.path.d, prevComplete.pathLen);
+          // Fração da transição: 0 = totalmente no fim do path anterior,
+          // 1 = totalmente no ponto atual do path novo
+          const transitionProgress = activePath.visibleLength / (activePath.pathLen * TRANSITION_FRACTION);
+          const t = Math.min(1, transitionProgress);
+          // Ease-out para a transição ficar mais natural
+          const easedT = 1 - (1 - t) * (1 - t);
+          penPosition = {
+            x: endOfPrev.x + (penPosition.x - endOfPrev.x) * easedT,
+            y: endOfPrev.y + (penPosition.y - endOfPrev.y) * easedT,
+          };
+        }
+      }
+    }
   } else {
     // Fallback: último path COMPLETO com comprimento > 0.
     // Itera de trás pra frente — O(N) no pior caso, mas tipicamente
@@ -348,6 +385,14 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
 
   const effectiveCanvasColor: CanvasColor = canvasColor ?? animation.canvasColor;
 
+  // v0.133.1: hold + imagem completa no final da animação.
+  // `isHoldPhase` é true quando o desenho terminou (drawnLength >= totalDrawingLength).
+  // Nesse momento, escondemos os paths sendo desenhados e mostramos a
+  // `resizedImage` (JPEG da imagem original) em tela cheia — equivalente
+  // ao "hold" do modo `mask` (`SpeedPaintScene.tsx:155-160`).
+  const isHoldPhase =
+    totalDrawingLength > 0 && drawnLength >= totalDrawingLength - 0.5;
+
   // Early return: sem paths para desenhar. Evita que `interpolate` receba
   // range `[0, totalDrawingLength]` com `totalDrawingLength = 0` e também
   // previne `<svg>` vazio de causar problemas no WebCodecs.
@@ -367,11 +412,37 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
         backgroundColor: effectiveCanvasColor === 'white' ? '#fff' : '#000',
       }}
     >
+      {/* v0.133.1: Imagem completa no final da animação (hold).
+          Equivalente ao `hold` de 3s do modo `mask` (`SpeedPaintScene.tsx`).
+          A `resizedImage` (JPEG 0.9 da imagem original) é renderizada quando
+          o desenho termina — equivale à "pintura" final do speed paint clássico.
+          Escondida durante a animação (paths sendo desenhados por cima). */}
+      {isHoldPhase && animation.resizedImage && (
+        <img
+          src={animation.resizedImage}
+          alt="Imagem completa — pintura final do speed paint"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       <svg
         width={animation.canvasWidth}
         height={animation.canvasHeight}
         viewBox={`0 0 ${animation.canvasWidth} ${animation.canvasHeight}`}
-        style={{ display: 'block' }}
+        style={{
+          display: 'block',
+          // v0.133.1: durante o hold, escondemos os paths e a caneta —
+          // a `resizedImage` (camada acima) toma o lugar deles.
+          opacity: isHoldPhase ? 0 : 1,
+          transition: 'none',
+        }}
         // Acessibilidade: descreve a cena para leitores de tela.
         aria-label={`Animação whiteboard com ${animation.paths.length} traços vetoriais`}
       >
@@ -416,19 +487,21 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
         })}
 
         {/* Caneta SVG inline — portabilidade total dentro do mesmo <svg>.
-            Wrapper externo aplica `scale(penScale)` a partir do CENTRO do
-            conteúdo (via `transformBox: 'fill-box' + transformOrigin: 'center'`)
-            para que a caneta escale uniformemente sem "voar" para fora da
-            ponta do traço. A transformação interna do `<Pencil>`
-            (`translate(x y) rotate(-45)`) continua inalterada. */}
+            v0.133.1 — correção do bug de sincronização: a ponta do Pencil
+            estava sendo multiplicada por `penScale` porque o `scale` era
+            aplicado ANTES do `translate` (ordem SVG = da direita pra
+            esquerda em compostos). Resultado: a ponta aparecia em
+            `(penScale*x, penScale*y)` em vez de `(x, y)`.
+            Solução: `translate(x y) scale(penScale)` no `<g>` externo —
+            agora o translate é aplicado PRIMEIRO, depois o scale ao
+            redor do ponto já posicionado. A ponta fica exatamente em
+            `(x, y)`. O `Pencil` interno continua com o `rotate(-45)`
+            (sem translate). */}
         {showPen && (
-          <g
-            transform={`scale(${effectivePenScale})`}
-            style={{ transformBox: 'fill-box', transformOrigin: 'center center' }}
-          >
+          <g transform={`translate(${penPosition.x} ${penPosition.y}) scale(${effectivePenScale})`}>
             <Pencil
-              x={penPosition.x}
-              y={penPosition.y}
+              x={0}
+              y={0}
               canvasColor={effectiveCanvasColor}
               frame={frame}
               pathIndex={activePathIndex}
@@ -494,8 +567,11 @@ function Pencil({
   frame,
   pathIndex,
 }: PencilProps): React.ReactElement {
-  // Efeito de flutuação sutil — idêntico ao Canvas original.
-  const bob = Math.sin(x * 0.1 + y * 0.1) * 2;
+  // Efeito de flutuação sutil — reduzido em v0.133.1 (era `* 2`).
+  // Valor original causava deslocamento de até ±2px da ponta real do
+  // traço, gerando dessincronia visual com a linha sendo pintada.
+  // Agora `* 0.5` mantém a sensação orgânica sem "soltar" a ponta.
+  const bob = Math.sin(x * 0.1 + y * 0.1) * 0.5;
 
   // Em canvas preto, a caneta usa cores mais claras para contraste.
   // No canvas branco, mantém a paleta amarelo/grafite do Canvas original.
@@ -519,7 +595,11 @@ function Pencil({
 
   return (
     <g
-      transform={`translate(${x + tremor} ${y + bob}) rotate(${rotation})`}
+      // v0.133.1: `x` e `y` são sempre `(0, 0)` (o `<g>` externo já fez
+      // o translate principal). Mantemos `tremor` e `bob` no espaço local
+      // do Pencil para a sensação orgânica sem deslocar a ponta do
+      // ponto exato no canvas.
+      transform={`translate(${tremor} ${bob}) rotate(${rotation})`}
       // Filtro SVG composto (`motion blur` + `sombra`) declarado no
       // `<defs>` do `<svg>` raiz — aplicado APENAS neste `<g>` (não no
       // `<svg>` inteiro — evita corte de sombra/blur nas bordas do canvas,

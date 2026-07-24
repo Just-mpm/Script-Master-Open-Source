@@ -99,8 +99,14 @@ export async function enhanceScenesWithSpeedPaint(
   }
 
   try {
+    // v0.133.1: propaga `renderMode`/`vetorialPreset` POR CENA para o
+    // renderer. Cena sem esses campos cai no fallback global (`options`).
     const results = await generateScenesWithSpeedPaint(
-      scenes.map((scene) => ({ imageUrl: scene.imageUrl })),
+      scenes.map((scene) => ({
+        imageUrl: scene.imageUrl,
+        renderMode: scene.renderMode,
+        vetorialPreset: scene.vetorialPreset,
+      })),
       onProgress,
       { useWorker: true, renderMode, vetorialPreset },
     );

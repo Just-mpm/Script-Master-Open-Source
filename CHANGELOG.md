@@ -7,6 +7,40 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.133.0] - 2026-07-24
+
+### Adicionado
+
+- **Web Worker para pipeline vetorial** (`src/features/speed-paint/lib/vetorialWorker.ts`, novo arquivo — 139 linhas): Worker dedicado para o pipeline edge+bezier do modo vetorial no Speed Paint. Processa Canny edge detection, Moore-Neighbor contour tracing e cubic Bézier fitting off the main thread, eliminando bloqueio da UI em roteiros com muitas cenas. Integrado via `useEdgeWorker` em `imageProcessing.ts` com guardas de runtime (`supportsVetorialWorker`) e fallback para processamento no thread principal.
+- **`SceneRenderModePanel`** (`src/features/video-render/components/SceneRenderModePanel.tsx`, novo arquivo — 226 linhas): painel de seleção de modo de renderização por cena no editor de vídeo. Exportado barrel de `src/features/video-render/index.ts`. Utilizado em `VideoPage.tsx`. Suporta `sceneRenderMode` i18n nos 3 locales.
+- **Utilitários de geometria em `vectorizer.ts`**: `polygonArea()`, `polygonPerimeter()`, `filterContoursByCompactness()` — usados pelo pipeline edge+bezier para filtrar e classificar contornos por compactidade antes da vetorização.
+- **Namespace i18n `sceneRenderMode`** adicionado aos 3 locales (`pt-BR.ts`, `en.ts`, `es.ts`): chaves para o seletor de modo de renderização de cena no editor de vídeo.
+- **`useEdgeWorker`** em `imageProcessing.ts` — hook que verifica suporte do navegador a Web Workers e direciona o processamento vetorial para o worker dedicado quando o preset é do tipo edge.
+- **`processVetorialInWorker`** em `imageProcessing.ts` — função que envia requisições de vetorização para o Web Worker e retorna a Promise com o resultado.
+- **`SceneWithRenderMode`** interface em `speedPaintRenderer.ts` — tipo que propaga `renderMode`/`vetorialPreset` por cena para o renderer.
+
+### Alterado
+
+- **Presets vetoriais — remoção de presets legados** (`src/features/speed-paint/types/vetorial.ts`): presets clássicos removidos (`posterized1`, `posterized2`, `posterized3`, `curvy`). `VetorialPreset` reduzido para valores compatíveis com o pipeline edge+bezier e legado imagetracerjs.
+- **`VetorialPresetGroupId`** redefinido em `vetorialPresets.ts` — agrupamento dos presets atualizado para refletir os presets remanescentes.
+- **`DEFAULT_MIN_CONTOUR_LENGTH`** em `contourTracing.ts` — valor de implementação alterado para otimizar a detecção de contornos no pipeline edge+bezier.
+- **`DEFAULT_VETORIAL_PRESET`** em `animationStore.ts` e `strokeCache.ts` — padrão alterado para `'edge-default'` (era `'artistic1'`), refletindo o novo edge+bezier como preset inicial.
+- **`videoRenderBridge.ts`** — preset padrão de vetorial alterado para `'edge-default'` como `'vetorialPreset'`.
+- **`speedPaintService.ts`** — propagação de `renderMode`/`vetorialPreset` por cena para o renderer, documentado com comentário de versão (v0.133.0). Cena sem esses campos cai no fallback global (`options`).
+- **`speedPaintRenderer.ts`** — removida exportação `scenes` (substituída por `SceneWithRenderMode`); adicionada interface `SceneWithRenderMode` para tipagem explícita da cena com modo de renderização.
+- **`SceneSequence.tsx`** — removido handler `onError` do componente `<Img>` (simplificação do tratamento de erros).
+- **`SpeedPaintScene.tsx`** — tratamento de erro melhorado com `try/catch` ao redor de `cancelRender`.
+- **`WhiteboardScene.tsx`** — adicionada constante `TRANSITION_FRACTION` (0.05) para transição suave entre strokes na animação da caneta.
+- **Tests de speed-paint e video-render** — todos os fixtures de preset atualizados de `'artistic1'`/`'detailed'`/`'curvy'` para `'edge-default'`/`'edge-bold'`.
+- **`firestore.rules`** — removida função `isValidProjectVideo` (16 linhas) que validava subcoleção de vídeos com campos específicos.
+
+### Corrigido
+
+- **Tratamento de erro no SpeedPaintScene** — `cancelRender` agora envolto em `try/catch` para evitar propagação de exceções não tratadas quando o render já foi cancelado.
+- **`MAX_PATHS_PER_SCENE` e `truncatePaths`** — removidos de `vectorizer.ts` (funções obsoletas cuja lógica de compactação foi absorvida por `filterContoursByCompactness`).
+
+---
+
 ## [0.132.0] - 2026-06-16
 
 ### Adicionado

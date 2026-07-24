@@ -945,7 +945,7 @@ function createMinimalVetorialAnimation(
     totalLength: 0,
     fps: 30,
     totalDurationMs: 333,
-    sourcePreset: 'artistic1',
+    sourcePreset: 'edge-default',
     ...overrides,
   };
 }
@@ -995,13 +995,13 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'edge-detailed', useWorker: false }),
     );
 
     // Assert — cache lookup DEVE ser discriminado por mode+preset (Premissa #10)
     expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', {
       mode: 'vetorial',
-      preset: 'detailed',
+      preset: 'edge-detailed',
     });
     expect(mockGetStroke).toHaveBeenCalledTimes(1);
 
@@ -1128,7 +1128,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'curvy', useWorker: false }),
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'edge-bold', useWorker: false }),
     );
 
     // Assert — generateStrokesFromImage DEVE receber os options de L1
@@ -1137,7 +1137,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
       expect.any(Function), // onProgress callback
       expect.objectContaining({
         renderMode: 'vetorial',
-        vetorialPreset: 'curvy',
+        vetorialPreset: 'edge-bold',
       }),
     );
 
@@ -1178,14 +1178,14 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'artistic1', useWorker: false }),
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'edge-default', useWorker: false }),
     );
 
     // Assert — setStrokeAnimation DEVE receber o context discriminado
     expect(mockSetStroke).toHaveBeenCalledWith(
       'scene1.png',
       expect.any(Object), // VetorialAnimation
-      { mode: 'vetorial', preset: 'artistic1' },
+      { mode: 'vetorial', preset: 'edge-default' },
     );
 
     vi.doUnmock('../../src/features/video-render/lib/strokeCache');
@@ -1199,7 +1199,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
 
   it('CT-F30: renderMode=vetorial sem vetorialPreset → preset fica undefined no spy (default aplicado internamente pelo cache)', async () => {
     // Arrange — sem vetorialPreset, o `speedPaintRenderer` propaga `undefined`
-    // para o cache. O default 'artistic1' (DEFAULT_VETORIAL_PRESET) é aplicado
+    // para o cache. O default 'edge-default' (DEFAULT_VETORIAL_PRESET) é aplicado
     // INTERNAMENTE em `getStrokeAnimation` (strokeCache.ts:187).
     const mockGetStroke = vi.fn().mockResolvedValue(null);
     const mockSetStroke = vi.fn().mockResolvedValue(undefined);
@@ -1235,7 +1235,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     );
 
     // Assert — o spy recebe o `preset: undefined` que o renderer propaga.
-    // A camada do cache (não mockada) é que aplica o default 'artistic1' —
+    // A camada do cache (não mockada) é que aplica o default 'edge-default' —
     // este comportamento é coberto em `tests/video-render/strokeCache.unit.test.ts`.
     expect(mockGetStroke).toHaveBeenCalledWith('scene1.png', {
       mode: 'vetorial',
@@ -1279,7 +1279,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'mask', vetorialPreset: 'detailed', useWorker: false }),
+      makeL1Options({ renderMode: 'mask', vetorialPreset: 'edge-detailed', useWorker: false }),
     );
 
     // Assert — cache lookup DEVE ser mask puro, sem vazar o preset vetorial
@@ -1329,7 +1329,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     const results = await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'edge-detailed', useWorker: false }),
     );
 
     // Assert — cache hit evita reprocessamento (CT-F13 do plano §L3)
@@ -1377,7 +1377,7 @@ describe('generateScenesWithSpeedPaint — propagação L1 (RF-04)', () => {
     const results = await generateScenesWithSpeedPaint(
       [{ imageUrl: 'scene1.png' }],
       undefined,
-      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'detailed', useWorker: false }),
+      makeL1Options({ renderMode: 'vetorial', vetorialPreset: 'edge-detailed', useWorker: false }),
     );
 
     // Assert — falha do type guard é capturada pelo try/catch e vira
