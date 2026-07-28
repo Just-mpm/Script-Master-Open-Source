@@ -455,6 +455,7 @@ const SpeedPaintPhaseBadge = React.memo(function SpeedPaintPhaseBadge({
           ? WHITE_12
           : 'rgba(46, 117, 182, 0.15)',
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         color: '#fff',
         fontSize: 12,
         fontWeight: 600,

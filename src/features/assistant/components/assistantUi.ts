@@ -74,6 +74,7 @@ export const assistantBubbleModelSx = (theme: Theme) => ({
   backgroundColor: alpha(APP_SURFACE_ELEVATED, 0.7),
   backgroundImage: 'none',
   backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
   boxShadow: `0 2px 12px ${alpha(SHADOW_DEEP, 0.18)}`,
   transition: 'box-shadow 0.3s ease',
   ...theme.applyStyles('dark', {

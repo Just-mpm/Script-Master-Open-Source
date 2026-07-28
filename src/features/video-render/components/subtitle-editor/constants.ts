@@ -301,6 +301,7 @@ export const DRAG_HINT_SX = {
   borderRadius: `${RADIUS_CHIP}px`,
   backgroundColor: BLACK_74,
   backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
   border: `1px solid ${APP_BORDER}`,
   boxShadow: `0 4px 16px ${BLACK_40}`,
   zIndex: 9,

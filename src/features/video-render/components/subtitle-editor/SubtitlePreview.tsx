@@ -93,6 +93,7 @@ export function SubtitlePreview({
             borderRadius: `${RADIUS_CHIP}px`,
             backgroundColor: BLACK_55,
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             border: `1px solid ${WHITE_08}`,
           }}
         >

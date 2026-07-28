@@ -25,9 +25,10 @@ vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   BRAND_SECONDARY: '#F7941E', };
 });;
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 describe('UseCasesSection', () => {
   beforeEach(() => {

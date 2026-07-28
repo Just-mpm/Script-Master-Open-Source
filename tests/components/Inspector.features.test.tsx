@@ -61,10 +61,10 @@ vi.mock('../../src/hooks/useVoicePreviews', () => ({
   }),
 }));
 
-vi.mock('../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-  insetPanelSx: () => ({}),
-}));
+vi.mock('../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/theme/tokens')>();

@@ -61,6 +61,7 @@ export const GalleryCard = memo(function GalleryCard({
             ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.32)}, 0 16px 36px ${alpha(theme.palette.primary.main, 0.16)}`
             : `0 12px 28px ${alpha(theme.palette.common.black, 0.18)}`,
           backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
           transition: theme.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
           '&:hover': {
             borderColor: isActive ? alpha(theme.palette.primary.main, 0.7) : alpha(theme.palette.common.white, 0.14),
@@ -189,6 +190,7 @@ export const GalleryCard = memo(function GalleryCard({
                   : alpha(theme.palette.common.black, 0.42),
                 color: theme.palette.common.white,
                 backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 transition: 'background-color 0.2s ease, transform 0.2s ease',
                 '&:hover': {
                   backgroundColor: isDownloading
@@ -221,6 +223,7 @@ export const GalleryCard = memo(function GalleryCard({
                 backgroundColor: alpha(theme.palette.common.black, 0.42),
                 color: theme.palette.common.white,
                 backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 transition: 'background-color 0.2s ease, transform 0.2s ease',
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.error.main, 0.72),

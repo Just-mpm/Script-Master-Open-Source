@@ -53,11 +53,10 @@ vi.mock('../../src/lib/logger', () => ({
   setLoggerUserId: vi.fn(),
 }));
 
-vi.mock('../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-  insetPanelSx: () => ({}),
-  searchFieldSx: {},
-}));
+vi.mock('../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/theme/tokens')>();

@@ -41,6 +41,10 @@ vi.mock('../../src/theme/surfaces', () => ({
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 8,
   }),
+  appDrawerPaperSx: {},
+  // Dependências declaradas acima: `insetPanelSx`, `appDrawerPaperSx`.
+  // Não importa `glassPanelSx`, `glassSurfaceSx`, `appDrawerBackdropSx`,
+  // `searchFieldSx` — se `assistantUi.tsx` passar a usá-los, este mock quebra.
 }));
 
 describe('assistantUi', () => {

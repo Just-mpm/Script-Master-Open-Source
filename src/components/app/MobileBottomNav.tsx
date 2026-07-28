@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, type ElementType } from 'react';
+import { useState, useMemo, type ElementType } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -38,6 +38,7 @@ import { useLocale, LOCALE_CONFIGS } from '../../features/i18n';
 import type { Locale } from '../../features/i18n/types';
 import { openAnalyticsConsentDialog } from './AnalyticsConsentPrompt';
 import { LogoutConfirmDialog } from '../LogoutConfirmDialog';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { useStore } from 'zustand';
 import { useVideoRenderController } from '../../features/video-render/store/videoRenderController';
 import {
@@ -50,9 +51,9 @@ import {
   WHITE_015,
   RADIUS_SM,
   RADIUS_XS,
-  BLACK_40,
 } from '../../theme/tokens';
-import { glassSurfaceSx } from '../../theme/surfaces';
+import { appDrawerBackdropSx, appDrawerPaperSx, glassSurfaceSx } from '../../theme/surfaces';
+import { exportDotPulseKeyframes } from '../../theme/animations';
 
 // ─── Tipos ────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ export function MobileBottomNav() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [localeAnchorEl, setLocaleAnchorEl] = useState<HTMLElement | null>(null);
 
   // ── Indicador de export de vídeo (P5=A — só ícone "Vídeo") ──
@@ -116,29 +118,42 @@ export function MobileBottomNav() {
   }, [t]);
 
   // ── Handlers ──
-  const handleMoreClick = useCallback(() => {
+  // Nota: funções simples em vez de `useCallback`. Não há `memo` nos
+  // componentes MUI consumidores e o React 19 não recomenda estabilizar
+  // identidade sem motivo. Notebook React 19 confirma: `useEvent` não
+  // existe e `useEffectEvent` só pode ser chamado dentro de `useEffect`.
+  const handleMoreClick = () => {
     setDrawerOpen((prev) => !prev);
-  }, []);
+  };
 
-  const closeDrawer = useCallback(() => {
+  const closeDrawer = () => {
     setDrawerOpen(false);
-  }, []);
+  };
 
-  const handleOpenLogoutDialog = useCallback(() => {
+  const handleOpenLogoutDialog = () => {
     closeDrawer();
     setLogoutDialogOpen(true);
-  }, [closeDrawer]);
+  };
 
-  const handleCloseLogoutDialog = useCallback(() => {
+  const handleCloseLogoutDialog = () => {
     setLogoutDialogOpen(false);
-  }, []);
+  };
 
-  const handleConfirmLogout = useCallback(() => {
+  const handleConfirmLogout = () => {
     setLogoutDialogOpen(false);
     logout();
-  }, [logout]);
+  };
 
-  const handleNavigate = useCallback((to: string, action?: 'feedback') => {
+  const handleOpenDeleteAccountDialog = () => {
+    closeDrawer();
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteAccountDialog = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  const handleNavigate = (to: string, action?: 'feedback') => {
     if (action === 'feedback') {
       openFeedback(location.pathname);
       closeDrawer();
@@ -146,11 +161,7 @@ export function MobileBottomNav() {
     }
     navigate(to);
     closeDrawer();
-  }, [navigate, closeDrawer, openFeedback, location.pathname]);
-
-  const handleLogout = useCallback(() => {
-    handleOpenLogoutDialog();
-  }, [handleOpenLogoutDialog]);
+  };
 
   // ── Valor ativo do BottomNavigation ──
   // Se a rota atual é uma das 4 principais, usa o pathname.
@@ -180,6 +191,7 @@ export function MobileBottomNav() {
           backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
           borderTop: `1px solid ${APP_BORDER}`,
           backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           pb: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
@@ -269,25 +281,24 @@ export function MobileBottomNav() {
                           ? t('exportCrossRoute.mobileDotActive')
                           : t('exportCrossRoute.mobileDotCompleted')}
                         role="status"
-                        sx={{
-                          position: 'absolute',
-                          top: -2,
-                          right: -4,
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
-                          boxShadow: videoIsRendering
-                            ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
-                            : `0 0 0 2px ${APP_SURFACE}`,
-                          animation: videoIsRendering
-                            ? 'exportDotPulse 1.6s ease-in-out infinite'
-                            : 'none',
-                          '@keyframes exportDotPulse': {
-                            '0%, 100%': { transform: 'scale(1)', opacity: 1 },
-                            '50%': { transform: 'scale(1.4)', opacity: 0.7 },
+                        sx={[
+                          exportDotPulseKeyframes,
+                          {
+                            position: 'absolute',
+                            top: -2,
+                            right: -4,
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
+                            boxShadow: videoIsRendering
+                              ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
+                              : `0 0 0 2px ${APP_SURFACE}`,
+                            animation: videoIsRendering
+                              ? 'exportDotPulse 1.6s ease-in-out infinite'
+                              : 'none',
                           },
-                        }}
+                        ]}
                       />
                     )}
                   </Box>
@@ -309,6 +320,7 @@ export function MobileBottomNav() {
             onClick={handleMoreClick}
             aria-label={t('mobileBottomNav.openMenu')}
             aria-expanded={drawerOpen}
+            aria-controls="mobile-bottom-drawer"
             sx={{
               '&.Mui-selected': {
                 color: 'text.primary',
@@ -325,31 +337,23 @@ export function MobileBottomNav() {
         anchor="left"
         open={drawerOpen}
         onClose={closeDrawer}
-        ModalProps={{ keepMounted: true }}
         slotProps={{
           paper: {
-            sx: {
-              backgroundColor: APP_SURFACE,
-              backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-              borderRight: `1px solid ${APP_BORDER}`,
-              width: 280,
-            },
+            sx: { ...appDrawerPaperSx, width: 280 },
+          },
+          backdrop: {
+            sx: appDrawerBackdropSx,
           },
         }}
+        id="mobile-bottom-drawer"
         aria-label={t('mobileBottomNav.ariaDrawer')}
         sx={{
+          // Drawer acima da bottom nav (1200) mas abaixo do ActionBar (1400).
+          // Aplicado diretamente no root porque `MuiModal-root` e `MuiDrawer-root`
+          // compartilham o mesmo elemento DOM — o seletor descendente nunca matchava.
+          zIndex: 1300,
           '& .MuiDrawer-paper': {
             transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          },
-          // Backdrop com blur — consistência com AppBar (blur 14-20px)
-          '& .MuiBackdrop-root': {
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            backgroundColor: BLACK_40,
-          },
-          // Drawer acima da bottom nav (1200) mas abaixo do ActionBar (1400)
-          '& .MuiModal-root': {
-            zIndex: 1300,
           },
         }}
       >
@@ -469,7 +473,7 @@ export function MobileBottomNav() {
             />
           </ListItemButton>
           <ListItemButton
-            onClick={handleLogout}
+            onClick={handleOpenLogoutDialog}
             sx={{
               borderRadius: RADIUS_XS,
               color: 'error.main',
@@ -486,12 +490,7 @@ export function MobileBottomNav() {
             />
           </ListItemButton>
           <ListItemButton
-            onClick={() => {
-              closeDrawer();
-              // Dialog de exclusão é controlado pela Sidebar (presente em /app/* desktop)
-              // Disparamos evento global para a Sidebar abrir o dialog
-              window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
-            }}
+            onClick={handleOpenDeleteAccountDialog}
             sx={{
               borderRadius: RADIUS_XS,
               color: 'error.main',
@@ -561,6 +560,14 @@ export function MobileBottomNav() {
         open={logoutDialogOpen}
         onClose={handleCloseLogoutDialog}
         onConfirm={handleConfirmLogout}
+      />
+
+      {/* Dialog de exclusão de conta — controlado localmente (antes dependia
+          do evento `open-delete-account-dialog` escutado pela `Sidebar`,
+          que só renderiza em desktop — bug silencioso no mobile). */}
+      <DeleteAccountDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteAccountDialog}
       />
     </>
   );

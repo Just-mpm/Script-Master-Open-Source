@@ -84,7 +84,11 @@ function formatMissingUsage(usage: I18nKeyUsage): string {
 }
 
 describe('i18n used keys', () => {
-  it('mantém toda chave literal usada em t(...) existente no locale base', () => {
+  it('mantém toda chave literal usada em t(...) existente no locale base', { timeout: 30_000 }, () => {
+    // Timeout elevado (default 15s flakeava sob carga da suíte completa ~4-5min).
+    // Esse teste varre todos os arquivos `src/` buscando chamadas `t(...)` — custo
+    // O(n) na quantidade de arquivos. Tolerância de 30s é folgado para a suíte
+    // completa e ainda alerta regressões genuínas.
     expect(existsSync(SOURCE_ROOT)).toBe(true);
 
     const baseDictionary: TranslationDictionary = dictionaries[DEFAULT_LOCALE];

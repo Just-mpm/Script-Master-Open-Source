@@ -18,9 +18,10 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassSurfaceSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/theme/tokens')>();

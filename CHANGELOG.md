@@ -7,6 +7,62 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.135.0] - 2026-07-28
+
+### Adicionado
+
+- **Helper `appDrawerBackdropSx` em `theme/surfaces.ts`** (+21 linhas): novo helper `SxProps<Theme>` exportado de `src/theme/surfaces.ts` (`appDrawerBackdropSx`) — centraliza o estilo do `Backdrop` (fundo escurecido) dos Drawers laterais temporários (`MobileBottomNav`, `GuestMobileNav`, `PublicHeader`). Padroniza `backdropFilter: blur(8px)` (com prefixo `-webkit-` para Safari iOS) e `backgroundColor: BLACK_40` (40% preto). Antes, apenas o `MobileBottomNav` tinha backdrop blur; os outros 2 Drawers usavam o backdrop default do MUI (sem blur, inconsistente visualmente). Padrão oficial MUI v9 confirmado via NotebookLM: `BackdropProps` foi removido na v9 em favor de `slotProps.backdrop`. JSDoc extensivo documenta o padrão de uso (`slotProps={{ backdrop: { sx: appDrawerBackdropSx } }}`) e o motivo da inconsistência anterior.
+
+- **4 testes para `appDrawerBackdropSx`** (`tests/theme/surfaces.unit.test.ts`): valida que o helper é um `SxProps<Theme>` (objeto literal, não função), aplica blur 8px consistente, define `WebkitBackdropFilter` para compatibilidade Safari iOS, e usa o token `BLACK_40` literal `rgba(0, 0, 0, 0.40)` (teste de contrato — detecta mudanças no token).
+
+### Alterado
+
+- **3 Drawers laterais migrados para `slotProps.backdrop`** (`MobileBottomNav.tsx`, `GuestMobileNav.tsx`, `PublicHeader.tsx`): o `MobileBottomNav` migrou do padrão legado `sx={{ '& .MuiBackdrop-root': {...} }}` (seletor descendente CSS, considerado menos idiomático na v9) para `slotProps={{ backdrop: { sx: appDrawerBackdropSx } }}`. Os outros 2 Drawers (`GuestMobileNav`, `PublicHeader`) ganharam `slotProps.backdrop` (antes não tinham backdrop blur — agora têm blur 8px consistente). O `MobileBottomNav` deixou de importar `BLACK_40` de `tokens.ts` (encapsulado no helper).
+
+- **Sidebar migrada para spread de `appDrawerPaperSx`** (`src/components/app/Sidebar.tsx`): o `Drawer` permanente da Sidebar (variante `variant="permanent"`) usava inline `backgroundColor: APP_SURFACE`, `backgroundImage: linear-gradient(180deg, ...)`, `borderRight: 1px solid APP_BORDER` — exatamente os mesmos 3 valores do helper `appDrawerPaperSx` criado na v0.134.0. Agora usa `{ ...appDrawerPaperSx, width, boxSizing, transition, overflowX, backdropFilter, height, zIndex }` via spread. Tokens `APP_SURFACE`, `WHITE_05`, `WHITE_015` removidos dos imports (não mais usados). Ganhou `WebkitBackdropFilter: 'blur(22px)'` no `backdropFilter` adicional (era preexistente sem o prefixo Safari).
+
+- **Webkit prefix adicionado em 18 ocorrências preexistentes** (`backdropFilter: 'blur(...)'` sem o prefixo `-webkit-`): correção cross-browser Safari iOS aplicada em 14 arquivos (`Configuracoes.tsx`, `Assistant.tsx`, `FeedbackDialog.tsx`, `StudioPage.tsx`, `GalleryCard.tsx` 3x, `AssistantComposer.tsx` 2x, `CaptionEditorPanel.tsx`, `SpeedPaintScene.tsx`, `SubtitlePreview.tsx`, `ManualProjectForm.tsx`, `QueueStaging.tsx` 2x, `assistantUi.ts`, `subtitle-editor/constants.ts`). Além disso, o `glassPanelSx` em `surfaces.ts` e o Paper da bottom nav em `MobileBottomNav.tsx` ganharam `WebkitBackdropFilter` (ambos eram preexistentes sem prefixo). Também o `ScriptEditor.tsx:302` ganhou `WebkitBackdropFilter: 'none'` (override defensivo — antes só desabilitava a propriedade padrão, não a prefixada). Total: **20 propriedades `backdropFilter` agora com `WebkitBackdropFilter` emparelhado** (1:1 em todos os arquivos do projeto, incluindo o CSS `index.css` que já tinha ambos os prefixes).
+
+- **5 escape hatches de mock documentados** (`assistantUi.unit.test.ts`, `ConfiguracoesPage.component.test.tsx`, `SpeedPaintControls.unit.test.tsx`, `CaptionEditorPanel.unit.test.tsx`, `VideoExportPanel.unit.test.tsx`): cada teste agora tem um comentário explícito listando quais exports de `src/theme/surfaces` ele importa (`insetPanelSx`, `glassPanelSx`, `glassSurfaceSx`, `appDrawerPaperSx` em combinações diferentes) e declarando quais NÃO importa (`searchFieldSx`, `appDrawerBackdropSx`). Documenta o risco de drift: se o componente sob teste passar a importar um export não-stubbed, o teste quebra e o desenvolvedor sabe exatamente o que adicionar. Padrão recomendado para mocks inline parciais.
+
+### Corrigido
+
+- **JSDoc do `appDrawerBackdropSx`** (`src/theme/surfaces.ts:70-77`): o exemplo de uso tinha dois `slotProps={{...}}` separados (segundo sobrescrevia o primeiro — código JSX inválido). Agora mostra um único `slotProps={{ backdrop: { sx: appDrawerBackdropSx }, paper: { sx: appDrawerPaperSx } }}`. Bug introduzido na implementação inicial da v0.135.0, corrigido na auditoria subsequente.
+
+### Validação
+
+- `bun run lint` → EXITCODE=0 ✅
+- `bun run typecheck` → EXITCODE=0 ✅
+- `bun run test` → **2617/2617 testes passando** ✅ (3 rodadas, ~3min cada)
+
+---
+
+## [0.134.0] - 2026-07-28
+
+### Adicionado
+
+- **Helper compartilhado `animations.ts`** (`src/theme/animations.ts`, novo arquivo — 31 linhas): `exportDotPulseKeyframes` extraído como `SxProps<Theme>` reutilizável, contendo o `@keyframes exportDotPulse` usado pelo indicador pulsante de export de vídeo na bottom nav. Consumido por `SidebarNavItem.tsx` e `MobileBottomNav.tsx` via **array syntax** do MUI v9 (`sx={[exportDotPulseKeyframes, {...}]}`) — padrão recomendado pelo notebook MUI v9, que adverte contra spread de `SxProps` por poder quebrar silenciosamente se a constante for refatorada para callback function no futuro. Elimina duplicação de ~10 linhas de keyframes que existia inline nos 2 componentes.
+
+- **Helper `appDrawerPaperSx` em `theme/surfaces.ts`** (+16 linhas): novo helper `SxProps<Theme>` exportado de `src/theme/surfaces.ts` (`appDrawerPaperSx`) — centraliza `backgroundColor`, `backgroundImage` (gradiente vertical sutil) e `borderRight` para que os Drawers laterais de navegação (`MobileBottomNav`, `GuestMobileNav`, `PublicHeader`) tenham exatamente a mesma aparência de superfície. Drawers que precisam de personalização adicional (ex: `MobileBottomNav` define `width: 280`) estendem o objeto via spread. JSDoc extensivo documenta o padrão de uso.
+
+- **Factory mock compartilhado de `surfaces` em testes** (`tests/__mocks__/surfacesMock.ts`, novo arquivo — 36 linhas): objeto literal `surfacesMock` exportado com stubs idênticos para todos os 5 helpers de `src/theme/surfaces.ts` (`glassPanelSx`, `insetPanelSx`, `glassSurfaceSx`, `appDrawerPaperSx`, `searchFieldSx`). Documentação inline explica o motivo do helper existir e por que usa **import dinâmico dentro do factory `vi.mock`** (não helper externo) — padrão oficial do Vitest 4 confirmado por NotebookLM: o `vi.mock` é hoisted antes dos `import` estáticos, então QUALQUER função importada externamente fica `undefined` no momento da execução do factory. JSDoc explica o uso canônico.
+
+### Alterado
+
+- **33 testes migrados para o factory `surfacesMock`** (33 arquivos): `vi.mock('../../src/theme/surfaces', () => ({...stubs...}))` substituído por `vi.mock(path, async () => { const { surfacesMock } = await import('../../__mocks__/surfacesMock'); return surfacesMock; })`. 5 testes mantêm mocks inline (escape hatch documentado): `assistantUi.unit.test.ts` (depende de `insetPanelSx` customizado com `backgroundColor`+`borderRadius`), `ConfiguracoesPage.component.test.tsx`, `SpeedPaintControls.unit.test.tsx`, `CaptionEditorPanel.unit.test.tsx`, `VideoExportPanel.unit.test.tsx` (valores `p: 2`/`borderRadius: 3` arbitrários mas mantidos como estão para evitar regressão não verificada). Benefício: adicionar novo export a `surfaces.ts` requer atualizar **1 arquivo** (`surfacesMock.ts`) em vez de descobrir via teste quebrado em 33 lugares. Suíte completa: 2613/2613 passando.
+
+- **`vitest.config.ts` configurado contra flakies de carga**: `pool: 'forks'` (default do Vitest 4, explicitado para documentar a intenção), `testTimeout: 15000` (era 5000ms), `hookTimeout: 20000` e `maxWorkers: '50%'`. Resolve 4 flakies pré-existentes (`SpeedPaintPage`, `ScriptEditor`, `lib-data`) que excediam 5s sob carga da suíte completa (~4min, 2.5k testes disputando CPU/disco). Sintaxe do Vitest 4: `poolOptions` foi removido nesta versão; `maxWorkers` substitui os antigos `maxThreads`/`maxForks`.
+
+- **`MobileBottomNav.tsx` simplificado** (+64/-54): 7 `useCallback` redundantes removidos — `handleMoreClick`, `closeDrawer`, `handleOpenLogoutDialog`, `handleCloseLogoutDialog`, `handleConfirmLogout`, `handleOpenDeleteAccountDialog`, `handleCloseDeleteAccountDialog`. Todos seguem o mesmo padrão do `handleNavigate`: passados como `onClick`/`onClose`/`onConfirm` para componentes MUI não-memo. Notebook React 19 confirma: `useEvent` não existe; `useEffectEvent` só pode ser chamado dentro de `useEffect`. A recomendação oficial é função simples ou `useCallback` com propósito real — escolhemos função simples. Import de `useCallback` removido. Suíte completa: 2613/2613 passando sem regressão.
+
+- **`SidebarNavItem.tsx` e `MobileBottomNav.tsx` consomem `exportDotPulseKeyframes` via array syntax**: conforme recomendação oficial do MUI v9. Antes usavam spread `...exportDotPulseKeyframes`, que pode quebrar silenciosamente se o helper for refatorado para callback function no futuro.
+
+### Limitado (documentado, fora do escopo)
+
+- **Escopo expandido em ondas anteriores** (pacote de melhorias, 3 ondas): além dos 4 itens explicitamente solicitados, foram entregues também: extração de `appDrawerPaperSx` para 3 Drawers, migração de `ModalProps={{ keepMounted: true }}` para padrão MUI 9 (default `false`), fix de a11y do drawer mobile (`aria-controls`/`aria-expanded`/`aria-label` consistente), `DeleteAccountDialog` migrado de evento global (`open-delete-account-dialog`) para estado local no `MobileBottomNav` (cada nav cuida do seu dialog — SRP), `AnalyticsConsentPrompt.actionPlacement` corrigido de `'stack'` para `'bottom'` (stack só funciona em column direction), `Sidebar.tsx` removido listener dead code, JSDoc de `DeleteAccountDialog` atualizado. Cada onda foi autorizada explicitamente pelo usuário em iterações anteriores.
+
+---
+
 ## [0.133.0] - 2026-07-24
 
 ### Adicionado

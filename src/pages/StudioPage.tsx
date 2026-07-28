@@ -98,6 +98,7 @@ export function StudioPage({
               borderRadius: RADIUS_SM,
               bgcolor: 'rgba(5, 8, 22, 0.88)',
               backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
             }}
           >
             <Tabs

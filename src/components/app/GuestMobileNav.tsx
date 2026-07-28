@@ -18,13 +18,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../features/i18n';
 import {
   APP_BORDER,
-  APP_SURFACE,
   BRAND_GRADIENT,
   BRAND_PRIMARY_GLOW,
   ICON_SIZE_LG,
   ICON_SIZE_MD,
-  WHITE_05,
-  WHITE_015, RADIUS_XS } from '../../theme/tokens';
+  RADIUS_XS,
+} from '../../theme/tokens';
+import { appDrawerBackdropSx, appDrawerPaperSx } from '../../theme/surfaces';
 
 interface GuestNavItem {
   to: string;
@@ -73,13 +73,6 @@ export function GuestMobileNav() {
   const toggleDrawer = (): void => setDrawerOpen((prev) => !prev);
   const closeDrawer = (): void => setDrawerOpen(false);
 
-  /** Estilo glass do drawer (fundo + borda) — mesmo padrão do Header original. */
-  const drawerPaperSx = {
-    backgroundColor: APP_SURFACE,
-    backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-    borderRight: `1px solid ${APP_BORDER}`,
-  };
-
   return (
     <>
       {/* Botão hamburguer — abre o drawer de navegação pública */}
@@ -87,6 +80,8 @@ export function GuestMobileNav() {
         <IconButton
           color="inherit"
           aria-label={t('nav.ariaMenu')}
+          aria-expanded={drawerOpen}
+          aria-controls="guest-mobile-drawer"
           onClick={toggleDrawer}
           sx={{
             color: 'text.secondary',
@@ -103,8 +98,11 @@ export function GuestMobileNav() {
         anchor="left"
         open={drawerOpen}
         onClose={closeDrawer}
-        ModalProps={{ keepMounted: true }}
-        slotProps={{ paper: { sx: drawerPaperSx } }}
+        slotProps={{
+          paper: { sx: appDrawerPaperSx },
+          backdrop: { sx: appDrawerBackdropSx },
+        }}
+        id="guest-mobile-drawer"
         aria-label={t('nav.ariaDrawerMenu')}
         sx={{
           '& .MuiDrawer-paper': {

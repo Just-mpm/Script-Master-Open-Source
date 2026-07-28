@@ -277,24 +277,27 @@ describe('Sidebar (component)', () => {
     });
   });
 
-  // ─── DeleteAccountDialog (evento do MobileBottomNav) ────────
+  // ─── DeleteAccountDialog — não é responsabilidade da Sidebar ────────
+  // O fluxo de exclusão de conta vive no `MobileBottomNav` (drawer "Mais"),
+  // que renderiza o próprio `DeleteAccountDialog`. A Sidebar desktop não
+  // tem listener de evento nem dialog — confirmar que o evento global
+  // legado não causa efeito algum aqui.
 
-  describe('evento open-delete-account-dialog', () => {
+  describe('DeleteAccountDialog — responsabilidade isolada do MobileBottomNav', () => {
     it('não exibe dialog de exclusão inicialmente', () => {
       renderSidebar('/app/estudio', true);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('abre o dialog ao receber o evento open-delete-account-dialog', () => {
+    it('ignora o evento legado open-delete-account-dialog (sem listener)', () => {
       renderSidebar('/app/estudio', true);
 
       act(() => {
         window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
       });
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-      // Título do dialog (i18n: studio.header.deleteAccount.dialogTitle)
-      expect(screen.getByText('Excluir conta permanentemente')).toBeInTheDocument();
+      // Nenhum dialog deve aparecer — a Sidebar não escuta mais o evento.
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
 });

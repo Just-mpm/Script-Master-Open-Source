@@ -140,10 +140,10 @@ vi.mock('../../src/theme/tokens', async (importOriginal) => {
   WHITE_14: 'rgba(255, 255, 255, 0.14)', };
 });;
 
-vi.mock('../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-  glassSurfaceSx: () => ({}),
-}));
+vi.mock('../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../src/lib/logger', () => ({
   createLogger: () => ({

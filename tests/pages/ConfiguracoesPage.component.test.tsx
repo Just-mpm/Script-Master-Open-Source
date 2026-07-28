@@ -66,6 +66,10 @@ vi.mock('../../src/features/studio/components/EmotionSelector', () => ({
 vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({ p: 2, borderRadius: 3 }),
   insetPanelSx: () => ({ p: 2 }),
+  appDrawerPaperSx: {},
+  // Dependências declaradas acima: `glassPanelSx`, `insetPanelSx`, `appDrawerPaperSx`.
+  // Não importa `glassSurfaceSx`, `appDrawerBackdropSx`, `searchFieldSx` —
+  // se `ConfiguracoesPage.tsx` passar a usá-los, este mock quebra.
 }));
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {

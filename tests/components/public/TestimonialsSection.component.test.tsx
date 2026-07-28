@@ -28,9 +28,10 @@ vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   BRAND_PRIMARY_GLOW_SOFT: 'rgba(6, 182, 212, 0.12)', };
 });;
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 // ─── TestimonialCard ────────────────────────────────────────
 

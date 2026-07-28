@@ -85,11 +85,10 @@ vi.mock('../../src/lib/logger', () => ({
   setLoggerUserId: vi.fn(),
 }));
 
-vi.mock('../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-  insetPanelSx: () => ({}),
-  searchFieldSx: {},
-}));
+vi.mock('../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../src/components/video-library/DeleteConfirmationDialog', () => ({
   DeleteConfirmationDialog: ({ open, titleIdleLabel }: { open: boolean; titleIdleLabel?: string }) =>

@@ -28,9 +28,10 @@ vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   APP_BORDER: 'rgba(255,255,255,0.08)', };
 });;
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 describe('ProductDemoSection', () => {
   beforeEach(() => {

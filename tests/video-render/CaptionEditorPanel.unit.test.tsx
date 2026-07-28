@@ -15,6 +15,10 @@ vi.mock('../../src/features/video-render/store/videoRenderBridge', () => ({
 
 vi.mock('../../src/theme/surfaces', () => ({
   glassSurfaceSx: () => ({ p: 2, borderRadius: 3 }),
+  appDrawerPaperSx: {},
+  // Dependências declaradas acima: `glassSurfaceSx`, `appDrawerPaperSx`.
+  // Não importa `glassPanelSx`, `insetPanelSx`, `appDrawerBackdropSx`,
+  // `searchFieldSx` — se `CaptionEditorPanel.tsx` passar a usá-los, este mock quebra.
 }));
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {

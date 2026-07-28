@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ElementType } from 'react';
+import { useCallback, useMemo, type ElementType } from 'react';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
@@ -25,18 +25,15 @@ import { useVideoRenderController } from '../../features/video-render/store/vide
 import { useSpeedPaintRenderController } from '../../features/speed-paint/store/speedPaintRenderController';
 import {
   APP_BORDER,
-  APP_SURFACE,
   BRAND_SECONDARY,
   SIDEBAR_TRANSITION_DURATION,
   SIDEBAR_WIDTH_COLLAPSED,
   SIDEBAR_WIDTH_EXPANDED,
-  WHITE_015,
-  WHITE_05,
   RADIUS_XS,
   WHITE_08,
 } from '../../theme/tokens';
 import { alpha } from '@mui/material/styles';
-import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { appDrawerPaperSx } from '../../theme/surfaces';
 import { SidebarFooter } from './SidebarFooter';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarNavItem } from './SidebarNavItem';
@@ -65,10 +62,9 @@ interface NavItem {
  * 3. Lista de `SidebarNavItem` (scroll interno)
  * 4. `SidebarFooter` — avatar, locale, cookies, logout
  *
- * Inclui o `DeleteAccountDialog` e escuta o evento
- * `open-delete-account-dialog` disparado pelo `MobileBottomNav`
- * (passo 14 do plano ajustará para callback direto, mas o listener
- * permanece como contrato retrocompatível).
+ * O fluxo de exclusão de conta é responsabilidade do `MobileBottomNav`
+ * (que renderiza o próprio `DeleteAccountDialog`). A sidebar desktop
+ * não tem item de exclusão — a ação vive no drawer "Mais" do mobile.
  */
 export function Sidebar() {
   const theme = useTheme();
@@ -78,7 +74,6 @@ export function Sidebar() {
   const { collapsed, toggle } = useSidebarStore(
     useShallow((s) => ({ collapsed: s.collapsed, toggle: s.toggle })),
   );
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // ── Indicador de export de vídeo no nav item "Vídeo" (M7) ──
   // Lê slices primitivas do controller — espelha o padrão do `MobileBottomNav`.
@@ -123,17 +118,6 @@ export function Sidebar() {
     [openFeedback, location.pathname],
   );
 
-  // ── Escuta o evento do MobileBottomNav para abrir o dialog de exclusão ──
-  useEffect(() => {
-    const handleOpenDeleteDialog = (): void => {
-      setDeleteDialogOpen(true);
-    };
-    window.addEventListener('open-delete-account-dialog', handleOpenDeleteDialog);
-    return () => {
-      window.removeEventListener('open-delete-account-dialog', handleOpenDeleteDialog);
-    };
-  }, []);
-
   // ── Largura dinâmica e transição reutilizável (paper + root) ──
   const width = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
   const widthTransition = theme.transitions.create('width', {
@@ -150,13 +134,11 @@ export function Sidebar() {
         slotProps={{
           paper: {
             sx: {
+              ...appDrawerPaperSx,
               width,
               boxSizing: 'border-box',
               transition: widthTransition,
               overflowX: 'hidden',
-              backgroundColor: APP_SURFACE,
-              backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-              borderRight: `1px solid ${APP_BORDER}`,
               backdropFilter: 'blur(22px)',
               WebkitBackdropFilter: 'blur(22px)',
               height: '100dvh',
@@ -257,9 +239,6 @@ export function Sidebar() {
         {/* Footer — avatar, locale, cookies, logout (já inclui seu Divider) */}
         <SidebarFooter collapsed={collapsed} />
       </Drawer>
-
-      {/* Dialog de exclusão de conta — controlado por estado local + evento do MobileBottomNav */}
-      <DeleteAccountDialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} />
     </>
   );
 }

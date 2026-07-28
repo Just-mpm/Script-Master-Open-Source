@@ -39,9 +39,10 @@ vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   WHITE_12: 'rgba(255,255,255,0.12)', };
 });;
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 vi.mock('../../../src/lib/seo', () => ({
   getPageSeo: () => ({ title: 'Política de Privacidade' }),

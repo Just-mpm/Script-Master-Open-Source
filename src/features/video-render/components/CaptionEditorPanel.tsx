@@ -911,8 +911,9 @@ export const CaptionEditorPanel = React.memo(function CaptionEditorPanel({
             borderRadius: RADIUS_SM,
             border: `1px solid ${WHITE_14}`,
             color: 'text.primary',
-            boxShadow: `0 8px 32px ${BLACK_40}`,
+boxShadow: `0 8px 32px ${BLACK_40}`,
             backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           },
         }}
       />

@@ -711,6 +711,7 @@ export function Configuracoes() {
           borderColor: alpha(currentTheme.palette.common.white, 0.12),
           backgroundColor: alpha(currentTheme.palette.background.paper, 0.88),
           backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
         })}
       >
         <Stack

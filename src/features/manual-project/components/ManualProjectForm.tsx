@@ -192,6 +192,7 @@ export function ManualProjectForm() {
             borderRadius: 2,
             bgcolor: alpha(theme.palette.background.paper, 0.9),
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             border: `1px solid ${theme.palette.divider}`,
             boxShadow: theme.shadows[8],
           })}

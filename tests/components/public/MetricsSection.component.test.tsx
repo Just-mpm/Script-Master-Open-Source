@@ -26,9 +26,10 @@ vi.mock('../../../src/theme/tokens', async (importOriginal) => {
   TEXT_SECONDARY: 'rgba(248, 250, 252, 0.68)', };
 });;
 
-vi.mock('../../../src/theme/surfaces', () => ({
-  glassPanelSx: () => ({}),
-}));
+vi.mock('../../../src/theme/surfaces', async () => {
+  const { surfacesMock } = await import('../../__mocks__/surfacesMock');
+  return surfacesMock;
+});
 
 describe('MetricsSection', () => {
   beforeEach(() => {

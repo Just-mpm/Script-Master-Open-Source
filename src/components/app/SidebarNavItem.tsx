@@ -16,6 +16,7 @@ import {
   BRAND_SECONDARY_GLOW_SOFT,
   ICON_SIZE_MD,
 } from '../../theme/tokens';
+import { exportDotPulseKeyframes } from '../../theme/animations';
 
 interface SidebarNavItemProps {
   /** Rota React Router para a qual o item navega. */
@@ -168,25 +169,24 @@ function ExportDot({ videoIsRendering }: { videoIsRendering?: boolean }) {
     <Box
       role="status"
       aria-label={videoIsRendering ? 'Renderização em andamento' : 'Vídeo pronto para ver'}
-      sx={{
-        position: 'absolute',
-        top: -2,
-        right: -4,
-        width: 10,
-        height: 10,
-        borderRadius: '50%',
-        backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
-        boxShadow: videoIsRendering
-          ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
-          : `0 0 0 2px ${APP_SURFACE}`,
-        animation: videoIsRendering
-          ? 'exportDotPulse 1.6s ease-in-out infinite'
-          : 'none',
-        '@keyframes exportDotPulse': {
-          '0%, 100%': { transform: 'scale(1)', opacity: 1 },
-          '50%': { transform: 'scale(1.4)', opacity: 0.7 },
+      sx={[
+        exportDotPulseKeyframes,
+        {
+          position: 'absolute',
+          top: -2,
+          right: -4,
+          width: 10,
+          height: 10,
+          borderRadius: '50%',
+          backgroundColor: videoIsRendering ? 'primary.main' : 'success.main',
+          boxShadow: videoIsRendering
+            ? `0 0 0 2px ${APP_SURFACE}, 0 0 8px ${BRAND_PRIMARY_GLOW_SOFT}`
+            : `0 0 0 2px ${APP_SURFACE}`,
+          animation: videoIsRendering
+            ? 'exportDotPulse 1.6s ease-in-out infinite'
+            : 'none',
         },
-      }}
+      ]}
     />
   );
 }

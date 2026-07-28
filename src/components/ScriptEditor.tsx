@@ -300,6 +300,7 @@ export function ScriptEditor({
                 borderRadius: 4,
                 backgroundColor: 'transparent',
                 backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
                 px: { xs: 0.5, sm: 1 },
                 py: { xs: 0.5, sm: 1 },
                 transition: 'box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

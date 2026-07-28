@@ -228,48 +228,48 @@ describe('Sidebar (features)', () => {
     });
   });
 
-  // ─── Delete account dialog (evento do MobileBottomNav) ──────
+  // ─── Delete account dialog — responsabilidade do MobileBottomNav ──────
+  // A Sidebar desktop não tem mais listener de `open-delete-account-dialog`
+  // nem renderiza `DeleteAccountDialog`. O dialog vive no drawer "Mais"
+  // do `MobileBottomNav` (controlado localmente). Os testes abaixo
+  // garantem que o evento legado é silenciosamente ignorado.
 
-  describe('DeleteAccountDialog via evento', () => {
-    it('evento open-delete-account-dialog abre o dialog', () => {
+  describe('DeleteAccountDialog — responsabilidade isolada do MobileBottomNav', () => {
+    it('não exibe dialog de exclusão inicialmente', () => {
+      renderSidebarAt('/app/estudio', true);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('ignora o evento legado open-delete-account-dialog (sem listener)', () => {
       renderSidebarAt('/app/estudio', true);
 
-      // Antes do evento: sem dialog
+      // Dispara o evento legado (simulando um MobileBottomNav antigo)
+      act(() => {
+        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+      });
+
+      // Nenhum dialog deve aparecer — a Sidebar não escuta mais o evento.
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByText('Excluir conta permanentemente')).not.toBeInTheDocument();
+    });
+
+    it('não vaza listeners após múltiplos dispatches do evento legado', () => {
+      const { unmount } = renderSidebarAt('/app/estudio', true);
+
+      // Disparos repetidos não devem causar memory leak ou efeito colateral
+      act(() => {
+        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
+      });
+
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-      // Dispara evento (simulando MobileBottomNav)
-      act(() => {
-        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
-      });
-
-      // Dialog aparece
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-      // Título do dialog (i18n: studio.header.deleteAccount.dialogTitle)
-      expect(screen.getByText('Excluir conta permanentemente')).toBeInTheDocument();
-    });
-
-    it('botão "Excluir conta" do dialog fica desabilitado sem digitar EXCLUIR', () => {
-      renderSidebarAt('/app/estudio', true);
-
-      act(() => {
-        window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
-      });
-
-      // O TextField tem placeholder "EXCLUIR" e o botão é desabilitado até digitar
-      const confirmButton = screen.getByRole('button', { name: /Excluir conta$/ });
-      expect(confirmButton).toBeDisabled();
-    });
-
-    it('remove o listener ao desmontar o componente', () => {
-      const { unmount } = renderSidebarAt('/app/estudio', true);
+      // Após desmontar, o evento continua sendo ignorado
       unmount();
-
-      // Após desmontar, evento não deve abrir dialog
       act(() => {
         window.dispatchEvent(new CustomEvent('open-delete-account-dialog'));
       });
-
-      // Como não há mais nada renderizado, queryByRole retorna null
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });

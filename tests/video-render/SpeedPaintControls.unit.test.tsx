@@ -7,7 +7,11 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 
 vi.mock('../../src/theme/surfaces', () => ({
   insetPanelSx: () => ({ p: 2 }),
-  glassPanelSx: {},
+  glassPanelSx: () => ({}),
+  appDrawerPaperSx: {},
+  // Dependências declaradas acima: `insetPanelSx`, `glassPanelSx`, `appDrawerPaperSx`.
+  // Não importa `glassSurfaceSx`, `appDrawerBackdropSx`, `searchFieldSx` —
+  // se `SpeedPaintControls.tsx` passar a usá-los, este mock quebra.
 }));
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {

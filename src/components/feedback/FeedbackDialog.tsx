@@ -91,6 +91,7 @@ export function FeedbackDialog({ open, onClose, defaultScreenContext }: Feedback
             borderRadius: RADIUS_XS,
             backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.96)}, ${alpha(theme.palette.background.paper, 0.92)})`,
             backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             border: `1px solid ${alpha(BRAND_SECONDARY, 0.24)}`,
             boxShadow: `0 24px 64px ${BLACK_32}, 0 0 0 1px ${BRAND_SECONDARY_GLOW_SOFT}`,
           }),

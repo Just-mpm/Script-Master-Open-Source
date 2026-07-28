@@ -18,6 +18,10 @@ vi.mock('../../src/features/video-render/lib/videoUtils', () => ({
 vi.mock('../../src/theme/surfaces', () => ({
   glassPanelSx: () => ({}),
   glassSurfaceSx: () => ({ p: 2, borderRadius: 3 }),
+  appDrawerPaperSx: {},
+  // Dependências declaradas acima: `glassPanelSx`, `glassSurfaceSx`, `appDrawerPaperSx`.
+  // Não importa `insetPanelSx`, `appDrawerBackdropSx`, `searchFieldSx` —
+  // se `VideoExportPanel.tsx` passar a usá-los, este mock quebra.
 }));
 
 vi.mock('../../src/theme/tokens', async (importOriginal) => {

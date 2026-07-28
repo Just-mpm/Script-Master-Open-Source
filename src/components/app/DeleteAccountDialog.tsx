@@ -26,9 +26,11 @@ interface DeleteAccountDialogProps {
 /**
  * Dialog de confirmação para exclusão permanente de conta.
  *
- * Reutilizado pelo `Sidebar` e pelo `MobileBottomNav` (via evento
- * `open-delete-account-dialog`). O estado de abertura é controlado
- * pelo componente pai — este dialog é puramente apresentacional.
+ * Renderizado pelo `MobileBottomNav` (controlado localmente via
+ * `useState` no drawer "Mais"). Cada componente de navegação que
+ * precisa do fluxo é responsável por gerenciar seu próprio dialog —
+ * o estado de abertura é controlado pelo componente pai, este dialog
+ * é puramente apresentacional.
  */
 export function DeleteAccountDialog({ open, onClose }: DeleteAccountDialogProps) {
   const { deleteAccount } = useAuth();

@@ -36,11 +36,8 @@ import {
   ICON_SIZE_MD,
   ICON_SIZE_LG,
   GAP_MEDIUM,
-  APP_SURFACE,
-  WHITE_05,
-  WHITE_015,
   SHADOW_DEEP, RADIUS_XS } from '../../theme/tokens';
-import { glassSurfaceSx } from '../../theme/surfaces';
+import { appDrawerBackdropSx, appDrawerPaperSx, glassSurfaceSx } from '../../theme/surfaces';
 import logos from '../../assets/logos';
 
 export function PublicHeader() {
@@ -86,12 +83,6 @@ export function PublicHeader() {
   const handleConfirmLogout = () => {
     setLogoutDialogOpen(false);
     logout();
-  };
-
-  const drawerPaperSx = {
-    backgroundColor: APP_SURFACE,
-    backgroundImage: `linear-gradient(180deg, ${WHITE_05} 0%, ${WHITE_015} 100%)`,
-    borderRight: `1px solid ${APP_BORDER}`,
   };
 
   return (
@@ -235,6 +226,8 @@ export function PublicHeader() {
                 <IconButton
                   color="inherit"
                   aria-label={t('nav.ariaMenu')}
+                  aria-expanded={drawerOpen}
+                  aria-controls="public-mobile-drawer"
                   onClick={toggleDrawer}
                   sx={{
                     color: 'text.secondary',
@@ -295,8 +288,11 @@ export function PublicHeader() {
         anchor="left"
         open={isMobile && drawerOpen }
         onClose={closeDrawer}
-        ModalProps={{ keepMounted: true }}
-        slotProps={{ paper: { sx: drawerPaperSx } }}
+        slotProps={{
+          paper: { sx: appDrawerPaperSx },
+          backdrop: { sx: appDrawerBackdropSx },
+        }}
+        id="public-mobile-drawer"
         aria-labelledby={drawerTitleId}
         sx={{
           '& .MuiDrawer-paper': {

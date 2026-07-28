@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createTheme } from '@mui/material/styles';
-import { glassPanelSx, insetPanelSx, glassSurfaceSx } from '../../src/theme/surfaces';
+import { appDrawerBackdropSx, glassPanelSx, insetPanelSx, glassSurfaceSx } from '../../src/theme/surfaces';
 
 // Cria um tema mínimo com os campos exigidos pelos surfaces
 const theme = createTheme({
@@ -110,6 +110,28 @@ describe('Surface Functions', () => {
     it('deve conter boxShadow', () => {
       const sx = glassSurfaceSx(theme) as Record<string, unknown>;
       expect(sx.boxShadow).toBeDefined();
+    });
+  });
+
+  describe('appDrawerBackdropSx', () => {
+    it('é um objeto literal (SxProps<Theme>)', () => {
+      expect(appDrawerBackdropSx).toBeTypeOf('object');
+      expect(appDrawerBackdropSx).not.toBeNull();
+    });
+
+    it('aplica blur 8px consistente com o padrão dos Drawers laterais', () => {
+      const sx = appDrawerBackdropSx as Record<string, unknown>;
+      expect(sx.backdropFilter).toBe('blur(8px)');
+    });
+
+    it('define WebkitBackdropFilter para compatibilidade Safari iOS', () => {
+      const sx = appDrawerBackdropSx as Record<string, unknown>;
+      expect(sx.WebkitBackdropFilter).toBe('blur(8px)');
+    });
+
+    it('define backgroundColor como rgba preto 40% (BLACK_40)', () => {
+      const sx = appDrawerBackdropSx as Record<string, unknown>;
+      expect(sx.backgroundColor).toBe('rgba(0, 0, 0, 0.40)');
     });
   });
 });

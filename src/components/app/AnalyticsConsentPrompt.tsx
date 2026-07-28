@@ -71,7 +71,17 @@ export function AnalyticsConsentPrompt() {
               - <Link> no description via ReactNode
               - 2 botões no slot action (accept/reject)
               - a11y (role="region" + aria-labelledby) via slotProps.root
-              - sizing/coloring custom do Paper original (border, bgcolor, shadow) */}
+              - sizing/coloring custom do Paper original (border, bgcolor, shadow)
+
+              GAP-07: actionPlacement="bottom" (antes "stack") — necessário
+              porque "stack" só empilha corretamente em direction="column".
+              Em direction="row" (sm+), o stackedActionBlock vira mais um
+              item do flex row, espremendo o textContent e jogando os
+              botões para o canto superior direito (anti-pattern confirmado
+              pelo notebook MUI v9: ações em texto longo devem empilhar
+              abaixo, nunca inline). "bottom" garante que o bottomActionBlock
+              é renderizado DEPOIS do mainRow, alinhado à direita via
+              actionAlign="end", em todas as larguras. */}
           <StackedHeader
             variant="glass"
             role="region"
@@ -101,7 +111,7 @@ export function AnalyticsConsentPrompt() {
                 <Button size="small" variant="contained" onClick={accept}>{t('analyticsConsent.accept')}</Button>
               </>
             }
-            actionPlacement="stack"
+            actionPlacement="bottom"
             actionAlign="end"
             density="compact"
           />
