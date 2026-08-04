@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Profiler, type ProfilerOnRenderCallback } from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { BatchOrchestrator } from '../../src/features/speed-paint/components/batch/BatchOrchestrator';
 
@@ -600,5 +601,103 @@ describe('BatchOrchestrator', () => {
     //  o job em voo, não sobre o estado da store)
     expect(useAnimationStore.getState().renderMode).toBe('mask');
     expect(useAnimationStore.getState().vetorialPreset).toBe('edge-bold');
+  });
+
+  // v0.135.3 (S5 da auditoria): o seletor `s.job.status` em vez de `s.job`
+  // evita re-render do BatchOrchestrator quando apenas `progress` muda
+  // durante o processamento. Validado via `React.Profiler` — o callback
+  // `onRender` é disparado a cada commit do BatchOrchestrator.
+  describe('seletor granular de status (v0.135.3 / S5)', () => {
+    it('NÃO re-renderiza quando apenas `progress` muda durante o processamento', async () => {
+      // Arrange
+      useAnimationStore.setState({
+        job: { id: '', inputImage: '', status: 'idle', progress: 0 },
+        queue: [],
+        batchMode: 'idle',
+        currentIndex: 0,
+      });
+      mockGenerateStrokesFromImage.mockReset();
+
+      // Contador via Profiler
+      let renderCount = 0;
+      const onRender: ProfilerOnRenderCallback = () => { renderCount += 1; };
+
+      // Act — render inicial
+      render(
+        <Profiler id="batch-orchestrator" onRender={onRender}>
+          <BatchOrchestrator />
+        </Profiler>,
+        { wrapper: Wrapper },
+      );
+      // Render inicial = 1 commit
+      const initialRenderCount = renderCount;
+      expect(initialRenderCount).toBe(1);
+
+      // Simula entrada em processing + 10 ticks de progresso.
+      // A entrada em 'processing' causa 1 re-render (status muda de
+      // 'idle' para 'processing' — primitivo diferente). Os 10 ticks
+      // de progresso NÃO devem causar re-render.
+      act(() => {
+        useAnimationStore.getState().setJob({
+          id: 'job-test',
+          inputImage: 'data:image/png;base64,xxx',
+          status: 'processing',
+          progress: 0,
+        });
+      });
+      const afterStatusChange = renderCount;
+      // Confirma que 1 re-render foi disparado pela mudança de status
+      expect(afterStatusChange).toBe(initialRenderCount + 1);
+
+      for (let i = 1; i <= 10; i++) {
+        act(() => {
+          useAnimationStore.getState().setJob({ progress: i / 10 });
+        });
+      }
+
+      // Assert: 10 updates de `progress` NÃO devem disparar re-render do
+      // BatchOrchestrator. Antes do fix (seletor `s.job`), eram 10 commits
+      // extras porque o objeto `job` mudava de identidade a cada tick.
+      // O seletor granular `s.job.status` retorna o mesmo primitivo
+      // 'processing' nos 10 ticks → React 19 pula reconciliação.
+      expect(renderCount).toBe(afterStatusChange);
+    });
+
+    it('re-renderiza quando `status` muda (idle → processing → failed)', () => {
+      // Arrange
+      useAnimationStore.setState({
+        job: { id: '', inputImage: '', status: 'idle', progress: 0 },
+        queue: [],
+        batchMode: 'idle',
+        currentIndex: 0,
+      });
+
+      let renderCount = 0;
+      const onRender: ProfilerOnRenderCallback = () => { renderCount += 1; };
+
+      render(
+        <Profiler id="batch-orchestrator" onRender={onRender}>
+          <BatchOrchestrator />
+        </Profiler>,
+        { wrapper: Wrapper },
+      );
+      const baseline = renderCount;
+
+      // Act 1: idle → processing (muda status)
+      act(() => {
+        useAnimationStore.getState().setJob({ status: 'processing' });
+      });
+      // React 19 em modo `batching` pode agrupar — mas a mudança de
+      // primitivo `status` deve disparar ao menos 1 re-render.
+      expect(renderCount).toBeGreaterThan(baseline);
+
+      const afterProcessing = renderCount;
+
+      // Act 2: processing → failed (muda status de novo)
+      act(() => {
+        useAnimationStore.getState().setJob({ status: 'failed' });
+      });
+      expect(renderCount).toBeGreaterThan(afterProcessing);
+    });
   });
 });

@@ -1350,6 +1350,11 @@ export const en: TranslationDictionary = {
     queueCancel: 'Clear queue',
     queuePreview: 'Preview only',
     queueExportSingleVideo: 'Generate 1 final video',
+    // v0.135.2 (F5 da auditoria): tooltips that document the uniform
+    // batch behavior — every scene uses the same mode/style at export
+    // time, even if individual queue items have different settings.
+    queueExportUniformTooltip: 'The final video uses the same mode/style for all scenes. Per-item queue settings are preserved in the preview, but export enforces uniformity.',
+    queueExportMixedModeBadge: 'Mixed-mode batch — uniform export will use the global mode',
     batchExportTitle: 'Final Queue Video',
     batchExportBackToQueue: 'Back to queue',
     batchExportClearQueue: 'Clear queue',
@@ -1432,6 +1437,9 @@ export const en: TranslationDictionary = {
     modeVetorialTooltip: 'Vector animation with SVG paths — more expressive, ideal for illustrations and line art.',
     modeProcessingError: 'Failed to reprocess the image in the selected mode.',
     modeProcessingRetry: 'Try again',
+    // v0.135.3 (S2 da auditoria): UX alert for canvasColor divergence.
+    canvasColorReprocessHint: 'Canvas color changed from {from} to {to}. Reprocess the image so paths and the composition background reflect the new color.',
+    canvasColorReprocessAction: 'Reprocess',
     processingLabel: 'Reprocessing image',
     // `vetorialPreset` selector (RF-03 / Phase 4.2) — visible only in Drawing
     // mode (vetorial). Tooltip (D08) warns that photos may not look ideal.

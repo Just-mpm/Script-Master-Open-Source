@@ -13,7 +13,9 @@
 import React from 'react';
 import { AbsoluteFill, useVideoConfig } from 'remotion';
 import { WhiteboardScene } from '../../video-render/components/WhiteboardScene';
+import { getRemotionEasing } from '../../video-render/lib/easingConverter';
 import type { VetorialAnimation } from '../types';
+import type { VetorialEasingType } from '../types/vetorial';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -26,6 +28,13 @@ export interface WhiteboardCompositionProps {
   showDrawTool?: boolean;
   /** Indica se a cena deve encerrar sem fade-out. */
   isLastScene?: boolean;
+  /**
+   * Curva de progressão da animação (L10, RF-10). Default `undefined`
+   * = usa o default interno de `WhiteboardScene` (`Easing.inOut(Easing.ease)`).
+   * v0.135.2 (F3 da auditoria): o seletor "Linear / Smooth / Bounce" da
+   * UI finalmente propaga para o render — antes era controle morto.
+   */
+  easing?: VetorialEasingType;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,6 +57,7 @@ export const WhiteboardComposition = React.memo(function WhiteboardComposition({
   animation,
   showDrawTool = true,
   isLastScene = true,
+  easing,
 }: WhiteboardCompositionProps) {
   const { durationInFrames } = useVideoConfig();
 
@@ -60,6 +70,7 @@ export const WhiteboardComposition = React.memo(function WhiteboardComposition({
         durationInFrames={durationInFrames}
         isLastScene={isLastScene}
         showDrawTool={showDrawTool}
+        easing={getRemotionEasing(easing)}
       />
     </AbsoluteFill>
   );

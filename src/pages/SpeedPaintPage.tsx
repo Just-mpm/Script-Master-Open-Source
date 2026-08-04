@@ -322,6 +322,20 @@ export function SpeedPaintPage() {
 
     batchRenderStartedRef.current = true;
     setIsBatchRecording(true);
+    // Lê o `renderMode`/`vetorialPreset`/`vetorialSortOrder` da store para
+    // propagar ao batch — antes, o batch sempre re-exportava em mask, e
+    // o `sortOrder` caía no default (varredura raster), divergindo do
+    // preview quando o usuário estava no modo Desenho. A infra-estrutura
+    // (`SpeedPaintBatchExportOptions.renderMode` + propagação no controller)
+    // já existia desde a v0.135.1 — bastava a UI passar. (W2 + W-B das
+    // auditorias v0.135.1 rodadas 5 e 6.)
+    const {
+      renderMode: storeRenderMode,
+      vetorialPreset: storePreset,
+      vetorialSortOrder: storeSortOrder,
+      canvasColor: storeCanvasColor,
+      easing: storeEasing,
+    } = useAnimationStore.getState();
     void speedPaintExporter.startBatchRender({
       items: eligibleBatchQueue.map((item) => ({
         imageSource: item.dataUrl,
@@ -331,6 +345,19 @@ export function SpeedPaintPage() {
       showDrawTool,
       fileName: getCombinedBatchExportFileName(eligibleBatchQueue.length),
       sceneDurationSeconds: animationDuration,
+      renderMode: storeRenderMode,
+      ...(storeRenderMode === 'vetorial' && storePreset !== undefined
+        ? { vetorialPreset: storePreset }
+        : {}),
+      ...(storeRenderMode === 'vetorial' && storeSortOrder !== undefined
+        ? { vetorialSortOrder: storeSortOrder }
+        : {}),
+      // v0.135.2 (F2): propaga canvasColor do store para a composição de
+      // exportação (apenas vetorial, mas o controller aceita ambos os modos).
+      canvasColor: storeCanvasColor,
+      // v0.135.2 (F3): propaga easing do store. No modo mask, o controller
+      // aceita o prop sem efeito (o mask usa `SpeedPaintScene` que ignora).
+      easing: storeEasing,
     });
   }, [animationDuration, batchMode, eligibleBatchQueue, showDrawTool, speedPaintExporter]);
 
@@ -430,7 +457,12 @@ export function SpeedPaintPage() {
    * quando o usuário troca o preset entre dois cliques no ToggleButton.
    */
   const reprocessCurrentImage = useCallback(async (mode: SpeedPaintRenderMode): Promise<void> => {
-    const { job, vetorialPreset: currentPreset, vetorialSortOrder: currentSortOrder } = useAnimationStore.getState();
+    const {
+      job,
+      vetorialPreset: currentPreset,
+      vetorialSortOrder: currentSortOrder,
+      canvasColor: currentCanvasColor,
+    } = useAnimationStore.getState();
     if (!job.inputImage || job.status === 'processing') return;
 
     // 1. Abortar processamento anterior
@@ -450,9 +482,20 @@ export function SpeedPaintPage() {
       // em compile-time via discriminação por igualdade de literal.
       // A chave do cache inclui `preset` (Premissa #10) E `sortOrder`
       // (L9, RF-09) para evitar colisão entre ordenações diferentes.
+      // v0.135.2 (F2): inclui `canvasColor` na chave do cache (vetorial) —
+      // trocar o fundo invalida o cache para evitar paths invisíveis
+      // respingando entre fundos.
       const cached: StrokeAnimation | VetorialAnimation | null = mode === 'vetorial'
-        ? await getStrokeAnimation(job.inputImage, { mode: 'vetorial', preset: currentPreset, sortOrder: currentSortOrder })
-        : await getStrokeAnimation(job.inputImage, { mode: 'mask' });
+        ? await getStrokeAnimation(job.inputImage, {
+            mode: 'vetorial',
+            preset: currentPreset,
+            sortOrder: currentSortOrder,
+            canvasColor: currentCanvasColor,
+          })
+        : await getStrokeAnimation(job.inputImage, {
+            mode: 'mask',
+            canvasColor: currentCanvasColor,
+          });
       if (processingIdRef.current !== processId) return;
       if (cached) {
         setJob({ animation: cached, status: 'completed', progress: 1 });
@@ -471,6 +514,8 @@ export function SpeedPaintPage() {
           renderMode: mode,
           vetorialPreset: mode === 'vetorial' ? currentPreset : undefined,
           vetorialSortOrder: mode === 'vetorial' ? currentSortOrder : undefined,
+          // v0.135.2 (F2): propaga canvasColor do store para o pipeline
+          canvasColor: currentCanvasColor,
           signal: ac.signal,
         },
       );
@@ -480,7 +525,12 @@ export function SpeedPaintPage() {
       // type guards de `strokeCache` (`isVetorialAnimation`/`isStrokeAnimation`),
       // narrowing real em compile-time sem `as` bypass.
       if (mode === 'vetorial' && isVetorialAnimation(animation)) {
-        await setStrokeAnimation(job.inputImage, animation, { mode: 'vetorial', preset: currentPreset, sortOrder: currentSortOrder });
+        await setStrokeAnimation(job.inputImage, animation, {
+          mode: 'vetorial',
+          preset: currentPreset,
+          sortOrder: currentSortOrder,
+          canvasColor: currentCanvasColor,
+        });
       } else if (mode === 'mask' && isStrokeAnimation(animation)) {
         await setStrokeAnimation(job.inputImage, animation, { mode: 'mask' });
       }
@@ -1457,6 +1507,43 @@ export function SpeedPaintPage() {
                         />
                       </Box>
                     </Box>
+
+                    {/* v0.135.3 (S2 da auditoria): alert de divergência de cor.
+                        Quando o usuário troca `canvasColor` na store mas o
+                        `job.animation` atual foi gerado com a cor anterior,
+                        o `filterPathsByBackgroundContrast` do pipeline
+                        vetorial pode ter descartado paths de forma errada
+                        (mantidos por contraste com a cor velha) e o
+                        `backgroundColor` do `AbsoluteFill` da composição
+                        fica desatualizado até a próxima regeneração.
+                        Mostra alerta UX explícito com botão "Reprocessar"
+                        para o usuário aplicar a nova cor — sem custo
+                        surpresa de auto-trigger (padrão do `modeProcessingError`). */}
+                    {isCompleted
+                      && job.animation != null
+                      && job.animation.canvasColor !== canvasColor && (
+                        <Alert
+                          severity="info"
+                          variant="outlined"
+                          role="status"
+                          action={(
+                            <Button
+                              color="inherit"
+                              size="small"
+                              onClick={() => {
+                                void reprocessInMode(renderMode);
+                              }}
+                            >
+                              {t('speedPaint.canvasColorReprocessAction')}
+                            </Button>
+                          )}
+                        >
+                          {t('speedPaint.canvasColorReprocessHint', {
+                            from: job.animation.canvasColor,
+                            to: canvasColor,
+                          })}
+                        </Alert>
+                      )}
                   </Stack>
               </StackedHeader>
             </Stack>

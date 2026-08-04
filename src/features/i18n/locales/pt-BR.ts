@@ -1367,6 +1367,12 @@ title: 'Controle claro do seu uso',
     queueCancel: 'Limpar fila',
     queuePreview: 'Só pré-visualizar',
     queueExportSingleVideo: 'Gerar 1 vídeo final',
+    // v0.135.2 (F5 da auditoria): tooltips que documentam o comportamento
+    // uniforme do batch — todas as cenas usam o modo/preset/easing
+    // vigente no momento da exportação, mesmo se itens individuais
+    // tiverem configurações diferentes no `QueuedImage`.
+    queueExportUniformTooltip: 'O vídeo final usa o mesmo modo/estilo para todas as cenas. Ajustes individuais de itens da fila são preservados no preview, mas a exportação força uniformidade.',
+    queueExportMixedModeBadge: 'Lote com modos mistos — exportação uniforme usará o modo global',
     batchExportTitle: 'Vídeo Final da Fila',
     batchExportBackToQueue: 'Voltar para a fila',
     batchExportClearQueue: 'Limpar fila',
@@ -1449,6 +1455,9 @@ title: 'Controle claro do seu uso',
     modeVetorialTooltip: 'Animação vetorial com paths SVG — mais expressivo, ideal para ilustrações e line art.',
     modeProcessingError: 'Falha ao reprocessar a imagem no modo selecionado.',
     modeProcessingRetry: 'Tentar novamente',
+    // v0.135.3 (S2 da auditoria): alert UX para divergência de canvasColor.
+    canvasColorReprocessHint: 'A cor do canvas mudou de {from} para {to}. Reprocesse a imagem para que os paths e o fundo da composição reflitam a nova cor.',
+    canvasColorReprocessAction: 'Reprocessar',
     processingLabel: 'Reprocessando imagem',
     // Seletor de `vetorialPreset` (RF-03 / Fase 4.2) — visível apenas no modo
     // "Desenho" (vetorial). Tooltip (D08) avisa que fotos podem não ficar

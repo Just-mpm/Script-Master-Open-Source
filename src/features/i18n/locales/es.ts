@@ -1350,6 +1350,11 @@ export const es: TranslationDictionary = {
     queueCancel: 'Limpiar cola',
     queuePreview: 'Solo previsualizar',
     queueExportSingleVideo: 'Generar 1 video final',
+    // v0.135.2 (F5 da auditoria): tooltips que documentan el comportamiento
+    // uniforme del lote — todas las escenas usan el mismo modo/estilo al
+    // exportar, incluso si los items individuales tienen configs distintas.
+    queueExportUniformTooltip: 'El video final usa el mismo modo/estilo para todas las escenas. Los ajustes por item de la cola se conservan en el preview, pero la exportación fuerza uniformidad.',
+    queueExportMixedModeBadge: 'Lote con modos mixtos — la exportación uniforme usará el modo global',
     batchExportTitle: 'Video Final de la Cola',
     batchExportBackToQueue: 'Volver a la cola',
     batchExportClearQueue: 'Limpiar cola',
@@ -1432,6 +1437,9 @@ export const es: TranslationDictionary = {
     modeVetorialTooltip: 'Animación vectorial con paths SVG — más expresivo, ideal para ilustraciones y line art.',
     modeProcessingError: 'Error al reprocesar la imagen en el modo seleccionado.',
     modeProcessingRetry: 'Reintentar',
+    // v0.135.3 (S2 da auditoría): alerta de UX para divergencia de canvasColor.
+    canvasColorReprocessHint: 'El color del lienzo cambió de {from} a {to}. Vuelve a procesar la imagen para que los trazos y el fondo de la composición reflejen el nuevo color.',
+    canvasColorReprocessAction: 'Reprocesar',
     processingLabel: 'Reprocesando imagen',
     // Selector de `vetorialPreset` (RF-03 / Fase 4.2) — visible solo en el
     // modo Dibujo (vetorial). Tooltip (D08) avisa que las fotos pueden no

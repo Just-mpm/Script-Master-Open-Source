@@ -145,8 +145,11 @@ describe('WhiteboardScene', () => {
     });
 
     it('renderiza o filtro `pencil-fx` no `<defs>` (best practice SVG)', () => {
+      // v0.135.2 (F7 da auditoria): o ID do filtro é gerado via `useId()` do
+      // React 19 para isolar entre cenas no mesmo documento SVG. O sufixo
+      // `:r0:` é o formato do `useId` em jsdom.
       const { container } = renderScene({ animation: makeAnimation() });
-      const filter = container.querySelector('filter#pencil-fx');
+      const filter = container.querySelector('filter[id^="pencil-fx-"]');
       expect(filter).not.toBeNull();
     });
 
@@ -260,8 +263,9 @@ describe('WhiteboardScene', () => {
         animation: makeAnimation(),
         showDrawTool: true,
       });
-      // O Pencil é um <g> com `filter="url(#pencil-fx)"`
-      const pencil = container.querySelector('g[filter="url(#pencil-fx)"]');
+      // v0.135.2 (F7): Pencil referencia o filtro via `url(#pencil-fx-{useId()})`.
+      // Matcher CSS aceita qualquer sufixo gerado por useId.
+      const pencil = container.querySelector('g[filter^="url(#pencil-fx-"]');
       expect(pencil).not.toBeNull();
     });
 
@@ -281,7 +285,7 @@ describe('WhiteboardScene', () => {
         animation: makeAnimation(),
         durationInFrames: 30,
       });
-      const pencil0 = c0.querySelector('g[filter="url(#pencil-fx)"]');
+      const pencil0 = c0.querySelector('g[filter^="url(#pencil-fx-"]');
       const transform0 = pencil0?.getAttribute('transform') ?? '';
       unmount();
 
@@ -291,7 +295,7 @@ describe('WhiteboardScene', () => {
         animation: makeAnimation(),
         durationInFrames: 30,
       });
-      const pencil1 = c1.querySelector('g[filter="url(#pencil-fx)"]');
+      const pencil1 = c1.querySelector('g[filter^="url(#pencil-fx-"]');
       const transform1 = pencil1?.getAttribute('transform') ?? '';
 
       // Os translates devem ser diferentes (tremor diferente)
@@ -331,7 +335,7 @@ describe('WhiteboardScene', () => {
         animation,
         durationInFrames: 100,
       });
-      const transform1 = c1.querySelector('g[filter="url(#pencil-fx)"]')?.getAttribute('transform');
+      const transform1 = c1.querySelector('g[filter^="url(#pencil-fx-"]')?.getAttribute('transform');
 
       // tremor = sin(frame * 0.5 + pathIndex) * 0.3 → diferentes
       expect(transform0).not.toBe(transform1);
@@ -372,7 +376,8 @@ describe('WhiteboardScene', () => {
       // e a "anterior" ficam muito próximas (delta pequeno). O speed depende
       // da diferença entre visibleLength atual e anterior.
       // Aqui só validamos que o filter está presente (e o blur é condicional).
-      const filter = container.querySelector('filter#pencil-fx');
+      // v0.135.2 (F7): ID dinâmico via useId.
+      const filter = container.querySelector('filter[id^="pencil-fx-"]');
       expect(filter).not.toBeNull();
     });
 

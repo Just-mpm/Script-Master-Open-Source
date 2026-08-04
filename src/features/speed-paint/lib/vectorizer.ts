@@ -1,14 +1,15 @@
 /**
  * Wrapper assíncrono que delega a dois pipelines de vetorização:
  *
- * 1. **Legado (`imagetracerjs`)** — para os 16 presets `ImagetRacerPreset`
- *    (`'artistic1'`, `'detailed'`, etc). Preservado 100% (sem mudança de
- *    comportamento) — usado em produção desde a v0.131.0.
+ * 1. **Legado (`imagetracerjs`)** — para o preset `ImagetRacerPreset`
+ *    `'default'` (único remanescente da família legado após simplificação
+ *    da v0.133.1). Preservado 100% (sem mudança de comportamento) — usado
+ *    em produção desde a v0.131.0.
  *
- * 2. **Edge+Bezier** — para os 4 presets `EdgePresetName` (`'edge-default'`,
- *    `'edge-detailed'`, `'edge-bold'`, `'edge-sketch'`) adicionados na
- *    v0.132.0. Pipeline novo: Canny → Moore-Neighbor → RDP → Schneider 1990
- *    → SVG `d`. Mais determinístico e amigável ao whiteboard.
+ * 2. **Edge+Bezier** — para os 3 presets `EdgePresetName` (`'edge-default'`,
+ *    `'edge-detailed'`, `'edge-bold'`) adicionados na v0.132.0. Pipeline
+ *    novo: Canny → Moore-Neighbor → RDP → Schneider 1990 → SVG `d`. Mais
+ *    determinístico e amigável ao whiteboard.
  *
  * O branch é decidido por `options.pipelineMode` (override explícito) ou
  * automaticamente por `isEdgePreset(preset)` (default = `pipelineMode: undefined`).
@@ -82,6 +83,54 @@ const DEFAULT_COLOR = '#222222';
 const ABORT_CHECK_INTERVAL = 50;
 
 /**
+ * Whitelist regex do atributo `d` de um `<path>` SVG. Cobre os 16 comandos
+ * padrão (`MmLlHhVvCcSsQqTtAaZz`), dígitos, separadores (`.`, `,`, `-`)
+ * e whitespace válido em XML 1.0 (`\t`, `\n`, `\r`, espaço).
+ *
+ * Exclui deliberadamente:
+ * - `e`/`E`/`+` (expoente científico) — protege contra `NaN`/`Infinity`
+ *   injetados por bibliotecas upstream (`imagetracerjs`, parsers próprios)
+ * - `\x0B` (vertical tab) e `\x0C` (form feed) — **ilegais em XML 1.0**
+ *   (`Char ::= #x9 | #xA | #xD | [#x20-#xD7FF]`). O `Remotion@4.0.448`
+ *   instalado NÃO contém o fix upstream #8651 que strip esses chars;
+ *   este regex é a única barreira local contra a classe de bug
+ *   `"Failed to convert SVG to image"`. Trocar `\s` por `[ \t\r\n]`
+ *   explícito fecha o vetor.
+ *
+ * Usado em `enrichPaths` (antes de `getLength`, que lança em `d`
+ * malformado) e em `sanitizePathOrNull` (validação final).
+ */
+const SVG_PATH_DATA_REGEX = /^[MmLlHhVvCcSsQqTtAaZz0-9.\-, \t\r\n]+$/;
+
+/**
+ * Limite de segurança do SVG gerado por cena.
+ *
+ * O Remotion (`@remotion/web-renderer` 4.0.448) serializa cada `<svg>` em
+ * um `data:image/svg+xml;base64,...` e o carrega via `new Image()`. SVGs
+ * grandes demais ou com paths demais podem fazer o `Image.onerror`
+ * disparar (`Failed to convert SVG to image`), abortando a exportação.
+ *
+ * O histórico de comentários do pipeline cita esses limites como
+ * salvaguarda contra GPU timeout e contra a decodificação acima. Como
+ * o pipeline atual não impõe truncamento após o filtro de contraste,
+ * reintroduzimos o limite aqui — alinhado com o teste e2e
+ * (`expect(paths.length).toBeLessThanOrEqual(500)`).
+ *
+ * Referências:
+ * - `docs/plan/edge-detection-whiteboard-architecture.md` §8.5
+ * - `tests/speed-paint/imageProcessing.vetorial.e2e.test.ts`
+ */
+const MAX_PATHS_PER_SCENE = 500;
+
+/**
+ * Tamanho máximo acumulado dos atributos `d` do `<path>` SVG por cena
+ * (em bytes UTF-16 / 2 bytes por caractere). Acima disso, o data URI
+ * base64 resultante (~4/3 do tamanho do SVG) costuma estourar limites
+ * práticos de decodificação no `Image` usado pelo `renderMediaOnWeb`.
+ */
+const MAX_D_BYTES_PER_SCENE = 250_000;
+
+/**
  * `pathomit` mínimo por preset. Presets que tendem a gerar muitos paths
  * (ex: `'detailed'` com `pathomit: 0` na lib) recebem um valor mais alto
  * para controlar a complexidade do SVG resultante.
@@ -131,9 +180,10 @@ export interface VectorizeOptions {
   /**
    * Preset do vetorizador (default: `'edge-default'` — pipeline edge+bezier).
    *
-   * Aceita a união completa `VetorialPreset` (20 valores). O branch entre
-   * os pipelines é decidido automaticamente por `isEdgePreset(preset)` ou
-   * explicitamente via `pipelineMode` (override).
+   * Aceita a união completa `VetorialPreset` (4 valores: `'default'` legado
+   * + `'edge-default'`/`'edge-detailed'`/`'edge-bold'` edge+bezier). O branch
+   * entre os pipelines é decidido automaticamente por `isEdgePreset(preset)`
+   * ou explicitamente via `pipelineMode` (override).
    */
   preset?: VetorialPreset;
   /** Descarta paths com `length < pathomit` (default: `8`). */
@@ -170,6 +220,16 @@ export interface VectorizeOptions {
    * forçar o pipeline legado em um preset `edge-*` (ou vice-versa).
    */
   pipelineMode?: 'imagetracer' | 'edge-bezier';
+  /**
+   * Cor de fundo do canvas (v0.135.2 / W4). Default `'white'` para
+   * retrocompatibilidade. Usada pelo pipeline edge+bezier no
+   * `filterPathsByBackgroundContrast` interno (não apenas pelo filtro
+   * externo em `imageProcessing.ts` — antes desta correção, o
+   * `filterPathsByBackgroundContrast` interno em `vectorizeImageEdgeBezier`
+   * hardcodava `'white'`, fazendo paths claros sumirem quando o usuário
+   * escolhia fundo preto).
+   */
+  canvasColor?: 'white' | 'black';
 }
 
 /** Path parseado antes do enriquecimento com `length` e `strokeWidth`. */
@@ -252,44 +312,66 @@ function parseSvgPaths(svg: string): ParsedPath[] {
  * Casa cada comando `M` (moveTo) ou `L` (lineTo) do path SVG e captura
  * coordenadas `(x, y)`. Usado pelos helpers de ordenação `top-down` e
  * `center-out` para extrair pontos de referência do `d` do path.
+ *
+ * Aceita formatos numéricos permissivos (incluindo negativos e decimais
+ * sem zero à esquerda) — `parseFloat` lida com qualquer string válida
+ * `-?\d*\.?\d+`, e essa regex casa exatamente esse formato:
+ *   - `1`, `10` (inteiros)
+ *   - `.5`, `0.5`, `1.5` (decimais com/sem zero à esquerda)
+ *   - `-1`, `-1.5`, `-.5` (negativos)
+ *
+ * A regex de validação do `d` (`SVG_PATH_DATA_REGEX`) é mais restritiva e
+ * continua sendo o portão principal — esta regex é apenas utilitária de
+ * ordenação.
  */
-const PATH_POINT_REGEX = /[ML]\s*(\d+\.?\d*)\s+(\d+\.?\d*)/g;
+const PATH_POINT_REGEX = /[ML]\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)/g;
+// v0.135.3 (S1 da auditoria): grupos capturados (X, Y) consumidos via
+// `matchAll(...)[1]/[2]`. Não usa mais `String.prototype.match` (que com
+// flag `g` retorna apenas substrings, sem grupos). A flag `g` também
+// evita o estado interno `lastIndex` (sem efeito em `matchAll`).
 
 /**
  * Retorna o menor Y entre os pontos do path (0 se vazio).
  * SRP: usado por `sortPaths('top-down')` para ordenar de cima para baixo.
+ *
+ * v0.135.3 (S1 da auditoria): usava `match` + `split(/\s+/)` que quebrava
+ * em paths com coords negativas adjacentes à letra (`M-5 10` virava
+ * `['M-5', '10']` → `parts[2]` undefined → Y=0 silencioso). Agora
+ * `matchAll` com grupos capturados (X, Y) — narrowing real, sem split
+ * frágil.
  */
 function getMinY(d: string): number {
-  PATH_POINT_REGEX.lastIndex = 0;
-  const matches = d.match(PATH_POINT_REGEX);
-  if (!matches || matches.length === 0) {
-    return 0;
-  }
   let min = Number.POSITIVE_INFINITY;
-  for (const m of matches) {
-    const parts = m.split(/\s+/);
-    const y = parseFloat(parts[2] ?? '0');
-    if (Number.isFinite(y) && y < min) {
-      min = y;
+  let hasAnyPoint = false;
+  for (const m of d.matchAll(PATH_POINT_REGEX)) {
+    const y = parseFloat(m[2] ?? '');
+    if (Number.isFinite(y)) {
+      hasAnyPoint = true;
+      if (y < min) min = y;
     }
   }
-  return Number.isFinite(min) ? min : 0;
+  return hasAnyPoint && Number.isFinite(min) ? min : 0;
 }
 
 /**
  * Retorna a distância euclidiana do **primeiro** ponto do path até
  * o centro `(cx, cy)`. Retorna `Infinity` se o path não tiver pontos
  * parseáveis (cai no fim da ordenação `center-out`).
+ *
+ * v0.135.3 (S1 da auditoria): mesma migração para `matchAll` com grupos
+ * capturados — ver `getMinY` para o racional.
  */
 function distFromCenter(d: string, cx: number, cy: number): number {
-  PATH_POINT_REGEX.lastIndex = 0;
-  const matches = d.match(PATH_POINT_REGEX);
-  if (!matches || matches.length === 0) {
+  // `matchAll` (e não `match`) preserva os grupos capturados mesmo com a
+  // flag `g` na regex. `String.match` com flag `g` retorna apenas as
+  // substrings casadas, sem `[1]/[2]`.
+  const iter = d.matchAll(PATH_POINT_REGEX);
+  const first = iter.next();
+  if (first.done || first.value == null) {
     return Number.POSITIVE_INFINITY;
   }
-  const first = matches[0].split(/\s+/);
-  const x = parseFloat(first[1] ?? '0');
-  const y = parseFloat(first[2] ?? '0');
+  const x = parseFloat(first.value[1] ?? '');
+  const y = parseFloat(first.value[2] ?? '');
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return Number.POSITIVE_INFINITY;
   }
@@ -556,6 +638,14 @@ export function filterPathsByBackgroundContrast(
  * apenas os paths com `length >= pathomit`, com `length` calculado via
  * `@remotion/paths.getLength()` (custo amortizado — não recalculado no render).
  *
+ * Validação defensiva ANTES de `getLength`: o pacote `@remotion/paths`
+ * lança `Error('Malformed path data')` quando recebe um `d` com tokens
+ * inválidos (`NaN`/`Infinity`, comandos desconhecidos). Sem essa guarda,
+ * um único path degenerado do `imagetracerjs` derrubaria o pipeline
+ * inteiro (job `failed`) em vez de ser descartado. A regex é deliberada-
+ * mente conservadora — cobre todos os comandos SVG padrão e exclui
+ * tokens que não fazem parte do formato (ex.: `e`/`E`/`+`/`%`).
+ *
  * @param parsed - Paths brutos extraídos do SVG (sem `length`).
  * @param pathomit - Limite mínimo de `length` para aceitar um path.
  * @param strokeWidth - Espessura do traço aplicada a todos os paths.
@@ -578,7 +668,21 @@ function enrichPaths(
     }
     const item = parsed[i];
     if (item === undefined) continue;
-    const length = getLength(item.d);
+    // Defesa em profundidade: valida formato do `d` ANTES de `getLength`,
+    // que lança exceção em `d` malformado. Try/catch residual cobre casos
+    // que escapem da regex (ex.: combinações sintáticas válidas em regex
+    // mas semanticamente inválidas para `@remotion/paths`).
+    if (typeof item.d !== 'string' || item.d.length === 0) continue;
+    if (!SVG_PATH_DATA_REGEX.test(item.d)) continue;
+    let length: number;
+    try {
+      length = getLength(item.d);
+    } catch {
+      // `d` malformado que escapou da regex — descarta em vez de derrubar
+      // o pipeline. `applyVetorialSafetyLimits` ainda fará a validação
+      // final no resultado agregado.
+      continue;
+    }
     if (length < pathomit) continue;
     result.push({
       d: item.d,
@@ -732,8 +836,14 @@ export function filterContoursByCompactness(
 
 /**
  * Amostra a cor RGBA do pixel correspondente ao **primeiro ponto** de cada
- * `Contour` original, convertendo para hex `#rrggbb`. O `i`-ésimo path
- * retornado usa a cor do `i`-ésimo contour.
+ * `Contour` original, convertendo para hex `#rrggbb`.
+ *
+ * **Pareamento path ↔ contour:** usa `path.contourIndex` quando presente
+ * (setado por `fitBezierPaths` desde v0.135.1) — isso evita que cores
+ * troquem quando `fitBezierPaths` descarta contornos degenerados
+ * (`bezierPaths[i]` deixa de corresponder a `contours[i]`). Fallback para
+ * o índice posicional `i` quando `contourIndex` é `undefined`
+ * (retrocompatibilidade com callers que constroem `BezierPath` manualmente).
  *
  * Usado pelo pipeline edge+bezier para preservar a cor da imagem de origem
  * (que o `imagetracerjs` fazia por meio da paleta quantizada — aqui fazemos
@@ -748,8 +858,9 @@ function sampleColors(
   bezierPaths: BezierPath[],
 ): string[] {
   const toHex = (n: number): string => n.toString(16).padStart(2, '0');
-  return bezierPaths.map((_, i) => {
-    const contour = contours[i];
+  return bezierPaths.map((path, i) => {
+    const contourIdx = path.contourIndex ?? i;
+    const contour = contours[contourIdx];
     if (contour === undefined || contour.points.length === 0) {
       return EDGE_FALLBACK_COLOR;
     }
@@ -827,10 +938,19 @@ async function vectorizeImageLegacy(
   // 8. Aplica ordenação configurável (L9, RF-09) — se fornecida.
   //    (v0.133.1) Removido `truncatePaths` — pipeline legado roda na main thread
   //    sob responsabilidade do caller; sem limite artificial de paths.
-  if (sortOrder !== undefined) {
-    return sortPaths(enriched, sortOrder, imageData.width, imageData.height);
-  }
-  return enriched;
+  //    v0.135.1: re-introduzido limite de segurança compartilhado com o
+  //    pipeline edge+bezier (`applyVetorialSafetyLimits`) para impedir que
+  //    SVGs excessivamente grandes quebrem a conversão do `renderMediaOnWeb`
+  //    (`Failed to convert SVG to image`).
+  const sorted = sortOrder !== undefined
+    ? sortPaths(enriched, sortOrder, imageData.width, imageData.height)
+    : enriched;
+  return applyVetorialSafetyLimits(sorted, {
+    pipeline: 'imagetracer',
+    preset,
+    width: imageData.width,
+    height: imageData.height,
+  });
 }
 
 /**
@@ -876,6 +996,10 @@ async function vectorizeImageEdgeBezier(
   const strokeWidth = options.strokeWidth ?? config.strokeWidth;
   const defaultColor = options.defaultColor ?? DEFAULT_COLOR;
   const sortOrder = options.sortOrder;
+  // v0.135.2 (W4 da auditoria): `canvasColor` é passado para o filtro
+  // de contraste interno. Antes hardcodava `'white'` — fundo preto
+  // fazia paths claros somirem. Default `'white'` mantém retrocompat.
+  const canvasColor = options.canvasColor ?? 'white';
   const { width, height } = imageData;
 
   // 1. Edge detection (Canny)
@@ -957,15 +1081,192 @@ async function vectorizeImageEdgeBezier(
   }));
 
   // 7. Filtra paths invisíveis por contraste com fundo (heurística legada)
-  const visible = filterPathsByBackgroundContrast(enriched, 'white');
+  // v0.135.2 (W4): `canvasColor` da opção, não mais hardcoded `'white'`.
+  const visible = filterPathsByBackgroundContrast(enriched, canvasColor);
 
   // 8. Ordenação configurável (v0.133.1) — `truncatePaths` removido.
   //    O pipeline edge+bezier roda no Web Worker (`vetorialWorker.ts`),
   //    sem limite artificial de paths. Memoização via `strokeCache.ts`.
-  if (sortOrder !== undefined) {
-    return sortPaths(visible, sortOrder, width, height);
+  //    v0.135.1: aplica limites de segurança compartilhados
+  //    (`applyVetorialSafetyLimits`) para impedir SVGs excessivos.
+  const sorted = sortOrder !== undefined
+    ? sortPaths(visible, sortOrder, width, height)
+    : visible;
+  return applyVetorialSafetyLimits(sorted, {
+    pipeline: 'edge-bezier',
+    preset,
+    width,
+    height,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers de validação numérica e limites (v0.135.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Contexto opcional para telemetria de truncamento aplicado por
+ * `applyVetorialSafetyLimits`. Mantido como literal simples para
+ * evitar novo tipo exportado.
+ */
+type SafetyLimitsContext = {
+  pipeline: 'imagetracer' | 'edge-bezier';
+  preset: VetorialPreset;
+  width: number;
+  height: number;
+};
+
+/**
+ * Verifica invariantes numéricas mínimas de um `VetorialPath`.
+ *
+ * - `d` deve ser string não vazia e finita (sem `NaN`/`Infinity`).
+ * - `length` deve ser número finito e não-negativo.
+ * - `strokeWidth` deve ser número finito e positivo.
+ *
+ * Retorna `null` quando o path é **inválido ou inútil** (descartado pelo
+ * caller). Critérios de descarte:
+ * 1. `d` ausente ou com tokens ilegais em XML 1.0
+ * 2. `length === 0` — path degenerado que ocuparia um slot dos limites
+ *    (`MAX_PATHS_PER_SCENE`/`MAX_D_BYTES_PER_SCENE`) sem renderizar nada
+ *    visualmente. v0.135.2: antes zerávamos `length` mantendo o path
+ *    (defesa em profundidade), mas isso desperdiçava slot e ainda exigia
+ *    renderização sem benefício. Agora descartamos.
+ *
+ * Caso contrário retorna um `VetorialPath` sanitizado (`strokeWidth` normalizado
+ * para `>= 1`) que é seguro para renderização.
+ */
+function sanitizePathOrNull(path: VetorialPath): VetorialPath | null {
+  if (typeof path.d !== 'string' || path.d.length === 0) {
+    return null;
   }
-  return visible;
+  // Verifica se há tokens inválidos (`NaN`/`Infinity` ou tokens malformados
+  // do tipo `MLC` que o `imagetracerjs` raramente emite, mas que escapariam
+  // de `getLength`).
+  if (!SVG_PATH_DATA_REGEX.test(path.d)) {
+    return null;
+  }
+  // Path degenerado (`length === 0`): não renderiza nada, desperdiça slot.
+  if (path.length === 0 || !Number.isFinite(path.length)) {
+    return null;
+  }
+  const strokeWidth = Number.isFinite(path.strokeWidth) && path.strokeWidth > 0
+    ? path.strokeWidth
+    : 1;
+  return {
+    d: path.d,
+    length: path.length,
+    color: path.color,
+    strokeWidth,
+  };
+}
+
+/**
+ * Aplica os limites de segurança compartilhados pelos dois pipelines:
+ *
+ * 1. **Sanitização numérica** — descarta paths com `d` inválido ou valores
+ *    não finitos (proteção contra regressões no vetorizador upstream).
+ * 2. **Limite de quantidade** — `MAX_PATHS_PER_SCENE` paths (alinhado com
+ *    o teste e2e de vetor). Logs `warn` quando o pipeline produz
+ *    mais paths que o permitido; descarta o excedente.
+ * 3. **Limite de bytes do `d`** — `MAX_D_BYTES_PER_SCENE` acumulado. Logs
+ *    `warn` quando o SVG serializado seria grande demais para o
+ *    `renderMediaOnWeb` decodificar via `data:image/svg+xml`.
+ *
+ * Mantém a ordem atual dos paths (sem reordenar). Retorna um novo array.
+ */
+function applyVetorialSafetyLimits(
+  paths: VetorialPath[],
+  context: SafetyLimitsContext,
+): VetorialPath[] {
+  if (paths.length === 0) {
+    return paths;
+  }
+
+  // 1. Sanitização numérica (descarte de paths com `d` inválido).
+  const sanitized: VetorialPath[] = [];
+  let invalidCount = 0;
+  for (const path of paths) {
+    const safe = sanitizePathOrNull(path);
+    if (safe === null) {
+      invalidCount += 1;
+      continue;
+    }
+    sanitized.push(safe);
+  }
+  if (invalidCount > 0) {
+    log.warn(
+      'Vetorização produziu paths com d inválido — descartados',
+      { pipeline: context.pipeline, preset: context.preset, invalidCount },
+    );
+  }
+
+  // 2. Limite de quantidade de paths.
+  let limited = sanitized;
+  if (sanitized.length > MAX_PATHS_PER_SCENE) {
+    log.warn(
+      'SVG vetorial acima do limite de paths — truncando para evitar falha de conversão',
+      {
+        pipeline: context.pipeline,
+        preset: context.preset,
+        pathCount: sanitized.length,
+        maxPaths: MAX_PATHS_PER_SCENE,
+        width: context.width,
+        height: context.height,
+      },
+    );
+    limited = sanitized.slice(0, MAX_PATHS_PER_SCENE);
+  }
+
+  // 3. Limite de bytes acumulados do atributo `d` (estimativa do data URI).
+  // Invariante: nenhum path individual pode exceder `MAX_D_BYTES_PER_SCENE`
+  // sozinho (descartado em silêncio, defesa em profundidade — esse caso
+  // indica anomalia no pipeline upstream). O limite acumulado também é
+  // respeitado: ao estourar, log único e para.
+  let totalBytes = 0;
+  let keptCount = 0;
+  let oversizedSinglePathCount = 0;
+  const kept: VetorialPath[] = [];
+  for (const path of limited) {
+    const pathBytes = path.d.length * 2; // UTF-16 aproxima bem o tamanho JS
+    // Defesa em profundidade: descarta path individual que sozinho exceda o
+    // limite (anomalia do pipeline upstream — não deveria acontecer após
+    // sanitização + limites de quantidade, mas garante o invariante).
+    if (pathBytes > MAX_D_BYTES_PER_SCENE) {
+      oversizedSinglePathCount += 1;
+      continue;
+    }
+    if (totalBytes + pathBytes > MAX_D_BYTES_PER_SCENE && keptCount > 0) {
+      log.warn(
+        'SVG vetorial acima do limite de bytes — descartando paths excedentes',
+        {
+          pipeline: context.pipeline,
+          preset: context.preset,
+          keptPaths: keptCount,
+          discardedPaths: limited.length - keptCount,
+          totalBytes,
+          maxBytes: MAX_D_BYTES_PER_SCENE,
+        },
+      );
+      break;
+    }
+    totalBytes += pathBytes;
+    kept.push(path);
+    keptCount += 1;
+  }
+
+  if (oversizedSinglePathCount > 0) {
+    log.warn(
+      'Vetorização produziu paths individuais acima do limite de bytes — descartados',
+      {
+        pipeline: context.pipeline,
+        preset: context.preset,
+        oversizedCount: oversizedSinglePathCount,
+        maxBytes: MAX_D_BYTES_PER_SCENE,
+      },
+    );
+  }
+
+  return kept;
 }
 
 // ---------------------------------------------------------------------------
@@ -1041,3 +1342,25 @@ export async function vectorizeImage(
   }
   return vectorizeImageLegacy(imageData, preset, options, signal);
 }
+
+// ---------------------------------------------------------------------------
+// API interna — apenas para testes determinísticos
+// ---------------------------------------------------------------------------
+
+/**
+ * Helpers internos expostos via namespace `__testing` para a suíte de
+ * testes poder exercitar `applyVetorialSafetyLimits` e `sanitizePathOrNull`
+ * de forma determinística (imagens reais raramente cruzam `MAX_PATHS_PER_SCENE`
+ * para disparar o truncamento, e o regex de validação precisa ser testado
+ * em isolamento).
+ *
+ * **NÃO use em código de produção.** Os helpers são internos — a API
+ * pública é apenas `vectorizeImage`.
+ */
+export const __testing = {
+  applyVetorialSafetyLimits,
+  sanitizePathOrNull,
+  MAX_PATHS_PER_SCENE,
+  MAX_D_BYTES_PER_SCENE,
+  SVG_PATH_DATA_REGEX,
+} as const;

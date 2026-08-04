@@ -311,6 +311,20 @@ export interface GenerateStrokesOptions {
    * @see `EDGE_PRESET_CONFIG[preset].epsilon`
    */
   contourEpsilon?: number;
+  /**
+   * Cor de fundo do canvas (`'white'` ou `'black'`). Default `'white'`
+   * para retrocompatibilidade.
+   *
+   * v0.135.2 (F2 da auditoria): antes o pipeline hardcodava `'white'` em
+   * 4 lugares, ignorando a escolha do usuário no seletor `useAnimationStore.canvasColor`.
+   * Agora a preferência é propagada do store para o `StrokeAnimation`/`VetorialAnimation`
+   * gerado, e também para o filtro de contraste `filterPathsByBackgroundContrast`
+   * (modo vetorial) — que precisa saber a cor de fundo para remover paths invisíveis.
+   *
+   * Aceita também o atalho semântico `'white'`/`'black'` (mais comum no app) —
+   * o filtro de contraste já trata esses valores como RGB.
+   */
+  canvasColor?: 'white' | 'black';
 }
 
 function createAbortError(): DOMException {
@@ -364,54 +378,65 @@ export async function generateStrokesFromImage(
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = async () => {
-      if (signal?.aborted) {
-        rejectOnce(createAbortError());
-        return;
-      }
-
+      // Try/catch global: qualquer throw síncrono ou assíncrono DENTRO deste
+      // handler (ex: `canvas.getContext('2d')` retornando null, `getImageData`
+      // lançando, ou falha no próprio `vectorizeImage`) vira reject da Promise
+      // — antes, exceção não capturada virava unhandled rejection e a
+      // Promise do executor nunca settle, deixando o job eternamente em
+      // 'processing' no BatchOrchestrator. (W3 da auditoria v0.135.1 rodada 5.)
       try {
-        await img.decode();
-      } catch {
-        rejectOnce(new Error('Falha ao decodificar imagem para speed paint'));
-        return;
-      }
+        if (signal?.aborted) {
+          rejectOnce(createAbortError());
+          return;
+        }
 
-      if (signal?.aborted) {
-        rejectOnce(createAbortError());
-        return;
-      }
+        try {
+          await img.decode();
+        } catch {
+          rejectOnce(new Error('Falha ao decodificar imagem para speed paint'));
+          return;
+        }
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
+        if (signal?.aborted) {
+          rejectOnce(createAbortError());
+          return;
+        }
 
-      // Resize to high resolution for quality (max 1920x1080)
-      const maxW = 1920;
-      const maxH = 1080;
-      let width = img.width;
-      let height = img.height;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (ctx === null) {
+          rejectOnce(new Error('Falha ao criar contexto 2D do canvas'));
+          return;
+        }
 
-      if (width > maxW || height > maxH) {
-        const ratio = Math.min(maxW / width, maxH / height);
-        width = Math.floor(width * ratio);
-        height = Math.floor(height * ratio);
-      }
+        // Resize to high resolution for quality (max 1920x1080)
+        const maxW = 1920;
+        const maxH = 1080;
+        let width = img.width;
+        let height = img.height;
 
-      canvas.width = width;
-      canvas.height = height;
+        if (width > maxW || height > maxH) {
+          const ratio = Math.min(maxW / width, maxH / height);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        }
 
-      // Fill with white background first to handle transparent PNGs
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
+        canvas.width = width;
+        canvas.height = height;
 
-      ctx.drawImage(img, 0, 0, width, height);
+        // Fill with white background first to handle transparent PNGs
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
 
-      // Save the resized image to prevent holding massive 4K images in memory
-      const resizedImage = canvas.toDataURL('image/jpeg', 0.9);
+        ctx.drawImage(img, 0, 0, width, height);
 
-      // Extrai imageData na main thread (canvas não disponível no Worker sem OffscreenCanvas)
-      const imageData = ctx.getImageData(0, 0, width, height);
+        // Save the resized image to prevent holding massive 4K images in memory
+        const resizedImage = canvas.toDataURL('image/jpeg', 0.9);
 
-      onProgress(0.3);
+        // Extrai imageData na main thread (canvas não disponível no Worker sem OffscreenCanvas)
+        const imageData = ctx.getImageData(0, 0, width, height);
+
+        onProgress(0.3);
 
       // -------------------------------------------------------------------------
       // Branch: renderização vetorial
@@ -438,6 +463,7 @@ export async function generateStrokesFromImage(
             sortOrder,
             options.edgeThreshold,
             options.contourEpsilon,
+            options.canvasColor ?? 'white',
             onProgress,
             resolveOnce,
             rejectOnce,
@@ -456,6 +482,7 @@ export async function generateStrokesFromImage(
           sortOrder,
           options.edgeThreshold,
           options.contourEpsilon,
+          options.canvasColor ?? 'white',
           onProgress,
           resolveOnce,
           rejectOnce,
@@ -470,7 +497,17 @@ export async function generateStrokesFromImage(
       } catch (workerError: unknown) {
         log.warn('Worker indisponível, usando fallback na main thread', { error: workerError });
         // Fallback: processa na main thread (comportamento original)
-        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolveOnce, rejectOnce, signal);
+        processOnMainThread(
+          imageData,
+          width,
+          height,
+          resizedImage,
+          options.canvasColor ?? 'white',
+          onProgress,
+          resolveOnce,
+          rejectOnce,
+          signal,
+        );
         return;
       }
 
@@ -492,7 +529,7 @@ export async function generateStrokesFromImage(
           id: Math.random().toString(36).substring(7),
           canvasWidth: width,
           canvasHeight: height,
-          canvasColor: 'white',
+          canvasColor: options.canvasColor ?? 'white',
           totalFrames: result.strokes.length,
           fps: 60,
           totalDurationMs: result.totalDurationMs,
@@ -514,8 +551,28 @@ export async function generateStrokesFromImage(
         worker!.terminate();
         worker = null;
         log.error('Erro no Worker de image processing, usando fallback', { error: err.message });
-        processOnMainThread(imageData, width, height, resizedImage, onProgress, resolveOnce, rejectOnce, signal);
+        processOnMainThread(
+          imageData,
+          width,
+          height,
+          resizedImage,
+          options.canvasColor ?? 'white',
+          onProgress,
+          resolveOnce,
+          rejectOnce,
+          signal,
+        );
       };
+      } catch (onloadError: unknown) {
+        // Catch global do `onload`: qualquer throw síncrono ou rejeição
+        // assíncrona dentro do handler (e.g. `getContext('2d')` retornando
+        // null, `getImageData` lançando, ou exceção no próprio
+        // `processVetorialOnMainThread`) vira `rejectOnce` da Promise do
+        // executor. Sem este catch, exceção não capturada virava unhandled
+        // rejection e a Promise nunca settle — o job ficaria eternamente em
+        // 'processing' no BatchOrchestrator. (W3 da auditoria v0.135.1 rodada 5.)
+        rejectOnce(onloadError instanceof Error ? onloadError : new Error(String(onloadError)));
+      }
     };
     img.onerror = () => rejectOnce(new Error('Failed to load image'));
     img.src = dataUrl;
@@ -572,6 +629,7 @@ function processVetorialInWorker(
   sortOrder: VetorialPathSortOrder | undefined,
   edgeThreshold: number | undefined,
   contourEpsilon: number | undefined,
+  canvasColor: 'white' | 'black',
   onProgress: (p: number) => void,
   resolve: (value: VetorialAnimation) => void,
   reject: (error: Error) => void,
@@ -584,10 +642,43 @@ function processVetorialInWorker(
 
   // Cria o Worker via URL relativa (padrão Vite). Vite resolve os imports
   // TS automaticamente, então o Worker pode usar `import` normal de módulos.
-  const worker = new Worker(new URL('./vetorialWorker.ts', import.meta.url), {
-    type: 'module',
-    name: `vetorial-worker-${Math.random().toString(36).slice(2, 8)}`,
-  });
+  //
+  // ## Defesa contra module worker indisponível (v0.135.1)
+  //
+  // `supportsVetorialWorker()` checa apenas `typeof Worker !== 'undefined'`,
+  // mas o construtor `new Worker(url, { type: 'module' })` lança `Error` em
+  // Safari < 15, Chrome < 80 e em CSPs com `worker-src` restritivo. Sem o
+  // try/catch, a exceção vira unhandled rejection e a Promise externa nunca
+  // settle — o job fica travado em `'processing'` no `BatchOrchestrator`,
+  // sem log, sem fallback. Espelhamos o padrão do `mask` (linhas 468-475):
+  // captura o erro e delega para `processVetorialOnMainThread`.
+  let worker: Worker;
+  try {
+    worker = new Worker(new URL('./vetorialWorker.ts', import.meta.url), {
+      type: 'module',
+      name: `vetorial-worker-${Math.random().toString(36).slice(2, 8)}`,
+    });
+  } catch (workerError: unknown) {
+    log.warn('Worker de vetorização indisponível, usando fallback na main thread', {
+      error: workerError,
+    });
+    processVetorialOnMainThread(
+      imageData,
+      width,
+      height,
+      resizedImage,
+      preset,
+      sortOrder,
+      edgeThreshold,
+      contourEpsilon,
+      canvasColor,
+      onProgress,
+      resolve,
+      reject,
+      signal,
+    );
+    return;
+  }
 
   const cleanup = (): void => {
     worker.terminate();
@@ -646,7 +737,7 @@ function processVetorialInWorker(
     sortOrder,
     edgeThreshold,
     contourEpsilon,
-    canvasColor: 'white',
+    canvasColor,
     resizedImage,
   };
 
@@ -661,6 +752,7 @@ async function processVetorialOnMainThread(
   sortOrder: VetorialPathSortOrder | undefined,
   edgeThreshold: number | undefined,
   contourEpsilon: number | undefined,
+  canvasColor: 'white' | 'black',
   onProgress: (p: number) => void,
   resolve: (value: VetorialAnimation) => void,
   reject: (error: Error) => void,
@@ -686,6 +778,10 @@ async function processVetorialOnMainThread(
       signal,
       edgeThreshold,
       contourEpsilon,
+      // v0.135.2 (W4): propaga canvasColor para o `filterPathsByBackgroundContrast`
+      // interno do pipeline edge+bezier. O filtro externo (linha 753) já
+      // recebia esta opção antes, mas o interno hardcodava `'white'`.
+      canvasColor,
     });
     if (signal?.aborted) {
       reject(createAbortError());
@@ -697,7 +793,9 @@ async function processVetorialOnMainThread(
     // invisíveis (branco sobre branco / preto sobre preto) e o pencil
     // se move sem traço aparecer. Filtro transparente para imagens com
     // bom contraste.
-    const paths = filterPathsByBackgroundContrast(rawPaths, 'white');
+    // v0.135.2 (F2 da auditoria): propaga `canvasColor` da preferência
+    // do usuário em vez de hardcodar `'white'`.
+    const paths = filterPathsByBackgroundContrast(rawPaths, canvasColor);
 
     onProgress(0.8);
 
@@ -715,7 +813,7 @@ async function processVetorialOnMainThread(
       id: Math.random().toString(36).substring(7),
       canvasWidth: width,
       canvasHeight: height,
-      canvasColor: 'white',
+      canvasColor,
       paths,
       totalLength,
       fps: 60,
@@ -741,6 +839,7 @@ function processOnMainThread(
   width: number,
   height: number,
   resizedImage: string,
+  canvasColor: 'white' | 'black',
   onProgress: (p: number) => void,
   resolve: (value: StrokeAnimation) => void,
   reject: (error: Error) => void,
@@ -988,7 +1087,7 @@ function processOnMainThread(
         id: Math.random().toString(36).substring(7),
         canvasWidth: width,
         canvasHeight: height,
-        canvasColor: 'white',
+        canvasColor,
         totalFrames: strokes.length,
         fps: 60,
         totalDurationMs: Math.max(1000, strokes.length * 8),

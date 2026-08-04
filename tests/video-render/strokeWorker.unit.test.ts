@@ -202,4 +202,76 @@ describe('strokeWorker', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('createStrokeWorker — fallback do construtor (v0.135.2 / F6)', () => {
+    /**
+     * v0.135.2 (F6 da auditoria): quando `new Worker(url)` lança (CSP
+     * restritivo, sandbox, navegador sem suporte), o try/catch captura
+     * a exceção, revoga a Blob URL e relança com mensagem clara.
+     * Sem isso, a exceção vira unhandled rejection e o caller não
+     * consegue fazer fallback.
+     */
+    it('captura erro do construtor Worker e relança com mensagem clara', async () => {
+      vi.stubGlobal('OffscreenCanvas', MockOffscreenCanvas);
+      vi.stubGlobal('createImageBitmap', mockCreateImageBitmap);
+
+      // Mock do Worker que lança no construtor
+      const origWorker = globalThis.Worker;
+      vi.stubGlobal('Worker', class {
+        constructor() {
+          throw new Error('CSP blocked blob: URL');
+        }
+      } as unknown as typeof Worker);
+
+      try {
+        const { createStrokeWorker, supportsStrokeWorker } =
+          await import('../../src/features/video-render/lib/strokeWorker');
+
+        if (!supportsStrokeWorker()) {
+          // Se OffscreenCanvas/createImageBitmap não estiverem disponíveis,
+          // o teste fica skip (cobre apenas o caso de suporte com Worker quebrado)
+          return;
+        }
+
+        // Deve lançar com mensagem incluindo "Falha ao criar Web Worker"
+        // e a causa original (CSP)
+        expect(() => createStrokeWorker()).toThrow(/Falha ao criar Web Worker/);
+      } finally {
+        // Restaura
+        vi.stubGlobal('Worker', origWorker);
+      }
+    });
+
+    it('revoga a Blob URL mesmo quando o construtor Worker lança', async () => {
+      vi.stubGlobal('OffscreenCanvas', MockOffscreenCanvas);
+      vi.stubGlobal('createImageBitmap', mockCreateImageBitmap);
+
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+      const origWorker = globalThis.Worker;
+      vi.stubGlobal('Worker', class {
+        constructor() {
+          throw new Error('CSP blocked blob: URL');
+        }
+      } as unknown as typeof Worker);
+
+      try {
+        const { createStrokeWorker, supportsStrokeWorker } =
+          await import('../../src/features/video-render/lib/strokeWorker');
+
+        if (!supportsStrokeWorker()) return;
+
+        try {
+          createStrokeWorker();
+        } catch {
+          // esperado
+        }
+
+        // Deve ter revogado a URL (defesa contra memory leak)
+        expect(revokeSpy).toHaveBeenCalled();
+      } finally {
+        vi.stubGlobal('Worker', origWorker);
+        revokeSpy.mockRestore();
+      }
+    });
+  });
 });

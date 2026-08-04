@@ -7,6 +7,107 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.136.0] - 2026-08-04
+
+### Resumo da versão
+
+Versão **MINOR** por introduzir novas capacidades **opt-in** (alert UX de divergência de `canvasColor`, tooltip explicativo de batch com modos mistos, propagação completa de `easing`/`canvasColor` no pipeline de export, novo módulo público `easingConverter.ts`) combinadas com correções críticas de robustez (falsos positivos de log em `useVoicePreviews`, Promise não settle no Worker vetorial, Worker timeout matando lote inteiro, `reset()` zerando codec fallback). Todas as mudanças são retrocompatíveis — campos novos são opcionais com defaults que preservam o comportamento atual.
+
+### Adicionado
+
+- **Novo módulo `easingConverter.ts`** (`src/features/video-render/lib/easingConverter.ts`, novo arquivo — 74 linhas): converte `VetorialEasingType` (literal serializável da store) em `EasingFunction` do Remotion no boundary entre estado e composição. Resolve o problema de "controle morto": o seletor "Linear / Smooth / Bounce" do Speed Paint já existia na store e na UI (v0.132.0), mas a escolha não chegava ao `WhiteboardScene` até a propagação completa do easing (gap que vinha desde v0.132.0). O conversor usa tabela de lookup hoisted em escopo de módulo (`LINEAR_EASING`, `BOUNCE_EASING`, `SMOOTH_EASING` alocadas 1× no carregamento) — referência estável para `React.memo` e deps de hooks. Testes em `tests/video-render/easingConverter.unit.test.ts` (67 linhas, 7 testes) fixam a referência estável como contrato (S4+S6 da auditoria).
+
+- **Alert UX de divergência de `canvasColor`** (`src/pages/SpeedPaintPage.tsx`, novo bloco condicional — ~35 linhas): quando o usuário troca `canvasColor` na store mas o `job.animation` atual foi gerado com a cor anterior, mostra `<Alert severity="info" role="status">` com texto `"A cor do canvas mudou de {from} para {to}. Reprocesse a imagem..."` e ação "Reprocessar" (delega para `reprocessInMode`). Resolve a divergência silenciosa entre background visual (`AbsoluteFill` da composição) e paths filtrados por `filterPathsByBackgroundContrast` — sem o alerta, o usuário via paths fantasma no preview até a próxima regeneração. Padrão do `modeProcessingError` Alert (não auto-trigger — exige clique para confirmar custo de reprocessamento). i18n (3 locales): `canvasColorReprocessHint`, `canvasColorReprocessAction`. Testes em `tests/speed-paint/CanvasColorAlert.component.test.tsx` (210 linhas, 5 testes).
+
+- **Tooltip explicativo de batch uniforme** (`src/features/speed-paint/components/batch/QueueStaging.tsx`, novo `<title>` no botão "Gerar 1 vídeo final" — ~7 linhas + i18n): detecta `hasMixedModes` na fila (itens com `renderMode` próprio diferente do global) e mostra `queueExportMixedModeBadge` ("Lote com modos mistos — exportação uniforme usará o modo global"); senão, mostra `queueExportUniformTooltip` ("O vídeo final usa o mesmo modo/estilo para todas as cenas"). Documenta o comportamento da exportação em lote (D04: lote uniforme, não misto) que antes era implícito. i18n (3 locales): 2 novas chaves.
+
+- **Limites de segurança no pipeline vetorial** (`src/features/speed-paint/lib/vectorizer.ts`, ~170 linhas): reintroduzido `MAX_PATHS_PER_SCENE = 500` e adicionado `MAX_D_BYTES_PER_SCENE = 250_000` (UTF-16, ≈375KB base64) — protege `renderMediaOnWeb` contra o erro `Failed to convert SVG to image` ao decodificar SVGs excessivamente grandes. `applyVetorialSafetyLimits` aplica 3 camadas: (1) sanitização numérica via `sanitizePathOrNull` (descarta `d` inválido, `length === 0` ou NaN, normaliza `strokeWidth` inválido para 1), (2) limite de quantidade com log único, (3) limite de bytes acumulado E defesa em profundidade para path individual oversized. Exportado via namespace `__testing` para testes determinísticos (`applyVetorialSafetyLimits`, `sanitizePathOrNull`, `MAX_PATHS_PER_SCENE`, `MAX_D_BYTES_PER_SCENE`, `SVG_PATH_DATA_REGEX`). Aplicado em ambos os pipelines (`vectorizeImageLegacy` e `vectorizeImageEdgeBezier`). Testes em `tests/speed-paint/vectorizer.safetyLimits.unit.test.ts` (315 linhas, 17 testes) cobrem os 3 limites, sanitização e regex de validação (que exclui `e`/`E`/`+`/`NaN`/`%` para fechar vetor de paths malformados upstream).
+
+- **`MAX_PATHS_PER_SCENE=500` reintroduzido** — alinhado com o teste e2e `imageProcessing.vetorial.e2e.test.ts:608`. Documentado em `docs/plan/edge-detection-whiteboard-architecture.md §8.5` (origem do valor). A v0.133.0 havia removido esse limite confiando apenas no filtro de compacidade; a reintrodução é defesa em profundidade contra regressões do vetorizador upstream.
+
+- **`contourIndex` em `BezierPath`** (`src/features/speed-paint/lib/bezierFitting.ts`, novo campo opcional): marca o índice do `Contour` de origem em cada `BezierPath` produzido por `fitBezierPaths`. Usado por `sampleColors` em `vectorizer.ts` para parear path↔contour mesmo após `fitBezierPaths` descartar contornos degenerados — sem isso, a cor sampleada trocava quando havia descarte (`bezierPaths[i]` deixava de corresponder a `contours[i]`). Opcional para retrocompatibilidade com testes que constroem `BezierPath` manualmente (`sampleColors` faz fallback posicional). Testes atualizados em `tests/speed-paint/bezierFitting.unit.test.ts`.
+
+- **`canvasColor` em `GetStrokeAnimation`/`SetStrokeAnimation`** (`src/features/video-render/lib/strokeCache.ts`): adicionado como discriminador no cache LRU em **ambos** os modos (vetorial filtra paths invisíveis; mask determina background da cena). Sem isso, alternar o fundo após cache HIT devolvia a animação com fundo antigo (W2). Chave SHA-256 inclui agora `mode + preset + sortOrder + canvasColor` — 4 dimensões, evita colisão total.
+
+- **`fitMode` prop em `WhiteboardScene`** (`src/features/video-render/components/WhiteboardScene.tsx`): aceita `'contain' | 'cover' | 'fill' | 'none'` para ajuste do SVG ao container do Remotion. Default `'contain'` (escala para caber, preserva proporção). Espelha o `fitMode` que `SpeedPaintScene` (modo mask) já aceitava no batch. Resolve bug onde cenas com proporção diferente da composição no batch ficavam desalinhadas no canto superior esquerdo (F4). `VetorialBatchSceneWrapper` em `speedPaintRenderController.tsx` propagou `fitMode="contain"` por padrão.
+
+- **`VetorialEasingType` no pipeline de export** (`src/features/speed-paint/hooks/useSpeedPaintExporter.tsx`, `src/features/speed-paint/store/speedPaintRenderController.tsx`): novas opções `easing?: VetorialEasingType` em `SpeedPaintExportOptions` e `SpeedPaintBatchExportOptions`. Propagação completa: UI (`SpeedPaintPage.startBatchRender`, `SpeedPaintExportPanel.handleStartExport`) → hook fachada → controller → composições (`WhiteboardComposition` recebe, `WhiteboardScene` aplica via `interpolate(... , { easing })`). Fecha o gap do "controle morto" do seletor de easing.
+
+- **`canvasColor` no pipeline de export** (`hooks/useSpeedPaintExporter.tsx`, `store/speedPaintRenderController.tsx`, `lib/imageProcessing.ts`): novas opções `canvasColor?: 'white' | 'black'` em `SpeedPaintExportOptions` e `SpeedPaintBatchExportOptions`. Propagação completa: store → hook fachada → controller → `generateStrokesFromImage` (F2 da auditoria). Antes desta propagação, o pipeline hardcodava `'white'` em 4 lugares, ignorando a escolha do usuário no seletor `useAnimationStore.canvasColor`. `VetorialAnimation.canvasColor`/`StrokeAnimation.canvasColor` agora refletem a preferência.
+
+- **`useVoicePreviews` — proteção contra falsos positivos pós-navegação** (`src/hooks/useVoicePreviews.ts`, +119/-22 linhas vs versão v0.135.0): 5 mecanismos adicionados que blindam o hook contra falsos positivos de log (Chrome dispara `onerror` ao abortar/limpar `<audio>`):
+  1. `sessionTokenRef` (contador incremental) — callbacks de áudio (`play().catch`, `onerror`, `onended`) verificam `isStale()` antes de aplicar efeito colateral; eventos atrasados de áudio antigo são descartados
+  2. Cleanup de unmount em `useEffect` — zera `onerror`/`onended` e revoga `src` antes do garbage collector coletar o `<audio>`, evita log pós-navegação e warning React de `setState-after-unmount`
+  3. Lógica condicional `code === 4 && audio.src === ''` — silencia o caso degenerado onde Chrome dispara `onerror` com code 4 ao limpar `src=''` + `load()` (decisão consciente rodada 6, restauração do ramo condicional que o round 5 removeu)
+  4. `setErrorId(null)` em `stop()` — evita que o indicador de erro persista indefinidamente após `stop()` quando o seletor do Inspector tem auto-clear de 3s mas o de Configurações não (S7)
+  5. `clearError` exposto no retorno do hook — consumidores podem resetar erro programaticamente
+
+  Cobertura de testes: `tests/hooks/useVoicePreviews.unit.test.ts` (+424/-5, MockAudio com helpers de rejeição controlada, 14 testes totais — 12 novos nesta release) — valida cada `MediaError.code` (0/1/2/3/4) e o caminho `isStale()` do `play().catch` assíncrono tardio.
+
+- **`pencilFxId` via `useId()` no `WhiteboardScene`** (`src/features/video-render/components/WhiteboardScene.tsx`): antes hardcoded `id="pencil-fx"` — em cenários com múltiplos `<WhiteboardScene>` renderizados juntos (batch com várias cenas em paralelo durante scrubbing no Remotion Studio), o filtro do `<defs>` da segunda cena era ignorado porque `url(#pencil-fx)` resolvia para o primeiro `<defs>` do documento SVG (resolução por documento, não por árvore React). Agora cada cena tem ID único via `useId` do React 19 — `pencil-fx-{useId()}`. `Pencil` interno recebe `pencilFxId` via prop. F7 da auditoria.
+
+- **4 novas chaves i18n** (3 locales: pt-BR/en/es): `canvasColorReprocessHint` (com placeholders `{from}` e `{to}`), `canvasColorReprocessAction`, `queueExportUniformTooltip`, `queueExportMixedModeBadge`. Total adicionado: 4 chaves × 3 locales = 12 entries.
+
+### Alterado
+
+- **`SpeedPaintPage` propaga `easing`/`canvasColor` para o batch** (`src/pages/SpeedPaintPage.tsx`, +30 linhas): o efeito de "iniciar exportação em lote" lê `renderMode`/`vetorialPreset`/`vetorialSortOrder`/`canvasColor`/`easing` da store via `useAnimationStore.getState()` e passa para `startBatchRender`. Antes, o batch sempre re-exportava em mask e o `sortOrder`/`canvasColor`/`easing` caíam no default — divergência silenciosa entre preview e export reproduzida nas auditorias W2 + W-B. A infra-estrutura no controller já aceitava a propagação desde a v0.133.0 — bastava a UI passar.
+
+- **`BatchOrchestrator` propaga `vetorialSortOrder` no preview** (`src/features/speed-paint/components/batch/BatchOrchestrator.tsx`, +20 linhas): a chamada `generateStrokesFromImage` agora inclui `vetorialSortOrder` (lido via `getState()` no momento da chamada, não via subscription — ver W3 abaixo) e `canvasColor` do store. Antes, o preview watch caía na ordem natural (varredura raster) enquanto o record exportava na ordem do seletor — divergência silenciosa que reproduzia a classe de bug do W-B.
+
+- **`BatchOrchestrator` usa seletor granular `s.job.status`** (`src/features/speed-paint/components/batch/BatchOrchestrator.tsx`): antes lia `s.job` (objeto inteiro) e re-renderizava 30×/s durante processamento porque `setJob({progress: 0.5})` cria nova referência do objeto `job`. Agora só re-renderiza quando `status` muda (`idle → processing → completed → failed`) — o callback de progresso muta o store, mas o seletor retorna o mesmo primitivo. Validação via `React.Profiler` em novo teste de `tests/speed-paint/BatchOrchestrator.component.test.tsx` (S5).
+
+- **`canvasColor` lido via `getState()` no momento da chamada** (`BatchOrchestrator.tsx`, `SpeedPaintPage.reprocessCurrentImage`): em vez de subscription + dep no `useEffect`, `canvasColor` é lido via `useAnimationStore.getState()`. Incluir nas deps faria o cleanup do useEffect abortar o processamento em curso SEM reiniciar (o corpo só reinicia com novo `currentImgId`), deixando o job eternamente em `'processing'`. Mesmo padrão aplicado a `vetorialSortOrder` (W3 da auditoria).
+
+- **`reset()` do `speedPaintRenderController` preserva `codec`/`container`** (`src/features/speed-paint/store/speedPaintRenderController.tsx`, ~3 linhas): antes zerava para os defaults `'h264'`/`'mp4'` ao chamar `...INITIAL_STATE`, sobrescrevendo o fallback VP8/WebM que `useCodecSupport` resolveu para browsers sem H.264 (ex: Firefox Linux). Agora lê `get().codec` e `get().container` antes do set, preserva os valores resolvidos. F1 da auditoria.
+
+- **F1 — falhas de validação em `runSingleRender`/`runBatchRender` setam `status: 'failed'` em vez de `return;` silencioso** (`speedPaintRenderController.tsx`, 3 sites): `imageSource` ausente no modo mask, `items.length === 0` no batch, e `firstAnimation` undefined após loop de geração. Antes, a UI ficava eternamente em estado idle após validação inválida — sem feedback. Agora a UI mostra o motivo em `<Alert severity="error">` (F14).
+
+- **`runSingleRender`/`runBatchRender` propagam `canvasColor` para `generateStrokesFromImage`** (`speedPaintRenderController.tsx`, +3 linhas): o `imageData` enviado ao pipeline vetorial agora carrega a cor de fundo da preferência — antes hardcodava `'white'` no `filterPathsByBackgroundContrast` interno.
+
+- **Defesa em profundidade em `strokeWorker.ts` (F6)** (`src/features/video-render/lib/strokeWorker.ts`, +30 linhas): `createStrokeWorker` agora captura a exceção do construtor `new Worker(url)` (CSP restritivo, sandbox sem permissão para Blob workers, navegadores que honram COEP sem instanciar o worker) com try/catch — revoga a Blob URL e relança com mensagem clara `"Falha ao criar Web Worker: ..."` + `cause` (ES2022) para preservar stack traces. Sem o try/catch, a exceção vira unhandled rejection no caller e o fallback main-thread não é acionado de forma limpa. Espelha o padrão de `processVetorialInWorker` em `imageProcessing.ts` (F10).
+
+- **Timeout de `processSceneInWorker` NÃO chama `terminateStrokeWorker`** (`strokeWorker.ts`): o worker é compartilhado entre múltiplas cenas do lote (`speedPaintRenderer.ts` cria 1 worker por lote e reusa) — terminá-lo mataria as cenas seguintes. Agora apenas remove os listeners desta cena específica e marca como timed out local. Caller decide se quer recriar o worker (já tem fallback para main-thread por cena no caso de falha). W5.
+
+- **`sampleColors` usa `path.contourIndex ?? i`** (`src/features/speed-paint/lib/vectorizer.ts`): pareamento path↔contour agora usa `path.contourIndex` quando presente (setado por `fitBezierPaths` desde a v0.133.0), fallback para índice posicional `i` para retrocompatibilidade com callers que constroem `BezierPath` manualmente. Sem isso, cores trocavam quando `fitBezierPaths` descartava contornos degenerados.
+
+- **`getMinY`/`distFromCenter` migrados para `matchAll` com grupos capturados** (`vectorizer.ts`, +5 linhas): antes usavam `String.match` + `split(/\s+/)` que quebrava em paths com coords negativas adjacentes à letra (`M-5 10` virava `['M-5', '10']` → `parts[2]` undefined → Y=0 silencioso, reverter ordem do `top-down`). Agora `matchAll` com flag `g` preserva os grupos `[1]`/`[2]` (X, Y) — narrowing real, sem split frágil. S1 da auditoria.
+
+- **`svg` com `maxWidth`/`maxHeight` quando `fitMode !== 'none'`** (`WhiteboardScene.tsx`): quando `fitMode !== 'none'`, o SVG preenche o container (que é o `AbsoluteFill` = 100% do frame). Combinado com `preserveAspectRatio` acima, produz o fit esperado (F4).
+
+- **`SVG_PATH_DATA_REGEX` excluindo `e`/`E`/`+`** (`vectorizer.ts`): proteção contra `NaN`/`Infinity` injetados por libs upstream. Regex cobre os 16 comandos SVG padrão (`MmLlHhVvCcSsQqTtAaZz`), dígitos, separadores e whitespace válido em XML 1.0. Trocar `\s` por `[ \t\r\n]` explícito fecha o vetor de vertical tab/form feed (ilegais em XML 1.0).
+
+- **`maxW=1920`/`maxH=1080` consistente entre imageProcessing principal + fallback main-thread** (`imageProcessing.ts`): antes do fix W3 da auditoria, o catch global não estava presente — qualquer throw síncrono (`canvas.getContext('2d')` retornando null, `getImageData` lançando, exceção em `processVetorialOnMainThread`) virava unhandled rejection e a Promise nunca settle — o job ficava eternamente em 'processing'.
+
+### Corrigido
+
+- **Falsos positivos de log de erro em `useVoicePreviews`** (`src/hooks/useVoicePreviews.ts`): o Chrome dispara `onerror` com code 4 ao atribuir `src = ''` num `<audio>` ativo ou ao abortar um `Audio` em reprodução (ver `MediaError.code = MEDIA_ERR_SRC_NOT_SUPPORTED`). Sem a guarda, o hook logava `"Não foi possível carregar o preview de voz X"` falso + setava `errorId`, exibindo o indicador de erro indefinidamente até o próximo `playPreview`. Solução: tokens de sessão + cleanup de unmount + condicional `code === 4 && audio.src === ''` (decisão consciente da rodada 6 da auditoria interna). 12 novos testes em `tests/hooks/useVoicePreviews.unit.test.ts` (+424 linhas, MockAudio + helpers de rejeição controlada).
+
+- **Promise não settle em `processVetorialInWorker` quando `new Worker(url, {type:'module'})` lança** (`imageProcessing.ts`): o construtor lança `Error` em Safari <15, Chrome <80 e CSPs com `worker-src` restritivo. Sem try/catch, a exceção vira unhandled rejection e a Promise externa nunca settle — o job fica travado em `'processing'` no `BatchOrchestrator`, sem log, sem fallback. Solução: try/catch + delegação para `processVetorialOnMainThread` (espelhando padrão do `mask` Worker nas linhas 468-475). Teste em `tests/speed-paint/imageProcessing.workerFallback.unit.test.ts` (175 linhas) simula CSP restritivo e valida fallback.
+
+- **`BatchOrchestrator` travado em 'processing' por throw síncrono no `onload` handler** (`imageProcessing.ts`): o `img.onload` async handler agora tem try/catch global — qualquer throw (canvas.getContext retornando null, getImageData lançando, exceção no vetorizador) vira `rejectOnce` da Promise do executor. Antes, exceção não capturada virava unhandled rejection e o job ficava eternamente em 'processing' no BatchOrchestrator. W3.
+
+- **Worker timeout matando lote inteiro** (`strokeWorker.ts`): `processSceneInWorker` timeout (60s) chamava `terminateStrokeWorker(worker)` — mas o worker é compartilhado entre múltiplas cenas do lote (`speedPaintRenderer.ts` cria 1 por lote e reusa). Terminá-lo matava as cenas seguintes. Agora apenas remove os listeners desta cena e marca como timed out local. W5.
+
+- **`useEffect` cleanup no `BatchOrchestrator` abortava processamento ao trocar `canvasColor`** (`BatchOrchestrator.tsx`): `canvasColor` agora é lido via `getState()` no momento da chamada, NÃO via subscription + dep no `useEffect`. Incluir nas deps fazia o cleanup do useEffect abortar o processamento em curso SEM reiniciar (o corpo só reinicia com novo `currentImgId`), deixando o job eternamente em `'processing'`. W3.
+
+- **Re-render 30×/s no `BatchOrchestrator` durante progresso** (`BatchOrchestrator.tsx`): seletor `s.job` (objeto inteiro) re-renderizava a cada `setJob({progress: 0.5})` (nova referência). Trocado por `s.job.status` (primitivo) — só re-renderiza quando `status` muda. S5.
+
+- **`sortPaths('top-down'|'center-out')` quebrando com coords negativas** (`vectorizer.ts`): `String.match` + `split(/\s+/)` interno quebrava em `M-5 10` (`M-5` ficava inteiro em `parts[0]`, Y caía em fallback `?? '0'`). Migrado para `matchAll` com flag `g` (preserva grupos `[1]`/`[2]`). Testes de regressão em `tests/speed-paint/vectorizer.unit.test.ts` (S1).
+
+- **`reset()` do controller zerando codec fallback** (`speedPaintRenderController.tsx`): `...INITIAL_STATE` zerava `codec`/`container` para `'h264'`/`'mp4'` padrão, sobrescrevendo o fallback VP8/WebM que `useCodecSupport` resolveu para browsers sem H.264. F1.
+
+- **`reset` quebrando fallback de codec em Firefox Linux** (`speedPaintRenderController.tsx`): usuário exporta com sucesso em Firefox (VP8/WebM) → chama reset → tenta re-exportar → volta para H.264/MP4 → falha. F1.
+
+- **Alert UX ausente para divergência de `canvasColor`**: usuário trocava o seletor de cor no SpeedPaintPage mas o `job.animation.canvasColor` ficava desatualizado até a próxima regeneração — paths fantasma no preview. S2 da auditoria — agora alert info com ação de reprocessar.
+
+### Validação
+
+- `bun run lint` → EXITCODE=0 ✅
+- `bun run typecheck` → EXITCODE=0 ✅
+- `bun run test` → suíte completa passando ✅ (delta estimado: +~1500 linhas de teste entre 4 arquivos novos `vectorizer.safetyLimits`, `imageProcessing.workerFallback`, `CanvasColorAlert`, `easingConverter` e modificações em `useVoicePreviews`, `BatchOrchestrator`, `bezierFitting`, `imageProcessing.vetorial`, `vectorizer`, `WhiteboardScene`, `strokeWorker`)
+
+---
+
 ## [0.135.0] - 2026-07-28
 
 ### Adicionado

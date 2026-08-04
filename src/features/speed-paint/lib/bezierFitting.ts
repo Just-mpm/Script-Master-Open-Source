@@ -73,6 +73,20 @@ export interface BezierPath {
   d: string;
   /** Comprimento total pré-calculado via `@remotion/paths.getLength()`. */
   length: number;
+  /**
+   * Índice do `Contour` de origem no array original recebido por
+   * `fitBezierPaths`. Usado pelo consumidor (`sampleColors`) para parear
+   * o path com o contour correto após descartes — sem isso, o pareamento
+   * posicional `bezierPaths[i] ↔ contours[i]` dessincroniza quando
+   * `fitBezierPaths` descarta contornos degenerados.
+   *
+   * Opcional para retrocompatibilidade: callers que constroem `BezierPath`
+   * manualmente (ex.: testes) podem omitir. `sampleColors` faz fallback
+   * para o índice posicional quando ausente.
+   *
+   * @see `vectorizer.ts:sampleColors` (consumidor)
+   */
+  contourIndex?: number;
 }
 
 /** Opções de ajuste de curvas Bezier em contornos de borda. */
@@ -566,13 +580,17 @@ export function fitBezierPaths(
 
   const out: BezierPath[] = [];
   let dropped = 0;
-  for (const contour of contours) {
+  for (let contourIndex = 0; contourIndex < contours.length; contourIndex++) {
+    const contour = contours[contourIndex];
+    if (contour === undefined) continue;
     const path = processContour(contour, epsilon, fitError, maxDepth);
     if (path === null) {
       dropped += 1;
       continue;
     }
-    out.push(path);
+    // Marca o índice do contour de origem para que `sampleColors` (no
+    // consumidor) possa parear path ↔ contour mesmo após descartes.
+    out.push({ ...path, contourIndex });
   }
   log.debug('Ajuste Bezier concluído', {
     input: contours.length,

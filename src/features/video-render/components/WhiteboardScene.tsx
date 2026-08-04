@@ -28,7 +28,7 @@
  * @see `src/features/video-render/components/SpeedPaintScene.tsx:37-106` — `drawTool()` original (Canvas 2D)
  */
 
-import React from 'react';
+import React, { useId } from 'react';
 import {
   AbsoluteFill,
   Easing,
@@ -107,6 +107,19 @@ function safeGetPointAtLength(d: string, length: number): PathPoint {
 const BLUR_THRESHOLD = 1.5;
 
 /**
+ * Modo de ajuste do SVG ao container (v0.135.2 / F4). Usado pelo batch
+ * quando há mistura de proporções entre cenas (ex: 16:9 + 1:1 + 9:16
+ * no mesmo vídeo). Sem isso, cenas com proporção diferente da composição
+ * ficam desalinhadas (canto superior esquerdo) ou esticadas.
+ *
+ * - `'contain'`: escala para caber inteiro, preserva aspect ratio (padrão)
+ * - `'cover'`:   escala para preencher, cropa nas bordas
+ * - `'fill'`:    estica para preencher (distorce)
+ * - `'none'`:    mantém tamanho natural da imagem (canto superior esquerdo)
+ */
+type FitMode = 'contain' | 'cover' | 'fill' | 'none';
+
+/**
  * `stdDeviation` máximo (em pixels SVG) do `feGaussianBlur`. Limite
  * superior evita degradação visual e mantém performance aceitável
  * em frames de exportação (RF-12 + RNF-02).
@@ -167,6 +180,13 @@ export interface WhiteboardSceneProps {
    * evita que a caneta "voe" para fora da ponta do traço ao escalar.
    */
   penScale?: number;
+  /**
+   * Modo de ajuste do SVG ao container (v0.135.2 / F4). Default `'contain'`
+   * (escala para caber, preserva proporção). Veja `FitMode` para os
+   * comportamentos de cada valor. Espelha o `fitMode` que `SpeedPaintScene`
+   * (modo mask) já aceita no batch.
+   */
+  fitMode?: FitMode;
 }
 
 // ---------------------------------------------------------------------------
@@ -213,10 +233,20 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
     showDrawTool = true,
     canvasColor,
     easing,
+    fitMode = 'contain',
     // `penScale` tem default calculado a partir de `strokeWidth` (abaixo) —
     // não usar destructuring default porque depende de `animation.paths[0]`.
   } = props;
   const frame = useCurrentFrame();
+  // v0.135.2 (F7 da auditoria): ID do filtro `pencil-fx` único por cena
+  // via `useId` do React 19. Antes era hardcoded `id="pencil-fx"` — em
+  // cenários onde múltiplos `<WhiteboardScene>` são renderizados juntos
+  // (ex: batch com várias cenas em paralelo durante scrubbing no Remotion
+  // Studio), o filtro do `<defs>` da segunda cena era ignorado porque
+  // `url(#pencil-fx)` resolvía para o primeiro `<defs>` do documento
+  // (resolução por documento SVG, não por árvore React). Com `useId`,
+  // cada cena tem seu próprio filtro isolado.
+  const pencilFxId = `pencil-fx-${useId()}`;
 
   // `penScale` efetivo: prop explícita do consumidor OU derivado do `strokeWidth`
   // do primeiro path (RF-19 — escala da caneta proporcional ao traço).
@@ -436,8 +466,20 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
         width={animation.canvasWidth}
         height={animation.canvasHeight}
         viewBox={`0 0 ${animation.canvasWidth} ${animation.canvasHeight}`}
+        preserveAspectRatio={
+          fitMode === 'fill'
+            ? 'none'
+            : fitMode === 'cover'
+              ? 'xMidYMid slice'
+              : 'xMidYMid meet' // contain e default
+        }
         style={{
           display: 'block',
+          // v0.135.2 (F4): quando `fitMode !== 'none'`, o SVG preenche o
+          // container (que é o `AbsoluteFill` = 100% do frame). Combinado
+          // com `preserveAspectRatio` acima, isso produz o fit esperado.
+          maxWidth: fitMode === 'none' ? undefined : '100%',
+          maxHeight: fitMode === 'none' ? undefined : '100%',
           // v0.133.1: durante o hold, escondemos os paths e a caneta —
           // a `resizedImage` (camada acima) toma o lugar deles.
           opacity: isHoldPhase ? 0 : 1,
@@ -454,7 +496,7 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
               proporcional à velocidade + sombra suave. O `<feGaussianBlur>`
               é condicional — só é emitido quando `stdDeviation > 0` para
               evitar custo desnecessário em frames de caneta parada. */}
-          <filter id="pencil-fx" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id={pencilFxId} x="-50%" y="-50%" width="200%" height="200%">
             {stdDeviation > 0 && (
               <feGaussianBlur in="SourceGraphic" stdDeviation={stdDeviation} />
             )}
@@ -505,6 +547,7 @@ export const WhiteboardScene = React.memo(function WhiteboardScene(
               canvasColor={effectiveCanvasColor}
               frame={frame}
               pathIndex={activePathIndex}
+              pencilFxId={pencilFxId}
             />
           </g>
         )}
@@ -528,6 +571,13 @@ interface PencilProps {
   frame: number;
   /** Índice do path ativo (-1 se nenhum) — usado no tremor (RF-11). */
   pathIndex: number;
+  /**
+   * ID do filtro `pencil-fx` no `<defs>` do `<svg>` raiz (v0.135.2 / F7).
+   * Necessário porque o Pencil é um componente separado e o ID é gerado
+   * pelo `useId()` do `WhiteboardScene` pai — passamos via prop para que
+   * o `filter="url(#...)"` aponte para o `<filter>` correto no mesmo SVG.
+   */
+  pencilFxId: string;
 }
 
 /**
@@ -566,6 +616,7 @@ function Pencil({
   canvasColor,
   frame,
   pathIndex,
+  pencilFxId,
 }: PencilProps): React.ReactElement {
   // Efeito de flutuação sutil — reduzido em v0.133.1 (era `* 2`).
   // Valor original causava deslocamento de até ±2px da ponta real do
@@ -593,20 +644,21 @@ function Pencil({
   // `Math.atan2(dy, dx)` da tangente do path ativo aqui.
   const rotation = -45;
 
-  return (
-    <g
-      // v0.133.1: `x` e `y` são sempre `(0, 0)` (o `<g>` externo já fez
-      // o translate principal). Mantemos `tremor` e `bob` no espaço local
-      // do Pencil para a sensação orgânica sem deslocar a ponta do
-      // ponto exato no canvas.
-      transform={`translate(${tremor} ${bob}) rotate(${rotation})`}
-      // Filtro SVG composto (`motion blur` + `sombra`) declarado no
-      // `<defs>` do `<svg>` raiz — aplicado APENAS neste `<g>` (não no
-      // `<svg>` inteiro — evita corte de sombra/blur nas bordas do canvas,
-      // CT-F67). O `feGaussianBlur` interno é condicional (omitido quando
-      // `stdDeviation === 0`).
-      filter="url(#pencil-fx)"
-    >
+    return (
+      <g
+        // v0.133.1: `x` e `y` são sempre `(0, 0)` (o `<g>` externo já fez
+        // o translate principal). Mantemos `tremor` e `bob` no espaço local
+        // do Pencil para a sensação orgânica sem deslocar a ponta do
+        // ponto exato no canvas.
+        transform={`translate(${tremor} ${bob}) rotate(${rotation})`}
+        // Filtro SVG composto (`motion blur` + `sombra`) declarado no
+        // `<defs>` do `<svg>` raiz — aplicado APENAS neste `<g>` (não no
+        // `<svg>` inteiro — evita corte de sombra/blur nas bordas do canvas,
+        // CT-F67). O `feGaussianBlur` interno é condicional (omitido quando
+        // `stdDeviation === 0`). v0.135.2 (F7): ID dinâmico via `useId()`
+        // para isolar filtros entre cenas no mesmo documento SVG.
+        filter={`url(#${pencilFxId})`}
+      >
       {/* Borracha (topo do lápis) */}
       <rect x={-8} y={-120} width={16} height={10} fill="#fca5a5" />
       {/* Banda metálica */}

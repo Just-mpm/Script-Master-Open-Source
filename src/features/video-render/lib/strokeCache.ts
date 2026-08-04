@@ -6,10 +6,10 @@
  * - `kind: 'vetorial'` → `VetorialAnimation` (path animation, modo novo)
  *
  * A chave SHA-256 inclui `renderMode` + `vetorialPreset` + `vetorialSortOrder`
- * além da URL. Isso garante que a mesma imagem processada com parâmetros
- * diferentes tem chaves distintas no cache — sem isso, ler uma imagem
- * com outra ordenação retornaria a animação errada (colisão de cache).
- * Veja Premissa #10 e L9/RF-09 do tracker
+ * + `canvasColor` além da URL. Isso garante que a mesma imagem processada
+ * com parâmetros diferentes tem chaves distintas no cache — sem isso, ler
+ * uma imagem com outro fundo/ordenação retornaria a animação errada
+ * (colisão de cache). Veja Premissa #10, L9/RF-09 e F2 (v0.135.2) do tracker
  * `docs/plan/tracker-speed-paint-vetorial-2026-06-14.md`.
  *
  * Usa hash SHA-256 via SubtleCrypto (async) como chave.
@@ -31,7 +31,7 @@ import { createLogger } from '../../../lib/logger';
  */
 type CachedAnimation =
   | { kind: 'mask'; animation: StrokeAnimation }
-  | { kind: 'vetorial'; animation: VetorialAnimation; preset: VetorialPreset; sortOrder?: VetorialPathSortOrder };
+  | { kind: 'vetorial'; animation: VetorialAnimation; preset: VetorialPreset; sortOrder?: VetorialPathSortOrder; canvasColor?: 'white' | 'black' };
 
 interface CacheEntry {
   data: CachedAnimation;
@@ -52,6 +52,13 @@ interface CacheContext {
    * no modo `mask` (a ordenação é uma no-op para `StrokeAnimation`).
    */
   sortOrder?: VetorialPathSortOrder;
+  /**
+   * Cor de fundo do canvas (v0.135.2 / F2). Diferentes fundos geram chaves
+   * distintas — sem isso, ler uma imagem processada com `'black'` retornaria
+   * a animação com `'white'` (paths fantasma). Ignorado no modo `mask` porque
+   * o canvasColor só afeta o background visual, não os strokes.
+   */
+  canvasColor?: 'white' | 'black';
 }
 
 // ---------------------------------------------------------------------------
@@ -78,9 +85,10 @@ const cache = new Map<string, CacheEntry>();
  * Gera hash SHA-256 hex digest de `url + JSON.stringify(context)`.
  * Usar crypto.subtle.digest — disponível em contextos seguros (HTTPS/local).
  *
- * Incluir `mode` + `preset` + `sortOrder` no payload é o que evita colisão
- * entre animações de modos diferentes (Premissa #10) ou com ordenações
- * diferentes (L9, RF-09) da mesma imagem.
+ * Incluir `mode` + `preset` + `sortOrder` + `canvasColor` no payload é o que
+ * evita colisão entre animações de modos diferentes (Premissa #10), com
+ * ordenações diferentes (L9, RF-09) ou com fundos diferentes (F2, v0.135.2)
+ * da mesma imagem.
  */
 async function buildCacheKey(imageUrl: string, context: CacheContext): Promise<string> {
   const encoder = new TextEncoder();
@@ -161,24 +169,32 @@ export async function getStrokeAnimation(imageUrl: string): Promise<StrokeAnimat
  * Busca uma animação vetorial no cache, discriminada por `mode: 'vetorial'`.
  *
  * @param imageUrl - URL da imagem (chave de busca)
- * @param context - Contexto discriminador: `mode: 'vetorial'` + `preset`/`sortOrder` opcionais
+ * @param context - Contexto discriminador: `mode: 'vetorial'` + `preset`/`sortOrder`/`canvasColor` opcionais
  * @returns A animação `VetorialAnimation` em cache, ou null
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context: { mode: 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
+  context: {
+    mode: 'vetorial';
+    preset?: VetorialPreset;
+    sortOrder?: VetorialPathSortOrder;
+    canvasColor?: 'white' | 'black';
+  },
 ): Promise<VetorialAnimation | null>;
 
 /**
  * Busca uma animação de máscara no cache, discriminada por `mode: 'mask'`.
  *
  * @param imageUrl - URL da imagem (chave de busca)
- * @param context - Contexto discriminador: `mode: 'mask'` (`preset` ignorado)
+ * @param context - Contexto discriminador: `mode: 'mask'` + `canvasColor`
+ *   opcional. v0.135.2 (W2 da auditoria): `canvasColor` é discriminador
+ *   também no modo mask — sem isso, alternar o fundo após cache HIT
+ *   devolve a animação com o fundo antigo.
  * @returns A animação `StrokeAnimation` em cache, ou null
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context: { mode: 'mask'; preset?: never; sortOrder?: never },
+  context: { mode: 'mask'; preset?: never; sortOrder?: never; canvasColor?: 'white' | 'black' },
 ): Promise<StrokeAnimation | null>;
 
 /**
@@ -188,28 +204,39 @@ export async function getStrokeAnimation(
  */
 export async function getStrokeAnimation(
   imageUrl: string,
-  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
+  context?: {
+    mode?: 'mask' | 'vetorial';
+    preset?: VetorialPreset;
+    sortOrder?: VetorialPathSortOrder;
+    canvasColor?: 'white' | 'black';
+  },
 ): Promise<StrokeAnimation | VetorialAnimation | null> {
   const mode = context?.mode ?? 'mask';
   // Aplica default do preset só no modo vetorial — no modo mask é irrelevante
   const preset = mode === 'vetorial' ? (context?.preset ?? DEFAULT_VETORIAL_PRESET) : context?.preset;
   // `sortOrder` só é considerado no modo vetorial (no mask a ordenação é no-op)
   const sortOrder = mode === 'vetorial' ? context?.sortOrder : undefined;
+  // v0.135.2 (W2 da auditoria): `canvasColor` é discriminador em AMBOS
+  // os modos — no vetorial filtra paths invisíveis; no mask determina
+  // o background da cena (`SpeedPaintScene` lê `animation.canvasColor`
+  // para o `backgroundColor` do AbsoluteFill). Sem isso, alternar o
+  // fundo após cache HIT devolve a animação com o fundo antigo.
+  const canvasColor = context?.canvasColor;
 
   try {
-    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder });
+    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder, canvasColor });
     const entry = cache.get(key);
 
     if (entry) {
       // Atualiza timestamp para LRU — entradas acessadas recentemente não são evictadas primeiro
       entry.timestamp = Date.now();
-      log.debug('Cache hit', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder });
+      log.debug('Cache hit', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder, canvasColor });
       // Discrimina por `kind` — a discriminated union `CachedAnimation` narrowa
       // o tipo de `entry.data.animation` automaticamente (sem `as`).
       return entry.data.animation;
     }
 
-    log.debug('Cache miss', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder });
+    log.debug('Cache miss', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder, canvasColor });
     return null;
   } catch (err: unknown) {
     // crypto.subtle indisponível (contexto inseguro) — ignora cache
@@ -223,12 +250,17 @@ export async function getStrokeAnimation(
  *
  * @param imageUrl - URL da imagem (chave de armazenamento)
  * @param animation - `VetorialAnimation` a ser armazenada
- * @param context - Contexto com `mode: 'vetorial'` + `preset`/`sortOrder` opcionais
+ * @param context - Contexto com `mode: 'vetorial'` + `preset`/`sortOrder`/`canvasColor` opcionais
  */
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: VetorialAnimation,
-  context: { mode: 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
+  context: {
+    mode: 'vetorial';
+    preset?: VetorialPreset;
+    sortOrder?: VetorialPathSortOrder;
+    canvasColor?: 'white' | 'black';
+  },
 ): Promise<void>;
 
 /**
@@ -241,7 +273,7 @@ export async function setStrokeAnimation(
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: StrokeAnimation,
-  context?: { mode?: 'mask'; preset?: never; sortOrder?: never },
+  context?: { mode?: 'mask'; preset?: never; sortOrder?: never; canvasColor?: never },
 ): Promise<void>;
 
 /**
@@ -252,15 +284,22 @@ export async function setStrokeAnimation(
 export async function setStrokeAnimation(
   imageUrl: string,
   animation: StrokeAnimation | VetorialAnimation,
-  context?: { mode?: 'mask' | 'vetorial'; preset?: VetorialPreset; sortOrder?: VetorialPathSortOrder },
+  context?: {
+    mode?: 'mask' | 'vetorial';
+    preset?: VetorialPreset;
+    sortOrder?: VetorialPathSortOrder;
+    canvasColor?: 'white' | 'black';
+  },
 ): Promise<void> {
   const mode = context?.mode ?? 'mask';
   const preset = mode === 'vetorial' ? (context?.preset ?? DEFAULT_VETORIAL_PRESET) : context?.preset;
   // `sortOrder` só é considerado no modo vetorial (no mask a ordenação é no-op)
   const sortOrder = mode === 'vetorial' ? context?.sortOrder : undefined;
+  // v0.135.2 (W2 da auditoria): `canvasColor` é discriminador em AMBOS os modos
+  const canvasColor = context?.canvasColor;
 
   try {
-    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder });
+    const key = await buildCacheKey(imageUrl, { mode, preset, sortOrder, canvasColor });
 
     // Eviction antes de inserir se necessário
     if (cache.size >= MAX_CACHE_SIZE && !cache.has(key)) {
@@ -286,6 +325,7 @@ export async function setStrokeAnimation(
         animation,
         preset: preset ?? DEFAULT_VETORIAL_PRESET,
         ...(sortOrder !== undefined ? { sortOrder } : {}),
+        ...(canvasColor !== undefined ? { canvasColor } : {}),
       };
     } else {
       if (!isStrokeAnimation(animation)) {
@@ -298,7 +338,7 @@ export async function setStrokeAnimation(
     }
 
     cache.set(key, { data, timestamp: Date.now() });
-    log.debug('Cache set', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder, cacheSize: cache.size });
+    log.debug('Cache set', { imageUrl: imageUrl.substring(0, 60), mode, preset, sortOrder, canvasColor, cacheSize: cache.size });
   } catch (err: unknown) {
     // Shape mismatch (TypeError) é erro do caller — propaga para que o
     // problema seja visível em desenvolvimento. Outros erros (ex: crypto

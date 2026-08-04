@@ -64,7 +64,6 @@ import {
   type SpeedPaintExportOptions,
   type SpeedPaintBatchExportOptions,
 } from '../hooks/useSpeedPaintExporter';
-import { useAnimationStore } from './animationStore';
 import type { StrokeAnimation, VetorialAnimation } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +83,14 @@ interface SpeedPaintCompositionProps {
 interface WhiteboardRenderProps {
   animation: VetorialAnimation;
   showDrawTool: boolean;
+  /**
+   * Curva de easing (v0.135.2 / F3). Default `undefined` = usa o
+   * default interno de `WhiteboardScene` (`Easing.inOut(Easing.ease)`).
+   * Aceita a string serializável `VetorialEasingType` — a conversão
+   * para `EasingFunction` do Remotion acontece dentro da composição
+   * via `getRemotionEasing` (boundary entre store e Remotion).
+   */
+  easing?: import('../types/vetorial').VetorialEasingType;
 }
 
 /** Item de uma composição batch — par (animação, imagem) */
@@ -99,6 +106,8 @@ interface BatchSpeedPaintCompositionProps {
   sceneDurationInFrames: number;
   sceneStepFrames: number;
   timingMode: SpeedPaintTimingMode;
+  /** Easing do lote (v0.135.2 / F3). */
+  easing?: import('../types/vetorial').VetorialEasingType;
 }
 
 /**
@@ -151,42 +160,136 @@ async function createExportableSpeedPaintComposition(): Promise<ComponentType<Ex
 }
 
 async function createExportableBatchSpeedPaintComposition(): Promise<ComponentType<ExportableBatchSpeedPaintProps>> {
-  const [{ AbsoluteFill, Sequence }, { SpeedPaintScene }] = await Promise.all([
+  const [{ AbsoluteFill, Sequence }, { SpeedPaintScene }, { WhiteboardScene }, { getRemotionEasing }] = await Promise.all([
     import('remotion'),
     import('../../video-render/components/SpeedPaintScene'),
+    import('../../video-render/components/WhiteboardScene'),
+    import('../../video-render/lib/easingConverter'),
   ]);
 
   /**
    * Wrapper de SpeedPaintScene para exportação em lote. Encadeia cenas via
    * `Sequence` com `from` calculado pelo `sceneStepFrames` e duração fixa por
    * cena (`sceneDurationInFrames`). Última cena tem `isLastScene=true`.
+   *
+   * ## Suporte ao modo vetorial (v0.135.1)
+   *
+   * Discrimina `VetorialAnimation` vs `StrokeAnimation` via `'paths' in animation`
+   * (campo exclusivo de `VetorialAnimation`). Para vetorial, renderiza
+   * `WhiteboardScene` via wrapper interno (`VetorialBatchSceneWrapper`) que
+   * recebe `sceneDurationInFrames` como prop — `useVideoConfig()` dentro de
+   * uma `<Sequence>` retorna a duração TOTAL da composição (todo o batch),
+   * não da cena local, fazendo cada cena desenhar só uma fração dos paths.
+   *
+   * Antes da correção (v0.135.1), o JSX forçava `animation as StrokeAnimation`
+   * sem type guard. Quando `animation` era `VetorialAnimation`, o cast silencioso
+   * deixava passar para `SpeedPaintScene`, que lia `animation.strokes.length`
+   * → `TypeError: Cannot read properties of undefined` no primeiro frame. A
+   * UI atual (`SpeedPaintPage.startBatchRender`) nunca passa `renderMode:
+   * 'vetorial'`, então o caminho era armadilha latente. Esta correção elimina
+   * o cast mentiroso e o dead code.
+   *
+   * v0.135.2 (F3): passa `easing` (VetorialEasingType) ao wrapper vetorial
+   * — convertido para `EasingFunction` do Remotion via `getRemotionEasing`.
    */
   return function ExportableBatchSpeedPaintComposition(props: ExportableBatchSpeedPaintProps): ReactNode {
-    const { items, showDrawTool, sceneDurationInFrames, sceneStepFrames, timingMode } = props;
+    const { items, showDrawTool, sceneDurationInFrames, sceneStepFrames, timingMode, easing } = props;
 
     return (
       <AbsoluteFill style={{ backgroundColor: '#000' }}>
-        {items.map((item, index) => (
-          <Sequence
-            key={`${item.animation.id}-${index}`}
-            from={index * sceneStepFrames }
-            durationInFrames={sceneDurationInFrames}
-          >
-            <SpeedPaintScene
-              animation={item.animation as StrokeAnimation}
-              imageSource={item.imageSource}
+        {items.map((item, index) => {
+          const isVetorial = 'paths' in item.animation;
+          return (
+            <Sequence
+              key={`${item.animation.id}-${index}`}
+              from={index * sceneStepFrames }
               durationInFrames={sceneDurationInFrames}
-              showDrawTool={showDrawTool}
-              isLastScene={index === items.length - 1 }
-              isExporting
-              fitMode="contain"
-              timingMode={timingMode}
-            />
-          </Sequence>
-        ))}
+            >
+              {isVetorial ? (
+                <VetorialBatchSceneWrapper
+                  animation={item.animation as VetorialAnimation}
+                  durationInFrames={sceneDurationInFrames}
+                  showDrawTool={showDrawTool}
+                  isLastScene={index === items.length - 1}
+                  easing={easing}
+                />
+              ) : (
+                <SpeedPaintScene
+                  animation={item.animation as StrokeAnimation}
+                  imageSource={item.imageSource}
+                  durationInFrames={sceneDurationInFrames}
+                  showDrawTool={showDrawTool}
+                  isLastScene={index === items.length - 1}
+                  isExporting
+                  fitMode="contain"
+                  timingMode={timingMode}
+                />
+              )}
+            </Sequence>
+          );
+        })}
       </AbsoluteFill>
     );
   };
+
+  /**
+   * Wrapper de WhiteboardScene para uma cena vetorial dentro do batch. Tem que
+   * ser declarado dentro de `createExportableBatchSpeedPaintComposition` para
+   * capturar `WhiteboardScene` do lazy import — não pode ser movido para
+   * escopo de módulo sem quebrar o split de bundle (Remotion + WhiteboardScene
+   * só entram no chunk quando `startBatchRender` é chamado).
+   *
+   * ## Por que `durationInFrames` é prop (não `useVideoConfig`)?
+   *
+   * Passamos `sceneDurationInFrames` como prop explícita em vez de chamar
+   * `useVideoConfig().durationInFrames` dentro do wrapper. **Robustez contra
+   * mudanças internas do Remotion**: na versão 4.0.448 instalada,
+   * `useVideoConfig().durationInFrames` dentro de uma `<Sequence>` retorna
+   * a duração da própria Sequence (não da composição raiz) — o que na
+   * verdade funcionaria para nós — mas em outras versões pode variar.
+   * Usar prop explícita garante o mesmo valor que `SpeedPaintScene` mask
+   * recebe e elimina a dependência do comportamento implícito do
+   * `SequenceContext` do Remotion.
+   *
+   * (W-01 da auditoria v0.135.1 rodada 6: doc-comment anterior afirmava
+   * incorretamente que `useVideoConfig` retornava a duração da composição
+   * raiz dentro de `<Sequence>`, com base em doc-comment de "notebook Remotion"
+   * inexistente no projeto. O source real do `remotion@4.0.448` instalado
+   * mostra que `useVideoConfig().durationInFrames` dentro de `<Sequence>`
+   * retorna a duração da Sequence. A correção do comentário evita
+   * manutenções futuras baseadas em premissa falsa — a prop explícita
+   * continua sendo a escolha mais defensiva.)
+   */
+  function VetorialBatchSceneWrapper({
+    animation,
+    durationInFrames,
+    showDrawTool,
+    isLastScene,
+    easing,
+  }: {
+    animation: VetorialAnimation;
+    durationInFrames: number;
+    showDrawTool: boolean;
+    isLastScene: boolean;
+    easing: import('../types/vetorial').VetorialEasingType | undefined;
+  }): ReactNode {
+    return (
+      <WhiteboardScene
+        animation={animation}
+        durationInFrames={durationInFrames}
+        showDrawTool={showDrawTool}
+        isLastScene={isLastScene}
+        isExporting
+        easing={getRemotionEasing(easing)}
+        // v0.135.2 (F4): espelha `fitMode="contain"` do `SpeedPaintScene`
+        // (modo mask) — cenas com proporção diferente da composição são
+        // redimensionadas para caber sem distorcer. Sem isso, uma cena
+        // 1:1 num batch 16:9 ficaria deslocada para o canto superior
+        // esquerdo, com o resto do canvas vazio.
+        fitMode="contain"
+      />
+    );
+  }
 }
 
 /**
@@ -208,11 +311,15 @@ async function createExportableBatchSpeedPaintComposition(): Promise<ComponentTy
  *
  * **Não consome `imageSource`** — a imagem original já foi vetorizada em
  * `animation.paths` pelo pipeline `imageProcessing.ts` (Fase 2.1).
+ *
+ * v0.135.2 (F3): converte `easing: VetorialEasingType` (string) para
+ * `EasingFunction` (Remotion) via `getRemotionEasing` no boundary.
  */
 async function createExportableWhiteboardComposition(): Promise<ComponentType<ExportableWhiteboardProps>> {
-  const [{ AbsoluteFill, useVideoConfig }, { WhiteboardScene }] = await Promise.all([
+  const [{ AbsoluteFill, useVideoConfig }, { WhiteboardScene }, { getRemotionEasing }] = await Promise.all([
     import('remotion'),
     import('../../video-render/components/WhiteboardScene'),
+    import('../../video-render/lib/easingConverter'),
   ]);
 
   /**
@@ -222,7 +329,7 @@ async function createExportableWhiteboardComposition(): Promise<ComponentType<Ex
    * de debug (placeholder da Fase 3.1, ainda sem badges de preview).
    */
   return function ExportableWhiteboardComposition(props: ExportableWhiteboardProps): ReactNode {
-    const { animation, showDrawTool } = props;
+    const { animation, showDrawTool, easing } = props;
     const { durationInFrames } = useVideoConfig();
 
     return (
@@ -235,6 +342,7 @@ async function createExportableWhiteboardComposition(): Promise<ComponentType<Ex
           showDrawTool={showDrawTool}
           isLastScene
           isExporting
+          easing={getRemotionEasing(easing)}
         />
       </AbsoluteFill>
     );
@@ -410,7 +518,10 @@ export const useSpeedPaintRenderController = create<SpeedPaintRenderControllerSt
   },
 
   // -------------------------------------------------------------------------
-  // reset — limpa tudo (revoga blob URL, aborta, volta a 'idle')
+  // reset — limpa tudo (revoga blob URL, aborta, volta a 'idle').
+  //    v0.135.2 (F1 da auditoria): preserva `codec`/`container` resolvidos
+  //    pelo `useCodecSupport` — sem isso, a próxima exportação voltaria a
+  //    usar h264/mp4 padrão em vez do fallback VP8/WebM já resolvido.
   // -------------------------------------------------------------------------
   reset: () => {
     if (abortController) {
@@ -432,6 +543,8 @@ export const useSpeedPaintRenderController = create<SpeedPaintRenderControllerSt
       wasCancelled: false,
       currentBatchIndex: 0,
       totalBatchItems: 0,
+      codec: get().codec,
+      container: get().container,
     });
   },
 
@@ -519,6 +632,7 @@ async function runSingleRender(
     showDrawTool = true,
     fileName,
     autoDownload = false,
+    easing,
   } = options;
 
   // 1. Identifica esta renderização — catch/finally antigos serão ignorados
@@ -528,21 +642,39 @@ async function runSingleRender(
   currentExportFileName = fileName ?? '';
 
   // 3. Decide o modo de renderização (Fase 3.2) **antes** de validar
-  //    `imageSource`. A fachada `useSpeedPaintExporter` propaga a união
-  //    `StrokeAnimation | VetorialAnimation` (GAP-02 da reauditoria F5.5)
-  //    — `options.animation` já é o tipo discriminado. Aqui apenas
-  //    confirmamos via type guard real (`'paths' in animation`) se o modo
-  //    'vetorial' foi pedido e a animação tem paths de fato. Sem cast:
-  //    o tipo de `animation` é a união declarada em
-  //    `SpeedPaintExportOptions.animation`.
-  const renderMode = useAnimationStore.getState().renderMode;
-  const isVetorial = renderMode === 'vetorial' && 'paths' in animation;
+  //    `imageSource`. O discriminante primário é o **dado** da animação
+  //    (`'paths' in animation`) — é a fonte da verdade. O `renderMode` da
+  //    store é um hint secundário (telemetria/consistência), mas NÃO é
+  //    confiável: o usuário pode trocar o modo sem regenerar (debounce do
+  //    `useSyncSpeedPaintRenderMode` abre uma janela em que o store já
+  //    diz "mask" mas `job.animation` ainda é `VetorialAnimation`).
+  //    Discriminar só pelo tipo do dado evita o TypeError em `SpeedPaintScene`
+  //    quando ele tenta ler `animation.strokes.length` numa VetorialAnimation.
+  //    Padrão idêntico ao `createExportableBatchSpeedPaintComposition` (linha 188).
+  const isVetorial = 'paths' in animation;
 
   // 4. Validação — antes de criar AbortController.
   //    Modo máscara exige `imageSource` (raspadinha usa a imagem de fundo).
   //    Modo vetorial dispensa — a imagem já foi vetorizada em
   //    `animation.paths` pelo pipeline `imageProcessing.ts` (Fase 2.1).
-  if (!isVetorial && !imageSource) return;
+  //    v0.135.2 (F14 da auditoria): em vez de retorno silencioso (`return;`),
+  //    seta `status: 'failed'` com mensagem clara para que a UI não fique
+  //    travada em estado idle após validação inválida.
+  if (!isVetorial && !imageSource) {
+    log.warn('Renderização speed paint recusada: imageSource ausente no modo máscara');
+    set({
+      ...INITIAL_STATE,
+      kind: 'speed-paint' as RenderKind,
+      status: 'failed' as RenderStatus,
+      isRendering: false,
+      error: 'Imagem de origem ausente — não é possível renderizar o modo máscara.',
+      renderStatusText: 'Falha na exportação',
+      // Preserva codec/container resolvidos pelo useCodecSupport
+      codec: get().codec,
+      container: get().container,
+    });
+    return;
+  }
 
   // 5. Cancela render anterior se existir (2ª exportação cancela 1ª)
   if (abortController) {
@@ -558,7 +690,12 @@ async function runSingleRender(
   // 7. Reseta throttle do percentual
   lastReportedPercentRef.current = -1;
 
-  // 8. Reseta estado para "preparing" — feedback visual imediato
+  // 8. Reseta estado para "preparing" — feedback visual imediato.
+  //    v0.135.2 (F1 da auditoria): `...INITIAL_STATE` zeraria `codec` e
+  //    `container` para os defaults `'h264'`/`'mp4'`, sobrescrevendo o
+  //    fallback VP8/WebM que `useCodecSupport` resolveu para browsers sem
+  //    H.264 (ex: Firefox Linux). Preservamos os valores atuais para que
+  //    o `invokeRenderMediaOnWeb` abaixo receba o codec correto.
   set({
     ...INITIAL_STATE,
     kind: 'speed-paint' as RenderKind,
@@ -571,6 +708,8 @@ async function runSingleRender(
     wasCancelled: false,
     currentBatchIndex: 0,
     totalBatchItems: 0,
+    codec: get().codec,
+    container: get().container,
   });
 
   const resolution = getSpeedPaintResolution(animation.canvasWidth, animation.canvasHeight, quality);
@@ -597,9 +736,12 @@ async function runSingleRender(
       // Narrowing real: o `isVetorial` acima estreita `animation` para
       // `VetorialAnimation` em runtime (mesmo que o TS ainda veja a união
       // declarada em `SpeedPaintExportOptions`).
+      // v0.135.2 (F3): propaga `easing` para a composição. `canvasColor`
+      // já está dentro de `animation` (F2).
       inputProps = {
         animation,
         showDrawTool,
+        ...(easing !== undefined ? { easing } : {}),
       };
       compositionId = COMPOSITION_ID_VETORIAL;
       ExportableComposition = await createExportableWhiteboardComposition();
@@ -779,14 +921,32 @@ async function runBatchRender(
     sceneDurationSeconds = 15,
     renderMode,
     vetorialPreset,
+    vetorialSortOrder,
+    canvasColor,
+    easing,
   } = options;
 
   // 1. Identifica esta renderização
   const renderId = ++currentRenderId;
   currentExportFileName = fileName ?? '';
 
-  // 2. Validação
-  if (items.length === 0) return;
+  // 2. Validação — v0.135.2 (F14 da auditoria): em vez de retorno silencioso,
+  //    seta `status: 'failed'` para que a UI mostre o motivo em vez de ficar
+  //    eternamente em estado idle.
+  if (items.length === 0) {
+    log.warn('Renderização de lote speed paint recusada: nenhum item na fila');
+    set({
+      ...INITIAL_STATE,
+      kind: 'speed-paint' as RenderKind,
+      status: 'failed' as RenderStatus,
+      isRendering: false,
+      error: 'Nenhuma imagem na fila para exportar.',
+      renderStatusText: 'Falha na exportação',
+      codec: get().codec,
+      container: get().container,
+    });
+    return;
+  }
 
   const analyticsParams = { quality, mode: 'batch' as const, scene_count: items.length };
   trackAnalyticsEvent('speed_paint_export_started', analyticsParams);
@@ -803,7 +963,9 @@ async function runBatchRender(
 
   lastReportedPercentRef.current = -1;
 
-  // 4. Reseta estado para "preparing"
+  // 4. Reseta estado para "preparing". v0.135.2 (F1 da auditoria): preserva
+  //    `codec`/`container` resolvidos pelo `useCodecSupport` (mesma justificativa
+  //    de `runSingleRender` acima).
   set({
     ...INITIAL_STATE,
     kind: 'speed-paint' as RenderKind,
@@ -816,6 +978,8 @@ async function runBatchRender(
     wasCancelled: false,
     currentBatchIndex: 0,
     totalBatchItems: items.length,
+    codec: get().codec,
+    container: get().container,
   });
 
   const generationWeight = 50;
@@ -844,11 +1008,15 @@ async function runBatchRender(
         },
         {
           signal,
-          // L8: propaga modo+preset uniformes para o lote. `vetorialPreset`
-          // só é enviado no modo vetorial (economiza payload e evita warning
-          // do cache por chave sem discriminator).
+          // L8: propaga modo+preset+sortOrder uniformes para o lote.
+          // `vetorialPreset` e `vetorialSortOrder` só são enviados no modo
+          // vetorial (economiza payload e evita warning do cache por chave
+          // sem discriminator). (W-B da auditoria v0.135.1 rodada 6.)
           ...(renderMode !== undefined ? { renderMode } : {}),
           ...(renderMode === 'vetorial' && vetorialPreset !== undefined ? { vetorialPreset } : {}),
+          ...(renderMode === 'vetorial' && vetorialSortOrder !== undefined ? { vetorialSortOrder } : {}),
+          // v0.135.2 (F2): propaga canvasColor (fundo) para o pipeline.
+          ...(canvasColor !== undefined ? { canvasColor } : {}),
         },
       );
 
@@ -859,7 +1027,34 @@ async function runBatchRender(
     }
 
     const firstAnimation = batchAnimations[0]?.animation;
-    if (!firstAnimation) return;
+    // v0.135.3 (S3 da auditoria): este branch é **defesa em profundidade**.
+    // Em produção, é inatingível — o guard `items.length === 0` no início
+    // de `runBatchRender` já aborta o fluxo, e o `items.map(...)` só não
+    // produz animação se TODOS os items retornarem `null` do
+    // `generateStrokesFromImage` (cenário hipotético: fila com imagens
+    // 100% corrompidas). Mantido por três razões:
+    //   1) Simetria com F14 (edge cases explicitados, não silenciados)
+    //   2) Endurecimento contra refatorações futuras que removam o
+    //      `items.length === 0` guard
+    //   3) Type safety: `firstAnimation` é `VetorialAnimation | undefined`
+    //      e é usado em `firstAnimation.canvasWidth` abaixo — sem este
+    //      guard, o TS emite erro de compilação por uso de `.canvasWidth`
+    //      em `undefined` (não é `any`, é erro de tipo). O `if` confirma
+    //      o narrowing para `VetorialAnimation`.
+    if (!firstAnimation) {
+      log.warn('Loop de geração de animações do lote não produziu resultado');
+      set({
+        ...INITIAL_STATE,
+        kind: 'speed-paint' as RenderKind,
+        status: 'failed' as RenderStatus,
+        isRendering: false,
+        error: 'Nenhuma cena pôde ser processada para exportação.',
+        renderStatusText: 'Falha na exportação',
+        codec: get().codec,
+        container: get().container,
+      });
+      return;
+    }
 
     // 6. Aplica patch de fontStretch
     patchCanvasFontStretch();
@@ -886,6 +1081,10 @@ async function runBatchRender(
       sceneDurationInFrames,
       sceneStepFrames,
       timingMode,
+      // v0.135.2 (F3): propaga easing para a composição. Como o controller
+      // já só gera VetorialAnimation quando `renderMode === 'vetorial'`,
+      // o easing é consistente com o tipo de cena do lote.
+      ...(easing !== undefined ? { easing } : {}),
     };
 
     // 8. Carrega Remotion lazy

@@ -383,7 +383,10 @@ const log = createLogger('strokeWorker');
  * pesada de edge detection/clustering/vetorização fora da main thread.
  *
  * @returns Instância do Worker pronta para receber mensagens
- * @throws Se Worker ou OffscreenCanvas não forem suportados
+ * @throws Se Worker ou OffscreenCanvas não forem suportados, OU se o
+ *   construtor `new Worker(url)` lançar em CSP restritivo / sandbox sem
+ *   permissão para Blob workers (catch wrapper para preservar a Blob URL
+ *   e fornecer mensagem de erro clara).
  */
 export function createStrokeWorker(): Worker {
   if (!supportsStrokeWorker()) {
@@ -394,7 +397,30 @@ export function createStrokeWorker(): Worker {
   const blob = new Blob([code], { type: 'application/javascript' });
   const url = URL.createObjectURL(blob);
 
-  const worker = new Worker(url);
+  // Defesa em profundidade (v0.135.2) — espelha o padrão de
+  // `processVetorialInWorker` em `imageProcessing.ts:619-643`. `supportsStrokeWorker`
+  // checa apenas a presença de `Worker`/`OffscreenCanvas`/`createImageBitmap`,
+  // mas o construtor `new Worker(url)` lança `Error` em:
+  // - CSP com `worker-src` restritivo (ex: sem `blob:` permitido)
+  // - Sandboxed iframes sem permissão para Blob workers
+  // - Navegadores que honram o header `Cross-Origin-Embedder-Policy`
+  //   mas não conseguem instanciar o worker
+  // Sem o try/catch, a exceção vira unhandled rejection no caller
+  // (`speedPaintRenderer.ts:386`) e o fallback main-thread não é acionado
+  // de forma limpa.
+  let worker: Worker;
+  try {
+    worker = new Worker(url);
+  } catch (workerError: unknown) {
+    URL.revokeObjectURL(url);
+    throw new Error(
+      `Falha ao criar Web Worker: ${workerError instanceof Error ? workerError.message : String(workerError)}. ` +
+        'Possível causa: Content Security Policy (CSP) restritiva ou sandbox.',
+      // v0.135.2: propaga a causa original via `cause` (ES2022) para que
+      // stack traces no Sentry/Datadog mostrem a origem real do erro.
+      { cause: workerError },
+    );
+  }
 
   // Limpa a Blob URL após criação — ela já foi carregada pelo Worker
   URL.revokeObjectURL(url);
@@ -418,10 +444,18 @@ export function terminateStrokeWorker(worker: Worker): void {
  *
  * Wrapper que envolve a comunicação postMessage/onmessage em uma Promise.
  *
- * @param worker - Instância do Worker ativa
+ * v0.135.2 (W5 da auditoria): o timeout NÃO chama `terminateStrokeWorker(worker)`
+ * mais — o worker é compartilhado entre múltiplas cenas do lote
+ * (`speedPaintRenderer.ts` cria 1 worker por lote e reusa), e terminar
+ * ele mataria as cenas seguintes. Em vez disso, apenas removemos os
+ * listeners desta cena específica e marcamos como timed out local.
+ * O caller (`speedPaintRenderer.ts`) decide se quer recriar o worker
+ * (já tem fallback para main-thread por cena no caso de falha).
+ *
+ * @param worker - Instância do Worker ativa (compartilhada entre cenas)
  * @param imageUrl - URL da imagem (blob: ou data:)
  * @param sceneIndex - Índice da cena (usado para correlação)
- * @returns Resultado do processamento ou null se o Worker foi encerrado
+ * @returns Resultado do processamento ou null se a cena expirou
  */
 export function processSceneInWorker(
   worker: Worker,
@@ -434,8 +468,12 @@ export function processSceneInWorker(
 
     const timeoutId = setTimeout(() => {
       timedOut = true;
-      terminateStrokeWorker(worker);
-      log.warn('Worker timeout para cena', { sceneIndex });
+      // v0.135.2 (W5): NÃO chamar `terminateStrokeWorker(worker)` —
+      // o worker é compartilhado entre cenas do lote. Apenas removemos
+      // o listener desta cena e marcamos como expirada. O caller
+      // (`speedPaintRenderer.ts`) tem fallback para main-thread por cena.
+      worker.removeEventListener('message', handler);
+      log.warn('Worker timeout para cena (worker compartilhado NÃO terminado)', { sceneIndex });
       resolve(null);
     }, TIMEOUT_MS);
 

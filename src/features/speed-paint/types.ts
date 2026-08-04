@@ -43,6 +43,15 @@ export interface QueuedImage {
    * Se ausente, herda o `vetorialPreset` global da store.
    */
   vetorialPreset?: VetorialPreset;
+  /**
+   * Ordem de desenho dos paths no modo vetorial (v0.135.1). Aplicado quando
+   * `renderMode === 'vetorial'`. Se ausente, herda o `vetorialSortOrder` global
+   * da store. Sem propagação, preview (BatchOrchestrator) e export
+   * (SpeedPaintPage.startBatchRender) divergem — o preview cai na ordem
+   * natural (varredura raster) e o export na ordem escolhida pelo usuário.
+   * (W-1 da auditoria v0.135.1 rodada 7.)
+   */
+  vetorialSortOrder?: import('./types/vetorial').VetorialPathSortOrder;
 }
 
 export interface PaintingJob {

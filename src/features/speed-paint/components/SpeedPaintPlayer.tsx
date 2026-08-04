@@ -28,6 +28,7 @@ import type { StrokeAnimation, VetorialAnimation } from '../types';
 import type { SpeedPaintTimingMode } from '../../video-render/lib/speedPaintTimings';
 import { glassPanelSx } from '../../../theme/surfaces';
 import { createLogger } from '../../../lib/logger';
+import { useAnimationStore } from '../store/animationStore';
 
 const logger = createLogger('SpeedPaintPlayer');
 
@@ -124,14 +125,25 @@ interface VetorialPlayerProps {
   ref: React.Ref<PlayerRef>;
   showDrawTool: boolean | undefined;
   isLastScene: boolean;
+  /**
+   * Easing do preview (v0.135.2 / F3 — fix do W1 da auditoria).
+   * Lido do store pelo consumidor e passado adiante. Sem isso, o preview
+   * ficava sempre em `smooth` (default) e o export usava o easing
+   * selecionado — divergência silenciosa.
+   */
+  easing?: import('../types/vetorial').VetorialEasingType;
 }
 
 const VetorialPlayer = memo(forwardRef<PlayerRef, VetorialPlayerProps>(
-  function VetorialPlayer({ animation, durationInFrames, fps, showDrawTool, isLastScene }, ref) {
+  function VetorialPlayer(
+    { animation, durationInFrames, fps, showDrawTool, isLastScene, easing },
+    ref,
+  ) {
     const inputProps: WhiteboardCompositionProps = {
       animation,
       showDrawTool,
       isLastScene,
+      easing,
     };
     return (
       <Player
@@ -259,6 +271,12 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
     const durationInFrames = Math.max(1, Math.round(animationDuration * fps));
     const isVetorial = isVetorialAnimation(animation);
     useAutoPlayOnComplete(ref, jobStatus);
+    // v0.135.2 (W1 da auditoria): propaga o `easing` do store para o
+    // `VetorialPlayer` — antes desta correção, o preview sempre
+    // renderizava com `smooth` (default) enquanto o export usava o
+    // easing selecionado, criando divergência silenciosa.
+    // `getState()` evita closure stale e dispensa dependência no effect/useMemo.
+    const previewEasing = useAnimationStore.getState().easing;
 
     return (
       <Paper elevation={0} sx={playerWrapperSx}>
@@ -270,6 +288,7 @@ export const SpeedPaintPlayer = memo(forwardRef<PlayerRef, SpeedPaintPlayerProps
             fps={fps}
             showDrawTool={showDrawTool}
             isLastScene={isLastScene}
+            easing={previewEasing}
           />
         ) : (
           <MaskPlayer

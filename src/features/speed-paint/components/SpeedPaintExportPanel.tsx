@@ -24,6 +24,7 @@ import { ExportProgressBar } from '../../video-render/components/export/ExportPr
 import { ExportResultActions } from '../../video-render/components/export/ExportResultActions';
 import type { SpeedPaintExporter, SpeedPaintExportOptions } from '../hooks/useSpeedPaintExporter';
 import { getSpeedPaintResolution } from '../hooks/useSpeedPaintExporter';
+import { useAnimationStore } from '../store/animationStore';
 import { AnimationDurationSelector } from './AnimationDurationSelector';
 import { useLocale } from '../../i18n';
 import { glassSurfaceSx } from '../../../theme/surfaces';
@@ -132,6 +133,11 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
     // Duração consistente com o preview (animationDuration × FPS)
     // — NÃO usar animation.totalFrames (contagem de strokes, não frames de vídeo)
     const exportDurationInFrames = Math.max(1, Math.round(animationDuration * resolvedFps));
+    // v0.135.2 (F3): propaga easing do store. O painel single é usado
+    // também no modo vetorial (quando a animação já foi gerada e o usuário
+    // clica em "Exportar" — o easing do seletor precisa ser respeitado
+    // na renderização final, não apenas no preview).
+    const { easing: storeEasing } = useAnimationStore.getState();
     const options: SpeedPaintExportOptions = {
       animation,
       imageSource,
@@ -140,6 +146,7 @@ export const SpeedPaintExportPanel = React.memo(function SpeedPaintExportPanel({
       quality,
       showDrawTool,
       fileName: fileName || undefined,
+      easing: storeEasing,
     };
     void exporter.startRender(options);
   };

@@ -244,8 +244,16 @@ export function QueueStaging() {
   const clearQueue = useAnimationStore((s) => s.clearQueue);
   const setAnimationDuration = useAnimationStore((s) => s.setAnimationDuration);
   const reorderQueue = useAnimationStore((s) => s.reorderQueue);
+  const globalRenderMode = useAnimationStore((s) => s.renderMode);
   const failedCount = queue.filter((item) => item.status === 'failed').length;
   const eligibleCount = queue.length - failedCount;
+  // v0.135.2 (F5 da auditoria): detecta se a fila tem modos mistos (itens
+  // com `renderMode` próprio diferente do global). Quando sim, a exportação
+  // uniforme vai forçar o modo global em todas as cenas — o badge avisa
+  // o usuário dessa decisão.
+  const hasMixedModes = queue.some(
+    (item) => (item.renderMode ?? globalRenderMode) !== globalRenderMode,
+  );
 
   const startWatching = () => setBatchMode('watch');
   const startRecording = () => setBatchMode('record');
@@ -453,6 +461,14 @@ export function QueueStaging() {
             variant="contained"
             disabled={eligibleCount === 0 }
             startIcon={<VideocamIcon sx={{ fontSize: 18 }} />}
+            // v0.135.2 (F5 da auditoria): tooltip explica que a exportação
+            // é uniforme — todas as cenas usam o modo/preset/easing global,
+            // mesmo se itens individuais tiverem configs diferentes.
+            title={
+              hasMixedModes
+                ? t('speedPaint.queueExportMixedModeBadge')
+                : t('speedPaint.queueExportUniformTooltip')
+            }
             sx={{
               background: `linear-gradient(135deg, ${BRAND_SECONDARY} 0%, ${BRAND_SECONDARY_LIGHT} 100%)`,
               boxShadow: `0 12px 32px ${BRAND_SECONDARY_GLOW_SOFT}`,

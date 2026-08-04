@@ -159,8 +159,15 @@ function expectValidBezierPath(path: BezierPath): void {
   expect(typeof path.length).toBe('number');
   expect(Number.isFinite(path.length)).toBe(true);
   expect(path.length).toBeGreaterThan(0);
-  // Chaves esperadas (exatamente d, length).
-  expect(Object.keys(path).sort()).toEqual(['d', 'length']);
+  // Chaves esperadas: `d`, `length` obrigatórias; `contourIndex` opcional
+  // (setado por `fitBezierPaths` desde v0.135.1 para pareamento path↔contour
+  // após descartes — não quebrou o shape público de `VetorialPath`).
+  const keys = Object.keys(path).sort();
+  expect(keys).toContain('d');
+  expect(keys).toContain('length');
+  for (const key of keys) {
+    expect(['d', 'length', 'contourIndex']).toContain(key);
+  }
   // d deve começar com M e conter pelo menos 1 C.
   expect(path.d).toMatch(/^M\s/);
   expect(path.d).toContain('C');
@@ -628,11 +635,16 @@ describe('fitBezierPaths', () => {
       expect(result).not.toBeUndefined();
     });
 
-    it('cada path tem exatamente as chaves "d" e "length"', () => {
+    it('cada path tem exatamente as chaves esperadas ("d", "length", "contourIndex")', () => {
       const result = fitBezierPaths([contour], 100, 100);
       for (const p of result) {
         const keys = Object.keys(p).sort();
-        expect(keys).toEqual(['d', 'length']);
+        // v0.135.1: `contourIndex` é opcional (setado por `fitBezierPaths`
+        // para pareamento path↔contour). Aceita d/length apenas OU d/length/contourIndex.
+        const isValidShape =
+          (keys.length === 2 && keys[0] === 'd' && keys[1] === 'length') ||
+          (keys.length === 3 && keys[0] === 'contourIndex' && keys[1] === 'd' && keys[2] === 'length');
+        expect(isValidShape).toBe(true);
       }
     });
 

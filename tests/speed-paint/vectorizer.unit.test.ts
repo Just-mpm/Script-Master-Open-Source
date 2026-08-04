@@ -912,4 +912,65 @@ describe('sortPaths', () => {
       expect(result[0]).toBe(a);
     });
   });
+
+  // v0.135.3 (S1 da auditoria): cobertura do parser de coords com valores
+  // negativos adjacentes à letra (ex: `M-5 10`). Antes da migração para
+  // `matchAll` com grupos capturados, o `m.split(/\s+/)` interno quebrava
+  // porque `M-5` ficava inteiro em `parts[0]` e o Y caía no `?? '0'`.
+  describe('parser de coords (v0.135.3 / S1)', () => {
+    it('top-down: detecta Y negativo quando coord está colada na letra (M-5 10)', () => {
+      // Repro: 2 paths, um com Y=10 (acima) e outro com Y=-3 (muito acima).
+      // Antes do fix, `Y=-3` virava 0 (split frágil) e o path com Y=10
+      // aparecia PRIMEIRO — reverter a ordem.
+      const aboveY10 = makePath('M 0 10 L 10 20', 50);
+      const aboveY3 = makePath('M-5 -3 L 10 -1', 50);
+      const input = [aboveY10, aboveY3];
+
+      const sorted = sortPaths(input, 'top-down', 100, 100);
+
+      // O path com Y=-3 (mais acima) deve vir PRIMEIRO
+      expect(sorted[0]?.d).toBe('M-5 -3 L 10 -1');
+      expect(sorted[1]?.d).toBe('M 0 10 L 10 20');
+    });
+
+    it('top-down: aceita decimais sem zero à esquerda (M.5 1.5)', () => {
+      // Regex cobre `-?\d*\.?\d+` — `.5` sem zero é válido.
+      const a = makePath('M 0 5 L 10 5', 20);
+      const b = makePath('M.5 .5 L 10.5 1.5', 20);
+      const input = [a, b];
+
+      const sorted = sortPaths(input, 'top-down', 100, 100);
+
+      // Y=0.5 < Y=5 → b primeiro
+      expect(sorted[0]?.d).toBe('M.5 .5 L 10.5 1.5');
+    });
+
+    it('center-out: usa o primeiro ponto (não minY) do path com coord negativa', () => {
+      // Path com primeiro ponto em (-50, 50) deve estar MAIS LONGE do
+      // centro (50, 50) que um path com primeiro ponto em (50, 50).
+      // Distância do (-50, 50) ao (50, 50) = 100.
+      const negative = makePath('M-50 50 L 0 50', 20);
+      const center = makePath('M 50 50 L 60 60', 20);
+      const input = [negative, center];
+
+      const sorted = sortPaths(input, 'center-out', 100, 100);
+
+      // center (dist 0) primeiro, negative (dist 100) depois
+      expect(sorted[0]?.d).toBe('M 50 50 L 60 60');
+      expect(sorted[1]?.d).toBe('M-50 50 L 0 50');
+    });
+
+    it('top-down: path sem pontos parseáveis retorna 0 (cai no fim)', () => {
+      // Path com apenas letras de comando, sem coords numéricas
+      const invalid = makePath('M Z L Z', 5);
+      const valid = makePath('M 0 50 L 10 50', 50);
+      const input = [valid, invalid];
+
+      const sorted = sortPaths(input, 'top-down', 100, 100);
+
+      // invalid (Y=0 fallback) < valid (Y=50) → invalid PRIMEIRO
+      expect(sorted[0]?.d).toBe('M Z L Z');
+      expect(sorted[1]?.d).toBe('M 0 50 L 10 50');
+    });
+  });
 });

@@ -73,6 +73,23 @@ export interface SpeedPaintExportOptions {
   fileName?: string;
   /** Dispara o download automaticamente ao concluir a exportação */
   autoDownload?: boolean;
+  /**
+   * Cor de fundo do canvas (`'white'` ou `'black'`). Default `undefined` = usa o
+   * `canvasColor` armazenado em `animation`. Forçar um valor aqui sobrescreve
+   * a preferência do `animation` — útil para re-exportar uma animação
+   * gerada em outro fundo sem precisar regenerar.
+   */
+  canvasColor?: 'white' | 'black';
+  /**
+   * Curva de progressão da animação (L10, RF-10). Default `undefined`
+   * = usa o default interno de `WhiteboardScene` (`Easing.inOut(Easing.ease)`).
+   * v0.135.2 (F3 da auditoria): propaga o seletor "Linear / Smooth / Bounce"
+   * da store para o render (antes era controle morto).
+   *
+   * Só é usado no modo `vetorial` — no modo `mask` (`SpeedPaintScene`),
+   * a progressão é implícita via ordem dos strokes.
+   */
+  easing?: import('../types/vetorial').VetorialEasingType;
 }
 
 export interface SpeedPaintBatchExportItem {
@@ -97,6 +114,25 @@ export interface SpeedPaintBatchExportOptions {
    * Default `undefined` = `'artistic1'` (default da `animationStore`).
    */
   vetorialPreset?: import('../types').VetorialPreset;
+  /**
+   * Ordem de desenho dos paths no modo vetorial (só usado quando
+   * `renderMode === 'vetorial'`). Sem propagação, o batch cai no default
+   * (varredura raster) e diverge do preview single — usuário com sort
+   * `'top-down'`/`'center-out'` vê ordem diferente no vídeo exportado.
+   * (W-B da auditoria v0.135.1 rodada 6.)
+   */
+  vetorialSortOrder?: import('../types/vetorial').VetorialPathSortOrder;
+  /**
+   * Cor de fundo do canvas para todas as cenas do lote (v0.135.2 / F2).
+   * Default `undefined` = usa o `canvasColor` armazenado em cada
+   * `animation` gerada (que já vem do store via `BatchOrchestrator`).
+   */
+  canvasColor?: 'white' | 'black';
+  /**
+   * Curva de progressão da animação para o lote (L10, RF-10). Default
+   * `undefined` = usa o default interno de `WhiteboardScene`. v0.135.2 (F3).
+   */
+  easing?: import('../types/vetorial').VetorialEasingType;
 }
 
 // ---------------------------------------------------------------------------

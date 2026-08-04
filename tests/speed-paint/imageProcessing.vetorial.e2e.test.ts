@@ -608,15 +608,29 @@ describe('imageProcessing — pipeline vetorial e2e (10 imagens)', () => {
       // Documentada como Premissa #12 do tracker
       expect(animation.paths.length).toBeLessThanOrEqual(500);
 
+      // Validação (v0.135.1): limite de bytes do `d` aplicado pelo
+      // `applyVetorialSafetyLimits` — protege a conversão do SVG pelo
+      // `renderMediaOnWeb` (`Failed to convert SVG to image`).
+      const totalDBytes = animation.paths.reduce(
+        (s, p) => s + p.d.length * 2,
+        0,
+      );
+      expect(totalDBytes).toBeLessThanOrEqual(250_000);
+
       // Validação: totalLength coerente com soma dos lengths
       const sumLength = animation.paths.reduce((s, p) => s + p.length, 0);
       expect(animation.totalLength).toBeCloseTo(sumLength, 1);
 
-      // Validação: cada path tem `d` (string) e `length` (positivo)
+      // Validação: cada path tem `d` (string), `length` válido e `strokeWidth` positivo
       for (const path of animation.paths) {
         expect(typeof path.d).toBe('string');
         expect(path.d.length).toBeGreaterThan(0);
+        // `d` deve conter apenas comandos SVG válidos (sem NaN/Infinity ou tokens inválidos)
+        expect(path.d).toMatch(/^[MmLlHhVvCcSsQqTtAaZz0-9.\-,\s]+$/);
         expect(path.length).toBeGreaterThanOrEqual(0);
+        expect(Number.isFinite(path.length)).toBe(true);
+        expect(path.strokeWidth).toBeGreaterThan(0);
+        expect(Number.isFinite(path.strokeWidth)).toBe(true);
       }
 
       // totalDurationMs: Math.max(3000, paths.length * 120) — Leva 3.2 recalibrou

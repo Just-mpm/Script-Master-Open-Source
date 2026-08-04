@@ -102,6 +102,10 @@ self.onmessage = async (e: MessageEvent<VetorialWorkerRequest>): Promise<void> =
         sortOrder: msg.sortOrder,
         edgeThreshold: msg.edgeThreshold,
         contourEpsilon: msg.contourEpsilon,
+        // v0.135.2 (W4): propaga canvasColor para o `filterPathsByBackgroundContrast`
+        // interno do pipeline edge+bezier. Sem isso, fundo preto + path
+        // claro = path removido como "invisível".
+        canvasColor: msg.canvasColor,
       },
     );
 
